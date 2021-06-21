@@ -5,6 +5,9 @@
 
 dgs:docker:
   stage: docker
+  before_script:
+    - rm $PROJECT_NAME/build/libs/${PROJECT_NAME}-*-api.jar
+    - cp $PROJECT_NAME/build/libs/${PROJECT_NAME}-*.jar $PROJECT_NAME/build/libs/${PROJECT_NAME}.jar
   extends:
     - .dgs
     - .docker
@@ -15,7 +18,6 @@ dgs:helmchart:
   stage: publish
   extends:
     - .dgs
-    - .publish
     - .helmchart
   needs:
     - job: "dgs:docker"

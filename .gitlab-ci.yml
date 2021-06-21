@@ -18,7 +18,7 @@ variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   GRADLE: "gradle -s --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
   DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
-  DOCKER_NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME}
+  DOCKER_NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_SLUG}
   DEV_CHART: git@gitlab.com:systolic/deltafi/charts.git
 
 .gradle:
@@ -29,20 +29,20 @@ variables:
 .publish:
   only:
     refs:
-      - master
+      - main
+      - "release/*"
 
 .docker:
   services:
     - name: docker:18-dind
       entrypoint: ["dockerd-entrypoint.sh"]
       command: ["--max-concurrent-downloads", "10"]
-  before_script:
+  script:
     - test -n "$PROJECT_NAME"
     - cd $PROJECT_NAME
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
     - echo "Building the following image ${DOCKER_NAMED_TAG}"
     - echo "Building the following image ${DOCKER_TAG}"
-  script:
     # pull latest image if available (performance optimization)
     - docker pull ${DOCKER_NAMED_TAG} || true
     - >
@@ -75,6 +75,9 @@ variables:
   image: alpine:3.8
   # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
   resource_group: deltafi-helmchart
+  only:
+    refs:
+      - master
   before_script:
     - test -n "$PROJECT_NAME"
     - test -n "$HELM_IMAGE_PATH"

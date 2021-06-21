@@ -13,7 +13,6 @@ apollo-gateway:helmchart:
   stage: publish
   extends:
     - .apollo-gateway
-    - .publish
     - .helmchart
   needs:
     - job: "apollo-gateway:docker"

@@ -15,7 +15,6 @@ passthrough:helmchart:
   stage: publish
   extends:
     - .passthrough
-    - .publish
     - .helmchart
   needs:
     - job: "passthrough:docker"

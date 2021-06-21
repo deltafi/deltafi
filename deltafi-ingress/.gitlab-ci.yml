@@ -15,7 +15,6 @@ ingress:helmchart:
   stage: publish
   extends:
     - .ingress
-    - .publish
     - .helmchart
   needs:
     - job: "ingress:docker"
