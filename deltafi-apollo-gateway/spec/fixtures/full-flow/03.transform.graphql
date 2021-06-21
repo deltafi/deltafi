@@ -1,0 +1,33 @@
+mutation {
+    transform(
+        did: "%1$s"
+        fromTransformAction: "JsonUtf8StixTransformAction"
+        protocolLayer: {
+            type: "json-utf8-stix"
+            objectReference: {
+                name: "objectName"
+                bucket: "objectBucket"
+                offset: 0
+                size: 500
+            }
+            metadata: [
+                {
+                    key: "stixType",
+                    value: "attack-pattern"
+                },
+                {
+                    key: "stixVersion",
+                    value: "2.1"
+                }
+            ]
+        }
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

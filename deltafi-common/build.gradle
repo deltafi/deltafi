@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+java {
+    sourceCompatibility = javaSourceCompatibility
+    targetCompatibility = javaTargetCompatibility
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+publishing {
+    publications {
+        java(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        if(project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
+            maven {
+                url projectMavenRepo
+                credentials(HttpHeaderCredentials) {
+                    name = gitLabTokenType
+                    value = gitLabToken
+                }
+                authentication {
+                    header(HttpHeaderAuthentication)
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'io.quarkiverse.loggingjson:quarkus-logging-json:0.3.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
+    testImplementation 'org.mockito:mockito-junit-jupiter:3.9.0'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+}
+
+test {
+    useJUnitPlatform()
+}

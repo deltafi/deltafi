@@ -1,0 +1,15 @@
+mutation {
+    error(
+        did: "%1$s"
+        fromAction: "AuthorityValidateAction"
+        message: "Authority XYZ not recognized"
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

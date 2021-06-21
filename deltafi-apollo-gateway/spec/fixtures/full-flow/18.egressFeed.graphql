@@ -1,0 +1,16 @@
+query {
+    actionFeed(
+        action: "StixEgressAction"
+    ) {
+        did
+        formattedData {
+            formatAction
+            objectReference {
+                bucket
+                name
+                size
+                offset
+            }
+        }
+    }
+}

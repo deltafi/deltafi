@@ -1,0 +1,66 @@
+spring:
+  mongodb:
+    embedded:
+      version: 4.0.23
+      features: only_with_ssl, sync_delay, no_http_interface_arg
+  data:
+    mongodb:
+      database: deltafi-test
+      auto-index-creation: true
+deltafi:
+  feedTimeoutSeconds: 30
+  ingress:
+    ingressFlows:
+      sample:
+        type: json
+        transformActions: [Utf8TransformAction, SampleTransformAction]
+        loadActions: [SampleLoadGroup]
+      theFlow:
+        type: theType
+        transformActions: []
+        loadActions: []
+  transformActions:
+    Utf8TransformAction:
+      consumes: json
+      produces: json-utf8
+    SampleTransformAction:
+      consumes: json-utf8
+      produces: json-utf8-sample
+  loadActions:
+    SampleLoadAction:
+      consumes: json-utf8-sample
+      requiresMetadata:
+        sampleType: sample-type
+    Sample2LoadAction:
+      consumes: json-utf8-sample
+      requiresMetadata:
+        sampleType: sample-type-2
+  loadGroups:
+    SampleLoadGroup:
+      - SampleLoadAction
+      - Sample2LoadAction
+  enrichActions:
+    SampleEnrichAction:
+      requiresDomains: [sample]
+  formatActions:
+    "[SampleFormatAction]":
+      requiresDomains: [sample]
+      requiresEnrichment: [sampleEnrichment]
+  validateActions:
+    - AuthorityValidateAction
+    - SampleValidateAction
+  egress:
+    egressFlows:
+      sample:
+        formatAction: SampleFormatAction
+        validateActions:
+          - AuthorityValidateAction
+          - SampleValidateAction
+  delete:
+    onCompletion: false
+    frequency: PT1M
+    policies:
+      oneHourAfterComplete:
+        type: ageOff
+        parameters:
+          afterComplete: PT1H

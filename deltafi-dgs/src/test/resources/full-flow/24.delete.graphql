@@ -1,0 +1,5 @@
+mutation {
+    delete(
+        dids: ["%1$s", "nonsenseDid"]
+    )
+}

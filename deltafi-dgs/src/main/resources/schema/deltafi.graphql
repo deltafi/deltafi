@@ -1,0 +1,171 @@
+scalar DateTime
+
+interface DeltaFiDomain {
+  did: String!
+}
+
+interface DeltaFiEnrichment {
+  did: String!
+}
+
+type KeyValue {
+  key: String!
+  value: String
+}
+
+input KeyValueInput {
+  key: String!
+  value: String
+}
+
+type SourceInfo {
+  filename: String!
+  flow: String!
+  metadata: [KeyValue!]
+}
+
+input SourceInfoInput {
+  filename: String!
+  flow: String!
+  metadata: [KeyValueInput!]
+}
+
+type ObjectReference {
+  name: String!
+  bucket: String!
+  offset: Int!
+  size: Int!
+}
+
+type ProtocolLayer {
+  type: String!
+  objectReference: ObjectReference!
+  metadata: [KeyValue!]
+}
+
+input ObjectReferenceInput {
+  name: String!
+  bucket: String!
+  offset: Int!
+  size: Int!
+}
+
+input ProtocolLayerInput {
+  type: String!
+  objectReference: ObjectReferenceInput!
+  metadata: [KeyValueInput!]
+}
+
+type DeltaFiDomains @key(fields: "did") {
+  did: String!
+  domainTypes: [String!]!
+  sampleDomain: SampleDomain
+}
+
+type DeltaFiEnrichments @key(fields: "did")  {
+  did: String!
+  enrichmentTypes: [String!]!
+  sampleEnrichment: SampleEnrichment
+}
+
+type FormattedData {
+  filename: String!
+  formatAction: String!
+  metadata: [KeyValue!]
+  objectReference: ObjectReference!
+}
+
+input FormatResultInput {
+  filename: String!
+  metadata: [KeyValueInput!]
+  objectReference: ObjectReferenceInput!
+}
+
+enum DeltaFileStage {
+  INGRESS
+  TRANSFORM
+  LOAD
+  ENRICH
+  FORMAT
+  VALIDATE
+  EGRESS
+  COMPLETE
+  ERROR
+  DELETE
+}
+
+enum ActionState {
+  QUEUED
+  DISPATCHED
+  COMPLETE
+  ERROR
+}
+
+type ActionEvent {
+  state: ActionState!
+  time: DateTime!
+  errorMessage: String
+}
+
+type Action {
+  name: String!
+  state: ActionState!
+  history: [ActionEvent!]!
+  created: DateTime!
+  modified: DateTime!
+  errorMessage: String
+}
+
+type DeltaFile {
+  did: String!
+  stage: String!
+  actions: [Action!]!
+  sourceInfo: SourceInfo!
+  protocolStack: [ProtocolLayer]!
+  domains: DeltaFiDomains!
+  enrichment: DeltaFiEnrichments!
+  formattedData: [FormattedData]!
+  created: DateTime!
+  modified: DateTime!
+  markedForDelete: DateTime
+  markedForDeleteReason: String
+}
+
+type FeedStats {
+  actionName : String!
+  recentQueryTimes : [DateTime]!
+  numQueries : Int
+}
+
+type Query {
+  deltaFile(did: String!): DeltaFile
+  actionFeed(action: String!, limit: Int, dryRun: Boolean) : [DeltaFile]!
+  lastCreated(last: Int) : [DeltaFile]!
+  lastModified(last: Int) : [DeltaFile]!
+  lastErrored(last: Int) : [DeltaFile]!
+  lastWithFilename(filename: String!) : DeltaFile
+
+  # feed stats are for debug purposes and do not persist across DGS restarts
+  feedStats(action: String) : [FeedStats]!
+}
+
+type Mutation {
+  ingress(sourceInfo: SourceInfoInput!, objectReference: ObjectReferenceInput!): DeltaFile!
+  transform(did: String!, fromTransformAction: String!, protocolLayer: ProtocolLayerInput!): DeltaFile!
+
+  # Load and enrich mutations record the fact of these domain-driven events
+  # Prior to calling them, an Action should write domain-specific records under the DeltaFile
+  load(did: String!, fromLoadAction: String!, domains: [String!]): DeltaFile!
+  enrich(did: String!, fromEnrichAction: String!, enrichments: [String!]): DeltaFile!
+
+  format(did: String!, fromFormatAction: String!, formatResult: FormatResultInput!): DeltaFile!
+  validate(did: String!, fromValidateAction: String!): DeltaFile!
+  egress(did: String!, fromEgressAction: String!): DeltaFile!
+
+  error(did: String!, fromAction: String!, message: String!) : DeltaFile!
+  retry(did: String!) : DeltaFile!
+
+  # The caller is responsible for removing all data, domains, and enrichment corresponding to this DeltaFile before calling this mutation
+  # Failure to do so may result in orphaned data and metadata
+  delete(dids: [String!]!) : [String!]!
+}

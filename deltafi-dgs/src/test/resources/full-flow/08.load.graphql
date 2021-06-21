@@ -1,0 +1,15 @@
+mutation {
+    load(
+        did: "%1$s"
+        fromLoadAction: "SampleLoadAction"
+        domains: ["sample"]
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

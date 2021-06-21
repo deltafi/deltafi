@@ -1,0 +1,16 @@
+query {
+    actionFeed(
+        action: "Stix2.1ValidateAction"
+    ) {
+        did
+        formattedData {
+            formatAction
+            objectReference {
+                bucket
+                name
+                size
+                offset
+            }
+        }
+    }
+}

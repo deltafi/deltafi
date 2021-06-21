@@ -1,0 +1,22 @@
+.passthrough:
+  variables:
+    PROJECT_NAME: deltafi-passthrough
+    HELM_IMAGE_PATH: deltafi.passthrough.image
+
+passthrough:docker:
+  stage: docker
+  extends:
+    - .passthrough
+    - .docker
+  needs:
+    - job: "build"
+
+passthrough:helmchart:
+  stage: publish
+  extends:
+    - .passthrough
+    - .publish
+    - .helmchart
+  needs:
+    - job: "passthrough:docker"
+

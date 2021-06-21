@@ -1,0 +1,23 @@
+mutation {
+    addStix(
+        did: "%1$s",
+        input: {
+          attackPattern: {
+            type: "attack-pattern",
+            specVersion: "2.1",
+            name: "Content Spoofing"
+            id: "attack-pattern--19da6e1c-71ab-4c2f-886d-d620d09d3b5a"
+            created: "2016-08-08T15:50:10.983Z"
+            modified: "2017-01-30T21:15:04.127Z"
+            externalReferences: [
+                {
+                    sourceName: "capec"
+                    url: "https://capec.mitre.org/data/definitions/148.html"
+                    externalId: "CAPEC-148"
+                }
+              ]
+            }
+        }
+    )
+}
+

@@ -1,0 +1,14 @@
+mutation {
+    egress(
+        did: "%1$s"
+        fromEgressAction: "StixEgressAction"
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

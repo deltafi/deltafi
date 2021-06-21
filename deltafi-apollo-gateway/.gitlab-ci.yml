@@ -1,0 +1,19 @@
+.apollo-gateway:
+  variables:
+    PROJECT_NAME: deltafi-apollo-gateway
+    HELM_IMAGE_PATH: deltafi.apollo_gateway.image
+
+apollo-gateway:docker:
+  stage: docker
+  extends:
+    - .apollo-gateway
+    - .docker
+
+apollo-gateway:helmchart:
+  stage: publish
+  extends:
+    - .apollo-gateway
+    - .publish
+    - .helmchart
+  needs:
+    - job: "apollo-gateway:docker"

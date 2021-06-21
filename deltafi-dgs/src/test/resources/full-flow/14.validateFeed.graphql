@@ -1,0 +1,16 @@
+query {
+    actionFeed(
+        action: "SampleValidateAction"
+    ) {
+        did
+        formattedData {
+            formatAction
+            objectReference {
+                bucket
+                name
+                size
+                offset
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+"%dev":
+  quarkus:
+    http:
+      port: 8085
+    log:
+      level: INFO
+      console:
+        json: false
+        color: true
+    minio:
+      url: http://localhost:9000
+  deltafi:
+    dgs:
+      url: http://localhost:8080/graphql
+  zipkin:
+    enabled: ${ZIPKIN_ENABLED:false}
+    url: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+
+quarkus:
+  http:
+    port: 8085
+  log:
+    level: INFO
+    console:
+      json: true
+      color: true
+  minio:
+    url: ${MINIO_URL:http://deltafi-minio}
+    access-key: ${MINIO_ACCESS:minioadmin}
+    secret-key: ${MINIO_SECRET:minioadmin}
+  kubernetes-config:
+    enabled: true
+    fail-on-missing-config: false
+
+deltafi:
+  dgs:
+    url: ${DELTAFI_DGS_URL:http://deltafi-apollo-gateway-service}
+  action_polling_start_delay_ms: 3000
+  action_polling_frequency_ms: 100
+  actions:
+    - name: SomeEgressAction
+      type: org.deltafi.action.egress.RestPostEgressAction
+      parameters:
+        url: ${EGRESS_ENDPOINT:http://localhost:8085/echo}
+        metadata_prefix: ${METADATA_PREFIX:deltafi.}
+        static_metadata:
+          passthrough_egress: I feel the need, the need for speed...
+zipkin:
+  enabled: ${ZIPKIN_ENABLED:true}
+  url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}

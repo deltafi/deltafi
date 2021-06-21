@@ -1,3 +1,3 @@
 # deltafi
 
-DeltaFi master repository
+DeltaFi master repository.

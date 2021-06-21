@@ -1,0 +1,19 @@
+{
+  "name": "apollo-gateway",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/gateway": "^0.28.0",
+    "apollo-server": "^2.19.0",
+    "graphql": "^15.4.0",
+    "graphql-upload": "^12.0.0",
+    "requestretry": "^5.0.0"
+  }
+}

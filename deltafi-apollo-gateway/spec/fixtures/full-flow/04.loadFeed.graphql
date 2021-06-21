@@ -1,0 +1,20 @@
+query {
+    actionFeed(
+        action: "StixAttackPatternLoadAction"
+    ) {
+        did
+        protocolStack {
+            type
+            objectReference {
+                name
+                bucket
+                offset
+                size
+            }
+            metadata {
+                key
+                value
+            }
+        }
+    }
+}

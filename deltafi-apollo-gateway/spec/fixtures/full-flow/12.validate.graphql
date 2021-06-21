@@ -1,0 +1,14 @@
+mutation {
+    validate(
+        did: "%1$s"
+        fromValidateAction: "Stix2.1ValidateAction"
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

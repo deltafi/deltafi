@@ -1,0 +1,20 @@
+query {
+    actionFeed(
+        action: "SampleLoadAction"
+    ) {
+        did
+        protocolStack {
+            type
+            metadata {
+                key
+                value
+            }
+            objectReference {
+                name
+                bucket
+                offset
+                size
+            }
+        }
+    }
+}

@@ -1,0 +1,16 @@
+query {
+    actionFeed(
+        action: "SampleTransformAction"
+    ) {
+        did
+        protocolStack {
+            type
+            objectReference {
+                name
+                bucket
+                offset
+                size
+            }
+        }
+    }
+}

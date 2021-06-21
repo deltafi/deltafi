@@ -1,0 +1,15 @@
+mutation {
+    load(
+        did: "%1$s"
+        fromLoadAction: "StixAttackPatternLoadAction"
+        domains: ["stix"]
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

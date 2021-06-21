@@ -1,0 +1,27 @@
+query {
+    actionFeed(action: "DeleteAction") {
+        did
+        protocolStack {
+            objectReference {
+                name
+                bucket
+                offset
+                size
+            }
+        }
+        domains {
+            domainTypes
+        }
+        enrichment {
+            enrichmentTypes
+        }
+        formattedData {
+            objectReference {
+                bucket
+                name
+                size
+                offset
+            }
+        }
+    }
+}

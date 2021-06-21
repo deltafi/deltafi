@@ -1,0 +1,189 @@
+package org.deltafi.dgs.services;
+
+import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import graphql.com.google.common.collect.Iterables;
+import org.deltafi.common.trace.ZipkinService;
+import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.dgs.configuration.*;
+import org.deltafi.dgs.converters.DeltaFileConverter;
+import org.deltafi.dgs.generated.types.DeltaFileStage;
+import org.deltafi.dgs.generated.types.KeyValue;
+import org.deltafi.dgs.generated.types.ProtocolLayer;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class StateMachine {
+    private final DeltaFiProperties properties;
+    private final ZipkinService zipkinService;
+
+    public StateMachine(DeltaFiProperties properties, ZipkinService zipkinService) {
+        this.properties = properties;
+        this.zipkinService = zipkinService;
+    }
+
+    public void advance(DeltaFile deltaFile) {
+        switch (DeltaFileStage.valueOf(deltaFile.getStage())) {
+            case INGRESS:
+                deltaFile.setStage(DeltaFileStage.TRANSFORM.name());
+            case TRANSFORM:
+                if (deltaFile.hasErroredAction()) {
+                    break;
+                }
+
+                String nextTransformAction = getTransformAction(deltaFile);
+                if (nextTransformAction == null) {
+                    deltaFile.setStage(DeltaFileStage.LOAD.name());
+                    ProtocolLayer lastProtocolLayer = Iterables.getLast(deltaFile.getProtocolStack());
+                    String loadAction = getLoadAction(flowConfiguration(deltaFile).getLoadActions(), lastProtocolLayer.getMetadata());
+                    if (!deltaFile.hasTerminalAction(loadAction)) {
+                        if (loadAction != null) {
+                            deltaFile.queueAction(loadAction);
+                        }
+                        break;
+                    }
+                } else {
+                    deltaFile.queueAction(nextTransformAction);
+                    break;
+                }
+            case LOAD:
+                deltaFile.setStage(DeltaFileStage.ENRICH.name());
+            case ENRICH:
+                List<String> enrichActions = getEnrichActions(deltaFile);
+                deltaFile.queueActionsIfNew(enrichActions);
+                if (enrichActions.isEmpty()) {
+                    deltaFile.setStage(DeltaFileStage.FORMAT.name());
+                } else {
+                    break;
+                }
+            case FORMAT:
+                List<String> formatActions = getFormatActions(deltaFile);
+                deltaFile.queueActionsIfNew(formatActions);
+                if (formatActions.isEmpty()) {
+                    deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+                } else {
+                    break;
+                }
+            case VALIDATE:
+                List<String> validateActions = getValidateActions(deltaFile);
+                deltaFile.queueActionsIfNew(validateActions);
+                if (validateActions.isEmpty()) {
+                    deltaFile.setStage(DeltaFileStage.EGRESS.name());
+                } else {
+                    break;
+                }
+            case EGRESS:
+                List<String> egressActions = getEgressActions(deltaFile);
+                deltaFile.queueActionsIfNew(egressActions);
+                if (egressActions.isEmpty() && !deltaFile.hasErroredAction()) {
+                    deltaFile.setStage(DeltaFileStage.COMPLETE.name());
+                } else {
+                    break;
+                }
+        }
+
+        if (!deltaFile.hasPendingActions() && !deltaFile.getStage().equals(DeltaFileStage.COMPLETE.name())) {
+            deltaFile.setStage(DeltaFileStage.ERROR.name());
+            sendTrace(deltaFile);
+        } else if (DeltaFileStage.COMPLETE.name().equals(deltaFile.getStage())) {
+            sendTrace(deltaFile);
+        }
+    }
+
+    private IngressFlowConfiguration flowConfiguration(DeltaFile deltaFile) {
+        String flow = deltaFile.getSourceInfo().getFlow();
+        IngressFlowConfiguration flowConfiguration = properties.getIngress().getIngressFlows().get(flow);
+        if (flowConfiguration == null) {
+            throw new DgsEntityNotFoundException("Flow " + flow + " is not configured.");
+        }
+
+        return flowConfiguration;
+    }
+
+    private String getTransformAction(DeltaFile deltaFile) {
+        Optional<String> nextAction = flowConfiguration(deltaFile).getTransformActions().stream().filter(a -> !deltaFile.hasTerminalAction(a)).findFirst();
+
+        return nextAction.orElse(null);
+    }
+
+    private String getLoadAction(List<String> loadActionsOrGroups, List<KeyValue> metadata) {
+        Map<String, String> metadataMap = DeltaFileConverter.convertKeyValues(metadata);
+        for (String loadActionOrGroup : loadActionsOrGroups) {
+            if (loadActionOrGroup.endsWith("Group")) {
+                for (String loadAction : properties.getLoadGroups().get(loadActionOrGroup)) {
+                    if (loadMetadataMatches(loadAction, metadataMap)) {
+                        return loadAction;
+                    }
+                }
+            } else {
+                if (loadMetadataMatches(loadActionOrGroup, metadataMap)) {
+                    return loadActionOrGroup;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean loadMetadataMatches(String loadAction, Map<String, String> metadata) {
+        Map<String, String> requiresMetadata = properties.getLoadActions().get(loadAction).getRequiresMetadata();
+        return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadata.get(k)));
+    }
+
+    private List<String> getEnrichActions(DeltaFile deltaFile) {
+        return properties.getEnrichActions().keySet().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
+    }
+
+    private boolean enrichActionReady(String enrichActionName, DeltaFile deltaFile) {
+        EnrichActionConfiguration config = properties.getEnrichActions().get(enrichActionName);
+        return !deltaFile.hasTerminalAction(enrichActionName) &&
+                deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
+                deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
+    }
+
+    private List<String> getFormatActions(DeltaFile deltaFile) {
+        return properties.getFormatActions().keySet().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
+    }
+
+    private boolean formatActionReady(String formatActionName, DeltaFile deltaFile) {
+        FormatActionConfiguration config = properties.getFormatActions().get(formatActionName);
+        return !deltaFile.hasTerminalAction(formatActionName) &&
+                deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
+                deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
+    }
+
+    private List<String> getValidateActions(DeltaFile deltaFile) {
+        return properties.getEgress().getEgressFlows().values().stream()
+                .filter(f -> deltaFile.hasTerminalAction(f.getFormatAction()))
+                .flatMap(f -> f.getValidateActions().stream())
+                .filter(v -> !deltaFile.hasTerminalAction(v))
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getEgressActions(DeltaFile deltaFile) {
+        return properties.getEgress().getEgressFlows().keySet().stream()
+                .filter(egressFlow -> egressActionReady(egressFlow, deltaFile))
+                .map(EgressConfiguration::egressActionName)
+                .filter(egressAction -> !deltaFile.hasTerminalAction(egressAction))
+                .collect(Collectors.toList());
+    }
+
+    private boolean egressActionReady(String egressFlowName, DeltaFile deltaFile) {
+        EgressFlowConfiguration egressFlow = properties.getEgress().getEgressFlows().get(egressFlowName);
+        return deltaFile.hasCompletedAction(egressFlow.getFormatAction()) &&
+                deltaFile.hasCompletedActions(egressFlow.getValidateActions()) &&
+                (egressFlow.getIncludeIngressFlows() == null ||
+                        egressFlow.getIncludeIngressFlows().isEmpty() ||
+                        egressFlow.getIncludeIngressFlows().contains(deltaFile.getSourceInfo().getFlow())) &&
+                (egressFlow.getExcludeIngressFlows() == null ||
+                        egressFlow.getExcludeIngressFlows().isEmpty() ||
+                        !egressFlow.getExcludeIngressFlows().contains(deltaFile.getSourceInfo().getFlow()));
+    }
+
+    private void sendTrace(DeltaFile deltaFile) {
+        zipkinService.createAndSendRootSpan(deltaFile.getDid(), deltaFile.getCreated(), deltaFile.getSourceInfo().getFilename(), deltaFile.getSourceInfo().getFlow());
+    }
+}

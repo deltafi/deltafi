@@ -1,0 +1,13 @@
+query {
+    actionFeed(
+        action: "SampleEnrichAction"
+    ) {
+        did
+        domains {
+            sampleDomain {
+                did
+                domained
+            }
+        }
+    }
+}

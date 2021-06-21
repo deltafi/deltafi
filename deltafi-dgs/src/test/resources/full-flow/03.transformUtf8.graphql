@@ -1,0 +1,25 @@
+mutation {
+    transform(
+        did: "%1$s"
+        fromTransformAction: "Utf8TransformAction"
+        protocolLayer: {
+            type: "json-utf8"
+            objectReference: {
+                name: "utf8ObjectName"
+                bucket: "utf8ObjectBucket"
+                offset: 0
+                size: 500
+            }
+        }
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+        created
+        modified
+    }
+}

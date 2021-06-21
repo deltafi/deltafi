@@ -1,0 +1,20 @@
+mutation {
+    ingress(
+        sourceInfo: {
+            filename: "input.xml"
+            flow: "stix"
+            metadata: {
+                key: "AuthorizedBy"
+                value: "XYZ"
+            }
+        }
+        objectReference: {
+            name: "objectName"
+            bucket: "objectBucket"
+            offset: 0
+            size: 500
+        }
+    ) {
+        did
+    }
+}

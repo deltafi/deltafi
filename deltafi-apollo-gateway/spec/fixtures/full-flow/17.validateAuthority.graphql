@@ -1,0 +1,14 @@
+mutation {
+    validate(
+        did: "%1$s"
+        fromValidateAction: "AuthorityValidateAction"
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

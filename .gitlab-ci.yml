@@ -1,0 +1,123 @@
+image: docker:latest
+
+services:
+  - name: docker:dind
+    entrypoint: ["dockerd-entrypoint.sh"]
+    command: ["--max-concurrent-downloads", "10"]
+
+stages:
+  - build
+  - test
+  - docker
+  - publish
+
+default:
+  timeout: 45m
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  GRADLE: "gradle -s --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
+  DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
+  DOCKER_NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME}
+  DEV_CHART: git@gitlab.com:systolic/deltafi/charts.git
+
+.gradle:
+  image: gradle:6.8.3-jdk11
+  variables:
+    GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
+
+.publish:
+  only:
+    refs:
+      - master
+
+.docker:
+  services:
+    - name: docker:18-dind
+      entrypoint: ["dockerd-entrypoint.sh"]
+      command: ["--max-concurrent-downloads", "10"]
+  before_script:
+    - test -n "$PROJECT_NAME"
+    - cd $PROJECT_NAME
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - echo "Building the following image ${DOCKER_NAMED_TAG}"
+    - echo "Building the following image ${DOCKER_TAG}"
+  script:
+    # pull latest image if available (performance optimization)
+    - docker pull ${DOCKER_NAMED_TAG} || true
+    - >
+      docker build
+      --build-arg VCS_REF=$CI_COMMIT_SHA
+      --build-arg VCS_URL=$CI_PROJECT_URL
+      --cache-from ${DOCKER_NAMED_TAG}
+      --tag ${DOCKER_TAG}
+      .
+    - docker push ${DOCKER_TAG}
+    - docker tag ${DOCKER_TAG} ${DOCKER_NAMED_TAG}
+    - docker push ${DOCKER_NAMED_TAG}
+    - docker images
+
+.coverage_report:
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.7
+  before_script:
+    - test -n "$PROJECT_NAME"
+    - cd $PROJECT_NAME
+  script:
+    - 'python /opt/cover2cover.py build/jacocoReport/test/jacocoTestReport.xml src/main/java > build/cobertura.xml'
+    - 'python /opt/source2filename.py build/cobertura.xml'
+  artifacts:
+    reports:
+      cobertura: $PROJECT_NAME/build/jacocoReport/test/cobertura.xml
+    paths:
+      - $PROJECT_NAME/build/cobertura.xml
+
+.helmchart:
+  image: alpine:3.8
+  # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
+  resource_group: deltafi-helmchart
+  before_script:
+    - test -n "$PROJECT_NAME"
+    - test -n "$HELM_IMAGE_PATH"
+    - echo "$PROJECT_NAME - $HELM_IMAGE_PATH - $DOCKER_TAG"
+    - cd $PROJECT_NAME
+    - apk add openssh-client git unzip sshpass rsync
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add - > /dev/null
+
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+
+    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+    - git config --global user.email "gitlab@gitlab.com"
+    - git config --global user.name "Gitlab CI/CD"
+
+    - wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/bin/yq
+  script:
+    - env
+    - git clone ${DEV_CHART}
+    - git checkout master
+    - cd charts/deltafi
+    - yq e ".${HELM_IMAGE_PATH} = \"${DOCKER_TAG}\"" -i values.yaml
+    - git add values.yaml
+    - git commit -am "[skip ci] CI/CD image update from ${CI_PROJECT_NAME}/${PROJECT_NAME}"
+    - git push origin master
+
+# Main build job (builds all the gradle things)
+build:
+  stage: build
+  script:
+    - ${GRADLE} --rerun-tasks assemble test
+  extends:
+    - .gradle
+  artifacts:
+    when: always
+    reports:
+      junit: "**/build/test-results/test/**/TEST-*.xml"
+    paths:
+      - "**/build"
+      - ".gradle"
+
+include:
+  - local: '*/.gitlab-ci.yml'

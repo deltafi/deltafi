@@ -1,0 +1,15 @@
+mutation {
+    enrich(
+        did: "%1$s"
+        fromEnrichAction: "SampleEnrichAction"
+        enrichments: ["sampleEnrichment"]
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}

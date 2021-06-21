@@ -1,0 +1,27 @@
+mutation {
+    format(
+        did: "%1$s"
+        fromFormatAction: "Stix2.1FormatAction"
+        formatResult: {
+            filename: "output.json"
+            metadata: [ {
+                key: "type"
+                value: "attack-pattern"
+            } ]
+            objectReference: {
+                name: "formattedName"
+                bucket: "formattedBucketName"
+                offset: 0
+                size: 1000
+            }
+        }
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorMessage
+        }
+    }
+}
