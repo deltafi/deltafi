@@ -9,6 +9,7 @@ import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.config.DeltafiConfig;
 import org.deltafi.dgs.generated.types.SourceInfo;
+import org.deltafi.exception.DgsPostException;
 import org.deltafi.types.DeltaFile;
 
 import javax.annotation.PostConstruct;
@@ -95,6 +96,9 @@ public class ActionService {
                                 }
                                 zipkinService.finishAndSendSpan(span);
 
+                            } catch (DgsPostException ignored) {
+                                // do nothing -- the error has already been logged
+                                // proceed with the next deltafile
                             } catch (Throwable e) {
 //                                String reason = "Action execution exception: " + "\n" + ExceptionUtils.getStackTrace(e);
                                 String reason = "Action execution exception: " + e;
