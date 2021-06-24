@@ -10,6 +10,7 @@ stages:
   - test
   - docker
   - publish
+  - helmchart
 
 default:
   timeout: 45m
@@ -19,6 +20,11 @@ variables:
   GRADLE: "gradle -s --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
   DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
   DEV_CHART: git@gitlab.com:systolic/deltafi/charts.git
+  PROJECT_LIST: "deltafi-apollo-gateway deltafi-dgs deltafi-passthrough deltafi-ingress"
+  deltafi_apollo_gateway_HELM_IMAGE_PATH: deltafi.apollo_gateway.image
+  deltafi_dgs_HELM_IMAGE_PATH: deltafi.dgs.image
+  deltafi_passthrough_HELM_IMAGE_PATH: deltafi.passthrough.image
+  deltafi_ingress_HELM_IMAGE_PATH: deltafi.ingress.image
 
 .gradle:
   image: gradle:6.8.3-jdk11
@@ -71,21 +77,18 @@ variables:
     paths:
       - $PROJECT_NAME/build/cobertura.xml
 
-.helmchart:
-  image: alpine:3.8
-  # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
-  resource_group: deltafi-helmchart
+helmchart:
+  stage: helmchart
   only:
     refs:
       - main
+  image: alpine:3.8
+  # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
+  resource_group: ci-helmchart
   before_script:
-    - test -n "$PROJECT_NAME"
-    - test -n "$HELM_IMAGE_PATH"
-    - echo "$PROJECT_NAME - $HELM_IMAGE_PATH - $DOCKER_TAG"
-    - cd $PROJECT_NAME
-    - apk add openssh-client git unzip sshpass rsync
+    - apk add bash openssh-client git unzip sshpass rsync
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add - > /dev/null
+    - echo "${SSH_PRIVATE_KEY}" | base64 -d | ssh-add - > /dev/null
 
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -96,15 +99,14 @@ variables:
     - git config --global user.email "gitlab@gitlab.com"
     - git config --global user.name "Gitlab CI/CD"
 
-    - wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/bin/yq
+    - wget -q https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/bin/yq
   script:
-    - env
     - git clone ${DEV_CHART}
-    - git checkout master
     - cd charts/deltafi
-    - yq e ".${HELM_IMAGE_PATH} = \"${DOCKER_TAG}\"" -i values.yaml
+    - for project in $PROJECT_LIST; do DOCKER_TAG=${CI_REGISTRY_IMAGE}/${project}:${CI_COMMIT_SHA}; PATH_VAR=${project//-/_}_HELM_IMAGE_PATH; HELM_IMAGE_PATH=$(eval echo \$$PATH_VAR); yq e ".${HELM_IMAGE_PATH} = \"${DOCKER_TAG}\"" -i values.yaml; done
+    - git diff
     - git add values.yaml
-    - git commit -am "[skip ci] CI/CD image update from ${CI_PROJECT_NAME}/${PROJECT_NAME}"
+    - git commit -am "[skip ci] CI/CD image update from ${CI_PROJECT_NAME}"
     - git push origin master
 
 # Main build job (builds all the gradle things)

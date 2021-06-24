@@ -1,7 +1,6 @@
 .ingress:
   variables:
     PROJECT_NAME: deltafi-ingress
-    HELM_IMAGE_PATH: deltafi.ingress.image
 
 ingress:docker:
   stage: docker
@@ -10,11 +9,3 @@ ingress:docker:
     - .docker
   needs:
     - job: "build"
-
-ingress:helmchart:
-  stage: publish
-  extends:
-    - .ingress
-    - .helmchart
-  needs:
-    - job: "ingress:docker"

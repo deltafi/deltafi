@@ -1,7 +1,6 @@
 .dgs:
   variables:
     PROJECT_NAME: deltafi-dgs
-    HELM_IMAGE_PATH: deltafi.dgs.image
 
 dgs:docker:
   stage: docker
@@ -13,14 +12,6 @@ dgs:docker:
     - .docker
   needs:
     - job: "build"
-
-dgs:helmchart:
-  stage: publish
-  extends:
-    - .dgs
-    - .helmchart
-  needs:
-    - job: "dgs:docker"
 
 dgs:publish:
   stage: publish
