@@ -29,7 +29,6 @@ variables:
   only:
     refs:
       - main
-      - "release/*"
       - tags
 
 .docker:
@@ -78,7 +77,7 @@ variables:
   resource_group: deltafi-helmchart
   only:
     refs:
-      - master
+      - main
   before_script:
     - test -n "$PROJECT_NAME"
     - test -n "$HELM_IMAGE_PATH"
