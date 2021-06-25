@@ -31,6 +31,8 @@ quarkus:
   kubernetes-config:
     enabled: true
     fail-on-missing-config: false
+    namespace: deltafi
+    config-maps: passthrough-config
 
 deltafi:
   dgs:
