@@ -22,6 +22,15 @@ compileTestJava {
     options.encoding = 'UTF-8'
 }
 
+task renameJar (type: Copy) {
+	from ('build/libs/')
+	include "deltafi-dgs-${project.version}.jar"
+	destinationDir file('build/libs/')
+	rename "deltafi-dgs-${project.version}.jar", 'deltafi-dgs.jar'
+}
+
+assemble.finalizedBy(renameJar)
+
 jar {
 	enabled = true
 	archiveClassifier.set('api')
