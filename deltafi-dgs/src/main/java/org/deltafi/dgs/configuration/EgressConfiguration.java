@@ -16,12 +16,6 @@ public class EgressConfiguration {
         this.egressFlows = egressFlows;
     }
 
-    public EgressFlowConfiguration forEgressAction(String egressAction) {
-        return egressFlows.get(egressFlows.keySet().stream()
-                .filter(k -> egressActionName(k).equals(egressAction))
-                .findFirst().orElse(null));
-    }
-
     static public String egressActionName(String flowName) {
         return flowName.substring(0, 1).toUpperCase(Locale.ROOT) +
                 (flowName.length() > 1 ? flowName.substring(1) : "") +

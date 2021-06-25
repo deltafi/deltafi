@@ -3,29 +3,39 @@ package org.deltafi.dgs.services;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.Util;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.configuration.EgressFlowConfiguration;
 import org.deltafi.dgs.generated.types.Action;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(MockitoExtension.class)
 class StateMachineTest {
 
-    final ZipkinService zipkinService = Mockito.mock(ZipkinService.class);
+    @InjectMocks
+    StateMachine stateMachine;
+
+    @Mock
+    @SuppressWarnings("unused")
+    ZipkinService zipkinService;
+
+    @Mock
+    DeltaFiConfigService deltaFiConfigService;
 
     @Test
     void testGetFormatActionsNotIncluded() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "notIncludedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -33,16 +43,15 @@ class StateMachineTest {
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
         config.setFormatAction("FormatAction");
-        properties.getEgress().getEgressFlows().put("the", config);
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         assertEquals(Collections.emptyList(), stateMachine.getEgressActions(deltaFile));
     }
 
     @Test
     void testGetFormatActionsIncluded() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "includedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -50,16 +59,15 @@ class StateMachineTest {
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
         config.setFormatAction("FormatAction");
-        properties.getEgress().getEgressFlows().put("the", config);
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         assertEquals(Collections.singletonList("TheEgressAction"), stateMachine.getEgressActions(deltaFile));
     }
 
     @Test
     void testGetFormatActionsExcluded() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "excludedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -67,16 +75,15 @@ class StateMachineTest {
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
         config.setFormatAction("FormatAction");
-        properties.getEgress().getEgressFlows().put("the", config);
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         assertEquals(Collections.emptyList(), stateMachine.getEgressActions(deltaFile));
     }
 
     @Test
     void testGetFormatActionsNotExcluded() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "notExcludedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -84,16 +91,15 @@ class StateMachineTest {
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
         config.setFormatAction("FormatAction");
-        properties.getEgress().getEgressFlows().put("the", config);
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         assertEquals(Collections.singletonList("TheEgressAction"), stateMachine.getEgressActions(deltaFile));
     }
 
     @Test
     void testAdvanceToValidateStage() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.FORMAT.name());
 
@@ -104,7 +110,9 @@ class StateMachineTest {
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");
         config.setValidateActions(Arrays.asList("ValidateAction1", "ValidateAction2"));
-        properties.getEgress().getEgressFlows().put("flow", config);
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         stateMachine.advance(deltaFile);
 
@@ -115,9 +123,6 @@ class StateMachineTest {
 
     @Test
     void testAdvanceCompleteValidateAction_onePending() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.VALIDATE.name());
 
@@ -130,7 +135,9 @@ class StateMachineTest {
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");
         config.setValidateActions(Arrays.asList("ValidateAction1", "ValidateAction2"));
-        properties.getEgress().getEgressFlows().put("flow", config);
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         stateMachine.advance(deltaFile);
 
@@ -141,9 +148,6 @@ class StateMachineTest {
 
     @Test
     void testAdvanceCompleteValidateAction_allComplete() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.VALIDATE.name());
 
@@ -156,7 +160,9 @@ class StateMachineTest {
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");
         config.setValidateActions(Arrays.asList("ValidateAction1", "ValidateAction2"));
-        properties.getEgress().getEgressFlows().put("flow", config);
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         stateMachine.advance(deltaFile);
 
@@ -167,9 +173,6 @@ class StateMachineTest {
 
     @Test
     void testAdvanceToEgressStage() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.VALIDATE.name());
 
@@ -178,12 +181,18 @@ class StateMachineTest {
 
         deltaFile.setActions(new ArrayList<>(Arrays.asList(formatAction, validateAction)));
 
-        EgressFlowConfiguration config = new EgressFlowConfiguration();
-        config.setFormatAction("FormatAction");
-        config.setValidateActions(Collections.singletonList("ValidateAction1"));
+        EgressFlowConfiguration flow1 = new EgressFlowConfiguration();
+        flow1.setFormatAction("FormatAction");
+        flow1.setValidateActions(Collections.singletonList("ValidateAction1"));
 
-        properties.getEgress().getEgressFlows().put("flow", config);
-        properties.getEgress().getEgressFlows().put("flow2", config);
+        EgressFlowConfiguration flow2 = new EgressFlowConfiguration();
+        flow2.setFormatAction("FormatAction");
+        flow2.setValidateActions(Collections.singletonList("ValidateAction1"));
+
+        flow1.setEgressAction("FlowEgressAction");
+        flow2.setEgressAction("Flow2EgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(flow1, flow2));
 
         stateMachine.advance(deltaFile);
 
@@ -194,9 +203,6 @@ class StateMachineTest {
 
     @Test
     void testAdvanceCompleteEgressAction_onePending() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.VALIDATE.name());
 
@@ -207,12 +213,18 @@ class StateMachineTest {
 
         deltaFile.setActions(new ArrayList<>(Arrays.asList(formatAction, validateAction, flowEgressAction, flow2EgressAction)));
 
-        EgressFlowConfiguration config = new EgressFlowConfiguration();
-        config.setFormatAction("FormatAction");
-        config.setValidateActions(Collections.singletonList("ValidateAction1"));
+        EgressFlowConfiguration flow1 = new EgressFlowConfiguration();
+        flow1.setFormatAction("FormatAction");
+        flow1.setValidateActions(Collections.singletonList("ValidateAction1"));
 
-        properties.getEgress().getEgressFlows().put("flow", config);
-        properties.getEgress().getEgressFlows().put("flow2", config);
+        EgressFlowConfiguration flow2 = new EgressFlowConfiguration();
+        flow2.setFormatAction("FormatAction");
+        flow2.setValidateActions(Collections.singletonList("ValidateAction1"));
+
+        flow1.setEgressAction("FlowEgressAction");
+        flow2.setEgressAction("Flow2EgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(flow1, flow2));
 
         stateMachine.advance(deltaFile);
 
@@ -223,9 +235,6 @@ class StateMachineTest {
 
     @Test
     void testAdvanceCompleteEgressAction_allComplete() {
-        DeltaFiProperties properties = new DeltaFiProperties();
-        StateMachine stateMachine = getStateMachine(properties);
-
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.VALIDATE.name());
 
@@ -236,21 +245,23 @@ class StateMachineTest {
 
         deltaFile.setActions(new ArrayList<>(Arrays.asList(formatAction, validateAction, flowEgressAction, flow2EgressAction)));
 
-        EgressFlowConfiguration config = new EgressFlowConfiguration();
-        config.setFormatAction("FormatAction");
-        config.setValidateActions(Collections.singletonList("ValidateAction1"));
+        EgressFlowConfiguration flow1 = new EgressFlowConfiguration();
+        flow1.setFormatAction("FormatAction");
+        flow1.setValidateActions(Collections.singletonList("ValidateAction1"));
 
-        properties.getEgress().getEgressFlows().put("flow", config);
-        properties.getEgress().getEgressFlows().put("flow2", config);
+        EgressFlowConfiguration flow2 = new EgressFlowConfiguration();
+        flow2.setFormatAction("FormatAction");
+        flow2.setValidateActions(Collections.singletonList("ValidateAction1"));
+
+        flow1.setEgressAction("FlowEgressAction");
+        flow2.setEgressAction("Flow2EgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(flow1, flow2));
 
         stateMachine.advance(deltaFile);
 
         assertEquals(DeltaFileStage.COMPLETE.name(), deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("FlowEgressAction").orElseThrow().getState());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("Flow2EgressAction").orElseThrow().getState());
-    }
-
-    private StateMachine getStateMachine(DeltaFiProperties properties) {
-        return new StateMachine(properties, zipkinService);
     }
 }

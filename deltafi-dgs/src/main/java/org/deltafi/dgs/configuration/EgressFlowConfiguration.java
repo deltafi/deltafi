@@ -1,46 +1,44 @@
 package org.deltafi.dgs.configuration;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.bson.types.ObjectId;
+import org.deltafi.dgs.api.types.ConfigType;
+import org.springframework.data.annotation.Transient;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.List;
 
-public class EgressFlowConfiguration {
-    private String formatAction;
-    private List<String> validateActions = new ArrayList<>();
-    private List<String> includeIngressFlows = new ArrayList<>();
-    private List<String> excludeIngressFlows = new ArrayList<>();
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NONE
+)
+public class EgressFlowConfiguration extends org.deltafi.dgs.generated.types.EgressFlowConfiguration implements DeltaFiConfiguration {
 
-    public String getFormatAction() {
-        return formatAction;
+    private ConfigType configType = ConfigType.EGRESS_FLOW;
+    private ObjectId id;
+
+    public EgressFlowConfiguration() {
+        setValidateActions(new ArrayList<>());
+        setIncludeIngressFlows(new ArrayList<>());
+        setExcludeIngressFlows(new ArrayList<>());
     }
 
-    @SuppressWarnings("unused")
-    public void setFormatAction(String formatAction) {
-        this.formatAction = formatAction;
+    @Override
+    public ConfigType getConfigType() {
+        return configType;
     }
 
-    @SuppressWarnings("unused")
-    public List<String> getValidateActions() {
-        return validateActions;
+    @Override
+    public ObjectId getId() {
+        return id;
     }
 
-    @SuppressWarnings("unused")
-    public void setValidateActions(List<String> validateActions) {
-        this.validateActions = validateActions;
+    public void setId(ObjectId id) {
+        this.id = id;
     }
 
-    public List<String> getIncludeIngressFlows() {
-        return includeIngressFlows;
-    }
-
-    public void setIncludeIngressFlows(List<String> includeIngressFlows) {
-        this.includeIngressFlows = includeIngressFlows;
-    }
-
-    public List<String> getExcludeIngressFlows() {
-        return excludeIngressFlows;
-    }
-
-    public void setExcludeIngressFlows(List<String> excludeIngressFlows) {
-        this.excludeIngressFlows = excludeIngressFlows;
+    @Transient
+    public OffsetDateTime getCreated() {
+        return getId().getDate().toInstant().atOffset(ZoneOffset.UTC);
     }
 }

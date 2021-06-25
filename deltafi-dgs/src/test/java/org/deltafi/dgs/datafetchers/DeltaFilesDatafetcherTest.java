@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.dgs.configuration.IngressFlowConfiguration;
+import org.deltafi.dgs.services.DeltaFiConfigService;
 import org.deltafi.dgs.services.StateMachine;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.DgsConstants;
@@ -15,14 +17,14 @@ import org.deltafi.dgs.generated.types.KeyValueInput;
 import org.deltafi.dgs.generated.types.ObjectReferenceInput;
 import org.deltafi.dgs.generated.types.SourceInfoInput;
 import org.deltafi.dgs.services.DeltaFilesService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.dgs.Util.equalIgnoringDates;
@@ -39,6 +41,9 @@ class DeltaFilesDatafetcherTest {
 
     @Autowired
     StateMachine stateMachine;
+
+    @MockBean
+    DeltaFiConfigService deltaFiConfigService;
 
     final String fileType = "theType";
     final String filename = "theFilename";
@@ -106,6 +111,13 @@ class DeltaFilesDatafetcherTest {
                     .size()
                     .parent()
                 .parent();
+
+    @BeforeEach
+    public void setup() {
+        IngressFlowConfiguration flowConfiguration = new IngressFlowConfiguration();
+        flowConfiguration.setType(fileType);
+        Mockito.when(deltaFiConfigService.getIngressFlow(flow)).thenReturn(Optional.of(flowConfiguration));
+    }
 
     @Test
     void addDeltaFile() {

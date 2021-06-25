@@ -1,26 +1,38 @@
 package org.deltafi.dgs.configuration;
 
-public class TransformActionConfiguration {
-    private String consumes;
-    private String produces;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.bson.types.ObjectId;
+import org.deltafi.dgs.api.types.ConfigType;
+import org.springframework.data.annotation.Transient;
 
-    @SuppressWarnings("unused")
-    public String getConsumes() {
-        return consumes;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NONE
+)
+@SuppressWarnings("unused")
+public class TransformActionConfiguration extends org.deltafi.dgs.generated.types.TransformActionConfiguration implements DeltaFiConfiguration {
+
+    private ConfigType configType = ConfigType.TRANSFORM_ACTION;
+    private ObjectId id;
+
+    @Override
+    public ConfigType getConfigType() {
+        return configType;
     }
 
-    @SuppressWarnings("unused")
-    public void setConsumes(String consumes) {
-        this.consumes = consumes;
+    @Override
+    public ObjectId getId() {
+        return id;
     }
 
-    @SuppressWarnings("unused")
-    public String getProduces() {
-        return produces;
+    public void setId(ObjectId id) {
+        this.id = id;
     }
 
-    @SuppressWarnings("unused")
-    public void setProduces(String produces) {
-        this.produces = produces;
+    @Transient
+    public OffsetDateTime getCreated() {
+        return getId().getDate().toInstant().atOffset(ZoneOffset.UTC);
     }
 }

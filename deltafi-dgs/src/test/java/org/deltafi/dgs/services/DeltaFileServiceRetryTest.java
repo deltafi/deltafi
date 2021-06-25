@@ -25,7 +25,7 @@ import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, DeltaFiProperties.class})
-@MockBean(StateMachine.class)
+@MockBean({StateMachine.class, DeltaFiConfigService.class})
 @EnableRetry
 public class DeltaFileServiceRetryTest {
 
@@ -62,6 +62,7 @@ public class DeltaFileServiceRetryTest {
         });
 
         Assertions.assertDoesNotThrow(() -> deltaFilesService.completeActionAndAdvance(did, fromAction));
+        Mockito.verify(deltaFileRepo, Mockito.times(2)).save(Mockito.any());
     }
 
 }

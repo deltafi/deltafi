@@ -1,27 +1,43 @@
 package org.deltafi.dgs.configuration;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.bson.types.ObjectId;
+import org.deltafi.dgs.api.types.ConfigType;
+import org.springframework.data.annotation.Transient;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.List;
 
-public class EnrichActionConfiguration {
-    private List<String> requiresDomains = new ArrayList<>();
-    private List<String> requiresEnrichment = new ArrayList<>();
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NONE
+)
+public class EnrichActionConfiguration extends org.deltafi.dgs.generated.types.EnrichActionConfiguration implements DeltaFiConfiguration {
 
-    public List<String> getRequiresDomains() {
-        return requiresDomains;
+    private ConfigType configType = ConfigType.ENRICH_ACTION;
+    private ObjectId id;
+
+    public EnrichActionConfiguration() {
+        setRequiresDomains(new ArrayList<>());
+        setRequiresEnrichment(new ArrayList<>());
     }
 
-    @SuppressWarnings("unused")
-    public void setRequiresDomains(List<String> requiresDomains) {
-        this.requiresDomains = requiresDomains;
+    @Override
+    public ConfigType getConfigType() {
+        return configType;
     }
 
-    public List<String> getRequiresEnrichment() {
-        return requiresEnrichment;
+    @Override
+    public ObjectId getId() {
+        return id;
     }
 
-    @SuppressWarnings("unused")
-    public void setRequiresEnrichment(List<String> requiresEnrichment) {
-        this.requiresEnrichment = requiresEnrichment;
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
+
+    @Transient
+    public OffsetDateTime getCreated() {
+        return getId().getDate().toInstant().atOffset(ZoneOffset.UTC);
     }
 }

@@ -84,6 +84,9 @@ deltafi:
         type: ageOff
         parameters:
           afterComplete: PT1H
+  configSource:
+    flows: DEFAULT_FROM_PROPERTY
+    actions: DEFAULT_FROM_PROPERTY
 zipkin:
   enabled: ${ZIPKIN_ENABLED:true}
-  url: ${ZIPKIN_ENABLED:http://deltafi-zipkin:9411/api/v2/spans}
+  url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}

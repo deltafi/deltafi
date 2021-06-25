@@ -20,13 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class DeltaFilesService {
 
+    final DeltaFiConfigService configService;
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
 
     final Map<String, FeedStats> feedStats = new ConcurrentHashMap<>();
 
-    public DeltaFilesService(DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo) {
+    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo) {
+        this.configService = configService;
         this.properties = properties;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
@@ -71,11 +73,7 @@ public class DeltaFilesService {
 
     public DeltaFile addDeltaFile(SourceInfoInput sourceInfoInput, ObjectReferenceInput objectReferenceInput) {
         String flow = sourceInfoInput.getFlow();
-        IngressFlowConfiguration flowConfiguration = properties.getIngress().getIngressFlows().get(flow);
-
-        if (flowConfiguration == null) {
-            throw new DgsEntityNotFoundException("Flow " + flow + " is not configured.");
-        }
+        IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
         DeltaFile deltaFile = DeltaFileConverter.convert(sourceInfoInput, objectReferenceInput, flowConfiguration.getType());
         stateMachine.advance(deltaFile);
@@ -100,7 +98,7 @@ public class DeltaFilesService {
         if (action.endsWith("TransformAction") || action.endsWith("LoadAction")) {
             deltaFiles.forEach(DeltaFile::trimProtocolLayers);
         } else if (action.endsWith("EgressAction")) {
-            EgressFlowConfiguration egressFlowConfig = properties.getEgress().forEgressAction(action);
+            EgressFlowConfiguration egressFlowConfig = configService.getEgressFlowForAction(action);
             deltaFiles.forEach(d -> d.trimFormats(egressFlowConfig.getFormatAction()));
         }
 

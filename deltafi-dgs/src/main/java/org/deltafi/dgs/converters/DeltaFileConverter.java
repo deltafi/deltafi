@@ -44,15 +44,6 @@ public class DeltaFileConverter {
                 .build();
     }
 
-    public static Map<String, String> convertKeyValues(List<KeyValue> keyValues) {
-        Map<String, String> keyValueMap = new HashMap<>();
-        for (KeyValue keyValue : keyValues) {
-            keyValueMap.put(keyValue.getKey(), keyValue.getValue());
-        }
-
-        return keyValueMap;
-    }
-
     public static ObjectReference convert(ObjectReferenceInput input) {
         return mapper.convertValue(input, ObjectReference.class);
     }

@@ -4,16 +4,14 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.converters.DeltaFileConverter;
+import org.deltafi.dgs.converters.KeyValueConverter;
 import org.deltafi.dgs.delete.DeleteConstants;
 import org.deltafi.dgs.delete.DeleteScheduler;
 import org.deltafi.dgs.generated.DgsConstants;
 import org.deltafi.dgs.generated.types.*;
+import org.deltafi.dgs.repo.DeltaFiConfigRepo;
 import org.deltafi.dgs.repo.DeltaFileRepo;
-import org.deltafi.dgs.services.DeltaFilesService;
-import org.deltafi.dgs.services.SampleDomainsService;
-import org.deltafi.dgs.services.SampleEnrichmentsService;
-import org.deltafi.dgs.services.StateMachine;
+import org.deltafi.dgs.services.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,6 +54,12 @@ class DeltaFiDgsApplicationTests {
 	@Autowired
 	DeltaFileRepo deltaFileRepo;
 
+	@Autowired
+	DeltaFiConfigRepo deltaFiConfigRepo;
+
+	@Autowired
+	ConfigLoaderService configLoaderService;
+
 	final static List<String> completedActions = Arrays.asList(
 			"Utf8TransformAction",
 			"SampleTransformAction",
@@ -76,6 +80,7 @@ class DeltaFiDgsApplicationTests {
 		sampleEnrichmentsService.getSampleEnrichments().clear();
 		sampleDomainsService.getSampleDomains().clear();
 		deltaFiProperties.getDelete().setOnCompletion(false);
+		configLoaderService.loadProperties();
 	}
 
 	@Test
@@ -260,7 +265,7 @@ class DeltaFiDgsApplicationTests {
 		assertThat(deltaFile.getDid()).isEqualTo(did);
 		assertThat(deltaFile.getProtocolStack().size()).isEqualTo(1);
 		assertThat(deltaFile.getProtocolStack().get(0).getType()).isEqualTo("json-utf8-sample");
-		Map<String, String> metadata = DeltaFileConverter.convertKeyValues(deltaFile.getProtocolStack().get(0).getMetadata());
+		Map<String, String> metadata = KeyValueConverter.convertKeyValues(deltaFile.getProtocolStack().get(0).getMetadata());
 		assertThat(metadata).containsEntry("sampleType", "sample-type").containsEntry("sampleVersion", "2.1");
 	}
 

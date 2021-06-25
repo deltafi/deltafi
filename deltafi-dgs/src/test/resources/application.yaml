@@ -9,6 +9,9 @@ spring:
       auto-index-creation: true
 deltafi:
   feedTimeoutSeconds: 30
+  configSource:
+    flows: RELOAD_FROM_PROPERTY
+    actions: RELOAD_FROM_PROPERTY
   ingress:
     ingressFlows:
       sample:

@@ -11,6 +11,7 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties(prefix="deltafi")
 public class DeltaFiProperties {
+    private ConfigSource configSource = new ConfigSource();
     private IngressConfiguration ingress = new IngressConfiguration();
     private Map<String, TransformActionConfiguration> transformActions = new HashMap<>();
     private Map<String, LoadActionConfiguration> loadActions = new HashMap<>();
@@ -22,6 +23,14 @@ public class DeltaFiProperties {
     private int defaultFeedLimit = 25;
     private int feedTimeoutSeconds = 30;
     private DeleteConfiguration delete = new DeleteConfiguration();
+
+    public ConfigSource getConfigSource() {
+        return configSource;
+    }
+
+    public void setConfigSource(ConfigSource configSource) {
+        this.configSource = configSource;
+    }
 
     public IngressConfiguration getIngress() {
         return ingress;

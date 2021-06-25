@@ -5,21 +5,25 @@ import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.Util;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.*;
+import org.deltafi.dgs.configuration.EgressFlowConfiguration;
+import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DeltaFilesServiceTest {
     DeltaFilesService deltaFilesService;
-    DeltaFiProperties deltaFiProperties;
+    DeltaFiConfigService deltaFiConfigService = Mockito.mock(DeltaFiConfigService.class);
     StateMachine stateMachine;
     DeltaFileRepo deltaFileRepo;
 
@@ -32,26 +36,23 @@ public class DeltaFilesServiceTest {
 
     @BeforeEach
     void setup() {
-        deltaFiProperties = new DeltaFiProperties();
-
-        IngressConfiguration ingressConfiguration = new IngressConfiguration();
         IngressFlowConfiguration flowConfiguration = new IngressFlowConfiguration();
-        ingressConfiguration.getIngressFlows().put(flow, flowConfiguration);
-        deltaFiProperties.setIngress(ingressConfiguration);
+        Mockito.when(deltaFiConfigService.getIngressFlow(flow)).thenReturn(Optional.of(flowConfiguration));
 
-        EgressConfiguration egressConfiguration = new EgressConfiguration();
         EgressFlowConfiguration flowConfiguration1 = new EgressFlowConfiguration();
         flowConfiguration1.setFormatAction(formatAction1);
-        egressConfiguration.getEgressFlows().put(flow1, flowConfiguration1);
         EgressFlowConfiguration flowConfiguration2 = new EgressFlowConfiguration();
-        flowConfiguration2.setFormatAction(formatAction2);
-        egressConfiguration.getEgressFlows().put(flow2, flowConfiguration2);
-        deltaFiProperties.setEgress(egressConfiguration);
+        flowConfiguration2.setFormatAction(formatAction2);;
 
-        stateMachine = new StateMachine(deltaFiProperties, new ZipkinService(null, false));
+        Mockito.when(deltaFiConfigService.getEgressFlow(flow1)).thenReturn(Optional.of(flowConfiguration1));
+        Mockito.when(deltaFiConfigService.getEgressFlow(flow2)).thenReturn(Optional.of(flowConfiguration2));
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(Arrays.asList(flowConfiguration1, flowConfiguration2));
+        Mockito.when(deltaFiConfigService.getEgressFlowForAction(EgressConfiguration.egressActionName(flow1))).thenReturn(flowConfiguration1);
+
+        stateMachine = new StateMachine(deltaFiConfigService, new ZipkinService(null, false));
 
         deltaFileRepo = Mockito.mock(DeltaFileRepo.class);
-        deltaFilesService = new DeltaFilesService(deltaFiProperties, stateMachine, deltaFileRepo);
+        deltaFilesService = new DeltaFilesService(deltaFiConfigService, new DeltaFiProperties(), stateMachine, deltaFileRepo);
     }
 
     @Test

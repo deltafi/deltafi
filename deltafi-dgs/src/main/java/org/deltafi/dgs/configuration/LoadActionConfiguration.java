@@ -1,20 +1,38 @@
 package org.deltafi.dgs.configuration;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import net.minidev.json.annotate.JsonIgnore;
+import org.bson.types.ObjectId;
+import org.deltafi.dgs.api.types.ConfigType;
+import org.deltafi.dgs.converters.KeyValueConverter;
+import org.deltafi.dgs.generated.types.KeyValue;
+import org.springframework.data.annotation.Transient;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class LoadActionConfiguration {
-    private String consumes;
-    private Map<String, String> requiresMetadata = new HashMap<>();
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NONE
+)
+public class LoadActionConfiguration extends org.deltafi.dgs.generated.types.LoadActionConfiguration implements DeltaFiConfiguration {
 
-    @SuppressWarnings("unused")
-    public String getConsumes() {
-        return consumes;
+    @JsonIgnore
+    private Map<String, String> requiresMetadata = new HashMap<>();
+    private ConfigType configType = ConfigType.LOAD_ACTION;
+    private ObjectId id;
+
+    @Override
+    public ConfigType getConfigType() {
+        return configType;
     }
 
-    @SuppressWarnings("unused")
-    public void setConsumes(String consumes) {
-        this.consumes = consumes;
+    @Override
+    @Transient
+    public List<KeyValue> getRequiresMetadataKeyValues() {
+        return KeyValueConverter.fromMap(requiresMetadata);
     }
 
     public Map<String, String> getRequiresMetadata() {
@@ -24,5 +42,19 @@ public class LoadActionConfiguration {
     @SuppressWarnings("unused")
     public void setRequiresMetadata(Map<String, String> requiresMetadata) {
         this.requiresMetadata = requiresMetadata;
+    }
+
+    @Override
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
+
+    @Transient
+    public OffsetDateTime getCreated() {
+        return getId().getDate().toInstant().atOffset(ZoneOffset.UTC);
     }
 }

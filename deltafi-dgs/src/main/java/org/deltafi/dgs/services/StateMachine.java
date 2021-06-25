@@ -5,7 +5,7 @@ import graphql.com.google.common.collect.Iterables;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.*;
-import org.deltafi.dgs.converters.DeltaFileConverter;
+import org.deltafi.dgs.converters.KeyValueConverter;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
 import org.deltafi.dgs.generated.types.KeyValue;
 import org.deltafi.dgs.generated.types.ProtocolLayer;
@@ -16,11 +16,12 @@ import java.util.stream.Collectors;
 
 @Service
 public class StateMachine {
-    private final DeltaFiProperties properties;
+
+    private final DeltaFiConfigService configService;
     private final ZipkinService zipkinService;
 
-    public StateMachine(DeltaFiProperties properties, ZipkinService zipkinService) {
-        this.properties = properties;
+    public StateMachine(DeltaFiConfigService configService, ZipkinService zipkinService) {
+        this.configService = configService;
         this.zipkinService = zipkinService;
     }
 
@@ -94,12 +95,7 @@ public class StateMachine {
 
     private IngressFlowConfiguration flowConfiguration(DeltaFile deltaFile) {
         String flow = deltaFile.getSourceInfo().getFlow();
-        IngressFlowConfiguration flowConfiguration = properties.getIngress().getIngressFlows().get(flow);
-        if (flowConfiguration == null) {
-            throw new DgsEntityNotFoundException("Flow " + flow + " is not configured.");
-        }
-
-        return flowConfiguration;
+        return configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
     }
 
     private String getTransformAction(DeltaFile deltaFile) {
@@ -109,10 +105,10 @@ public class StateMachine {
     }
 
     private String getLoadAction(List<String> loadActionsOrGroups, List<KeyValue> metadata) {
-        Map<String, String> metadataMap = DeltaFileConverter.convertKeyValues(metadata);
+        Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(metadata);
         for (String loadActionOrGroup : loadActionsOrGroups) {
             if (loadActionOrGroup.endsWith("Group")) {
-                for (String loadAction : properties.getLoadGroups().get(loadActionOrGroup)) {
+                for (String loadAction : configService.getLoadGroupActions(loadActionOrGroup)) {
                     if (loadMetadataMatches(loadAction, metadataMap)) {
                         return loadAction;
                     }
@@ -128,34 +124,34 @@ public class StateMachine {
     }
 
     private boolean loadMetadataMatches(String loadAction, Map<String, String> metadata) {
-        Map<String, String> requiresMetadata = properties.getLoadActions().get(loadAction).getRequiresMetadata();
+        Map<String, String> requiresMetadata = configService.getLoadAction(loadAction).getRequiresMetadata();
         return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadata.get(k)));
     }
 
     private List<String> getEnrichActions(DeltaFile deltaFile) {
-        return properties.getEnrichActions().keySet().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
+        return configService.getEnrichActions().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
     }
 
     private boolean enrichActionReady(String enrichActionName, DeltaFile deltaFile) {
-        EnrichActionConfiguration config = properties.getEnrichActions().get(enrichActionName);
+        EnrichActionConfiguration config = configService.getEnrichAction(enrichActionName);
         return !deltaFile.hasTerminalAction(enrichActionName) &&
                 deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
                 deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
     }
 
     private List<String> getFormatActions(DeltaFile deltaFile) {
-        return properties.getFormatActions().keySet().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
+        return configService.getFormatActions().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
     }
 
     private boolean formatActionReady(String formatActionName, DeltaFile deltaFile) {
-        FormatActionConfiguration config = properties.getFormatActions().get(formatActionName);
+        FormatActionConfiguration config = configService.getFormatAction(formatActionName);
         return !deltaFile.hasTerminalAction(formatActionName) &&
                 deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
                 deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
     }
 
     private List<String> getValidateActions(DeltaFile deltaFile) {
-        return properties.getEgress().getEgressFlows().values().stream()
+        return configService.getEgressFlows().stream()
                 .filter(f -> deltaFile.hasTerminalAction(f.getFormatAction()))
                 .flatMap(f -> f.getValidateActions().stream())
                 .filter(v -> !deltaFile.hasTerminalAction(v))
@@ -164,15 +160,14 @@ public class StateMachine {
     }
 
     public List<String> getEgressActions(DeltaFile deltaFile) {
-        return properties.getEgress().getEgressFlows().keySet().stream()
+        return configService.getEgressFlows().stream()
                 .filter(egressFlow -> egressActionReady(egressFlow, deltaFile))
-                .map(EgressConfiguration::egressActionName)
+                .map(org.deltafi.dgs.generated.types.EgressFlowConfiguration::getEgressAction)
                 .filter(egressAction -> !deltaFile.hasTerminalAction(egressAction))
                 .collect(Collectors.toList());
     }
 
-    private boolean egressActionReady(String egressFlowName, DeltaFile deltaFile) {
-        EgressFlowConfiguration egressFlow = properties.getEgress().getEgressFlows().get(egressFlowName);
+    private boolean egressActionReady(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
         return deltaFile.hasCompletedAction(egressFlow.getFormatAction()) &&
                 deltaFile.hasCompletedActions(egressFlow.getValidateActions()) &&
                 (egressFlow.getIncludeIngressFlows() == null ||

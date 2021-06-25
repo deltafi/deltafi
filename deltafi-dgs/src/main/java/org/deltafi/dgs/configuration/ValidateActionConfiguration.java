@@ -7,20 +7,14 @@ import org.springframework.data.annotation.Transient;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NONE
 )
-public class FormatActionConfiguration extends org.deltafi.dgs.generated.types.FormatActionConfiguration implements DeltaFiConfiguration {
+public class ValidateActionConfiguration extends org.deltafi.dgs.generated.types.ValidateActionConfiguration implements DeltaFiConfiguration {
 
-    private ConfigType configType = ConfigType.FORMAT_ACTION;
+    private ConfigType configType = ConfigType.VALIDATE_ACTION;
     private ObjectId id;
-
-    public FormatActionConfiguration() {
-        setRequiresDomains(new ArrayList<>());
-        setRequiresEnrichment(new ArrayList<>());
-    }
 
     @Override
     public ConfigType getConfigType() {
@@ -37,7 +31,6 @@ public class FormatActionConfiguration extends org.deltafi.dgs.generated.types.F
     }
 
     @Transient
-    @Override
     public OffsetDateTime getCreated() {
         return getId().getDate().toInstant().atOffset(ZoneOffset.UTC);
     }
