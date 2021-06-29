@@ -181,6 +181,7 @@ class DeltafiConfigDatafetcherTest {
                 .name(NAME)
                 .loadActions(singletonList("loader"))
                 .transformActions(singletonList("transformer"))
+                .type("test-type")
                 .build();
 
         DeltaFiConfigProjectionRoot projection = rootProject()
