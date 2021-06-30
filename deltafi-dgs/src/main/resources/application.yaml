@@ -8,6 +8,8 @@ spring:
       password: ${MONGO_PASSWORD:password}
       authentication-database: ${MONGO_AUTH_DB:admin}
       auto-index-creation: true
+  profiles:
+    active: k8s
 deltafi:
   defaultFeedLimit: 25
   feedTimeoutSeconds: 30

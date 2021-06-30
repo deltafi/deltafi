@@ -22,7 +22,7 @@ public class DeltaFiConfigRepoImpl implements DeltaFiConfigRepoCustom {
     public static final String CONFIG_TYPE = "configType";
     public static final String COLLECTION_NAME = "deltaFiConfig";
 
-    public static final List<ConfigType> FLOW_CONFIGS = Arrays.asList(INGRESS_FLOW, EGRESS_FLOW);
+    protected static final List<ConfigType> FLOW_CONFIGS = Arrays.asList(INGRESS_FLOW, EGRESS_FLOW);
 
     private static final FindAndReplaceOptions UPSERT = FindAndReplaceOptions.options().upsert().returnNew();
 
@@ -77,8 +77,11 @@ public class DeltaFiConfigRepoImpl implements DeltaFiConfigRepoCustom {
 
     @Override
     public List<EgressFlowConfiguration> findAllEgressFlows() {
-        Query query = Query.query(Criteria.where(CONFIG_TYPE).is(EGRESS_FLOW));
-        return mongoTemplate.find(query, EgressFlowConfiguration.class, COLLECTION_NAME);
+        return findAllByConfigType(EGRESS_FLOW, EgressFlowConfiguration.class);
+    }
+
+    public List<DomainEndpointConfiguration> findAllDomainEndpoints() {
+        return findAllByConfigType(DOMAIN_ENDPOINT, DomainEndpointConfiguration.class);
     }
 
     @Override
@@ -110,6 +113,11 @@ public class DeltaFiConfigRepoImpl implements DeltaFiConfigRepoCustom {
 
     Query byNameAndConfigType(String name, ConfigType configType) {
         return Query.query(Criteria.where(NAME).is(name).and(CONFIG_TYPE).is(configType));
+    }
+
+    <C extends DeltaFiConfiguration> List<C> findAllByConfigType(ConfigType type, Class<C> clazz) {
+        Query query = Query.query(Criteria.where(CONFIG_TYPE).is(type));
+        return mongoTemplate.find(query, clazz, COLLECTION_NAME);
     }
 
 }

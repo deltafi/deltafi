@@ -26,6 +26,8 @@ public interface DeltaFiConfigRepoCustom {
 
     List<EgressFlowConfiguration> findAllEgressFlows();
 
+    List<DomainEndpointConfiguration> findAllDomainEndpoints();
+
     void deleteActionConfigs();
 
     void deleteFlowConfigs();

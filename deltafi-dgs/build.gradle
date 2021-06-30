@@ -86,6 +86,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 	implementation 'org.springframework.retry:spring-retry'
+	implementation 'io.fabric8:kubernetes-client:5.4.1'
 
 	// Use DGS BOM to automatically define versions of other packages below
 	implementation(platform('com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.2.0')) {
@@ -101,6 +102,7 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.2.0'
+	testImplementation 'io.fabric8:kubernetes-server-mock:5.4.1'
 }
 
 test {

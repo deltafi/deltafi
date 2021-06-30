@@ -17,7 +17,10 @@ import org.deltafi.dgs.configuration.ValidateActionConfiguration;
 import org.deltafi.dgs.configuration.*;
 import org.deltafi.dgs.converters.KeyValueConverter;
 import org.deltafi.dgs.generated.types.*;
+import org.deltafi.dgs.k8s.GatewayConfigService;
 import org.deltafi.dgs.repo.DeltaFiConfigRepo;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -29,9 +32,11 @@ public class DeltaFiConfigService {
     private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final DeltaFiConfigRepo deltaFiConfigRepo;
+    private final ObjectProvider<GatewayConfigService> gatewayConfigService;
 
-    public DeltaFiConfigService(DeltaFiConfigRepo deltaFiConfigRepo) {
+    public DeltaFiConfigService(DeltaFiConfigRepo deltaFiConfigRepo, @Lazy ObjectProvider<GatewayConfigService> gatewayConfigService) {
         this.deltaFiConfigRepo = deltaFiConfigRepo;
+        this.gatewayConfigService = gatewayConfigService;
     }
 
     public Optional<IngressFlowConfiguration> getIngressFlow(String flow) {
@@ -60,6 +65,10 @@ public class DeltaFiConfigService {
 
     public FormatActionConfiguration getFormatAction(String formatAction) {
         return deltaFiConfigRepo.findFormatAction(formatAction);
+    }
+
+    public List<DomainEndpointConfiguration> getDomainEndpoints() {
+        return deltaFiConfigRepo.findAllDomainEndpoints();
     }
 
     public List<String> getEnrichActions() {
@@ -133,14 +142,26 @@ public class DeltaFiConfigService {
     }
 
     public DomainEndpointConfiguration saveDomainEndpoint(DomainEndpointConfigurationInput domainEndpointConfigurationInput) {
-        return saveConfig(domainEndpointConfigurationInput, DomainEndpointConfiguration.class);
+        DomainEndpointConfiguration domainEndpointConfiguration = saveConfig(domainEndpointConfigurationInput, DomainEndpointConfiguration.class);
+        reloadApollo();
+        return domainEndpointConfiguration;
     }
 
     public LoadActionGroupConfiguration saveLoadActionGroup(LoadActionGroupConfigurationInput loadActionGroup) {
         return saveConfig(loadActionGroup, LoadActionGroupConfiguration.class);
     }
 
-    public long removeConfigs(ConfigQueryInput configQuery) {
+    public long removeConfigs(ConfigQueryInput configQueryInput) {
+        long removed = doRemoveConfigs(configQueryInput);
+
+        if (removed > 0 && shouldRefreshApollo(configQueryInput)) {
+            reloadApollo();
+        }
+
+        return removed;
+    }
+
+    public long doRemoveConfigs(ConfigQueryInput configQuery) {
         if (Objects.nonNull(configQuery)) {
             ConfigType configType = mapper.convertValue(configQuery.getConfigType(), ConfigType.class);
             if (Objects.nonNull(configQuery.getName())) {
@@ -152,8 +173,16 @@ public class DeltaFiConfigService {
         return deltaFiConfigRepo.deleteAllWithCount();
     }
 
+    private void reloadApollo() {
+        gatewayConfigService.ifAvailable(GatewayConfigService::refreshApolloConfig);
+    }
+
     private <C extends DeltaFiConfiguration> C saveConfig(Object input, Class<C> clazz) {
         C fromInput = mapper.convertValue(input, clazz);
         return deltaFiConfigRepo.upsertConfiguration(fromInput, clazz);
+    }
+
+    private boolean shouldRefreshApollo(ConfigQueryInput input) {
+        return Objects.isNull(input) || org.deltafi.dgs.generated.types.ConfigType.DOMAIN_ENDPOINT.equals(input.getConfigType());
     }
 }

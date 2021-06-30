@@ -135,6 +135,15 @@ class DeltaFiConfigRepoTest {
     }
 
     @Test
+    void findAllDomainEndpoints() {
+        DomainEndpointConfiguration config = new DomainEndpointConfiguration();
+        config.setName("name");
+        deltaFiConfigRepo.save(config);
+
+        assertEquals(config, deltaFiConfigRepo.findAllDomainEndpoints().get(0));
+    }
+
+    @Test
     void deleteActionConfigs() {
         EgressFlowConfiguration egressFlow = new EgressFlowConfiguration();
         egressFlow.setName("name");
