@@ -81,5 +81,5 @@ docker {
     dependsOn compileJava
     dependsOn build
     name "${project.name}:${project.version}"
-    copySpec.from(".").into(".")
+    copySpec.from("build/quarkus-app").into("build/quarkus-app")
 }
