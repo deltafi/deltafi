@@ -3,6 +3,7 @@ plugins {
     id 'io.quarkus'
     id 'idea'
     id 'jacoco'
+    id "com.palantir.docker" version "0.22.1"
 }
 
 java {
@@ -74,4 +75,11 @@ jacocoTestReport {
 
 jacoco {
     reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
+}
+
+docker {
+    dependsOn compileJava
+    dependsOn build
+    name "${project.name}:${project.version}"
+    copySpec.from(".").into(".")
 }

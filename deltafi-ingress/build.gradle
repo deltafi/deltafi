@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'io.quarkus'
     id 'idea'
+    id "com.palantir.docker" version "0.22.1"
 }
 
 java {
@@ -36,4 +37,11 @@ dependencies {
     testImplementation 'io.quarkus:quarkus-junit5-mockito'
     testImplementation 'io.rest-assured:rest-assured'
     testImplementation 'org.mockito:mockito-junit-jupiter'
+}
+
+docker {
+    dependsOn compileJava
+    dependsOn build
+    name "${project.name}:${project.version}"
+    copySpec.from(".").into(".")
 }
