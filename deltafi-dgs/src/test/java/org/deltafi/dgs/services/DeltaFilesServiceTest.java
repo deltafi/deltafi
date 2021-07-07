@@ -1,6 +1,7 @@
 package org.deltafi.dgs.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import org.deltafi.common.trace.ZipkinConfig;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.Util;
 import org.deltafi.dgs.api.types.DeltaFile;
@@ -21,7 +22,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class DeltaFilesServiceTest {
+class DeltaFilesServiceTest {
     DeltaFilesService deltaFilesService;
     DeltaFiConfigService deltaFiConfigService = Mockito.mock(DeltaFiConfigService.class);
     StateMachine stateMachine;
@@ -42,14 +43,16 @@ public class DeltaFilesServiceTest {
         EgressFlowConfiguration flowConfiguration1 = new EgressFlowConfiguration();
         flowConfiguration1.setFormatAction(formatAction1);
         EgressFlowConfiguration flowConfiguration2 = new EgressFlowConfiguration();
-        flowConfiguration2.setFormatAction(formatAction2);;
+        flowConfiguration2.setFormatAction(formatAction2);
 
         Mockito.when(deltaFiConfigService.getEgressFlow(flow1)).thenReturn(Optional.of(flowConfiguration1));
         Mockito.when(deltaFiConfigService.getEgressFlow(flow2)).thenReturn(Optional.of(flowConfiguration2));
         Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(Arrays.asList(flowConfiguration1, flowConfiguration2));
         Mockito.when(deltaFiConfigService.getEgressFlowForAction(EgressConfiguration.egressActionName(flow1))).thenReturn(flowConfiguration1);
 
-        stateMachine = new StateMachine(deltaFiConfigService, new ZipkinService(null, false));
+        ZipkinConfig zipkinConfig = new ZipkinConfig();
+        zipkinConfig.setEnabled(false);
+        stateMachine = new StateMachine(deltaFiConfigService, new ZipkinService(null, zipkinConfig));
 
         deltaFileRepo = Mockito.mock(DeltaFileRepo.class);
         deltaFilesService = new DeltaFilesService(deltaFiConfigService, new DeltaFiProperties(), stateMachine, deltaFileRepo);

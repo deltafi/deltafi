@@ -89,6 +89,9 @@ deltafi:
   configSource:
     flows: DEFAULT_FROM_PROPERTY
     actions: DEFAULT_FROM_PROPERTY
-zipkin:
-  enabled: ${ZIPKIN_ENABLED:true}
-  url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
+  zipkin:
+    enabled: ${ZIPKIN_ENABLED:true}
+    url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
+    initialDelayInMilli: ${ZIPKIN_INITIAL_DELAY:500}
+    sendFrequencyInMilli: ${ZIPKIN_FREQUENCY:500}
+    maxBatchSize: ${ZIPKIN_MAX_BATCH_SIZE:10000}

@@ -1,5 +1,6 @@
 package org.deltafi.dgs.configuration;
 
+import org.deltafi.common.trace.ZipkinConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,6 +24,7 @@ public class DeltaFiProperties {
     private int defaultFeedLimit = 25;
     private int feedTimeoutSeconds = 30;
     private DeleteConfiguration delete = new DeleteConfiguration();
+    private ZipkinConfig zipkin = new ZipkinConfig();
 
     public ConfigSource getConfigSource() {
         return configSource;
@@ -110,5 +112,13 @@ public class DeltaFiProperties {
 
     public void setDelete(DeleteConfiguration delete) {
         this.delete = delete;
+    }
+
+    public ZipkinConfig getZipkin() {
+        return zipkin;
+    }
+
+    public void setZipkinConfig(ZipkinConfig zipkin) {
+        this.zipkin = zipkin;
     }
 }

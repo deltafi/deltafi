@@ -134,7 +134,7 @@ public class DeltaFileService {
 
     private void sendTrace(IngressInputHolder ingressInputHolder, DeltaFile deltaFile) {
         DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), INGRESS_ACTION, ingressInputHolder.getSourceInfoInput().getFilename(), ingressInputHolder.getSourceInfoInput().getFlow());
-        zipkinService.finishAndSendSpan(span);
+        zipkinService.markSpanComplete(span);
     }
 
     private GraphQLResponse executeQuery(GraphQLQueryRequest query) {

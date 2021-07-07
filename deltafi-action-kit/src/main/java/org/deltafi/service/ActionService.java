@@ -94,7 +94,7 @@ public class ActionService {
                                 if (result != null) {
                                     domainGatewayService.submit(result);
                                 }
-                                zipkinService.finishAndSendSpan(span);
+                                zipkinService.markSpanComplete(span);
 
                             } catch (DgsPostException ignored) {
                                 // do nothing -- the error has already been logged

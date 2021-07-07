@@ -4,6 +4,7 @@ import io.quarkus.arc.config.ConfigProperties;
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.runtime.annotations.ConfigItem;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.trace.ZipkinConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,16 @@ public class DeltafiConfig {
 
     @ConfigItem(defaultValue = "100")
     public int action_polling_frequency_ms = 100;
+
+    public ZipkinConfig zipkin = new ZipkinConfig();
+
+    public ZipkinConfig getZipkin() {
+        return zipkin;
+    }
+
+    public void setZipkin(ZipkinConfig zipkin) {
+        this.zipkin = zipkin;
+    }
 
     public static class ActionSpec {
         @ConfigItem

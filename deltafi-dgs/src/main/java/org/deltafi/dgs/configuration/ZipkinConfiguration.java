@@ -2,28 +2,27 @@ package org.deltafi.dgs.configuration;
 
 import org.deltafi.common.trace.ZipkinRestClient;
 import org.deltafi.common.trace.ZipkinService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.net.http.HttpClient;
 
 @Configuration
-public class ZipkinConfig {
+public class ZipkinConfiguration {
 
-    @Value("${zipkin.url:http://localhost:9411/api/v2/span}")
-    private String zipkinUrl;
+    DeltaFiProperties properties;
 
-    @Value("${zipkin.enabled:false}")
-    private final boolean enableZipkin = false;
+    public ZipkinConfiguration(DeltaFiProperties properties) {
+        this.properties = properties;
+    }
 
     @Bean
     public ZipkinService zipkinService() {
-        return new ZipkinService(zipkinRestClient(), enableZipkin);
+        return new ZipkinService(zipkinRestClient(), properties.getZipkin());
     }
 
     public ZipkinRestClient zipkinRestClient() {
-        return new ZipkinRestClient(getHttpClient(), zipkinUrl);
+        return new ZipkinRestClient(getHttpClient(), properties.getZipkin().getUrl());
     }
 
     public HttpClient getHttpClient() {

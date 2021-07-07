@@ -3,7 +3,6 @@ package org.deltafi.common.trace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -22,20 +21,24 @@ public class ZipkinRestClient {
     }
 
     void sendSpan(String spanJson) {
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).POST(HttpRequest.BodyPublishers.ofString(spanJson)).build();
-        try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() > 299 && log.isErrorEnabled()) {
-                log.error("Failed to send {} to Zipkin with error of {}", spanJson, response.body());
-            }
-        } catch (IOException ioException) {
-            log.error("Failed to send {} to Zipkin", spanJson, ioException);
-        } catch (InterruptedException e) {
-            log.error("Could not complete sending the span: {}", spanJson, e);
-            Thread.currentThread().interrupt();
+        httpClient.sendAsync(buildRequest(spanJson), HttpResponse.BodyHandlers.ofString())
+            .thenAcceptAsync(response -> processResponse(response, spanJson))
+            .exceptionally(throwable -> processException(throwable, spanJson));
+    }
+
+    public HttpRequest buildRequest(String spanJson) {
+        return HttpRequest.newBuilder().uri(URI.create(url)).POST(HttpRequest.BodyPublishers.ofString(spanJson)).build();
+    }
+
+    public void processResponse(HttpResponse<String> response, String spanJson) {
+        if (response.statusCode() < 200 || response.statusCode() > 299 && log.isErrorEnabled()) {
+            log.error("Failed to send {} to Zipkin with error of {}", spanJson, response.body());
         }
     }
 
-
+    public Void processException(Throwable throwable, String spanJson) {
+        log.error("Failed to send {} to Zipkin with an exception", spanJson, throwable);
+        return null;
+    }
 
 }
