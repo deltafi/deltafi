@@ -42,7 +42,7 @@ allprojects { project ->
             showStackTraces true
         }
 
-        ignoreFailures = true // Always try to run all tests for all modules
+        ignoreFailures = false
 
         afterSuite { desc, result ->
 
