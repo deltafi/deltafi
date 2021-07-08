@@ -1,0 +1,9 @@
+plugins {
+    id 'idea'
+    id "com.palantir.docker" version "0.22.1"
+}
+
+docker {
+    name "${project.name}:${project.version}"
+    copySpec.from(".").into(".")
+}
