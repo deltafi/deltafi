@@ -78,19 +78,38 @@ public class ZipkinService {
      * @param did - DeltaFile id
      * @param actionName - Action acting on the deltaFile in this span
      * @param fileName - original fileName
-     * @param flow -  flow that this deltaFile belongs too
+     * @param flow - flow that this deltaFile belongs too
      * @return - the span for the deltaFile going through the action
      */
     public DeltafiSpan createChildSpan(String did, String actionName, String fileName, String flow) {
-        return DeltafiSpan.newSpanBuilder()
+        return createChildSpan(did, actionName, fileName, flow, null);
+    }
+
+    /**
+     * Create a span that represents the lifecycle of the deltaFile
+     * going through the given action.
+     *
+     * @param did - DeltaFile id
+     * @param actionName - Action acting on the deltaFile in this span
+     * @param fileName - original fileName
+     * @param flow - flow that this deltaFile belongs too
+     * @param created - optional timestamp
+     * @return - the span for the deltaFile going through the action
+     */
+    public DeltafiSpan createChildSpan(String did, String actionName, String fileName, String flow, OffsetDateTime created) {
+        DeltafiSpan.Builder builder = DeltafiSpan.newSpanBuilder()
                 .localEndpoint(fileName)
                 .traceId(traceId(did))
                 .id(longToHex(uniqueId()))
                 .name(actionName)
                 .parentId(hexIdFromUuid(did))
                 .tags(Map.of(DID, did, FLOW, flow))
-                .kind(SERVER)
-                .build();
+                .kind(SERVER);
+        if (created != null) {
+            builder.timestamp(created.toInstant());
+        }
+
+        return builder.build();
     }
 
     /**

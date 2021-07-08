@@ -73,6 +73,7 @@ type FormattedData {
   formatAction: String!
   metadata: [KeyValue!]
   objectReference: ObjectReference!
+  egressActions: [String!]!
 }
 
 input FormatResultInput {
@@ -96,7 +97,6 @@ enum DeltaFileStage {
 
 enum ActionState {
   QUEUED
-  DISPATCHED
   COMPLETE
   ERROR
 }
@@ -129,12 +129,6 @@ type DeltaFile {
   modified: DateTime!
   markedForDelete: DateTime
   markedForDeleteReason: String
-}
-
-type FeedStats {
-  actionName : String!
-  recentQueryTimes : [DateTime]!
-  numQueries : Int
 }
 
 enum ConfigType {
@@ -322,14 +316,10 @@ input DomainEndpointConfigurationInput {
 
 type Query {
   deltaFile(did: String!): DeltaFile
-  actionFeed(action: String!, limit: Int, dryRun: Boolean) : [DeltaFile]!
   lastCreated(last: Int) : [DeltaFile]!
   lastModified(last: Int) : [DeltaFile]!
   lastErrored(last: Int) : [DeltaFile]!
   lastWithFilename(filename: String!) : DeltaFile
-
-  # feed stats are for debug purposes and do not persist across DGS restarts
-  feedStats(forAction: String) : [FeedStats]!
 
   deltaFiConfig(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
 }

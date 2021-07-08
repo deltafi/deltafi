@@ -10,5 +10,5 @@ public enum ConfigType {
     EGRESS_ACTION,
     INGRESS_FLOW,
     EGRESS_FLOW,
-    DOMAIN_ENDPOINT;
+    DOMAIN_ENDPOINT
 }

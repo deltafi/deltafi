@@ -21,8 +21,7 @@ public class DeltaFiProperties {
     private Map<String, FormatActionConfiguration> formatActions = new HashMap<>();
     private List<String> validateActions = new ArrayList<>();
     private EgressConfiguration egress = new EgressConfiguration();
-    private int defaultFeedLimit = 25;
-    private int feedTimeoutSeconds = 30;
+    private int requeueSeconds = 30;
     private DeleteConfiguration delete = new DeleteConfiguration();
     private ZipkinConfig zipkin = new ZipkinConfig();
 
@@ -98,13 +97,9 @@ public class DeltaFiProperties {
         this.egress = egress;
     }
 
-    public int getDefaultFeedLimit() { return defaultFeedLimit; }
+    public int getRequeueSeconds() { return requeueSeconds; }
 
-    public void setDefaultFeedLimit(int defaultFeedLimit) { this.defaultFeedLimit = defaultFeedLimit; }
-
-    public int getFeedTimeoutSeconds() { return feedTimeoutSeconds; }
-
-    public void setFeedTimeoutSeconds(int feedTimeoutSeconds) { this.feedTimeoutSeconds = feedTimeoutSeconds; }
+    public void setRequeueSeconds(int requeueSeconds) { this.requeueSeconds = requeueSeconds; }
 
     public DeleteConfiguration getDelete() {
         return delete;

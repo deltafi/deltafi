@@ -32,6 +32,8 @@ dependencies {
     implementation project(path: ':deltafi-action-kit', configuration: 'jars')
     implementation project(path: ':deltafi-dgs', configuration: 'jars')
 
+    implementation 'redis.clients:jedis:3.6.1'
+
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-jackson'

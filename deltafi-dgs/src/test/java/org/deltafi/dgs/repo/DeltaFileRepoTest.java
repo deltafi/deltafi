@@ -12,10 +12,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,6 +27,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestPropertySource(properties = "enableScheduling=false")
 @SpringBootTest
 class DeltaFileRepoTest {
 
@@ -38,102 +43,31 @@ class DeltaFileRepoTest {
     }
 
     @Test
-    void testFindAndDispatchedQueued() {
-        DeltaFile deltaFile = deltaFile("did");
+    void testUpdateForRequeue() {
+        DeltaFile hit = deltaFile("did");
+        DeltaFile miss = deltaFile("did2");
 
-        Action shouldDispatch = Action.newBuilder().name("hit").state(ActionState.QUEUED).history(new ArrayList<>()).build();
-        Action shouldStay = Action.newBuilder().name("miss").state(ActionState.QUEUED).history(new ArrayList<>()).build();
+        // mongo eats microseconds, jump through hoops
+        OffsetDateTime now = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
+        Action shouldRequeue = Action.newBuilder().name("hit").modified(now.minusSeconds(1000)).state(ActionState.QUEUED).history(new ArrayList<>()).build();
+        Action shouldStay = Action.newBuilder().name("miss").modified(now.plusSeconds(1000)).state(ActionState.QUEUED).history(new ArrayList<>()).build();
 
-        List<Action> actions = Arrays.asList(shouldDispatch, shouldStay);
-        deltaFile.setActions(actions);
+        hit.setActions(Arrays.asList(shouldRequeue, shouldStay));
+        miss.setActions(Arrays.asList(shouldStay, shouldStay));
 
-        deltaFileRepo.save(deltaFile);
+        deltaFileRepo.save(hit);
+        deltaFileRepo.save(miss);
 
-        deltaFileRepo.findAndDispatchForAction("hit", 10, false);
+        List<DeltaFile> hits = deltaFileRepo.updateForRequeue(now);
+        assertEquals(1, hits.size());
+        assertEquals(hit.getDid(), hits.get(0).getDid());
 
-        DeltaFile after = deltaFilesService.getDeltaFile("did");
+        DeltaFile hitAfter = deltaFilesService.getDeltaFile("did");
+        DeltaFile missAfter = deltaFilesService.getDeltaFile("did2");
 
-        Action hitAction = after.getActions().stream().filter(a -> "hit".equals(a.getName())).findFirst().orElseThrow(() -> new RuntimeException("test failed"));
-        assertEquals(ActionState.DISPATCHED, hitAction.getState());
-
-        ActionEvent history = hitAction.getHistory().get(0);
-        assertEquals(ActionState.DISPATCHED, history.getState());
-
-        Action missAction = after.getActions().stream().filter(a -> "miss".equals(a.getName())).findFirst().orElseThrow(() -> new RuntimeException("test failed"));
-        assertTrue(missAction.getHistory().isEmpty());
-        assertEquals(ActionState.QUEUED, missAction.getState());
-    }
-
-    @Test
-    void testFindAndDispatchedDryRun() {
-        DeltaFile deltaFile = deltaFile("did");
-
-        Action shouldDispatch = Action.newBuilder().name("hit").state(ActionState.QUEUED).history(new ArrayList<>()).build();
-        Action shouldStay = Action.newBuilder().name("miss").state(ActionState.QUEUED).history(new ArrayList<>()).build();
-
-        List<Action> actions = Arrays.asList(shouldDispatch, shouldStay);
-        deltaFile.setActions(actions);
-
-        deltaFileRepo.save(deltaFile);
-
-        deltaFileRepo.findAndDispatchForAction("hit", 10, true);
-
-        DeltaFile after = deltaFilesService.getDeltaFile("did");
-
-        Action hitAction = after.getActions().stream().filter(a -> "hit".equals(a.getName())).findFirst().orElseThrow(() -> new RuntimeException("test failed"));
-        assertEquals(ActionState.QUEUED, hitAction.getState());
-        assertTrue(hitAction.getHistory().isEmpty());
-    }
-
-    @Test
-    void testFindAndDispatchTimedOutDispatched() {
-        DeltaFile deltaFile = deltaFile("did");
-
-        OffsetDateTime modified = OffsetDateTime.now().minusSeconds(31);
-        Action shouldDispatch = Action.newBuilder().name("hit").state(ActionState.DISPATCHED).errorMessage("old dispatch").modified(modified).history(new ArrayList<>()).build();
-        Action shouldStay = Action.newBuilder().name("miss").state(ActionState.QUEUED).history(new ArrayList<>()).build();
-
-        List<Action> actions = Arrays.asList(shouldDispatch, shouldStay);
-        deltaFile.setActions(actions);
-
-        deltaFileRepo.save(deltaFile);
-
-        deltaFileRepo.findAndDispatchForAction("hit", 10, false);
-
-        DeltaFile after = deltaFilesService.getDeltaFile("did");
-
-        Action hitAction = after.getActions().stream().filter(a -> "hit".equals(a.getName())).findFirst().orElseThrow(() -> new RuntimeException("test failed"));
-        assertEquals(ActionState.DISPATCHED, hitAction.getState());
-        assertTrue(hitAction.getModified().compareTo(modified) > 0);
-        assertNull(hitAction.getErrorMessage());
-
-        assertTrue(after.getModified().compareTo(modified) > 0);
-        assertEquals(2L, after.getVersion());
-
-        ActionEvent history = hitAction.getHistory().get(0);
-        assertEquals(ActionState.DISPATCHED, history.getState());
-
-        Action missAction = after.getActions().stream().filter(a -> "miss".equals(a.getName())).findFirst().orElseThrow(() -> new RuntimeException("test failed"));
-        assertTrue(missAction.getHistory().isEmpty());
-        assertEquals(ActionState.QUEUED, missAction.getState());
-    }
-
-    @Test
-    void testFindAndDispatchNoMatches() {
-        DeltaFile original = deltaFile("did");
-        OffsetDateTime time = OffsetDateTime.now().minusMinutes(5);
-        original.setCreated(time);
-        original.setModified(time);
-        Action completeAction = Action.newBuilder().state(ActionState.COMPLETE).history(new ArrayList<>()).name("myTestAction").build();
-        Action queuedAction = Action.newBuilder().state(ActionState.QUEUED).history(new ArrayList<>()).name("otherAction").build();
-        original.setActions(Arrays.asList(completeAction, queuedAction));
-        original = deltaFileRepo.save(original);
-
-        deltaFileRepo.findAndDispatchForAction("myTestAction", 10, false);
-
-        DeltaFile after = deltaFilesService.getDeltaFile("did");
-
-        Assertions.assertTrue(Util.equalIgnoringDates(original, after));
+        assertEquals(miss, missAfter);
+        assertNotEquals(hit.getActions().get(0).getModified(), hitAfter.getActions().get(0).getModified());
+        assertEquals(hit.getActions().get(1).getModified(), hitAfter.getActions().get(1).getModified());
     }
 
     @Test

@@ -15,6 +15,9 @@
     zipkin:
       enabled: ${ZIPKIN_ENABLED:false}
       url: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+  redis:
+    url: ${REDIS_URL:http://localhost:6379}
+    password: ${REDIS_PASSWORD:}
 
 quarkus:
   http:
@@ -39,7 +42,7 @@ deltafi:
   action_polling_frequency_ms: 100
   actions:
     - name: SomeEgressAction
-      type: org.deltafi.action.egress.RestPostEgressAction
+      type: org.deltafi.actionkit.action.egress.RestPostEgressAction
       parameters:
         url: ${EGRESS_ENDPOINT:http://localhost:8085/echo}
         metadata_prefix: ${METADATA_PREFIX:deltafi.}
@@ -51,3 +54,6 @@ deltafi:
     initialDelayInMilli: ${ZIPKIN_INITIAL_DELAY:500}
     sendFrequencyInMilli: ${ZIPKIN_FREQUENCY:500}
     maxBatchSize: ${ZIPKIN_MAX_BATCH_SIZE:10000}
+redis:
+  url: ${REDIS_URL:http://deltafi-redis-master:6379}
+  password: ${REDIS_PASSWORD:}

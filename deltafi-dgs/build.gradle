@@ -52,8 +52,7 @@ generateJava {
     packageName = 'org.deltafi.dgs.generated'
     generateClient = true
     typeMapping = [
-      deltaFile: "org.deltafi.dgs.api.types.DeltaFile",
-      feedStats: "org.deltafi.dgs.services.FeedStats"
+      deltaFile: "org.deltafi.dgs.api.types.DeltaFile"
     ]
 }
 
@@ -88,6 +87,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 	implementation 'org.springframework.retry:spring-retry'
 	implementation 'io.fabric8:kubernetes-client:5.4.1'
+
+	implementation 'redis.clients:jedis:3.6.1'
 
 	// Use DGS BOM to automatically define versions of other packages below
 	implementation(platform('com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.2.0')) {

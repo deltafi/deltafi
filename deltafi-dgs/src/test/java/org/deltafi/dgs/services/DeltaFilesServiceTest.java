@@ -3,7 +3,6 @@ package org.deltafi.dgs.services;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.common.trace.ZipkinConfig;
 import org.deltafi.common.trace.ZipkinService;
-import org.deltafi.dgs.Util;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.*;
 import org.deltafi.dgs.configuration.EgressFlowConfiguration;
@@ -15,18 +14,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DeltaFilesServiceTest {
     DeltaFilesService deltaFilesService;
-    DeltaFiConfigService deltaFiConfigService = Mockito.mock(DeltaFiConfigService.class);
+    final DeltaFiConfigService deltaFiConfigService = Mockito.mock(DeltaFiConfigService.class);
     StateMachine stateMachine;
     DeltaFileRepo deltaFileRepo;
+    final RedisService redisService = Mockito.mock(RedisService.class);
 
     final String flow = "theFlow";
 
@@ -55,7 +52,7 @@ class DeltaFilesServiceTest {
         stateMachine = new StateMachine(deltaFiConfigService, new ZipkinService(null, zipkinConfig));
 
         deltaFileRepo = Mockito.mock(DeltaFileRepo.class);
-        deltaFilesService = new DeltaFilesService(deltaFiConfigService, new DeltaFiProperties(), stateMachine, deltaFileRepo);
+        deltaFilesService = new DeltaFilesService(deltaFiConfigService, new DeltaFiProperties(), stateMachine, deltaFileRepo, redisService);
     }
 
     @Test
@@ -81,20 +78,4 @@ class DeltaFilesServiceTest {
     void getReturnsNullOnMissingDid() {
         assertNull(deltaFilesService.getDeltaFile("nonsense"));
     }
-
-    @Test
-    void returnsOnlyMyFormatData() {
-        DeltaFile doubleFormatted = Util.emptyDeltaFile("did", "flow");
-        doubleFormatted.getFormattedData().add(FormattedData.newBuilder().formatAction(formatAction1).build());
-        doubleFormatted.getFormattedData().add(FormattedData.newBuilder().formatAction(formatAction2).build());
-        doubleFormatted.getActions().add(Action.newBuilder().name(EgressConfiguration.egressActionName(flow1)).state(ActionState.QUEUED).build());
-
-        Mockito.when(deltaFileRepo.findAndDispatchForAction(EgressConfiguration.egressActionName(flow1), 12, false)).thenReturn(Collections.singletonList(doubleFormatted));
-
-        List<DeltaFile> results = deltaFilesService.actionFeed(EgressConfiguration.egressActionName(flow1), 12, false);
-        assertThat(results.size()).isEqualTo(1);
-        assertThat(results.get(0).getFormattedData().size()).isEqualTo(1);
-        assertThat(results.get(0).getFormattedData().get(0).getFormatAction()).isEqualTo(formatAction1);
-    }
-
 }

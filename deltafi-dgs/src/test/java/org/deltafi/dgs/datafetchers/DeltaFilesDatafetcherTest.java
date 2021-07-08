@@ -23,6 +23,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.*;
 
@@ -31,6 +32,7 @@ import static org.deltafi.dgs.Util.equalIgnoringDates;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
+@TestPropertySource(properties = "enableScheduling=false")
 class DeltaFilesDatafetcherTest {
 
     @Autowired

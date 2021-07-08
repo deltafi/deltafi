@@ -26,7 +26,7 @@ compileTestJava {
 }
 
 jar {
-	enabled = true
+    enabled = true
 }
 
 configurations {
@@ -70,6 +70,8 @@ dependencies {
 
     implementation project(':deltafi-common')
     implementation project(path: ':deltafi-dgs', configuration: 'jars')
+
+    implementation 'redis.clients:jedis:3.6.1'
 
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-rest-client'

@@ -1,15 +1,15 @@
 package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.action.Result;
-import org.deltafi.action.validate.ValidateAction;
-import org.deltafi.action.validate.ValidateResult;
-import org.deltafi.config.DeltafiConfig;
+import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.validate.ValidateAction;
+import org.deltafi.actionkit.action.validate.ValidateResult;
+import org.deltafi.actionkit.config.DeltafiConfig;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
-import org.deltafi.service.ContentService;
-import org.deltafi.types.DeltaFile;
+import org.deltafi.actionkit.service.ContentService;
+import org.deltafi.actionkit.types.DeltaFile;
 
 @SuppressWarnings("unused")
 @Slf4j

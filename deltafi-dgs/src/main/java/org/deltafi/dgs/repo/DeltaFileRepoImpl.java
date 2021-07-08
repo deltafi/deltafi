@@ -2,21 +2,17 @@ package org.deltafi.dgs.repo;
 
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.generated.types.ActionEvent;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -40,7 +36,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_NAME = "name";
     public static final String ACTIONS_MODIFIED = "modified";
 
-    public static final String ACTION_NAME = "action.name";
+    public static final String ACTION_MODIFIED = "action.modified";
+    public static final String ACTION_STATE = "action.state";
     public static final String ACTIONS_UPDATE_STATE = "actions.$[action].state";
     public static final String ACTIONS_UPDATE_MODIFIED = "actions.$[action].modified";
     public static final String ACTIONS_UPDATE_ERROR = "actions.$[action].errorMessage";
@@ -55,11 +52,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findAndDispatchForAction(String actionName, Integer limit, Boolean dryRun) {
-        return findReadyForDispatch(actionName, limit).stream()
-                .map(deltaFile -> this.dispatchAction(deltaFile, actionName, dryRun))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime) {
+        requeue(requeueTime);
+        return findQueuedAt(requeueTime);
     }
 
     @Override
@@ -81,78 +76,51 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         mongoTemplate.save(deltaFile);
     }
 
-    DeltaFile dispatchAction(DeltaFile deltaFile, String actionName, Boolean dryRun) {
-        if (dryRun) {
-            return deltaFile;
-        }
-
-        OffsetDateTime now = OffsetDateTime.now();
-
-        Update dispatchUpdate = buildDispatchUpdate(now);
-        dispatchUpdate.filterArray(Criteria.where(ACTION_NAME).is(actionName));
-
-        return versionedUpdate(deltaFile, new Query(), dispatchUpdate, now).orElse(null);
+    void requeue(OffsetDateTime requeueTime) {
+        mongoTemplate.updateMulti(buildReadyForRequeueQuery(requeueTime), buildRequeueUpdate(requeueTime), DeltaFile.class);
     }
 
-    Update buildDispatchUpdate(OffsetDateTime modified) {
+    Update buildRequeueUpdate(OffsetDateTime modified) {
         Update update = new Update();
 
-        ActionEvent actionEvent = ActionEvent.newBuilder().state(ActionState.DISPATCHED).time(modified).build();
-
-        update.set(ACTIONS_UPDATE_STATE, ActionState.DISPATCHED.name());
         // clear out any old error messages
         update.set(ACTIONS_UPDATE_ERROR, null);
         update.set(ACTIONS_UPDATE_MODIFIED, modified);
-        update.addToSet(ACTIONS_UPDATE_HISTORY, actionEvent);
+
+        update.set(MODIFIED, nonNull(modified) ? modified : OffsetDateTime.now());
+
+        Criteria queued = Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name());
+
+        long epochMs = requeueThreshold(modified).toInstant().toEpochMilli();
+        Criteria expired = Criteria.where(ACTION_MODIFIED).lt(new Date(epochMs));
+
+        update.filterArray(new Criteria().andOperator(queued, expired));
 
         return update;
     }
 
-    /**
-     * FindAndModify the given DeltaFile if we are working with the latest version
-     *
-     * @param deltaFile - deltaFile that needs to be updated
-     * @param query - query with criteria to search for, id and version will always be added to the criteria
-     * @param update - updates to perform for the record, version and modified will always be added to the update
-     * @param modified - optional modified time to use, if null the current time is used
-     * @return - The updated version of the DeltaFile if the modify was successful, otherwise empty
-     */
-    public Optional<DeltaFile> versionedUpdate(DeltaFile deltaFile, Query query, Update update, OffsetDateTime modified) {
-        Criteria versionCriteria = Criteria.where(ID).is(deltaFile.getDid()).and(VERSION).is(deltaFile.getVersion());
-        query.addCriteria(versionCriteria);
-        update.set(VERSION, deltaFile.getVersion() + 1);
-        update.set(MODIFIED, nonNull(modified) ? modified : OffsetDateTime.now());
-
-        FindAndModifyOptions options = FindAndModifyOptions.options().returnNew(true).upsert(false);
-
-        DeltaFile modifiedDeltafile = mongoTemplate.findAndModify(query, update, options, DeltaFile.class);
-        if (isNull(modifiedDeltafile)) {
-            logger.debug("Cannot update deltaFile {} with version {}. The version did not match or the record was removed", deltaFile.getDid(), deltaFile.getVersion());
-            return Optional.empty();
-        }
-        return Optional.of(modifiedDeltafile);
+    List<DeltaFile> findQueuedAt(OffsetDateTime modified) {
+        return mongoTemplate.find(buildRequeuedQuery(modified), DeltaFile.class);
     }
 
-    List<DeltaFile> findReadyForDispatch(String actionName, Integer limit) {
-        return mongoTemplate.find(buildReadyForDispatchQuery(actionName, limit), DeltaFile.class);
-    }
-
-    private Query buildReadyForDispatchQuery(String actionName, Integer limit) {
-        Criteria nameMatches = Criteria.where(ACTIONS_NAME).is(actionName);
+    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime) {
         Criteria queued = Criteria.where(ACTIONS_STATE).is(ActionState.QUEUED.name());
-        Criteria expired = Criteria.where(ACTIONS_MODIFIED).lt(feedThreshold());
-        Criteria dispatched = Criteria.where(ACTIONS_STATE).is(ActionState.DISPATCHED.name());
 
-        Criteria timedOut = new Criteria().andOperator(dispatched, expired);
-        Criteria stateMatches = new Criteria().orOperator(queued, timedOut);
+        long epochMs = requeueThreshold(requeueTime).toInstant().toEpochMilli();
+        Criteria expired = Criteria.where(ACTIONS_MODIFIED).lt(new Date(epochMs));
 
-        Criteria actionElemMatch = new Criteria().andOperator(nameMatches, stateMatches);
+        Criteria actionElemMatch = new Criteria().andOperator(queued, expired);
 
-        Query query = new Query(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
-        query.fields().include(ID, VERSION);
-        query.limit(limit);
+        return new Query(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
+    }
 
-        return query;
+    private Query buildRequeuedQuery(OffsetDateTime requeueTime) {
+        Criteria queued = Criteria.where(ACTIONS_STATE).is(ActionState.QUEUED.name());
+        Criteria requeuedTime = Criteria.where(ACTIONS_MODIFIED).is(requeueTime);
+
+        Criteria actionElemMatch = new Criteria().andOperator(queued, requeuedTime);
+
+        return new Query(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
     }
 
     private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate, String flowName) {
@@ -186,7 +154,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return new Criteria().andOperator(completed, lastModified);
     }
 
-    private Date feedThreshold() {
-        return Date.from(Instant.now().minusSeconds(properties.getFeedTimeoutSeconds()));
+    private OffsetDateTime requeueThreshold(OffsetDateTime requeueTime) {
+        return requeueTime.minusSeconds(properties.getRequeueSeconds());
     }
 }

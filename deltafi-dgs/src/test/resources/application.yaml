@@ -8,7 +8,7 @@ spring:
       database: deltafi-test
       auto-index-creation: true
 deltafi:
-  feedTimeoutSeconds: 30
+  requeueSeconds: 30
   configSource:
     flows: RELOAD_FROM_PROPERTY
     actions: RELOAD_FROM_PROPERTY

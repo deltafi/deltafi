@@ -64,8 +64,10 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         return actionNamed(name).isEmpty();
     }
 
-    public void queueActionsIfNew(List<String> actions) {
-        actions.stream().filter(this::isNewAction).forEach(this::queueNewAction);
+    public List<String> queueActionsIfNew(List<String> actions) {
+        List<String> newActions = actions.stream().filter(this::isNewAction).collect(Collectors.toList());
+        newActions.forEach(this::queueNewAction);
+        return newActions;
     }
 
     public void completeAction(String name) {
@@ -133,12 +135,6 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         return getActions().stream().noneMatch(action -> action.getName().equals(name) && !terminalState(action.getState()));
     }
 
-    public boolean readyForDispatch(String name, int feedTimeoutSeconds) {
-        return getActions().stream().anyMatch(action -> action.getName().equals(name) &&
-                (action.getState().equals(ActionState.QUEUED) ||
-                        (action.getState().equals(ActionState.DISPATCHED) && action.getModified().compareTo(OffsetDateTime.now().minusSeconds(feedTimeoutSeconds)) <= 0)));
-    }
-
     private boolean terminalState(ActionState actionState) {
         return actionState.equals(ActionState.COMPLETE) || actionState.equals(ActionState.ERROR);
     }
@@ -160,7 +156,7 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
 
         getActions().stream()
                 .filter(action -> !action.getName().equals(deleteAction))
-                .filter(action -> action.getState().equals(ActionState.QUEUED) || action.getState().equals(ActionState.DISPATCHED))
+                .filter(action -> action.getState().equals(ActionState.QUEUED))
                 .forEach(a -> {
             a.setModified(now);
             a.setState(ActionState.ERROR);
@@ -171,25 +167,28 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         setModified(now);
     }
 
-    /**
-     * Remove all but the last protocolLayer
-     */
-    public void trimProtocolLayers() {
-        setProtocolStack(Collections.singletonList(getProtocolStack().get(getProtocolStack().size()-1)));
-    }
-
-    /**
-     * Prune the formattedData list to just the specified formatAction
-     * @param formatToKeep filter by this FormatAction
-     */
-    public void trimFormats(String formatToKeep) {
-        setFormattedData(getFormattedData().stream()
-                        .filter(f -> f.getFormatAction().equals(formatToKeep))
-                        .collect(Collectors.toList()));
-    }
 
     public static Builder newBuilder() {
         return new Builder();
+    }
+
+    public DeltaFile forQueue(String actionName) {
+        Builder builder = DeltaFile.newBuilder()
+                .did(getDid())
+                .sourceInfo(getSourceInfo())
+                .protocolStack(Collections.singletonList(getProtocolStack().get(getProtocolStack().size()-1)));
+
+        if (getStage().equals(DeltaFileStage.ENRICH.name()) || getStage().equals(DeltaFileStage.FORMAT.name())) {
+            // TODO: trim down domains and enrichment to those that the current action cares about
+            builder.domains(getDomains())
+                    .enrichment(getEnrichment());
+        } else if (getStage().equals(DeltaFileStage.VALIDATE.name()) || getStage().equals(DeltaFileStage.EGRESS.name())) {
+            builder.formattedData(getFormattedData().stream()
+                    .filter(f -> f.getEgressActions().contains(actionName))
+                    .collect(Collectors.toList()));
+        }
+
+        return builder.build();
     }
 
     public static class Builder extends org.deltafi.dgs.generated.types.DeltaFile.Builder{

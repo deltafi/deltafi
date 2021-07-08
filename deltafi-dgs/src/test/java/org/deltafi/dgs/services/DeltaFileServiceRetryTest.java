@@ -25,7 +25,7 @@ import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, DeltaFiProperties.class})
-@MockBean({StateMachine.class, DeltaFiConfigService.class})
+@MockBean({StateMachine.class, DeltaFiConfigService.class, RedisService.class})
 @EnableRetry
 public class DeltaFileServiceRetryTest {
 
@@ -42,7 +42,7 @@ public class DeltaFileServiceRetryTest {
 
         Mockito.when(deltaFileRepo.findById(did)).thenAnswer((Answer<Optional<DeltaFile>>) invocationOnMock -> {
             DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
-            Action action = Action.newBuilder().name(fromAction).state(ActionState.DISPATCHED).build();
+            Action action = Action.newBuilder().name(fromAction).state(ActionState.QUEUED).build();
             deltaFile.setActions(new ArrayList<>(Collections.singletonList(action)));
             return Optional.of(deltaFile);
         });

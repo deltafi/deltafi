@@ -11,8 +11,7 @@ spring:
   profiles:
     active: k8s
 deltafi:
-  defaultFeedLimit: 25
-  feedTimeoutSeconds: 30
+  requeueSeconds: 30
   ingress:
     ingressFlows:
       stix2_1:
@@ -95,3 +94,6 @@ deltafi:
     initialDelayInMilli: ${ZIPKIN_INITIAL_DELAY:500}
     sendFrequencyInMilli: ${ZIPKIN_FREQUENCY:500}
     maxBatchSize: ${ZIPKIN_MAX_BATCH_SIZE:10000}
+redis:
+  url: ${REDIS_URL:http://localhost:6379}
+  password: ${REDIS_PASSWORD:}

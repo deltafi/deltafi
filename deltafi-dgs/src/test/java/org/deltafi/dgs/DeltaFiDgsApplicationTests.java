@@ -4,28 +4,31 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.converters.KeyValueConverter;
-import org.deltafi.dgs.delete.DeleteConstants;
-import org.deltafi.dgs.delete.DeleteScheduler;
+import org.deltafi.dgs.schedulers.DeleteScheduler;
 import org.deltafi.dgs.generated.DgsConstants;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.repo.DeltaFiConfigRepo;
 import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.services.*;
 import org.junit.jupiter.api.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.*;
 
 import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.dgs.Util.equalIgnoringDates;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 
 @SpringBootTest
 class DeltaFiDgsApplicationTests {
@@ -60,15 +63,8 @@ class DeltaFiDgsApplicationTests {
 	@Autowired
 	ConfigLoaderService configLoaderService;
 
-	final static List<String> completedActions = Arrays.asList(
-			"Utf8TransformAction",
-			"SampleTransformAction",
-			"SampleLoadAction",
-			"SampleEnrichAction",
-			"SampleFormatAction",
-			"SampleValidateAction",
-			"AuthorityValidateAction",
-			"SampleEgressAction");
+	@MockBean
+	RedisService redisService;
 
 	final static List <KeyValue> sampleMetadata = Arrays.asList(
 			KeyValue.newBuilder().key("sampleType").value("sample-type").build(),
@@ -121,7 +117,6 @@ class DeltaFiDgsApplicationTests {
 
 	@Test
 	void test01Ingress() throws IOException {
-		assertTrue(deltaFileRepo.findAll().isEmpty());
 		String did = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQL("01.ingress"),
 				"data." + DgsConstants.MUTATION.Ingress,
@@ -131,29 +126,11 @@ class DeltaFiDgsApplicationTests {
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(equalIgnoringDates(postIngressDeltaFile(did), deltaFile));
-	}
 
-	@Test
-	void test02TransformFeedUtf8() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postIngressDeltaFile(did));
-
-		List<DeltaFile> transformFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("02.transformFeedUtf8"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(transformFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = transformFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getProtocolStack().size()).isEqualTo(1);
-		ProtocolLayer protocolLayer = deltaFile.getProtocolStack().get(0);
-		assertThat(protocolLayer.getType()).isEqualTo("json");
-		assertThat(protocolLayer.getObjectReference().getOffset()).isZero();
-		assertThat(protocolLayer.getObjectReference().getSize()).isEqualTo(500);
-		assertThat(protocolLayer.getObjectReference().getName()).isEqualTo("objectName");
-		assertThat(protocolLayer.getObjectReference().getBucket()).isEqualTo("objectBucket");
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("Utf8TransformAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(equalIgnoringDates(postIngressDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postTransformUtf8DeltaFile(String did) {
@@ -176,42 +153,18 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postIngressDeltaFile(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("03.transformUtf8"), did),
 				"data." + DgsConstants.MUTATION.Transform,
-				DeltaFile.class);
+				DeltaFile.class).getDid();
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.TRANSFORM.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.readyForDispatch("SampleTransformAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 1));
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postTransformUtf8DeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postTransformUtf8DeltaFile(did), deltaFilesService.getDeltaFile(did)));
-		assertThat(deltaFile.getCreated()).isNotEqualTo(deltaFile.getModified());
-	}
-
-	@Test
-	void test04TransformFeed() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postTransformUtf8DeltaFile(did));
-
-		List<DeltaFile> transformFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("04.transformFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(transformFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = transformFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getProtocolStack().size()).isEqualTo(1);
-		ProtocolLayer protocolLayer = deltaFile.getProtocolStack().get(0);
-		assertThat(protocolLayer.getType()).isEqualTo("json-utf8");
-		assertThat(protocolLayer.getObjectReference().getOffset()).isZero();
-		assertThat(protocolLayer.getObjectReference().getSize()).isEqualTo(500);
-		assertThat(protocolLayer.getObjectReference().getName()).isEqualTo("utf8ObjectName");
-		assertThat(protocolLayer.getObjectReference().getBucket()).isEqualTo("utf8ObjectBucket");
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleTransformAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(equalIgnoringDates(postTransformUtf8DeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postTransformDeltaFile(String did) {
@@ -235,38 +188,18 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postTransformUtf8DeltaFile(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("05.transform"), did),
 				"data." + DgsConstants.MUTATION.Transform,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.LOAD.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.readyForDispatch("SampleLoadAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 2));
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postTransformDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postTransformDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-	}
-
-	@Test
-	void test06LoadFeed() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postTransformDeltaFile(did));
-
-		List<DeltaFile> transformFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("06.loadFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(transformFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = transformFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getProtocolStack().size()).isEqualTo(1);
-		assertThat(deltaFile.getProtocolStack().get(0).getType()).isEqualTo("json-utf8-sample");
-		Map<String, String> metadata = KeyValueConverter.convertKeyValues(deltaFile.getProtocolStack().get(0).getMetadata());
-		assertThat(metadata).containsEntry("sampleType", "sample-type").containsEntry("sampleVersion", "2.1");
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleLoadAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(equalIgnoringDates(postTransformDeltaFile(did), deltaFile));
 	}
 
 	SampleDomain sampleDomain(String did) {
@@ -306,38 +239,18 @@ class DeltaFiDgsApplicationTests {
 		deltaFilesService.addDeltaFile(postTransformDeltaFile(did));
 		sampleDomainsService.addSampleDomain(sampleDomain(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("08.load"), did),
 				"data." + DgsConstants.MUTATION.Load,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.ENRICH.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.readyForDispatch("SampleEnrichAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 3));
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postLoadDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postLoadDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-	}
-
-	@Test
-	void test09EnrichFeed() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
-		sampleDomainsService.addSampleDomain(sampleDomain(did));
-
-		List<DeltaFile> transformFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("09.enrichFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(transformFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = transformFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getDomains().getSampleDomain()).isNotNull();
-		assertThat(deltaFile.getDomains().getSampleDomain().getDid()).isEqualTo(did);
-		assertTrue(deltaFile.getDomains().getSampleDomain().getDomained());
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleEnrichAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(equalIgnoringDates(postLoadDeltaFile(did), deltaFile));
 	}
 
 	SampleEnrichment sampleEnrichment(String did) {
@@ -378,42 +291,18 @@ class DeltaFiDgsApplicationTests {
 		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
 		sampleDomainsService.addSampleDomain(sampleDomain(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("11.enrich"), did),
 				"data." + DgsConstants.MUTATION.Enrich,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.FORMAT.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.readyForDispatch("SampleFormatAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 4));
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postEnrichDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postEnrichDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-	}
-
-	@Test
-	void test12FormatFeed() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postEnrichDeltaFile(did));
-		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
-		sampleDomainsService.addSampleDomain(sampleDomain(did));
-
-		List<DeltaFile> formatFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("12.formatFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(formatFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = formatFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getDomains().getSampleDomain()).isNotNull();
-		assertThat(deltaFile.getDomains().getSampleDomain().getDid()).isEqualTo(did);
-		assertTrue(deltaFile.getDomains().getSampleDomain().getDomained());
-		assertThat(deltaFile.getEnrichment().getSampleEnrichment()).isNotNull();
-		assertThat(deltaFile.getEnrichment().getSampleEnrichment().getDid()).isEqualTo(did);
-		assertTrue(deltaFile.getEnrichment().getSampleEnrichment().getEnriched());
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleFormatAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(equalIgnoringDates(postEnrichDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postFormatDeltaFile(String did) {
@@ -429,7 +318,10 @@ class DeltaFiDgsApplicationTests {
 						.name("formattedObjectName")
 						.bucket("formattedBucketName")
 						.offset(0)
-						.size(1000).build()).build());
+						.size(1000)
+						.build())
+				.egressActions(Collections.singletonList("SampleEgressAction"))
+				.build());
 		return deltaFile;
 	}
 
@@ -440,42 +332,18 @@ class DeltaFiDgsApplicationTests {
 		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
 		sampleDomainsService.addSampleDomain(sampleDomain(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("13.format"), did),
 				"data." + DgsConstants.MUTATION.Format,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.VALIDATE.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(2);
-		assertTrue(deltaFile.readyForDispatch("AuthorityValidateAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertTrue(deltaFile.readyForDispatch("SampleValidateAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 5));
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postFormatDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postFormatDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-	}
-
-	@Test
-	void test14ValidateFeed() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postFormatDeltaFile(did));
-
-		List<DeltaFile> validateFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("14.validateFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(validateFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = validateFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getFormattedData().size()).isEqualTo(1);
-		assertThat(deltaFile.getFormattedData().get(0).getFormatAction()).isEqualTo("SampleFormatAction");
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference()).isNotNull();
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getBucket()).isEqualTo("formattedBucketName");
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getName()).isEqualTo("formattedObjectName");
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getSize()).isEqualTo(1000);
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getOffset()).isZero();
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Arrays.asList("AuthorityValidateAction", "SampleValidateAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(equalIgnoringDates(postFormatDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postValidateDeltaFile(String did) {
@@ -490,37 +358,16 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postFormatDeltaFile(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("15.validate"), did),
 				"data." + DgsConstants.MUTATION.Validate,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.VALIDATE.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.readyForDispatch("AuthorityValidateAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 6));
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postValidateDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-	}
-
-	@Test
-	void test16ValidateFeedAuthority() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
-
-		List<DeltaFile> validateFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("16.validateFeedAuthority"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(validateFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = validateFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getSourceInfo().getMetadata().size()).isEqualTo(1);
-		assertThat(deltaFile.getSourceInfo().getMetadata().get(0).getKey()).isEqualTo("AuthorizedBy");
-		assertThat(deltaFile.getSourceInfo().getMetadata().get(0).getValue()).isEqualTo("XYZ");
+		Mockito.verify(redisService, never()).enqueue(any(), any());
+		assertTrue(equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postErrorDeltaFile(String did) {
@@ -535,22 +382,15 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("17.error"), did),
 				"data." + DgsConstants.MUTATION.Error,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.ERROR.name());
-		assertTrue(deltaFile.queuedActions().isEmpty());
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 6));
-		assertThat(deltaFile.erroredActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.hasErroredAction("AuthorityValidateAction"));
-		Optional<Action> maybeAction = deltaFile.actionNamed("AuthorityValidateAction");
-		assertTrue(maybeAction.isPresent());
-		assertThat(maybeAction.get().getErrorMessage()).isEqualTo("Authority XYZ not recognized");
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postErrorDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postErrorDeltaFile(did), deltaFilesService.getDeltaFile(did)));
+		Mockito.verify(redisService, never()).enqueue(any(), any());
 	}
 
 	@Test
@@ -558,39 +398,17 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postErrorDeltaFile(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("18.retry"), did),
 				"data." + DgsConstants.MUTATION.Retry,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.VALIDATE.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.readyForDispatch("AuthorityValidateAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		assertThat(deltaFile.completedActions()).isEqualTo(completedActions.subList(0, 6));
-		assertTrue(deltaFile.erroredActions().isEmpty());
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postValidateDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-	}
-
-	@Test
-	void test19ValidateFeedAuthorityAgain() throws IOException {
-		// this is a duplicate of 14, leave it here for flow clarity
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
-
-		List<DeltaFile> validateFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("19.validateFeedAuthorityAgain"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(validateFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = validateFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getSourceInfo().getMetadata().size()).isEqualTo(1);
-		assertThat(deltaFile.getSourceInfo().getMetadata().get(0).getKey()).isEqualTo("AuthorizedBy");
-		assertThat(deltaFile.getSourceInfo().getMetadata().get(0).getValue()).isEqualTo("XYZ");
+		// it is not immediately added to the queue, the scheduled requeue task will pick it up
+		Mockito.verify(redisService, never()).enqueue(any(), any());
+		assertTrue(equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postValidateAuthorityDeltaFile(String did) {
@@ -606,80 +424,18 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("20.validateAuthority"), did),
 				"data." + DgsConstants.MUTATION.Validate,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.EGRESS.name());
-		assertThat(deltaFile.queuedActions().size()).isEqualTo(1);
-		assertTrue(deltaFile.readyForDispatch("SampleEgressAction", deltaFiProperties.getFeedTimeoutSeconds()));
-		// the actions completed in a different order than they were queued.  Sort the lists alphabetically so they match
-		List<String> expectedActions = new ArrayList<>(completedActions.subList(0, 7));
-		Collections.sort(expectedActions);
-		List<String> actualActions = new ArrayList<>(deltaFile.completedActions());
-		Collections.sort(actualActions);
-		assertThat(expectedActions).isEqualTo(actualActions);
-
-		assertTrue(equalIgnoringDates(postValidateAuthorityDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-	}
-
-	@Test
-	void test21EgressFeed() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
-
-		List<DeltaFile> egressFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("21.egressFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(egressFeed.size()).isEqualTo(1);
-
-		DeltaFile deltaFile = egressFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getFormattedData().size()).isEqualTo(1);
-		assertThat(deltaFile.getFormattedData().get(0).getFormatAction()).isEqualTo("SampleFormatAction");
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference()).isNotNull();
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getBucket()).isEqualTo("formattedBucketName");
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getName()).isEqualTo("formattedObjectName");
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getSize()).isEqualTo(1000);
-		assertThat(deltaFile.getFormattedData().get(0).getObjectReference().getOffset()).isZero();
-	}
-
-	@Test
-	void test21EgressFeedTimeout() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
-
-		List<DeltaFile> egressFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("21.egressFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(egressFeed.size()).isEqualTo(1);
-
-		egressFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("21.egressFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		// we've queried the feed within the last 30 seconds, so we should not get the DeltaFile again
-		assertTrue(egressFeed.isEmpty());
-
-		// get the latest version from the DB to avoid lock failure and artificially age the last feed dispatch
-		// so that we are reissued the DeltaFile
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		deltaFile.getActions().get(7).setModified(OffsetDateTime.now().minusSeconds(31));
-		deltaFilesService.addDeltaFile(deltaFile);
+		assertTrue(equalIgnoringDates(postValidateAuthorityDeltaFile(did), deltaFile));
 
-		egressFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("21.egressFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(egressFeed.size()).isEqualTo(1);
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleEgressAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(equalIgnoringDates(postValidateAuthorityDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postEgressDeltaFile(String did) {
@@ -694,22 +450,15 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
 
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("22.egress"), did),
 				"data." + DgsConstants.MUTATION.Egress,
 				DeltaFile.class);
 
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE.name());
-		assertTrue(deltaFile.queuedActions().isEmpty());
-		// the actions completed in a different order than they were queued.  Sort the lists alphabetically so they match
-		List<String> expectedActions = new ArrayList<>(completedActions.subList(0, 8));
-		Collections.sort(expectedActions);
-		List<String> actualActions = new ArrayList<>(deltaFile.completedActions());
-		Collections.sort(actualActions);
-		assertThat(expectedActions).isEqualTo(actualActions);
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(equalIgnoringDates(postEgressDeltaFile(did), deltaFile));
 
-		assertTrue(equalIgnoringDates(postEgressDeltaFile(did), deltaFilesService.getDeltaFile(did)));
+		Mockito.verify(redisService, never()).enqueue(any(), any());
 	}
 
 	@Test
@@ -719,55 +468,26 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
 
-		assertNotNull(deltaFilesService.getDeltaFile(did));
-
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("22.egress"), did),
 				"data." + DgsConstants.MUTATION.Egress,
 				DeltaFile.class);
 
 		assertNull(deltaFilesService.getDeltaFile(did));
-	}
-
-	@Test
-	void test23DeleteFeed() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postEgressDeltaFile(did));
-
-		List<DeltaFile> deleteFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("23.deleteFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertTrue(deleteFeed.isEmpty());
-
-		DeltaFile deltaFileToRemove = deltaFilesService.getDeltaFile(did);
-		deltaFileToRemove.markForDelete(DeleteConstants.DELETE_ACTION, "becauseISaidSo");
-		deltaFilesService.addDeltaFile(deltaFileToRemove);
-
-		deleteFeed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("23.deleteFeed"),
-				"data." + DgsConstants.QUERY.ActionFeed,
-				new TypeRef<>() {});
-
-		assertThat(deleteFeed.size()).isEqualTo(1);
-		DeltaFile deltaFile = deleteFeed.get(0);
-		assertThat(deltaFile.getDid()).isEqualTo(did);
+		Mockito.verify(redisService, never()).enqueue(any(), any());
 	}
 
 	@Test
 	void test24Delete() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postEgressDeltaFile(did));
-		assertTrue(deltaFilesService.getDeltaFile(did) != null);
 
 		List<String> dids = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("24.delete"), did),
 				"data." + DgsConstants.MUTATION.Delete,
 				new TypeRef<>() {});
 
-		assertThat(dids.size()).isEqualTo(2);
-		assertTrue(dids.contains(did));
-		assertTrue(deltaFilesService.getDeltaFile(did) == null);
+		assertEquals(Arrays.asList(did, "nonsenseDid"), dids);
+		assertNull(deltaFilesService.getDeltaFile(did));
 	}
 }

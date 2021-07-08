@@ -3,7 +3,7 @@ package org.deltafi.dgs.services;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.configuration.EgressFlowConfiguration;
+import org.deltafi.dgs.configuration.EgressConfiguration;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.DeltaFileConverter;
 import org.deltafi.dgs.exceptions.UnexpectedActionException;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class DeltaFilesService {
@@ -24,14 +24,14 @@ public class DeltaFilesService {
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
+    final RedisService redisService;
 
-    final Map<String, FeedStats> feedStats = new ConcurrentHashMap<>();
-
-    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo) {
+    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, RedisService redisService) {
         this.configService = configService;
         this.properties = properties;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
+        this.redisService = redisService;
     }
 
     public void addDeltaFile(DeltaFile deltaFile) {
@@ -63,46 +63,13 @@ public class DeltaFilesService {
         return matches.isEmpty() ? null : matches.get(0);
     }
 
-    public List<FeedStats> getFeedStats(String actionName) {
-        if (Objects.isNull(actionName)) {
-            return new ArrayList<>(feedStats.values());
-        } else {
-            return Collections.singletonList(feedStats.get(actionName));
-        }
-    }
-
     public DeltaFile addDeltaFile(SourceInfoInput sourceInfoInput, ObjectReferenceInput objectReferenceInput) {
         String flow = sourceInfoInput.getFlow();
         IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
         DeltaFile deltaFile = DeltaFileConverter.convert(sourceInfoInput, objectReferenceInput, flowConfiguration.getType());
-        stateMachine.advance(deltaFile);
-        return deltaFileRepo.save(deltaFile);
-    }
 
-    public void addFeedStats(String actionName) {
-        FeedStats actionFeedStats = feedStats.get(actionName);
-        if (Objects.isNull(actionFeedStats)) {
-            actionFeedStats = new FeedStats(actionName);
-            feedStats.put(actionName, actionFeedStats);
-        }
-        actionFeedStats.addQuery();
-    }
-
-    public List<DeltaFile> actionFeed(String action, Integer limit, Boolean dryRun) {
-        if (!dryRun) {
-            addFeedStats(action);
-        }
-        List<DeltaFile> deltaFiles = deltaFileRepo.findAndDispatchForAction(action, limit, dryRun);
-
-        if (action.endsWith("TransformAction") || action.endsWith("LoadAction")) {
-            deltaFiles.forEach(DeltaFile::trimProtocolLayers);
-        } else if (action.endsWith("EgressAction")) {
-            EgressFlowConfiguration egressFlowConfig = configService.getEgressFlowForAction(action);
-            deltaFiles.forEach(d -> d.trimFormats(egressFlowConfig.getFormatAction()));
-        }
-
-        return deltaFiles;
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -117,9 +84,7 @@ public class DeltaFilesService {
         }
         deltaFile.completeAction(fromTransformAction);
 
-        stateMachine.advance(deltaFile);
-
-        return save(deltaFile);
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -134,9 +99,7 @@ public class DeltaFilesService {
 
         deltaFile.getDomains().setDomainTypes(domains);
 
-        stateMachine.advance(deltaFile);
-
-        return save(deltaFile);
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -151,9 +114,7 @@ public class DeltaFilesService {
 
         deltaFile.getEnrichment().setEnrichmentTypes(enrichments);
 
-        stateMachine.advance(deltaFile);
-
-        return save(deltaFile);
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -171,12 +132,14 @@ public class DeltaFilesService {
                 .filename(formatResult.getFilename())
                 .metadata(DeltaFileConverter.convertKeyValueInputs(formatResult.getMetadata()))
                 .objectReference(DeltaFileConverter.convert(formatResult.getObjectReference()))
+                .egressActions(properties.getEgress().getEgressFlows().keySet().stream()
+                        .filter(k -> properties.getEgress().getEgressFlows().get(k).getFormatAction().equals(fromFormatAction))
+                        .map(EgressConfiguration::egressActionName)
+                        .collect(Collectors.toList()))
                 .build();
         deltaFile.getFormattedData().add(formattedData);
 
-        stateMachine.advance(deltaFile);
-
-        return save(deltaFile);
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -189,14 +152,7 @@ public class DeltaFilesService {
 
         deltaFile.completeAction(fromAction);
 
-        stateMachine.advance(deltaFile);
-
-        if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE.toString())) {
-            deltaFileRepo.deleteById(deltaFile.getDid());
-            return deltaFile;
-        }
-
-        return save(deltaFile);
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -209,9 +165,7 @@ public class DeltaFilesService {
 
         deltaFile.errorAction(fromAction, message);
 
-        stateMachine.advance(deltaFile);
-
-        return save(deltaFile);
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -221,20 +175,40 @@ public class DeltaFilesService {
         deltaFile.retryErrors();
         deltaFile.setStage(DeltaFileStage.INGRESS.name());
 
-        stateMachine.advance(deltaFile);
-
-        return save(deltaFile);
+        return advanceAndSave(deltaFile);
     }
 
-    public DeltaFile save(DeltaFile deltaFile) {
-        return deltaFileRepo.save(deltaFile);
+    public DeltaFile advanceAndSave(DeltaFile deltaFile) {
+        List<String> enqueueActions = stateMachine.advance(deltaFile);
+        if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE.toString())) {
+            deltaFileRepo.deleteById(deltaFile.getDid());
+        } else {
+            deltaFileRepo.save(deltaFile);
+            if (!enqueueActions.isEmpty()) {
+                redisService.enqueue(enqueueActions, deltaFile);
+            }
+        }
+        return deltaFile;
     }
 
+    @MongoRetryable
     public void markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy) {
         deltaFileRepo.markForDelete(createdBefore, completedBefore, flow, policy);
     }
 
+    @MongoRetryable
     public void delete(List<String> dids) {
         deltaFileRepo.deleteByDidIn(dids);
+    }
+
+    @MongoRetryable
+    public void requeue() {
+        OffsetDateTime modified = OffsetDateTime.now();
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified);
+        requeuedDeltaFiles.forEach(deltaFile -> redisService.enqueue(requeuedActions(deltaFile, modified), deltaFile));
+    }
+
+    private List<String> requeuedActions(DeltaFile deltaFile, OffsetDateTime modified) {
+        return deltaFile.getActions().stream().filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli()).map(Action::getName).collect(Collectors.toList());
     }
 }

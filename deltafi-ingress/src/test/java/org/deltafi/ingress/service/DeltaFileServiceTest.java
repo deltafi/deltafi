@@ -67,7 +67,7 @@ class DeltaFileServiceTest {
         Mockito.when(response.hasErrors()).thenReturn(false);
         Mockito.when(graphQLClientService.executeGraphQLQuery(Mockito.any(GraphQLQueryRequest.class), Mockito.any())).thenReturn(response);
         Mockito.when(response.extractValueAsObject(Mockito.eq("ingress"), Mockito.any(TypeRef.class))).thenReturn(deltaFile);
-        Mockito.when(zipkinService.createChildSpan(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(DeltafiSpan.newSpanBuilder().build());
+        Mockito.when(zipkinService.createChildSpan(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(DeltafiSpan.newSpanBuilder().build());
         deltaFileService.processNotificationRecords(notificationRecords);
 
         // All required fields were set, graphQL request should have fired

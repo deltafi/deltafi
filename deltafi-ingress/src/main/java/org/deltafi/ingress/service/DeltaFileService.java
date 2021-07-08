@@ -69,7 +69,8 @@ public class DeltaFileService {
             .key()
             .value()
             .parent()
-            .parent();
+            .parent()
+            .created();
 
     public DeltaFileService(GraphQLClientService graphQLClientService, MinioService minioService, ZipkinService zipkinService, ObjectMapper objectMapper) {
         this.graphQLClientService = graphQLClientService;
@@ -133,7 +134,7 @@ public class DeltaFileService {
     }
 
     private void sendTrace(IngressInputHolder ingressInputHolder, DeltaFile deltaFile) {
-        DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), INGRESS_ACTION, ingressInputHolder.getSourceInfoInput().getFilename(), ingressInputHolder.getSourceInfoInput().getFlow());
+        DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), INGRESS_ACTION, ingressInputHolder.getSourceInfoInput().getFilename(), ingressInputHolder.getSourceInfoInput().getFlow(), deltaFile.getCreated());
         zipkinService.markSpanComplete(span);
     }
 

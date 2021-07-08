@@ -6,7 +6,7 @@ public class ConfigSource {
         DEFAULT_FROM_PROPERTY, // merge configs from property file, user property version only if the config doesn't already exist
         OVERWRITE_FROM_PROPERTY, // merge configs from property, properties will overwrite configs that already exist
         RELOAD_FROM_PROPERTY,  // dump all existing configs and load settings from the properties, useful for testing
-        EXTERNAL; // load configs from outside sources, nothing from properties will be loaded
+        EXTERNAL // load configs from outside sources, nothing from properties will be loaded
     }
 
     private Source actions = Source.EXTERNAL;

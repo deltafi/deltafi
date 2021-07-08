@@ -34,6 +34,10 @@ class StateMachineTest {
     @Mock
     DeltaFiConfigService deltaFiConfigService;
 
+    @Mock
+    @SuppressWarnings("unused")
+    RedisService redisService;
+
     @Test
     void testGetFormatActionsNotIncluded() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "notIncludedFlow");
@@ -128,7 +132,7 @@ class StateMachineTest {
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action completedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
-        Action dispatchedAction = Action.newBuilder().state(ActionState.DISPATCHED).name("ValidateAction2").build();
+        Action dispatchedAction = Action.newBuilder().state(ActionState.QUEUED).name("ValidateAction2").build();
 
         deltaFile.setActions(Arrays.asList(formatAction, completedAction, dispatchedAction));
 
@@ -143,7 +147,7 @@ class StateMachineTest {
 
         assertEquals(DeltaFileStage.VALIDATE.name(), deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, completedAction.getState());
-        assertEquals(ActionState.DISPATCHED, dispatchedAction.getState());
+        assertEquals(ActionState.QUEUED, dispatchedAction.getState());
     }
 
     @Test
@@ -209,7 +213,7 @@ class StateMachineTest {
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action validateAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
         Action flowEgressAction = Action.newBuilder().state(ActionState.COMPLETE).name("FlowEgressAction").build();
-        Action flow2EgressAction = Action.newBuilder().state(ActionState.DISPATCHED).name("Flow2EgressAction").build();
+        Action flow2EgressAction = Action.newBuilder().state(ActionState.QUEUED).name("Flow2EgressAction").build();
 
         deltaFile.setActions(new ArrayList<>(Arrays.asList(formatAction, validateAction, flowEgressAction, flow2EgressAction)));
 
@@ -230,7 +234,7 @@ class StateMachineTest {
 
         assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("FlowEgressAction").orElseThrow().getState());
-        assertEquals(ActionState.DISPATCHED, deltaFile.actionNamed("Flow2EgressAction").orElseThrow().getState());
+        assertEquals(ActionState.QUEUED, deltaFile.actionNamed("Flow2EgressAction").orElseThrow().getState());
     }
 
     @Test

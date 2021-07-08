@@ -1,15 +1,15 @@
 package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.action.Result;
-import org.deltafi.action.format.FormatAction;
-import org.deltafi.action.format.FormatResult;
-import org.deltafi.config.DeltafiConfig;
+import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.format.FormatAction;
+import org.deltafi.actionkit.action.format.FormatResult;
+import org.deltafi.actionkit.config.DeltafiConfig;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
-import org.deltafi.service.ContentService;
-import org.deltafi.types.DeltaFile;
+import org.deltafi.actionkit.service.ContentService;
+import org.deltafi.actionkit.types.DeltaFile;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -33,9 +33,7 @@ public class RoteFormatAction extends FormatAction {
 
         FormatResult result = new FormatResult(this, deltafile.getDid(), deltafile.getSourceInfo().getFilename());
 
-        deltafile.getSourceInfo().getMetadata().forEach(kv -> result.addMetadata("sourceInfo." + kv.getKey(),kv.getValue()));
-        // Coalesce metadata from every protocol stack
-        deltafile.getProtocolStack().forEach( ps -> result.addMetadata(ps.getMetadata()));
+        deltafile.getSourceInfo().getMetadata().forEach(kv -> result.addMetadata("sourceInfo." + kv.getKey(), kv.getValue()));
         staticMetadata.forEach(result::addMetadata);
 
         result.setObjectReference(deltafile.getProtocolStack().get(0).getObjectReference());

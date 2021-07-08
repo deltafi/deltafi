@@ -25,7 +25,13 @@ public class StateMachine {
         this.zipkinService = zipkinService;
     }
 
-    public void advance(DeltaFile deltaFile) {
+    /** Advance the state of the given DeltaFile
+     *
+     * @param deltaFile The deltaFile to advance
+     * @return a list of actions that should receive this DeltaFile next
+     */
+    public List<String> advance(DeltaFile deltaFile) {
+        List<String> enqueueActions = new ArrayList<>();
         switch (DeltaFileStage.valueOf(deltaFile.getStage())) {
             case INGRESS:
                 deltaFile.setStage(DeltaFileStage.TRANSFORM.name());
@@ -42,18 +48,21 @@ public class StateMachine {
                     if (!deltaFile.hasTerminalAction(loadAction)) {
                         if (loadAction != null) {
                             deltaFile.queueAction(loadAction);
+                            enqueueActions.add(loadAction);
                         }
                         break;
                     }
                 } else {
                     deltaFile.queueAction(nextTransformAction);
+                    enqueueActions.add(nextTransformAction);
                     break;
                 }
             case LOAD:
                 deltaFile.setStage(DeltaFileStage.ENRICH.name());
             case ENRICH:
                 List<String> enrichActions = getEnrichActions(deltaFile);
-                deltaFile.queueActionsIfNew(enrichActions);
+                List<String> newEnrichActions = deltaFile.queueActionsIfNew(enrichActions);
+                enqueueActions.addAll(newEnrichActions);
                 if (enrichActions.isEmpty()) {
                     deltaFile.setStage(DeltaFileStage.FORMAT.name());
                 } else {
@@ -61,7 +70,8 @@ public class StateMachine {
                 }
             case FORMAT:
                 List<String> formatActions = getFormatActions(deltaFile);
-                deltaFile.queueActionsIfNew(formatActions);
+                List<String> newFormatActions = deltaFile.queueActionsIfNew(formatActions);
+                enqueueActions.addAll(newFormatActions);
                 if (formatActions.isEmpty()) {
                     deltaFile.setStage(DeltaFileStage.VALIDATE.name());
                 } else {
@@ -69,7 +79,8 @@ public class StateMachine {
                 }
             case VALIDATE:
                 List<String> validateActions = getValidateActions(deltaFile);
-                deltaFile.queueActionsIfNew(validateActions);
+                List<String> newValidateActions = deltaFile.queueActionsIfNew(validateActions);
+                enqueueActions.addAll(newValidateActions);
                 if (validateActions.isEmpty()) {
                     deltaFile.setStage(DeltaFileStage.EGRESS.name());
                 } else {
@@ -77,7 +88,8 @@ public class StateMachine {
                 }
             case EGRESS:
                 List<String> egressActions = getEgressActions(deltaFile);
-                deltaFile.queueActionsIfNew(egressActions);
+                List<String> newEgressActions = deltaFile.queueActionsIfNew(egressActions);
+                enqueueActions.addAll(newEgressActions);
                 if (egressActions.isEmpty() && !deltaFile.hasErroredAction()) {
                     deltaFile.setStage(DeltaFileStage.COMPLETE.name());
                 } else {
@@ -91,6 +103,8 @@ public class StateMachine {
         } else if (DeltaFileStage.COMPLETE.name().equals(deltaFile.getStage())) {
             sendTrace(deltaFile);
         }
+
+        return enqueueActions;
     }
 
     private IngressFlowConfiguration flowConfiguration(DeltaFile deltaFile) {

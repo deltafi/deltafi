@@ -8,13 +8,11 @@ import java.util.List;
 public interface DeltaFileRepoCustom {
 
     /**
-     * Find the deltaFiles ready to be dispatched, update the action state and
-     * action history.
+     * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.
      *
-     * @param actionName - action to search for
-     * @return - list of the DeltaFiles with the updated values
+     * @return - list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> findAndDispatchForAction(String actionName, Integer limit, Boolean dryRun);
+    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime);
 
     /**
      * Find DeltaFiles that match the given criteria and move them to the Delete stage.

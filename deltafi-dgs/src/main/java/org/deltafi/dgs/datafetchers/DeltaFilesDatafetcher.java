@@ -10,7 +10,6 @@ import org.deltafi.dgs.generated.types.ObjectReferenceInput;
 import org.deltafi.dgs.generated.types.ProtocolLayerInput;
 import org.deltafi.dgs.generated.types.SourceInfoInput;
 import org.deltafi.dgs.services.DeltaFilesService;
-import org.deltafi.dgs.services.FeedStats;
 
 import java.util.List;
 import java.util.Objects;
@@ -59,18 +58,6 @@ public class DeltaFilesDatafetcher {
   @SuppressWarnings("unused")
   public DeltaFile lastWithFilename(String filename) {
     return deltaFilesService.getLastWithFilename(filename);
-  }
-
-  @DgsQuery
-  @SuppressWarnings("unused")
-  public List<FeedStats> feedStats(String action) {
-    return deltaFilesService.getFeedStats(action);
-  }
-
-  @DgsQuery
-  @SuppressWarnings("unused")
-  public List<DeltaFile> actionFeed(@InputArgument String action, @InputArgument Integer limit, @InputArgument Boolean dryRun) {
-    return deltaFilesService.actionFeed(action, Objects.requireNonNullElse(limit, deltaFiProperties.getDefaultFeedLimit()), Objects.requireNonNullElse(dryRun, false));
   }
 
   @DgsMutation
