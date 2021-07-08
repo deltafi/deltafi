@@ -126,11 +126,11 @@ public class DomainGatewayService {
         for (String domain : domainProjections.keySet()) {
             if (deltaFile.getDomains().getDomainTypes().contains(domain)) {
                 if (Objects.isNull(root)) {
-                    root = new DeltaFileProjectionRoot().did();
+                    root = new DeltaFileProjectionRoot();
                 }
 
                 if (!root.getFields().containsKey("domains")) {
-                    DeltaFile_DomainsProjection projection = new DeltaFile_DomainsProjection(null, null).did();
+                    DeltaFile_DomainsProjection projection = new DeltaFile_DomainsProjection(null, null);
                     root.getFields().put("domains", projection);
                 }
 
@@ -143,11 +143,11 @@ public class DomainGatewayService {
         for (String enrichment : enrichmentProjections.keySet()) {
             if (deltaFile.getEnrichment().getEnrichmentTypes().contains(enrichment)) {
                 if (Objects.isNull(root)) {
-                    root = new DeltaFileProjectionRoot().did();
+                    root = new DeltaFileProjectionRoot();
                 }
 
                 if (!root.getFields().containsKey("enrichment")) {
-                    DeltaFile_EnrichmentProjection projection = new DeltaFile_EnrichmentProjection(null, null).did();
+                    DeltaFile_EnrichmentProjection projection = new DeltaFile_EnrichmentProjection(null, null);
                     root.getFields().put("enrichment", projection);
                 }
 
