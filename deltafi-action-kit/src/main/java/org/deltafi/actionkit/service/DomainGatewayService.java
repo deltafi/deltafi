@@ -130,7 +130,7 @@ public class DomainGatewayService {
                 }
 
                 if (!root.getFields().containsKey("domains")) {
-                    DeltaFile_DomainsProjection projection = new DeltaFile_DomainsProjection(null, null);
+                    DeltaFile_DomainsProjection projection = new DeltaFile_DomainsProjection(null, null).did();
                     root.getFields().put("domains", projection);
                 }
 
@@ -147,7 +147,7 @@ public class DomainGatewayService {
                 }
 
                 if (!root.getFields().containsKey("enrichment")) {
-                    DeltaFile_EnrichmentProjection projection = new DeltaFile_EnrichmentProjection(null, null);
+                    DeltaFile_EnrichmentProjection projection = new DeltaFile_EnrichmentProjection(null, null).did();
                     root.getFields().put("enrichment", projection);
                 }
 
