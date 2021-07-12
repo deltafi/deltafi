@@ -16,7 +16,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
 import java.util.*;
@@ -117,12 +116,13 @@ class DeltaFiDgsApplicationTests {
 
 	@Test
 	void test01Ingress() throws IOException {
-		String did = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQL("01.ingress"),
+		String did = UUID.randomUUID().toString();
+		DeltaFile deltaFileFromDgs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("01.ingress"), did),
 				"data." + DgsConstants.MUTATION.Ingress,
-				DeltaFile.class).getDid();
+				DeltaFile.class);
 
-		assertThat(UUID.fromString(did)).hasToString(did);
+		assertEquals(did, deltaFileFromDgs.getDid());
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(equalIgnoringDates(postIngressDeltaFile(did), deltaFile));

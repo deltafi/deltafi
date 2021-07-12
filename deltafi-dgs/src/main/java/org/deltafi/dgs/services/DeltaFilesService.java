@@ -10,6 +10,8 @@ import org.deltafi.dgs.exceptions.UnexpectedActionException;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.retry.MongoRetryable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class DeltaFilesService {
+
+    private static final Logger log = LoggerFactory.getLogger(DeltaFilesService.class);
 
     final DeltaFiConfigService configService;
     final DeltaFiProperties properties;
@@ -63,11 +67,11 @@ public class DeltaFilesService {
         return matches.isEmpty() ? null : matches.get(0);
     }
 
-    public DeltaFile addDeltaFile(SourceInfoInput sourceInfoInput, ObjectReferenceInput objectReferenceInput) {
-        String flow = sourceInfoInput.getFlow();
+    public DeltaFile addDeltaFile(IngressInput ingressInput) {
+        String flow = ingressInput.getSourceInfo().getFlow();
         IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
-        DeltaFile deltaFile = DeltaFileConverter.convert(sourceInfoInput, objectReferenceInput, flowConfiguration.getType());
+        DeltaFile deltaFile = DeltaFileConverter.convert(ingressInput.getDid(), ingressInput.getSourceInfo(), ingressInput.getObjectReference(), ingressInput.getCreated(), flowConfiguration.getType());
 
         return advanceAndSave(deltaFile);
     }
@@ -210,5 +214,16 @@ public class DeltaFilesService {
 
     private List<String> requeuedActions(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream().filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli()).map(Action::getName).collect(Collectors.toList());
+    }
+
+    public void getIngressResponses() {
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                IngressInput ingressInput = redisService.ingressFeed();
+                addDeltaFile(ingressInput);
+            }
+        } catch (Throwable e) {
+            log.error("Error receiving ingress: " + e.getMessage());
+        }
     }
 }

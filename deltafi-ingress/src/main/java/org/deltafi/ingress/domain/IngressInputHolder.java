@@ -1,49 +1,50 @@
 package org.deltafi.ingress.domain;
 
 import io.minio.messages.Event;
+import org.deltafi.dgs.generated.types.IngressInput;
 import org.deltafi.dgs.generated.types.ObjectReferenceInput;
 import org.deltafi.dgs.generated.types.SourceInfoInput;
 
+import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 public class IngressInputHolder {
 
     Event event;
-    SourceInfoInput sourceInfoInput;
-    ObjectReferenceInput objectReferenceInput;
+    IngressInput ingressInput;
 
+    @SuppressWarnings("CdiInjectionPointsInspection")
     public IngressInputHolder(Event event) {
         this.event = event;
     }
 
     public IngressInputHolder(Event event, SourceInfoInput sourceInfoInput, ObjectReferenceInput objectReferenceInput) {
         this.event = event;
-        this.sourceInfoInput = sourceInfoInput;
-        this.objectReferenceInput = objectReferenceInput;
+        this.ingressInput = IngressInput.newBuilder()
+                .did(UUID.randomUUID().toString())
+                .sourceInfo(sourceInfoInput)
+                .objectReference(objectReferenceInput)
+                .created(Objects.nonNull(event.eventTime()) ? event.eventTime().toOffsetDateTime() : OffsetDateTime.now())
+                .build();
     }
 
     public Event getEvent() {
         return event;
     }
 
+    @SuppressWarnings("unused")
     public void setEvent(Event event) {
         this.event = event;
     }
 
-    public SourceInfoInput getSourceInfoInput() {
-        return sourceInfoInput;
+    public IngressInput getIngressInput() {
+        return ingressInput;
     }
 
-    public void setSourceInfoInput(SourceInfoInput sourceInfoInput) {
-        this.sourceInfoInput = sourceInfoInput;
-    }
-
-    public ObjectReferenceInput getObjectReferenceInput() {
-        return objectReferenceInput;
-    }
-
-    public void setObjectReferenceInput(ObjectReferenceInput objectReferenceInput) {
-        this.objectReferenceInput = objectReferenceInput;
+    @SuppressWarnings("unused")
+    public void setIngressInput(IngressInput ingressInput) {
+        this.ingressInput = ingressInput;
     }
 
     @Override
@@ -51,11 +52,11 @@ public class IngressInputHolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IngressInputHolder ingressInputHolder = (IngressInputHolder) o;
-        return Objects.equals(event, ingressInputHolder.event) && Objects.equals(sourceInfoInput, ingressInputHolder.sourceInfoInput) && Objects.equals(objectReferenceInput, ingressInputHolder.objectReferenceInput);
+        return Objects.equals(event, ingressInputHolder.event) && Objects.equals(ingressInput, ingressInputHolder.ingressInput);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(event, sourceInfoInput, objectReferenceInput);
+        return Objects.hash(event, ingressInput);
     }
 }

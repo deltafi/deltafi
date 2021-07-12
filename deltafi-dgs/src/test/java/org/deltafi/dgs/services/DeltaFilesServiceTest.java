@@ -13,8 +13,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,12 +60,15 @@ class DeltaFilesServiceTest {
     @Test
     void setsAndGets() {
         Mockito.when(deltaFileRepo.save(Mockito.any(DeltaFile.class))).thenAnswer((i) -> i.getArguments()[0]);
+        String did = UUID.randomUUID().toString();
         SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().flow(flow).build();
         ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput();
-        DeltaFile deltaFile = deltaFilesService.addDeltaFile(sourceInfoInput, objectReferenceInput);
+        IngressInput ingressInput = new IngressInput(did, sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
+        DeltaFile deltaFile = deltaFilesService.addDeltaFile(ingressInput);
 
         assertNotNull(deltaFile);
-        assertEquals(flow, sourceInfoInput.getFlow());
+        assertEquals(flow, deltaFile.getSourceInfo().getFlow());
+        assertEquals(did, deltaFile.getDid());
         assertNotNull(deltaFile.getProtocolStack().get(0));
     }
 
@@ -71,7 +76,8 @@ class DeltaFilesServiceTest {
     void setThrowsOnMissingFlow() {
         SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().flow("nonsense").build();
         ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput();
-        assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.addDeltaFile(sourceInfoInput, objectReferenceInput));
+        IngressInput ingressInput = new IngressInput("did", sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
+        assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.addDeltaFile(ingressInput));
     }
 
     @Test

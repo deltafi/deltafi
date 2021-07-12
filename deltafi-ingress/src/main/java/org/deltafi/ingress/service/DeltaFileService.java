@@ -3,11 +3,6 @@ package org.deltafi.ingress.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.TypeRef;
-import com.netflix.graphql.dgs.client.ErrorType;
-import com.netflix.graphql.dgs.client.GraphQLClientException;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.minio.messages.Event;
 import io.minio.messages.NotificationRecords;
 import io.quarkiverse.loggingjson.providers.KeyValueStructuredArgument;
@@ -17,23 +12,17 @@ import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
-import org.deltafi.dgs.generated.client.DeltaFileProjectionRoot;
-import org.deltafi.dgs.generated.client.IngressGraphQLQuery;
-import org.deltafi.dgs.generated.types.DeltaFile;
-import org.deltafi.dgs.generated.types.KeyValueInput;
-import org.deltafi.dgs.generated.types.ObjectReferenceInput;
-import org.deltafi.dgs.generated.types.SourceInfoInput;
+import org.deltafi.dgs.generated.types.*;
 import org.deltafi.ingress.domain.IngressInputHolder;
-import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 
 @ApplicationScoped
@@ -41,7 +30,6 @@ public class DeltaFileService {
 
     private static final Logger log = LoggerFactory.getLogger(DeltaFileService.class);
 
-    private static final List<ErrorType> RECOVERABLE_ERRORS = Arrays.asList(ErrorType.PERMISSION_DENIED, ErrorType.UNAUTHENTICATED, ErrorType.FAILED_PRECONDITION, ErrorType.UNAVAILABLE);
     private static final String FILENAME = "filename";
     private static final String FLOW = "flow";
     public static final String METRIC_KEY = "metric";
@@ -52,28 +40,18 @@ public class DeltaFileService {
     private static final String BYTES_DROPPED = "bytes_dropped";
 
     static final String NIFI_ATTRIBUTES_KEY = "X-Amz-Meta-Attributes";
-    static final TypeRef<DeltaFile> DELTAFI_TYPE = new TypeRef<>() {};
     public static final String INGRESS_ACTION = "IngressAction";
 
-    final GraphQLClientService graphQLClientService;
+    final RedisService redisService;
     final MinioService minioService;
     final ZipkinService zipkinService;
     final ObjectMapper objectMapper;
 
     private static final TypeReference<Map<String, String>> KEY_VALUE_LIST_TYPE = new TypeReference<>(){};
-    private static final DeltaFileProjectionRoot deltaFileProjectionRoot = new DeltaFileProjectionRoot()
-            .did()
-            .sourceInfo()
-            .flow()
-            .metadata()
-            .key()
-            .value()
-            .parent()
-            .parent()
-            .created();
 
-    public DeltaFileService(GraphQLClientService graphQLClientService, MinioService minioService, ZipkinService zipkinService, ObjectMapper objectMapper) {
-        this.graphQLClientService = graphQLClientService;
+    @SuppressWarnings("CdiInjectionPointsInspection")
+    public DeltaFileService(RedisService redisService, MinioService minioService, ZipkinService zipkinService, ObjectMapper objectMapper) {
+        this.redisService = redisService;
         this.minioService = minioService;
         this.zipkinService = zipkinService;
         this.objectMapper = objectMapper;
@@ -86,11 +64,11 @@ public class DeltaFileService {
 
         log.debug("Received {} events", notificationRecords.events().size());
 
-        notificationRecords.events().stream()
-                .map(this::toIngressInputHolder)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(this::ingressDeltaFile);
+        for(Event event : notificationRecords.events()) {
+            OffsetDateTime now = OffsetDateTime.now();
+            Optional<IngressInputHolder> ingressInputHolder = toIngressInputHolder(event);
+            ingressInputHolder.ifPresent(inputHolder -> ingressDeltaFile(inputHolder, now));
+        }
     }
 
     /**
@@ -113,37 +91,20 @@ public class DeltaFileService {
         }
     }
 
-    private void ingressDeltaFile(IngressInputHolder ingressInputHolder) {
+    private void ingressDeltaFile(IngressInputHolder ingressInputHolder, OffsetDateTime startTime) {
         try {
-            IngressGraphQLQuery ingressMutation = buildIngressGraphQLQuery(ingressInputHolder);
-            GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(ingressMutation, deltaFileProjectionRoot);
-            GraphQLResponse response = executeQuery(graphQLQueryRequest);
-
-            if (response.hasErrors()) {
-                handleDgsResponseErrors(ingressInputHolder, response);
-            } else {
-                DeltaFile deltaFile = response.extractValueAsObject(ingressMutation.getOperationName(), DELTAFI_TYPE);
-                sendTrace(ingressInputHolder, deltaFile);
-                log.debug("Ingress created the following deltafile: {}", deltaFile);
-                logInMetrics(ingressInputHolder, deltaFile.getDid());
-            }
-        } catch (GraphQLClientException exception) {
+            redisService.ingress(ingressInputHolder.getIngressInput());
+            sendTrace(ingressInputHolder, startTime);
+            logInMetrics(ingressInputHolder);
+        } catch (Throwable exception) {
             log.error("Ingress failed for event: {}", ingressInputHolder.getEvent(), exception);
             handleUnrecoverableError(ingressInputHolder);
         }
     }
 
-    private void sendTrace(IngressInputHolder ingressInputHolder, DeltaFile deltaFile) {
-        DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), INGRESS_ACTION, ingressInputHolder.getSourceInfoInput().getFilename(), ingressInputHolder.getSourceInfoInput().getFlow(), deltaFile.getCreated());
+    private void sendTrace(IngressInputHolder ingressInputHolder, OffsetDateTime startTime) {
+        DeltafiSpan span = zipkinService.createChildSpan(ingressInputHolder.getIngressInput().getDid(), INGRESS_ACTION, ingressInputHolder.getIngressInput().getSourceInfo().getFilename(), ingressInputHolder.getIngressInput().getSourceInfo().getFlow(), startTime);
         zipkinService.markSpanComplete(span);
-    }
-
-    private GraphQLResponse executeQuery(GraphQLQueryRequest query) {
-        return graphQLClientService.executeGraphQLQuery(query, emptyMap());
-    }
-
-    private IngressGraphQLQuery buildIngressGraphQLQuery(IngressInputHolder ingressInputHolder) {
-        return new IngressGraphQLQuery.Builder().sourceInfo(ingressInputHolder.getSourceInfoInput()).objectReference(ingressInputHolder.getObjectReferenceInput()).build();
     }
 
     SourceInfoInput buildSourceInfoInput(Event event) {
@@ -161,16 +122,6 @@ public class DeltaFileService {
     ObjectReferenceInput buildObjectReferenceInput(Event event) {
         return new ObjectReferenceInput.Builder().bucket(event.bucketName())
                 .name(event.objectName()).offset(0).size((int) event.objectSize()).build();
-    }
-
-    void handleDgsResponseErrors(IngressInputHolder ingressInputHolder, GraphQLResponse response) {
-        if (response.getErrors().stream().map(error ->  Objects.nonNull(error.getExtensions()) ?
-                error.getExtensions().getErrorType() : ErrorType.UNKNOWN).allMatch(RECOVERABLE_ERRORS::contains)) {
-            throw new DeltafiGraphQLException("Failed to ingress data with the following errors: " + response.getErrors());
-        } else {
-            log.error("Event {} failed to process in DGS with the following errors: {}", ingressInputHolder.getEvent(), response.getErrors());
-            handleUnrecoverableError(ingressInputHolder);
-        }
     }
 
     private void handleUnrecoverableError(IngressInputHolder ingressInputHolder) {
@@ -220,10 +171,10 @@ public class DeltaFileService {
         return value;
     }
 
-    private void logInMetrics(IngressInputHolder ingressInputHolder, String did) {
+    private void logInMetrics(IngressInputHolder ingressInputHolder) {
         Tag filename = getFilenameTag(ingressInputHolder);
         Tag flow = getFlowTag(ingressInputHolder);
-        Tag didTag = new Tag("did", did);
+        Tag didTag = new Tag("did", ingressInputHolder.getIngressInput().getDid());
         logForMetrics(FILES_IN, 1, flow);
         logForMetrics(BYTES_IN, ingressInputHolder.getEvent().objectSize(), filename, flow, didTag);
     }
@@ -247,12 +198,24 @@ public class DeltaFileService {
     }
 
     private Tag getFilenameTag(IngressInputHolder ingressInputHolder) {
-        String filename = Objects.nonNull(ingressInputHolder.getSourceInfoInput()) ? ingressInputHolder.getSourceInfoInput().getFilename() : "UNKNOWN";
+        String filename;
+        if (Objects.nonNull(ingressInputHolder.getIngressInput()) && Objects.nonNull(ingressInputHolder.getIngressInput().getSourceInfo())) {
+            filename = Objects.requireNonNullElse(ingressInputHolder.getIngressInput().getSourceInfo().getFilename(), "UNKNOWN");
+        } else {
+            filename = "UNKNOWN";
+        }
+
         return new Tag(FILENAME, filename);
     }
 
     private Tag getFlowTag(IngressInputHolder ingressInputHolder) {
-        String flow = Objects.nonNull(ingressInputHolder.getSourceInfoInput()) ? ingressInputHolder.getSourceInfoInput().getFlow() : "UNKNOWN";
+        String flow;
+        if (Objects.nonNull(ingressInputHolder.getIngressInput()) && Objects.nonNull(ingressInputHolder.getIngressInput().getSourceInfo())) {
+            flow = Objects.requireNonNullElse(ingressInputHolder.getIngressInput().getSourceInfo().getFlow(), "UNKNOWN");
+        } else {
+            flow = "UNKNOWN";
+        }
+
         return new Tag(FLOW, flow);
     }
 }

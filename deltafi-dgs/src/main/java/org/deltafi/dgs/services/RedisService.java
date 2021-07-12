@@ -6,15 +6,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.dgs.generated.types.IngressInput;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.ZAddParams;
+import redis.clients.jedis.resps.KeyedZSetElement;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
+
+import static org.deltafi.dgs.api.Constants.DGS_INGRESS;
 
 public class RedisService {
 
@@ -26,8 +30,8 @@ public class RedisService {
     public RedisService(String redisUrl, String redisPassword) throws URISyntaxException {
         URI uri = new URI(redisUrl);
         GenericObjectPoolConfig<Jedis> pool = new GenericObjectPoolConfig<>();
-        pool.setMaxIdle(32);
-        pool.setMaxTotal(32);
+        pool.setMaxIdle(8);
+        pool.setMaxTotal(8);
         if (redisPassword.isEmpty()) {
             this.jedisPool = new JedisPool(pool, uri);
         } else {
@@ -42,6 +46,13 @@ public class RedisService {
             }
         } catch (JsonProcessingException e) {
             // TODO: this should never happen, but do something?
+        }
+    }
+
+    public IngressInput ingressFeed() throws JsonProcessingException {
+        try (Jedis jedis = jedisPool.getResource()) {
+            KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, DGS_INGRESS);
+            return mapper.readValue(keyedZSetElement.getElement(), IngressInput.class);
         }
     }
 }

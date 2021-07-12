@@ -14,8 +14,7 @@ public class DeltaFileConverter {
 
     private DeltaFileConverter() {}
 
-    public static DeltaFile convert(SourceInfoInput sourceInfoInput, ObjectReferenceInput objectReferenceInput, String fileType) {
-        String did = UUID.randomUUID().toString();
+    public static DeltaFile convert(String did, SourceInfoInput sourceInfoInput, ObjectReferenceInput objectReferenceInput, OffsetDateTime created, String fileType) {
         ProtocolLayer protocolLayer = ProtocolLayer.newBuilder().type(fileType).objectReference(mapper.convertValue(objectReferenceInput, ObjectReference.class)).metadata(new ArrayList<>()).build();
         OffsetDateTime now = OffsetDateTime.now();
         return DeltaFile.newBuilder()
@@ -27,7 +26,7 @@ public class DeltaFileConverter {
                 .domains(DeltaFiDomains.newBuilder().did(did).domainTypes(new ArrayList<>()).build())
                 .enrichment(DeltaFiEnrichments.newBuilder().did(did).enrichmentTypes(new ArrayList<>()).build())
                 .formattedData(new ArrayList<>())
-                .created(now)
+                .created(created)
                 .modified(now)
                 .build();
     }

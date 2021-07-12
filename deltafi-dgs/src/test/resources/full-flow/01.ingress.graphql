@@ -1,18 +1,22 @@
 mutation {
     ingress(
-        sourceInfo: {
-            filename: "input.txt"
-            flow: "sample"
-            metadata: {
-                key: "AuthorizedBy"
-                value: "XYZ"
+        input: {
+            did: "%1$s"
+            sourceInfo: {
+                filename: "input.txt"
+                flow: "sample"
+                metadata: {
+                    key: "AuthorizedBy"
+                    value: "XYZ"
+                }
             }
-        }
-        objectReference: {
-            name: "objectName"
-            bucket: "objectBucket"
-            offset: 0
-            size: 500
+            objectReference: {
+                name: "objectName"
+                bucket: "objectBucket"
+                offset: 0
+                size: 500
+            }
+            created: "2021-07-11T13:44:22.183Z"
         }
     ) {
         did

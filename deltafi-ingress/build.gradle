@@ -33,6 +33,7 @@ dependencies {
     implementation('io.quarkiverse.loggingjson:quarkus-logging-json:0.3.1') {
         because 'Plugin to allow JSON formatted logging for log scraping'
     }
+    implementation 'redis.clients:jedis:3.6.1'
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.quarkus:quarkus-junit5-mockito'
     testImplementation 'io.rest-assured:rest-assured'

@@ -1,18 +1,21 @@
-package org.deltafi.actionkit.service;
+package org.deltafi.ingress.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.generated.types.IngressInput;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
-import redis.clients.jedis.resps.KeyedZSetElement;
+import redis.clients.jedis.params.ZAddParams;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
+
+import static org.deltafi.dgs.api.Constants.DGS_INGRESS;
 
 public class RedisService {
     private final JedisPool jedisPool;
@@ -23,9 +26,6 @@ public class RedisService {
     public RedisService(String redisUrl, String redisPassword) throws URISyntaxException {
         URI uri = new URI(redisUrl);
         GenericObjectPoolConfig<Jedis> pool = new GenericObjectPoolConfig<>();
-        // TODO: This needs to scale up with the number of actions configured
-        pool.setMaxIdle(8);
-        pool.setMaxTotal(8);
         if (redisPassword.isEmpty()) {
             this.jedisPool = new JedisPool(pool, uri);
         } else {
@@ -33,10 +33,9 @@ public class RedisService {
         }
     }
 
-    public DeltaFile actionFeed(String actionName) throws JsonProcessingException {
+    public void ingress(IngressInput input) throws JsonProcessingException {
         try (Jedis jedis = jedisPool.getResource()) {
-            KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, actionName);
-            return mapper.readValue(keyedZSetElement.getElement(), DeltaFile.class);
+            jedis.zadd(DGS_INGRESS, Instant.now().toEpochMilli(), mapper.writeValueAsString(input), ZAddParams.zAddParams().nx());
         }
     }
 }

@@ -5,10 +5,7 @@ import com.netflix.graphql.dgs.*;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.generated.types.FormatResultInput;
-import org.deltafi.dgs.generated.types.ObjectReferenceInput;
-import org.deltafi.dgs.generated.types.ProtocolLayerInput;
-import org.deltafi.dgs.generated.types.SourceInfoInput;
+import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.services.DeltaFilesService;
 
 import java.util.List;
@@ -62,8 +59,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public DeltaFile ingress(SourceInfoInput sourceInfo, ObjectReferenceInput objectReference) {
-    return deltaFilesService.addDeltaFile(sourceInfo, objectReference);
+  public DeltaFile ingress(IngressInput input) {
+    return deltaFilesService.addDeltaFile(input);
   }
 
   @DgsMutation

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
+import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.services.DeltaFiConfigService;
 import org.deltafi.dgs.services.StateMachine;
 import org.deltafi.dgs.api.types.DeltaFile;
@@ -12,10 +13,6 @@ import org.deltafi.dgs.generated.DgsConstants;
 import org.deltafi.dgs.generated.client.DeltaFileGraphQLQuery;
 import org.deltafi.dgs.generated.client.DeltaFileProjectionRoot;
 import org.deltafi.dgs.generated.client.IngressGraphQLQuery;
-import org.deltafi.dgs.generated.types.KeyValue;
-import org.deltafi.dgs.generated.types.KeyValueInput;
-import org.deltafi.dgs.generated.types.ObjectReferenceInput;
-import org.deltafi.dgs.generated.types.SourceInfoInput;
 import org.deltafi.dgs.services.DeltaFilesService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,6 +54,8 @@ class DeltaFilesDatafetcherTest {
     final List<KeyValueInput> metadata = Arrays.asList(new KeyValueInput("k1", "v1"), new KeyValueInput("k2", "v2"));
     final ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput(objectName, objectBucket, 0, size);
     final SourceInfoInput sourceInfoInput = new SourceInfoInput(filename, flow, metadata);
+    final String did = UUID.randomUUID().toString();
+    final IngressInput ingressInput = new IngressInput(did, sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
 
     final DeltaFileProjectionRoot deltaFileProjectionRoot = new DeltaFileProjectionRoot()
             .did()
@@ -124,7 +124,7 @@ class DeltaFilesDatafetcherTest {
     @Test
     void addDeltaFile() {
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-                new IngressGraphQLQuery.Builder().sourceInfo(sourceInfoInput).objectReference(objectReferenceInput).build(),
+                new IngressGraphQLQuery.Builder().input(ingressInput).build(),
                 deltaFileProjectionRoot
         );
         DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -150,7 +150,7 @@ class DeltaFilesDatafetcherTest {
         sourceInfoInput.setMetadata(Collections.emptyList());
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-                new IngressGraphQLQuery.Builder().sourceInfo(sourceInfoInput).objectReference(objectReferenceInput).build(),
+                new IngressGraphQLQuery.Builder().input(ingressInput).build(),
                 deltaFileProjectionRoot
         );
         DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -171,7 +171,7 @@ class DeltaFilesDatafetcherTest {
     }
 
     @Test void deltaFile() {
-        DeltaFile expected = deltaFilesService.addDeltaFile(sourceInfoInput, objectReferenceInput);
+        DeltaFile expected = deltaFilesService.addDeltaFile(ingressInput);
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
                 new DeltaFileGraphQLQuery.Builder().did(expected.getDid()).build(),

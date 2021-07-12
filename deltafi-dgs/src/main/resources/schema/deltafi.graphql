@@ -314,6 +314,13 @@ input DomainEndpointConfigurationInput {
   domainVersion: String
 }
 
+input IngressInput {
+  did: String!
+  sourceInfo: SourceInfoInput!
+  objectReference: ObjectReferenceInput!
+  created: DateTime!
+}
+
 type Query {
   deltaFile(did: String!): DeltaFile
   lastCreated(last: Int) : [DeltaFile]!
@@ -325,7 +332,7 @@ type Query {
 }
 
 type Mutation {
-  ingress(sourceInfo: SourceInfoInput!, objectReference: ObjectReferenceInput!): DeltaFile!
+  ingress(input: IngressInput!): DeltaFile!
   transform(did: String!, fromTransformAction: String!, protocolLayer: ProtocolLayerInput!): DeltaFile!
 
   # Load and enrich mutations record the fact of these domain-driven events
