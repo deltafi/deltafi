@@ -107,7 +107,7 @@ helmchart:
     - git diff
     - git add values.yaml
     - git commit -am "[skip ci] CI/CD image update from ${CI_PROJECT_NAME}"
-    - git push origin master
+    - git push origin main
 
 # Main build job (builds all the gradle things)
 build:
