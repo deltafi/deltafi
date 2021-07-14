@@ -99,6 +99,7 @@ enum ActionState {
   QUEUED
   COMPLETE
   ERROR
+  FILTERED
 }
 
 type ActionEvent {
@@ -344,6 +345,7 @@ type Mutation {
   validate(did: String!, fromValidateAction: String!): DeltaFile!
   egress(did: String!, fromEgressAction: String!): DeltaFile!
 
+  filter(did: String!, fromAction: String!, message: String!) : DeltaFile!
   error(did: String!, fromAction: String!, message: String!) : DeltaFile!
   retry(did: String!) : DeltaFile!
 

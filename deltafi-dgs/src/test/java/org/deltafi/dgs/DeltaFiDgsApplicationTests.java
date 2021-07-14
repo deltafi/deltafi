@@ -462,6 +462,25 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
+	void testFilterEgress() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("filter"), did, "SampleEgressAction"),
+				"data." + DgsConstants.MUTATION.Filter,
+				DeltaFile.class);
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		Action lastAction = deltaFile.getActions().get(deltaFile.getActions().size()-1);
+		assertEquals("SampleEgressAction", lastAction.getName());
+		assertEquals(ActionState.FILTERED, lastAction.getState());
+		assertEquals(DeltaFileStage.COMPLETE.name(), deltaFile.getStage());
+
+		Mockito.verify(redisService, never()).enqueue(any(), any());
+	}
+
+	@Test
 	void test22EgressDeleteCompleted() throws IOException {
 		deltaFiProperties.getDelete().setOnCompletion(true);
 

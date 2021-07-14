@@ -1,0 +1,10 @@
+mutation {
+    filter(
+        did: "%1$s"
+        fromAction: "%2$s"
+        message: "you got filtered"
+    ) {
+        did
+        stage
+    }
+}

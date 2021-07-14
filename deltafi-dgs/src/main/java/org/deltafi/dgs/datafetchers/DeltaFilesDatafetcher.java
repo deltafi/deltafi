@@ -101,6 +101,12 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
+  public DeltaFile filter(String did, String fromAction, String message) {
+    return deltaFilesService.filter(did, fromAction, message);
+  }
+
+  @DgsMutation
+  @SuppressWarnings("unused")
   public DeltaFile error(String did, String fromAction, String message) {
     return deltaFilesService.error(did, fromAction, message);
   }

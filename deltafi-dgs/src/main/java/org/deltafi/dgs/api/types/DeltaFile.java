@@ -28,6 +28,7 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         return super.getDid();
     }
 
+    @SuppressWarnings("unused")
     public long getVersion() {
         return version;
     }
@@ -76,6 +77,12 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
                 .forEach(action -> setActionState(action, ActionState.COMPLETE));
     }
 
+    public void filterAction(String name, String filterMessage) {
+        getActions().stream()
+                .filter(action -> action.getName().equals(name))
+                .forEach(action -> setActionState(action, ActionState.FILTERED, filterMessage));
+    }
+
     public void errorAction(String name, String errorMessage) {
         getActions().stream()
                 .filter(action -> action.getName().equals(name))
@@ -111,24 +118,12 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).collect(Collectors.toList());
     }
 
-    public List<String> completedActions() {
-        return getActions().stream().filter(action -> action.getState().equals(ActionState.COMPLETE)).map(Action::getName).collect(Collectors.toList());
-    }
-
-    public List<String> erroredActions() {
-        return getActions().stream().filter(action -> action.getState().equals(ActionState.ERROR)).map(Action::getName).collect(Collectors.toList());
-    }
-
     public boolean hasErroredAction() {
         return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.ERROR));
     }
 
-    public boolean hasErroredAction(String name) {
-        return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.ERROR) && action.getName().equals(name));
-    }
-
     public boolean hasPendingActions() {
-        return !getActions().stream().allMatch(action -> action.getState().equals(ActionState.ERROR) || action.getState().equals(ActionState.COMPLETE));
+        return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.QUEUED));
     }
 
     public boolean noPendingAction(String name) {
@@ -136,7 +131,7 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     }
 
     private boolean terminalState(ActionState actionState) {
-        return actionState.equals(ActionState.COMPLETE) || actionState.equals(ActionState.ERROR);
+        return !actionState.equals(ActionState.QUEUED);
     }
 
     public boolean hasTerminalAction(String name) {

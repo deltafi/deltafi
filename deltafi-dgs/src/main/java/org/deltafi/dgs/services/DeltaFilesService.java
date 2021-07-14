@@ -160,6 +160,19 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
+    public DeltaFile filter(String did, String fromAction, String message) {
+        DeltaFile deltaFile = getDeltaFile(did);
+
+        if (deltaFile.noPendingAction(fromAction)) {
+            throw new UnexpectedActionException(fromAction, did, deltaFile.queuedActions());
+        }
+
+        deltaFile.filterAction(fromAction, message);
+
+        return advanceAndSave(deltaFile);
+    }
+
+    @MongoRetryable
     public DeltaFile error(String did, String fromAction, String message) {
         DeltaFile deltaFile = getDeltaFile(did);
 
