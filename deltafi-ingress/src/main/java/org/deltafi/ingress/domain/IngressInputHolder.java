@@ -1,9 +1,7 @@
 package org.deltafi.ingress.domain;
 
 import io.minio.messages.Event;
-import org.deltafi.dgs.generated.types.IngressInput;
-import org.deltafi.dgs.generated.types.ObjectReferenceInput;
-import org.deltafi.dgs.generated.types.SourceInfoInput;
+import org.deltafi.dgs.generated.types.*;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -13,6 +11,7 @@ public class IngressInputHolder {
 
     Event event;
     IngressInput ingressInput;
+    final String did = UUID.randomUUID().toString();
 
     @SuppressWarnings("CdiInjectionPointsInspection")
     public IngressInputHolder(Event event) {
@@ -22,7 +21,6 @@ public class IngressInputHolder {
     public IngressInputHolder(Event event, SourceInfoInput sourceInfoInput, ObjectReferenceInput objectReferenceInput) {
         this.event = event;
         this.ingressInput = IngressInput.newBuilder()
-                .did(UUID.randomUUID().toString())
                 .sourceInfo(sourceInfoInput)
                 .objectReference(objectReferenceInput)
                 .created(Objects.nonNull(event.eventTime()) ? event.eventTime().toOffsetDateTime() : OffsetDateTime.now())
@@ -38,8 +36,14 @@ public class IngressInputHolder {
         this.event = event;
     }
 
-    public IngressInput getIngressInput() {
-        return ingressInput;
+    public ActionEventInput getIngressEvent() {
+        return ActionEventInput.newBuilder()
+                .did(did)
+                .action("IngressAction")
+                .time(OffsetDateTime.now())
+                .ingress(ingressInput)
+                .type(ActionEventType.INGRESS)
+                .build();
     }
 
     @SuppressWarnings("unused")

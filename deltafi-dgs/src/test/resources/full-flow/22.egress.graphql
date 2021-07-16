@@ -1,7 +1,11 @@
 mutation {
-    egress(
-        did: "%1$s"
-        fromEgressAction: "SampleEgressAction"
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "SampleEgressAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: EGRESS
+        }
     ) {
         did
         stage

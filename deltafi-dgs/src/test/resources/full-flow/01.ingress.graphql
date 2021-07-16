@@ -1,24 +1,29 @@
 mutation {
-    ingress(
-        input: {
+    actionEvent(
+        event: {
+            action: "IngressAction"
             did: "%1$s"
-            sourceInfo: {
-                filename: "input.txt"
-                flow: "sample"
-                metadata: {
-                    key: "AuthorizedBy"
-                    value: "XYZ"
+            time: "2021-07-11T13:44:22.183Z"
+            type: INGRESS
+            ingress: {
+                sourceInfo: {
+                    filename: "input.txt"
+                    flow: "sample"
+                    metadata: {
+                        key: "AuthorizedBy"
+                        value: "XYZ"
+                    }
                 }
+                objectReference: {
+                    name: "objectName"
+                    bucket: "objectBucket"
+                    offset: 0
+                    size: 500
+                }
+                created: "2021-07-11T13:44:22.183Z"
             }
-            objectReference: {
-                name: "objectName"
-                bucket: "objectBucket"
-                offset: 0
-                size: 500
-            }
-            created: "2021-07-11T13:44:22.183Z"
-        }
-    ) {
+        })
+    {
         did
     }
 }

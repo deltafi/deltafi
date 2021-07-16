@@ -100,7 +100,11 @@ public class ActionService {
                         try {
                             Result result = action.execute(deltaFile);
                             if (result != null) {
-                                domainGatewayService.submit(result);
+                                if (result.resultType().equals(Result.ResultType.GRAPHQL)) {
+                                    domainGatewayService.submit(result);
+                                } else {
+                                    redisService.submit(result);
+                                }
                             }
                             zipkinService.markSpanComplete(span);
                         } catch (DgsPostException ignored) {

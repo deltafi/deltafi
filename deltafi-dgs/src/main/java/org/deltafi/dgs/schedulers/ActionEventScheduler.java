@@ -9,17 +9,16 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
-public class ActionResponseScheduler {
+public class ActionEventScheduler {
 
     final DeltaFilesService deltaFilesService;
 
-    public ActionResponseScheduler(DeltaFilesService deltaFilesService) {
+    public ActionEventScheduler(DeltaFilesService deltaFilesService) {
         this.deltaFilesService = deltaFilesService;
     }
 
-    // convert to milliseconds then divide each interval into 10 samples
     @Scheduled(fixedDelay = 1000)
-    public void getIngressResponses() {
-        deltaFilesService.getIngressResponses();
+    public void getActionEvents() {
+        deltaFilesService.getActionEvents();
     }
 }

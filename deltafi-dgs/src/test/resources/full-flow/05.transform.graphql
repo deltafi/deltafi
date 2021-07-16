@@ -1,24 +1,30 @@
 mutation {
-    transform(
-        did: "%1$s"
-        fromTransformAction: "SampleTransformAction"
-        protocolLayer: {
-            type: "json-utf8-sample"
-            metadata: [
-                {
-                    key: "sampleType",
-                    value: "sample-type"
-                },
-                {
-                    key: "sampleVersion",
-                    value: "2.1"
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "SampleTransformAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: TRANSFORM
+            transform: {
+                protocolLayer: {
+                    type: "json-utf8-sample"
+                    metadata: [
+                        {
+                            key: "sampleType",
+                            value: "sample-type"
+                        },
+                        {
+                            key: "sampleVersion",
+                            value: "2.1"
+                        }
+                    ]
+                    objectReference: {
+                        name: "objectName"
+                        bucket: "objectBucket"
+                        offset: 0
+                        size: 500
+                    }
                 }
-            ]
-            objectReference: {
-                name: "objectName"
-                bucket: "objectBucket"
-                offset: 0
-                size: 500
             }
         }
     ) {

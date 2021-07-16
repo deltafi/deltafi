@@ -59,34 +59,6 @@ public class Util {
         } else {
             return java.util.Objects.equals(a1.getName(), a2.getName()) &&
                     java.util.Objects.equals(a1.getState(), a2.getState()) &&
-                    actionEventsEqualIgnoringDates(a1.getHistory(), a2.getHistory()) &&
-                    java.util.Objects.equals(a1.getErrorMessage(), a2.getErrorMessage());
-        }
-    }
-
-    public static boolean actionEventsEqualIgnoringDates(List<ActionEvent> a1, List<ActionEvent> a2) {
-        if (a1 == null && a2 == null) {
-            return true;
-        } else if (a1 == null || a2 == null) {
-            return false;
-        } else {
-            for (int i=0; i<a1.size(); i++) {
-                if (!actionEventEqualIgnoringDates(a1.get(i), a2.get(i))) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public static boolean actionEventEqualIgnoringDates(ActionEvent a1, ActionEvent a2) {
-        if (a1 == null && a2 == null) {
-            return true;
-        } else if (a1 == null || a2 == null) {
-            return false;
-        } else {
-            return java.util.Objects.equals(a1.getState(), a2.getState()) &&
                     java.util.Objects.equals(a1.getErrorMessage(), a2.getErrorMessage());
         }
     }

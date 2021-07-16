@@ -6,10 +6,7 @@ import io.minio.messages.Event;
 import io.minio.messages.NotificationRecords;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
-import org.deltafi.dgs.generated.types.DeltaFile;
-import org.deltafi.dgs.generated.types.IngressInput;
-import org.deltafi.dgs.generated.types.ObjectReferenceInput;
-import org.deltafi.dgs.generated.types.SourceInfoInput;
+import org.deltafi.dgs.generated.types.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -63,7 +60,7 @@ class DeltaFileServiceTest {
         deltaFileService.processNotificationRecords(notificationRecords);
 
         // All required fields were set, graphQL request should have fired
-        Mockito.verify(redisService).ingress(Mockito.any(IngressInput.class));
+        Mockito.verify(redisService).ingress(Mockito.any(ActionEventInput.class));
     }
 
     @Test

@@ -1,7 +1,11 @@
 mutation {
-    validate(
-        did: "%1$s"
-        fromValidateAction: "AuthorityValidateAction"
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "AuthorityValidateAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: VALIDATE
+        }
     ) {
         did
         stage

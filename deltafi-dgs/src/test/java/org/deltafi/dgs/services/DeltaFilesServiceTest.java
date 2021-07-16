@@ -63,8 +63,15 @@ class DeltaFilesServiceTest {
         String did = UUID.randomUUID().toString();
         SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().flow(flow).build();
         ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput();
-        IngressInput ingressInput = new IngressInput(did, sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
-        DeltaFile deltaFile = deltaFilesService.addDeltaFile(ingressInput);
+        IngressInput ingressInput = new IngressInput(sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
+        ActionEventInput event = ActionEventInput.newBuilder()
+                .did(did)
+                .type(ActionEventType.INGRESS)
+                .time(OffsetDateTime.now())
+                .action("IngressAction")
+                .ingress(ingressInput)
+                .build();
+        DeltaFile deltaFile = deltaFilesService.addDeltaFile(event);
 
         assertNotNull(deltaFile);
         assertEquals(flow, deltaFile.getSourceInfo().getFlow());
@@ -76,8 +83,15 @@ class DeltaFilesServiceTest {
     void setThrowsOnMissingFlow() {
         SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().flow("nonsense").build();
         ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput();
-        IngressInput ingressInput = new IngressInput("did", sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
-        assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.addDeltaFile(ingressInput));
+        IngressInput ingressInput = new IngressInput(sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
+        ActionEventInput event = ActionEventInput.newBuilder()
+                .did("did")
+                .type(ActionEventType.INGRESS)
+                .time(OffsetDateTime.now())
+                .action("IngressAction")
+                .ingress(ingressInput)
+                .build();
+        assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.addDeltaFile(event));
     }
 
     @Test

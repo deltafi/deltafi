@@ -93,7 +93,7 @@ public class DeltaFileService {
 
     private void ingressDeltaFile(IngressInputHolder ingressInputHolder, OffsetDateTime startTime) {
         try {
-            redisService.ingress(ingressInputHolder.getIngressInput());
+            redisService.ingress(ingressInputHolder.getIngressEvent());
             sendTrace(ingressInputHolder, startTime);
             logInMetrics(ingressInputHolder);
         } catch (Throwable exception) {
@@ -103,7 +103,7 @@ public class DeltaFileService {
     }
 
     private void sendTrace(IngressInputHolder ingressInputHolder, OffsetDateTime startTime) {
-        DeltafiSpan span = zipkinService.createChildSpan(ingressInputHolder.getIngressInput().getDid(), INGRESS_ACTION, ingressInputHolder.getIngressInput().getSourceInfo().getFilename(), ingressInputHolder.getIngressInput().getSourceInfo().getFlow(), startTime);
+        DeltafiSpan span = zipkinService.createChildSpan(ingressInputHolder.getIngressEvent().getDid(), INGRESS_ACTION, ingressInputHolder.getIngressEvent().getIngress().getSourceInfo().getFilename(), ingressInputHolder.getIngressEvent().getIngress().getSourceInfo().getFlow(), startTime);
         zipkinService.markSpanComplete(span);
     }
 
@@ -174,7 +174,7 @@ public class DeltaFileService {
     private void logInMetrics(IngressInputHolder ingressInputHolder) {
         Tag filename = getFilenameTag(ingressInputHolder);
         Tag flow = getFlowTag(ingressInputHolder);
-        Tag didTag = new Tag("did", ingressInputHolder.getIngressInput().getDid());
+        Tag didTag = new Tag("did", ingressInputHolder.getIngressEvent().getDid());
         logForMetrics(FILES_IN, 1, flow);
         logForMetrics(BYTES_IN, ingressInputHolder.getEvent().objectSize(), filename, flow, didTag);
     }
@@ -199,8 +199,10 @@ public class DeltaFileService {
 
     private Tag getFilenameTag(IngressInputHolder ingressInputHolder) {
         String filename;
-        if (Objects.nonNull(ingressInputHolder.getIngressInput()) && Objects.nonNull(ingressInputHolder.getIngressInput().getSourceInfo())) {
-            filename = Objects.requireNonNullElse(ingressInputHolder.getIngressInput().getSourceInfo().getFilename(), "UNKNOWN");
+        if (Objects.nonNull(ingressInputHolder.getIngressEvent())
+                && Objects.nonNull(ingressInputHolder.getIngressEvent().getIngress())
+                && Objects.nonNull(ingressInputHolder.getIngressEvent().getIngress().getSourceInfo())) {
+            filename = Objects.requireNonNullElse(ingressInputHolder.getIngressEvent().getIngress().getSourceInfo().getFilename(), "UNKNOWN");
         } else {
             filename = "UNKNOWN";
         }
@@ -210,8 +212,10 @@ public class DeltaFileService {
 
     private Tag getFlowTag(IngressInputHolder ingressInputHolder) {
         String flow;
-        if (Objects.nonNull(ingressInputHolder.getIngressInput()) && Objects.nonNull(ingressInputHolder.getIngressInput().getSourceInfo())) {
-            flow = Objects.requireNonNullElse(ingressInputHolder.getIngressInput().getSourceInfo().getFlow(), "UNKNOWN");
+        if (Objects.nonNull(ingressInputHolder.getIngressEvent())
+                && Objects.nonNull(ingressInputHolder.getIngressEvent().getIngress())
+                && Objects.nonNull(ingressInputHolder.getIngressEvent().getIngress().getSourceInfo())) {
+            flow = Objects.requireNonNullElse(ingressInputHolder.getIngressEvent().getIngress().getSourceInfo().getFlow(), "UNKNOWN");
         } else {
             flow = "UNKNOWN";
         }

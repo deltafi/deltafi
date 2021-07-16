@@ -3,11 +3,9 @@ package org.deltafi.dgs.repo;
 import org.deltafi.dgs.Util;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.types.Action;
-import org.deltafi.dgs.generated.types.ActionEvent;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
 import org.deltafi.dgs.services.DeltaFilesService;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,8 +46,8 @@ class DeltaFileRepoTest {
 
         // mongo eats microseconds, jump through hoops
         OffsetDateTime now = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
-        Action shouldRequeue = Action.newBuilder().name("hit").modified(now.minusSeconds(1000)).state(ActionState.QUEUED).history(new ArrayList<>()).build();
-        Action shouldStay = Action.newBuilder().name("miss").modified(now.plusSeconds(1000)).state(ActionState.QUEUED).history(new ArrayList<>()).build();
+        Action shouldRequeue = Action.newBuilder().name("hit").modified(now.minusSeconds(1000)).state(ActionState.QUEUED).build();
+        Action shouldStay = Action.newBuilder().name("miss").modified(now.plusSeconds(1000)).state(ActionState.QUEUED).build();
 
         hit.setActions(Arrays.asList(shouldRequeue, shouldStay));
         miss.setActions(Arrays.asList(shouldStay, shouldStay));

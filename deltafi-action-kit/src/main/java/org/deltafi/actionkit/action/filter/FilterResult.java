@@ -6,6 +6,7 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.dgs.generated.client.FilterGraphQLQuery;
 import org.deltafi.dgs.generated.client.FilterProjectionRoot;
+import org.deltafi.dgs.generated.types.ActionEventType;
 
 public class FilterResult extends Result {
 
@@ -37,4 +38,9 @@ public class FilterResult extends Result {
                     .state()
                 .parent();
     }
+
+    @Override final public ResultType resultType() { return ResultType.GRAPHQL; }
+
+    @Override
+    final public ActionEventType actionEventType() { return ActionEventType.FILTER; }
 }

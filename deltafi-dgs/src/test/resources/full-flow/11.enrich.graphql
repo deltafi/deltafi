@@ -1,8 +1,14 @@
 mutation {
-    enrich(
-        did: "%1$s"
-        fromEnrichAction: "SampleEnrichAction"
-        enrichments: ["sampleEnrichment"]
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "SampleEnrichAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: ENRICH
+            enrich: {
+                enrichments: ["sampleEnrichment"]
+            }
+        }
     ) {
         did
         stage

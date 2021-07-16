@@ -101,10 +101,6 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
 
     private void setActionState(Action action, ActionState actionState, String errorMessage) {
         OffsetDateTime now = OffsetDateTime.now();
-        if (action.getHistory() == null) {
-            action.setHistory(new ArrayList<>());
-        }
-        action.getHistory().add(ActionEvent.newBuilder().state(actionState).time(now).errorMessage(errorMessage).build());
         action.setState(actionState);
         if (action.getCreated() == null) {
             action.setCreated(now);

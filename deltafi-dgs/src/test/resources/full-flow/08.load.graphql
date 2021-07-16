@@ -1,8 +1,14 @@
 mutation {
-    load(
-        did: "%1$s"
-        fromLoadAction: "SampleLoadAction"
-        domains: ["sample"]
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "SampleLoadAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: LOAD
+            load: {
+                domains: ["sample"]
+            }
+        }
     ) {
         did
         stage

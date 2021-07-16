@@ -6,18 +6,20 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.dgs.generated.client.ErrorGraphQLQuery;
 import org.deltafi.dgs.generated.client.ErrorProjectionRoot;
+import org.deltafi.dgs.generated.types.ActionEventType;
 
 public class ErrorResult extends Result {
 
     final String errorMessage;
 
+    @SuppressWarnings("CdiInjectionPointsInspection")
     public ErrorResult(Action action, String did, String errorMessage) {
         super(action, did);
         this.errorMessage = errorMessage;
     }
 
     @Override
-    public GraphQLQuery toQuery() {
+    final public GraphQLQuery toQuery() {
         return ErrorGraphQLQuery.newRequest()
                 .did(did)
                 .fromAction(name)
@@ -36,4 +38,10 @@ public class ErrorResult extends Result {
                     .state()
                 .parent();
     }
+
+    @Override
+    final public ResultType resultType() { return ResultType.GRAPHQL; }
+
+    @Override
+    final public ActionEventType actionEventType() { return ActionEventType.ERROR; }
 }

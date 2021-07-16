@@ -1,10 +1,6 @@
 package org.deltafi.actionkit.action.transform;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.client.TransformGraphQLQuery;
-import org.deltafi.dgs.generated.client.TransformProjectionRoot;
 import org.deltafi.dgs.generated.types.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,25 +19,15 @@ public class TransformResult extends Result {
     protected ObjectReferenceInput objectReferenceInput;
     protected String type;
 
-    @NotNull
-    @Override
-    public GraphQLQuery toQuery() {
-        TransformGraphQLQuery.Builder builder = TransformGraphQLQuery.newRequest()
-                .did(did)
+    private TransformInput transformInput() {
+        return TransformInput.newBuilder()
                 .protocolLayer(
                         new ProtocolLayerInput.Builder()
                                 .metadata(metadata)
                                 .type(type)
                                 .objectReference(objectReferenceInput)
                                 .build())
-                .fromTransformAction(name);
-
-        return builder.build();
-    }
-
-    public BaseProjectionNode getProjection() {
-        return new TransformProjectionRoot()
-                .did();
+                .build();
     }
 
     public void addMetadata(@NotNull String key, @NotNull String value) {
@@ -56,6 +42,7 @@ public class TransformResult extends Result {
         addMetadata(keyValue.getKey(), keyValue.getValue());
     }
 
+    @SuppressWarnings("unused")
     public void addMetadata(@NotNull List<KeyValue> keyValues) {
         keyValues.forEach(this::addMetadata);
     }
@@ -63,6 +50,7 @@ public class TransformResult extends Result {
     public void setType(String type) {
         this.type = type;
     }
+
     public void setObjectReference(@NotNull ObjectReference objectReference) {
         objectReferenceInput = new ObjectReferenceInput.Builder()
                 .bucket(objectReference.getBucket())
@@ -77,4 +65,16 @@ public class TransformResult extends Result {
         objectReferenceInput = new ObjectReferenceInput(name, bucket, offset, size);
     }
 
+    @Override
+    final public ResultType resultType() { return ResultType.QUEUE; }
+
+    @Override
+    final public ActionEventType actionEventType() { return ActionEventType.TRANSFORM; }
+
+    @Override
+    final public ActionEventInput toEvent() {
+        ActionEventInput event = super.toEvent();
+        event.setTransform(transformInput());
+        return event;
+    }
 }

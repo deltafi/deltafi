@@ -1,10 +1,6 @@
 package org.deltafi.actionkit.action.format;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.client.FormatGraphQLQuery;
-import org.deltafi.dgs.generated.client.FormatProjectionRoot;
 import org.deltafi.dgs.generated.types.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,27 +20,11 @@ public class FormatResult extends Result {
     protected final List<KeyValueInput> metadata = new ArrayList<>();
     protected ObjectReferenceInput objectReferenceInput;
 
-    @NotNull
-    @Override
-    public GraphQLQuery toQuery() {
-        FormatResultInput fri = new FormatResultInput.Builder()
+    private FormatInput formatInput() {
+        return FormatInput.newBuilder()
                 .filename(filename)
                 .metadata(metadata)
                 .objectReference(objectReferenceInput).build();
-
-        FormatGraphQLQuery.Builder builder = FormatGraphQLQuery.newRequest()
-                .did(did)
-                .fromFormatAction(name)
-                .formatResult(fri);
-
-        return builder.build();
-    }
-
-    public BaseProjectionNode getProjection() {
-        return new FormatProjectionRoot()
-                .did()
-                .actions().errorMessage()
-                .parent();
     }
 
     public void addMetadata(@NotNull String key, @NotNull String value) {
@@ -83,4 +63,17 @@ public class FormatResult extends Result {
 
     @SuppressWarnings("unused")
     public void setFilename(String filename) { this.filename = filename; }
+
+    @Override
+    final public ResultType resultType() { return ResultType.QUEUE; }
+
+    @Override
+    final public ActionEventType actionEventType() { return ActionEventType.FORMAT; }
+
+    @Override
+    final public ActionEventInput toEvent() {
+        ActionEventInput event = super.toEvent();
+        event.setFormat(formatInput());
+        return event;
+    }
 }

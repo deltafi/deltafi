@@ -1,10 +1,9 @@
 package org.deltafi.actionkit.action.load;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.client.LoadGraphQLQuery;
-import org.deltafi.dgs.generated.client.LoadProjectionRoot;
+import org.deltafi.dgs.generated.types.ActionEventInput;
+import org.deltafi.dgs.generated.types.ActionEventType;
+import org.deltafi.dgs.generated.types.LoadInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -19,25 +18,26 @@ public class LoadResult extends Result {
 
     protected final List<String> domains = new ArrayList<>();
 
-    @NotNull
-    @Override
-    public GraphQLQuery toQuery() {
-        LoadGraphQLQuery.Builder builder = LoadGraphQLQuery.newRequest()
-                .did(did)
+    private LoadInput loadInput() {
+        return LoadInput.newBuilder()
                 .domains(domains)
-                .fromLoadAction(name);
-
-        return builder.build();
-    }
-
-    public BaseProjectionNode getProjection() {
-        return new LoadProjectionRoot()
-                .did()
-                .actions().errorMessage()
-                .parent();
+                .build();
     }
 
     public void addDomain(@NotNull String domain) {
         domains.add(domain);
+    }
+
+    @Override
+    final public ResultType resultType() { return ResultType.QUEUE; }
+
+    @Override
+    final public ActionEventType actionEventType() { return ActionEventType.LOAD; }
+
+    @Override
+    final public ActionEventInput toEvent() {
+        ActionEventInput event = super.toEvent();
+        event.setLoad(loadInput());
+        return event;
     }
 }

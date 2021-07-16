@@ -1,11 +1,7 @@
 package org.deltafi.actionkit.action.validate;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.client.ValidateGraphQLQuery;
-import org.deltafi.dgs.generated.client.ValidateProjectionRoot;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.dgs.generated.types.ActionEventType;
 
 public class ValidateResult extends Result {
 
@@ -14,20 +10,9 @@ public class ValidateResult extends Result {
         super(action, did);
     }
 
-    @NotNull
     @Override
-    public GraphQLQuery toQuery() {
-        ValidateGraphQLQuery.Builder builder = ValidateGraphQLQuery.newRequest()
-                .did(did)
-                .fromValidateAction(name);
+    final public ResultType resultType() { return ResultType.QUEUE; }
 
-        return builder.build();
-    }
-
-    public BaseProjectionNode getProjection() {
-        return new ValidateProjectionRoot()
-                .did()
-                .actions().errorMessage()
-                .parent();
-    }
+    @Override
+    final public ActionEventType actionEventType() { return ActionEventType.VALIDATE; }
 }

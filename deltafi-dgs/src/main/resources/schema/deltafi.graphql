@@ -76,12 +76,6 @@ type FormattedData {
   egressActions: [String!]!
 }
 
-input FormatResultInput {
-  filename: String!
-  metadata: [KeyValueInput!]
-  objectReference: ObjectReferenceInput!
-}
-
 enum DeltaFileStage {
   INGRESS
   TRANSFORM
@@ -102,19 +96,39 @@ enum ActionState {
   FILTERED
 }
 
-type ActionEvent {
-  state: ActionState!
-  time: DateTime!
-  errorMessage: String
-}
-
 type Action {
   name: String!
   state: ActionState!
-  history: [ActionEvent!]!
   created: DateTime!
   modified: DateTime!
   errorMessage: String
+}
+
+enum ActionEventType {
+  INGRESS
+  TRANSFORM
+  LOAD
+  ENRICH
+  FORMAT
+  VALIDATE
+  EGRESS
+  ERROR
+  RETRY
+  DELETE
+  FILTER
+}
+
+input ActionEventInput {
+  did: String!
+  action: String!
+  time: DateTime!
+  type: ActionEventType!
+  ingress: IngressInput
+  transform: TransformInput
+  load: LoadInput
+  enrich: EnrichInput
+  format: FormatInput
+  # TODO: error, retry, delete, and filter
 }
 
 type DeltaFile {
@@ -316,10 +330,27 @@ input DomainEndpointConfigurationInput {
 }
 
 input IngressInput {
-  did: String!
   sourceInfo: SourceInfoInput!
   objectReference: ObjectReferenceInput!
   created: DateTime!
+}
+
+input TransformInput {
+  protocolLayer: ProtocolLayerInput!
+}
+
+input LoadInput {
+  domains: [String!]
+}
+
+input EnrichInput {
+  enrichments: [String!]
+}
+
+input FormatInput {
+  filename: String!
+  metadata: [KeyValueInput!]
+  objectReference: ObjectReferenceInput!
 }
 
 type Query {
@@ -333,17 +364,7 @@ type Query {
 }
 
 type Mutation {
-  ingress(input: IngressInput!): DeltaFile!
-  transform(did: String!, fromTransformAction: String!, protocolLayer: ProtocolLayerInput!): DeltaFile!
-
-  # Load and enrich mutations record the fact of these domain-driven events
-  # Prior to calling them, an Action should write domain-specific records under the DeltaFile
-  load(did: String!, fromLoadAction: String!, domains: [String!]): DeltaFile!
-  enrich(did: String!, fromEnrichAction: String!, enrichments: [String!]): DeltaFile!
-
-  format(did: String!, fromFormatAction: String!, formatResult: FormatResultInput!): DeltaFile!
-  validate(did: String!, fromValidateAction: String!): DeltaFile!
-  egress(did: String!, fromEgressAction: String!): DeltaFile!
+  actionEvent(event: ActionEventInput!): DeltaFile!
 
   filter(did: String!, fromAction: String!, message: String!) : DeltaFile!
   error(did: String!, fromAction: String!, message: String!) : DeltaFile!

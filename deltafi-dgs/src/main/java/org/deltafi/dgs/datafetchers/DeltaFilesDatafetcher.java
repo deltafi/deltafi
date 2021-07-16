@@ -59,44 +59,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public DeltaFile ingress(IngressInput input) {
-    return deltaFilesService.addDeltaFile(input);
-  }
-
-  @DgsMutation
-  @SuppressWarnings("unused")
-  public DeltaFile transform(String did, String fromTransformAction, ProtocolLayerInput protocolLayer) {
-    return deltaFilesService.transform(did, fromTransformAction, protocolLayer);
-  }
-
-  @DgsMutation
-  @SuppressWarnings("unused")
-  public DeltaFile load(String did, String fromLoadAction, List<String> domains) {
-    return deltaFilesService.load(did, fromLoadAction, domains);
-  }
-
-  @DgsMutation
-  @SuppressWarnings("unused")
-  public DeltaFile enrich(String did, String fromEnrichAction, List<String> enrichments) {
-    return deltaFilesService.enrich(did, fromEnrichAction, enrichments);
-  }
-
-  @DgsMutation
-  @SuppressWarnings("unused")
-  public DeltaFile format(String did, String fromFormatAction, FormatResultInput formatResult) {
-    return deltaFilesService.format(did, fromFormatAction, formatResult);
-  }
-
-  @DgsMutation
-  @SuppressWarnings("unused")
-  public DeltaFile validate(String did, String fromValidateAction) {
-    return deltaFilesService.completeActionAndAdvance(did, fromValidateAction);
-  }
-
-  @DgsMutation
-  @SuppressWarnings("unused")
-  public DeltaFile egress(String did, String fromEgressAction) {
-    return deltaFilesService.completeActionAndAdvance(did, fromEgressAction);
+  public DeltaFile actionEvent(ActionEventInput event) {
+    return deltaFilesService.handleActionEvent(event);
   }
 
   @DgsMutation

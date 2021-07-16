@@ -1,24 +1,28 @@
 mutation {
-    format(
-        did: "%1$s"
-        fromFormatAction: "SampleFormatAction"
-        formatResult: {
-            filename: "output.txt"
-            metadata: [
-                {
-                    key: "key1"
-                    value: "value1"
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "SampleFormatAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: FORMAT
+            format: {
+                filename: "output.txt"
+                metadata: [
+                    {
+                        key: "key1"
+                        value: "value1"
+                    }
+                    {
+                        key: "key2"
+                        value: "value2"
+                    }
+                ]
+                objectReference: {
+                    name: "formattedObjectName"
+                    bucket: "formattedBucketName"
+                    offset: 0
+                    size: 1000
                 }
-                {
-                    key: "key2"
-                    value: "value2"
-                }
-            ]
-            objectReference: {
-                name: "formattedObjectName"
-                bucket: "formattedBucketName"
-                offset: 0
-                size: 1000
             }
         }
     ) {

@@ -4,6 +4,8 @@ import org.deltafi.dgs.Util;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.generated.types.Action;
+import org.deltafi.dgs.generated.types.ActionEventInput;
+import org.deltafi.dgs.generated.types.ActionEventType;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Assertions;
@@ -19,6 +21,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
@@ -61,7 +64,7 @@ public class DeltaFileServiceRetryTest {
 
         });
 
-        Assertions.assertDoesNotThrow(() -> deltaFilesService.completeActionAndAdvance(did, fromAction));
+        Assertions.assertDoesNotThrow(() -> deltaFilesService.handleActionEvent(ActionEventInput.newBuilder().type(ActionEventType.VALIDATE).did(did).action(fromAction).time(OffsetDateTime.now()).build()));
         Mockito.verify(deltaFileRepo, Mockito.times(2)).save(Mockito.any());
     }
 

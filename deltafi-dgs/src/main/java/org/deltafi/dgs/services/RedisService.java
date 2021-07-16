@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.IngressInput;
+import org.deltafi.dgs.generated.types.*;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
 
-import static org.deltafi.dgs.api.Constants.DGS_INGRESS;
+import static org.deltafi.dgs.api.Constants.*;
 
 public class RedisService {
 
@@ -49,10 +49,10 @@ public class RedisService {
         }
     }
 
-    public IngressInput ingressFeed() throws JsonProcessingException {
+    public ActionEventInput dgsFeed() throws JsonProcessingException {
         try (Jedis jedis = jedisPool.getResource()) {
-            KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, DGS_INGRESS);
-            return mapper.readValue(keyedZSetElement.getElement(), IngressInput.class);
+            KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, DGS_QUEUE);
+            return mapper.readValue(keyedZSetElement.getElement(), ActionEventInput.class);
         }
     }
 }

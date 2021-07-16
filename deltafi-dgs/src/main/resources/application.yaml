@@ -10,6 +10,11 @@ spring:
       auto-index-creation: true
   profiles:
     active: k8s
+  task:
+    scheduling:
+      pool:
+        # provide threads for scheduled redis long poll tasks
+        size: 4
 deltafi:
   requeueSeconds: 30
   ingress:

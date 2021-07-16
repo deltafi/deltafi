@@ -119,7 +119,7 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		DeltaFile deltaFileFromDgs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("01.ingress"), did),
-				"data." + DgsConstants.MUTATION.Ingress,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		assertEquals(did, deltaFileFromDgs.getDid());
@@ -155,7 +155,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("03.transformUtf8"), did),
-				"data." + DgsConstants.MUTATION.Transform,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class).getDid();
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -190,7 +190,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("05.transform"), did),
-				"data." + DgsConstants.MUTATION.Transform,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -241,7 +241,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("08.load"), did),
-				"data." + DgsConstants.MUTATION.Load,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -293,7 +293,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("11.enrich"), did),
-				"data." + DgsConstants.MUTATION.Enrich,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -334,7 +334,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("13.format"), did),
-				"data." + DgsConstants.MUTATION.Format,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -360,7 +360,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("15.validate"), did),
-				"data." + DgsConstants.MUTATION.Validate,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -426,7 +426,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("20.validateAuthority"), did),
-				"data." + DgsConstants.MUTATION.Validate,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -452,7 +452,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("22.egress"), did),
-				"data." + DgsConstants.MUTATION.Egress,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -489,7 +489,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("22.egress"), did),
-				"data." + DgsConstants.MUTATION.Egress,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		assertNull(deltaFilesService.getDeltaFile(did));

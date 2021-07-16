@@ -7,6 +7,7 @@ import org.deltafi.dgs.configuration.EgressConfiguration;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.DeltaFileConverter;
 import org.deltafi.dgs.exceptions.UnexpectedActionException;
+import org.deltafi.dgs.exceptions.UnknownTypeException;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.retry.MongoRetryable;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,7 +32,9 @@ public class DeltaFilesService {
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
     final RedisService redisService;
+    final ExecutorService executor = Executors.newFixedThreadPool(16);
 
+    @SuppressWarnings("CdiInjectionPointsInspection")
     public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, RedisService redisService) {
         this.configService = configService;
         this.properties = properties;
@@ -67,94 +72,93 @@ public class DeltaFilesService {
         return matches.isEmpty() ? null : matches.get(0);
     }
 
-    public DeltaFile addDeltaFile(IngressInput ingressInput) {
-        String flow = ingressInput.getSourceInfo().getFlow();
+    @MongoRetryable
+    public DeltaFile handleActionEvent(ActionEventInput event) {
+        if (event.getType().equals(ActionEventType.INGRESS)) {
+            return addDeltaFile(event);
+        }
+
+        DeltaFile deltaFile = getDeltaFile(event.getDid());
+
+        if (deltaFile.noPendingAction(event.getAction())) {
+            throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
+        }
+
+        switch (event.getType()) {
+            case TRANSFORM:
+                return transform(deltaFile, event);
+            case LOAD:
+                return load(deltaFile, event);
+            case ENRICH:
+                return enrich(deltaFile, event);
+            case FORMAT:
+                return format(deltaFile, event);
+            case VALIDATE:
+                return validate(deltaFile, event);
+            case EGRESS:
+                return egress(deltaFile, event);
+        }
+
+        throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
+    }
+
+    public DeltaFile addDeltaFile(ActionEventInput event) {
+        String flow = event.getIngress().getSourceInfo().getFlow();
         IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
-        DeltaFile deltaFile = DeltaFileConverter.convert(ingressInput.getDid(), ingressInput.getSourceInfo(), ingressInput.getObjectReference(), ingressInput.getCreated(), flowConfiguration.getType());
+        DeltaFile deltaFile = DeltaFileConverter.convert(event.getDid(), event.getIngress().getSourceInfo(), event.getIngress().getObjectReference(), event.getIngress().getCreated(), flowConfiguration.getType());
 
         return advanceAndSave(deltaFile);
     }
 
-    @MongoRetryable
-    public DeltaFile transform(String did, String fromTransformAction, ProtocolLayerInput protocolLayer) {
-        DeltaFile deltaFile = getDeltaFile(did);
-
-        if (deltaFile.noPendingAction(fromTransformAction)) {
-            throw new UnexpectedActionException(fromTransformAction, did, deltaFile.queuedActions());
+    public DeltaFile transform(DeltaFile deltaFile, ActionEventInput event) {
+        if (event.getTransform().getProtocolLayer() != null) {
+            deltaFile.getProtocolStack().add(DeltaFileConverter.convert(event.getTransform().getProtocolLayer()));
         }
-        if (protocolLayer != null) {
-            deltaFile.getProtocolStack().add(DeltaFileConverter.convert(protocolLayer));
-        }
-        deltaFile.completeAction(fromTransformAction);
+        deltaFile.completeAction(event.getAction());
 
         return advanceAndSave(deltaFile);
     }
 
-    @MongoRetryable
-    public DeltaFile load(String did, String fromLoadAction, List<String> domains) {
-        DeltaFile deltaFile = getDeltaFile(did);
-
-        if (deltaFile.noPendingAction(fromLoadAction)) {
-            throw new UnexpectedActionException(fromLoadAction, did, deltaFile.queuedActions());
-        }
-
-        deltaFile.completeAction(fromLoadAction);
-
-        deltaFile.getDomains().setDomainTypes(domains);
+    public DeltaFile load(DeltaFile deltaFile, ActionEventInput event) {
+        deltaFile.getDomains().setDomainTypes(event.getLoad().getDomains());
+        deltaFile.completeAction(event.getAction());
 
         return advanceAndSave(deltaFile);
     }
 
-    @MongoRetryable
-    public DeltaFile enrich(String did, String fromEnrichAction, List<String> enrichments) {
-        DeltaFile deltaFile = getDeltaFile(did);
-
-        if (deltaFile.noPendingAction(fromEnrichAction)) {
-            throw new UnexpectedActionException(fromEnrichAction, did, deltaFile.queuedActions());
-        }
-
-        deltaFile.completeAction(fromEnrichAction);
-
-        deltaFile.getEnrichment().setEnrichmentTypes(enrichments);
+    public DeltaFile enrich(DeltaFile deltaFile, ActionEventInput event) {
+        deltaFile.getEnrichment().setEnrichmentTypes(event.getEnrich().getEnrichments());
+        deltaFile.completeAction(event.getAction());
 
         return advanceAndSave(deltaFile);
     }
 
-    @MongoRetryable
-    public DeltaFile format(String did, String fromFormatAction, FormatResultInput formatResult) {
-        DeltaFile deltaFile = getDeltaFile(did);
-
-        if (deltaFile.noPendingAction(fromFormatAction)) {
-            throw new UnexpectedActionException(fromFormatAction, did, deltaFile.queuedActions());
-        }
-
-        deltaFile.completeAction(fromFormatAction);
-
+    public DeltaFile format(DeltaFile deltaFile, ActionEventInput event) {
         FormattedData formattedData = FormattedData.newBuilder()
-                .formatAction(fromFormatAction)
-                .filename(formatResult.getFilename())
-                .metadata(DeltaFileConverter.convertKeyValueInputs(formatResult.getMetadata()))
-                .objectReference(DeltaFileConverter.convert(formatResult.getObjectReference()))
+                .formatAction(event.getAction())
+                .filename(event.getFormat().getFilename())
+                .metadata(DeltaFileConverter.convertKeyValueInputs(event.getFormat().getMetadata()))
+                .objectReference(DeltaFileConverter.convert(event.getFormat().getObjectReference()))
                 .egressActions(properties.getEgress().getEgressFlows().keySet().stream()
-                        .filter(k -> properties.getEgress().getEgressFlows().get(k).getFormatAction().equals(fromFormatAction))
+                        .filter(k -> properties.getEgress().getEgressFlows().get(k).getFormatAction().equals(event.getAction()))
                         .map(EgressConfiguration::egressActionName)
                         .collect(Collectors.toList()))
                 .build();
         deltaFile.getFormattedData().add(formattedData);
+        deltaFile.completeAction(event.getAction());
 
         return advanceAndSave(deltaFile);
     }
 
-    @MongoRetryable
-    public DeltaFile completeActionAndAdvance(String did, String fromAction) {
-        DeltaFile deltaFile = getDeltaFile(did);
+    public DeltaFile validate(DeltaFile deltaFile, ActionEventInput event) {
+        deltaFile.completeAction(event.getAction());
 
-        if (deltaFile.noPendingAction(fromAction)) {
-            throw new UnexpectedActionException(fromAction, did, deltaFile.queuedActions());
-        }
+        return advanceAndSave(deltaFile);
+    }
 
-        deltaFile.completeAction(fromAction);
+    public DeltaFile egress(DeltaFile deltaFile, ActionEventInput event) {
+        deltaFile.completeAction(event.getAction());
 
         return advanceAndSave(deltaFile);
     }
@@ -229,14 +233,14 @@ public class DeltaFilesService {
         return deltaFile.getActions().stream().filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli()).map(Action::getName).collect(Collectors.toList());
     }
 
-    public void getIngressResponses() {
+    public void getActionEvents() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                IngressInput ingressInput = redisService.ingressFeed();
-                addDeltaFile(ingressInput);
+                ActionEventInput event = redisService.dgsFeed();
+                executor.submit(() -> handleActionEvent(event));
             }
         } catch (Throwable e) {
-            log.error("Error receiving ingress: " + e.getMessage());
+            log.error("Error receiving event: " + e.getMessage());
         }
     }
 }
