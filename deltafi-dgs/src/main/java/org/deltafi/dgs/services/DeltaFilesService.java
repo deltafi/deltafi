@@ -13,6 +13,7 @@ import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.retry.MongoRetryable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -246,6 +247,9 @@ public class DeltaFilesService {
                     }
                 });
             }
+        } catch (OptimisticLockingFailureException e) {
+            // rethrow this exception so that @MongoRetryable works
+            throw e;
         } catch (Throwable e) {
             log.error("Error receiving event: " + e.getMessage());
         }
