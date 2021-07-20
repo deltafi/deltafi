@@ -240,6 +240,9 @@ public class DeltaFilesService {
                 executor.submit(() -> {
                     try {
                         handleActionEvent(event);
+                    } catch (OptimisticLockingFailureException e) {
+                        // rethrow this exception so that @MongoRetryable works
+                        throw e;
                     } catch (Throwable e) {
                         StringWriter stackWriter = new StringWriter();
                         e.printStackTrace(new PrintWriter(stackWriter));
