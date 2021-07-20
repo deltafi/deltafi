@@ -25,6 +25,7 @@ variables:
   deltafi_dgs_HELM_IMAGE_PATH: deltafi.dgs.image
   deltafi_passthrough_HELM_IMAGE_PATH: deltafi.passthrough.image
   deltafi_ingress_HELM_IMAGE_PATH: deltafi.ingress.image
+  deltafi_auth_HELM_IMAGE_PATH: deltafi.auth.image
 
 .gradle:
   image: gradle:6.8.3-jdk11
