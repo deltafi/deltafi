@@ -214,17 +214,14 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    @MongoRetryable
     public void markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy) {
         deltaFileRepo.markForDelete(createdBefore, completedBefore, flow, policy);
     }
 
-    @MongoRetryable
     public void delete(List<String> dids) {
         deltaFileRepo.deleteByDidIn(dids);
     }
 
-    @MongoRetryable
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now();
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified);
