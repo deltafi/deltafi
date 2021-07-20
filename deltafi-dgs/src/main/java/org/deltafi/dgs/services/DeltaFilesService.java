@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -237,7 +239,15 @@ public class DeltaFilesService {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionEventInput event = redisService.dgsFeed();
-                executor.submit(() -> handleActionEvent(event));
+                executor.submit(() -> {
+                    try {
+                        handleActionEvent(event);
+                    } catch (Throwable e) {
+                        StringWriter stackWriter = new StringWriter();
+                        e.printStackTrace(new PrintWriter(stackWriter));
+                        log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
+                    }
+                });
             }
         } catch (Throwable e) {
             log.error("Error receiving event: " + e.getMessage());
