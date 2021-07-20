@@ -30,8 +30,8 @@ public class RedisService {
         URI uri = new URI(redisUrl);
         GenericObjectPoolConfig<Jedis> pool = new GenericObjectPoolConfig<>();
         // TODO: This needs to scale up with the number of actions configured
-        pool.setMaxIdle(8);
-        pool.setMaxTotal(8);
+        pool.setMaxIdle(16);
+        pool.setMaxTotal(16);
         if (redisPassword.isEmpty()) {
             this.jedisPool = new JedisPool(pool, uri);
         } else {
