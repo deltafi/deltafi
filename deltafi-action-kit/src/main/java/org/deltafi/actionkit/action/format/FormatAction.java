@@ -34,12 +34,16 @@ abstract public class FormatAction implements Action {
 
     @SuppressWarnings("unused")
     static public void addSourceInputMetadata(FormatResult result, DeltaFile deltaFile) {
-        deltaFile.getSourceInfo().getMetadata().forEach(kv -> result.addMetadata("sourceInfo." + kv.getKey(),kv.getValue()));
+        if(deltaFile.getSourceInfo() != null && deltaFile.getSourceInfo().getMetadata() != null) {
+            deltaFile.getSourceInfo().getMetadata().forEach(kv -> result.addMetadata("sourceInfo." + kv.getKey(), kv.getValue()));
+        }
     }
 
     @SuppressWarnings("unused")
     static public void addProtocolStackMetadata(FormatResult result, DeltaFile deltaFile) {
-        deltaFile.getProtocolStack().forEach( ps -> result.addMetadata(ps.getMetadata()));
+        if(deltaFile.getProtocolStack() != null) {
+            deltaFile.getProtocolStack().forEach(ps -> result.addMetadata(ps.getMetadata()));
+        }
     }
 
     public void generateMetrics(DeltaFile deltafile) {

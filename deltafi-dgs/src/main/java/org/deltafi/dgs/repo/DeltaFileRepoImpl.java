@@ -40,7 +40,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTION_STATE = "action.state";
     public static final String ACTIONS_UPDATE_STATE = "actions.$[action].state";
     public static final String ACTIONS_UPDATE_MODIFIED = "actions.$[action].modified";
-    public static final String ACTIONS_UPDATE_ERROR = "actions.$[action].errorMessage";
+    public static final String ACTIONS_UPDATE_ERROR = "actions.$[action].errorCause";
+    public static final String ACTIONS_UPDATE_ERROR_CONTEXT = "actions.$[action].errorContext";
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
 
     private final MongoTemplate mongoTemplate;
@@ -85,6 +86,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         // clear out any old error messages
         update.set(ACTIONS_UPDATE_ERROR, null);
+        update.set(ACTIONS_UPDATE_ERROR_CONTEXT, null);
         update.set(ACTIONS_UPDATE_MODIFIED, modified);
 
         update.set(MODIFIED, nonNull(modified) ? modified : OffsetDateTime.now());

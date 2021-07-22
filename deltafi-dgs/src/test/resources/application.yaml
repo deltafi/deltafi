@@ -46,6 +46,8 @@ deltafi:
     SampleEnrichAction:
       requiresDomains: [sample]
   formatActions:
+    "ErrorFormatAction":
+      requiresDomains: [error]
     "[SampleFormatAction]":
       requiresDomains: [sample]
       requiresEnrichment: [sampleEnrichment]
@@ -54,6 +56,8 @@ deltafi:
     - SampleValidateAction
   egress:
     egressFlows:
+      error:
+        formatAction: ErrorFormatAction
       sample:
         formatAction: SampleFormatAction
         validateActions:

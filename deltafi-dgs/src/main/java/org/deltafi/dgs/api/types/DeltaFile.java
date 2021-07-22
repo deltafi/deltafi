@@ -80,13 +80,13 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     public void filterAction(String name, String filterMessage) {
         getActions().stream()
                 .filter(action -> action.getName().equals(name))
-                .forEach(action -> setActionState(action, ActionState.FILTERED, filterMessage));
+                .forEach(action -> setActionState(action, ActionState.FILTERED, filterMessage, null));
     }
 
-    public void errorAction(String name, String errorMessage) {
+    public void errorAction(String name, String errorCause, String errorContext) {
         getActions().stream()
                 .filter(action -> action.getName().equals(name))
-                .forEach(action -> setActionState(action, ActionState.ERROR, errorMessage));
+                .forEach(action -> setActionState(action, ActionState.ERROR, errorCause, errorContext));
     }
 
     public void retryErrors() {
@@ -96,22 +96,27 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     }
 
     private void setActionState(Action action, ActionState actionState) {
-        setActionState(action, actionState, null);
+        setActionState(action, actionState, null, null);
     }
 
-    private void setActionState(Action action, ActionState actionState, String errorMessage) {
+    private void setActionState(Action action, ActionState actionState, String errorCause, String errorContext) {
         OffsetDateTime now = OffsetDateTime.now();
         action.setState(actionState);
         if (action.getCreated() == null) {
             action.setCreated(now);
         }
         action.setModified(now);
-        action.setErrorMessage(errorMessage);
+        action.setErrorCause(errorCause);
+        action.setErrorContext(errorContext);
         setModified(now);
     }
 
     public List<String> queuedActions() {
         return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).collect(Collectors.toList());
+    }
+
+    public boolean hasErrorDomain() {
+        return getDomains().getError() != null;
     }
 
     public boolean hasErroredAction() {
@@ -151,7 +156,7 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
                 .forEach(a -> {
             a.setModified(now);
             a.setState(ActionState.ERROR);
-            a.setErrorMessage("DeltaFile marked for deletion by " + policy + " policy");
+            a.setErrorCause("DeltaFile marked for deletion by " + policy + " policy");
         });
         queueAction(deleteAction);
         setStage(DeltaFileStage.DELETE.name());
@@ -166,8 +171,11 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     public DeltaFile forQueue(String actionName) {
         Builder builder = DeltaFile.newBuilder()
                 .did(getDid())
-                .sourceInfo(getSourceInfo())
-                .protocolStack(Collections.singletonList(getProtocolStack().get(getProtocolStack().size()-1)));
+                .sourceInfo(getSourceInfo());
+
+        if (!getProtocolStack().isEmpty()) {
+            builder.protocolStack(Collections.singletonList(getProtocolStack().get(getProtocolStack().size() - 1)));
+        }
 
         if (getStage().equals(DeltaFileStage.ENRICH.name()) || getStage().equals(DeltaFileStage.FORMAT.name())) {
             // TODO: trim down domains and enrichment to those that the current action cares about

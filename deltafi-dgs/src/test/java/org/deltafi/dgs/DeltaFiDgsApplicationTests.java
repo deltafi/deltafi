@@ -373,7 +373,7 @@ class DeltaFiDgsApplicationTests {
 	DeltaFile postErrorDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR.name());
-		deltaFile.errorAction("AuthorityValidateAction", "Authority XYZ not recognized");
+		deltaFile.errorAction("AuthorityValidateAction", "Authority XYZ not recognized", "Dead beef feed face cafe");
 		return deltaFile;
 	}
 
@@ -385,12 +385,14 @@ class DeltaFiDgsApplicationTests {
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("17.error"), did),
 				"data." + DgsConstants.MUTATION.Error,
-				DeltaFile.class);
+				ErrorDomain.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(equalIgnoringDates(postErrorDeltaFile(did), deltaFile));
+		DeltaFile actual = deltaFilesService.getDeltaFile(did);
+		DeltaFile expected = postErrorDeltaFile(did);
+		assertTrue(equalIgnoringDates(expected, actual));
 
-		Mockito.verify(redisService, never()).enqueue(any(), any());
+		// FIXME: Be specific...
+		Mockito.verify(redisService).enqueue(any(), any());
 	}
 
 	@Test

@@ -34,7 +34,7 @@ public class FilterResult extends Result {
                 .stage()
                 .actions()
                     .name()
-                    .errorMessage()
+                    .errorCause()
                     .state()
                 .parent();
     }

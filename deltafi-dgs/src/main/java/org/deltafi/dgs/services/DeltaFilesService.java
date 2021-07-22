@@ -2,14 +2,17 @@ package org.deltafi.dgs.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.dgs.api.types.ErrorDomain;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.configuration.EgressConfiguration;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.DeltaFileConverter;
+import org.deltafi.dgs.converters.ErrorConverter;
 import org.deltafi.dgs.exceptions.UnexpectedActionException;
 import org.deltafi.dgs.exceptions.UnknownTypeException;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.repo.DeltaFileRepo;
+import org.deltafi.dgs.repo.ErrorRepo;
 import org.deltafi.dgs.retry.MongoRetryable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,15 +37,17 @@ public class DeltaFilesService {
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
+    final ErrorRepo errorRepo;
     final RedisService redisService;
     final ExecutorService executor = Executors.newFixedThreadPool(16);
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, RedisService redisService) {
+    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, ErrorRepo errorRepo, RedisService redisService) {
         this.configService = configService;
         this.properties = properties;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
+        this.errorRepo = errorRepo;
         this.redisService = redisService;
     }
 
@@ -180,14 +185,32 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile error(String did, String fromAction, String message) {
-        DeltaFile deltaFile = getDeltaFile(did);
-
-        if (deltaFile.noPendingAction(fromAction)) {
-            throw new UnexpectedActionException(fromAction, did, deltaFile.queuedActions());
+    public DeltaFile error(ErrorInput errorInput) {
+        DeltaFile deltaFile = getDeltaFile(errorInput.getOriginatorDid());
+        if(deltaFile.hasErrorDomain()) {
+            log.error("DeltaFile with error domain has thrown an error:\n" +
+                    "Error DID: " + errorInput.getOriginatorDid() + "\n" +
+                    "Errored in action : " + errorInput.getFromAction() + "\n" +
+                    "Inception Error cause: " + errorInput.getCause() + "\n" +
+                    "Inception Error context: " + errorInput.getContext() + "\n");
+            if (!deltaFile.noPendingAction(errorInput.getFromAction())) {
+                deltaFile.errorAction(errorInput.getFromAction(), errorInput.getCause(), errorInput.getContext());
+            }
+            return deltaFile;
         }
 
-        deltaFile.errorAction(fromAction, message);
+        if (deltaFile.noPendingAction(errorInput.getFromAction())) {
+            throw new UnexpectedActionException(errorInput.getFromAction(), errorInput.getOriginatorDid(), deltaFile.queuedActions());
+        }
+
+        deltaFile.errorAction(errorInput.getFromAction(), errorInput.getCause(), errorInput.getContext());
+
+        ErrorDomain errorDomain = ErrorConverter.convert(errorInput, deltaFile);
+        DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, errorDomain);
+
+        errorRepo.save(errorDomain);
+
+        advanceAndSave(errorDeltaFile);
 
         return advanceAndSave(deltaFile);
     }

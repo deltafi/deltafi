@@ -16,8 +16,6 @@ import org.deltafi.actionkit.types.DeltaFile;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -110,11 +108,7 @@ public class ActionService {
                         } catch (DgsPostException ignored) {
                             // do nothing -- the error has already been logged
                         } catch (Throwable e) {
-                            StringWriter stackWriter = new StringWriter();
-                            e.printStackTrace(new PrintWriter(stackWriter));
-                            String reason = "Action execution exception: " + "\n" + e.getMessage() + "\n" + stackWriter;
-                            log.error(action.name() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
-                            ErrorResult err = new ErrorResult(action, deltaFile.getDid(), reason);
+                            ErrorResult err = new ErrorResult(action, deltaFile, "Action execution exception", e).logErrorTo(log);
                             domainGatewayService.submit(err);
                         }
                     }

@@ -15,7 +15,8 @@ mutation {
         actions {
             name
             state
-            errorMessage
+            errorCause
+            errorContext
         }
     }
 }

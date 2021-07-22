@@ -8,6 +8,7 @@ import org.deltafi.dgs.generated.types.ActionEventInput;
 import org.deltafi.dgs.generated.types.ActionEventType;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.repo.DeltaFileRepo;
+import org.deltafi.dgs.repo.ErrorRepo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +38,9 @@ public class DeltaFileServiceRetryTest {
 
     @MockBean
     private DeltaFileRepo deltaFileRepo;
+
+    @MockBean
+    private ErrorRepo errorRepo;
 
     @Test
     void testRetry() {

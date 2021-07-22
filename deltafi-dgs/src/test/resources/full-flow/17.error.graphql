@@ -1,15 +1,19 @@
 mutation {
     error(
-        did: "%1$s"
-        fromAction: "AuthorityValidateAction"
-        message: "Authority XYZ not recognized"
+        error: {
+            originatorDid: "%1$s"
+            fromAction: "AuthorityValidateAction"
+            cause: "Authority XYZ not recognized"
+            context: "Dead beef feed face cafe"
+        }
     ) {
         did
         stage
         actions {
             name
             state
-            errorMessage
+            errorCause
+            errorContext
         }
     }
 }

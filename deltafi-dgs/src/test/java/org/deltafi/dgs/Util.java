@@ -59,7 +59,8 @@ public class Util {
         } else {
             return java.util.Objects.equals(a1.getName(), a2.getName()) &&
                     java.util.Objects.equals(a1.getState(), a2.getState()) &&
-                    java.util.Objects.equals(a1.getErrorMessage(), a2.getErrorMessage());
+                    java.util.Objects.equals(a1.getErrorContext(), a2.getErrorContext()) &&
+                    java.util.Objects.equals(a1.getErrorCause(), a2.getErrorCause());
         }
     }
 }

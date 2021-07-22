@@ -12,8 +12,6 @@
       fail-on-missing-config: false
     minio:
       url: http://localhost:9000
-    kubernetes-config:
-      enabled: false
   deltafi:
     dgs:
       url: http://localhost:8080/graphql
@@ -63,6 +61,11 @@ deltafi:
       parameters:
         static_metadata:
           passthrough_format: That's a negative Ghostrider...
+    - name: ErrorFormatAction
+      type: org.deltafi.actionkit.action.format.SimpleErrorFormatAction
+      parameters:
+        static_metadata:
+          error_format: "Danger Will Robinson!"
     - name: PassthroughValidateAction
       type: org.deltafi.passthrough.action.RubberStampValidateAction
     - name: PassthroughEgressAction
@@ -79,6 +82,13 @@ deltafi:
         metadata_prefix: ${METADATA_PREFIX:deltafi.}
         static_metadata:
           passthrough_egress: Kick the tires and light the fires...
+    - name: ErrorEgressAction
+      type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+      parameters:
+        url: ${EGRESS_ENDPOINT:http://localhost:8085/echo}
+        metadata_prefix: ${METADATA_PREFIX:deltafi.}
+        static_metadata:
+          error_egress: Once more unto the breach...
   zipkin:
     enabled: ${ZIPKIN_ENABLED:true}
     url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}

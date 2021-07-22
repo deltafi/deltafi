@@ -31,6 +31,30 @@ public class DeltaFileConverter {
                 .build();
     }
 
+    public static DeltaFile convert(DeltaFile originator, ErrorDomain errorDomain) {
+        OffsetDateTime now = OffsetDateTime.now();
+        String did = errorDomain.getDid();
+        return DeltaFile.newBuilder()
+                .did(did)
+                .stage(DeltaFileStage.LOAD.name())
+                .actions(new ArrayList<>())
+                .sourceInfo(originator.getSourceInfo())
+                .protocolStack(Collections.emptyList())
+                .domains(DeltaFiDomains.newBuilder()
+                        .did(did)
+                        .domainTypes(Collections.singletonList("error"))
+                        .error(errorDomain)
+                        .build())
+                .enrichment(DeltaFiEnrichments.newBuilder()
+                        .did(did)
+                        .enrichmentTypes(Collections.emptyList())
+                        .build())
+                .formattedData(Collections.emptyList())
+                .created(now)
+                .modified(now)
+                .build();
+    }
+
     public static List<KeyValue> convertKeyValueInputs(List<KeyValueInput> keyValueInputs) {
         return mapper.convertValue(keyValueInputs, new TypeReference<>(){});
     }

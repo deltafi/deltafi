@@ -1,0 +1,27 @@
+type ErrorDomain implements DeltaFiDomain {
+    did: String!
+    originator: DeltaFile! # DeltaFile that errored
+    originatorDid: String! # Hoisted up for filtering
+    fromAction: String! # Originating action
+    cause: String! # Error message (from exception, etc.)
+    context: String # Stack trace, etc.
+}
+
+input ErrorInput {
+    originatorDid: String!
+    fromAction: String!
+    cause: String!
+    context: String
+}
+
+extend type Query {
+    # Get error by error did
+    getError(did: String!) : ErrorDomain!
+    # Get list of errors for a given DID
+    getErrorsFor(originatorDid: String!) : [ErrorDomain!]!
+}
+
+extend type Mutation {
+    deleteError(did: String!) : Boolean!
+    deleteErrors(dids: [String!]!) : [Boolean!]!
+}

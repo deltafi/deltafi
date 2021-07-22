@@ -60,6 +60,7 @@ type DeltaFiDomains @key(fields: "did") {
   did: String!
   domainTypes: [String!]!
   sampleDomain: SampleDomain
+  error: ErrorDomain
 }
 
 type DeltaFiEnrichments @key(fields: "did")  {
@@ -101,7 +102,8 @@ type Action {
   state: ActionState!
   created: DateTime!
   modified: DateTime!
-  errorMessage: String
+  errorCause: String
+  errorContext: String
 }
 
 enum ActionEventType {
@@ -366,8 +368,8 @@ type Query {
 type Mutation {
   actionEvent(event: ActionEventInput!): DeltaFile!
 
+  error(error: ErrorInput!) : DeltaFile!
   filter(did: String!, fromAction: String!, message: String!) : DeltaFile!
-  error(did: String!, fromAction: String!, message: String!) : DeltaFile!
   retry(did: String!) : DeltaFile!
 
   # The caller is responsible for removing all data, domains, and enrichment corresponding to this DeltaFile before calling this mutation

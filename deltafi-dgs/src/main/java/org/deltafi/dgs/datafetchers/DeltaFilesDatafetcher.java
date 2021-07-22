@@ -71,8 +71,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public DeltaFile error(String did, String fromAction, String message) {
-    return deltaFilesService.error(did, fromAction, message);
+  public DeltaFile error(ErrorInput error) {
+    return deltaFilesService.error(error);
   }
 
   @DgsMutation

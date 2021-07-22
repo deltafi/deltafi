@@ -3,8 +3,10 @@ package org.deltafi.actionkit.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.RequestExecutor;
@@ -61,10 +63,13 @@ public class DomainGatewayService {
     DomainGatewayService() {
         log.debug(this.getClass().getSimpleName() + " instantiated");
         instance = this;
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
+
         SimpleModule module = new SimpleModule();
         module.addDeserializer(DeltaFile.class, new DeltaFileDeserializer());
-        mapper.registerModule(module);
+        mapper.registerModule(module)
+                .registerModule(new JavaTimeModule());
     }
 
     /**
@@ -81,8 +86,14 @@ public class DomainGatewayService {
             log.error("Could not parse the DGS GraphqlResponse json", e);
             return null;
         }
-        JsonNode deltaFileNode = jsonNode.get(DATA_PATH).get("deltaFile");
-        return mapper.convertValue(deltaFileNode, DeltaFile.class);
+
+        try {
+            JsonNode deltaFileNode = jsonNode.get(DATA_PATH).get("deltaFile");
+            return mapper.convertValue(deltaFileNode, DeltaFile.class);
+        } catch (Throwable t) {
+            log.error("Could not convert json to DeltaFile: ", t);
+            throw new RuntimeException("Could not convert json to DeltaFile", t);
+        }
     }
 
     public GraphQLResponse submit(Result result) {
@@ -108,7 +119,8 @@ public class DomainGatewayService {
         }
         if (response.hasErrors()) {
             StringBuilder errorMessage = new StringBuilder("Error in DGS submission:\n");
-            log.error("Query has errors");
+            errorMessage.append("\nOriginal query:\n")
+                        .append(request.serialize()).append("\n\n");
             for(var err:response.getErrors()) {
                 errorMessage.append(err.getMessage()).append("\n");
             }

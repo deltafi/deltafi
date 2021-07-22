@@ -90,8 +90,7 @@ public class RestPostEgressAction extends EgressAction{
         } catch(ContentServiceConnectException e) {
             return null;
         } catch(Throwable e) {
-            log.error("Unable to complete egress",e);
-            return new ErrorResult(this, deltafile.getDid(), "Unable to complete egress: " + e);
+            return new ErrorResult(this, deltafile, "Unable to complete egress", e).logErrorTo(log);
         }
     }
 }

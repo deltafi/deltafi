@@ -55,6 +55,8 @@ deltafi:
       requiresDomains: [stix]
     PassthroughFormatAction:
       requiresDomains: [binary]
+    ErrorFormatAction:
+      requiresDomains: [error]
   validateActions:
     - Stix2_1ValidateAction
     - Stix1_XValidateAction
@@ -62,6 +64,8 @@ deltafi:
     - PassthroughValidateAction
   egress:
     egressFlows:
+      error:
+        formatAction: ErrorFormatAction
       stix2_1:
         formatAction: Stix2_1FormatAction
         validateActions:
