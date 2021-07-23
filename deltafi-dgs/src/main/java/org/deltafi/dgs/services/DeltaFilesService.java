@@ -12,7 +12,6 @@ import org.deltafi.dgs.exceptions.UnexpectedActionException;
 import org.deltafi.dgs.exceptions.UnknownTypeException;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.repo.DeltaFileRepo;
-import org.deltafi.dgs.repo.ErrorRepo;
 import org.deltafi.dgs.retry.MongoRetryable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,17 +36,15 @@ public class DeltaFilesService {
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
-    final ErrorRepo errorRepo;
     final RedisService redisService;
     final ExecutorService executor = Executors.newFixedThreadPool(16);
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, ErrorRepo errorRepo, RedisService redisService) {
+    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, RedisService redisService) {
         this.configService = configService;
         this.properties = properties;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
-        this.errorRepo = errorRepo;
         this.redisService = redisService;
     }
 
@@ -210,8 +207,6 @@ public class DeltaFilesService {
 
         ErrorDomain errorDomain = ErrorConverter.convert(errorInput, deltaFile);
         DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, errorDomain);
-
-        errorRepo.save(errorDomain);
 
         advanceAndSave(errorDeltaFile);
 

@@ -9,7 +9,6 @@ import org.deltafi.dgs.configuration.EgressFlowConfiguration;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.repo.DeltaFileRepo;
-import org.deltafi.dgs.repo.ErrorRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -27,7 +26,6 @@ class DeltaFilesServiceTest {
     final ActionConfigService actionConfigService = Mockito.mock(ActionConfigService.class);
     StateMachine stateMachine;
     DeltaFileRepo deltaFileRepo;
-    ErrorRepo errorRepo;
     final RedisService redisService = Mockito.mock(RedisService.class);
 
     final String flow = "theFlow";
@@ -57,8 +55,7 @@ class DeltaFilesServiceTest {
         stateMachine = new StateMachine(deltaFiConfigService, actionConfigService, new ZipkinService(null, zipkinConfig));
 
         deltaFileRepo = Mockito.mock(DeltaFileRepo.class);
-        errorRepo = Mockito.mock(ErrorRepo.class);
-        deltaFilesService = new DeltaFilesService(deltaFiConfigService, new DeltaFiProperties(), stateMachine, deltaFileRepo, errorRepo, redisService);
+        deltaFilesService = new DeltaFilesService(deltaFiConfigService, new DeltaFiProperties(), stateMachine, deltaFileRepo, redisService);
     }
 
     @Test

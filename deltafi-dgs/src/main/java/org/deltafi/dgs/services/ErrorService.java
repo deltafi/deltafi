@@ -1,7 +1,9 @@
 package org.deltafi.dgs.services;
 
+import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.api.types.ErrorDomain;
-import org.deltafi.dgs.repo.ErrorRepo;
+import org.deltafi.dgs.converters.ErrorConverter;
+import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,25 +11,21 @@ import java.util.stream.Collectors;
 
 @Service
 public class ErrorService {
-    private final ErrorRepo errorRepo;
+    private final DeltaFileRepo deltaFileRepo;
 
-    public ErrorService(ErrorRepo errorRepo) {
-        this.errorRepo = errorRepo;
+    public ErrorService(DeltaFileRepo deltaFileRepo) {
+        this.deltaFileRepo = deltaFileRepo;
     }
 
     public ErrorDomain getError(String did) {
-        return errorRepo.findById(did).orElse(null);
+        DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
+        if(deltaFile == null || deltaFile.getDomains() == null) return null;
+        return ErrorConverter.convert(deltaFile.getDomains().getError());
     }
 
     public List<ErrorDomain> getErrorsFor(String did) {
-        return errorRepo.findAllByOriginatorDid(did);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findAllByDomainsErrorOriginatorDid(did);
+        return deltaFiles.stream().map(err -> ErrorConverter.convert(err.getDomains().getError())).collect(Collectors.toList());
     }
 
-    public Boolean deleteError(String did) {
-        return 1L == errorRepo.deleteByDid(did);
-    }
-
-    public List<Boolean> deleteErrors(List<String> dids) {
-        return dids.stream().map(this::deleteError).collect(Collectors.toList());
-    }
 }

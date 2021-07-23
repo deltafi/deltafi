@@ -18,4 +18,15 @@ public class ErrorConverter {
                 .originator(deltaFile)
                 .build();
     }
+
+    public static ErrorDomain convert(org.deltafi.dgs.generated.types.ErrorDomain errorDomain) {
+        return ErrorDomain.newBuilder()
+                .did(errorDomain.getDid())
+                .cause(errorDomain.getCause())
+                .context(errorDomain.getContext())
+                .fromAction(errorDomain.getFromAction())
+                .originatorDid(errorDomain.getOriginatorDid())
+                .originator(errorDomain.getOriginator())
+                .build();
+    }
 }

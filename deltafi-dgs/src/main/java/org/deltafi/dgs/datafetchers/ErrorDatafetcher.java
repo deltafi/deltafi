@@ -1,7 +1,6 @@
 package org.deltafi.dgs.datafetchers;
 
 import com.netflix.graphql.dgs.DgsComponent;
-import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.dgs.api.datafetchers.DomainsDatafetcher;
@@ -42,13 +41,4 @@ public class ErrorDatafetcher extends DomainsDatafetcher {
         return errors;
     }
 
-    @DgsMutation
-    public Boolean deleteError(String did) {
-        return errorService.deleteError(did);
-    }
-
-    @DgsMutation
-    public List<Boolean> deleteErrors(List<String> dids) {
-        return errorService.deleteErrors(dids);
-    }
 }

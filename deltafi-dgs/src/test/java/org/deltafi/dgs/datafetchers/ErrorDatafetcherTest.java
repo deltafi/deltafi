@@ -4,11 +4,11 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import graphql.ExecutionResult;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.api.types.ErrorDomain;
 import org.deltafi.dgs.generated.client.*;
-import org.deltafi.dgs.repo.ErrorRepo;
+import org.deltafi.dgs.generated.types.DeltaFiDomains;
+import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.services.ErrorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,7 +35,7 @@ class ErrorDatafetcherTest<ErrorDomainProjection> {
     ErrorService errorService;
 
     @Autowired
-    ErrorRepo errorRepo;
+    DeltaFileRepo deltaFileRepo;
 
     DeltaFile deltaFile(String did) {
         DeltaFile deltaFile = new DeltaFile();
@@ -56,15 +56,27 @@ class ErrorDatafetcherTest<ErrorDomainProjection> {
                 .build();
     }
 
+    DeltaFile deltaFile(String errorDid, ErrorDomain errorDomain) {
+        DeltaFile retval = new DeltaFile();
+        retval.setDid(errorDid);
+        retval.setActions(new ArrayList<>());
+        retval.setDomains(new DeltaFiDomains());
+        retval.getDomains().setDid(errorDid);
+        retval.getDomains().setDomainTypes(Collections.singletonList("error"));
+        retval.getDomains().setError(errorDomain);
+
+        return retval;
+    }
+
     void loadDummyDomains() {
-        List<ErrorDomain> errorDomainList = new ArrayList<>();
+        List<DeltaFile> deltaFiles = new ArrayList<>();
 
-        errorDomainList.add(errorDomain("e1", "orig", "FormatAction", "Hosed", "Right there"));
-        errorDomainList.add(errorDomain("e2", "orig", "FormatAction", "Bombed", "Right there"));
-        errorDomainList.add(errorDomain("e3", "orig", "FormatAction", "Jacked", "Right there"));
-        errorDomainList.add(errorDomain("e4", "nope", "FormatAction", "Not bad", "Somewhere"));
+        deltaFiles.add(deltaFile("e1-error", errorDomain("e1", "orig", "FormatAction", "Hosed", "Right there")));
+        deltaFiles.add(deltaFile("e2-error", errorDomain("e2", "orig", "FormatAction", "Bombed", "Right there")));
+        deltaFiles.add(deltaFile("e3-error", errorDomain("e3", "orig", "FormatAction", "Jacked", "Right there")));
+        deltaFiles.add(deltaFile("e4-error", errorDomain("e4", "nope", "FormatAction", "Not bad", "Somewhere")));
 
-        errorRepo.saveAll(errorDomainList);
+        deltaFileRepo.saveAll(deltaFiles);
     }
 
     BaseProjectionNode projection = new GetErrorProjectionRoot()
@@ -74,19 +86,23 @@ class ErrorDatafetcherTest<ErrorDomainProjection> {
             .fromAction()
             .originatorDid()
             .originator()
-            .did()
+                .did()
+                .actions()
+                    .name()
+                    .state()
+                .parent()
             .parent();
 
     @BeforeEach
     void setUp() {
-        errorRepo.deleteAll();
+        deltaFileRepo.deleteAll();
         loadDummyDomains();
     }
 
     @Test
     void getError() {
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-                new GetErrorGraphQLQuery.Builder().did("e1").build(),
+                new GetErrorGraphQLQuery.Builder().did("e1-error").build(),
                 projection
         );
 
@@ -128,36 +144,4 @@ class ErrorDatafetcherTest<ErrorDomainProjection> {
         assertThat(errorDomains.get(2).getDid()).isEqualTo("e3");
     }
 
-    @Test
-    void deleteError() {
-
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-                new DeleteErrorGraphQLQuery.Builder().did("e1").build()
-        );
-
-        Boolean result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data.deleteError",
-                Boolean.class
-        );
-
-        assertTrue(result);
-        assertThat(errorRepo.findAll().size()).isEqualTo(3);
-    }
-
-    @Test
-    void deleteErrors() {
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-                new DeleteErrorsGraphQLQuery.Builder().dids(Arrays.asList("e1","e3","blah")).build()
-        );
-
-        List<Boolean> result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data.deleteErrors",
-                new TypeRef<>() {}
-        );
-
-        assertThat(result).isEqualTo(Arrays.asList(true, true, false));
-        assertThat(errorRepo.findAll().size()).isEqualTo(2);
-    }
 }
