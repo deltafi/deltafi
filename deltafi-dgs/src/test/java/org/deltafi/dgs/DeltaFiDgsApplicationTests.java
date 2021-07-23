@@ -2,20 +2,26 @@ package org.deltafi.dgs;
 
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
+import org.deltafi.dgs.api.types.ConfigType;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.schedulers.DeleteScheduler;
+import org.deltafi.dgs.delete.DeleteRunner;
 import org.deltafi.dgs.generated.DgsConstants;
+import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.generated.types.*;
+
 import org.deltafi.dgs.repo.DeltaFiConfigRepo;
 import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.services.*;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.mockito.internal.stubbing.answers.AnswersWithDelay;
+import org.mockito.internal.stubbing.answers.Returns;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
 import java.util.*;
@@ -25,11 +31,12 @@ import static graphql.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.dgs.Util.equalIgnoringDates;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest
+@TestPropertySource(properties = "enableScheduling=false")
 class DeltaFiDgsApplicationTests {
 
 	@Autowired
@@ -51,7 +58,7 @@ class DeltaFiDgsApplicationTests {
 	SampleDomainsService sampleDomainsService;
 
 	@Autowired
-	DeleteScheduler deleteScheduler;
+	DeleteRunner deleteRunner;
 
 	@Autowired
 	DeltaFileRepo deltaFileRepo;
@@ -70,24 +77,26 @@ class DeltaFiDgsApplicationTests {
 			KeyValue.newBuilder().key("sampleVersion").value("2.1").build());
 
 	@BeforeEach
-	void setup() {
+	void setup() throws IOException {
 		deltaFileRepo.deleteAll();
 		sampleEnrichmentsService.getSampleEnrichments().clear();
 		sampleDomainsService.getSampleDomains().clear();
 		deltaFiProperties.getDelete().setOnCompletion(false);
-		configLoaderService.loadProperties();
+		configLoaderService.initConfig();
+		// sleep longer than the tests
+		doAnswer( new AnswersWithDelay( 10000000,  new Returns(null)) ).when(redisService).dgsFeed();
 	}
 
 	@Test
 	void contextLoads() {
 		assertTrue(true);
-		assertFalse(deltaFiProperties.getIngress().getIngressFlows().isEmpty());
+		assertFalse(deltaFiConfigRepo.findAllByConfigType(ConfigType.INGRESS_FLOW).isEmpty());
 	}
 
 	@Test
 	void deletePoliciesScheduled() {
-		assertThat(deleteScheduler.getDeletePolicies().size()).isEqualTo(1);
-		assertThat(deleteScheduler.getDeletePolicies().get(0).getName()).isEqualTo("oneHourAfterComplete");
+		assertThat(deleteRunner.getDeletePolicies().size()).isEqualTo(1);
+		assertThat(deleteRunner.getDeletePolicies().get(0).getName()).isEqualTo("oneHourAfterComplete");
 	}
 
 	private String graphQL(String filename) throws IOException {
@@ -115,7 +124,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test01Ingress() throws IOException {
+	void test01Ingress() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile deltaFileFromDgs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("01.ingress"), did),
@@ -149,7 +158,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test03TransformUtf8() throws IOException {
+	void test03TransformUtf8() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postIngressDeltaFile(did));
 
@@ -184,7 +193,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test05Transform() throws IOException {
+	void test05Transform() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postTransformUtf8DeltaFile(did));
 
@@ -234,7 +243,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test08Load() throws IOException {
+	void test08Load() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postTransformDeltaFile(did));
 		sampleDomainsService.addSampleDomain(sampleDomain(did));
@@ -285,7 +294,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test11Enrich() throws IOException {
+	void test11Enrich() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
 		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
@@ -326,7 +335,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test13Format() throws IOException {
+	void test13Format() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postEnrichDeltaFile(did));
 		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
@@ -354,7 +363,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test15Validate() throws IOException {
+	void test15Validate() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postFormatDeltaFile(did));
 
@@ -378,7 +387,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test17Error() throws IOException {
+	void test17Error() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
 
@@ -392,11 +401,11 @@ class DeltaFiDgsApplicationTests {
 		assertTrue(equalIgnoringDates(expected, actual));
 
 		// FIXME: Be specific...
-		Mockito.verify(redisService).enqueue(any(), any());
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("ErrorFormatAction")), any());
 	}
 
 	@Test
-	void test18Retry() throws IOException {
+	void test18Retry() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postErrorDeltaFile(did));
 
@@ -422,7 +431,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test20ValidateAuthority() throws IOException {
+	void test20ValidateAuthority() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
 
@@ -448,7 +457,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test22Egress() throws IOException {
+	void test22Egress() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
 
@@ -464,7 +473,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void testFilterEgress() throws IOException {
+	void testFilterEgress() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
 
@@ -483,7 +492,7 @@ class DeltaFiDgsApplicationTests {
 	}
 
 	@Test
-	void test22EgressDeleteCompleted() throws IOException {
+	void test22EgressDeleteCompleted() throws IOException, ActionConfigException {
 		deltaFiProperties.getDelete().setOnCompletion(true);
 
 		String did = UUID.randomUUID().toString();
@@ -510,5 +519,23 @@ class DeltaFiDgsApplicationTests {
 
 		assertEquals(Arrays.asList(did, "nonsenseDid"), dids);
 		assertNull(deltaFilesService.getDeltaFile(did));
+	}
+
+	@Test
+	void test25ActionConfigError() throws IOException, ActionConfigException {
+		String did = UUID.randomUUID().toString();
+		deltaFilesService.addDeltaFile(postIngressDeltaFile(did));
+
+		Mockito.doThrow(new ActionConfigException("SampleTransformAction", "action not found")).when(redisService).enqueue(eq(Collections.singletonList("SampleTransformAction")), argThat((d) -> did.equals(d.getDid())));
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("03.transformUtf8"), did),
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class).getDid();
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertThat(DeltaFileStage.ERROR.name()).isEqualTo(deltaFile.getStage());
+
+		Action errored = deltaFile.actionNamed("SampleTransformAction").orElseThrow();
+		assertThat("action not found").isEqualTo(errored.getErrorCause());
 	}
 }

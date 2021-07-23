@@ -11,8 +11,8 @@ import java.util.Map;
 public class FormatResult extends Result {
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public FormatResult(FormatAction action, String did, String filename) {
-        super(action, did);
+    public FormatResult(String name, String did, String filename) {
+        super(name, did);
         this.filename = filename;
     }
 

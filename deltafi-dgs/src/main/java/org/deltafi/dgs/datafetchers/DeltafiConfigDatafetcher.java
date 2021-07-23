@@ -29,36 +29,6 @@ public class DeltafiConfigDatafetcher {
     }
 
     @DgsMutation
-    public TransformActionConfiguration registerTransformAction(TransformActionConfigurationInput transformActionConfiguration) {
-        return deltaFiConfigService.saveTransformAction(transformActionConfiguration);
-    }
-
-    @DgsMutation
-    public LoadActionConfiguration registerLoadAction(LoadActionConfigurationInput loadActionConfiguration) {
-        return deltaFiConfigService.saveLoadAction(loadActionConfiguration);
-    }
-
-    @DgsMutation
-    public EnrichActionConfiguration registerEnrichAction(EnrichActionConfigurationInput enrichActionConfiguration) {
-        return deltaFiConfigService.saveEnrichAction(enrichActionConfiguration);
-    }
-
-    @DgsMutation
-    public FormatActionConfiguration registerFormatAction(FormatActionConfigurationInput formatActionConfiguration) {
-        return deltaFiConfigService.saveFormatAction(formatActionConfiguration);
-    }
-
-    @DgsMutation
-    public ValidateActionConfiguration registerValidateAction(ValidateActionConfigurationInput validateActionConfiguration) {
-        return deltaFiConfigService.saveValidateAction(validateActionConfiguration);
-    }
-
-    @DgsMutation
-    public EgressActionConfiguration registerEgressAction(EgressActionConfigurationInput egressActionConfiguration) {
-        return deltaFiConfigService.saveEgressAction(egressActionConfiguration);
-    }
-
-    @DgsMutation
     public DomainEndpointConfiguration registerDomainEndpoint(DomainEndpointConfigurationInput domainEndpointConfiguration) {
         return deltaFiConfigService.saveDomainEndpoint(domainEndpointConfiguration);
     }
@@ -79,12 +49,12 @@ public class DeltafiConfigDatafetcher {
     }
 
     @DgsMutation
-    public long removeConfig(ConfigQueryInput configQuery) {
-        return deltaFiConfigService.removeConfigs(configQuery);
+    public long removeDeltaFiConfigs(ConfigQueryInput configQuery) {
+        return deltaFiConfigService.removeDeltafiConfigs(configQuery);
     }
 
     @DgsQuery
-    public List<DeltaFiConfiguration> deltaFiConfig(ConfigQueryInput configQuery) {
+    public List<DeltaFiConfiguration> deltaFiConfigs(ConfigQueryInput configQuery) {
         return deltaFiConfigService.getConfigs(configQuery);
     }
 }

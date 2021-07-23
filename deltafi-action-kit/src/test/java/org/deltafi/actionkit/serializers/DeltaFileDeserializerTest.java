@@ -3,7 +3,8 @@ package org.deltafi.actionkit.serializers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.actionkit.config.ObjectMapperConfig;
-import org.deltafi.actionkit.types.DeltaFile;
+
+import org.deltafi.dgs.api.types.DeltaFile;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

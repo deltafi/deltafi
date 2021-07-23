@@ -4,10 +4,10 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.api.types.ErrorDomain;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.configuration.EgressConfiguration;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.DeltaFileConverter;
 import org.deltafi.dgs.converters.ErrorConverter;
+import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.exceptions.UnexpectedActionException;
 import org.deltafi.dgs.exceptions.UnknownTypeException;
 import org.deltafi.dgs.generated.types.*;
@@ -88,6 +88,10 @@ public class DeltaFilesService {
 
         DeltaFile deltaFile = getDeltaFile(event.getDid());
 
+        if (deltaFile == null) {
+            throw new DgsEntityNotFoundException("Received event for unknown did: " + event);
+        }
+
         if (deltaFile.noPendingAction(event.getAction())) {
             throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
         }
@@ -148,10 +152,7 @@ public class DeltaFilesService {
                 .filename(event.getFormat().getFilename())
                 .metadata(DeltaFileConverter.convertKeyValueInputs(event.getFormat().getMetadata()))
                 .objectReference(DeltaFileConverter.convert(event.getFormat().getObjectReference()))
-                .egressActions(properties.getEgress().getEgressFlows().keySet().stream()
-                        .filter(k -> properties.getEgress().getEgressFlows().get(k).getFormatAction().equals(event.getAction()))
-                        .map(EgressConfiguration::egressActionName)
-                        .collect(Collectors.toList()))
+                .egressActions(configService.getEgressFlowsWithFormatAction(event.getAction()))
                 .build();
         deltaFile.getFormattedData().add(formattedData);
         deltaFile.completeAction(event.getAction());
@@ -232,7 +233,7 @@ public class DeltaFilesService {
         } else {
             deltaFileRepo.save(deltaFile);
             if (!enqueueActions.isEmpty()) {
-                redisService.enqueue(enqueueActions, deltaFile);
+                enqueueActions(enqueueActions, deltaFile);
             }
         }
         return deltaFile;
@@ -249,7 +250,7 @@ public class DeltaFilesService {
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now();
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified);
-        requeuedDeltaFiles.forEach(deltaFile -> redisService.enqueue(requeuedActions(deltaFile, modified), deltaFile));
+        requeuedDeltaFiles.forEach(deltaFile -> enqueueActions(requeuedActions(deltaFile, modified), deltaFile));
     }
 
     private List<String> requeuedActions(DeltaFile deltaFile, OffsetDateTime modified) {
@@ -261,15 +262,25 @@ public class DeltaFilesService {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionEventInput event = redisService.dgsFeed();
                 executor.submit(() -> {
-                    try {
-                        handleActionEvent(event);
-                    } catch (OptimisticLockingFailureException e) {
-                        // rethrow this exception so that @MongoRetryable works
-                        throw e;
-                    } catch (Throwable e) {
-                        StringWriter stackWriter = new StringWriter();
-                        e.printStackTrace(new PrintWriter(stackWriter));
-                        log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
+                    int count = 0;
+                    while(true) {
+                        try {
+                            count += 1;
+                            handleActionEvent(event);
+                            break;
+                        } catch (OptimisticLockingFailureException e) {
+                            if (count < 10) {
+                                // retry manually
+                                handleActionEvent(event);
+                            } else {
+                                throw e;
+                            }
+                        } catch (Throwable e) {
+                            StringWriter stackWriter = new StringWriter();
+                            e.printStackTrace(new PrintWriter(stackWriter));
+                            log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
+                            break;
+                        }
                     }
                 });
             }
@@ -280,4 +291,14 @@ public class DeltaFilesService {
             log.error("Error receiving event: " + e.getMessage());
         }
     }
+
+    public void enqueueActions(List<String> actions, DeltaFile deltaFile) {
+        try {
+            redisService.enqueue(actions, deltaFile);
+        } catch (ActionConfigException e) {
+            log.error("Failed to enqueue {} with error {}", deltaFile.getDid(), e.getMessage());
+            this.error(ErrorInput.newBuilder().originatorDid(deltaFile.getDid()).fromAction(e.getActionName()).cause(e.getMessage()).build());
+        }
+    }
 }
+

@@ -6,8 +6,8 @@ import org.deltafi.dgs.generated.types.ActionEventType;
 public class ValidateResult extends Result {
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public ValidateResult(ValidateAction action, String did) {
-        super(action, did);
+    public ValidateResult(String name, String did) {
+        super(name, did);
     }
 
     @Override

@@ -1,13 +1,18 @@
 package org.deltafi.dgs.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.dgs.configuration.*;
+import org.deltafi.dgs.repo.ActionConfigRepo;
 import org.deltafi.dgs.repo.DeltaFiConfigRepo;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -17,113 +22,102 @@ import java.util.function.Consumer;
 @Service
 public class ConfigLoaderService {
 
-    private final DeltaFiProperties deltaFiProperties;
-    private final DeltaFiConfigRepo deltaFiConfigRepo;
-    private Consumer<DeltaFiConfiguration> persistActionMethod;
-    private Consumer<DeltaFiConfiguration> persistFlowMethod;
+    @Value("${deltafi.configSource.path:classpath:deltafi-config.json}")
+    private Resource resource;
 
-    public ConfigLoaderService(DeltaFiProperties deltaFiProperties, DeltaFiConfigRepo deltaFiConfigRepo) {
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private final DeltaFiProperties deltaFiProperties;
+    private final ActionConfigRepo actionConfigRepo;
+    private final DeltaFiConfigRepo deltaFiConfigRepo;
+
+    private Consumer<ActionConfiguration> persistActionConfigMethod;
+    private Consumer<DeltaFiConfiguration> persistDeltafiConfigMethod;
+
+    public ConfigLoaderService(DeltaFiProperties deltaFiProperties, DeltaFiConfigRepo deltaFiConfigRepo, ActionConfigRepo actionConfigRepo) {
         this.deltaFiProperties = deltaFiProperties;
         this.deltaFiConfigRepo = deltaFiConfigRepo;
+        this.actionConfigRepo = actionConfigRepo;
     }
 
     @PostConstruct
-    public void loadProperties() {
-        loadActions(deltaFiProperties.getConfigSource().getActions());
-        loadFlows(deltaFiProperties.getConfigSource().getFlows());
+    public void initConfig() throws IOException {
+        if (resource.exists() && resource.isReadable()) {
+            DeltafiRuntimeConfiguration config = mapper.readValue(resource.getInputStream(), DeltafiRuntimeConfiguration.class);
+            loadActionConfigs(config);
+            loadDeltafiConfigs(config);
+        }
     }
 
-    public void loadActions(ConfigSource.Source actionConfigSource) {
-        switch (actionConfigSource) {
+    @CacheEvict(allEntries = true, cacheNames = { "loadAction", "enrichAction", "formatAction", "actionConfig", "actionConfigs", "actionNames" })
+    public void loadActionConfigs(DeltafiRuntimeConfiguration config) {
+        switch (deltaFiProperties.getConfigSource().getActions()) {
             case EXTERNAL:
                 return;
             case OVERWRITE_FROM_PROPERTY:
-                persistActionMethod = this::upsertConfig;
+                persistActionConfigMethod = this::upsertConfig;
                 break;
             case DEFAULT_FROM_PROPERTY:
-                persistActionMethod = this::saveIfNew;
+                persistActionConfigMethod = this::saveIfNew;
                 break;
             case RELOAD_FROM_PROPERTY:
-                deltaFiConfigRepo.deleteActionConfigs();
-                persistActionMethod = this::save;
+                actionConfigRepo.deleteAll();
+                persistActionConfigMethod = this::save;
                 break;
         }
-        loadActions();
+        doLoadActionConfigs(config);
     }
 
-    public void loadFlows(ConfigSource.Source flowConfigSource) {
-        switch (flowConfigSource) {
+    @CacheEvict(allEntries = true, cacheNames = { "ingressFlow", "egressFlows", "optionalEgressFlow", "egressFlow", "egressFlowNames", "domainEndpoints", "loadGroups", "config" })
+    public void loadDeltafiConfigs(DeltafiRuntimeConfiguration configs) {
+        switch (deltaFiProperties.getConfigSource().getFlows()) {
             case EXTERNAL:
                 return;
             case OVERWRITE_FROM_PROPERTY:
-                persistFlowMethod = this::upsertConfig;
+                persistDeltafiConfigMethod = this::upsertConfig;
                 break;
             case DEFAULT_FROM_PROPERTY:
-                persistFlowMethod = this::saveIfNew;
+                persistDeltafiConfigMethod = this::saveIfNew;
                 break;
             case RELOAD_FROM_PROPERTY:
-                deltaFiConfigRepo.deleteFlowConfigs();
-                persistFlowMethod = this::save;
+                deltaFiConfigRepo.deleteAll();
+                persistDeltafiConfigMethod = this::save;
                 break;
         }
-        loadFlows();
+        doLoadDeltafiConfigs(configs);
     }
 
-    public void loadActions() {
-        deltaFiProperties.getTransformActions().forEach(this::setNameAndSaveConfig);
-        deltaFiProperties.getLoadActions().forEach(this::setNameAndSaveConfig);
-        deltaFiProperties.getEnrichActions().forEach(this::setNameAndSaveConfig);
-        deltaFiProperties.getFormatActions().forEach(this::setNameAndSaveConfig);
-        deltaFiProperties.getLoadGroups().forEach(this::saveLoadGroups);
-        deltaFiProperties.getValidateActions().forEach(this::saveValidateConfig);
-        deltaFiProperties.getEgress().getEgressFlows().keySet().forEach(this::saveEgressAction);
+    public void doLoadActionConfigs(DeltafiRuntimeConfiguration config) {
+        config.getTransformActions().forEach(this::persistActionConfig);
+        config.getLoadActions().forEach(this::persistActionConfig);
+        config.getEnrichActions().forEach(this::persistActionConfig);
+        config.getFormatActions().forEach(this::persistActionConfig);
+        config.getValidateActions().forEach(this::persistActionConfig);
+        config.getEgressActions().forEach(this::persistActionConfig);
+        config.getTransformActions().forEach(this::persistActionConfig);
     }
 
-    public void loadFlows() {
-        deltaFiProperties.getIngress().getIngressFlows().forEach(this::saveIngressFlowConfiguration);
-        deltaFiProperties.getEgress().getEgressFlows().forEach(this::saveEgressFlowConfiguration);
+    public void doLoadDeltafiConfigs(DeltafiRuntimeConfiguration config) {
+        config.getIngressFlows().forEach(this::persistDeltafiConfig);
+        config.getEgressFlows().forEach(this::saveEgressFlowConfiguration);
+        config.getLoadGroups().forEach(this::persistDeltafiConfig);
     }
 
-    private void saveIngressFlowConfiguration(String name, IngressFlowConfiguration ingressFlowConfiguration) {
-        ingressFlowConfiguration.setName(name);
-        ingressFlowConfiguration.setModified(OffsetDateTime.now());
-        persistFlowMethod.accept(ingressFlowConfiguration);
+    private void saveEgressFlowConfiguration(EgressFlowConfiguration egressFlowConfiguration) {
+        if (Objects.isNull(egressFlowConfiguration.getEgressAction()) || egressFlowConfiguration.getEgressAction().isBlank()) {
+            egressFlowConfiguration.setEgressAction(EgressConfiguration.egressActionName(egressFlowConfiguration.getName()));
+        }
+        persistDeltafiConfig(egressFlowConfiguration);
     }
 
-    private void saveEgressFlowConfiguration(String name, EgressFlowConfiguration egressFlowConfiguration) {
-        egressFlowConfiguration.setName(name);
-        egressFlowConfiguration.setEgressAction(EgressConfiguration.egressActionName(name));
-        egressFlowConfiguration.setModified(OffsetDateTime.now());
-        persistFlowMethod.accept(egressFlowConfiguration);
+    private void persistDeltafiConfig(DeltaFiConfiguration deltafiConfig) {
+        deltafiConfig.setModified(OffsetDateTime.now());
+        persistDeltafiConfigMethod.accept(deltafiConfig);
     }
 
-    public void saveValidateConfig(String name) {
-        ValidateActionConfiguration actionConfiguration = new ValidateActionConfiguration();
-        actionConfiguration.setName(name);
-        persistActionConfig(actionConfiguration);
-    }
-
-    public void saveEgressAction(String name) {
-        EgressActionConfiguration actionConfiguration = new EgressActionConfiguration();
-        actionConfiguration.setName(EgressConfiguration.egressActionName(name));
-        persistActionConfig(actionConfiguration);
-    }
-
-    public void saveLoadGroups(String name, List<String> actions) {
-        LoadActionGroupConfiguration loadActionGroupConfiguration = new LoadActionGroupConfiguration();
-        loadActionGroupConfiguration.setName(name);
-        loadActionGroupConfiguration.setLoadActions(actions);
-        persistActionConfig(loadActionGroupConfiguration);
-    }
-
-    public void setNameAndSaveConfig(String name, DeltaFiConfiguration config) {
-        config.setName(name);
-        persistActionConfig(config);
-    }
-
-    public void persistActionConfig(DeltaFiConfiguration configuration) {
+    public void persistActionConfig(ActionConfiguration configuration) {
         configuration.setModified(OffsetDateTime.now());
-        persistActionMethod.accept(configuration);
+        persistActionConfigMethod.accept(configuration);
     }
 
     public void upsertConfig(DeltaFiConfiguration configuration) {
@@ -138,6 +132,20 @@ public class ConfigLoaderService {
 
     public void save(DeltaFiConfiguration configuration) {
         deltaFiConfigRepo.save(configuration);
+    }
+
+    public void upsertConfig(ActionConfiguration configuration) {
+        actionConfigRepo.upsertConfiguration(configuration, ActionConfiguration.class);
+    }
+
+    public void saveIfNew(ActionConfiguration configuration) {
+        if (!actionConfigRepo.exists(configuration)) {
+            actionConfigRepo.save(configuration);
+        }
+    }
+
+    public void save(ActionConfiguration configuration) {
+        actionConfigRepo.save(configuration);
     }
 
 

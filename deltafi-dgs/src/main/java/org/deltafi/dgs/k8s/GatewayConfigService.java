@@ -15,6 +15,7 @@ import org.deltafi.dgs.generated.types.DomainEndpointConfigurationInput;
 import org.deltafi.dgs.services.DeltaFiConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 
 import javax.annotation.PostConstruct;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 public class GatewayConfigService {
 
     private static final Logger log = LoggerFactory.getLogger(GatewayConfigService.class);
-    public static final String DELTAFI_NAMESPACE = "deltafi";
+
     public static final String DOMAIN_SERVICE_LABEL_KEY = "deltafi-domain-service";
     public static final String SERVICE_LIST_KEY = "SERVICE_LIST";
     public static final String APOLLO_GATEWAY_CONFIG = "apollo-gateway-config";
@@ -44,6 +45,9 @@ public class GatewayConfigService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    @Value("${deltafi.namespace}")
+    public String namespace = "deltafi";
+
     private final KubernetesClient k8s;
     private final DeltaFiConfigService configService;
 
@@ -59,7 +63,7 @@ public class GatewayConfigService {
     @PostConstruct
     public Watch startServiceWatcher() {
         // TODO - should we sync the ConfigMap at startup?
-        return k8s.services().inNamespace(DELTAFI_NAMESPACE).watch(new Watcher<>() {
+        Watch watch = k8s.services().inNamespace(namespace).watch(new Watcher<>() {
             @Override
             public void eventReceived(Action action, Service resource) {
                 domainServiceName(resource).ifPresent(name -> handleDomainServiceEvent(name, resource, action));
@@ -67,9 +71,13 @@ public class GatewayConfigService {
 
             @Override
             public void onClose(WatcherException cause) {
-                log.warn("Server watcher is shutting down.", cause);
+                log.warn("K8S service watcher is shutting down.", cause);
             }
         });
+
+        log.info("Watching for new services");
+
+        return watch;
     }
 
     public void handleDomainServiceEvent(String name, Service service, Watcher.Action action) {
@@ -95,12 +103,15 @@ public class GatewayConfigService {
         getAnnotation(service, API_VERSION_ANNOTATION_KEY).ifPresent(endpointConfigurationInput::apiVersion);
         getAnnotation(service, DOMAIN_VERSION_ANNOTATION_KEY).ifPresent(endpointConfigurationInput::domainVersion);
 
+        log.info("Add or update service for {}", name);
         configService.saveDomainEndpoint(endpointConfigurationInput.build());
     }
 
     protected void deleteService(String name) {
         ConfigQueryInput query = ConfigQueryInput.newBuilder().configType(ConfigType.DOMAIN_ENDPOINT).name(name).build();
-        configService.removeConfigs(query);
+
+        log.info("Remove service for {}", name);
+        configService.removeDeltafiConfigs(query);
     }
 
     public void refreshApolloConfig() {
@@ -112,14 +123,14 @@ public class GatewayConfigService {
         try {
             String serviceJson = mapper.writeValueAsString(serviceMaps);
 
-            k8s.configMaps().inNamespace(DELTAFI_NAMESPACE)
+            k8s.configMaps().inNamespace(namespace)
                     .withName(APOLLO_GATEWAY_CONFIG)
                     .edit(cm -> new ConfigMapBuilder(cm)
                             .removeFromData(SERVICE_LIST_KEY)
                             .addToData(SERVICE_LIST_KEY, serviceJson)
                             .build());
 
-            k8s.apps().deployments().inNamespace(DELTAFI_NAMESPACE).withName(APOLLO_DEPLOYMENT).rolling().restart();
+            k8s.apps().deployments().inNamespace(namespace).withName(APOLLO_DEPLOYMENT).rolling().restart();
         } catch (JsonProcessingException e) {
             log.error("Failed to update the apollo-gateway-config", e);
         }

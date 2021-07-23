@@ -11,8 +11,8 @@ import java.util.Map;
 public class TransformResult extends Result {
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public TransformResult(TransformAction action, String did) {
-        super(action, did);
+    public TransformResult(String name, String did) {
+        super(name, did);
     }
 
     protected final List<KeyValueInput> metadata = new ArrayList<>();

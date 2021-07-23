@@ -1,0 +1,135 @@
+enum ActionType {
+    TRANSFORM_ACTION
+    LOAD_ACTION
+    ENRICH_ACTION
+    FORMAT_ACTION
+    VALIDATE_ACTION
+    EGRESS_ACTION
+}
+
+interface ActionConfiguration {
+    name: String!
+    type: String!
+    parameters: JSON
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+}
+
+input ActionQueryInput {
+    actionType: ActionType!
+    name: String
+    apiVersion: String
+}
+
+type TransformActionConfiguration implements ActionConfiguration {
+    name: String!
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+    consumes: String!
+    produces: String!
+    type: String!
+    parameters: JSON
+}
+
+input TransformActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    consumes: String!
+    produces: String!
+    type: String!
+    parameters: JSON
+}
+
+type LoadActionConfiguration implements ActionConfiguration {
+    name: String!
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+    consumes: String!
+    requiresMetadataKeyValues: [KeyValue]
+    type: String!
+    parameters: JSON
+}
+
+input LoadActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    consumes: String!
+    requiresMetadataKeyValues: [KeyValueInput]
+    type: String!
+    parameters: JSON
+}
+
+type EnrichActionConfiguration implements ActionConfiguration {
+    name: String!
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+    type: String!
+    parameters: JSON
+}
+
+input EnrichActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+    type: String!
+    parameters: JSON
+}
+
+type FormatActionConfiguration implements ActionConfiguration {
+    name: String!
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+    type: String!
+    parameters: JSON
+}
+
+input FormatActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+    type: String!
+    parameters: JSON
+}
+
+type ValidateActionConfiguration implements ActionConfiguration {
+    name: String!
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+    type: String!
+    parameters: JSON
+}
+
+input ValidateActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    type: String!
+    parameters: JSON
+}
+
+type EgressActionConfiguration implements ActionConfiguration {
+    name: String!
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+    type: String!
+    parameters: JSON
+}
+
+input EgressActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    type: String!
+    parameters: JSON
+}

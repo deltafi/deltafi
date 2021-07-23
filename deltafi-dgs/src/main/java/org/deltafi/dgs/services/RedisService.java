@@ -4,45 +4,47 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.deltafi.dgs.api.types.ActionInput;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.*;
+import org.deltafi.dgs.api.types.JsonMap;
+import org.deltafi.dgs.configuration.ActionConfiguration;
+import org.deltafi.dgs.exceptions.ActionConfigException;
+import org.deltafi.dgs.generated.types.ActionEventInput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.resps.KeyedZSetElement;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
-import static org.deltafi.dgs.api.Constants.*;
+import static org.deltafi.dgs.api.Constants.DGS_QUEUE;
 
+@Service
 public class RedisService {
-
-    private final JedisPool jedisPool;
+    Logger log = LoggerFactory.getLogger(RedisService.class);
     private static final ObjectMapper mapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .registerModule(new JavaTimeModule());
 
-    public RedisService(String redisUrl, String redisPassword) throws URISyntaxException {
-        URI uri = new URI(redisUrl);
-        GenericObjectPoolConfig<Jedis> pool = new GenericObjectPoolConfig<>();
-        pool.setMaxIdle(8);
-        pool.setMaxTotal(8);
-        if (redisPassword.isEmpty()) {
-            this.jedisPool = new JedisPool(pool, uri);
-        } else {
-            this.jedisPool = new JedisPool(pool, uri.getHost(), uri.getPort(), Protocol.DEFAULT_TIMEOUT, redisPassword);
-        }
+    private final JedisPool jedisPool;
+    private final ActionConfigService actionConfigService;
+
+    public RedisService(JedisPool jedisPool, ActionConfigService actionConfigService) {
+        this.jedisPool = jedisPool;
+        this.actionConfigService = actionConfigService;
     }
 
-    public void enqueue(List<String> actionNames, DeltaFile deltaFile) {
+    public void enqueue(List<String> actionNames, DeltaFile deltaFile) throws ActionConfigException {
         try (Jedis jedis = jedisPool.getResource()) {
             for (String actionName : actionNames) {
-                jedis.zadd(actionName, Instant.now().toEpochMilli(), mapper.writeValueAsString(deltaFile.forQueue(actionName)), ZAddParams.zAddParams().nx());
+                ActionConfiguration params = actionConfigService.getConfigForAction(actionName);
+                ActionInput actionInput = toActionInput(actionName, params, deltaFile);
+                jedis.zadd(params.getType(), Instant.now().toEpochMilli(), mapper.writeValueAsString(actionInput), ZAddParams.zAddParams().nx());
             }
         } catch (JsonProcessingException e) {
             // TODO: this should never happen, but do something?
@@ -54,5 +56,17 @@ public class RedisService {
             KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, DGS_QUEUE);
             return mapper.readValue(keyedZSetElement.getElement(), ActionEventInput.class);
         }
+    }
+
+    public ActionInput toActionInput(String actionName, ActionConfiguration params, DeltaFile deltaFile) {
+        ActionInput actionInput = new ActionInput();
+        actionInput.setDeltaFile(deltaFile.forQueue(actionName));
+
+        if (Objects.isNull(params.getParameters())) {
+            params.setParameters(new JsonMap());
+        }
+        params.getParameters().put("name", params.getName());
+        actionInput.setActionParams(params.getParameters());
+        return actionInput;
     }
 }

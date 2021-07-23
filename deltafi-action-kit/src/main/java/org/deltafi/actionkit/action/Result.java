@@ -18,8 +18,8 @@ abstract public class Result {
     }
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public Result(Action action, String did) {
-        name = action.name();
+    public Result(String name, String did) {
+        this.name = name;
         this.did = did;
     }
 

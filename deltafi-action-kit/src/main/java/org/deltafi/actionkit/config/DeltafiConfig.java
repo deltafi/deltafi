@@ -14,9 +14,6 @@ import java.util.Map;
 @ConfigGroup
 public class DeltafiConfig {
 
-    @ConfigItem
-    public List<ActionSpec> actions;
-
     // Quarkus config items...just terrible
     // https://github.com/quarkusio/quarkus/issues/2765
     // You have to specify and initialize the defaultValue for this to work...

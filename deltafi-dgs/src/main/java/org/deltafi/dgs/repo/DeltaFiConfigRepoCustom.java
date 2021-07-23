@@ -10,27 +10,19 @@ public interface DeltaFiConfigRepoCustom {
 
     boolean exists(DeltaFiConfiguration config);
 
-    LoadActionConfiguration findLoadAction(String name);
-
-    FormatActionConfiguration findFormatAction(String name);
-
-    EnrichActionConfiguration findEnrichAction(String name);
-
     LoadActionGroupConfiguration findLoadActionGroup(String name);
 
     IngressFlowConfiguration findIngressFlowConfig(String name);
 
     EgressFlowConfiguration findEgressFlowConfig(String name);
 
-    EgressFlowConfiguration findEgressFlowForAction(String actionName);
+    EgressFlowConfiguration findEgressFlowByEgressActionName(String actionName);
+
+    List<String> findEgressActionsWithFormatAction(String formatAction);
 
     List<EgressFlowConfiguration> findAllEgressFlows();
 
     List<DomainEndpointConfiguration> findAllDomainEndpoints();
-
-    void deleteActionConfigs();
-
-    void deleteFlowConfigs();
 
     long deleteAllWithCount();
 

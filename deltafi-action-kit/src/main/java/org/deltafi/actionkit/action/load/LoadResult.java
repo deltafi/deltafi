@@ -12,8 +12,8 @@ import java.util.List;
 public class LoadResult extends Result {
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public LoadResult(LoadAction action, String did) {
-        super(action, did);
+    public LoadResult(String name, String did) {
+        super(name, did);
     }
 
     protected final List<String> domains = new ArrayList<>();

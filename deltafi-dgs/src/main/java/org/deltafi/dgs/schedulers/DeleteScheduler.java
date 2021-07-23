@@ -1,58 +1,24 @@
 package org.deltafi.dgs.schedulers;
 
-import org.deltafi.dgs.configuration.DeletePolicyConfiguration;
-import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.delete.DeletePolicy;
-import org.deltafi.dgs.delete.TimedDelete;
-import org.deltafi.dgs.services.DeltaFilesService;
+import org.deltafi.dgs.delete.DeleteRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-
-@ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = true)
+// TODO: change this to matchIfMissing = true once the DeleteAction exists
+@ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = false)
 @Service
 @EnableScheduling
 public class DeleteScheduler {
-    static private final Map<String, Class<? extends DeletePolicy>> DELETE_POLICY_TYPES;
-    static {
-        Map<String, Class<? extends DeletePolicy>> deletePolicyTypes = new HashMap<>();
-        deletePolicyTypes.put("ageOff", TimedDelete.class);
-        DELETE_POLICY_TYPES = deletePolicyTypes;
-    }
+    private final DeleteRunner deleteRunner;
 
-    final private List<DeletePolicy> deletePolicies = new ArrayList<>();
-
-    public List<DeletePolicy> getDeletePolicies() {
-        return deletePolicies;
-    }
-
-    @SuppressWarnings("unused")
-    public DeleteScheduler(DeltaFilesService deltaFilesService, DeltaFiProperties deltaFiProperties) {
-        deltaFiProperties.getDelete().getPolicies().keySet().forEach(name -> {
-            DeletePolicyConfiguration config = deltaFiProperties.getDelete().getPolicies().get(name);
-            String type = config.getType();
-            if (DELETE_POLICY_TYPES.containsKey(type)) {
-                try {
-                    Constructor<? extends DeletePolicy> c = DELETE_POLICY_TYPES.get(type).getDeclaredConstructor(DeltaFilesService.class, String.class, Map.class);
-                    c.setAccessible(true);
-                    DeletePolicy deletePolicy = c.newInstance(deltaFilesService, name, config.getParameters());
-                    deletePolicies.add(deletePolicy);
-                } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException("Something has gone terribly wrong: " + e.getMessage());
-                }
-            } else {
-                throw new IllegalArgumentException("Unknown delete policy type " + type + " configured in policy " + name);
-            }
-        });
+    public DeleteScheduler(DeleteRunner deleteRunner) {
+        this.deleteRunner = deleteRunner;
     }
 
     @Scheduled(fixedDelayString = "#{deltaFiProperties.getDelete().getFrequency()}")
     public void runDeletes() {
-        deletePolicies.forEach(DeletePolicy::run);
+        deleteRunner.runDeletes();
     }
 }

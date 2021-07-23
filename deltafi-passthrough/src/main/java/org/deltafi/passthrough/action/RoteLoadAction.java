@@ -1,44 +1,31 @@
 package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.config.DeltafiConfig;
+import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
-import org.deltafi.actionkit.service.ContentService;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.passthrough.param.RoteLoadParameters;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.inject.Inject;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class RoteLoadAction extends LoadAction {
+public class RoteLoadAction extends Action<RoteLoadParameters> {
 
-    final ContentService contentService;
-    final List<String> domains = new ArrayList<>();
+    @Inject
+    ContentService contentService;
 
-    @SuppressWarnings("unused")
-    public RoteLoadAction() {
-        super();
-        contentService = ContentService.instance();
-    }
+    public Result execute(DeltaFile deltafile, RoteLoadParameters params) {
+        log.trace(params.getName() + " loading (" + deltafile.getDid() + ")");
 
-    public void init(DeltafiConfig.ActionSpec spec) {
-        super.init(spec);
-        if (spec.parameters.get("domain") != null) domains.add(spec.parameters.get("domain").toString());
-        // Add parameter processing here...
-    }
+        LoadResult result = new LoadResult(params.getName(), deltafile.getDid());
 
-    public Result execute(DeltaFile deltafile) {
-        log.trace(name + " loading (" + deltafile.getDid() + ")");
-
-        LoadResult result = new LoadResult(this, deltafile.getDid());
-
-        domains.forEach(result::addDomain);
+        params.getDomains().forEach(result::addDomain);
 
         generateMetrics(deltafile);
 
@@ -57,5 +44,10 @@ public class RoteLoadAction extends LoadAction {
         };
 
         metricLogger.logMetric(LOG_SOURCE, MetricType.COUNTER, FILES_PROCESSED, 1, tags);
+    }
+
+    @Override
+    public Class<RoteLoadParameters> getParamType() {
+        return RoteLoadParameters.class;
     }
 }

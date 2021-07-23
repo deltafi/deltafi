@@ -2,7 +2,7 @@ package org.deltafi.dgs.configuration;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.bson.types.ObjectId;
-import org.deltafi.dgs.api.types.ConfigType;
+import org.deltafi.dgs.generated.types.ActionType;
 import org.springframework.data.annotation.Transient;
 
 import java.time.OffsetDateTime;
@@ -12,14 +12,14 @@ import java.time.ZoneOffset;
         use = JsonTypeInfo.Id.NONE
 )
 @SuppressWarnings("unused")
-public class TransformActionConfiguration extends org.deltafi.dgs.generated.types.TransformActionConfiguration implements DeltaFiConfiguration {
+public class TransformActionConfiguration extends org.deltafi.dgs.generated.types.TransformActionConfiguration implements ActionConfiguration {
 
-    private ConfigType configType = ConfigType.TRANSFORM_ACTION;
+    private ActionType actionType = ActionType.TRANSFORM_ACTION;
     private ObjectId id;
 
     @Override
-    public ConfigType getConfigType() {
-        return configType;
+    public ActionType getActionType() {
+        return actionType;
     }
 
     @Override

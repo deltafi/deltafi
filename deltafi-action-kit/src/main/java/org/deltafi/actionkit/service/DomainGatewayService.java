@@ -13,19 +13,18 @@ import com.netflix.graphql.dgs.client.RequestExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.BaseSubProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import graphql.schema.Coercing;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.coerce.StringCoercing;
+import org.deltafi.actionkit.exception.DgsPostException;
+import org.deltafi.dgs.api.serializers.DeltaFileDeserializer;
+import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.client.DeltaFileGraphQLQuery;
 import org.deltafi.dgs.generated.client.DeltaFileProjectionRoot;
-import org.deltafi.actionkit.exception.DgsPostException;
-import org.deltafi.actionkit.serializers.DeltaFileDeserializer;
-import org.deltafi.actionkit.types.DeltaFile;
 import org.deltafi.dgs.generated.client.DeltaFile_DomainsProjection;
 import org.deltafi.dgs.generated.client.DeltaFile_EnrichmentProjection;
-
-import graphql.schema.Coercing;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -51,14 +50,15 @@ public class DomainGatewayService {
 
     final ObjectMapper mapper = new ObjectMapper();
 
-    // Guarantee instantiation if not injected...
     @SuppressWarnings("EmptyMethod")
-    void startup(@Observes StartupEvent event) {}
+    void startup(@Observes StartupEvent event) {
+        // Guarantee instantiation if not injected...
+    }
 
     static DomainGatewayService instance;
 
     @SuppressWarnings("unused")
-    static public DomainGatewayService instance() { return instance; }
+    public static DomainGatewayService instance() { return instance; }
 
     DomainGatewayService() {
         log.debug(this.getClass().getSimpleName() + " instantiated");

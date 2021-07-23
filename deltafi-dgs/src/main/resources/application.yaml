@@ -17,75 +17,6 @@ spring:
         size: 4
 deltafi:
   requeueSeconds: 30
-  ingress:
-    ingressFlows:
-      stix2_1:
-        type: stix2_1
-        transformActions: []
-        loadActions: [Stix2_1LoadAction]
-      stix1_x:
-        type: stix1_x
-        transformActions: [Stix1_xTo2_1TransformAction]
-        loadActions: [Stix2_1LoadAction]
-      passthrough:
-        type: binary
-        transformActions: [PassthroughTransformAction]
-        loadActions: [PassthroughLoadAction]
-      smoke:
-        type: binary
-        transformActions: [ PassthroughTransformAction ]
-        loadActions: [ PassthroughLoadAction ]
-  transformActions:
-    PassthroughTransformAction:
-      consumes: binary
-      produces: passthrough-binary
-    Stix1_xTo2_1TransformAction:
-      consumes: stix1_x
-      produces: stix2_1
-  loadActions:
-    Stix2_1LoadAction:
-      consumes: stix2_1
-    PassthroughLoadAction:
-      consumes: passthrough-binary
-  enrichActions: {}
-  formatActions:
-    "[Stix2_1FormatAction]":
-      requiresDomains: [stix]
-    "[Stix1_XFormatAction]":
-      requiresDomains: [stix]
-    PassthroughFormatAction:
-      requiresDomains: [binary]
-    ErrorFormatAction:
-      requiresDomains: [error]
-  validateActions:
-    - Stix2_1ValidateAction
-    - Stix1_XValidateAction
-    - AuthorityValidateAction
-    - PassthroughValidateAction
-  egress:
-    egressFlows:
-      error:
-        formatAction: ErrorFormatAction
-      stix2_1:
-        formatAction: Stix2_1FormatAction
-        validateActions:
-          - Stix2_1ValidateAction
-      stix1_X:
-        formatAction: Stix1_XFormatAction
-        validateActions:
-          - Stix1_XValidateAction
-      passthrough:
-        formatAction: PassthroughFormatAction
-        validateActions:
-          - PassthroughValidateAction
-        includeIngressFlows:
-          - passthrough
-      smoke:
-        formatAction: PassthroughFormatAction
-        validateActions:
-          - PassthroughValidateAction
-        includeIngressFlows:
-          - smoke
   delete:
     onCompletion: false
     frequency: PT1M
@@ -97,6 +28,8 @@ deltafi:
   configSource:
     flows: DEFAULT_FROM_PROPERTY
     actions: DEFAULT_FROM_PROPERTY
+    path: ${CONFIG_SOURCE_PATH:classpath:deltafi-config.json}
+  namespace: deltafi
   zipkin:
     enabled: ${ZIPKIN_ENABLED:true}
     url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}

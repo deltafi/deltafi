@@ -13,8 +13,8 @@ public class FilterResult extends Result {
     final String filterMessage;
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public FilterResult(Action action, String did, String filterMessage) {
-        super(action, did);
+    public FilterResult(String name, String did, String filterMessage) {
+        super(name, did);
         this.filterMessage = filterMessage;
     }
 

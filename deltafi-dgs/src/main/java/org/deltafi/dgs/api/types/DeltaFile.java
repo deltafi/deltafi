@@ -1,5 +1,6 @@
 package org.deltafi.dgs.api.types;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.deltafi.dgs.generated.types.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
@@ -7,10 +8,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Document
@@ -22,10 +20,42 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     @Version
     private long version;
 
+    transient Map<String, JsonNode> domainDetails;
+
+    transient Map<String, JsonNode> enrichmentDetails;
+
     @Id
     @Override
     public String getDid() {
         return super.getDid();
+    }
+
+    public Map<String, JsonNode> getDomainDetails() {
+        return domainDetails;
+    }
+
+    public void setDomainDetails(Map<String, JsonNode> domainDetails) {
+        this.domainDetails = domainDetails;
+    }
+
+    public Map<String, JsonNode> getEnrichmentDetails() {
+        return enrichmentDetails;
+    }
+
+    public void setEnrichmentDetails(Map<String, JsonNode> enrichmentDetails) { this.enrichmentDetails = enrichmentDetails; }
+
+    public void addDomainDetails(String key, JsonNode rawDomain) {
+        if (Objects.isNull(domainDetails)) {
+            this.domainDetails = new HashMap<>();
+        }
+        this.domainDetails.put(key, rawDomain);
+    }
+
+    public void addEnrichmentDetails(String key, JsonNode rawEnrichment) {
+        if (Objects.isNull(enrichmentDetails)) {
+            this.enrichmentDetails = new HashMap<>();
+        }
+        this.enrichmentDetails.put(key, rawEnrichment);
     }
 
     @SuppressWarnings("unused")

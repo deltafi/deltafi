@@ -23,31 +23,29 @@ class DeltaFiConfigRepoTest {
 
     @Test
     void upsertConfiguration() {
-        TransformActionConfiguration config = new TransformActionConfiguration();
+        IngressFlowConfiguration config = new IngressFlowConfiguration();
         config.setName("name");
-        config.setConsumes("xml");
-        config.setProduces("json");
+        config.setType("xml");
         config.setApiVersion("1");
-        TransformActionConfiguration saved = deltaFiConfigRepo.upsertConfiguration(config, TransformActionConfiguration.class);
+        IngressFlowConfiguration saved = deltaFiConfigRepo.upsertConfiguration(config, IngressFlowConfiguration.class);
 
         assertEquals("name", saved.getName());
-        assertEquals("xml", saved.getConsumes());
-        assertEquals("json", saved.getProduces());
+        assertEquals("xml", saved.getType());
         assertEquals("1", saved.getApiVersion());
         assertNotNull(saved.getCreated());
         assertNotNull(saved.getModified());
 
-        config.setProduces("csv");
-        TransformActionConfiguration updated = deltaFiConfigRepo.upsertConfiguration(config, TransformActionConfiguration.class);
+        config.setType("csv");
+        IngressFlowConfiguration updated = deltaFiConfigRepo.upsertConfiguration(config, IngressFlowConfiguration.class);
 
         assertTrue(updated.getModified().compareTo(saved.getModified()) > 0);
         assertEquals(saved.getCreated(), updated.getCreated());
-        assertEquals("csv", updated.getProduces());
+        assertEquals("csv", updated.getType());
     }
 
     @Test
     void exists() {
-        TransformActionConfiguration config = new TransformActionConfiguration();
+        LoadActionGroupConfiguration config = new LoadActionGroupConfiguration();
         config.setName("name");
 
         assertFalse(deltaFiConfigRepo.exists(config));
@@ -55,33 +53,6 @@ class DeltaFiConfigRepoTest {
         deltaFiConfigRepo.save(config);
 
         assertTrue(deltaFiConfigRepo.exists(config));
-    }
-
-    @Test
-    void findLoadAction() {
-        LoadActionConfiguration config = new LoadActionConfiguration();
-        config.setName("name");
-        deltaFiConfigRepo.save(config);
-
-        assertEquals(config, deltaFiConfigRepo.findLoadAction("name"));
-    }
-
-    @Test
-    void findFormatAction() {
-        FormatActionConfiguration config = new FormatActionConfiguration();
-        config.setName("name");
-        deltaFiConfigRepo.save(config);
-
-        assertEquals(config, deltaFiConfigRepo.findFormatAction("name"));
-    }
-
-    @Test
-    void findEnrichAction() {
-        EnrichActionConfiguration config = new EnrichActionConfiguration();
-        config.setName("name");
-        deltaFiConfigRepo.save(config);
-
-        assertEquals(config, deltaFiConfigRepo.findEnrichAction("name"));
     }
 
     @Test
@@ -124,7 +95,7 @@ class DeltaFiConfigRepoTest {
         deltaFiConfigRepo.save(config);
         deltaFiConfigRepo.save(config2);
 
-        assertEquals(config, deltaFiConfigRepo.findEgressFlowForAction("NameEgressAction"));
+        assertEquals(config, deltaFiConfigRepo.findEgressFlowByEgressActionName("NameEgressAction"));
     }
 
     @Test
@@ -143,47 +114,6 @@ class DeltaFiConfigRepoTest {
         deltaFiConfigRepo.save(config);
 
         assertEquals(config, deltaFiConfigRepo.findAllDomainEndpoints().get(0));
-    }
-
-    @Test
-    void deleteActionConfigs() {
-        EgressFlowConfiguration egressFlow = new EgressFlowConfiguration();
-        egressFlow.setName("name");
-        deltaFiConfigRepo.save(egressFlow);
-        IngressFlowConfiguration ingressFlow = new IngressFlowConfiguration();
-        egressFlow.setName("name");
-        deltaFiConfigRepo.save(ingressFlow);
-
-        LoadActionGroupConfiguration actionConfig = new LoadActionGroupConfiguration();
-        actionConfig.setName("name");
-        deltaFiConfigRepo.save(actionConfig);
-        assertEquals(3, deltaFiConfigRepo.count());
-
-        deltaFiConfigRepo.deleteActionConfigs();
-
-        assertEquals(2, deltaFiConfigRepo.count());
-
-        assertNull(deltaFiConfigRepo.findLoadActionGroup("name"));
-    }
-
-    @Test
-    void deleteFlowConfigs() {
-        EgressFlowConfiguration egressFlow = new EgressFlowConfiguration();
-        egressFlow.setName("name");
-        deltaFiConfigRepo.save(egressFlow);
-        IngressFlowConfiguration ingressFlow = new IngressFlowConfiguration();
-        egressFlow.setName("name");
-        deltaFiConfigRepo.save(ingressFlow);
-
-        LoadActionGroupConfiguration actionConfig = new LoadActionGroupConfiguration();
-        actionConfig.setName("name");
-        deltaFiConfigRepo.save(actionConfig);
-        assertEquals(3, deltaFiConfigRepo.count());
-
-        deltaFiConfigRepo.deleteFlowConfigs();
-
-        assertEquals(1, deltaFiConfigRepo.count());
-        assertEquals(actionConfig, deltaFiConfigRepo.findAll().get(0));
     }
 
     @Test

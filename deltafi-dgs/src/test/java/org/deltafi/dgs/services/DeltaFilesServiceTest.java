@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DeltaFilesServiceTest {
     DeltaFilesService deltaFilesService;
     final DeltaFiConfigService deltaFiConfigService = Mockito.mock(DeltaFiConfigService.class);
+    final ActionConfigService actionConfigService = Mockito.mock(ActionConfigService.class);
     StateMachine stateMachine;
     DeltaFileRepo deltaFileRepo;
     ErrorRepo errorRepo;
@@ -49,11 +50,11 @@ class DeltaFilesServiceTest {
         Mockito.when(deltaFiConfigService.getEgressFlow(flow1)).thenReturn(Optional.of(flowConfiguration1));
         Mockito.when(deltaFiConfigService.getEgressFlow(flow2)).thenReturn(Optional.of(flowConfiguration2));
         Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(Arrays.asList(flowConfiguration1, flowConfiguration2));
-        Mockito.when(deltaFiConfigService.getEgressFlowForAction(EgressConfiguration.egressActionName(flow1))).thenReturn(flowConfiguration1);
+        Mockito.when(deltaFiConfigService.getEgressFlowByEgressActionName(EgressConfiguration.egressActionName(flow1))).thenReturn(flowConfiguration1);
 
         ZipkinConfig zipkinConfig = new ZipkinConfig();
         zipkinConfig.setEnabled(false);
-        stateMachine = new StateMachine(deltaFiConfigService, new ZipkinService(null, zipkinConfig));
+        stateMachine = new StateMachine(deltaFiConfigService, actionConfigService, new ZipkinService(null, zipkinConfig));
 
         deltaFileRepo = Mockito.mock(DeltaFileRepo.class);
         errorRepo = Mockito.mock(ErrorRepo.class);

@@ -3,8 +3,8 @@ package org.deltafi.dgs.configuration;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import net.minidev.json.annotate.JsonIgnore;
 import org.bson.types.ObjectId;
-import org.deltafi.dgs.api.types.ConfigType;
 import org.deltafi.dgs.converters.KeyValueConverter;
+import org.deltafi.dgs.generated.types.ActionType;
 import org.deltafi.dgs.generated.types.KeyValue;
 import org.springframework.data.annotation.Transient;
 
@@ -17,16 +17,16 @@ import java.util.Map;
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NONE
 )
-public class LoadActionConfiguration extends org.deltafi.dgs.generated.types.LoadActionConfiguration implements DeltaFiConfiguration {
+public class LoadActionConfiguration extends org.deltafi.dgs.generated.types.LoadActionConfiguration implements ActionConfiguration {
 
     @JsonIgnore
     private Map<String, String> requiresMetadata = new HashMap<>();
-    private ConfigType configType = ConfigType.LOAD_ACTION;
+    private ActionType actionType = ActionType.LOAD_ACTION;
     private ObjectId id;
 
     @Override
-    public ConfigType getConfigType() {
-        return configType;
+    public ActionType getActionType() {
+        return actionType;
     }
 
     @Override

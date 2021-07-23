@@ -42,7 +42,7 @@ class GatewayConfigServiceTest {
         Watch watch = gatewayConfigService.startServiceWatcher();
 
         // Add a new service with the deltafi-domain-service label which should be sent to the configService
-        client.services().inNamespace(DELTAFI_NAMESPACE).create(builderService());
+        client.services().inNamespace("deltafi").create(builderService());
 
         Mockito.verify(configService, Mockito.timeout(1000L)).saveDomainEndpoint(Mockito.argThat((arg) -> DOMAIN_LABEL.equals(arg.getName())));
 
@@ -70,7 +70,7 @@ class GatewayConfigServiceTest {
     @Test
     void handleDomainServiceEvent_Deleted() {
         gatewayConfigService.handleDomainServiceEvent(DOMAIN_LABEL, builderService(), Watcher.Action.DELETED);
-        Mockito.verify(configService).removeConfigs(Mockito.argThat((arg) -> DOMAIN_LABEL.equals(arg.getName())));
+        Mockito.verify(configService).removeDeltafiConfigs(Mockito.argThat((arg) -> DOMAIN_LABEL.equals(arg.getName())));
     }
 
     @Test

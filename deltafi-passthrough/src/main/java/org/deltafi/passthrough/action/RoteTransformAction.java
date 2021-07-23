@@ -1,50 +1,33 @@
 package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.config.DeltafiConfig;
+import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
-import org.deltafi.actionkit.service.ContentService;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.passthrough.param.RoteTransformParameters;
 
-import java.util.Objects;
+import javax.inject.Inject;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class RoteTransformAction extends TransformAction {
+public class RoteTransformAction extends Action<RoteTransformParameters> {
 
-    final ContentService contentService;
+    @Inject
+    ContentService contentService;
 
-    String resultType;
+    public Result execute(DeltaFile deltafile, RoteTransformParameters params) {
+        log.trace(params.getName() + " transforming (" + deltafile.getDid() + ")");
 
-    @SuppressWarnings("unused")
-    public RoteTransformAction() {
-        super();
-        contentService = ContentService.instance();
-    }
+        TransformResult result = new TransformResult(params.getName(), deltafile.getDid());
 
-    public void init(DeltafiConfig.ActionSpec spec) {
-        super.init(spec);
-
-        if (Objects.nonNull(spec.parameters) && spec.parameters.containsKey("result_type")) {
-            resultType = (String) spec.parameters.get("result_type");
-        } else {
-            throw new RuntimeException("TransformAction " + spec.name + " requires result_type parameter");
-        }
-    }
-
-    public Result execute(DeltaFile deltafile) {
-        log.trace(name + " transforming (" + deltafile.getDid() + ")");
-
-        TransformResult result = new TransformResult(this, deltafile.getDid());
-
-        result.setType(resultType);
+        result.setType(params.getResultType());
         result.setObjectReference(deltafile.getProtocolStack().get(0).getObjectReference());
-        result.addMetadata(staticMetadata);
+        result.addMetadata(params.getStaticMetadata());
 
         generateMetrics(deltafile);
         return result;
@@ -62,5 +45,10 @@ public class RoteTransformAction extends TransformAction {
         };
 
         metricLogger.logMetric(LOG_SOURCE, MetricType.COUNTER, FILES_PROCESSED, 1, tags);
+    }
+
+    @Override
+    public Class<RoteTransformParameters> getParamType() {
+        return RoteTransformParameters.class;
     }
 }

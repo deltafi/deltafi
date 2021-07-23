@@ -12,57 +12,6 @@ deltafi:
   configSource:
     flows: RELOAD_FROM_PROPERTY
     actions: RELOAD_FROM_PROPERTY
-  ingress:
-    ingressFlows:
-      sample:
-        type: json
-        transformActions: [Utf8TransformAction, SampleTransformAction]
-        loadActions: [SampleLoadGroup]
-      theFlow:
-        type: theType
-        transformActions: []
-        loadActions: []
-  transformActions:
-    Utf8TransformAction:
-      consumes: json
-      produces: json-utf8
-    SampleTransformAction:
-      consumes: json-utf8
-      produces: json-utf8-sample
-  loadActions:
-    SampleLoadAction:
-      consumes: json-utf8-sample
-      requiresMetadata:
-        sampleType: sample-type
-    Sample2LoadAction:
-      consumes: json-utf8-sample
-      requiresMetadata:
-        sampleType: sample-type-2
-  loadGroups:
-    SampleLoadGroup:
-      - SampleLoadAction
-      - Sample2LoadAction
-  enrichActions:
-    SampleEnrichAction:
-      requiresDomains: [sample]
-  formatActions:
-    "ErrorFormatAction":
-      requiresDomains: [error]
-    "[SampleFormatAction]":
-      requiresDomains: [sample]
-      requiresEnrichment: [sampleEnrichment]
-  validateActions:
-    - AuthorityValidateAction
-    - SampleValidateAction
-  egress:
-    egressFlows:
-      error:
-        formatAction: ErrorFormatAction
-      sample:
-        formatAction: SampleFormatAction
-        validateActions:
-          - AuthorityValidateAction
-          - SampleValidateAction
   delete:
     onCompletion: false
     frequency: PT1M

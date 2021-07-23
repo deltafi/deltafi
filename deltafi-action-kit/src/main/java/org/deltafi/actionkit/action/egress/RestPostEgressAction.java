@@ -1,17 +1,18 @@
 package org.deltafi.actionkit.action.egress;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.parameters.RestPostEgressParameters;
+import org.deltafi.actionkit.exception.ContentServiceConnectException;
 import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.actionkit.service.HttpService;
-import org.deltafi.actionkit.config.DeltafiConfig;
-import org.deltafi.dgs.generated.types.FormattedData;
-import org.deltafi.actionkit.exception.ContentServiceConnectException;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.dgs.generated.types.FormattedData;
 
 import java.io.InputStream;
 import java.net.http.HttpResponse;
@@ -20,36 +21,21 @@ import java.util.Map;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class RestPostEgressAction extends EgressAction{
-
-    private String url;
-    private String prefix = "";
-    final ContentService contentService;
-    final HttpService httpPostService;
-
+public class RestPostEgressAction extends Action<RestPostEgressParameters> {
 
     private static final MetricLogger metricLogger = new MetricLogger();
-
-    @SuppressWarnings("unused")
-    public RestPostEgressAction() {
-        super();
-        contentService = ContentService.instance();
-        httpPostService = HttpService.instance();
-    }
-
-    public void init(DeltafiConfig.ActionSpec spec) {
-        super.init(spec);
-        // TODO: Throw exception if parameter missing...
-        url = (String) spec.parameters.get("url");
-        Object mp = spec.parameters.get("metadata_prefix");
-        if (mp instanceof String) {
-           prefix = (String) spec.parameters.get("metadata_prefix");
-        }
-    }
 
     static final String LOG_SOURCE = "egress";
     static final String FILES_OUT = "files_out";
     static final String BYTES_OUT = "bytes_out";
+
+    final ContentService contentService;
+    final HttpService httpPostService;
+
+    public RestPostEgressAction(ContentService contentService, HttpService httpPostService) {
+        this.contentService = contentService;
+        this.httpPostService = httpPostService;
+    }
 
     void generateEgressMetrics(DeltaFile deltafile, long size, String endpoint) {
         Tag[] tags = {
@@ -63,20 +49,23 @@ public class RestPostEgressAction extends EgressAction{
         metricLogger.logMetric(LOG_SOURCE, MetricType.COUNTER, BYTES_OUT, size, tags);
     }
 
-    public Result execute(DeltaFile deltafile) {
-        log.debug(name + " posting (" + deltafile.getDid() + ") to: " + url );
+    public Result execute(DeltaFile deltafile, RestPostEgressParameters params) {
+        log.debug(params.getName() + " posting (" + deltafile.getDid() + ") to: " + params.getUrl() );
 
         // TODO: Catch exceptions from post, generate error query
         try {
+            String prefix = params.getMetadataPrefix();
+            String url = params.getUrl();
+
             // egressFeed is guaranteed to return only 1 formattedData
             FormattedData formattedData = deltafile.getFormattedData().get(0);
             Map<String, String> headers = new HashMap<>();
             if (formattedData.getMetadata() != null)
                 for (var pair : formattedData.getMetadata()) headers.put(prefix + pair.getKey(), pair.getValue());
-            staticMetadata.forEach((k, v) -> headers.put(prefix + k, v));
+            params.getStaticMetadata().forEach((k, v) -> headers.put(prefix + k, v));
             headers.put(prefix + "did", deltafile.getDid());
             headers.put(prefix + "ingressFlow", deltafile.getSourceInfo().getFlow());
-            headers.put(prefix + "flow", flow());
+            headers.put(prefix + "flow", EgressUtility.flow(params.getName()));
             headers.put(prefix + "originalFilename", deltafile.getSourceInfo().getFilename());
             headers.put(prefix + "filename", formattedData.getFilename());
             contentService.get(formattedData.getObjectReference(),
@@ -85,12 +74,17 @@ public class RestPostEgressAction extends EgressAction{
                         generateEgressMetrics(deltafile, formattedData.getObjectReference().getSize(), url);
                     });
 
-            log.info("Successful egress: " + this.name() + ": " + deltafile.getDid() + " (" + url +")");
-            return new EgressResult(this, deltafile.getDid());
+            log.info("Successful egress: " + params.getName() + ": " + deltafile.getDid() + " (" + url +")");
+            return new EgressResult(params.getName(), deltafile.getDid());
         } catch(ContentServiceConnectException e) {
             return null;
         } catch(Throwable e) {
-            return new ErrorResult(this, deltafile, "Unable to complete egress", e).logErrorTo(log);
+            return new ErrorResult(params.getName(), deltafile, "Unable to complete egress", e).logErrorTo(log);
         }
+    }
+
+    @Override
+    public Class<RestPostEgressParameters> getParamType() {
+        return RestPostEgressParameters.class;
     }
 }

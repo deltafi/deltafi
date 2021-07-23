@@ -12,8 +12,8 @@ import java.util.List;
 public class EnrichResult extends Result {
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public EnrichResult(EnrichAction action, String did) {
-        super(action, did);
+    public EnrichResult(String name, String did) {
+        super(name, did);
     }
 
     protected final List<String> enrichments = new ArrayList<>();

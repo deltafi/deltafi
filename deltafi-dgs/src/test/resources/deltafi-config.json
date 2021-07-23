@@ -1,0 +1,118 @@
+{
+  "ingressFlows": [
+    {"name": "sample",
+      "type": "json",
+      "transformActions": [
+        "Utf8TransformAction",
+        "SampleTransformAction"
+      ],
+      "loadActions": [
+        "SampleLoadGroup"
+      ]
+    },
+    {"name": "theFlow",
+      "type": "theType",
+      "transformActions": [],
+      "loadActions": []
+    }
+  ],
+  "egressFlows": [
+    {
+      "name": "sample",
+      "formatAction": "SampleFormatAction",
+      "validateActions": [
+        "AuthorityValidateAction",
+        "SampleValidateAction"
+      ]
+    },
+    {
+      "name": "error",
+      "formatAction": "ErrorFormatAction"
+    }
+  ],
+  "transformActions": [
+    { "name": "Utf8TransformAction",
+      "consumes": "json",
+      "produces": "json-utf8"
+    },
+    { "name": "SampleTransformAction",
+      "consumes": "json-utf8",
+      "produces": "json-utf8-sample"
+    }
+  ],
+  "loadActions": [
+    { "name": "SampleLoadAction",
+      "consumes": "json-utf8-sample",
+      "requiresMetadata": {
+        "sampleType": "sample-type"
+      }
+    },
+    { "name": "Sample2LoadAction",
+      "consumes": "json-utf8-sample",
+      "requiresMetadata": {
+        "sampleType": "sample-type-2"
+      }
+    }
+  ],
+  "enrichActions": [
+    { "name": "SampleEnrichAction",
+      "requiresDomains": [
+        "sample"
+      ]
+    }
+  ],
+  "formatActions": [
+    {
+      "name": "SampleFormatAction",
+      "requiresDomains": [
+        "sample"
+      ],
+      "requiresEnrichment": [
+        "sampleEnrichment"
+      ]
+    },
+    {
+      "name": "ErrorFormatAction",
+      "requiresDomains": [
+        "error"
+      ]
+    }
+  ],
+  "validateActions": [
+    {
+      "name": "AuthorityValidateAction",
+      "type": "org.deltafi.stix.actions.RubberStampValidateAction"
+    },
+    {
+      "name": "SampleValidateAction",
+      "type": "org.deltafi.stix.actions.RubberStampValidateAction"
+    }
+  ],
+  "egressActions": [
+    {
+      "name": "Stix2_1EgressAction",
+      "type": "org.deltafi.actionkit.action.egress.RestPostEgressAction",
+      "parameters": {
+        "url": "${EGRESS_ENDPOINT:http://localhost:8085/echo}",
+        "metadataPrefix": "${METADATA_PREFIX:deltafi.}"
+      }
+    },
+    {
+      "name": "Stix1_XEgressAction",
+      "type": "org.deltafi.actionkit.action.egress.RestPostEgressAction",
+      "parameters": {
+        "url": "${EGRESS_ENDPOINT:http://localhost:8085/echo}",
+        "metadataPrefix": "${METADATA_PREFIX:deltafi.}"
+      }
+    }
+  ],
+  "loadGroups": [
+    {
+      "name": "SampleLoadGroup",
+      "loadActions": [
+        "SampleLoadAction",
+        "Sample2LoadAction"
+      ]
+    }
+  ]
+}

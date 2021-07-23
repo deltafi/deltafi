@@ -1,8 +1,8 @@
-package org.deltafi.actionkit.serializers;
+package org.deltafi.dgs.api.serializers;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.DeltaFile;
 
 import java.io.IOException;
 import java.util.Arrays;

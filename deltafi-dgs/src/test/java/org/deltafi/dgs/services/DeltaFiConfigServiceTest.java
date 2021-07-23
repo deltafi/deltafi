@@ -1,15 +1,9 @@
 package org.deltafi.dgs.services;
 
 import org.deltafi.dgs.api.types.ConfigType;
-import org.deltafi.dgs.configuration.EgressFlowConfiguration;
-import org.deltafi.dgs.configuration.EnrichActionConfiguration;
-import org.deltafi.dgs.configuration.FormatActionConfiguration;
 import org.deltafi.dgs.configuration.LoadActionGroupConfiguration;
 import org.deltafi.dgs.generated.types.ConfigQueryInput;
-import org.deltafi.dgs.generated.types.IngressFlowConfiguration;
-import org.deltafi.dgs.generated.types.IngressFlowConfigurationInput;
 import org.deltafi.dgs.repo.DeltaFiConfigRepo;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,11 +11,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.ObjectInputFilter;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFiConfigServiceTest {
@@ -52,46 +44,8 @@ class DeltaFiConfigServiceTest {
 
     @Test
     void getEgressFlowForAction() {
-        configService.getEgressFlowForAction("FlowEgressAction");
-        Mockito.verify(deltaFiConfigRepo).findEgressFlowForAction("FlowEgressAction");
-    }
-
-    @Test
-    void getLoadAction() {
-        configService.getLoadAction("action");
-        Mockito.verify(deltaFiConfigRepo).findLoadAction("action");
-    }
-
-    @Test
-    void getEnrichAction() {
-        configService.getEnrichAction("action");
-        Mockito.verify(deltaFiConfigRepo).findEnrichAction("action");
-    }
-
-    @Test
-    void getFormatAction() {
-        configService.getFormatAction("action");
-        Mockito.verify(deltaFiConfigRepo).findFormatAction("action");
-    }
-
-    @Test
-    void getEnrichActions() {
-        EnrichActionConfiguration config = new EnrichActionConfiguration();
-        config.setName("action");
-        Mockito.when(deltaFiConfigRepo.findAllByConfigType(ConfigType.ENRICH_ACTION)).thenReturn(List.of(config));
-        List<String> actions = configService.getEnrichActions();
-        assertEquals(1, actions.size());
-        assertEquals("action", actions.get(0));
-    }
-
-    @Test
-    void getFormatActions() {
-        FormatActionConfiguration config = new FormatActionConfiguration();
-        config.setName("action");
-        Mockito.when(deltaFiConfigRepo.findAllByConfigType(ConfigType.FORMAT_ACTION)).thenReturn(List.of(config));
-        List<String> actions = configService.getFormatActions();
-        assertEquals(1, actions.size());
-        assertEquals("action", actions.get(0));
+        configService.getEgressFlowByEgressActionName("FlowEgressAction");
+        Mockito.verify(deltaFiConfigRepo).findEgressFlowByEgressActionName("FlowEgressAction");
     }
 
     @Test
@@ -126,32 +80,22 @@ class DeltaFiConfigServiceTest {
     }
 
     @Test
-    void getActionNamesByType() {
-        EnrichActionConfiguration config = new EnrichActionConfiguration();
-        config.setName("action");
-        Mockito.when(deltaFiConfigRepo.findAllByConfigType(ConfigType.ENRICH_ACTION)).thenReturn(List.of(config));
-        List<String> actionNames = configService.getActionNamesByType(ConfigType.ENRICH_ACTION);
-        assertEquals(1, actionNames.size());
-        assertEquals("action", actionNames.get(0));
-    }
-
-    @Test
     void removeConfigs_all() {
-        configService.removeConfigs(null);
+        configService.removeDeltafiConfigs(null);
         Mockito.verify(deltaFiConfigRepo).deleteAllWithCount();
     }
 
     @Test
     void removeConfigs_byType() {
         ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(org.deltafi.dgs.generated.types.ConfigType.EGRESS_FLOW).build();
-        configService.removeConfigs(input);
+        configService.removeDeltafiConfigs(input);
         Mockito.verify(deltaFiConfigRepo).deleteAllByConfigType(ConfigType.EGRESS_FLOW);
     }
 
     @Test
     void removeConfigs_byNameAndType() {
         ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(org.deltafi.dgs.generated.types.ConfigType.EGRESS_FLOW).name("action").build();
-        configService.removeConfigs(input);
+        configService.removeDeltafiConfigs(input);
         Mockito.verify(deltaFiConfigRepo).deleteByNameAndConfigType("action", ConfigType.EGRESS_FLOW);
     }
 }

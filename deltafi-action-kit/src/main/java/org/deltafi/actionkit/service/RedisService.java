@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.ActionInput;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
@@ -39,10 +39,10 @@ public class RedisService {
         }
     }
 
-    public DeltaFile actionFeed(String actionName) throws JsonProcessingException {
+    public ActionInput actionFeed(String actionClassName) throws JsonProcessingException {
         try (Jedis jedis = jedisPool.getResource()) {
-            KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, actionName);
-            return mapper.readValue(keyedZSetElement.getElement(), DeltaFile.class);
+            KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, actionClassName);
+            return mapper.readValue(keyedZSetElement.getElement(), ActionInput.class);
         }
     }
 

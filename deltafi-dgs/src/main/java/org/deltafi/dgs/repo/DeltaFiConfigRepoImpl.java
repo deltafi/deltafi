@@ -3,26 +3,30 @@ package org.deltafi.dgs.repo;
 import com.mongodb.client.result.DeleteResult;
 import org.deltafi.dgs.api.types.ConfigType;
 import org.deltafi.dgs.configuration.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.deltafi.dgs.api.types.ConfigType.*;
 
 @SuppressWarnings("unused")
 public class DeltaFiConfigRepoImpl implements DeltaFiConfigRepoCustom {
 
+    private final static Logger log = LoggerFactory.getLogger(DeltaFiConfigRepoImpl.class);
+
+    public static final String ID = "_id";
     public static final String NAME = "name";
     public static final String EGRESS_ACTION_NAME = "egressAction";
     public static final String CONFIG_TYPE = "configType";
     public static final String COLLECTION_NAME = "deltaFiConfig";
-
-    protected static final List<ConfigType> FLOW_CONFIGS = Arrays.asList(INGRESS_FLOW, EGRESS_FLOW);
+    public static final String FORMAT_ACTION_FIELD = "formatAction";
 
     private static final FindAndReplaceOptions UPSERT = FindAndReplaceOptions.options().upsert().returnNew();
 
@@ -37,21 +41,6 @@ public class DeltaFiConfigRepoImpl implements DeltaFiConfigRepoCustom {
         config.setModified(OffsetDateTime.now());
         return mongoTemplate.findAndReplace(byNameAndConfigType(config.getName(), config.getConfigType()),
                 config, UPSERT, clazz, COLLECTION_NAME);
-    }
-
-    @Override
-    public LoadActionConfiguration findLoadAction(String name) {
-        return findByNameAndType(name, LOAD_ACTION, LoadActionConfiguration.class);
-    }
-
-    @Override
-    public FormatActionConfiguration findFormatAction(String name) {
-        return findByNameAndType(name, FORMAT_ACTION, FormatActionConfiguration.class);
-    }
-
-    @Override
-    public EnrichActionConfiguration findEnrichAction(String name) {
-        return findByNameAndType(name, ENRICH_ACTION, EnrichActionConfiguration.class);
     }
 
     @Override
@@ -70,9 +59,17 @@ public class DeltaFiConfigRepoImpl implements DeltaFiConfigRepoCustom {
     }
 
     @Override
-    public EgressFlowConfiguration findEgressFlowForAction(String actionName) {
+    public EgressFlowConfiguration findEgressFlowByEgressActionName(String actionName) {
         Query query = Query.query(Criteria.where(CONFIG_TYPE).is(EGRESS_FLOW).and(EGRESS_ACTION_NAME).is(actionName));
         return mongoTemplate.findOne(query, EgressFlowConfiguration.class, COLLECTION_NAME);
+    }
+
+    @Override
+    public List<String> findEgressActionsWithFormatAction(String formatAction) {
+        Query query = Query.query(Criteria.where(CONFIG_TYPE).is(EGRESS_FLOW).and(FORMAT_ACTION_FIELD).is(formatAction));
+        query.fields().include(EGRESS_ACTION_NAME).exclude(ID);
+        return mongoTemplate.find(query, EgressFlowConfiguration.class, COLLECTION_NAME).stream()
+                .map(EgressFlowConfiguration::getEgressAction).collect(Collectors.toList());
     }
 
     @Override
@@ -87,18 +84,6 @@ public class DeltaFiConfigRepoImpl implements DeltaFiConfigRepoCustom {
     @Override
     public boolean exists(DeltaFiConfiguration config) {
         return mongoTemplate.count(byNameAndConfigType(config.getName(), config.getConfigType()), COLLECTION_NAME) > 0;
-    }
-
-    @Override
-    public void deleteActionConfigs() {
-        Query query = Query.query(Criteria.where(CONFIG_TYPE).nin(FLOW_CONFIGS));
-        mongoTemplate.remove(query, COLLECTION_NAME);
-    }
-
-    @Override
-    public void deleteFlowConfigs() {
-        Query query = Query.query(Criteria.where(CONFIG_TYPE).in(FLOW_CONFIGS));
-        mongoTemplate.remove(query, COLLECTION_NAME);
     }
 
     @Override

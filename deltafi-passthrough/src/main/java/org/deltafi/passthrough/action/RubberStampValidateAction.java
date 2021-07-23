@@ -1,38 +1,29 @@
 package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.SimpleAction;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.validate.ValidateAction;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.validate.ValidateResult;
-import org.deltafi.actionkit.config.DeltafiConfig;
+import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
-import org.deltafi.actionkit.service.ContentService;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.DeltaFile;
+
+import javax.inject.Inject;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class RubberStampValidateAction extends ValidateAction {
+public class RubberStampValidateAction extends SimpleAction {
 
-    final ContentService contentService;
+    @Inject
+    ContentService contentService;
 
-    @SuppressWarnings("unused")
-    public RubberStampValidateAction() {
-        super();
-        contentService = ContentService.instance();
-    }
-
-    public void init(DeltafiConfig.ActionSpec spec) {
-        super.init(spec);
-
-        // Add parameter processing here...
-    }
-
-    public Result execute(DeltaFile deltafile) {
-        log.trace(name + " validating (" + deltafile.getDid() + ")");
+    public Result execute(DeltaFile deltafile, ActionParameters params) {
+        log.trace(params.getName() + " validating (" + deltafile.getDid() + ")");
         generateMetrics(deltafile);
-        return new ValidateResult(this, deltafile.getDid());
+        return new ValidateResult(params.getName(), deltafile.getDid());
     }
 
     private static final MetricLogger metricLogger = new MetricLogger();
@@ -48,6 +39,5 @@ public class RubberStampValidateAction extends ValidateAction {
 
         metricLogger.logMetric(LOG_SOURCE, MetricType.COUNTER, FILES_PROCESSED, 1, tags);
     }
-
 
 }

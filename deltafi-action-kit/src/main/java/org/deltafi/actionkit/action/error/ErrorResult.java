@@ -2,9 +2,8 @@ package org.deltafi.actionkit.action.error;
 
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
-import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.client.ErrorGraphQLQuery;
 import org.deltafi.dgs.generated.client.ErrorProjectionRoot;
 import org.deltafi.dgs.generated.types.ErrorInput;
@@ -21,7 +20,7 @@ public class ErrorResult extends Result {
     final private String errorSummary;
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public ErrorResult(Action action, DeltaFile deltafile, String errorMessage, Throwable throwable) {
+    public ErrorResult(String action, DeltaFile deltafile, String errorMessage, Throwable throwable) {
         super(action, deltafile.getDid());
         this.errorCause = errorMessage;
 
@@ -32,7 +31,7 @@ public class ErrorResult extends Result {
     }
 
     @SuppressWarnings("unused")
-    public ErrorResult(Action action, DeltaFile deltafile, String errorMessage) {
+    public ErrorResult(String action, DeltaFile deltafile, String errorMessage) {
         super(action, deltafile.getDid());
         this.errorCause = errorMessage;
         this.errorContext = "";

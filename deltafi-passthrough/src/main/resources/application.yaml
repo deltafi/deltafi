@@ -9,7 +9,6 @@
         color: true
     kubernetes-config:
       enabled: false
-      fail-on-missing-config: false
     minio:
       url: http://localhost:9000
   deltafi:
@@ -21,80 +20,3 @@
   redis:
     url: ${REDIS_URL:http://localhost:6379}
     password: ${REDIS_PASSWORD:}
-
-quarkus:
-  http:
-    port: 8089
-  log:
-    level: INFO
-    console:
-      json: true
-      color: true
-  minio:
-    url: ${MINIO_URL:http://deltafi-minio}
-    access-key: ${MINIO_ACCESS:minioadmin}
-    secret-key: ${MINIO_SECRET:minioadmin}
-  kubernetes-config:
-    enabled: true
-    fail-on-missing-config: false
-    namespace: deltafi
-    config-maps: passthrough-config
-
-deltafi:
-  dgs:
-    url: ${DELTAFI_DGS_URL:http://deltafi-apollo-gateway-service}
-  action_polling_start_delay_ms: 3000
-  action_polling_frequency_ms: 100
-  actions:
-    - name: PassthroughTransformAction
-      type: org.deltafi.passthrough.action.RoteTransformAction
-      parameters:
-        result_type: 'passthrough-binary'
-        static_metadata:
-          passthrough_transform: Talk to me Goose...
-    - name: PassthroughLoadAction
-      type: org.deltafi.passthrough.action.RoteLoadAction
-      parameters:
-        domain: binary
-    - name: PassthroughFormatAction
-      type: org.deltafi.passthrough.action.RoteFormatAction
-      parameters:
-        static_metadata:
-          passthrough_format: That's a negative Ghostrider...
-    - name: ErrorFormatAction
-      type: org.deltafi.actionkit.action.format.SimpleErrorFormatAction
-      parameters:
-        static_metadata:
-          error_format: "Danger Will Robinson!"
-    - name: PassthroughValidateAction
-      type: org.deltafi.passthrough.action.RubberStampValidateAction
-    - name: PassthroughEgressAction
-      type: org.deltafi.actionkit.action.egress.RestPostEgressAction
-      parameters:
-        url: ${EGRESS_ENDPOINT:http://localhost:8085/echo}
-        metadata_prefix: ${METADATA_PREFIX:deltafi.}
-        static_metadata:
-          passthrough_egress: I feel the need, the need for speed...
-    - name: SmokeEgressAction
-      type: org.deltafi.actionkit.action.egress.RestPostEgressAction
-      parameters:
-        url: ${EGRESS_ENDPOINT:http://localhost:8085/echo}
-        metadata_prefix: ${METADATA_PREFIX:deltafi.}
-        static_metadata:
-          passthrough_egress: Kick the tires and light the fires...
-    - name: ErrorEgressAction
-      type: org.deltafi.actionkit.action.egress.RestPostEgressAction
-      parameters:
-        url: ${EGRESS_ENDPOINT:http://localhost:8085/echo}
-        metadata_prefix: ${METADATA_PREFIX:deltafi.}
-        static_metadata:
-          error_egress: Once more unto the breach...
-  zipkin:
-    enabled: ${ZIPKIN_ENABLED:true}
-    url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
-    initialDelayInMilli: ${ZIPKIN_INITIAL_DELAY:500}
-    sendFrequencyInMilli: ${ZIPKIN_FREQUENCY:500}
-    maxBatchSize: ${ZIPKIN_MAX_BATCH_SIZE:10000}
-redis:
-  url: ${REDIS_URL:http://deltafi-redis-master:6379}
-  password: ${REDIS_PASSWORD:}

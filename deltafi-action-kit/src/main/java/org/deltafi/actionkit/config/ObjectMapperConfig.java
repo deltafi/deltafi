@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.quarkus.jackson.ObjectMapperCustomizer;
-import org.deltafi.actionkit.serializers.DeltaFileDeserializer;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.serializers.DeltaFileDeserializer;
+import org.deltafi.dgs.api.types.DeltaFile;
 
 import javax.inject.Singleton;
 

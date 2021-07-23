@@ -9,10 +9,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.config.DeltafiConfig;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.config.ObjectMapperConfig;
 import org.deltafi.actionkit.service.ContentService;
-import org.deltafi.actionkit.types.DeltaFile;
+import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.client.GetErrorProjectionRoot;
 import org.deltafi.dgs.generated.types.ErrorDomain;
 import org.deltafi.dgs.generated.types.ObjectReference;
@@ -23,17 +23,14 @@ import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
-public class SimpleErrorFormatAction extends FormatAction {
+@SuppressWarnings("unused")
+public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
 
     final private ContentService contentService;
 
     public SimpleErrorFormatAction() {
         super();
         contentService = ContentService.instance();
-    }
-
-    public void init(DeltafiConfig.ActionSpec spec) {
-        super.init(spec);
     }
 
     private final static ObjectMapper objectMapper =
@@ -106,8 +103,8 @@ public class SimpleErrorFormatAction extends FormatAction {
     }
 
     @Override
-    public Result execute(DeltaFile deltaFile) {
-        log.warn(name + " formatting (" + deltaFile.getDid() + ")");
+    public Result execute(DeltaFile deltaFile, ActionParameters params) {
+        log.warn(params.getName() + " formatting (" + deltaFile.getDid() + ")");
 
         if (Objects.isNull(deltaFile.getDomainDetails()) || !deltaFile.getDomainDetails().containsKey("error")) {
             log.error("Error domain missing with did: {}", deltaFile.getDid());
@@ -122,7 +119,7 @@ public class SimpleErrorFormatAction extends FormatAction {
             throw new RuntimeException("Error converting json to ErrorDomain.\n" + json,t);
         }
 
-        ObjectReference objectReference = contentService.putObject(json.toPrettyString(), deltaFile.getDid() + "_" + this.name);
+        ObjectReference objectReference = contentService.putObject(json.toPrettyString(), deltaFile.getDid() + "_" + params.getName());
 
         String filename;
         try {
@@ -135,13 +132,18 @@ public class SimpleErrorFormatAction extends FormatAction {
             throw new RuntimeException(err, t);
         }
 
-        FormatResult result = new FormatResult(this, deltaFile.getDid(), filename);
+        FormatResult result = new FormatResult(params.getName(), deltaFile.getDid(), filename);
         addSourceInputMetadata(result, deltaFile);
         addProtocolStackMetadata(result, deltaFile);
         result.setObjectReference(objectReference);
 
-        generateMetrics(deltaFile);
+        generateMetrics(deltaFile, params.getName());
 
         return result;
+    }
+
+    @Override
+    public Class<ActionParameters> getParamType() {
+        return ActionParameters.class;
     }
 }

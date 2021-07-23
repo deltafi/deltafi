@@ -27,10 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class DeltafiConfigDatafetcherTest {
 
     public static final String NAME = "myAction";
-    public static final String CONSUMES = "xml";
-    public static final String PRODUCES = "json";
-    public static final String DOMAIN = "domain";
-    public static final String ENRICHMENT = "enrichment";
 
     @Autowired
     DgsQueryExecutor dgsQueryExecutor;
@@ -44,59 +40,12 @@ class DeltafiConfigDatafetcherTest {
     }
 
     @Test
-    void addTransformConfigTest() {
-        TransformActionConfigurationInput transformInput = TransformActionConfigurationInput.newBuilder()
-                .name(NAME).consumes(CONSUMES).produces(PRODUCES).build();
-
-        DeltaFiConfigProjectionRoot projection = rootProject().onTransformActionConfiguration()
-                .consumes()
-                .produces()
-                .parent();
-
-        RegisterTransformActionGraphQLQuery transformRequest = RegisterTransformActionGraphQLQuery.newRequest().transformActionConfiguration(transformInput).build();
-
-        TransformActionConfiguration config = executeRequest(transformRequest, projection, TransformActionConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-        assertEquals(CONSUMES, config.getConsumes());
-        assertEquals(PRODUCES, config.getProduces());
-    }
-
-    @Test
-    void addLoadActionConfigTest() {
-        KeyValueInput keyValueInput = KeyValueInput.newBuilder().key("version").value("1").build();
-
-        LoadActionConfigurationInput loadConfigInput = LoadActionConfigurationInput.newBuilder().name(NAME)
-                .consumes(CONSUMES).requiresMetadataKeyValues(singletonList(keyValueInput)).build();
-
-        DeltaFiConfigProjectionRoot projection = rootProject().onLoadActionConfiguration()
-                .consumes()
-                .requiresMetadataKeyValues()
-                    .key()
-                    .value()
-                    .parent()
-                .parent();
-
-        RegisterLoadActionGraphQLQuery loadActionGraphQLQuery = RegisterLoadActionGraphQLQuery.newRequest().loadActionConfiguration(loadConfigInput).build();
-        LoadActionConfiguration config = executeRequest(loadActionGraphQLQuery, projection, LoadActionConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-        assertEquals(CONSUMES, config.getConsumes());
-        assertEquals("version", config.getRequiresMetadataKeyValues().get(0).getKey());
-        assertEquals("1", config.getRequiresMetadataKeyValues().get(0).getValue());
-    }
-
-    @Test
     void addLoadActionGroupConfigTest() {
         LoadActionGroupConfigurationInput input = LoadActionGroupConfigurationInput.newBuilder()
                 .name(NAME)
                 .loadActions(singletonList("loader")).build();
 
-        DeltaFiConfigProjectionRoot projection = rootProject().onLoadActionGroupConfiguration()
+        DeltaFiConfigsProjectionRoot projection = rootProject().onLoadActionGroupConfiguration()
                 .loadActions()
                 .parent();
 
@@ -110,74 +59,6 @@ class DeltafiConfigDatafetcherTest {
     }
 
     @Test
-    void addEnrichActionConfigTest() {
-        EnrichActionConfigurationInput input = EnrichActionConfigurationInput.newBuilder().name(NAME)
-                .requiresDomains(singletonList(DOMAIN))
-                .requiresEnrichment(singletonList(ENRICHMENT)).build();
-
-        DeltaFiConfigProjectionRoot projection = rootProject()
-                .onEnrichActionConfiguration()
-                .requiresEnrichment()
-                .requiresDomains()
-                .parent();
-
-        RegisterEnrichActionGraphQLQuery register = RegisterEnrichActionGraphQLQuery.newRequest().enrichActionConfiguration(input).build();
-        EnrichActionConfiguration config = executeRequest(register, projection, EnrichActionConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-        assertEquals(DOMAIN, config.getRequiresDomains().get(0));
-        assertEquals(ENRICHMENT, config.getRequiresEnrichment().get(0));
-    }
-
-    @Test
-    void addFormatActionConfigTest() {
-        FormatActionConfigurationInput input = FormatActionConfigurationInput.newBuilder().name(NAME)
-                .requiresDomains(singletonList(DOMAIN))
-                .requiresEnrichment(singletonList(ENRICHMENT)).build();
-
-        DeltaFiConfigProjectionRoot projection = rootProject()
-                .onFormatActionConfiguration()
-                .requiresEnrichment()
-                .requiresDomains()
-                .parent();
-
-        RegisterFormatActionGraphQLQuery register = RegisterFormatActionGraphQLQuery.newRequest().formatActionConfiguration(input).build();
-        FormatActionConfiguration config = executeRequest(register, projection, FormatActionConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-        assertEquals(DOMAIN, config.getRequiresDomains().get(0));
-        assertEquals(ENRICHMENT, config.getRequiresEnrichment().get(0));
-    }
-
-    @Test
-    void addValidateActionConfigTest() {
-        ValidateActionConfigurationInput input = ValidateActionConfigurationInput.newBuilder().name(NAME).build();
-
-        RegisterValidateActionGraphQLQuery register = RegisterValidateActionGraphQLQuery.newRequest().validateActionConfiguration(input).build();
-        ValidateActionConfiguration config = executeRequest(register, rootProject(), ValidateActionConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-    }
-
-    @Test
-    void addEgressActionConfigTest() {
-        EgressActionConfigurationInput input = EgressActionConfigurationInput.newBuilder().name(NAME).build();
-
-        RegisterEgressActionGraphQLQuery register = RegisterEgressActionGraphQLQuery.newRequest().egressActionConfiguration(input).build();
-        EgressActionConfiguration config = executeRequest(register, rootProject(), EgressActionConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-    }
-
-    @Test
     void addIngressFlowConfigTest() {
         IngressFlowConfigurationInput input = IngressFlowConfigurationInput.newBuilder()
                 .name(NAME)
@@ -186,7 +67,7 @@ class DeltafiConfigDatafetcherTest {
                 .type("test-type")
                 .build();
 
-        DeltaFiConfigProjectionRoot projection = rootProject()
+        DeltaFiConfigsProjectionRoot projection = rootProject()
                 .name()
                 .onIngressFlowConfiguration()
                     .loadActions()
@@ -212,7 +93,7 @@ class DeltafiConfigDatafetcherTest {
                 .formatAction("formatter")
                 .validateActions(singletonList("validator")).build();
 
-        DeltaFiConfigProjectionRoot projection = rootProject()
+        DeltaFiConfigsProjectionRoot projection = rootProject()
                 .onEgressFlowConfiguration()
                 .excludeIngressFlows()
                 .includeIngressFlows()
@@ -242,7 +123,7 @@ class DeltafiConfigDatafetcherTest {
                 .domainVersion("1.0.2")
                 .url("url").build();
 
-        DeltaFiConfigProjectionRoot projection = rootProject()
+        DeltaFiConfigsProjectionRoot projection = rootProject()
                 .onDomainEndpointConfiguration()
                     .url()
                     .domainVersion()
@@ -269,7 +150,7 @@ class DeltafiConfigDatafetcherTest {
                 .domainVersion("1.0.2")
                 .url("url").build();
 
-        DeltaFiConfigProjectionRoot projection = rootProject()
+        DeltaFiConfigsProjectionRoot projection = rootProject()
                 .onDomainEndpointConfiguration()
                 .url()
                 .parent();
@@ -277,7 +158,7 @@ class DeltafiConfigDatafetcherTest {
         RegisterDomainEndpointGraphQLQuery register = RegisterDomainEndpointGraphQLQuery.newRequest().domainEndpointConfiguration(input).build();
         executeRequest(register, projection, DomainEndpointConfiguration.class);
 
-        DeltaFiConfigGraphQLQuery findConfig = DeltaFiConfigGraphQLQuery.newRequest().configQuery(configQueryInput).build();
+        DeltaFiConfigsGraphQLQuery findConfig = DeltaFiConfigsGraphQLQuery.newRequest().configQuery(configQueryInput).build();
 
         TypeRef<List<DeltaFiConfiguration>> listOfConfigs = new TypeRef<>() {};
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(findConfig, projection);
@@ -302,12 +183,12 @@ class DeltafiConfigDatafetcherTest {
                 .domainVersion("1.0.2")
                 .url("url").build();
 
-        DeltaFiConfigProjectionRoot projection = rootProject();
+        DeltaFiConfigsProjectionRoot projection = rootProject();
 
         RegisterDomainEndpointGraphQLQuery register = RegisterDomainEndpointGraphQLQuery.newRequest().domainEndpointConfiguration(input).build();
         executeRequest(register, projection, DomainEndpointConfiguration.class);
 
-        RemoveConfigGraphQLQuery remove = RemoveConfigGraphQLQuery.newRequest().build();
+        RemoveDeltaFiConfigsGraphQLQuery remove = RemoveDeltaFiConfigsGraphQLQuery.newRequest().build();
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(remove, null);
         Integer removed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -316,8 +197,8 @@ class DeltafiConfigDatafetcherTest {
         assertEquals(1, removed.intValue());
     }
 
-    DeltaFiConfigProjectionRoot rootProject() {
-        return new DeltaFiConfigProjectionRoot()
+    DeltaFiConfigsProjectionRoot rootProject() {
+        return new DeltaFiConfigsProjectionRoot()
                 .name()
                 .created()
                 .modified()

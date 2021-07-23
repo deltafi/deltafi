@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 public class KeyValueConverter {
 
     public static Map<String, String> convertKeyValues(List<KeyValue> keyValues) {
+        if (Objects.isNull(keyValues)) {
+            return Collections.emptyMap();
+        }
         Map<String, String> keyValueMap = new HashMap<>();
         for (KeyValue keyValue : keyValues) {
             keyValueMap.put(keyValue.getKey(), keyValue.getValue());
@@ -18,6 +21,9 @@ public class KeyValueConverter {
     }
 
     public static Map<String, String> convertKeyValueInputs(List<KeyValueInput> keyValues) {
+        if (Objects.isNull(keyValues)) {
+            return Collections.emptyMap();
+        }
         Map<String, String> keyValueMap = new HashMap<>();
         for (KeyValueInput keyValue : keyValues) {
             keyValueMap.put(keyValue.getKey(), keyValue.getValue());

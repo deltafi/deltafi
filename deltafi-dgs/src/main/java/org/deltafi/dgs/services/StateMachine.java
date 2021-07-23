@@ -4,25 +4,33 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.com.google.common.collect.Iterables;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.configuration.*;
+import org.deltafi.dgs.configuration.EgressFlowConfiguration;
+import org.deltafi.dgs.configuration.EnrichActionConfiguration;
+import org.deltafi.dgs.configuration.FormatActionConfiguration;
+import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.KeyValueConverter;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
 import org.deltafi.dgs.generated.types.KeyValue;
 import org.deltafi.dgs.generated.types.ProtocolLayer;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class StateMachine {
 
     private final DeltaFiConfigService configService;
+    private final ActionConfigService actionConfigService;
     private final ZipkinService zipkinService;
 
-    public StateMachine(DeltaFiConfigService configService, ZipkinService zipkinService) {
+    public StateMachine(DeltaFiConfigService configService, ActionConfigService actionConfigService, ZipkinService zipkinService) {
         this.configService = configService;
         this.zipkinService = zipkinService;
+        this.actionConfigService = actionConfigService;
     }
 
     /** Advance the state of the given DeltaFile
@@ -138,27 +146,27 @@ public class StateMachine {
     }
 
     private boolean loadMetadataMatches(String loadAction, Map<String, String> metadata) {
-        Map<String, String> requiresMetadata = configService.getLoadAction(loadAction).getRequiresMetadata();
+        Map<String, String> requiresMetadata = actionConfigService.getLoadAction(loadAction).getRequiresMetadata();
         return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadata.get(k)));
     }
 
     private List<String> getEnrichActions(DeltaFile deltaFile) {
-        return configService.getEnrichActions().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
+        return actionConfigService.getEnrichActions().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
     }
 
     private boolean enrichActionReady(String enrichActionName, DeltaFile deltaFile) {
-        EnrichActionConfiguration config = configService.getEnrichAction(enrichActionName);
+        EnrichActionConfiguration config = actionConfigService.getEnrichAction(enrichActionName);
         return !deltaFile.hasTerminalAction(enrichActionName) &&
                 deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
                 deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
     }
 
     private List<String> getFormatActions(DeltaFile deltaFile) {
-        return configService.getFormatActions().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
+        return actionConfigService.getFormatActions().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
     }
 
     private boolean formatActionReady(String formatActionName, DeltaFile deltaFile) {
-        FormatActionConfiguration config = configService.getFormatAction(formatActionName);
+        FormatActionConfiguration config = actionConfigService.getFormatAction(formatActionName);
         return !deltaFile.hasTerminalAction(formatActionName) &&
                 deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
                 deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());

@@ -13,14 +13,6 @@ import java.util.Map;
 @ConfigurationProperties(prefix="deltafi")
 public class DeltaFiProperties {
     private ConfigSource configSource = new ConfigSource();
-    private IngressConfiguration ingress = new IngressConfiguration();
-    private Map<String, TransformActionConfiguration> transformActions = new HashMap<>();
-    private Map<String, LoadActionConfiguration> loadActions = new HashMap<>();
-    private Map<String, List<String>> loadGroups = new HashMap<>();
-    private Map<String, EnrichActionConfiguration> enrichActions = new HashMap<>();
-    private Map<String, FormatActionConfiguration> formatActions = new HashMap<>();
-    private List<String> validateActions = new ArrayList<>();
-    private EgressConfiguration egress = new EgressConfiguration();
     private int requeueSeconds = 30;
     private DeleteConfiguration delete = new DeleteConfiguration();
     private ZipkinConfig zipkin = new ZipkinConfig();
@@ -31,70 +23,6 @@ public class DeltaFiProperties {
 
     public void setConfigSource(ConfigSource configSource) {
         this.configSource = configSource;
-    }
-
-    public IngressConfiguration getIngress() {
-        return ingress;
-    }
-
-    public void setIngress(IngressConfiguration ingress) {
-        this.ingress = ingress;
-    }
-
-    public Map<String, TransformActionConfiguration> getTransformActions() {
-        return transformActions;
-    }
-
-    public void setTransformActions(Map<String, TransformActionConfiguration> transformActions) {
-        this.transformActions = transformActions;
-    }
-
-    public Map<String, LoadActionConfiguration> getLoadActions() {
-        return loadActions;
-    }
-
-    public void setLoadActions(Map<String, LoadActionConfiguration> loadActions) {
-        this.loadActions = loadActions;
-    }
-
-    public Map<String, List<String>> getLoadGroups() {
-        return loadGroups;
-    }
-
-    public void setLoadGroups(Map<String, List<String>> loadGroups) {
-        this.loadGroups = loadGroups;
-    }
-
-    public Map<String, EnrichActionConfiguration> getEnrichActions() {
-        return enrichActions;
-    }
-
-    public void setEnrichActions(Map<String, EnrichActionConfiguration> enrichActions) {
-        this.enrichActions = enrichActions;
-    }
-
-    public Map<String, FormatActionConfiguration> getFormatActions() {
-        return formatActions;
-    }
-
-    public void setFormatActions(Map<String, FormatActionConfiguration> formatActions) {
-        this.formatActions = formatActions;
-    }
-
-    public List<String> getValidateActions() {
-        return validateActions;
-    }
-
-    public void setValidateActions(List<String> validateActions) {
-        this.validateActions = validateActions;
-    }
-
-    public EgressConfiguration getEgress() {
-        return egress;
-    }
-
-    public void setEgress(EgressConfiguration egress) {
-        this.egress = egress;
     }
 
     public int getRequeueSeconds() { return requeueSeconds; }
@@ -116,4 +44,5 @@ public class DeltaFiProperties {
     public void setZipkinConfig(ZipkinConfig zipkin) {
         this.zipkin = zipkin;
     }
+
 }

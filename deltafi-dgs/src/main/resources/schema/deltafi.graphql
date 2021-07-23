@@ -1,4 +1,5 @@
 scalar DateTime
+scalar JSON
 
 interface DeltaFiDomain {
   did: String!
@@ -148,189 +149,6 @@ type DeltaFile {
   markedForDeleteReason: String
 }
 
-enum ConfigType {
-  TRANSFORM_ACTION
-  LOAD_ACTION
-  LOAD_ACTION_GROUP
-  ENRICH_ACTION
-  FORMAT_ACTION
-  VALIDATE_ACTION
-  EGRESS_ACTION
-  INGRESS_FLOW
-  EGRESS_FLOW
-  DOMAIN_ENDPOINT
-}
-
-interface DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-}
-
-input ConfigQueryInput {
-  configType: ConfigType!
-  name: String
-  apiVersion: String
-}
-
-type IngressFlowConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  type: String!
-  transformActions: [String]!
-  loadActions: [String]!
-}
-
-input IngressFlowConfigurationInput {
-  name: String!
-  apiVersion: String
-  type: String!
-  transformActions: [String]!
-  loadActions: [String]!
-}
-
-type EgressFlowConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  egressAction: String!
-  formatAction: String!
-  validateActions: [String]
-  includeIngressFlows: [String]
-  excludeIngressFlows: [String]
-}
-
-input EgressFlowConfigurationInput {
-  name: String!
-  formatAction: String!
-  apiVersion: String
-  validateActions: [String]
-  includeIngressFlows: [String]
-  excludeIngressFlows: [String]
-}
-
-type TransformActionConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  consumes: String!
-  produces: String!
-}
-
-input TransformActionConfigurationInput {
-  name: String!
-  apiVersion: String
-  consumes: String!
-  produces: String!
-}
-
-type LoadActionConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  consumes: String!
-  requiresMetadataKeyValues: [KeyValue]
-}
-
-input LoadActionConfigurationInput {
-  name: String!
-  apiVersion: String
-  consumes: String!
-  requiresMetadataKeyValues: [KeyValueInput]
-}
-
-type EnrichActionConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  requiresDomains: [String]!
-  requiresEnrichment: [String]
-}
-
-input EnrichActionConfigurationInput {
-  name: String!
-  apiVersion: String
-  requiresDomains: [String]!
-  requiresEnrichment: [String]
-}
-
-type FormatActionConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  requiresDomains: [String]!
-  requiresEnrichment: [String]
-}
-
-input FormatActionConfigurationInput {
-  name: String!
-  apiVersion: String
-  requiresDomains: [String]!
-  requiresEnrichment: [String]
-}
-
-type ValidateActionConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-}
-
-input ValidateActionConfigurationInput {
-  name: String!
-  apiVersion: String
-}
-
-type EgressActionConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-}
-
-input EgressActionConfigurationInput {
-  name: String!
-  apiVersion: String
-}
-
-type LoadActionGroupConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  loadActions: [String]!
-}
-
-input LoadActionGroupConfigurationInput {
-  name: String!
-  apiVersion: String
-  loadActions: [String]!
-}
-
-type DomainEndpointConfiguration implements DeltaFiConfiguration {
-  name: String!
-  created: DateTime!
-  modified: DateTime!
-  apiVersion: String
-  url: String!
-  domainVersion: String
-}
-
-input DomainEndpointConfigurationInput {
-  name: String!
-  apiVersion: String
-  url: String!
-  domainVersion: String
-}
-
 input IngressInput {
   sourceInfo: SourceInfoInput!
   objectReference: ObjectReferenceInput!
@@ -362,7 +180,8 @@ type Query {
   lastErrored(last: Int) : [DeltaFile]!
   lastWithFilename(filename: String!) : DeltaFile
 
-  deltaFiConfig(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
+  deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
+  actionConfigs(actionQuery: ActionQueryInput) : [ActionConfiguration]!
 }
 
 type Mutation {
@@ -388,5 +207,6 @@ type Mutation {
   addIngressFlow(ingressFlowConfiguration: IngressFlowConfigurationInput!): IngressFlowConfiguration!
   addEgressFlow(egressFlowConfiguration: EgressFlowConfigurationInput!): EgressFlowConfiguration!
 
-  removeConfig(configQuery: ConfigQueryInput): Int!
+  removeDeltaFiConfigs(configQuery: ConfigQueryInput): Int!
+  removeActionConfigs(actionQuery: ActionQueryInput): Int!
 }
