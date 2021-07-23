@@ -1,8 +1,0 @@
-mutation {
-    addSampleDomain(
-        did: "%1$s",
-        domained: true
-    ) {
-        did
-    }
-}

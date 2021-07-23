@@ -1,14 +1,8 @@
-type SampleDomain implements DeltaFiDomain {
-    did: String!
-    domained: Boolean!
-}
-
 type SampleEnrichment implements DeltaFiEnrichment {
     did: String!
     enriched: Boolean!
 }
 
 extend type Mutation {
-    addSampleDomain(did: String!, domained: Boolean!) : SampleDomain!
     addSampleEnrichment(did: String!, enriched: Boolean!) : SampleEnrichment!
 }

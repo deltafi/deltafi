@@ -60,7 +60,6 @@ input ProtocolLayerInput {
 type DeltaFiDomains @key(fields: "did") {
   did: String!
   domainTypes: [String!]!
-  sampleDomain: SampleDomain
   error: ErrorDomain
 }
 

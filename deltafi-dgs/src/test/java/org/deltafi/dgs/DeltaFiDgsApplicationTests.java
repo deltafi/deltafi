@@ -55,9 +55,6 @@ class DeltaFiDgsApplicationTests {
 	StateMachine stateMachine;
 
 	@Autowired
-	SampleDomainsService sampleDomainsService;
-
-	@Autowired
 	DeleteRunner deleteRunner;
 
 	@Autowired
@@ -80,7 +77,6 @@ class DeltaFiDgsApplicationTests {
 	void setup() throws IOException {
 		deltaFileRepo.deleteAll();
 		sampleEnrichmentsService.getSampleEnrichments().clear();
-		sampleDomainsService.getSampleDomains().clear();
 		deltaFiProperties.getDelete().setOnCompletion(false);
 		configLoaderService.initConfig();
 		// sleep longer than the tests
@@ -211,28 +207,6 @@ class DeltaFiDgsApplicationTests {
 		assertTrue(equalIgnoringDates(postTransformDeltaFile(did), deltaFile));
 	}
 
-	SampleDomain sampleDomain(String did) {
-		return SampleDomain.newBuilder()
-				.did(did)
-				.domained(true)
-				.build();
-	}
-
-	@Test
-	void test07AddSampleDomain() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postTransformDeltaFile(did));
-
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("07.addSampleDomain"), did),
-				"data." + DgsConstants.MUTATION.AddSampleDomain,
-				DeltaFile.class);
-
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertTrue(equalIgnoringDates(postTransformDeltaFile(did), deltaFilesService.getDeltaFile(did)));
-		assertThat(sampleDomain(did)).isEqualTo(sampleDomainsService.forDid(did));
-	}
-
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ENRICH.name());
@@ -246,7 +220,6 @@ class DeltaFiDgsApplicationTests {
 	void test08Load() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postTransformDeltaFile(did));
-		sampleDomainsService.addSampleDomain(sampleDomain(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("08.load"), did),
@@ -273,7 +246,6 @@ class DeltaFiDgsApplicationTests {
 	void test10AddSampleEnrichment() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
-		sampleDomainsService.addSampleDomain(sampleDomain(did));
 
 		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("10.addSampleEnrichment"), did),
@@ -298,7 +270,6 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
 		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
-		sampleDomainsService.addSampleDomain(sampleDomain(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("11.enrich"), did),
@@ -339,7 +310,6 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postEnrichDeltaFile(did));
 		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
-		sampleDomainsService.addSampleDomain(sampleDomain(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("13.format"), did),
