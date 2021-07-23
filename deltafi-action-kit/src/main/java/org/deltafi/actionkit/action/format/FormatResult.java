@@ -65,9 +65,6 @@ public class FormatResult extends Result {
     public void setFilename(String filename) { this.filename = filename; }
 
     @Override
-    final public ResultType resultType() { return ResultType.QUEUE; }
-
-    @Override
     final public ActionEventType actionEventType() { return ActionEventType.FORMAT; }
 
     @Override

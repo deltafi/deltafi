@@ -1,9 +1,16 @@
 mutation {
-    filter(
-        did: "%1$s"
-        fromAction: "%2$s"
-        message: "you got filtered"
-    ) {
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "%2$s"
+            time: "2021-07-11T13:44:22.183Z"
+            type: FILTER
+            filter: {
+                message: "you got filtered"
+            }
+        }
+    )
+    {
         did
         stage
     }

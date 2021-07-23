@@ -363,8 +363,8 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("17.error"), did),
-				"data." + DgsConstants.MUTATION.Error,
-				ErrorDomain.class);
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class);
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
 		DeltaFile expected = postErrorDeltaFile(did);
@@ -449,7 +449,7 @@ class DeltaFiDgsApplicationTests {
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("filter"), did, "SampleEgressAction"),
-				"data." + DgsConstants.MUTATION.Filter,
+				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);

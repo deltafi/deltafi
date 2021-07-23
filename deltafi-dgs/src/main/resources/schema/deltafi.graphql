@@ -115,8 +115,6 @@ enum ActionEventType {
   VALIDATE
   EGRESS
   ERROR
-  RETRY
-  DELETE
   FILTER
 }
 
@@ -130,7 +128,8 @@ input ActionEventInput {
   load: LoadInput
   enrich: EnrichInput
   format: FormatInput
-  # TODO: error, retry, delete, and filter
+  error: ErrorInput
+  filter: FilterInput
 }
 
 type DeltaFile {
@@ -172,6 +171,10 @@ input FormatInput {
   objectReference: ObjectReferenceInput!
 }
 
+input FilterInput {
+  message: String!
+}
+
 type Query {
   deltaFile(did: String!): DeltaFile
   lastCreated(last: Int) : [DeltaFile]!
@@ -186,8 +189,6 @@ type Query {
 type Mutation {
   actionEvent(event: ActionEventInput!): DeltaFile!
 
-  error(error: ErrorInput!) : DeltaFile!
-  filter(did: String!, fromAction: String!, message: String!) : DeltaFile!
   retry(did: String!) : DeltaFile!
 
   # The caller is responsible for removing all data, domains, and enrichment corresponding to this DeltaFile before calling this mutation

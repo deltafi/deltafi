@@ -66,9 +66,6 @@ public class TransformResult extends Result {
     }
 
     @Override
-    final public ResultType resultType() { return ResultType.QUEUE; }
-
-    @Override
     final public ActionEventType actionEventType() { return ActionEventType.TRANSFORM; }
 
     @Override

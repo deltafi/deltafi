@@ -8,8 +8,6 @@ type ErrorDomain implements DeltaFiDomain {
 }
 
 input ErrorInput {
-    originatorDid: String!
-    fromAction: String!
     cause: String!
     context: String
 }

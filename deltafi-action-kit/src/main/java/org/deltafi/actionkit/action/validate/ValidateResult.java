@@ -11,8 +11,5 @@ public class ValidateResult extends Result {
     }
 
     @Override
-    final public ResultType resultType() { return ResultType.QUEUE; }
-
-    @Override
     final public ActionEventType actionEventType() { return ActionEventType.VALIDATE; }
 }

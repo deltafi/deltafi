@@ -1,5 +1,6 @@
 package org.deltafi.actionkit.action;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
@@ -84,16 +85,11 @@ public abstract class Action<P extends ActionParameters> {
         }
     }
 
-    private void executeAction(DeltaFile deltaFile, P params, DeltafiSpan span) {
+    private void executeAction(DeltaFile deltaFile, P params, DeltafiSpan span) throws JsonProcessingException {
         try {
             Result result = execute(deltaFile, params);
             if (result != null) {
-                if (result.resultType().equals(Result.ResultType.GRAPHQL)) {
-                    domainGatewayService.submit(result);
-                } else {
-                    redisService.submit(result);
-                }
-
+                redisService.submit(result);
             }
             zipkinService.markSpanComplete(span);
         } catch (DgsPostException ignored) {
@@ -104,7 +100,7 @@ public abstract class Action<P extends ActionParameters> {
             String reason = "Action execution exception: " + "\n" + e.getMessage() + "\n" + stackWriter;
             log.error(params.getName() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
             ErrorResult err = new ErrorResult(params.getName(), deltaFile, "Action execution exception", e).logErrorTo(log);
-            domainGatewayService.submit(err);
+            redisService.submit(err);
         }
     }
 

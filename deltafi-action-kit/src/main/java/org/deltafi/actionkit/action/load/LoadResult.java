@@ -29,9 +29,6 @@ public class LoadResult extends Result {
     }
 
     @Override
-    final public ResultType resultType() { return ResultType.QUEUE; }
-
-    @Override
     final public ActionEventType actionEventType() { return ActionEventType.LOAD; }
 
     @Override

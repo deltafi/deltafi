@@ -1,12 +1,9 @@
 package org.deltafi.actionkit.action.filter;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
-import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.client.FilterGraphQLQuery;
-import org.deltafi.dgs.generated.client.FilterProjectionRoot;
+import org.deltafi.dgs.generated.types.ActionEventInput;
 import org.deltafi.dgs.generated.types.ActionEventType;
+import org.deltafi.dgs.generated.types.FilterInput;
 
 public class FilterResult extends Result {
 
@@ -18,29 +15,19 @@ public class FilterResult extends Result {
         this.filterMessage = filterMessage;
     }
 
-    @Override
-    public GraphQLQuery toQuery() {
-        return FilterGraphQLQuery.newRequest()
-                .did(did)
-                .fromAction(name)
+    private FilterInput filterInput() {
+        return FilterInput.newBuilder()
                 .message(filterMessage)
                 .build();
     }
 
     @Override
-    public BaseProjectionNode getProjection() {
-        return new FilterProjectionRoot()
-                .did()
-                .stage()
-                .actions()
-                    .name()
-                    .errorCause()
-                    .state()
-                .parent();
-    }
-
-    @Override final public ResultType resultType() { return ResultType.GRAPHQL; }
+    final public ActionEventType actionEventType() { return ActionEventType.FILTER; }
 
     @Override
-    final public ActionEventType actionEventType() { return ActionEventType.FILTER; }
+    final public ActionEventInput toEvent() {
+        ActionEventInput event = super.toEvent();
+        event.setFilter(filterInput());
+        return event;
+    }
 }

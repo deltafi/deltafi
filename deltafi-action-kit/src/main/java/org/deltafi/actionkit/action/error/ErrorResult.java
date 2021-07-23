@@ -1,11 +1,8 @@
 package org.deltafi.actionkit.action.error;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.client.ErrorGraphQLQuery;
-import org.deltafi.dgs.generated.client.ErrorProjectionRoot;
+import org.deltafi.dgs.generated.types.ActionEventInput;
 import org.deltafi.dgs.generated.types.ErrorInput;
 import org.deltafi.dgs.generated.types.ActionEventType;
 import org.slf4j.Logger;
@@ -43,33 +40,20 @@ public class ErrorResult extends Result {
         return this;
     }
 
-    @Override
-    final public GraphQLQuery toQuery() {
-        return ErrorGraphQLQuery.newRequest()
-                .error(ErrorInput.newBuilder()
-                        .originatorDid(did)
-                        .fromAction(name)
-                        .cause(errorCause)
-                        .context(errorContext).build())
+    private ErrorInput errorInput() {
+        return ErrorInput.newBuilder()
+                .cause(errorCause)
+                .context(errorContext)
                 .build();
     }
 
     @Override
-    public BaseProjectionNode getProjection() {
-        return new ErrorProjectionRoot()
-                .did()
-                .stage()
-                .actions()
-                    .name()
-                    .errorCause()
-                    .errorContext()
-                    .state()
-                .parent();
-    }
-
-    @Override
-    final public ResultType resultType() { return ResultType.GRAPHQL; }
-
-    @Override
     final public ActionEventType actionEventType() { return ActionEventType.ERROR; }
+
+    @Override
+    final public ActionEventInput toEvent() {
+        ActionEventInput event = super.toEvent();
+        event.setError(errorInput());
+        return event;
+    }
 }

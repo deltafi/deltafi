@@ -96,10 +96,6 @@ public class DomainGatewayService {
         }
     }
 
-    public GraphQLResponse submit(Result result) {
-        return submit(new GraphQLQueryRequest(result.toQuery(), result.getProjection(), BLOCK_QUOTE));
-    }
-
     public GraphQLResponse submit(GraphQLQueryRequest request) {
         boolean retried = false;
         GraphQLResponse response = null;

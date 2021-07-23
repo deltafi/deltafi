@@ -1,10 +1,14 @@
 mutation {
-    error(
-        error: {
-            originatorDid: "%1$s"
-            fromAction: "AuthorityValidateAction"
-            cause: "Authority XYZ not recognized"
-            context: "Dead beef feed face cafe"
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "AuthorityValidateAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: ERROR
+            error: {
+                cause: "Authority XYZ not recognized"
+                context: "Dead beef feed face cafe"
+            }
         }
     ) {
         did

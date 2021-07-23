@@ -109,6 +109,10 @@ public class DeltaFilesService {
                 return validate(deltaFile, event);
             case EGRESS:
                 return egress(deltaFile, event);
+            case ERROR:
+                return error(deltaFile, event);
+            case FILTER:
+                return filter(deltaFile, event);
         }
 
         throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
@@ -173,38 +177,36 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile filter(String did, String fromAction, String message) {
-        DeltaFile deltaFile = getDeltaFile(did);
-
-        if (deltaFile.noPendingAction(fromAction)) {
-            throw new UnexpectedActionException(fromAction, did, deltaFile.queuedActions());
+    public DeltaFile filter(DeltaFile deltaFile, ActionEventInput event) {
+        if (deltaFile.noPendingAction(event.getAction())) {
+            throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
         }
 
-        deltaFile.filterAction(fromAction, message);
+        deltaFile.filterAction(event.getAction(), event.getFilter().getMessage());
 
         return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
-    public DeltaFile error(ErrorInput errorInput) {
-        DeltaFile deltaFile = getDeltaFile(errorInput.getOriginatorDid());
+    public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) {
+        ErrorInput errorInput = event.getError();
         if(deltaFile.hasErrorDomain()) {
             log.error("DeltaFile with error domain has thrown an error:\n" +
-                    "Error DID: " + errorInput.getOriginatorDid() + "\n" +
-                    "Errored in action : " + errorInput.getFromAction() + "\n" +
+                    "Error DID: " + deltaFile.getDid() + "\n" +
+                    "Errored in action : " + event.getAction() + "\n" +
                     "Inception Error cause: " + errorInput.getCause() + "\n" +
                     "Inception Error context: " + errorInput.getContext() + "\n");
-            if (!deltaFile.noPendingAction(errorInput.getFromAction())) {
-                deltaFile.errorAction(errorInput.getFromAction(), errorInput.getCause(), errorInput.getContext());
+            if (!deltaFile.noPendingAction(event.getAction())) {
+                deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
             }
             return deltaFile;
         }
 
-        if (deltaFile.noPendingAction(errorInput.getFromAction())) {
-            throw new UnexpectedActionException(errorInput.getFromAction(), errorInput.getOriginatorDid(), deltaFile.queuedActions());
+        if (deltaFile.noPendingAction(event.getAction())) {
+            throw new UnexpectedActionException(event.getAction(), deltaFile.getDid(), deltaFile.queuedActions());
         }
 
-        deltaFile.errorAction(errorInput.getFromAction(), errorInput.getCause(), errorInput.getContext());
+        deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
 
         ErrorDomain errorDomain = ErrorConverter.convert(errorInput, deltaFile);
         DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, errorDomain);
@@ -297,7 +299,9 @@ public class DeltaFilesService {
             redisService.enqueue(actions, deltaFile);
         } catch (ActionConfigException e) {
             log.error("Failed to enqueue {} with error {}", deltaFile.getDid(), e.getMessage());
-            this.error(ErrorInput.newBuilder().originatorDid(deltaFile.getDid()).fromAction(e.getActionName()).cause(e.getMessage()).build());
+            ErrorInput error = ErrorInput.newBuilder().cause(e.getMessage()).build();
+            ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(e.getActionName()).error(error).build();
+            this.error(deltaFile, event);
         }
     }
 }
