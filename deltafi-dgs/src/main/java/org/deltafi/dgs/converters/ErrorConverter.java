@@ -15,6 +15,7 @@ public class ErrorConverter {
                 .did(errorDid)
                 .cause(errorInput.getCause())
                 .context(errorInput.getContext())
+                .fromAction(errorInput.getFromAction())
                 .originator(deltaFile)
                 .build();
     }
