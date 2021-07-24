@@ -205,7 +205,7 @@ public class DeltaFilesService {
 
         deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
 
-        ErrorDomain errorDomain = ErrorConverter.convert(errorInput, deltaFile);
+        ErrorDomain errorDomain = ErrorConverter.convert(errorInput, deltaFile, event.getAction());
         DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, errorDomain);
 
         advanceAndSave(errorDeltaFile);

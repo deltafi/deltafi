@@ -9,13 +9,13 @@ import java.util.UUID;
 public class ErrorConverter {
     private ErrorConverter() {}
 
-    public static ErrorDomain convert(ErrorInput errorInput, DeltaFile deltaFile) {
+    public static ErrorDomain convert(ErrorInput errorInput, DeltaFile deltaFile, String fromAction) {
         String errorDid = UUID.randomUUID().toString();
         return ErrorDomain.newBuilder()
                 .did(errorDid)
                 .cause(errorInput.getCause())
                 .context(errorInput.getContext())
-                .fromAction(errorInput.getFromAction())
+                .fromAction(fromAction)
                 .originator(deltaFile)
                 .build();
     }
