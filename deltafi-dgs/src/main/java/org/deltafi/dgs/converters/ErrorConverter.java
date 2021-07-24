@@ -1,6 +1,7 @@
 package org.deltafi.dgs.converters;
 
 import org.deltafi.dgs.api.types.ErrorDomain;
+import org.deltafi.dgs.generated.types.ActionEventInput;
 import org.deltafi.dgs.generated.types.DeltaFile;
 import org.deltafi.dgs.generated.types.ErrorInput;
 
@@ -9,13 +10,14 @@ import java.util.UUID;
 public class ErrorConverter {
     private ErrorConverter() {}
 
-    public static ErrorDomain convert(ErrorInput errorInput, DeltaFile deltaFile, String fromAction) {
+    public static ErrorDomain convert(ActionEventInput event, DeltaFile deltaFile) {
         String errorDid = UUID.randomUUID().toString();
         return ErrorDomain.newBuilder()
                 .did(errorDid)
-                .cause(errorInput.getCause())
-                .context(errorInput.getContext())
-                .fromAction(fromAction)
+                .cause(event.getError().getCause())
+                .context(event.getError().getContext())
+                .fromAction(event.getAction())
+                .originatorDid(event.getDid())
                 .originator(deltaFile)
                 .build();
     }
