@@ -1,5 +1,6 @@
-const { DeltaFiGatewayServer } = require("./deltafi_gateway_server");
+import { DeltaFiGatewayServer } from './deltafi_gateway_server.js';
 
+const { HOST = '0.0.0.0' } = process.env;
 const { PORT = 4000 } = process.env;
 const { RETRY_DELAY = 5000 } = process.env;
 const { MAX_RETRIES = 5 } = process.env;
@@ -12,4 +13,5 @@ const SERVICE_LIST =
     ? defaultServiceList
     : JSON.parse(process.env.SERVICE_LIST);
 
-DeltaFiGatewayServer(PORT, SERVICE_LIST, MAX_RETRIES, RETRY_DELAY);
+var deltaFiGatewayServer = new DeltaFiGatewayServer(HOST, PORT, SERVICE_LIST, MAX_RETRIES, RETRY_DELAY);
+deltaFiGatewayServer.start();

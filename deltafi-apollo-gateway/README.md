@@ -3,7 +3,7 @@
 Start deltafi-dgs and deltafi-stix-dgs then start up the gateway:
 ```
 npm install
-node index.js
+node app.js
 ```
 ## Testing
 Assuming everything is already up and running:

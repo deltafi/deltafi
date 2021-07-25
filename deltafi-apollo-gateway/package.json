@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,10 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@apollo/gateway": "^0.28.0",
-    "apollo-server": "^2.19.0",
-    "graphql": "^15.4.0",
-    "graphql-upload": "^12.0.0",
-    "requestretry": "^5.0.0"
+    "@apollo/gateway": "^0.34.0",
+    "apollo-server": "^3.0.1",
+    "graphql": "^15.5.1",
+    "requestretry": "^5.0.0",
+    "request": "^2.88.1"
   }
 }
