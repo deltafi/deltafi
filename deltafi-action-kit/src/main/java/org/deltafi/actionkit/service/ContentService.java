@@ -1,14 +1,15 @@
 package org.deltafi.actionkit.service;
 
-import io.minio.GetObjectArgs;
-import io.minio.MinioClient;
-import io.minio.ObjectWriteResponse;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import io.minio.errors.*;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
+import io.minio.messages.Item;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.dgs.generated.types.ObjectReference;
 import org.deltafi.actionkit.exception.ContentServiceConnectException;
+import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.dgs.generated.types.ObjectReference;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -18,12 +19,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ApplicationScoped
 public class ContentService {
 
-    public static final String STORAGE = "storage";
+    private static final String STORAGE = "storage";
+    private static final String INCOMING = "incoming";
 
     @Inject
     MinioClient minioClient;
@@ -34,7 +39,7 @@ public class ContentService {
 
     static ContentService instance;
 
-    static public ContentService instance() { return instance; }
+    public static ContentService instance() { return instance; }
 
     private boolean healthy = true;
 
@@ -104,7 +109,13 @@ public class ContentService {
         }
     }
 
-    public ObjectReference putObject(String data, String objectName) {
+    @SuppressWarnings("unused")
+    public ObjectReference putObject(String data, DeltaFile deltaFile, String actionName) {
+        String objectName = deltaFile.getDid() + "/" + actionName;
+        return putObject(data, objectName);
+    }
+
+    private ObjectReference putObject(String data, String objectName) {
         try {
             byte[] rawData = data.getBytes();
             InputStream dataInputStream = new ByteArrayInputStream(rawData);
@@ -123,6 +134,66 @@ public class ContentService {
         }
     }
 
+    /**
+     * Remove stored data for the given DeltaFile
+     * @param deltaFile - deltaFile that content needs to be removed for
+     * @return - true if all objects were successfully removed, otherwise false
+     */
+    public boolean deleteObjectsForDeltaFile(DeltaFile deltaFile) {
+        return deleteIncomingObject(deltaFile) && deleteStorageObjects(deltaFile);
+    }
+
+    public boolean deleteIncomingObject(DeltaFile deltaFile) {
+        ObjectReference incoming = deltaFile.getProtocolStack().stream().filter(pl -> INCOMING.equals(pl.getObjectReference().getBucket())).findFirst()
+                .orElseThrow(ContentService::missingIncoming).getObjectReference();
+
+        RemoveObjectArgs removeObject = RemoveObjectArgs.builder().bucket(INCOMING).object(incoming.getName()).build();
+        try {
+            minioClient.removeObject(removeObject);
+        } catch (ErrorResponseException | InvalidKeyException | InsufficientDataException | InternalException | InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
+            log.error("Failed to delete incoming object for did {}", deltaFile.getDid(), e);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean deleteStorageObjects(DeltaFile deltaFile) {
+        List<DeleteObject> objectsInStorage = getObjectNamesForDid(deltaFile.getDid()).stream().map(DeleteObject::new).collect(Collectors.toList());
+
+        RemoveObjectsArgs removeArgs = RemoveObjectsArgs.builder()
+                .bucket(STORAGE).objects(objectsInStorage).build();
+
+        Iterable<Result<DeleteError>> removeResults = minioClient.removeObjects(removeArgs);
+
+        boolean success = true;
+        for (Result<DeleteError> removeResult : removeResults) {
+            try {
+                DeleteError error = removeResult.get();
+                log.error("Failed to delete object {} with an error of {}", error.objectName(), error.message());
+            } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | XmlParserException e) {
+                log.error("Failed to delete minio object for did {}", deltaFile.getDid(), e);
+            }
+            success = false;
+        }
+        return success;
+    }
+
+    public List<String> getObjectNamesForDid(String did) {
+        List<String> didObjects = new ArrayList<>();
+        Iterable<Result<Item>> objects = minioClient.listObjects(ListObjectsArgs.builder().bucket(STORAGE).prefix(did).recursive(true).build());
+        for (Result<Item> item : objects) {
+            try {
+                Item itemObj = item.get();
+                if (!itemObj.isDir()) {
+                    didObjects.add(itemObj.objectName());
+                }
+            } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | XmlParserException e) {
+                log.error("Failed to retrieve minio object for did {}", did, e);
+            }
+        }
+        return didObjects;
+    }
+
     private ObjectReference fromObjectWriteResponse(ObjectWriteResponse response, int size) {
         return ObjectReference.newBuilder()
                 .bucket(response.bucket())
@@ -139,4 +210,9 @@ public class ContentService {
                 .object(objectReference.getName())
                 .build();
     }
+
+    private static IllegalArgumentException missingIncoming() {
+        return new IllegalArgumentException("DeltaFile does not have an incoming object reference");
+    }
+
 }

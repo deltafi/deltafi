@@ -119,7 +119,7 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
             throw new RuntimeException("Error converting json to ErrorDomain.\n" + json,t);
         }
 
-        ObjectReference objectReference = contentService.putObject(json.toPrettyString(), deltaFile.getDid() + "_" + params.getName());
+        ObjectReference objectReference = contentService.putObject(json.toPrettyString(), deltaFile, params.getName());
 
         String filename;
         try {
