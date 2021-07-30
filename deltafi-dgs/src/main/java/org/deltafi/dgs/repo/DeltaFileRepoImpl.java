@@ -147,7 +147,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Criteria createdBeforeCriteria(OffsetDateTime createdBeforeDate) {
-        return Criteria.where(CREATED).lt(createdBeforeDate);
+        Criteria notDeleted = Criteria.where(STAGE).ne(DeltaFileStage.DELETE.name());
+        Criteria created = Criteria.where(CREATED).lt(createdBeforeDate);
+        return new Criteria().andOperator(notDeleted, created);
     }
 
     private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {

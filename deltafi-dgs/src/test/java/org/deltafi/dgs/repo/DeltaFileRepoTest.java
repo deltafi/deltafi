@@ -22,7 +22,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @TestPropertySource(properties = "enableScheduling=false")
 @SpringBootTest
@@ -122,6 +123,21 @@ class DeltaFileRepoTest {
         deltaFilesService.markForDelete(OffsetDateTime.now(), null,"not the flow", "policy");
         DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
         assertThat(after.getStage()).isNotEqualTo(DeltaFileStage.DELETE.name());
+    }
+
+    @Test
+    void testMarkForDelete_alreadyMarkedDeleted() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
+
+        OffsetDateTime dateTime = OffsetDateTime.now().minusHours(2);
+        deltaFile.setModified(dateTime);
+        deltaFile.setCreated(dateTime);
+        deltaFile.setStage(DeltaFileStage.DELETE.name());
+        deltaFilesService.addDeltaFile(deltaFile);
+
+        deltaFilesService.markForDelete(OffsetDateTime.now(), null, "flow", "policy");
+        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
+        assertThat(after.getModified().toEpochSecond()).isEqualTo(dateTime.toEpochSecond()); // this shouldn't change if it was already marked as deleted
     }
 
     @Test
