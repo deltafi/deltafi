@@ -3,7 +3,7 @@ plugins {
     id 'io.quarkus'
     id 'idea'
     id 'jacoco'
-    id "com.palantir.docker" version "0.22.1"
+    id 'com.palantir.docker' version '0.22.1'
 }
 
 java {
@@ -24,7 +24,7 @@ dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
 
     // Use DGS BOM to automatically define versions of other packages below
-    implementation(platform('com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.1.0')) {
+    implementation(platform('com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.5.0')) {
         because 'DGS BOM to automatically define versions of other packages below'
     }
 
