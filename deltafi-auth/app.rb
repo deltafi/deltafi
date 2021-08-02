@@ -17,5 +17,8 @@ end
 
 get '/auth' do
   client_dn = request.env["HTTP_SSL_CLIENT_SUBJECT_DN"]
-  halt 401 unless allowed.include? client_dn
+  unless allowed.include? client_dn
+    logger.warn "Unauthorized DN: #{client_dn.inspect}"
+    halt 401
+  end
 end
