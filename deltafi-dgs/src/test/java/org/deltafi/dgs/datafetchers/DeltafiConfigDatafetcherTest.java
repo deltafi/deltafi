@@ -5,9 +5,10 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.dgs.configuration.DeltafiRuntimeConfiguration;
 import org.deltafi.dgs.generated.client.*;
 import org.deltafi.dgs.generated.types.*;
-import org.deltafi.dgs.repo.DeltaFiConfigRepo;
+import org.deltafi.dgs.repo.DeltaFiRuntimeConfigRepo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,11 +33,11 @@ class DeltafiConfigDatafetcherTest {
     DgsQueryExecutor dgsQueryExecutor;
 
     @Autowired
-    DeltaFiConfigRepo deltaFiConfigRepo;
+    DeltaFiRuntimeConfigRepo deltaFiConfigRepo;
 
     @BeforeEach
     public void setup() {
-        deltaFiConfigRepo.deleteAll();
+        deltaFiConfigRepo.save(new DeltafiRuntimeConfiguration());
     }
 
     @Test

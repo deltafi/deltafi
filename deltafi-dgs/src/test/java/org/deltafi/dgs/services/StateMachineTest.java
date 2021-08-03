@@ -36,10 +36,6 @@ class StateMachineTest {
 
     @Mock
     @SuppressWarnings("unused")
-    ActionConfigService actionConfigService;
-
-    @Mock
-    @SuppressWarnings("unused")
     RedisService redisService;
 
     @Test

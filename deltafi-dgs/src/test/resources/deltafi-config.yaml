@@ -1,0 +1,86 @@
+ingressFlows:
+  sample:
+    name: sample
+    type: json
+    transformActions:
+      - Utf8TransformAction
+      - SampleTransformAction
+    loadActions:
+      - SampleLoadGroup
+  theFlow:
+    name: theFlow
+    type: theType
+    transformActions: []
+    loadActions: []
+egressFlows:
+  sample:
+    name: sample
+    formatAction: SampleFormatAction
+    validateActions:
+      - AuthorityValidateAction
+      - SampleValidateAction
+  error:
+    name: error
+    formatAction: ErrorFormatAction
+transformActions:
+  Utf8TransformAction:
+    name: Utf8TransformAction
+    consumes: json
+    produces: json-utf8
+  SampleTransformAction:
+    name: SampleTransformAction
+    consumes: json-utf8
+    produces: json-utf8-sample
+loadActions:
+  SampleLoadAction:
+    name: SampleLoadAction
+    consumes: json-utf8-sample
+    requiresMetadata:
+      sampleType: sample-type
+  Sample2LoadAction:
+    name: Sample2LoadAction
+    consumes: json-utf8-sample
+    requiresMetadata:
+      sampleType: sample-type-2
+enrichActions:
+  SampleEnrichAction:
+    name: SampleEnrichAction
+    requiresDomains:
+      - sample
+formatActions:
+  SampleFormatAction:
+    name: SampleFormatAction
+    requiresDomains:
+      - sample
+    requiresEnrichment:
+      - sampleEnrichment
+  ErrorFormatAction:
+    name: ErrorFormatAction
+    requiresDomains:
+      - error
+validateActions:
+  AuthorityValidateAction:
+    name: AuthorityValidateAction
+    type: org.deltafi.stix.actions.RubberStampValidateAction
+  SampleValidateAction:
+    name: SampleValidateAction
+    type: org.deltafi.stix.actions.RubberStampValidateAction
+egressActions:
+  Stix2_1EgressAction:
+    name: Stix2_1EgressAction
+    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    parameters:
+      url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
+      metadataPrefix: "${METADATA_PREFIX:deltafi.}"
+  Stix1_XEgressAction:
+    name: Stix1_XEgressAction
+    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    parameters:
+      url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
+      metadataPrefix: "${METADATA_PREFIX:deltafi.}"
+loadGroups:
+  SampleLoadGroup:
+    name: SampleLoadGroup
+    loadActions:
+      - SampleLoadAction
+      - Sample2LoadAction

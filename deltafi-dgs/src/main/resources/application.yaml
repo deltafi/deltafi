@@ -28,7 +28,7 @@ deltafi:
   configSource:
     flows: DEFAULT_FROM_PROPERTY
     actions: DEFAULT_FROM_PROPERTY
-    path: ${CONFIG_SOURCE_PATH:classpath:deltafi-config.json}
+    path: ${CONFIG_SOURCE_PATH:classpath:deltafi-config.yaml}
   namespace: deltafi
   zipkin:
     enabled: ${ZIPKIN_ENABLED:true}

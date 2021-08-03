@@ -183,7 +183,6 @@ type Query {
   lastWithFilename(filename: String!) : DeltaFile
 
   deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
-  actionConfigs(actionQuery: ActionQueryInput) : [ActionConfiguration]!
 }
 
 type Mutation {
@@ -208,5 +207,4 @@ type Mutation {
   addEgressFlow(egressFlowConfiguration: EgressFlowConfigurationInput!): EgressFlowConfiguration!
 
   removeDeltaFiConfigs(configQuery: ConfigQueryInput): Int!
-  removeActionConfigs(actionQuery: ActionQueryInput): Int!
 }

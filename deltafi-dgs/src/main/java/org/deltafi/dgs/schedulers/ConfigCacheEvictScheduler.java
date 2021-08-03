@@ -1,7 +1,7 @@
 package org.deltafi.dgs.schedulers;
 
+import org.deltafi.dgs.services.DeltaFiConfigService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -10,8 +10,15 @@ import org.springframework.stereotype.Service;
 @Service
 @EnableScheduling
 public class ConfigCacheEvictScheduler {
-    @CacheEvict(allEntries = true, cacheNames = { "ingressFlow", "egressFlows", "optionalEgressFlow", "egressFlow", "egressFlowNames", "domainEndpoints", "loadGroups", "config", "loadAction", "enrichAction", "formatAction", "actionConfig", "actionConfigs", "actionNames" })
+
+    DeltaFiConfigService deltaFiConfigService;
+
+    public ConfigCacheEvictScheduler(DeltaFiConfigService deltaFiConfigService) {
+        this.deltaFiConfigService = deltaFiConfigService;
+    }
+
     @Scheduled(fixedDelay = 30000)
     public void cacheEvict() {
+        deltaFiConfigService.refreshConfig();
     }
 }

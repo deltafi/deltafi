@@ -10,8 +10,6 @@ import org.deltafi.dgs.api.types.JsonMap;
 import org.deltafi.dgs.configuration.ActionConfiguration;
 import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.generated.types.ActionEventInput;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -26,23 +24,23 @@ import static org.deltafi.dgs.api.Constants.DGS_QUEUE;
 
 @Service
 public class RedisService {
-    Logger log = LoggerFactory.getLogger(RedisService.class);
+
     private static final ObjectMapper mapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .registerModule(new JavaTimeModule());
 
     private final JedisPool jedisPool;
-    private final ActionConfigService actionConfigService;
+    private final DeltaFiConfigService configService;
 
-    public RedisService(JedisPool jedisPool, ActionConfigService actionConfigService) {
+    public RedisService(JedisPool jedisPool, DeltaFiConfigService configService) {
         this.jedisPool = jedisPool;
-        this.actionConfigService = actionConfigService;
+        this.configService = configService;
     }
 
     public void enqueue(List<String> actionNames, DeltaFile deltaFile) throws ActionConfigException {
         try (Jedis jedis = jedisPool.getResource()) {
             for (String actionName : actionNames) {
-                ActionConfiguration params = actionConfigService.getConfigForAction(actionName);
+                ActionConfiguration params = configService.getConfigForAction(actionName);
                 ActionInput actionInput = toActionInput(actionName, params, deltaFile);
                 jedis.zadd(params.getType(), Instant.now().toEpochMilli(), mapper.writeValueAsString(actionInput), ZAddParams.zAddParams().nx());
             }

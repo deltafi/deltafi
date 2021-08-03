@@ -1,12 +1,3 @@
-enum ActionType {
-    TRANSFORM_ACTION
-    LOAD_ACTION
-    ENRICH_ACTION
-    FORMAT_ACTION
-    VALIDATE_ACTION
-    EGRESS_ACTION
-}
-
 interface ActionConfiguration {
     name: String!
     type: String!
@@ -16,13 +7,7 @@ interface ActionConfiguration {
     apiVersion: String
 }
 
-input ActionQueryInput {
-    actionType: ActionType!
-    name: String
-    apiVersion: String
-}
-
-type TransformActionConfiguration implements ActionConfiguration {
+type TransformActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -42,7 +27,7 @@ input TransformActionConfigurationInput {
     parameters: JSON
 }
 
-type LoadActionConfiguration implements ActionConfiguration {
+type LoadActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -62,7 +47,7 @@ input LoadActionConfigurationInput {
     parameters: JSON
 }
 
-type EnrichActionConfiguration implements ActionConfiguration {
+type EnrichActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -82,7 +67,7 @@ input EnrichActionConfigurationInput {
     parameters: JSON
 }
 
-type FormatActionConfiguration implements ActionConfiguration {
+type FormatActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -102,7 +87,7 @@ input FormatActionConfigurationInput {
     parameters: JSON
 }
 
-type ValidateActionConfiguration implements ActionConfiguration {
+type ValidateActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -118,7 +103,7 @@ input ValidateActionConfigurationInput {
     parameters: JSON
 }
 
-type EgressActionConfiguration implements ActionConfiguration {
+type EgressActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!

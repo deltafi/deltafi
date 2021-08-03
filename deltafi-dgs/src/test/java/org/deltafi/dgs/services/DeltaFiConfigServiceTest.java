@@ -1,101 +1,176 @@
 package org.deltafi.dgs.services;
 
-import org.deltafi.dgs.api.types.ConfigType;
-import org.deltafi.dgs.configuration.LoadActionGroupConfiguration;
+import org.assertj.core.api.Assertions;
+import org.deltafi.dgs.configuration.*;
 import org.deltafi.dgs.generated.types.ConfigQueryInput;
-import org.deltafi.dgs.repo.DeltaFiConfigRepo;
+import org.deltafi.dgs.generated.types.ConfigType;
+import org.deltafi.dgs.generated.types.EgressFlowConfigurationInput;
+import org.deltafi.dgs.k8s.GatewayConfigService;
+import org.deltafi.dgs.repo.DeltaFiRuntimeConfigRepo;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFiConfigServiceTest {
+
+    public static final String ACTION_TO_FIND = "SampleLoadAction";
+    private static final LoadActionConfiguration action = new LoadActionConfiguration();
 
     @InjectMocks
     private DeltaFiConfigService configService;
 
     @Mock
-    private DeltaFiConfigRepo deltaFiConfigRepo;
+    private DeltaFiRuntimeConfigRepo deltaFiConfigRepo;
 
-    @Test
-    void getIngressFlow() {
-        configService.getIngressFlow("flow");
-        Mockito.verify(deltaFiConfigRepo).findIngressFlowConfig("flow");
+    @SuppressWarnings("unused")
+    @Mock
+    ObjectProvider<GatewayConfigService> gatewayConfigService;
+
+    private DeltafiRuntimeConfiguration config;
+
+    @BeforeEach
+    void loadConfig() {
+        config = buildConfig();
+        configService.setConfig(config);
     }
 
     @Test
-    void getEgressFlows() {
-        configService.getEgressFlows();
-        Mockito.verify(deltaFiConfigRepo).findAllEgressFlows();
+    void testGetConfigFromMap_cacheHit() {
+        LoadActionConfiguration found = configService.getLoadAction(ACTION_TO_FIND);
+
+        Mockito.verifyNoInteractions(deltaFiConfigRepo);
+        Assertions.assertThat(found).isEqualTo(action);
     }
 
     @Test
-    void getEgressFlow() {
-        configService.getEgressFlow("flow");
-        Mockito.verify(deltaFiConfigRepo).findEgressFlowConfig("flow");
+    void testGetConfigFromMap_cacheMiss() {
+        DeltafiRuntimeConfiguration missingConfig = new DeltafiRuntimeConfiguration();
+        configService.setConfig(missingConfig);
+
+        DeltafiRuntimeConfiguration refreshedConfig = new DeltafiRuntimeConfiguration();
+        LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration();
+        loadActionConfiguration.setName(ACTION_TO_FIND);
+        refreshedConfig.getLoadActions().put(ACTION_TO_FIND, loadActionConfiguration);
+
+        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(refreshedConfig));
+
+        LoadActionConfiguration found = configService.getLoadAction(ACTION_TO_FIND);
+        Mockito.verify(deltaFiConfigRepo).findById(DeltafiRuntimeConfiguration.ID_CONSTANT);
+        Assertions.assertThat(found).isEqualTo(loadActionConfiguration);
     }
 
     @Test
-    void getEgressFlowForAction() {
-        configService.getEgressFlowByEgressActionName("FlowEgressAction");
-        Mockito.verify(deltaFiConfigRepo).findEgressFlowByEgressActionName("FlowEgressAction");
+    void testUpdateConfig() {
+        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
+        DeltafiRuntimeConfiguration updatedConfig = new DeltafiRuntimeConfiguration();
+        EgressFlowConfiguration mocked = new EgressFlowConfiguration();
+        mocked.setName("myFlow");
+        updatedConfig.getEgressFlows().put("myFlow", mocked);
+        Mockito.when(deltaFiConfigRepo.save(Mockito.any())).thenReturn(updatedConfig);
+
+        EgressFlowConfigurationInput egressFlow = new EgressFlowConfigurationInput();
+        egressFlow.setFormatAction("formatAction");
+        egressFlow.setName("myFlow");
+        egressFlow.setApiVersion("v1");
+
+        EgressFlowConfiguration saved = configService.saveEgressFlow(egressFlow);
+
+        Mockito.verify(deltaFiConfigRepo).findById(DeltafiRuntimeConfiguration.ID_CONSTANT);
+        Mockito.verify(deltaFiConfigRepo).save(Mockito.argThat(config -> config.getEgressFlows().size() == 2));
+
+        Assertions.assertThat(saved.getName()).isEqualTo("myFlow");
+        Assertions.assertThat(saved.getEgressAction()).isEqualTo("MyFlowEgressAction");
+        Assertions.assertThat(saved.getApiVersion()).isEqualTo("v1");
+        Assertions.assertThat(saved.getCreated()).isNotNull();
+        Assertions.assertThat(saved.getModified()).isNotNull();
+
+        Assertions.assertThat(configService.getEgressFlow("myFlow")).contains(mocked);
     }
 
     @Test
-    void getLoadGroupActions() {
-        LoadActionGroupConfiguration config = new LoadActionGroupConfiguration();
-        config.setName("loadGroup");
-        List<String> actions = List.of("a");
-        config.setLoadActions(actions);
-        Mockito.when(deltaFiConfigRepo.findLoadActionGroup("loadGroup")).thenReturn(config);
-        List<String> loadGroupActions = configService.getLoadGroupActions("loadGroup");
-        assertEquals(actions, loadGroupActions);
+    void testGetConfigs_TypeAndName() {
+        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).name(ACTION_TO_FIND).build();
+        List<DeltaFiConfiguration> configs = configService.getConfigs(input);
+
+        Assertions.assertThat(configs.get(0)).isEqualTo(action);
     }
 
     @Test
-    void getConfigs_all() {
-        configService.getConfigs(null);
-        Mockito.verify(deltaFiConfigRepo).findAll();
+    void testGetConfigs_Type() {
+        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).build();
+        List<DeltaFiConfiguration> configs = configService.getConfigs(input);
+
+        Assertions.assertThat(configs.size()).isEqualTo(2);
     }
 
     @Test
-    void getConfigs_byType() {
-        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(org.deltafi.dgs.generated.types.ConfigType.EGRESS_FLOW).build();
-        configService.getConfigs(input);
-        Mockito.verify(deltaFiConfigRepo).findAllByConfigType(ConfigType.EGRESS_FLOW);
+    void testGetConfigs_All() {
+        List<DeltaFiConfiguration> configs = configService.getConfigs(null);
+        Assertions.assertThat(configs.size()).isEqualTo(11);
     }
 
     @Test
-    void getConfigs_byNameAndType() {
-        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(org.deltafi.dgs.generated.types.ConfigType.EGRESS_FLOW).name("action").build();
-        configService.getConfigs(input);
-        Mockito.verify(deltaFiConfigRepo).findByNameAndConfigType("action", ConfigType.EGRESS_FLOW);
+    void testRemoveConfigs_TypeAndName() {
+        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
+        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).name(ACTION_TO_FIND).build();
+        long removed = configService.removeDeltafiConfigs(input);
+
+        Assertions.assertThat(removed).isEqualTo(1);
+        Mockito.verify(deltaFiConfigRepo).save(Mockito.any());
     }
 
     @Test
-    void removeConfigs_all() {
-        configService.removeDeltafiConfigs(null);
-        Mockito.verify(deltaFiConfigRepo).deleteAllWithCount();
+    void testRemoveConfigs_Type() {
+        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
+        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).build();
+        long removed = configService.removeDeltafiConfigs(input);
+
+        Assertions.assertThat(removed).isEqualTo(2);
+        Mockito.verify(deltaFiConfigRepo).save(Mockito.any());
     }
 
     @Test
-    void removeConfigs_byType() {
-        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(org.deltafi.dgs.generated.types.ConfigType.EGRESS_FLOW).build();
-        configService.removeDeltafiConfigs(input);
-        Mockito.verify(deltaFiConfigRepo).deleteAllByConfigType(ConfigType.EGRESS_FLOW);
+    void testRemoveConfigs_All() {
+        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
+        long removed = configService.removeDeltafiConfigs(null);
+
+        Assertions.assertThat(removed).isEqualTo(11);
+        Mockito.verify(deltaFiConfigRepo).save(Mockito.any());
     }
 
-    @Test
-    void removeConfigs_byNameAndType() {
-        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(org.deltafi.dgs.generated.types.ConfigType.EGRESS_FLOW).name("action").build();
-        configService.removeDeltafiConfigs(input);
-        Mockito.verify(deltaFiConfigRepo).deleteByNameAndConfigType("action", ConfigType.EGRESS_FLOW);
+    DeltafiRuntimeConfiguration buildConfig() {
+        DeltafiRuntimeConfiguration newConfig = new DeltafiRuntimeConfiguration();
+
+        action.setName(ACTION_TO_FIND);
+        newConfig.getLoadActions().put(ACTION_TO_FIND, action);
+        createAndAdd(TransformActionConfiguration::new, "load", newConfig.getTransformActions());
+        createAndAdd(TransformActionConfiguration::new, "transform", newConfig.getTransformActions());
+        createAndAdd(LoadActionConfiguration::new, "load", newConfig.getLoadActions());
+        createAndAdd(EnrichActionConfiguration::new, "enrich", newConfig.getEnrichActions());
+        createAndAdd(FormatActionConfiguration::new, "format", newConfig.getFormatActions());
+        createAndAdd(ValidateActionConfiguration::new, "validate", newConfig.getValidateActions());
+        createAndAdd(EgressActionConfiguration::new, "egress", newConfig.getEgressActions());
+        createAndAdd(IngressFlowConfiguration::new, "ingressFlow", newConfig.getIngressFlows());
+        createAndAdd(EgressFlowConfiguration::new, "egressFlow", newConfig.getEgressFlows());
+        createAndAdd(DomainEndpointConfiguration::new, "domain", newConfig.getDomainEndpoints());
+
+        return newConfig;
+    }
+
+    <C extends DeltaFiConfiguration> void createAndAdd(Supplier<C> constructor, String name, Map<String, C> configs) {
+        C configItem = constructor.get();
+        configItem.setName(name);
+        configs.put(name, configItem);
     }
 }

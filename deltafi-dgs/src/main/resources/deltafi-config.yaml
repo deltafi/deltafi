@@ -1,0 +1,170 @@
+ingressFlows:
+  stix2_1:
+    name: stix2_1
+    type: stix2_1
+    transformActions: []
+    loadActions:
+      - Stix2_1LoadAction
+  stix1_x:
+    name: stix1_x
+    type: stix1_x
+    transformActions:
+      - Stix1_xTo2_1TransformAction
+    loadActions:
+      - Stix2_1LoadAction
+  passthrough:
+    name: passthrough
+    type: binary
+    transformActions:
+      - PassthroughTransformAction
+    loadActions:
+      - PassthroughLoadAction
+  smoke:
+    name: smoke
+    type: binary
+    transformActions:
+      - PassthroughTransformAction
+    loadActions:
+      - PassthroughLoadAction
+egressFlows:
+  stix2_1:
+    name: stix2_1
+    egressAction: Stix2_1EgressAction
+    formatAction: Stix2_1FormatAction
+    validateActions:
+      - Stix2_1ValidateAction
+  stix1_X:
+    name: stix1_X
+    egressAction: Stix1_xEgressAction
+    formatAction: Stix1_XFormatAction
+    validateActions:
+      - Stix1_XValidateAction
+  passthrough:
+    name: passthrough
+    egressAction: PassthroughEgressAction
+    formatAction: PassthroughFormatAction
+    validateActions:
+      - PassthroughValidateAction
+    includeIngressFlows:
+      - passthrough
+  smoke:
+    name: smoke
+    egressAction: SmokeEgressAction
+    formatAction: PassthroughFormatAction
+    validateActions:
+      - PassthroughValidateAction
+    includeIngressFlows:
+      - smoke
+  error:
+    name: error
+    egressAction: ErrorEgressAction
+    formatAction: ErrorFormatAction
+transformActions:
+  PassthroughTransformAction:
+    name: PassthroughTransformAction
+    consumes: binary
+    produces: passthrough-binary
+    type: org.deltafi.passthrough.action.RoteTransformAction
+    parameters:
+      resultType: passthrough-binary
+      staticMetadata:
+        passthrough_transform: Talk to me Goose...
+  Stix1_xTo2_1TransformAction:
+    name: Stix1_xTo2_1TransformAction
+    consumes: stix1_x
+    produces: stix2_1
+    type: org.deltafi.stix.actions.StixTransformAction
+loadActions:
+  Stix2_1LoadAction:
+    name: Stix2_1LoadAction
+    consumes: stix2_1
+    type: org.deltafi.stix.actions.StixLoadAction
+  PassthroughLoadAction:
+    name: PassthroughLoadAction
+    consumes: passthrough-binary
+    type: org.deltafi.passthrough.action.RoteLoadAction
+    parameters:
+      domains:
+        - binary
+enrichActions: {}
+formatActions:
+  Stix2_1FormatAction:
+    name: Stix2_1FormatAction
+    type: org.deltafi.stix.actions.Stix2_1FormatAction
+    requiresDomains:
+      - stix
+  Stix1_XFormatAction:
+    name: Stix1_XFormatAction
+    type: org.deltafi.stix.actions.Stix1_XFormatAction
+    requiresDomains:
+      - stix
+  PassthroughFormatAction:
+    name: PassthroughFormatAction
+    requiresDomains:
+      - binary
+    type: org.deltafi.passthrough.action.RoteFormatAction
+    parameters:
+      staticMetadata:
+        passthrough_format: That's a negative Ghostrider...
+  ErrorFormatAction:
+    name: ErrorFormatAction
+    type: org.deltafi.actionkit.action.format.SimpleErrorFormatAction
+    requiresDomains:
+      - error
+    parameters:
+      staticMetadata:
+        error_format: Watch the birdie...
+validateActions:
+  Stix2_1ValidateAction:
+    name: Stix2_1ValidateAction
+    type: org.deltafi.stix.actions.RubberStampValidateAction
+  Stix1_XValidateAction:
+    name: Stix1_XValidateAction
+    type: org.deltafi.stix.actions.RubberStampValidateAction
+  AuthorityValidateAction:
+    name: AuthorityValidateAction
+    type: org.deltafi.stix.actions.RubberStampValidateAction
+  PassthroughValidateAction:
+    name: PassthroughValidateAction
+    type: org.deltafi.passthrough.action.RubberStampValidateAction
+egressActions:
+  PassthroughEgressAction:
+    name: PassthroughEgressAction
+    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    parameters:
+      url: http://nifi-egress-service
+      metadataPrefix: deltafi.
+      staticMetadata:
+        passthrough_egress: Configured from deltafi-dgs and passed as a param
+  SmokeEgressAction:
+    name: SmokeEgressAction
+    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    parameters:
+      url: http://nifi-egress-service
+      metadataPrefix: deltafi.
+      staticMetadata:
+        passthrough_egress: Just a walk in the park
+  Stix2_1EgressAction:
+    name: Stix2_1EgressAction
+    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    parameters:
+      url: http://nifi-egress-service
+      metadataPrefix: deltafi.
+      staticMetadata:
+        json: Sending out as json
+  Stix1_XEgressAction:
+    name: Stix1_XEgressAction
+    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    parameters:
+      url: http://nifi-egress-service
+      metadataPrefix: deltafi.
+      staticMetadata:
+        xml: Sending out as xml
+  ErrorEgressAction:
+    name: ErrorEgressAction
+    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    parameters:
+      url: http://nifi-egress-service
+      metadataPrefix: deltafi.
+      staticMetadata:
+        xml: Its time to buzz the tower...

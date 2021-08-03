@@ -2,7 +2,6 @@ package org.deltafi.dgs;
 
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import org.deltafi.dgs.api.types.ConfigType;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.delete.DeleteRunner;
@@ -10,7 +9,6 @@ import org.deltafi.dgs.generated.DgsConstants;
 import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.generated.types.*;
 
-import org.deltafi.dgs.repo.DeltaFiConfigRepo;
 import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.services.*;
 import org.junit.jupiter.api.*;
@@ -61,10 +59,10 @@ class DeltaFiDgsApplicationTests {
 	DeltaFileRepo deltaFileRepo;
 
 	@Autowired
-	DeltaFiConfigRepo deltaFiConfigRepo;
+	ConfigLoaderService configLoaderService;
 
 	@Autowired
-	ConfigLoaderService configLoaderService;
+	DeltaFiConfigService configService;
 
 	@MockBean
 	RedisService redisService;
@@ -86,7 +84,8 @@ class DeltaFiDgsApplicationTests {
 	@Test
 	void contextLoads() {
 		assertTrue(true);
-		assertFalse(deltaFiConfigRepo.findAllByConfigType(ConfigType.INGRESS_FLOW).isEmpty());
+		ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.INGRESS_FLOW).build();
+		assertFalse(configService.getConfigs(input).isEmpty());
 	}
 
 	@Test

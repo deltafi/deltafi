@@ -115,7 +115,7 @@ public class GatewayConfigService {
     }
 
     public void refreshApolloConfig() {
-        List<DomainEndpointConfiguration> currentEndpoints = configService.getDomainEndpoints();
+        Collection<DomainEndpointConfiguration> currentEndpoints = configService.getDomainEndpoints();
         addDeltaFiDgsServiceIfMissing(currentEndpoints);
 
         List<Map<String, String>> serviceMaps = currentEndpoints.stream().map(this::fromDomainEndpointConfig).collect(Collectors.toList());
@@ -184,7 +184,7 @@ public class GatewayConfigService {
         return Optional.ofNullable(service.getMetadata().getAnnotations().get(key));
     }
 
-    private void addDeltaFiDgsServiceIfMissing(List<DomainEndpointConfiguration> endpoints) {
+    private void addDeltaFiDgsServiceIfMissing(Collection<DomainEndpointConfiguration> endpoints) {
         if (endpoints.stream().filter(this::isDeltaFiDgsService).findFirst().isEmpty()) {
             endpoints.add(configService.saveDomainEndpoint(DELTAFI_DGS_SERVICE));
         }

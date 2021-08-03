@@ -4,7 +4,7 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.common.trace.ZipkinConfig;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.configuration.*;
+import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.configuration.EgressFlowConfiguration;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.generated.types.*;
@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class DeltaFilesServiceTest {
     DeltaFilesService deltaFilesService;
     final DeltaFiConfigService deltaFiConfigService = Mockito.mock(DeltaFiConfigService.class);
-    final ActionConfigService actionConfigService = Mockito.mock(ActionConfigService.class);
     StateMachine stateMachine;
     DeltaFileRepo deltaFileRepo;
     final RedisService redisService = Mockito.mock(RedisService.class);
@@ -48,11 +47,10 @@ class DeltaFilesServiceTest {
         Mockito.when(deltaFiConfigService.getEgressFlow(flow1)).thenReturn(Optional.of(flowConfiguration1));
         Mockito.when(deltaFiConfigService.getEgressFlow(flow2)).thenReturn(Optional.of(flowConfiguration2));
         Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(Arrays.asList(flowConfiguration1, flowConfiguration2));
-        Mockito.when(deltaFiConfigService.getEgressFlowByEgressActionName(EgressConfiguration.egressActionName(flow1))).thenReturn(flowConfiguration1);
 
         ZipkinConfig zipkinConfig = new ZipkinConfig();
         zipkinConfig.setEnabled(false);
-        stateMachine = new StateMachine(deltaFiConfigService, actionConfigService, new ZipkinService(null, zipkinConfig));
+        stateMachine = new StateMachine(deltaFiConfigService, new ZipkinService(null, zipkinConfig));
 
         deltaFileRepo = Mockito.mock(DeltaFileRepo.class);
         deltaFilesService = new DeltaFilesService(deltaFiConfigService, new DeltaFiProperties(), stateMachine, deltaFileRepo, redisService);

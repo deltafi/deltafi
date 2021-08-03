@@ -24,13 +24,11 @@ import java.util.stream.Collectors;
 public class StateMachine {
 
     private final DeltaFiConfigService configService;
-    private final ActionConfigService actionConfigService;
     private final ZipkinService zipkinService;
 
-    public StateMachine(DeltaFiConfigService configService, ActionConfigService actionConfigService, ZipkinService zipkinService) {
+    public StateMachine(DeltaFiConfigService configService, ZipkinService zipkinService) {
         this.configService = configService;
         this.zipkinService = zipkinService;
-        this.actionConfigService = actionConfigService;
     }
 
     /** Advance the state of the given DeltaFile
@@ -146,27 +144,27 @@ public class StateMachine {
     }
 
     private boolean loadMetadataMatches(String loadAction, Map<String, String> metadata) {
-        Map<String, String> requiresMetadata = actionConfigService.getLoadAction(loadAction).getRequiresMetadata();
+        Map<String, String> requiresMetadata = configService.getLoadAction(loadAction).getRequiresMetadata();
         return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadata.get(k)));
     }
 
     private List<String> getEnrichActions(DeltaFile deltaFile) {
-        return actionConfigService.getEnrichActions().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
+        return configService.getEnrichActions().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
     }
 
     private boolean enrichActionReady(String enrichActionName, DeltaFile deltaFile) {
-        EnrichActionConfiguration config = actionConfigService.getEnrichAction(enrichActionName);
+        EnrichActionConfiguration config = configService.getEnrichAction(enrichActionName);
         return !deltaFile.hasTerminalAction(enrichActionName) &&
                 deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
                 deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
     }
 
     private List<String> getFormatActions(DeltaFile deltaFile) {
-        return actionConfigService.getFormatActions().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
+        return configService.getFormatActions().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
     }
 
     private boolean formatActionReady(String formatActionName, DeltaFile deltaFile) {
-        FormatActionConfiguration config = actionConfigService.getFormatAction(formatActionName);
+        FormatActionConfiguration config = configService.getFormatAction(formatActionName);
         return !deltaFile.hasTerminalAction(formatActionName) &&
                 deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
                 deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());

@@ -1,22 +1,17 @@
 package org.deltafi.dgs.datafetchers;
 
-import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.dgs.generated.client.*;
 import org.deltafi.dgs.generated.types.*;
-import org.deltafi.dgs.repo.ActionConfigRepo;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
-import java.util.List;
-
-import static graphql.Assert.*;
+import static graphql.Assert.assertNotNull;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -34,20 +29,12 @@ class ActionConfigDatafetcherTest {
     @Autowired
     DgsQueryExecutor dgsQueryExecutor;
 
-    @Autowired
-    ActionConfigRepo actionConfigRepo;
-
-    @BeforeEach
-    public void setup() {
-        actionConfigRepo.deleteAll();
-    }
-
     @Test
     void addTransformConfigTest() {
         TransformActionConfigurationInput transformInput = TransformActionConfigurationInput.newBuilder()
                 .name(NAME).consumes(CONSUMES).produces(PRODUCES).type(CLASS_NAME).build();
 
-        ActionConfigsProjectionRoot projection = rootProject().onTransformActionConfiguration()
+        DeltaFiConfigsProjectionRoot projection = rootProject().onTransformActionConfiguration()
                 .consumes()
                 .produces()
                 .parent();
@@ -70,7 +57,7 @@ class ActionConfigDatafetcherTest {
         LoadActionConfigurationInput loadConfigInput = LoadActionConfigurationInput.newBuilder().name(NAME)
                 .consumes(CONSUMES).requiresMetadataKeyValues(singletonList(keyValueInput)).type(CLASS_NAME).build();
 
-        ActionConfigsProjectionRoot projection = rootProject().onLoadActionConfiguration()
+        DeltaFiConfigsProjectionRoot projection = rootProject().onLoadActionConfiguration()
                 .consumes()
                 .requiresMetadataKeyValues()
                     .key()
@@ -96,7 +83,7 @@ class ActionConfigDatafetcherTest {
                 .requiresEnrichment(singletonList(ENRICHMENT))
                 .type(CLASS_NAME).build();
 
-        ActionConfigsProjectionRoot projection = rootProject()
+        DeltaFiConfigsProjectionRoot projection = rootProject()
                 .onEnrichActionConfiguration()
                 .requiresEnrichment()
                 .requiresDomains()
@@ -119,7 +106,7 @@ class ActionConfigDatafetcherTest {
                 .requiresEnrichment(singletonList(ENRICHMENT))
                 .type(CLASS_NAME).build();
 
-        ActionConfigsProjectionRoot projection = rootProject()
+        DeltaFiConfigsProjectionRoot projection = rootProject()
                 .onFormatActionConfiguration()
                 .requiresEnrichment()
                 .requiresDomains()
@@ -159,62 +146,8 @@ class ActionConfigDatafetcherTest {
         assertNotNull(config.getModified());
     }
 
-    @Test
-    void findConfigsTest() {
-        ActionQueryInput actionQueryInput = ActionQueryInput.newBuilder().actionType(ActionType.TRANSFORM_ACTION).name(NAME).build();
-
-        TransformActionConfigurationInput transformInput = TransformActionConfigurationInput.newBuilder()
-                .name(NAME).consumes(CONSUMES).produces(PRODUCES).type(CLASS_NAME).build();
-
-        ActionConfigsProjectionRoot projection = rootProject().onTransformActionConfiguration()
-                .consumes()
-                .parent();
-
-        RegisterTransformActionGraphQLQuery transformRequest = RegisterTransformActionGraphQLQuery.newRequest().transformActionConfiguration(transformInput).build();
-        executeRequest(transformRequest, projection, TransformActionConfiguration.class);
-
-        ActionConfigsGraphQLQuery findConfig = ActionConfigsGraphQLQuery.newRequest().actionQuery(actionQueryInput).build();
-
-        TypeRef<List<ActionConfiguration>> listOfConfigs = new TypeRef<>() {};
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(findConfig, projection);
-        List<ActionConfiguration> configs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + findConfig.getOperationName(),
-                listOfConfigs);
-
-        assertTrue(configs.get(0) instanceof TransformActionConfiguration);
-
-        TransformActionConfiguration transformConfig = (TransformActionConfiguration) configs.get(0);
-        assertEquals(NAME, transformConfig.getName());
-        assertNotNull(transformConfig.getCreated());
-        assertNotNull(transformConfig.getModified());
-        assertEquals(CONSUMES, transformConfig.getConsumes());
-        assertNull(transformConfig.getProduces()); // not in the projection should be null
-    }
-
-    @Test
-    void deleteConfigsTest() {
-        TransformActionConfigurationInput transformInput = TransformActionConfigurationInput.newBuilder()
-                .name(NAME).consumes(CONSUMES).produces(PRODUCES).type(CLASS_NAME).build();
-
-        ActionConfigsProjectionRoot projection = rootProject().onTransformActionConfiguration()
-                .consumes()
-                .parent();
-
-        RegisterTransformActionGraphQLQuery transformRequest = RegisterTransformActionGraphQLQuery.newRequest().transformActionConfiguration(transformInput).build();
-        executeRequest(transformRequest, projection, TransformActionConfiguration.class);
-
-        RemoveActionConfigsGraphQLQuery remove = RemoveActionConfigsGraphQLQuery.newRequest().build();
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(remove, null);
-        Integer removed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + remove.getOperationName(),
-                Integer.class);
-        assertEquals(1, removed.intValue());
-    }
-
-    ActionConfigsProjectionRoot rootProject() {
-        return new ActionConfigsProjectionRoot()
+    DeltaFiConfigsProjectionRoot rootProject() {
+        return new DeltaFiConfigsProjectionRoot()
                 .name()
                 .created()
                 .modified()
