@@ -10,7 +10,6 @@ import org.deltafi.dgs.configuration.FormatActionConfiguration;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.KeyValueConverter;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
-import org.deltafi.dgs.generated.types.KeyValue;
 import org.deltafi.dgs.generated.types.ProtocolLayer;
 import org.springframework.stereotype.Service;
 
@@ -40,73 +39,51 @@ public class StateMachine {
         List<String> enqueueActions = new ArrayList<>();
         switch (DeltaFileStage.valueOf(deltaFile.getStage())) {
             case INGRESS:
-                deltaFile.setStage(DeltaFileStage.TRANSFORM.name());
-            case TRANSFORM:
                 if (deltaFile.hasErroredAction()) {
                     break;
                 }
 
+                // transform
                 String nextTransformAction = getTransformAction(deltaFile);
-                if (nextTransformAction == null) {
-                    deltaFile.setStage(DeltaFileStage.LOAD.name());
-                    ProtocolLayer lastProtocolLayer = Iterables.getLast(deltaFile.getProtocolStack());
-                    String loadAction = getLoadAction(flowConfiguration(deltaFile).getLoadActions(), lastProtocolLayer.getMetadata());
-                    if (!deltaFile.hasTerminalAction(loadAction)) {
-                        if (loadAction != null) {
-                            deltaFile.queueAction(loadAction);
-                            enqueueActions.add(loadAction);
-                        }
-                        break;
-                    }
-                } else {
+                if (nextTransformAction != null) {
                     deltaFile.queueAction(nextTransformAction);
                     enqueueActions.add(nextTransformAction);
                     break;
                 }
-            case LOAD:
-                deltaFile.setStage(DeltaFileStage.ENRICH.name());
-            case ENRICH:
-                List<String> enrichActions = getEnrichActions(deltaFile);
-                List<String> newEnrichActions = deltaFile.queueActionsIfNew(enrichActions);
-                enqueueActions.addAll(newEnrichActions);
-                if (enrichActions.isEmpty()) {
-                    deltaFile.setStage(DeltaFileStage.FORMAT.name());
-                } else {
+
+                // load
+                String loadAction = getLoadAction(deltaFile);
+                if (loadAction != null && !deltaFile.hasTerminalAction(loadAction)) {
+                    deltaFile.queueAction(loadAction);
+                    enqueueActions.add(loadAction);
                     break;
                 }
-            case FORMAT:
-                List<String> formatActions = getFormatActions(deltaFile);
-                List<String> newFormatActions = deltaFile.queueActionsIfNew(formatActions);
-                enqueueActions.addAll(newFormatActions);
-                if (formatActions.isEmpty()) {
-                    deltaFile.setStage(DeltaFileStage.VALIDATE.name());
-                } else {
-                    break;
-                }
-            case VALIDATE:
-                List<String> validateActions = getValidateActions(deltaFile);
-                List<String> newValidateActions = deltaFile.queueActionsIfNew(validateActions);
-                enqueueActions.addAll(newValidateActions);
-                if (validateActions.isEmpty()) {
-                    deltaFile.setStage(DeltaFileStage.EGRESS.name());
-                } else {
-                    break;
-                }
+
+                // if transform and load are complete, move to egress stage
+                deltaFile.setStage(DeltaFileStage.EGRESS.name());
             case EGRESS:
+                // enrich
+                List<String> enrichActions = getEnrichActions(deltaFile);
+                List<String> newActions = new ArrayList<>(deltaFile.queueActionsIfNew(enrichActions));
+
+                // format
+                List<String> formatActions = getFormatActions(deltaFile);
+                newActions.addAll(deltaFile.queueActionsIfNew(formatActions));
+
+                // validate
+                List<String> validateActions = getValidateActions(deltaFile);
+                newActions.addAll(deltaFile.queueActionsIfNew(validateActions));
+
+                // egress
                 List<String> egressActions = getEgressActions(deltaFile);
-                List<String> newEgressActions = deltaFile.queueActionsIfNew(egressActions);
-                enqueueActions.addAll(newEgressActions);
-                if (egressActions.isEmpty() && !deltaFile.hasErroredAction()) {
-                    deltaFile.setStage(DeltaFileStage.COMPLETE.name());
-                } else {
-                    break;
-                }
+                newActions.addAll(deltaFile.queueActionsIfNew(egressActions));
+
+                enqueueActions.addAll(newActions);
+                break;
         }
 
-        if (!deltaFile.hasPendingActions() && !deltaFile.getStage().equals(DeltaFileStage.COMPLETE.name())) {
-            deltaFile.setStage(DeltaFileStage.ERROR.name());
-            sendTrace(deltaFile);
-        } else if (DeltaFileStage.COMPLETE.name().equals(deltaFile.getStage())) {
+        if (!deltaFile.hasPendingActions()) {
+            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR.name() : DeltaFileStage.COMPLETE.name());
             sendTrace(deltaFile);
         }
 
@@ -124,9 +101,10 @@ public class StateMachine {
         return nextAction.orElse(null);
     }
 
-    private String getLoadAction(List<String> loadActionsOrGroups, List<KeyValue> metadata) {
-        Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(metadata);
-        for (String loadActionOrGroup : loadActionsOrGroups) {
+    private String getLoadAction(DeltaFile deltaFile) {
+        ProtocolLayer lastProtocolLayer = Iterables.getLast(deltaFile.getProtocolStack());
+        Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(lastProtocolLayer.getMetadata());
+        for (String loadActionOrGroup : flowConfiguration(deltaFile).getLoadActions()) {
             if (loadActionOrGroup.endsWith("Group")) {
                 for (String loadAction : configService.getLoadGroupActions(loadActionOrGroup)) {
                     if (loadMetadataMatches(loadAction, metadataMap)) {

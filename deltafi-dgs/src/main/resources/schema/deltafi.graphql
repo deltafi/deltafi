@@ -79,11 +79,6 @@ type FormattedData {
 
 enum DeltaFileStage {
   INGRESS
-  TRANSFORM
-  LOAD
-  ENRICH
-  FORMAT
-  VALIDATE
   EGRESS
   COMPLETE
   ERROR

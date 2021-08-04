@@ -36,7 +36,7 @@ public class DeltaFileConverter {
         String did = errorDomain.getDid();
         return DeltaFile.newBuilder()
                 .did(did)
-                .stage(DeltaFileStage.LOAD.name())
+                .stage(DeltaFileStage.EGRESS.name())
                 .actions(new ArrayList<>())
                 .sourceInfo(originator.getSourceInfo())
                 .protocolStack(Collections.emptyList())

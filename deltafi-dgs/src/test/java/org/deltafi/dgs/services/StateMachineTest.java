@@ -103,9 +103,9 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceToValidateStage() {
+    void testAdvanceToValidateAction() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.FORMAT.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS.name());
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
 
@@ -120,7 +120,7 @@ class StateMachineTest {
 
         stateMachine.advance(deltaFile);
 
-        assertEquals(DeltaFileStage.VALIDATE.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
         assertEquals(ActionState.QUEUED, deltaFile.actionNamed("ValidateAction1").orElseThrow().getState());
         assertEquals(ActionState.QUEUED, deltaFile.actionNamed("ValidateAction2").orElseThrow().getState());
     }
@@ -128,7 +128,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteValidateAction_onePending() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS.name());
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action completedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -145,7 +145,7 @@ class StateMachineTest {
 
         stateMachine.advance(deltaFile);
 
-        assertEquals(DeltaFileStage.VALIDATE.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, completedAction.getState());
         assertEquals(ActionState.QUEUED, dispatchedAction.getState());
     }
@@ -153,7 +153,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteValidateAction_allComplete() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS.name());
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action completedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -176,9 +176,9 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceToEgressStage() {
+    void testAdvanceToEgressAction() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS.name());
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action validateAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -208,7 +208,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteEgressAction_onePending() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS.name());
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action validateAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -240,7 +240,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteEgressAction_allComplete() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS.name());
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action validateAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();

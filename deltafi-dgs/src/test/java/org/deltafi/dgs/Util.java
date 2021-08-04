@@ -12,7 +12,7 @@ public class Util {
         OffsetDateTime now = OffsetDateTime.now();
         return DeltaFile.newBuilder()
                 .did(did)
-                .stage(DeltaFileStage.TRANSFORM.name())
+                .stage(DeltaFileStage.INGRESS.name())
                 .actions(new ArrayList<>())
                 .sourceInfo(SourceInfo.newBuilder().flow(flow).build())
                 .protocolStack(new ArrayList<>())

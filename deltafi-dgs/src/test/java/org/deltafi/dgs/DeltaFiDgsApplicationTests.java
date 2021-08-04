@@ -139,7 +139,7 @@ class DeltaFiDgsApplicationTests {
 
 	DeltaFile postTransformUtf8DeltaFile(String did) {
 		DeltaFile deltaFile = postIngressDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.TRANSFORM.name());
+		deltaFile.setStage(DeltaFileStage.INGRESS.name());
 		deltaFile.completeAction("Utf8TransformAction");
 		deltaFile.queueAction("SampleTransformAction");
 		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
@@ -173,7 +173,7 @@ class DeltaFiDgsApplicationTests {
 
 	DeltaFile postTransformDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.LOAD.name());
+		deltaFile.setStage(DeltaFileStage.INGRESS.name());
 		deltaFile.completeAction("SampleTransformAction");
 		deltaFile.queueAction("SampleLoadAction");
 		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
@@ -208,7 +208,7 @@ class DeltaFiDgsApplicationTests {
 
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.ENRICH.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS.name());
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
 		deltaFile.getDomains().getDomainTypes().add("sample");
@@ -257,7 +257,7 @@ class DeltaFiDgsApplicationTests {
 
 	DeltaFile postEnrichDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.FORMAT.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS.name());
 		deltaFile.queueAction("SampleFormatAction");
 		deltaFile.completeAction("SampleEnrichAction");
 		deltaFile.getEnrichment().getEnrichmentTypes().add("sampleEnrichment");
@@ -286,7 +286,7 @@ class DeltaFiDgsApplicationTests {
 
 	DeltaFile postFormatDeltaFile(String did) {
 		DeltaFile deltaFile = postEnrichDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS.name());
 		deltaFile.queueActionsIfNew(Arrays.asList("AuthorityValidateAction", "SampleValidateAction"));
 		deltaFile.completeAction("SampleFormatAction");
 		deltaFile.getFormattedData().add(FormattedData.newBuilder()
@@ -326,7 +326,7 @@ class DeltaFiDgsApplicationTests {
 
 	DeltaFile postValidateDeltaFile(String did) {
 		DeltaFile deltaFile = postFormatDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.VALIDATE.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS.name());
 		deltaFile.completeAction("SampleValidateAction");
 		return deltaFile;
 	}
@@ -369,7 +369,9 @@ class DeltaFiDgsApplicationTests {
 		DeltaFile expected = postErrorDeltaFile(did);
 		assertTrue(equalIgnoringDates(expected, actual));
 
-		// FIXME: Be specific...
+		// ensure an error deltaFile was created
+		assertNotEquals(actual, deltaFilesService.getLastCreatedDeltaFiles(1).get(0));
+
 		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("ErrorFormatAction")), any());
 	}
 

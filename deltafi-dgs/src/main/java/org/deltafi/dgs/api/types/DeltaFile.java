@@ -201,20 +201,15 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     public DeltaFile forQueue(String actionName) {
         Builder builder = DeltaFile.newBuilder()
                 .did(getDid())
-                .sourceInfo(getSourceInfo());
+                .sourceInfo(getSourceInfo())
+                .domains(getDomains())
+                .enrichment(getEnrichment())
+                .formattedData(getFormattedData().stream()
+                        .filter(f -> f.getEgressActions().contains(actionName))
+                        .collect(Collectors.toList()));
 
         if (!getProtocolStack().isEmpty()) {
             builder.protocolStack(Collections.singletonList(getProtocolStack().get(getProtocolStack().size() - 1)));
-        }
-
-        if (getStage().equals(DeltaFileStage.ENRICH.name()) || getStage().equals(DeltaFileStage.FORMAT.name())) {
-            // TODO: trim down domains and enrichment to those that the current action cares about
-            builder.domains(getDomains())
-                    .enrichment(getEnrichment());
-        } else if (getStage().equals(DeltaFileStage.VALIDATE.name()) || getStage().equals(DeltaFileStage.EGRESS.name())) {
-            builder.formattedData(getFormattedData().stream()
-                    .filter(f -> f.getEgressActions().contains(actionName))
-                    .collect(Collectors.toList()));
         }
 
         return builder.build();
