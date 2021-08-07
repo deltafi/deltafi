@@ -14,7 +14,7 @@ spring:
     scheduling:
       pool:
         # provide threads for scheduled redis long poll tasks
-        size: 4
+        size: 32
 deltafi:
   requeueSeconds: 30
   delete:
