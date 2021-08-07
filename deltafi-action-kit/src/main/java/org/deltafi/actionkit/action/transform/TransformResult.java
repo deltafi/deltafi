@@ -61,7 +61,7 @@ public class TransformResult extends Result {
     }
 
     @SuppressWarnings("unused")
-    public void setObjectReference(@NotNull String name, @NotNull String bucket, int size, int offset) {
+    public void setObjectReference(@NotNull String name, @NotNull String bucket, long size, long offset) {
         objectReferenceInput = new ObjectReferenceInput(name, bucket, offset, size);
     }
 

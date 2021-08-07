@@ -22,13 +22,18 @@ compileTestJava {
 dependencies {
     implementation project(":deltafi-common")
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    // Use DGS BOM to automatically define versions of other packages below
+    implementation(platform('com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.5.0')) {
+        because 'DGS BOM to automatically define versions of other packages below'
+    }
     implementation project(path: ':deltafi-dgs', configuration: 'jars')
     implementation 'io.quarkus:quarkus-resteasy'
     implementation 'io.quarkus:quarkus-resteasy-jackson'
     implementation 'io.quarkiverse.minio:quarkus-minio'
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-kotlin'
-    implementation 'com.netflix.graphql.dgs:graphql-dgs-client:3.11.0'
+    implementation 'com.netflix.graphql.dgs:graphql-dgs-client'
+    implementation 'com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:5.0.5'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation('io.quarkiverse.loggingjson:quarkus-logging-json:0.3.1') {
         because 'Plugin to allow JSON formatted logging for log scraping'

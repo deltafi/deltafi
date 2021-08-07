@@ -123,7 +123,7 @@ class DeltaFiDgsApplicationTests {
 		String did = UUID.randomUUID().toString();
 		DeltaFile deltaFileFromDgs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("01.ingress"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
+				"data." + DgsConstants.MUTATION.Ingress,
 				DeltaFile.class);
 
 		assertEquals(did, deltaFileFromDgs.getDid());

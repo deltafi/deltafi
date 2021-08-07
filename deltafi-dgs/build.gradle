@@ -53,7 +53,8 @@ generateJava {
     generateClient = true
     typeMapping = [
       deltaFile: "org.deltafi.dgs.api.types.DeltaFile",
-	  "JSON": "org.deltafi.dgs.api.types.JsonMap"
+	  "JSON": "org.deltafi.dgs.api.types.JsonMap",
+	  "Long": "java.lang.Long"
     ]
 }
 

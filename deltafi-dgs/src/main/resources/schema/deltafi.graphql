@@ -1,5 +1,6 @@
 scalar DateTime
 scalar JSON
+scalar Long
 
 interface DeltaFiDomain {
   did: String!
@@ -34,8 +35,8 @@ input SourceInfoInput {
 type ObjectReference {
   name: String!
   bucket: String!
-  offset: Int!
-  size: Int!
+  offset: Long!
+  size: Long!
 }
 
 type ProtocolLayer {
@@ -47,8 +48,8 @@ type ProtocolLayer {
 input ObjectReferenceInput {
   name: String!
   bucket: String!
-  offset: Int!
-  size: Int!
+  offset: Long!
+  size: Long!
 }
 
 input ProtocolLayerInput {
@@ -102,7 +103,6 @@ type Action {
 }
 
 enum ActionEventType {
-  INGRESS
   TRANSFORM
   LOAD
   ENRICH
@@ -118,7 +118,6 @@ input ActionEventInput {
   action: String!
   time: DateTime!
   type: ActionEventType!
-  ingress: IngressInput
   transform: TransformInput
   load: LoadInput
   enrich: EnrichInput
@@ -143,6 +142,7 @@ type DeltaFile {
 }
 
 input IngressInput {
+  did: String!
   sourceInfo: SourceInfoInput!
   objectReference: ObjectReferenceInput!
   created: DateTime!
@@ -181,6 +181,7 @@ type Query {
 }
 
 type Mutation {
+  ingress(input: IngressInput!): DeltaFile!
   actionEvent(event: ActionEventInput!): DeltaFile!
 
   retry(did: String!) : DeltaFile!

@@ -23,12 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
+
 @Slf4j
 @ApplicationScoped
 public class ContentService {
-
-    private static final String STORAGE = "storage";
-    private static final String INCOMING = "incoming";
 
     @Inject
     MinioClient minioClient;
@@ -121,7 +120,7 @@ public class ContentService {
             InputStream dataInputStream = new ByteArrayInputStream(rawData);
             ObjectWriteResponse objectWriteResponse = minioClient.putObject(
                     PutObjectArgs.builder()
-                            .bucket(STORAGE)
+                            .bucket(MINIO_BUCKET)
                             .object(objectName)
                             .stream(dataInputStream, rawData.length, -1)
                             .build()
@@ -140,28 +139,10 @@ public class ContentService {
      * @return - true if all objects were successfully removed, otherwise false
      */
     public boolean deleteObjectsForDeltaFile(DeltaFile deltaFile) {
-        return deleteIncomingObject(deltaFile) && deleteStorageObjects(deltaFile);
-    }
-
-    public boolean deleteIncomingObject(DeltaFile deltaFile) {
-        ObjectReference incoming = deltaFile.getProtocolStack().stream().filter(pl -> INCOMING.equals(pl.getObjectReference().getBucket())).findFirst()
-                .orElseThrow(ContentService::missingIncoming).getObjectReference();
-
-        RemoveObjectArgs removeObject = RemoveObjectArgs.builder().bucket(INCOMING).object(incoming.getName()).build();
-        try {
-            minioClient.removeObject(removeObject);
-        } catch (ErrorResponseException | InvalidKeyException | InsufficientDataException | InternalException | InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
-            log.error("Failed to delete incoming object for did {}", deltaFile.getDid(), e);
-            return false;
-        }
-        return true;
-    }
-
-    public boolean deleteStorageObjects(DeltaFile deltaFile) {
         List<DeleteObject> objectsInStorage = getObjectNamesForDid(deltaFile.getDid()).stream().map(DeleteObject::new).collect(Collectors.toList());
 
         RemoveObjectsArgs removeArgs = RemoveObjectsArgs.builder()
-                .bucket(STORAGE).objects(objectsInStorage).build();
+                .bucket(MINIO_BUCKET).objects(objectsInStorage).build();
 
         Iterable<Result<DeleteError>> removeResults = minioClient.removeObjects(removeArgs);
 
@@ -180,7 +161,7 @@ public class ContentService {
 
     public List<String> getObjectNamesForDid(String did) {
         List<String> didObjects = new ArrayList<>();
-        Iterable<Result<Item>> objects = minioClient.listObjects(ListObjectsArgs.builder().bucket(STORAGE).prefix(did).recursive(true).build());
+        Iterable<Result<Item>> objects = minioClient.listObjects(ListObjectsArgs.builder().bucket(MINIO_BUCKET).prefix(did).recursive(true).build());
         for (Result<Item> item : objects) {
             try {
                 Item itemObj = item.get();
@@ -194,7 +175,7 @@ public class ContentService {
         return didObjects;
     }
 
-    private ObjectReference fromObjectWriteResponse(ObjectWriteResponse response, int size) {
+    private ObjectReference fromObjectWriteResponse(ObjectWriteResponse response, long size) {
         return ObjectReference.newBuilder()
                 .bucket(response.bucket())
                 .name(response.object())
@@ -205,14 +186,10 @@ public class ContentService {
     private GetObjectArgs buildArgs(ObjectReference objectReference) {
         return GetObjectArgs.builder()
                 .bucket(objectReference.getBucket())
-                .offset((long) objectReference.getOffset())
-                .length((long) objectReference.getSize())
+                .offset(objectReference.getOffset())
+                .length(objectReference.getSize())
                 .object(objectReference.getName())
                 .build();
-    }
-
-    private static IllegalArgumentException missingIncoming() {
-        return new IllegalArgumentException("DeltaFile does not have an incoming object reference");
     }
 
 }

@@ -59,6 +59,12 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
+  public DeltaFile ingress(IngressInput input) {
+    return deltaFilesService.handleIngress(input);
+  }
+
+  @DgsMutation
+  @SuppressWarnings("unused")
   public DeltaFile actionEvent(ActionEventInput event) {
     return deltaFilesService.handleActionEvent(event);
   }

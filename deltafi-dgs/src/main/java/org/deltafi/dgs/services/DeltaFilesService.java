@@ -78,11 +78,12 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile handleActionEvent(ActionEventInput event) {
-        if (event.getType().equals(ActionEventType.INGRESS)) {
-            return addDeltaFile(event);
-        }
+    public DeltaFile handleIngress(IngressInput input) {
+        return addDeltaFile(input);
+    }
 
+    @MongoRetryable
+    public DeltaFile handleActionEvent(ActionEventInput event) {
         DeltaFile deltaFile = getDeltaFile(event.getDid());
 
         if (deltaFile == null) {
@@ -115,11 +116,11 @@ public class DeltaFilesService {
         throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
     }
 
-    public DeltaFile addDeltaFile(ActionEventInput event) {
-        String flow = event.getIngress().getSourceInfo().getFlow();
+    public DeltaFile addDeltaFile(IngressInput input) {
+        String flow = input.getSourceInfo().getFlow();
         IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
-        DeltaFile deltaFile = DeltaFileConverter.convert(event.getDid(), event.getIngress().getSourceInfo(), event.getIngress().getObjectReference(), event.getIngress().getCreated(), flowConfiguration.getType());
+        DeltaFile deltaFile = DeltaFileConverter.convert(input.getDid(), input.getSourceInfo(), input.getObjectReference(), input.getCreated(), flowConfiguration.getType());
 
         return advanceAndSave(deltaFile);
     }

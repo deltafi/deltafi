@@ -14,7 +14,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 @ApplicationScoped
 public class GraphQLClientService {
@@ -29,8 +30,8 @@ public class GraphQLClientService {
         this.httpClient = httpClient;
     }
 
-    public GraphQLResponse executeGraphQLQuery(GraphQLQueryRequest query, Map<String, Object> variables) {
-        return graphQLClient.executeQuery(query.serialize(), variables, (url, headers, body) -> getHttpResponse(url, body));
+    public GraphQLResponse executeGraphQLQuery(GraphQLQueryRequest query) {
+        return graphQLClient.executeQuery(query.serialize(), emptyMap(), (url, headers, body) -> getHttpResponse(url, body));
     }
 
     @NotNull

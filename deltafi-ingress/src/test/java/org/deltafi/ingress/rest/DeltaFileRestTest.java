@@ -1,60 +1,81 @@
 package org.deltafi.ingress.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import org.deltafi.ingress.exceptions.DeltafiException;
+import org.deltafi.ingress.exceptions.DeltafiMetadataException;
+import org.deltafi.ingress.exceptions.DeltafiMinioException;
 import org.deltafi.ingress.service.DeltaFileService;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import javax.inject.Inject;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
-// TODO: dont try to hit MinIO on startup of this test
 @QuarkusTest
-@Disabled
 class DeltaFileRestTest {
 
     @InjectMock
     DeltaFileService deltaFileService;
 
-    @Inject
-    ObjectMapper objectMapper;
+    @Test
+    void testIngress() throws DeltafiMinioException, DeltafiException, DeltafiMetadataException {
+        RequestSpecification request = RestAssured.given();
+        request.body("incoming data".getBytes(StandardCharsets.UTF_8));
+        request.contentType("application/octet-stream");
+        request.headers(Map.of("Flow", "flow", "Filename", "incoming.txt", "Metadata", "{\"key\": \"value\"}"));
+
+        Response response = request.post("/deltafile/ingress");
+
+        Assertions.assertEquals(200, response.getStatusCode());
+
+        Mockito.verify(deltaFileService).ingressData(Mockito.any(), Mockito.eq("incoming.txt"), Mockito.eq("flow"), Mockito.eq("{\"key\": \"value\"}"));
+    }
 
     @Test
-    void testMinioEventListener() {
+    void testIngress_missingFlow() {
         RequestSpecification request = RestAssured.given();
-        request.body(notificationString());
-        request.contentType("application/json");
-        Response response = request.post("/deltafile");
+        request.body("incoming data".getBytes(StandardCharsets.UTF_8));
+        request.contentType("application/octet-stream");
+        request.headers(Map.of("Filename", "incoming.txt"));
 
-        Assertions.assertEquals(204, response.getStatusCode());
-        Mockito.verify(deltaFileService).processNotificationRecords(Mockito.any());
+        Response response = request.post("/deltafile/ingress");
+
+        Assertions.assertEquals(400, response.getStatusCode());
+
+        Mockito.verifyNoInteractions(deltaFileService);
     }
 
-    private static String notificationString() {
-        return "{\n" +
-                "  \"Records\": [\n" +
-                "    {\n" +
-                "      \"eventSource\": \"web\",\n" +
-                "      \"s3\": {\n" +
-                "        \"bucket\": {\n" +
-                "          \"name\": \"incoming\"\n" +
-                "        },\n" +
-                "        \"object\": {\n" +
-                "          \"key\": \"filename\",\n" +
-                "          \"size\": 10,\n" +
-                "          \"userMetadata\": {\n" +
-                "            \"X-Amz-Meta-Attributes\": \"{\\\"flow\\\": \\\"test-flow\\\", \\\"fileType\\\": \\\"stix\\\", \\\"extra\\\": \\\"info\\\", \\\"size\\\": 20}\"\n" +
-                "          }\n" +
-                "        }\n" +
-                "      }\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
+    @Test
+    void testIngress_missingFilename() {
+        RequestSpecification request = RestAssured.given();
+        request.body("incoming data".getBytes(StandardCharsets.UTF_8));
+        request.contentType("application/octet-stream");
+        request.headers(Map.of("Flow", "flow"));
+
+        Response response = request.post("/deltafile/ingress");
+
+        Assertions.assertEquals(400, response.getStatusCode());
+
+        Mockito.verifyNoInteractions(deltaFileService);
     }
+
+    @Test
+    void testIngress_queryParams() throws DeltafiMinioException, DeltafiException, DeltafiMetadataException {
+        RequestSpecification request = RestAssured.given();
+        request.body("incoming data".getBytes(StandardCharsets.UTF_8));
+        request.contentType("application/octet-stream");
+        request.headers(Map.of("Flow", "flowFromHeader", "Filename", "fileFromHeader"));
+
+        Response response = request.post("/deltafile/ingress?filename=fileFromParam&flow=flowFromParam");
+
+        Assertions.assertEquals(200, response.getStatusCode());
+
+        Mockito.verify(deltaFileService).ingressData(Mockito.any(), Mockito.eq("fileFromParam"), Mockito.eq("flowFromParam"), Mockito.isNull());
+    }
+
 }
