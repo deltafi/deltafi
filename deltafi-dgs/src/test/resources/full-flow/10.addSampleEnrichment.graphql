@@ -4,5 +4,13 @@ mutation {
         enriched: true
     ) {
         did
+        domains {
+            key
+            value
+        }
+        enrichment {
+            key
+            value
+        }
     }
 }

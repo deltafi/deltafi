@@ -91,13 +91,13 @@ class DeltaFilesDatafetcherTest {
                 .parent()
               .parent()
             .enrichment()
-              .did()
-              .enrichmentTypes()
-              .parent()
+                .key()
+                .value()
+                .parent()
             .domains()
-              .did()
-              .domainTypes()
-              .parent()
+                .key()
+                .value()
+                .parent()
             .formattedData()
                 .filename()
                 .formatAction()
@@ -135,8 +135,8 @@ class DeltaFilesDatafetcherTest {
         assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getBucket()).isEqualTo(objectBucket);
         assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getOffset()).isZero();
         assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getSize()).isEqualTo(size);
-        assertTrue(deltaFile.getEnrichment().getEnrichmentTypes().isEmpty());
-        assertTrue(deltaFile.getDomains().getDomainTypes().isEmpty());
+        assertTrue(deltaFile.getEnrichment().isEmpty());
+        assertTrue(deltaFile.getDomains().isEmpty());
         assertTrue(deltaFile.getFormattedData().isEmpty());
     }
 
@@ -160,8 +160,8 @@ class DeltaFilesDatafetcherTest {
         assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getBucket()).isEqualTo(objectBucket);
         assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getOffset()).isZero();
         assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getSize()).isEqualTo(size);
-        assertTrue(deltaFile.getEnrichment().getEnrichmentTypes().isEmpty());
-        assertTrue(deltaFile.getDomains().getDomainTypes().isEmpty());
+        assertTrue(deltaFile.getEnrichment().isEmpty());
+        assertTrue(deltaFile.getDomains().isEmpty());
         assertTrue(deltaFile.getFormattedData().isEmpty());
     }
 

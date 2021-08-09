@@ -1,4 +1,4 @@
-package org.deltafi.dgs.repo;
+package org.deltafi.dgs.api.repo;
 
 import org.deltafi.dgs.Util;
 import org.deltafi.dgs.api.types.DeltaFile;
@@ -56,7 +56,7 @@ class DeltaFileRepoTest {
         deltaFileRepo.save(hit);
         deltaFileRepo.save(miss);
 
-        List<DeltaFile> hits = deltaFileRepo.updateForRequeue(now);
+        List<DeltaFile> hits = deltaFileRepo.updateForRequeue(now, 30);
         assertEquals(1, hits.size());
         assertEquals(hit.getDid(), hits.get(0).getDid());
 

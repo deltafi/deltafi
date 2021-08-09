@@ -1,27 +1,24 @@
 package org.deltafi.dgs.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.deltafi.dgs.api.services.EnrichmentService;
+import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.types.SampleEnrichment;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class SampleEnrichmentsService {
 
-    final Map<String, SampleEnrichment> sampleEnrichments = new HashMap<>();
+    final private EnrichmentService enrichmentService;
+    final static ObjectMapper objectMapper = new ObjectMapper();
 
-    public Map<String, SampleEnrichment> getSampleEnrichments() {
-        return sampleEnrichments;
+    @SuppressWarnings("CdiInjectionPointsInspection")
+    public SampleEnrichmentsService(EnrichmentService enrichmentService) {
+        this.enrichmentService = enrichmentService;
     }
 
-    public SampleEnrichment addSampleEnrichment(SampleEnrichment sampleEnrichment) {
-        sampleEnrichments.put(sampleEnrichment.getDid(), sampleEnrichment);
-
-        return sampleEnrichment;
-    }
-
-    public SampleEnrichment forDid(String did) {
-        return sampleEnrichments.get(did);
+    public DeltaFile addSampleEnrichment(String did, SampleEnrichment sampleEnrichment) throws JsonProcessingException {
+        return enrichmentService.addEnrichment(did, "sampleEnrichment", objectMapper.writeValueAsString(sampleEnrichment));
     }
 }

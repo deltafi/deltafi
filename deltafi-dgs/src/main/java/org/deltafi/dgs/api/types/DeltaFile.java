@@ -1,6 +1,5 @@
 package org.deltafi.dgs.api.types;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.deltafi.dgs.generated.types.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
@@ -20,42 +19,10 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     @Version
     private long version;
 
-    transient Map<String, JsonNode> domainDetails;
-
-    transient Map<String, JsonNode> enrichmentDetails;
-
     @Id
     @Override
     public String getDid() {
         return super.getDid();
-    }
-
-    public Map<String, JsonNode> getDomainDetails() {
-        return domainDetails;
-    }
-
-    public void setDomainDetails(Map<String, JsonNode> domainDetails) {
-        this.domainDetails = domainDetails;
-    }
-
-    public Map<String, JsonNode> getEnrichmentDetails() {
-        return enrichmentDetails;
-    }
-
-    public void setEnrichmentDetails(Map<String, JsonNode> enrichmentDetails) { this.enrichmentDetails = enrichmentDetails; }
-
-    public void addDomainDetails(String key, JsonNode rawDomain) {
-        if (Objects.isNull(domainDetails)) {
-            this.domainDetails = new HashMap<>();
-        }
-        this.domainDetails.put(key, rawDomain);
-    }
-
-    public void addEnrichmentDetails(String key, JsonNode rawEnrichment) {
-        if (Objects.isNull(enrichmentDetails)) {
-            this.enrichmentDetails = new HashMap<>();
-        }
-        this.enrichmentDetails.put(key, rawEnrichment);
     }
 
     @SuppressWarnings("unused")
@@ -146,7 +113,61 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     }
 
     public boolean hasErrorDomain() {
-        return getDomains().getError() != null;
+        if (Objects.isNull(getDomains())) {
+            setDomains(new ArrayList<>());
+        }
+
+        return getDomains().stream().anyMatch(d -> d.getKey().equals("error"));
+    }
+
+    public String getDomain(String domain) {
+        if (Objects.isNull(getDomains())) {
+            setDomains(new ArrayList<>());
+        }
+
+        return getDomains().stream().filter(d -> d.getKey().equals(domain)).findFirst().map(KeyValue::getValue).orElse(null);
+    }
+
+    public void addDomain(String domainKey, String domainValue) {
+        if (Objects.isNull(getDomains())) {
+            setDomains(new ArrayList<>());
+        }
+
+        Optional<KeyValue> kv = getDomains().stream().filter(d -> d.getKey().equals(domainKey)).findFirst();
+        if (kv.isPresent()) {
+            kv.get().setValue(domainValue);
+        } else {
+            getDomains().add(KeyValue.newBuilder().key(domainKey).value(domainValue).build());
+        }
+    }
+
+    public boolean hasDomains(List<String> domains) {
+        return domains.stream().allMatch(d -> getDomains().stream().anyMatch(kv -> kv.getKey().equals(d)));
+    }
+
+    public String getEnrichment(String enrichment) {
+        if (Objects.isNull(getEnrichment())) {
+            setEnrichment(new ArrayList<>());
+        }
+
+        return getEnrichment().stream().filter(e -> e.getKey().equals(enrichment)).findFirst().map(KeyValue::getValue).orElse(null);
+    }
+
+    public void addEnrichment(String enrichmentKey, String enrichmentValue) {
+        if (Objects.isNull(getEnrichment())) {
+            setEnrichment(new ArrayList<>());
+        }
+
+        Optional<KeyValue> kv = getEnrichment().stream().filter(d -> d.getKey().equals(enrichmentKey)).findFirst();
+        if (kv.isPresent()) {
+            kv.get().setValue(enrichmentValue);
+        } else {
+            getEnrichment().add(KeyValue.newBuilder().key(enrichmentKey).value(enrichmentValue).build());
+        }
+    }
+
+    public boolean hasEnrichments(List<String> enrichments) {
+        return enrichments.stream().allMatch(e -> getEnrichment().stream().anyMatch(kv -> kv.getKey().equals(e)));
     }
 
     public boolean hasErroredAction() {
@@ -193,7 +214,6 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         setModified(now);
     }
 
-
     public static Builder newBuilder() {
         return new Builder();
     }
@@ -221,8 +241,8 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         private List<Action> actions;
         private SourceInfo sourceInfo;
         private List<ProtocolLayer> protocolStack;
-        private DeltaFiDomains domains;
-        private DeltaFiEnrichments enrichment;
+        private List<KeyValue> domains;
+        private List<KeyValue> enrichment;
         private List<FormattedData> formattedData;
         private OffsetDateTime created;
         private OffsetDateTime modified;
@@ -267,12 +287,12 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
             return this;
         }
 
-        public Builder domains(DeltaFiDomains domains) {
+        public Builder domains(List<KeyValue> domains) {
             this.domains = domains;
             return this;
         }
 
-        public Builder enrichment(DeltaFiEnrichments enrichment) {
+        public Builder enrichment(List<KeyValue> enrichment) {
             this.enrichment = enrichment;
             return this;
         }

@@ -2,7 +2,7 @@ package org.deltafi.dgs.exceptions;
 
 public class ActionConfigException extends Exception {
 
-    private String actionName;
+    final private String actionName;
 
     public ActionConfigException(String actionName, String message) {
         super(message);

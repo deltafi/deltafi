@@ -1,11 +1,14 @@
 package org.deltafi.dgs.datafetchers;
 
-import com.netflix.graphql.dgs.*;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.netflix.graphql.dgs.DgsComponent;
+import com.netflix.graphql.dgs.DgsMutation;
+import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
-import org.deltafi.dgs.generated.types.*;
+import org.deltafi.dgs.generated.types.ActionEventInput;
+import org.deltafi.dgs.generated.types.IngressInput;
 import org.deltafi.dgs.services.DeltaFilesService;
 
 import java.util.List;
@@ -16,6 +19,7 @@ public class DeltaFilesDatafetcher {
   final DeltaFiProperties deltaFiProperties;
   final DeltaFilesService deltaFilesService;
 
+  @SuppressWarnings("CdiInjectionPointsInspection")
   DeltaFilesDatafetcher(DeltaFiProperties deltaFiProperties, DeltaFilesService deltaFilesService) {
     this.deltaFiProperties = deltaFiProperties;
     this.deltaFilesService = deltaFilesService;
@@ -65,7 +69,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public DeltaFile actionEvent(ActionEventInput event) {
+  public DeltaFile actionEvent(ActionEventInput event) throws JsonProcessingException {
     return deltaFilesService.handleActionEvent(event);
   }
 

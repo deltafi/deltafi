@@ -76,7 +76,6 @@ public abstract class Action<P extends ActionParameters> {
 
                 SourceInfo sourceInfo = deltaFile.getSourceInfo();
                 DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), params.getName(), sourceInfo.getFilename(), sourceInfo.getFlow());
-                deltaFile = domainGatewayService.federate(deltaFile, getDomainProjections(), getEnrichmentProjections());
 
                 executeAction(deltaFile, params, span);
             }
@@ -110,14 +109,6 @@ public abstract class Action<P extends ActionParameters> {
         }
 
         return this.getClass().getCanonicalName();
-    }
-
-    public Map<String, BaseProjectionNode> getDomainProjections() {
-        return Collections.emptyMap();
-    }
-
-    public Map<String, BaseProjectionNode> getEnrichmentProjections() {
-        return Collections.emptyMap();
     }
 
     public P convertToParams(Map<String, Object> params) {

@@ -1,13 +1,13 @@
 package org.deltafi.dgs.services;
 
 import org.deltafi.dgs.Util;
+import org.deltafi.dgs.api.repo.DeltaFileRepo;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.generated.types.Action;
 import org.deltafi.dgs.generated.types.ActionEventInput;
 import org.deltafi.dgs.generated.types.ActionEventType;
 import org.deltafi.dgs.generated.types.ActionState;
-import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,7 +1,6 @@
-package org.deltafi.dgs.repo;
+package org.deltafi.dgs.api.repo;
 
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
 import org.slf4j.Logger;
@@ -12,7 +11,8 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -45,16 +45,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
 
     private final MongoTemplate mongoTemplate;
-    private final DeltaFiProperties properties;
 
-    public DeltaFileRepoImpl(MongoTemplate mongoTemplate, DeltaFiProperties properties) {
+    @SuppressWarnings("CdiInjectionPointsInspection")
+    public DeltaFileRepoImpl(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
-        this.properties = properties;
     }
 
     @Override
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime) {
-        requeue(requeueTime);
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds) {
+        requeue(requeueTime, requeueSeconds);
         return findQueuedAt(requeueTime);
     }
 
@@ -77,11 +76,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         mongoTemplate.save(deltaFile);
     }
 
-    void requeue(OffsetDateTime requeueTime) {
-        mongoTemplate.updateMulti(buildReadyForRequeueQuery(requeueTime), buildRequeueUpdate(requeueTime), DeltaFile.class);
+    void requeue(OffsetDateTime requeueTime, int requeueSeconds) {
+        mongoTemplate.updateMulti(buildReadyForRequeueQuery(requeueTime, requeueSeconds), buildRequeueUpdate(requeueTime, requeueSeconds), DeltaFile.class);
     }
 
-    Update buildRequeueUpdate(OffsetDateTime modified) {
+    Update buildRequeueUpdate(OffsetDateTime modified, int requeueSeconds) {
         Update update = new Update();
 
         // clear out any old error messages
@@ -93,7 +92,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         Criteria queued = Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name());
 
-        long epochMs = requeueThreshold(modified).toInstant().toEpochMilli();
+        long epochMs = requeueThreshold(modified, requeueSeconds).toInstant().toEpochMilli();
         Criteria expired = Criteria.where(ACTION_MODIFIED).lt(new Date(epochMs));
 
         update.filterArray(new Criteria().andOperator(queued, expired));
@@ -105,10 +104,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return mongoTemplate.find(buildRequeuedQuery(modified), DeltaFile.class);
     }
 
-    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime) {
+    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds) {
         Criteria queued = Criteria.where(ACTIONS_STATE).is(ActionState.QUEUED.name());
 
-        long epochMs = requeueThreshold(requeueTime).toInstant().toEpochMilli();
+        long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
         Criteria expired = Criteria.where(ACTIONS_MODIFIED).lt(new Date(epochMs));
 
         Criteria actionElemMatch = new Criteria().andOperator(queued, expired);
@@ -158,7 +157,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return new Criteria().andOperator(completed, lastModified);
     }
 
-    private OffsetDateTime requeueThreshold(OffsetDateTime requeueTime) {
-        return requeueTime.minusSeconds(properties.getRequeueSeconds());
+    private OffsetDateTime requeueThreshold(OffsetDateTime requeueTime, int requeueSeconds) {
+        return requeueTime.minusSeconds(requeueSeconds);
     }
 }

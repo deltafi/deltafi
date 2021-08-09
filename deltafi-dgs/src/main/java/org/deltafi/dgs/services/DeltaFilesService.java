@@ -1,8 +1,11 @@
 package org.deltafi.dgs.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import org.deltafi.dgs.api.repo.DeltaFileRepo;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.api.types.ErrorDomain;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.DeltaFileConverter;
@@ -11,7 +14,6 @@ import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.exceptions.UnexpectedActionException;
 import org.deltafi.dgs.exceptions.UnknownTypeException;
 import org.deltafi.dgs.generated.types.*;
-import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.retry.MongoRetryable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,8 @@ import org.springframework.stereotype.Service;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -38,6 +41,8 @@ public class DeltaFilesService {
     final DeltaFileRepo deltaFileRepo;
     final RedisService redisService;
     final ExecutorService executor = Executors.newFixedThreadPool(16);
+
+    static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @SuppressWarnings("CdiInjectionPointsInspection")
     public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, RedisService redisService) {
@@ -83,7 +88,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile handleActionEvent(ActionEventInput event) {
+    public DeltaFile handleActionEvent(ActionEventInput event) throws JsonProcessingException {
         DeltaFile deltaFile = getDeltaFile(event.getDid());
 
         if (deltaFile == null) {
@@ -135,15 +140,29 @@ public class DeltaFilesService {
     }
 
     public DeltaFile load(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.getDomains().setDomainTypes(event.getLoad().getDomains());
         deltaFile.completeAction(event.getAction());
+
+        if (event.getLoad() != null && event.getLoad().getDomains() != null) {
+            for (String domain : event.getLoad().getDomains()) {
+                if (Objects.isNull(deltaFile.getDomain(domain))) {
+                    deltaFile.addDomain(domain, null);
+                }
+            }
+        }
 
         return advanceAndSave(deltaFile);
     }
 
     public DeltaFile enrich(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.getEnrichment().setEnrichmentTypes(event.getEnrich().getEnrichments());
         deltaFile.completeAction(event.getAction());
+
+        if (event.getLoad() != null && event.getEnrich().getEnrichments() != null) {
+            for (String enrichment : event.getEnrich().getEnrichments()) {
+                if (Objects.isNull(deltaFile.getEnrichment(enrichment))) {
+                    deltaFile.addEnrichment(enrichment, null);
+                }
+            }
+        }
 
         return advanceAndSave(deltaFile);
     }
@@ -186,7 +205,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) {
+    public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
         ErrorInput errorInput = event.getError();
         if(deltaFile.hasErrorDomain()) {
             log.error("DeltaFile with error domain has thrown an error:\n" +
@@ -207,7 +226,7 @@ public class DeltaFilesService {
         deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
 
         ErrorDomain errorDomain = ErrorConverter.convert(event, deltaFile);
-        DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, errorDomain);
+        DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, objectMapper.writeValueAsString(errorDomain));
 
         advanceAndSave(errorDeltaFile);
 
@@ -247,7 +266,7 @@ public class DeltaFilesService {
 
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now();
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified);
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, properties.getRequeueSeconds());
         requeuedDeltaFiles.forEach(deltaFile -> enqueueActions(requeuedActions(deltaFile, modified), deltaFile));
     }
 
@@ -267,10 +286,7 @@ public class DeltaFilesService {
                             handleActionEvent(event);
                             break;
                         } catch (OptimisticLockingFailureException e) {
-                            if (count < 10) {
-                                // retry manually
-                                handleActionEvent(event);
-                            } else {
+                            if (count > 9) {
                                 throw e;
                             }
                         } catch (Throwable e) {
@@ -282,9 +298,6 @@ public class DeltaFilesService {
                     }
                 });
             }
-        } catch (OptimisticLockingFailureException e) {
-            // rethrow this exception so that @MongoRetryable works
-            throw e;
         } catch (Throwable e) {
             log.error("Error receiving event: " + e.getMessage());
         }
@@ -297,7 +310,11 @@ public class DeltaFilesService {
             log.error("Failed to enqueue {} with error {}", deltaFile.getDid(), e.getMessage());
             ErrorInput error = ErrorInput.newBuilder().cause(e.getMessage()).build();
             ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(e.getActionName()).error(error).build();
-            this.error(deltaFile, event);
+            try {
+                this.error(deltaFile, event);
+            } catch (JsonProcessingException ex) {
+                log.error("Failed to create error for " + deltaFile.getDid() + " with event " + event + ": " + e.getMessage());
+            }
         }
     }
 }

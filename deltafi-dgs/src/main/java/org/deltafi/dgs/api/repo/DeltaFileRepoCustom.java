@@ -1,4 +1,4 @@
-package org.deltafi.dgs.repo;
+package org.deltafi.dgs.api.repo;
 
 import org.deltafi.dgs.api.types.DeltaFile;
 
@@ -12,7 +12,7 @@ public interface DeltaFileRepoCustom {
      *
      * @return - list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime);
+    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds);
 
     /**
      * Find DeltaFiles that match the given criteria and move them to the Delete stage.

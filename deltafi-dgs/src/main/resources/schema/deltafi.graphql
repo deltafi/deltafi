@@ -2,14 +2,6 @@ scalar DateTime
 scalar JSON
 scalar Long
 
-interface DeltaFiDomain {
-  did: String!
-}
-
-interface DeltaFiEnrichment {
-  did: String!
-}
-
 type KeyValue {
   key: String!
   value: String
@@ -56,18 +48,6 @@ input ProtocolLayerInput {
   type: String!
   objectReference: ObjectReferenceInput!
   metadata: [KeyValueInput!]
-}
-
-type DeltaFiDomains @key(fields: "did") {
-  did: String!
-  domainTypes: [String!]!
-  error: ErrorDomain
-}
-
-type DeltaFiEnrichments @key(fields: "did")  {
-  did: String!
-  enrichmentTypes: [String!]!
-  sampleEnrichment: SampleEnrichment
 }
 
 type FormattedData {
@@ -132,8 +112,8 @@ type DeltaFile {
   actions: [Action!]!
   sourceInfo: SourceInfo!
   protocolStack: [ProtocolLayer]!
-  domains: DeltaFiDomains!
-  enrichment: DeltaFiEnrichments!
+  domains: [KeyValue!]!
+  enrichment: [KeyValue!]!
   formattedData: [FormattedData]!
   created: DateTime!
   modified: DateTime!
@@ -186,8 +166,7 @@ type Mutation {
 
   retry(did: String!) : DeltaFile!
 
-  # The caller is responsible for removing all data, domains, and enrichment corresponding to this DeltaFile before calling this mutation
-  # Failure to do so may result in orphaned data and metadata
+  # The caller is responsible for removing all data corresponding to this DeltaFile before calling this mutation
   delete(dids: [String!]!) : [String!]!
 
   registerTransformAction(transformActionConfiguration: TransformActionConfigurationInput!): TransformActionConfiguration!

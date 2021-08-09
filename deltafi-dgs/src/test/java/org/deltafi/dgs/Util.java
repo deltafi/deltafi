@@ -1,7 +1,9 @@
 package org.deltafi.dgs;
 
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.*;
+import org.deltafi.dgs.generated.types.Action;
+import org.deltafi.dgs.generated.types.DeltaFileStage;
+import org.deltafi.dgs.generated.types.SourceInfo;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -16,8 +18,8 @@ public class Util {
                 .actions(new ArrayList<>())
                 .sourceInfo(SourceInfo.newBuilder().flow(flow).build())
                 .protocolStack(new ArrayList<>())
-                .domains(DeltaFiDomains.newBuilder().did(did).domainTypes(new ArrayList<>()).build())
-                .enrichment(DeltaFiEnrichments.newBuilder().did(did).enrichmentTypes(new ArrayList<>()).build())
+                .domains(new ArrayList<>())
+                .enrichment(new ArrayList<>())
                 .formattedData(new ArrayList<>())
                 .created(now)
                 .modified(now)

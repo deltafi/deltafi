@@ -1,8 +1,7 @@
-type SampleEnrichment implements DeltaFiEnrichment {
-    did: String!
+type SampleEnrichment {
     enriched: Boolean!
 }
 
 extend type Mutation {
-    addSampleEnrichment(did: String!, enriched: Boolean!) : SampleEnrichment!
+    addSampleEnrichment(did: String!, enriched: Boolean!) : DeltaFile!
 }

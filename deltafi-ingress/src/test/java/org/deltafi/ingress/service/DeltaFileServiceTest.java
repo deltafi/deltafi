@@ -44,6 +44,7 @@ class DeltaFileServiceTest {
     ZipkinService zipkinService;
 
     @Spy
+    @SuppressWarnings("unused")
     ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
@@ -126,7 +127,7 @@ class DeltaFileServiceTest {
     }
 
     @Test
-    void fromMetadataString_fail() throws DeltafiMetadataException {
+    void fromMetadataString_fail() {
         String metadata = "[\"bad\"]";
         Assertions.assertThrows(DeltafiMetadataException.class, () -> deltaFileService.fromMetadataString(metadata));
     }

@@ -1,17 +1,19 @@
 package org.deltafi.dgs;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
+import org.deltafi.dgs.api.repo.DeltaFileRepo;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.delete.DeleteRunner;
-import org.deltafi.dgs.generated.DgsConstants;
 import org.deltafi.dgs.exceptions.ActionConfigException;
+import org.deltafi.dgs.generated.DgsConstants;
 import org.deltafi.dgs.generated.types.*;
-
-import org.deltafi.dgs.repo.DeltaFileRepo;
 import org.deltafi.dgs.services.*;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.internal.stubbing.answers.AnswersWithDelay;
@@ -47,9 +49,6 @@ class DeltaFiDgsApplicationTests {
 	DeltaFiProperties deltaFiProperties;
 
 	@Autowired
-	SampleEnrichmentsService sampleEnrichmentsService;
-
-	@Autowired
 	StateMachine stateMachine;
 
 	@Autowired
@@ -57,6 +56,9 @@ class DeltaFiDgsApplicationTests {
 
 	@Autowired
 	DeltaFileRepo deltaFileRepo;
+
+	@Autowired
+	SampleEnrichmentsService sampleEnrichmentsService;
 
 	@Autowired
 	ConfigLoaderService configLoaderService;
@@ -67,6 +69,8 @@ class DeltaFiDgsApplicationTests {
 	@MockBean
 	RedisService redisService;
 
+	final static ObjectMapper objectMapper = new ObjectMapper();
+
 	final static List <KeyValue> sampleMetadata = Arrays.asList(
 			KeyValue.newBuilder().key("sampleType").value("sample-type").build(),
 			KeyValue.newBuilder().key("sampleVersion").value("2.1").build());
@@ -74,7 +78,6 @@ class DeltaFiDgsApplicationTests {
 	@BeforeEach
 	void setup() throws IOException {
 		deltaFileRepo.deleteAll();
-		sampleEnrichmentsService.getSampleEnrichments().clear();
 		deltaFiProperties.getDelete().setOnCompletion(false);
 		configLoaderService.initConfig();
 		// sleep longer than the tests
@@ -211,14 +214,15 @@ class DeltaFiDgsApplicationTests {
 		deltaFile.setStage(DeltaFileStage.EGRESS.name());
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
-		deltaFile.getDomains().getDomainTypes().add("sample");
+		deltaFile.addDomain("sample", null);
 		return deltaFile;
 	}
 
 	@Test
 	void test08Load() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postTransformDeltaFile(did));
+		DeltaFile postTransform = postTransformDeltaFile(did);
+		deltaFilesService.addDeltaFile(postTransform);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("08.load"), did),
@@ -234,9 +238,8 @@ class DeltaFiDgsApplicationTests {
 		assertTrue(equalIgnoringDates(postLoadDeltaFile(did), deltaFile));
 	}
 
-	SampleEnrichment sampleEnrichment(String did) {
+	SampleEnrichment sampleEnrichment() {
 		return SampleEnrichment.newBuilder()
-				.did(did)
 				.enriched(true)
 				.build();
 	}
@@ -252,7 +255,8 @@ class DeltaFiDgsApplicationTests {
 				DeltaFile.class);
 
 		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(sampleEnrichment(did)).isEqualTo(sampleEnrichmentsService.forDid(did));
+		assertThat(sampleEnrichment()).isEqualTo(objectMapper.readValue(deltaFile.getEnrichment("sampleEnrichment"), SampleEnrichment.class));
+		assertThat(sampleEnrichment()).isEqualTo(objectMapper.readValue(deltaFilesService.getDeltaFile(did).getEnrichment("sampleEnrichment"), SampleEnrichment.class));
 	}
 
 	DeltaFile postEnrichDeltaFile(String did) {
@@ -260,7 +264,9 @@ class DeltaFiDgsApplicationTests {
 		deltaFile.setStage(DeltaFileStage.EGRESS.name());
 		deltaFile.queueAction("SampleFormatAction");
 		deltaFile.completeAction("SampleEnrichAction");
-		deltaFile.getEnrichment().getEnrichmentTypes().add("sampleEnrichment");
+		try {
+			deltaFile.addEnrichment("sampleEnrichment", objectMapper.writeValueAsString(sampleEnrichment()));
+		} catch(JsonProcessingException ignored) {}
 		return deltaFile;
 	}
 
@@ -268,7 +274,7 @@ class DeltaFiDgsApplicationTests {
 	void test11Enrich() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
-		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
+		sampleEnrichmentsService.addSampleEnrichment(did, sampleEnrichment());
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("11.enrich"), did),
@@ -308,7 +314,7 @@ class DeltaFiDgsApplicationTests {
 	void test13Format() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postEnrichDeltaFile(did));
-		sampleEnrichmentsService.addSampleEnrichment(sampleEnrichment(did));
+		sampleEnrichmentsService.addSampleEnrichment(did, sampleEnrichment());
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("13.format"), did),

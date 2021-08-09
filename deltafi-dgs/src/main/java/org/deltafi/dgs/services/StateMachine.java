@@ -25,6 +25,7 @@ public class StateMachine {
     private final DeltaFiConfigService configService;
     private final ZipkinService zipkinService;
 
+    @SuppressWarnings("CdiInjectionPointsInspection")
     public StateMachine(DeltaFiConfigService configService, ZipkinService zipkinService) {
         this.configService = configService;
         this.zipkinService = zipkinService;
@@ -133,8 +134,8 @@ public class StateMachine {
     private boolean enrichActionReady(String enrichActionName, DeltaFile deltaFile) {
         EnrichActionConfiguration config = configService.getEnrichAction(enrichActionName);
         return !deltaFile.hasTerminalAction(enrichActionName) &&
-                deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
-                deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
+                deltaFile.hasDomains(config.getRequiresDomains()) &&
+                deltaFile.hasEnrichments(config.getRequiresEnrichment());
     }
 
     private List<String> getFormatActions(DeltaFile deltaFile) {
@@ -144,8 +145,8 @@ public class StateMachine {
     private boolean formatActionReady(String formatActionName, DeltaFile deltaFile) {
         FormatActionConfiguration config = configService.getFormatAction(formatActionName);
         return !deltaFile.hasTerminalAction(formatActionName) &&
-                deltaFile.getDomains().getDomainTypes().containsAll(config.getRequiresDomains()) &&
-                deltaFile.getEnrichment().getEnrichmentTypes().containsAll(config.getRequiresEnrichment());
+                deltaFile.hasDomains(config.getRequiresDomains()) &&
+                deltaFile.hasEnrichments(config.getRequiresEnrichment());
     }
 
     private List<String> getValidateActions(DeltaFile deltaFile) {

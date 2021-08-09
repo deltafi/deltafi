@@ -1,13 +1,12 @@
 package org.deltafi.dgs.services;
 
+import org.deltafi.dgs.api.repo.DeltaFileRepo;
 import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.api.types.ErrorDomain;
 import org.deltafi.dgs.converters.ErrorConverter;
-import org.deltafi.dgs.repo.DeltaFileRepo;
+import org.deltafi.dgs.generated.types.ErrorDomain;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ErrorService {
@@ -20,12 +19,14 @@ public class ErrorService {
     public ErrorDomain getError(String did) {
         DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
         if(deltaFile == null || deltaFile.getDomains() == null) return null;
-        return ErrorConverter.convert(deltaFile.getDomains().getError());
+        return ErrorConverter.convert(deltaFile.getDomain("error"));
     }
 
     public List<ErrorDomain> getErrorsFor(String did) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findAllByDomainsErrorOriginatorDid(did);
-        return deltaFiles.stream().map(err -> ErrorConverter.convert(err.getDomains().getError())).collect(Collectors.toList());
+        // TODO: once we have child/parent relationships between deltaFiles, query that way
+        return null;
+        //List<DeltaFile> deltaFiles = deltaFileRepo.findAllByDomainsErrorOriginatorDid(did);
+        //return deltaFiles.stream().map(err -> ErrorConverter.convert(err.getDomains().get("error"))).collect(Collectors.toList());
     }
 
 }

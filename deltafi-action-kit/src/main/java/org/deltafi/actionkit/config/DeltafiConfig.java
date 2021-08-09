@@ -6,7 +6,6 @@ import io.quarkus.runtime.annotations.ConfigItem;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.trace.ZipkinConfig;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j

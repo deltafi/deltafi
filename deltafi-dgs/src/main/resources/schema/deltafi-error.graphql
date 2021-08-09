@@ -1,5 +1,4 @@
-type ErrorDomain implements DeltaFiDomain {
-    did: String!
+type ErrorDomain {
     originator: DeltaFile! # DeltaFile that errored
     originatorDid: String! # Hoisted up for filtering
     fromAction: String! # Originating action

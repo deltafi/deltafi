@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.quarkus.jackson.ObjectMapperCustomizer;
-import org.deltafi.dgs.api.serializers.DeltaFileDeserializer;
-import org.deltafi.dgs.api.types.DeltaFile;
 
 import javax.inject.Singleton;
 
@@ -15,7 +13,6 @@ public class ObjectMapperConfig implements ObjectMapperCustomizer {
     public void customize(ObjectMapper mapper) {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(DeltaFile.class, new DeltaFileDeserializer());
         mapper.registerModule(module);
     }
 

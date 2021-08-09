@@ -1,4 +1,4 @@
-package org.deltafi.dgs.converters;
+package org.deltafi.dgs.api.converters;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
