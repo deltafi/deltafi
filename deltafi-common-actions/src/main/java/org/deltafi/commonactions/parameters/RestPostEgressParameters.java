@@ -1,4 +1,4 @@
-package org.deltafi.actionkit.action.parameters;
+package org.deltafi.commonactions.parameters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 @Data
 @NoArgsConstructor

@@ -3,7 +3,6 @@ package org.deltafi.actionkit.action;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +23,6 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -58,6 +56,7 @@ public abstract class Action<P extends ActionParameters> {
 
     @PostConstruct
     void startAction() {
+        log.info("Starting action: {}", getFeedString());
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleWithFixedDelay(this::startListening,
                 config.action_polling_start_delay_ms,

@@ -6,7 +6,7 @@ import org.deltafi.dgs.generated.types.ActionEventType;
 public class EgressResult extends Result {
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    EgressResult(String name, String did) {
+    public EgressResult(String name, String did) {
         super(name, did);
     }
 

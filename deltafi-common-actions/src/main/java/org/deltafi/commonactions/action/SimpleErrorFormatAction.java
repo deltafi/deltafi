@@ -1,4 +1,4 @@
-package org.deltafi.actionkit.action.format;
+package org.deltafi.commonactions.action;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.format.FormatAction;
+import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.dgs.api.types.DeltaFile;

@@ -1,10 +1,12 @@
-package org.deltafi.actionkit.action.egress;
+package org.deltafi.commonactions.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.egress.EgressResult;
+import org.deltafi.actionkit.action.egress.EgressUtility;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.parameters.RestPostEgressParameters;
+import org.deltafi.commonactions.parameters.RestPostEgressParameters;
 import org.deltafi.actionkit.exception.ContentServiceConnectException;
 import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.actionkit.service.HttpService;

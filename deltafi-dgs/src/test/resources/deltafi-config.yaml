@@ -68,13 +68,13 @@ validateActions:
 egressActions:
   Stix2_1EgressAction:
     name: Stix2_1EgressAction
-    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
     parameters:
       url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
       metadataPrefix: "${METADATA_PREFIX:deltafi.}"
   Stix1_XEgressAction:
     name: Stix1_XEgressAction
-    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
     parameters:
       url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
       metadataPrefix: "${METADATA_PREFIX:deltafi.}"

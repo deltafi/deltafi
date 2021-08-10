@@ -108,7 +108,7 @@ formatActions:
         passthrough_format: That's a negative Ghostrider...
   ErrorFormatAction:
     name: ErrorFormatAction
-    type: org.deltafi.actionkit.action.format.SimpleErrorFormatAction
+    type: org.deltafi.commonactions.action.SimpleErrorFormatAction
     requiresDomains:
       - error
     parameters:
@@ -130,7 +130,7 @@ validateActions:
 egressActions:
   PassthroughEgressAction:
     name: PassthroughEgressAction
-    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
     parameters:
       url: http://nifi-egress-service
       metadataPrefix: deltafi.
@@ -138,7 +138,7 @@ egressActions:
         passthrough_egress: Configured from deltafi-dgs and passed as a param
   SmokeEgressAction:
     name: SmokeEgressAction
-    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
     parameters:
       url: http://nifi-egress-service
       metadataPrefix: deltafi.
@@ -146,7 +146,7 @@ egressActions:
         passthrough_egress: Just a walk in the park
   Stix2_1EgressAction:
     name: Stix2_1EgressAction
-    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
     parameters:
       url: http://nifi-egress-service
       metadataPrefix: deltafi.
@@ -154,7 +154,7 @@ egressActions:
         json: Sending out as json
   Stix1_XEgressAction:
     name: Stix1_XEgressAction
-    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
     parameters:
       url: http://nifi-egress-service
       metadataPrefix: deltafi.
@@ -162,7 +162,7 @@ egressActions:
         xml: Sending out as xml
   ErrorEgressAction:
     name: ErrorEgressAction
-    type: org.deltafi.actionkit.action.egress.RestPostEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
     parameters:
       url: http://nifi-egress-service
       metadataPrefix: deltafi.

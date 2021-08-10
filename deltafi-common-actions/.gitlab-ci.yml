@@ -1,0 +1,11 @@
+.common-actions:
+  variables:
+    PROJECT_NAME: deltafi-common-actions
+
+common-actions:docker:
+  stage: docker
+  extends:
+    - .common-actions
+    - .docker
+  needs:
+    - job: "build"
