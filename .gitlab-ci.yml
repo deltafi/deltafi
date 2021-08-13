@@ -24,6 +24,7 @@ variables:
   deltafi_apollo_gateway_HELM_IMAGE_PATH: deltafi.apollo_gateway.image
   deltafi_dgs_HELM_IMAGE_PATH: deltafi.dgs.image
   deltafi_passthrough_HELM_IMAGE_PATH: deltafi.passthrough.image
+  deltafi_common_actions_HELM_IMAGE_PATH: deltafi.common_actions.image
   deltafi_ingress_HELM_IMAGE_PATH: deltafi.ingress.image
   deltafi_auth_HELM_IMAGE_PATH: deltafi.auth.image
 
