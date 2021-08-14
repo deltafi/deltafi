@@ -7,6 +7,13 @@ public class ActionInput {
     private DeltaFile deltaFile;
     private Map<String, Object> actionParams;
 
+    public ActionInput() {}
+
+    public ActionInput(DeltaFile deltaFile, Map<String, Object> actionParams) {
+        this.deltaFile = deltaFile;
+        this.actionParams = actionParams;
+    }
+
     public DeltaFile getDeltaFile() {
         return deltaFile;
     }

@@ -10,7 +10,6 @@ import java.util.Map;
 
 public class FormatResult extends Result {
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
     public FormatResult(String name, String did, String filename) {
         super(name, did);
         this.filename = filename;
@@ -53,12 +52,15 @@ public class FormatResult extends Result {
                 .build();
     }
 
+    public ObjectReferenceInput getObjectReference() {
+        return objectReferenceInput;
+    }
+
     @SuppressWarnings("unused")
     public void setObjectReference(@NotNull String name, @NotNull String bucket, long size, long offset) {
         objectReferenceInput = new ObjectReferenceInput(name, bucket, offset, size);
     }
 
-    @SuppressWarnings("unused")
     public String getFilename() { return filename; }
 
     @SuppressWarnings("unused")

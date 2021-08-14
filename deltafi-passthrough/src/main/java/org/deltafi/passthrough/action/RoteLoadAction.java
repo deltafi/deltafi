@@ -4,21 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.passthrough.param.RoteLoadParameters;
 
-import javax.inject.Inject;
-
 @SuppressWarnings("unused")
 @Slf4j
 public class RoteLoadAction extends Action<RoteLoadParameters> {
-
-    @Inject
-    ContentService contentService;
 
     public Result execute(DeltaFile deltafile, RoteLoadParameters params) {
         log.trace(params.getName() + " loading (" + deltafile.getDid() + ")");

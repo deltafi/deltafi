@@ -10,8 +10,8 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.config.DeltafiConfig;
 import org.deltafi.actionkit.exception.DgsPostException;
+import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
-import org.deltafi.actionkit.service.RedisService;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.api.types.ActionInput;
@@ -41,7 +41,7 @@ public abstract class Action<P extends ActionParameters> {
     ZipkinService zipkinService;
 
     @Inject
-    RedisService redisService;
+    ActionEventService actionEventService;
 
     @Inject
     DeltafiConfig config;
@@ -67,7 +67,7 @@ public abstract class Action<P extends ActionParameters> {
     private void startListening() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                ActionInput actionInput = redisService.actionFeed(getFeedString());
+                ActionInput actionInput = actionEventService.getAction(getFeedString());
 
                 log.trace("Running action with input {}", actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();
@@ -87,7 +87,7 @@ public abstract class Action<P extends ActionParameters> {
         try {
             Result result = execute(deltaFile, params);
             if (result != null) {
-                redisService.submit(result);
+                actionEventService.submitResult(result);
             }
             zipkinService.markSpanComplete(span);
         } catch (DgsPostException ignored) {
@@ -98,7 +98,7 @@ public abstract class Action<P extends ActionParameters> {
             String reason = "Action execution exception: " + "\n" + e.getMessage() + "\n" + stackWriter;
             log.error(params.getName() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
             ErrorResult err = new ErrorResult(params.getName(), deltaFile, "Action execution exception", e).logErrorTo(log);
-            redisService.submit(err);
+            actionEventService.submitResult(err);
         }
     }
 

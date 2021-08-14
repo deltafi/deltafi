@@ -5,20 +5,14 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatAction;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
 import org.deltafi.dgs.api.types.DeltaFile;
 
-import javax.inject.Inject;
-
 @SuppressWarnings("unused")
 @Slf4j
 public class RoteFormatAction extends FormatAction<ActionParameters> {
-
-    @Inject
-    ContentService contentService;
 
     public Result execute(DeltaFile deltafile, ActionParameters params) {
         log.trace(params.getName() + " formatting (" + deltafile.getDid() + ")");

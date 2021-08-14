@@ -1,17 +1,14 @@
 package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.SimpleAction;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.SimpleAction;
 import org.deltafi.actionkit.action.enrich.EnrichResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.service.ContentService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
 import org.deltafi.dgs.api.types.DeltaFile;
-
-import javax.inject.Inject;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -21,9 +18,6 @@ public class RoteEnrichAction extends SimpleAction {
 
     static final String LOG_SOURCE = "enrich";
     static final String FILES_PROCESSED = "files_processed";
-
-    @Inject
-    ContentService contentService;
 
     public Result execute(DeltaFile deltafile, ActionParameters params) {
         log.trace(params.getName() + " enrich (" + deltafile.getDid() + ")");

@@ -21,11 +21,10 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
 
-    final private ContentService contentService;
+    final ContentService contentService;
 
-    public SimpleErrorFormatAction() {
-        super();
-        contentService = ContentService.instance();
+    public SimpleErrorFormatAction(ContentService contentService) {
+        this.contentService = contentService;
     }
 
     private final static ObjectMapper objectMapper =
@@ -44,8 +43,6 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
         }
         String json = deltaFile.getDomain("error");
 
-        ObjectReference objectReference = contentService.putObject(json, deltaFile, params.getName());
-
         ErrorDomain errorDomain;
         try {
             errorDomain = objectMapper.readValue(json, ErrorDomain.class);
@@ -63,6 +60,8 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
             log.error(err, t);
             throw new RuntimeException(err, t);
         }
+
+        ObjectReference objectReference = contentService.putObject(json, deltaFile, params.getName());
 
         FormatResult result = new FormatResult(params.getName(), deltaFile.getDid(), filename);
         addSourceInputMetadata(result, deltaFile);

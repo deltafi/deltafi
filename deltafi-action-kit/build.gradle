@@ -37,6 +37,10 @@ artifacts {
 	jars jar
 }
 
+quarkusDev {
+    dependsOn 'jandex'
+}
+
 publishing {
 	publications {
 		java(MavenPublication) {
@@ -74,13 +78,8 @@ dependencies {
     implementation 'redis.clients:jedis:3.6.1'
 
     implementation 'io.quarkus:quarkus-config-yaml'
-    implementation 'io.quarkus:quarkus-rest-client'
-    implementation 'io.quarkus:quarkus-resteasy'
-    implementation 'io.quarkus:quarkus-micrometer'
-    implementation 'io.quarkus:quarkus-micrometer-registry-prometheus'
-    implementation 'io.quarkus:quarkus-arc'
-    implementation 'io.quarkus:quarkus-kotlin'
-    implementation 'io.quarkus:quarkus-scheduler'
+    implementation 'io.quarkus:quarkus-resteasy-reactive'
+    implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation 'io.quarkus:quarkus-kubernetes-config'
     implementation 'io.quarkiverse.loggingjson:quarkus-logging-json:0.3.1'
     implementation 'io.quarkiverse.minio:quarkus-minio'

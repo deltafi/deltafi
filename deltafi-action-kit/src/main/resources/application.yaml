@@ -9,15 +9,14 @@
         color: true
     minio:
       url: http://localhost:9000
+    kubernetes-config:
+      enabled: false
   deltafi:
     dgs:
       url: http://localhost:8080/graphql
     zipkin:
       enabled: ${ZIPKIN_ENABLED:false}
       url: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
-  redis:
-    url: ${REDIS_URL:http://localhost:6379}
-    password: ${REDIS_PASSWORD:}
 
 quarkus:
   http:
