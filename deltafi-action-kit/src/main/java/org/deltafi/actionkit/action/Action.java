@@ -2,7 +2,12 @@ package org.deltafi.actionkit.action;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.victools.jsonschema.generator.*;
+import com.github.victools.jsonschema.module.jackson.JacksonModule;
+import com.github.victools.jsonschema.module.jackson.JacksonOption;
+import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +21,12 @@ import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.dgs.api.types.ActionInput;
 import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.dgs.api.types.JsonMap;
+import org.deltafi.dgs.generated.client.RegisterActionGraphQLQuery;
+import org.deltafi.dgs.generated.client.RegisterActionProjectionRoot;
+import org.deltafi.dgs.generated.types.ActionSchemaInput;
 import org.deltafi.dgs.generated.types.SourceInfo;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.event.Observes;
@@ -46,6 +56,18 @@ public abstract class Action<P extends ActionParameters> {
     @Inject
     DeltafiConfig config;
 
+    @ConfigProperty(name = "quarkus.application.version", defaultValue = "missing-value")
+    String version;
+
+    private static final SchemaGenerator generator;
+
+    static {
+        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2019_09, OptionPreset.PLAIN_JSON)
+                .without(Option.SCHEMA_VERSION_INDICATOR)
+                .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM));
+        generator = new SchemaGenerator(configBuilder.build());
+    }
+
     public void start(@Observes StartupEvent start) {
         // quarkus will prune the actions if this is not included
     }
@@ -61,6 +83,12 @@ public abstract class Action<P extends ActionParameters> {
         scheduler.scheduleWithFixedDelay(this::startListening,
                 config.action_polling_start_delay_ms,
                 config.action_polling_frequency_ms,
+                TimeUnit.MILLISECONDS);
+
+        final ScheduledExecutorService registerScheduler = Executors.newScheduledThreadPool(1);
+        registerScheduler.scheduleWithFixedDelay(this::registerParamSchema,
+                config.action_registration_start_delay_ms,
+                config.action_registration_frequency_ms,
                 TimeUnit.MILLISECONDS);
     }
 
@@ -108,6 +136,38 @@ public abstract class Action<P extends ActionParameters> {
         }
 
         return this.getClass().getCanonicalName();
+    }
+
+    void registerParamSchema() {
+        try {
+            doRegisterParamSchema();
+        } catch (Exception exception) {
+            log.error("Could not send action parameter schema", exception);
+        }
+    }
+
+    void doRegisterParamSchema() {
+        JsonNode schemaJson = getSchema(getParamType());
+        JsonMap definition = mapper.convertValue(schemaJson, JsonMap.class);
+        ActionSchemaInput paramInput = ActionSchemaInput.newBuilder().actionClass(getClassCanonicalName())
+                .paramClass(getParamType().getCanonicalName()).actionKitVersion(version).schema(definition).build();
+
+        RegisterActionProjectionRoot projectionRoot = new RegisterActionProjectionRoot().actionClass();
+
+        RegisterActionGraphQLQuery graphQLQuery = RegisterActionGraphQLQuery.newRequest().actionSchema(paramInput).build();
+                GraphQLQueryRequest request = new GraphQLQueryRequest(graphQLQuery, projectionRoot);
+
+        log.trace("Registering schema: {}", schemaJson.toPrettyString());
+        domainGatewayService.submit(request);
+    }
+
+    private String getClassCanonicalName() {
+        return this instanceof Subclass ? this.getClass().getSuperclass().getCanonicalName() : this.getClass().getCanonicalName();
+    }
+
+
+    private JsonNode getSchema(Class<?> clazz) {
+        return generator.generateSchema(clazz);
     }
 
     public P convertToParams(Map<String, Object> params) {

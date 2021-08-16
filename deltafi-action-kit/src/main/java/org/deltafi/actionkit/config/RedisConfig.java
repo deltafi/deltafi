@@ -15,7 +15,7 @@ public class RedisConfig {
     @ConfigProperty(name = "redis.url")
     String redisUrl;
 
-    @ConfigProperty(name = "redis.password")
+    @ConfigProperty(name = "redis-password")
     Optional<String> redisPassword;
 
     @Produces

@@ -61,9 +61,6 @@ class DeltaFiDgsApplicationTests {
 	SampleEnrichmentsService sampleEnrichmentsService;
 
 	@Autowired
-	ConfigLoaderService configLoaderService;
-
-	@Autowired
 	DeltaFiConfigService configService;
 
 	@MockBean
@@ -79,9 +76,14 @@ class DeltaFiDgsApplicationTests {
 	void setup() throws IOException {
 		deltaFileRepo.deleteAll();
 		deltaFiProperties.getDelete().setOnCompletion(false);
-		configLoaderService.initConfig();
+		loadConfig();
 		// sleep longer than the tests
 		doAnswer( new AnswersWithDelay( 10000000,  new Returns(null)) ).when(redisService).dgsFeed();
+	}
+
+	void loadConfig() throws IOException {
+		String config = new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("deltafi-config.yaml")).readAllBytes());
+		configService.replaceConfig(config);
 	}
 
 	@Test
@@ -513,6 +515,6 @@ class DeltaFiDgsApplicationTests {
 		assertThat(DeltaFileStage.ERROR.name()).isEqualTo(deltaFile.getStage());
 
 		Action errored = deltaFile.actionNamed("SampleTransformAction").orElseThrow();
-		assertThat("action not found").isEqualTo(errored.getErrorCause());
+		assertThat(errored.getErrorCause()).isEqualTo("action not found");
 	}
 }

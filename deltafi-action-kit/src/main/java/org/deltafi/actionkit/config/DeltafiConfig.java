@@ -22,6 +22,12 @@ public class DeltafiConfig {
     @ConfigItem(defaultValue = "100")
     public int action_polling_frequency_ms = 100;
 
+    @ConfigItem(defaultValue = "1000")
+    public int action_registration_start_delay_ms = 1000;
+
+    @ConfigItem(defaultValue = "10000")
+    public int action_registration_frequency_ms = 10_000;
+
     public ZipkinConfig zipkin = new ZipkinConfig();
 
     public ZipkinConfig getZipkin() {

@@ -7,18 +7,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix="deltafi")
 public class DeltaFiProperties {
-    private ConfigSource configSource = new ConfigSource();
     private int requeueSeconds = 30;
     private DeleteConfiguration delete = new DeleteConfiguration();
     private ZipkinConfig zipkin = new ZipkinConfig();
-
-    public ConfigSource getConfigSource() {
-        return configSource;
-    }
-
-    public void setConfigSource(ConfigSource configSource) {
-        this.configSource = configSource;
-    }
 
     public int getRequeueSeconds() { return requeueSeconds; }
 

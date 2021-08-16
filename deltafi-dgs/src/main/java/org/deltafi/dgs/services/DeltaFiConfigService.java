@@ -21,11 +21,20 @@ import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.k8s.GatewayConfigService;
 import org.deltafi.dgs.repo.DeltaFiRuntimeConfigRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.introspector.Property;
+import org.yaml.snakeyaml.nodes.NodeTuple;
+import org.yaml.snakeyaml.nodes.Tag;
+import org.yaml.snakeyaml.representer.Representer;
 
+import javax.annotation.PostConstruct;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Consumer;
@@ -35,7 +44,22 @@ import java.util.stream.Collectors;
 @Service
 public class DeltaFiConfigService {
 
+    private static final Logger log = LoggerFactory.getLogger(DeltaFiConfigService.class);
     private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    Representer representer = new Representer() {
+        @Override
+        protected NodeTuple representJavaBeanProperty(Object javaBean, Property property,
+                                                      Object propertyValue, Tag customTag) {
+            if (Objects.isNull(propertyValue) || propertyValue instanceof OffsetDateTime) {
+                return null;
+            } else {
+                return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
+            }
+        }
+    };
+
+    Yaml yaml = new Yaml(new Constructor(DeltafiRuntimeConfiguration.class), representer);
 
     private final DeltaFiRuntimeConfigRepo configRepo;
     private final ObjectProvider<GatewayConfigService> gatewayConfigService;
@@ -48,6 +72,16 @@ public class DeltaFiConfigService {
         this.gatewayConfigService = gatewayConfigService;
     }
 
+    @PostConstruct
+    public void getOrCreateDefaultConfig() {
+        this.config = configRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT).orElseGet(this::defaultConfig);
+    }
+
+    private DeltafiRuntimeConfiguration defaultConfig() {
+        log.info("Started with no config loading empty config");
+        return configRepo.save(new DeltafiRuntimeConfiguration());
+    }
+
     @Async
     public void refreshConfig() {
         config = getCurrentConfig();
@@ -55,6 +89,54 @@ public class DeltaFiConfigService {
 
     void setConfig(DeltafiRuntimeConfiguration config) {
         this.config = config;
+    }
+
+    DeltafiRuntimeConfiguration getConfig() {
+        return config;
+    }
+
+    public String exportConfigAsYaml() {
+        return yaml.dumpAsMap(config);
+    }
+
+    public String replaceConfig(String configInput) {
+        DeltafiRuntimeConfiguration incoming = yaml.load(configInput);
+        incoming.allConfigs().forEach(this::setTimes);
+        incoming.getEgressFlows().values().forEach(this::setEgressActionName);
+        config = configRepo.save(incoming);
+        return exportConfigAsYaml();
+    }
+
+    void setTimes(DeltaFiConfiguration config) {
+        OffsetDateTime now = OffsetDateTime.now();
+        config.setModified(now);
+        config.setCreated(now);
+    }
+
+    public String mergeConfig(String configInput) {
+        DeltafiRuntimeConfiguration incoming = yaml.load(configInput);
+        incoming.getEgressFlows().values().forEach(this::setEgressActionName);
+        DeltafiRuntimeConfiguration existing = getCurrentConfig();
+
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getTransformActions);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getLoadActions);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getEnrichActions);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getFormatActions);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getValidateActions);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getEgressActions);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getIngressFlows);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getEgressFlows);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getLoadGroups);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getDomainEndpoints);
+
+        config = configRepo.save(existing);
+        return exportConfigAsYaml();
+    }
+
+    public void setEgressActionName(EgressFlowConfiguration egressFlowConfiguration) {
+        if (Objects.isNull(egressFlowConfiguration.getEgressAction()) || egressFlowConfiguration.getEgressAction().isBlank()) {
+            egressFlowConfiguration.setEgressAction(EgressConfiguration.egressActionName(egressFlowConfiguration.getName()));
+        }
     }
 
     public Optional<IngressFlowConfiguration> getIngressFlow(String flow) {
@@ -287,6 +369,23 @@ public class DeltaFiConfigService {
         config = configRepo.save(current);
 
         return configToSave;
+    }
+
+    public <C extends DeltaFiConfiguration> void mergeMap(DeltafiRuntimeConfiguration incoming, DeltafiRuntimeConfiguration existing, Function<DeltafiRuntimeConfiguration, Map<String, C>> mapFunction) {
+        Map<String, C> incomingMap = mapFunction.apply(incoming);
+        Map<String, C> existingMap = mapFunction.apply(existing);
+
+        for (Map.Entry<String, C> entry : incomingMap.entrySet()) {
+            String key = entry.getKey();
+            C configEntry = entry.getValue();
+
+            OffsetDateTime now = OffsetDateTime.now();
+            OffsetDateTime created = existingMap.containsKey(key) ? existingMap.get(key).getCreated() : now;
+            configEntry.setModified(now);
+            configEntry.setCreated(created);
+
+            existingMap.put(key, configEntry);
+        }
     }
 
 }

@@ -158,6 +158,8 @@ type Query {
   lastWithFilename(filename: String!) : DeltaFile
 
   deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
+  actionSchemas: [ActionSchema!]!
+  exportConfigAsYaml: String!
 }
 
 type Mutation {
@@ -177,9 +179,14 @@ type Mutation {
   registerEgressAction(egressActionConfiguration: EgressActionConfigurationInput!): EgressActionConfiguration!
   registerDomainEndpoint(domainEndpointConfiguration: DomainEndpointConfigurationInput!): DomainEndpointConfiguration!
 
+  registerAction(actionSchema: ActionSchemaInput!): ActionSchema!
+
   addLoadActionGroup(loadActionGroupConfiguration: LoadActionGroupConfigurationInput!): LoadActionGroupConfiguration!
   addIngressFlow(ingressFlowConfiguration: IngressFlowConfigurationInput!): IngressFlowConfiguration!
   addEgressFlow(egressFlowConfiguration: EgressFlowConfigurationInput!): EgressFlowConfiguration!
+
+  replaceConfig(configYaml: String!): String
+  mergeConfig(configYaml: String!): String
 
   removeDeltaFiConfigs(configQuery: ConfigQueryInput): Int!
 }

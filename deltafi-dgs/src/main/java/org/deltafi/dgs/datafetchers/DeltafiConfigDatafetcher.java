@@ -87,4 +87,19 @@ public class DeltafiConfigDatafetcher {
     public List<DeltaFiConfiguration> deltaFiConfigs(ConfigQueryInput configQuery) {
         return deltaFiConfigService.getConfigs(configQuery);
     }
+
+    @DgsMutation
+    public String replaceConfig(String configYaml) {
+        return deltaFiConfigService.replaceConfig(configYaml);
+    }
+
+    @DgsMutation
+    public String mergeConfig(String configYaml) {
+        return deltaFiConfigService.mergeConfig(configYaml);
+    }
+
+    @DgsQuery
+    public String exportConfigAsYaml() {
+        return deltaFiConfigService.exportConfigAsYaml();
+    }
 }

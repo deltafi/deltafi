@@ -26,21 +26,30 @@ quarkus:
     console:
       json: true
       color: true
-  minio:
-    url: ${MINIO_URL:http://deltafi-minio}
-    access-key: ${MINIO_ACCESS:minioadmin}
-    secret-key: ${MINIO_SECRET:minioadmin}
   kubernetes-config:
     enabled: true
     fail-on-missing-config: false
     namespace: ${ACTION_NAMESPACE:deltafi}
     config-maps: ${ACTION_CONFIG_MAP:global-actions-config}
+    secrets:
+      ~: minio-keys,redis-password
+      enabled: true
+
+minio:
+  url: ${MINIO_URL:http://deltafi-minio}
+
+# The following values should be read from the secrets configured above
+accesskey:
+secretkey:
+redis-password:
 
 deltafi:
   dgs:
     url: ${DELTAFI_DGS_URL:http://deltafi-apollo-gateway-service}
   action_polling_start_delay_ms: 3000
   action_polling_frequency_ms: 100
+  action_registration_start_delay_ms: 1000
+  action_registration_frequency_ms: 10000
   zipkin:
     enabled: ${ZIPKIN_ENABLED:true}
     url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
@@ -49,4 +58,3 @@ deltafi:
     maxBatchSize: ${ZIPKIN_MAX_BATCH_SIZE:10000}
 redis:
   url: ${REDIS_URL:http://deltafi-redis-master:6379}
-  password: ${REDIS_PASSWORD:}

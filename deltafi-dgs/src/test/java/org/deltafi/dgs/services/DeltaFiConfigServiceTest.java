@@ -16,8 +16,11 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 
+import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -149,10 +152,96 @@ class DeltaFiConfigServiceTest {
         Mockito.verify(deltaFiConfigRepo).save(Mockito.any());
     }
 
+    @Test
+    void replaceConfig() throws IOException {
+        Mockito.when(deltaFiConfigRepo.save(Mockito.any())).thenAnswer(invocation -> invocation.getArguments()[0]);
+        String yaml = new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("config-test/load.yaml")).readAllBytes());
+        configService.replaceConfig(yaml);
+        DeltafiRuntimeConfiguration config = configService.getConfig();
+
+        IngressFlowConfiguration ingressFlow = commonChecks(config.getIngressFlows(), "sample");
+        Assertions.assertThat(ingressFlow.getType()).isEqualTo("json");
+        Assertions.assertThat(ingressFlow.getTransformActions()).hasSize(1);
+        Assertions.assertThat(ingressFlow.getTransformActions()).contains("SampleTransformAction");
+        Assertions.assertThat(ingressFlow.getLoadActions()).hasSize(1);
+        Assertions.assertThat(ingressFlow.getLoadActions()).contains("SampleLoadGroup");
+
+        EgressFlowConfiguration egressFlowConfiguration = commonChecks(config.getEgressFlows(), "sample");
+        Assertions.assertThat(egressFlowConfiguration.getEgressAction()).contains("SampleEgressAction");
+        Assertions.assertThat(egressFlowConfiguration.getFormatAction()).isEqualTo("SampleFormatAction");
+        Assertions.assertThat(egressFlowConfiguration.getValidateActions()).hasSize(1);
+        Assertions.assertThat(egressFlowConfiguration.getValidateActions()).contains("SampleValidateAction");
+
+        TransformActionConfiguration transformActionConfiguration = commonChecks(config.getTransformActions(), "SampleTransformAction");
+        Assertions.assertThat(transformActionConfiguration.getName()).isEqualTo("SampleTransformAction");
+        Assertions.assertThat(transformActionConfiguration.getConsumes()).isEqualTo("json-utf8");
+        Assertions.assertThat(transformActionConfiguration.getProduces()).isEqualTo("json-utf8-sample");
+
+        LoadActionConfiguration loadActionConfiguration = commonChecks(config.getLoadActions(), "SampleLoadAction");
+        Assertions.assertThat(loadActionConfiguration.getConsumes()).isEqualTo("json-utf8-sample");
+        Assertions.assertThat(loadActionConfiguration.getRequiresMetadata()).hasSize(1);
+        Assertions.assertThat(loadActionConfiguration.getRequiresMetadata()).containsEntry("sampleType", "sample-type");
+
+        FormatActionConfiguration formatActionConfiguration = commonChecks(config.getFormatActions(), "SampleFormatAction");
+        Assertions.assertThat(formatActionConfiguration.getRequiresDomains()).hasSize(1);
+        Assertions.assertThat(formatActionConfiguration.getRequiresDomains()).contains("sample");
+        Assertions.assertThat(formatActionConfiguration.getRequiresEnrichment()).hasSize(1);
+        Assertions.assertThat(formatActionConfiguration.getRequiresEnrichment()).contains("sampleEnrichment");
+        Assertions.assertThat(formatActionConfiguration.getCreated()).isNotNull();
+        Assertions.assertThat(formatActionConfiguration.getModified()).isNotNull();
+
+        ValidateActionConfiguration validateActionConfiguration = commonChecks(config.getValidateActions(), "SampleValidateAction");
+        Assertions.assertThat(validateActionConfiguration.getName()).isEqualTo("SampleValidateAction");
+        Assertions.assertThat(validateActionConfiguration.getType()).isEqualTo("org.deltafi.stix.actions.RubberStampValidateAction");
+
+        EgressActionConfiguration egressActionConfiguration = commonChecks(config.getEgressActions(), "SampleEgressAction");
+        Assertions.assertThat(egressActionConfiguration.getType()).isEqualTo("org.deltafi.commonactions.action.RestPostEgressAction");
+        Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("url", "http://localhost:8085/echo");
+        Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("metadataPrefix", "deltafi.");
+
+        LoadActionGroupConfiguration loadGroupConfiguration = commonChecks(config.getLoadGroups(), "SampleLoadGroup");
+        Assertions.assertThat(loadGroupConfiguration.getName()).isEqualTo("SampleLoadGroup");
+        Assertions.assertThat(loadGroupConfiguration.getLoadActions()).hasSize(2);
+        Assertions.assertThat(loadGroupConfiguration.getLoadActions()).contains("SampleLoadAction");
+        Assertions.assertThat(loadGroupConfiguration.getLoadActions()).contains("Sample2LoadAction");
+    }
+
+    <C extends DeltaFiConfiguration> C commonChecks(Map<String, C> configs, String name) {
+        Assertions.assertThat(configs).hasSize(1);
+        Assertions.assertThat(configs.containsKey(name)).isTrue();
+        C entry = configs.get(name);
+        Assertions.assertThat(entry.getName()).isEqualTo(name);
+        Assertions.assertThat(entry.getCreated()).isNotNull();
+        Assertions.assertThat(entry.getModified()).isNotNull();
+        return entry;
+    }
+
+    @Test
+    void mergeConfig() throws IOException {
+        Mockito.when(deltaFiConfigRepo.save(Mockito.any())).thenAnswer(invocation -> invocation.getArguments()[0]);
+        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
+        String yaml = new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("config-test/load.yaml")).readAllBytes());
+
+        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(11);
+        LoadActionConfiguration preUpdate = configService.getConfig().getLoadActions().get(ACTION_TO_FIND);
+        Assertions.assertThat(preUpdate.getConsumes()).isNull();
+
+        configService.mergeConfig(yaml);
+
+        // SampleLoadAction already existed, so it will be replaced and 8 new entries from the config are added
+        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(19);
+        LoadActionConfiguration afterUpdate = configService.getConfig().getLoadActions().get(ACTION_TO_FIND);
+        Assertions.assertThat(afterUpdate.getConsumes()).isEqualTo("json-utf8-sample");
+        Assertions.assertThat(afterUpdate.getCreated()).isEqualTo(preUpdate.getCreated());
+        Assertions.assertThat(afterUpdate.getModified()).isAfter(preUpdate.getModified());
+    }
+
     DeltafiRuntimeConfiguration buildConfig() {
         DeltafiRuntimeConfiguration newConfig = new DeltafiRuntimeConfiguration();
 
         action.setName(ACTION_TO_FIND);
+        action.setCreated(OffsetDateTime.now().minusHours(1));
+        action.setModified(OffsetDateTime.now().minusHours(1));
         newConfig.getLoadActions().put(ACTION_TO_FIND, action);
         createAndAdd(TransformActionConfiguration::new, "load", newConfig.getTransformActions());
         createAndAdd(TransformActionConfiguration::new, "transform", newConfig.getTransformActions());

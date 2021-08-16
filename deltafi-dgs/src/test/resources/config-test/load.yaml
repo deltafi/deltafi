@@ -1,0 +1,54 @@
+ingressFlows:
+  sample:
+    name: sample
+    type: json
+    transformActions:
+      - SampleTransformAction
+    loadActions:
+      - SampleLoadGroup
+egressFlows:
+  sample:
+    name: sample
+    formatAction: SampleFormatAction
+    validateActions:
+      - SampleValidateAction
+transformActions:
+  SampleTransformAction:
+    name: SampleTransformAction
+    consumes: json-utf8
+    produces: json-utf8-sample
+loadActions:
+  SampleLoadAction:
+    name: SampleLoadAction
+    consumes: json-utf8-sample
+    requiresMetadata:
+      sampleType: sample-type
+enrichActions:
+  SampleEnrichAction:
+    name: SampleEnrichAction
+    requiresDomains:
+      - sample
+formatActions:
+  SampleFormatAction:
+    name: SampleFormatAction
+    requiresDomains:
+      - sample
+    requiresEnrichment:
+      - sampleEnrichment
+validateActions:
+  SampleValidateAction:
+    name: SampleValidateAction
+    type: org.deltafi.stix.actions.RubberStampValidateAction
+egressActions:
+  SampleEgressAction:
+    name: SampleEgressAction
+    type: org.deltafi.commonactions.action.RestPostEgressAction
+    parameters:
+      url: "http://localhost:8085/echo"
+      metadataPrefix: "deltafi."
+loadGroups:
+  SampleLoadGroup:
+    name: SampleLoadGroup
+    loadActions:
+      - SampleLoadAction
+      - Sample2LoadAction
