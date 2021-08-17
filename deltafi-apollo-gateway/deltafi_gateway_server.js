@@ -1,7 +1,9 @@
-import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
-import { ApolloServer, gql } from "apollo-server";
+import { ApolloServer } from "apollo-server-express";
 import { ApolloGateway } from "@apollo/gateway";
 import Request from 'requestretry';
+import express from 'express';
+import expressPlayground from '@apollographql/graphql-playground-middleware-express';
+import path from 'path';
 
 export class DeltaFiGatewayServer {
   constructor(host = '0.0.0.0', port, serviceList, maxRetries = 5, retryDelay = 5000) {
@@ -42,20 +44,27 @@ export class DeltaFiGatewayServer {
 
     const server = new ApolloServer({
       gateway,
-      subscriptions: false,
-      plugins: [
-        ApolloServerPluginLandingPageGraphQLPlayground({
-          settings: {
-            "request.credentials": "same-origin",
-          },
-        })
-      ]
+      subscriptions: false
     });
 
+    const app = express()
+    await server.start()
+    server.applyMiddleware({ app })
+
+    const staticRoot = path.resolve('node_modules');
+    app.use('/node_modules', express.static(staticRoot));
+
+    app.get('/', expressPlayground.default({
+      endpoint: '/graphql',
+      cdnUrl: './node_modules/@apollographql',
+      settings: {
+        "request.credentials": "same-origin",
+      }
+    }))
+
     console.log("Starting server...");
-    server.listen({ host: this.host, port: this.port }).then(({ url }) => {
-      console.log(`Server running on ${url}`);
-    });
+    app.listen(this.port, this.host)
+    console.log(`Server running on http://${this.host}:${this.port}`);
 
     return server;
   };
