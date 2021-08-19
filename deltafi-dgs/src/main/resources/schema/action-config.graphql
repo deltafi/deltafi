@@ -133,3 +133,19 @@ input EgressActionConfigurationInput {
     type: String!
     parameters: JSON
 }
+
+type DeleteActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+    name: String!
+    created: DateTime!
+    modified: DateTime!
+    apiVersion: String
+    type: String!
+    parameters: JSON
+}
+
+input DeleteActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    type: String!
+    parameters: JSON
+}

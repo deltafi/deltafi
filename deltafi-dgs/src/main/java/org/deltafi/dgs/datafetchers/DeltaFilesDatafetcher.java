@@ -78,11 +78,4 @@ public class DeltaFilesDatafetcher {
   public DeltaFile retry(String did) {
     return deltaFilesService.retry(did);
   }
-
-  @DgsMutation
-  @SuppressWarnings("unused")
-  public List<String> delete(List<String> dids) {
-    deltaFilesService.delete(dids);
-    return dids;
-  }
 }

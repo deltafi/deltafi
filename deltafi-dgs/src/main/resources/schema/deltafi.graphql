@@ -24,6 +24,9 @@ input SourceInfoInput {
   metadata: [KeyValueInput!]
 }
 
+"""
+An ObjectReference represents data stored in an S3 repository.
+"""
 type ObjectReference {
   name: String!
   bucket: String!
@@ -31,7 +34,11 @@ type ObjectReference {
   size: Long!
 }
 
+"""
+A ProtocolLayer is for ...
+"""
 type ProtocolLayer {
+  "This is the type of the ProtocolLayer"
   type: String!
   objectReference: ObjectReference!
   metadata: [KeyValue!]
@@ -91,6 +98,7 @@ enum ActionEventType {
   EGRESS
   ERROR
   FILTER
+  DELETE
 }
 
 input ActionEventInput {
@@ -167,9 +175,6 @@ type Mutation {
   actionEvent(event: ActionEventInput!): DeltaFile!
 
   retry(did: String!) : DeltaFile!
-
-  # The caller is responsible for removing all data corresponding to this DeltaFile before calling this mutation
-  delete(dids: [String!]!) : [String!]!
 
   registerTransformAction(transformActionConfiguration: TransformActionConfigurationInput!): TransformActionConfiguration!
   registerLoadAction(loadActionConfiguration: LoadActionConfigurationInput!): LoadActionConfiguration!

@@ -23,7 +23,8 @@ public interface DeltaFileRepoCustom {
      * @param completedBefore - if non-null find DeltaFiles in the completed stage that were last modified before this date
      * @param flow - if non-null the DeltaFiles must have this flow set in the source info
      * @param policy - policy name to use in any metadata
+     * @return the list of DeltaFiles marked for deletion
      */
-    void markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy);
+    List<DeltaFile> markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy);
 
 }

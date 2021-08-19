@@ -165,8 +165,8 @@ public class DeltaFiConfigService {
         return config.getEgressFlows().values().stream().filter(egressFlowConfiguration -> formatAction.equals(egressFlowConfiguration.getFormatAction())).map(EgressFlowConfiguration::getEgressAction).collect(Collectors.toList());
     }
 
-    public Collection<DomainEndpointConfiguration> getDomainEndpoints() {
-        return config.getDomainEndpoints().values();
+    public Map<String, DomainEndpointConfiguration> getDomainEndpoints() {
+        return config.getDomainEndpoints();
     }
 
     public List<String> getLoadGroupActions(String loadGroupName) {

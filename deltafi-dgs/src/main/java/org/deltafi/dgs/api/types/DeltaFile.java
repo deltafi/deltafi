@@ -1,5 +1,6 @@
 package org.deltafi.dgs.api.types;
 
+import org.deltafi.dgs.delete.DeleteConstants;
 import org.deltafi.dgs.generated.types.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
@@ -46,10 +47,7 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
     }
 
     public void queueNewAction(String name) {
-        Action action = new Action();
-        action.setName(name);
-        setActionState(action, ActionState.QUEUED);
-        getActions().add(action);
+        getActions().add(Action.newBuilder().name(name).state(ActionState.QUEUED).build());
     }
 
     public Optional<Action> actionNamed(String name) {
@@ -198,18 +196,18 @@ public class DeltaFile extends org.deltafi.dgs.generated.types.DeltaFile {
         return names.stream().allMatch(this::hasCompletedAction);
     }
 
-    public void markForDelete(String deleteAction, String policy) {
+    public void markForDelete(String policy) {
         OffsetDateTime now = OffsetDateTime.now();
 
         getActions().stream()
-                .filter(action -> !action.getName().equals(deleteAction))
+                .filter(action -> !action.getName().equals(DeleteConstants.DELETE_ACTION))
                 .filter(action -> action.getState().equals(ActionState.QUEUED))
-                .forEach(a -> {
-            a.setModified(now);
-            a.setState(ActionState.ERROR);
-            a.setErrorCause("DeltaFile marked for deletion by " + policy + " policy");
-        });
-        queueAction(deleteAction);
+                .forEach(action -> {
+                    action.setModified(now);
+                    action.setState(ActionState.ERROR);
+                    action.setErrorCause("DeltaFile marked for deletion by " + policy + " policy");
+                });
+        queueAction(DeleteConstants.DELETE_ACTION);
         setStage(DeltaFileStage.DELETE.name());
         setModified(now);
     }

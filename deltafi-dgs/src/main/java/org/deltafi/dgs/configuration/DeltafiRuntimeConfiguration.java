@@ -1,5 +1,7 @@
 package org.deltafi.dgs.configuration;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.deltafi.dgs.api.types.ConfigType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -9,6 +11,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Document("deltafiConfig")
+@Getter
+@Setter
 public class DeltafiRuntimeConfiguration {
 
     public static final String ID_CONSTANT = "deltafi-config";
@@ -24,100 +28,17 @@ public class DeltafiRuntimeConfiguration {
     private Map<String, FormatActionConfiguration> formatActions = new HashMap<>();
     private Map<String, ValidateActionConfiguration> validateActions = new HashMap<>();
     private Map<String, EgressActionConfiguration> egressActions = new HashMap<>();
+    private Map<String, DeleteActionConfiguration> deleteActions = new HashMap<>();
     private Map<String, LoadActionGroupConfiguration> loadGroups = new HashMap<>();
     private Map<String, DomainEndpointConfiguration> domainEndpoints = new HashMap<>();
 
-    public String getId() {
-        return id;
-    }
-
-    public Map<String, IngressFlowConfiguration> getIngressFlows() {
-        return ingressFlows;
-    }
-
-    public void setIngressFlows(Map<String, IngressFlowConfiguration> ingressFlows) {
-        this.ingressFlows = ingressFlows;
-    }
-
-    public Map<String, EgressFlowConfiguration> getEgressFlows() {
-        return egressFlows;
-    }
-
-    public void setEgressFlows(Map<String, EgressFlowConfiguration> egressFlows) {
-        this.egressFlows = egressFlows;
-    }
-
-    public Map<String, TransformActionConfiguration> getTransformActions() {
-        return transformActions;
-    }
-
-    public void setTransformActions(Map<String, TransformActionConfiguration> transformActions) {
-        this.transformActions = transformActions;
-    }
-
-    public Map<String, LoadActionConfiguration> getLoadActions() {
-        return loadActions;
-    }
-
-    public void setLoadActions(Map<String, LoadActionConfiguration> loadActions) {
-        this.loadActions = loadActions;
-    }
-
-    public Map<String, EnrichActionConfiguration> getEnrichActions() {
-        return enrichActions;
-    }
-
-    public void setEnrichActions(Map<String, EnrichActionConfiguration> enrichActions) {
-        this.enrichActions = enrichActions;
-    }
-
-    public Map<String, FormatActionConfiguration> getFormatActions() {
-        return formatActions;
-    }
-
-    public void setFormatActions(Map<String, FormatActionConfiguration> formatActions) {
-        this.formatActions = formatActions;
-    }
-
-    public Map<String, ValidateActionConfiguration> getValidateActions() {
-        return validateActions;
-    }
-
-    public void setValidateActions(Map<String, ValidateActionConfiguration> validateActions) {
-        this.validateActions = validateActions;
-    }
-
-    public Map<String, EgressActionConfiguration> getEgressActions() {
-        return egressActions;
-    }
-
-    public void setEgressActions(Map<String, EgressActionConfiguration> egressActions) {
-        this.egressActions = egressActions;
-    }
-
-    public Map<String, LoadActionGroupConfiguration> getLoadGroups() {
-        return loadGroups;
-    }
-
-    public void setLoadGroups(Map<String, LoadActionGroupConfiguration> loadGroups) {
-        this.loadGroups = loadGroups;
-    }
-
-    public Map<String, DomainEndpointConfiguration> getDomainEndpoints() {
-        return domainEndpoints;
-    }
-
-    public void setDomainEndpoints(Map<String, DomainEndpointConfiguration> domainEndpoints) {
-        this.domainEndpoints = domainEndpoints;
-    }
-
     public List<DeltaFiConfiguration> allConfigs() {
-        return Stream.of(ingressFlows, egressFlows, transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions, loadGroups, domainEndpoints)
+        return Stream.of(ingressFlows, egressFlows, transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions, deleteActions, loadGroups, domainEndpoints)
                 .map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
     }
 
     public Optional<ActionConfiguration> findByActionName(String actionName) {
-        return Stream.of(transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions)
+        return Stream.of(transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions, deleteActions)
                 .map(configs -> findByActionName(configs, actionName)).filter(Objects::nonNull).findFirst();
     }
 
@@ -130,7 +51,7 @@ public class DeltafiRuntimeConfiguration {
     }
 
     public Stream<Map<String, ? extends DeltaFiConfiguration>> actionMaps() {
-        return Stream.of(transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions);
+        return Stream.of(transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions, deleteActions);
     }
 
     public Map<String, ? extends DeltaFiConfiguration> getMapByType(ConfigType type) {
@@ -155,6 +76,8 @@ public class DeltafiRuntimeConfiguration {
                  return validateActions;
             case EGRESS_ACTION:
                 return egressActions;
+            case DELETE_ACTION:
+                return deleteActions;
         }
         throw new IllegalArgumentException("Unexpected config type " + type);
     }

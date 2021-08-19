@@ -10,19 +10,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Util {
+    public static DeltaFile buildDeltaFile(String did) {
+        return emptyDeltaFile(did, null);
+    }
+
     public static DeltaFile emptyDeltaFile(String did, String flow) {
         OffsetDateTime now = OffsetDateTime.now();
+        return buildDeltaFile(did, flow, DeltaFileStage.INGRESS, now, now);
+    }
+
+    public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
+                                           OffsetDateTime modified) {
         return DeltaFile.newBuilder()
                 .did(did)
-                .stage(DeltaFileStage.INGRESS.name())
-                .actions(new ArrayList<>())
                 .sourceInfo(SourceInfo.newBuilder().flow(flow).build())
+                .stage(stage != null ? stage.name() : null)
+                .created(created)
+                .modified(modified)
+                .actions(new ArrayList<>())
                 .protocolStack(new ArrayList<>())
                 .domains(new ArrayList<>())
                 .enrichment(new ArrayList<>())
                 .formattedData(new ArrayList<>())
-                .created(now)
-                .modified(now)
                 .build();
     }
 
@@ -43,7 +52,7 @@ public class Util {
         } else if (a1 == null || a2 == null) {
             return false;
         } else {
-            for (int i=0; i<a1.size(); i++) {
+            for (int i = 0; i < a1.size(); i++) {
                 if (!actionEqualIgnoringDates(a1.get(i), a2.get(i))) {
                     return false;
                 }

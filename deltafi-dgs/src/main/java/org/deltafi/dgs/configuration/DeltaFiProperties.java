@@ -1,34 +1,17 @@
 package org.deltafi.dgs.configuration;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.deltafi.common.trace.ZipkinConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties(prefix="deltafi")
+@Getter
+@Setter
 public class DeltaFiProperties {
     private int requeueSeconds = 30;
     private DeleteConfiguration delete = new DeleteConfiguration();
     private ZipkinConfig zipkin = new ZipkinConfig();
-
-    public int getRequeueSeconds() { return requeueSeconds; }
-
-    public void setRequeueSeconds(int requeueSeconds) { this.requeueSeconds = requeueSeconds; }
-
-    public DeleteConfiguration getDelete() {
-        return delete;
-    }
-
-    public void setDelete(DeleteConfiguration delete) {
-        this.delete = delete;
-    }
-
-    public ZipkinConfig getZipkin() {
-        return zipkin;
-    }
-
-    public void setZipkinConfig(ZipkinConfig zipkin) {
-        this.zipkin = zipkin;
-    }
-
 }

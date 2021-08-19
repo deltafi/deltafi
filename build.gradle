@@ -94,6 +94,8 @@ private static void printResults(allResults) {
 subprojects {
     group 'org.deltafi'
 
+    apply plugin: 'java'
+
     repositories {
         mavenLocal()
         mavenCentral()
@@ -110,6 +112,13 @@ subprojects {
                 header(HttpHeaderAuthentication)
             }
         }
+    }
+
+    dependencies {
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+        testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+        testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     }
 }
 

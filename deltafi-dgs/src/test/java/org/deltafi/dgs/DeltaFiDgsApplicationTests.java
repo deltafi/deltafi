@@ -2,7 +2,6 @@ package org.deltafi.dgs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.dgs.api.repo.DeltaFileRepo;
 import org.deltafi.dgs.api.types.DeltaFile;
@@ -16,14 +15,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.internal.stubbing.answers.AnswersWithDelay;
-import org.mockito.internal.stubbing.answers.Returns;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import static graphql.Assert.assertFalse;
@@ -32,11 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.dgs.Util.equalIgnoringDates;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest
-@TestPropertySource(properties = "enableScheduling=false")
 class DeltaFiDgsApplicationTests {
 
 	@Autowired
@@ -47,9 +43,6 @@ class DeltaFiDgsApplicationTests {
 
 	@Autowired
 	DeltaFiProperties deltaFiProperties;
-
-	@Autowired
-	StateMachine stateMachine;
 
 	@Autowired
 	DeleteRunner deleteRunner;
@@ -63,7 +56,23 @@ class DeltaFiDgsApplicationTests {
 	@Autowired
 	DeltaFiConfigService configService;
 
-	@MockBean
+	@TestConfiguration
+	public static class Configuration {
+		@Bean
+		public RedisService redisService() {
+			RedisService redisService = Mockito.mock(RedisService.class);
+			try {
+				// Allows the ActionEventScheduler to not hold up other scheduled tasks (by default, Spring Boot uses a
+				// single thread for all scheduled tasks). Throwing an exception here breaks it out of its tight loop.
+				Mockito.when(redisService.dgsFeed()).thenThrow(new RuntimeException());
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+			return redisService;
+		}
+	}
+
+	@Autowired
 	RedisService redisService;
 
 	final static ObjectMapper objectMapper = new ObjectMapper();
@@ -77,8 +86,8 @@ class DeltaFiDgsApplicationTests {
 		deltaFileRepo.deleteAll();
 		deltaFiProperties.getDelete().setOnCompletion(false);
 		loadConfig();
-		// sleep longer than the tests
-		doAnswer( new AnswersWithDelay( 10000000,  new Returns(null)) ).when(redisService).dgsFeed();
+
+		Mockito.clearInvocations(redisService);
 	}
 
 	void loadConfig() throws IOException {
@@ -96,7 +105,7 @@ class DeltaFiDgsApplicationTests {
 	@Test
 	void deletePoliciesScheduled() {
 		assertThat(deleteRunner.getDeletePolicies().size()).isEqualTo(1);
-		assertThat(deleteRunner.getDeletePolicies().get(0).getName()).isEqualTo("oneHourAfterComplete");
+		assertThat(deleteRunner.getDeletePolicies().get(0).getName()).isEqualTo("twoSecondsAfterComplete");
 	}
 
 	private String graphQL(String filename) throws IOException {
@@ -482,22 +491,7 @@ class DeltaFiDgsApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		assertNull(deltaFilesService.getDeltaFile(did));
-		Mockito.verify(redisService, never()).enqueue(any(), any());
-	}
-
-	@Test
-	void test24Delete() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postEgressDeltaFile(did));
-
-		List<String> dids = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("24.delete"), did),
-				"data." + DgsConstants.MUTATION.Delete,
-				new TypeRef<>() {});
-
-		assertEquals(Arrays.asList(did, "nonsenseDid"), dids);
-		assertNull(deltaFilesService.getDeltaFile(did));
+		Mockito.verify(redisService).enqueue(Mockito.eq(Collections.singletonList("DeleteAction")), Mockito.any());
 	}
 
 	@Test
@@ -516,5 +510,16 @@ class DeltaFiDgsApplicationTests {
 
 		Action errored = deltaFile.actionNamed("SampleTransformAction").orElseThrow();
 		assertThat(errored.getErrorCause()).isEqualTo("action not found");
+	}
+
+	@Test
+	void deleteActionAddedToRedisQueueAfterCompletion() throws Exception {
+		deltaFileRepo.save(DeltaFile.newBuilder().did("a").stage(DeltaFileStage.COMPLETE.name())
+				.modified(OffsetDateTime.now()).actions(Collections.emptyList()).build());
+		Thread.sleep(1000);
+		Mockito.verify(redisService, never()).enqueue(any(), any());
+
+		Thread.sleep(2000);
+		Mockito.verify(redisService).enqueue(Mockito.eq(Collections.singletonList("DeleteAction")), Mockito.any());
 	}
 }

@@ -25,6 +25,7 @@ egressFlows:
 transformActions:
   Utf8TransformAction:
     name: Utf8TransformAction
+    type: org.deltafi.dgs.TestAction
     consumes: json
     produces: json-utf8
   SampleTransformAction:
@@ -78,6 +79,10 @@ egressActions:
     parameters:
       url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
       metadataPrefix: "${METADATA_PREFIX:deltafi.}"
+deleteActions:
+  DeleteAction:
+    name: DeleteAction
+    type: org.deltafi.commonactions.delete.DeleteAction
 loadGroups:
   SampleLoadGroup:
     name: SampleLoadGroup

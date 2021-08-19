@@ -1,19 +1,15 @@
 package org.deltafi.actionkit.action;
 
+import lombok.RequiredArgsConstructor;
 import org.deltafi.dgs.generated.types.ActionEventInput;
 import org.deltafi.dgs.generated.types.ActionEventType;
 
 import java.time.OffsetDateTime;
 
+@RequiredArgsConstructor
 abstract public class Result {
     protected final String name;
     protected final String did;
-
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public Result(String name, String did) {
-        this.name = name;
-        this.did = did;
-    }
 
     abstract public ActionEventType actionEventType();
 

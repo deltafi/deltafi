@@ -5,7 +5,6 @@ import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.types.Action;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
-import org.deltafi.dgs.services.DeltaFilesService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,23 +14,17 @@ import org.springframework.test.context.TestPropertySource;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-@TestPropertySource(properties = "enableScheduling=false")
 @SpringBootTest
+@TestPropertySource(properties = "enableScheduling=false")
 class DeltaFileRepoTest {
-
-    @Autowired
-    private DeltaFilesService deltaFilesService;
-
     @Autowired
     private DeltaFileRepo deltaFileRepo;
 
@@ -42,26 +35,26 @@ class DeltaFileRepoTest {
 
     @Test
     void testUpdateForRequeue() {
-        DeltaFile hit = deltaFile("did");
-        DeltaFile miss = deltaFile("did2");
-
         // mongo eats microseconds, jump through hoops
         OffsetDateTime now = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
         Action shouldRequeue = Action.newBuilder().name("hit").modified(now.minusSeconds(1000)).state(ActionState.QUEUED).build();
         Action shouldStay = Action.newBuilder().name("miss").modified(now.plusSeconds(1000)).state(ActionState.QUEUED).build();
 
+        DeltaFile hit = Util.buildDeltaFile("did", null, null, now, now);
         hit.setActions(Arrays.asList(shouldRequeue, shouldStay));
-        miss.setActions(Arrays.asList(shouldStay, shouldStay));
-
         deltaFileRepo.save(hit);
+
+        DeltaFile miss = Util.buildDeltaFile("did2", null, null, now, now);
+        miss.setActions(Arrays.asList(shouldStay, shouldStay));
         deltaFileRepo.save(miss);
 
         List<DeltaFile> hits = deltaFileRepo.updateForRequeue(now, 30);
+
         assertEquals(1, hits.size());
         assertEquals(hit.getDid(), hits.get(0).getDid());
 
-        DeltaFile hitAfter = deltaFilesService.getDeltaFile("did");
-        DeltaFile missAfter = deltaFilesService.getDeltaFile("did2");
+        DeltaFile hitAfter = loadDeltaFile("did");
+        DeltaFile missAfter = loadDeltaFile("did2");
 
         assertEquals(miss, missAfter);
         assertNotEquals(hit.getActions().get(0).getModified(), hitAfter.getActions().get(0).getModified());
@@ -69,80 +62,8 @@ class DeltaFileRepoTest {
     }
 
     @Test
-    void testMarkForDeleteCreatedBefore() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFilesService.addDeltaFile(deltaFile);
-        deltaFilesService.markForDelete(OffsetDateTime.now(), null,null, "policy");
-        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
-        assertThat(after.getStage()).isEqualTo(DeltaFileStage.DELETE.name());
-    }
-
-    @Test
-    void testMarkForDeleteNotCreatedBefore() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setCreated(OffsetDateTime.now().plusHours(1));
-        deltaFilesService.addDeltaFile(deltaFile);
-        deltaFilesService.markForDelete(OffsetDateTime.now(),null, null, "policy");
-        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
-        assertThat(after.getStage()).isNotEqualTo(DeltaFileStage.DELETE.name());
-    }
-
-    @Test
-    void testMarkForDeleteCompletedBefore() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setModified(OffsetDateTime.now());
-        deltaFile.setStage(DeltaFileStage.COMPLETE.name());
-        deltaFilesService.addDeltaFile(deltaFile);
-        deltaFilesService.markForDelete(null, OffsetDateTime.now(), null, "policy");
-        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
-        assertThat(after.getStage()).isEqualTo(DeltaFileStage.DELETE.name());
-    }
-
-    @Test
-    void testMarkForDeleteNotCompletedBefore() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFilesService.addDeltaFile(deltaFile);
-        deltaFilesService.markForDelete(null, OffsetDateTime.now(), null, "policy");
-        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
-        assertThat(after.getStage()).isNotEqualTo(DeltaFileStage.DELETE.name());
-    }
-
-    @Test
-    void testMarkForDeleteFlowMatches() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFilesService.addDeltaFile(deltaFile);
-        deltaFilesService.markForDelete(OffsetDateTime.now(), null,"flow", "policy");
-        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
-        assertThat(after.getStage()).isEqualTo(DeltaFileStage.DELETE.name());
-    }
-
-    @Test
-    void testMarkForDeleteFlowDoesntMatch() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFilesService.addDeltaFile(deltaFile);
-        deltaFilesService.markForDelete(OffsetDateTime.now(), null,"not the flow", "policy");
-        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
-        assertThat(after.getStage()).isNotEqualTo(DeltaFileStage.DELETE.name());
-    }
-
-    @Test
-    void testMarkForDelete_alreadyMarkedDeleted() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-
-        OffsetDateTime dateTime = OffsetDateTime.now().minusHours(2);
-        deltaFile.setModified(dateTime);
-        deltaFile.setCreated(dateTime);
-        deltaFile.setStage(DeltaFileStage.DELETE.name());
-        deltaFilesService.addDeltaFile(deltaFile);
-
-        deltaFilesService.markForDelete(OffsetDateTime.now(), null, "flow", "policy");
-        DeltaFile after = deltaFilesService.getDeltaFile(deltaFile.getDid());
-        assertThat(after.getModified().toEpochSecond()).isEqualTo(dateTime.toEpochSecond()); // this shouldn't change if it was already marked as deleted
-    }
-
-    @Test
     void deleteByDidIn() {
-        List<DeltaFile> deltaFiles = Stream.of("a", "b", "c").map(this::deltaFile).collect(Collectors.toList());
+        List<DeltaFile> deltaFiles = Stream.of("a", "b", "c").map(Util::buildDeltaFile).collect(Collectors.toList());
         deltaFileRepo.saveAll(deltaFiles);
 
         assertEquals(3, deltaFileRepo.count());
@@ -153,10 +74,74 @@ class DeltaFileRepoTest {
         assertEquals("b", deltaFileRepo.findAll().get(0).getDid());
     }
 
-    DeltaFile deltaFile(String did) {
-        DeltaFile deltaFile = new DeltaFile();
-        deltaFile.setDid(did);
-        deltaFile.setActions(new ArrayList<>());
-        return deltaFile;
+    @Test
+    void testMarkForDeleteCreatedBefore() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFileRepo.save(deltaFile2);
+        DeltaFile deltaFile3 = Util.buildDeltaFile("3", null, DeltaFileStage.INGRESS, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now().plusSeconds(2));
+        deltaFileRepo.save(deltaFile3);
+
+        deltaFileRepo.markForDelete(OffsetDateTime.now().plusSeconds(1), null, null, "policy");
+
+        DeltaFile after = loadDeltaFile(deltaFile1.getDid());
+        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        after = loadDeltaFile(deltaFile2.getDid());
+        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        after = loadDeltaFile(deltaFile3.getDid());
+        assertEquals(DeltaFileStage.INGRESS.name(), after.getStage());
+    }
+
+    @Test
+    void testMarkForDeleteCompletedBefore() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(2));
+        deltaFileRepo.save(deltaFile2);
+        DeltaFile deltaFile3 = Util.buildDeltaFile("3", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFileRepo.save(deltaFile3);
+
+        deltaFileRepo.markForDelete(null, OffsetDateTime.now().plusSeconds(1), null, "policy");
+
+        DeltaFile after = loadDeltaFile(deltaFile1.getDid());
+        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        after = loadDeltaFile(deltaFile2.getDid());
+        assertEquals(DeltaFileStage.COMPLETE.name(), after.getStage());
+        after = loadDeltaFile(deltaFile3.getDid());
+        assertEquals(DeltaFileStage.ERROR.name(), after.getStage());
+    }
+
+    @Test
+    void testMarkForDeleteWithFlow() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", "a", DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", "b", DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFileRepo.save(deltaFile2);
+
+        deltaFileRepo.markForDelete(OffsetDateTime.now().plusSeconds(1), null, "a", "policy");
+
+        DeltaFile after = loadDeltaFile(deltaFile1.getDid());
+        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        after = loadDeltaFile(deltaFile2.getDid());
+        assertEquals(DeltaFileStage.ERROR.name(), after.getStage());
+    }
+
+    @Test
+    void testMarkForDelete_alreadyMarkedDeleted() {
+        OffsetDateTime oneSecondAgo = OffsetDateTime.now().minusSeconds(1);
+
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.DELETE, oneSecondAgo, oneSecondAgo);
+        deltaFileRepo.save(deltaFile1);
+
+        deltaFileRepo.markForDelete(OffsetDateTime.now(), null, null, "policy");
+
+        DeltaFile after = loadDeltaFile(deltaFile1.getDid());
+        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        assertEquals(oneSecondAgo.toEpochSecond(), after.getModified().toEpochSecond());
+    }
+
+    private DeltaFile loadDeltaFile(String did) {
+        return deltaFileRepo.findById(did).orElse(null);
     }
 }

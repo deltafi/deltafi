@@ -1,15 +1,17 @@
 package org.deltafi.dgs.delete;
 
+import lombok.Getter;
 import org.deltafi.dgs.services.DeltaFilesService;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
+@Getter
 public class TimedDelete extends DeletePolicy {
-    final private Duration afterCreate;
-    final private Duration afterComplete;
-    final private String flow;
+    private final Duration afterCreate;
+    private final Duration afterComplete;
+    private final String flow;
 
     public TimedDelete(DeltaFilesService deltaFilesService, String name, Map<String, String> parameters) {
         super(deltaFilesService, name, parameters);
@@ -22,18 +24,6 @@ public class TimedDelete extends DeletePolicy {
         }
 
         flow = getParameters().get("flow");
-    }
-
-    public Duration getAfterCreate() {
-        return afterCreate;
-    }
-
-    public Duration getAfterComplete() {
-        return afterComplete;
-    }
-
-    public String getFlow() {
-        return flow;
     }
 
     public void run() {

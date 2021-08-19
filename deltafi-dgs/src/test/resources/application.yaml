@@ -1,4 +1,6 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   mongodb:
     embedded:
       version: 4.0.23
@@ -14,9 +16,11 @@ deltafi:
     actions: RELOAD_FROM_PROPERTY
   delete:
     onCompletion: false
-    frequency: PT1M
+    frequency: PT1S
     policies:
-      oneHourAfterComplete:
+      twoSecondsAfterComplete:
         type: ageOff
         parameters:
-          afterComplete: PT1H
+          afterComplete: PT2S
+redis:
+  port: 6379

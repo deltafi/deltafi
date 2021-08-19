@@ -1,16 +1,17 @@
 package org.deltafi.dgs.api.repo;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.generated.types.ActionState;
 import org.deltafi.dgs.generated.types.DeltaFileStage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -19,10 +20,9 @@ import static java.util.Objects.nonNull;
 import static org.deltafi.dgs.delete.DeleteConstants.DELETE_ACTION;
 
 @SuppressWarnings("unused")
+@RequiredArgsConstructor
+@Slf4j
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
-
-    private static final Logger logger = LoggerFactory.getLogger(DeltaFileRepoImpl.class);
-
     public static final String ID = "_id";
     public static final String VERSION = "version";
     public static final String MODIFIED = "modified";
@@ -46,11 +46,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private final MongoTemplate mongoTemplate;
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public DeltaFileRepoImpl(MongoTemplate mongoTemplate) {
-        this.mongoTemplate = mongoTemplate;
-    }
-
     @Override
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds) {
         requeue(requeueTime, requeueSeconds);
@@ -58,21 +53,23 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public void markForDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                                String flowName, String policy) {
+    public List<DeltaFile> markForDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
+                                         String flowName, String policy) {
         // one of these must be set for any matches to occur
         if (isNull(createdBeforeDate) && isNull(completedBeforeDate)) {
-            return;
+            return Collections.emptyList();
         }
 
         Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, flowName));
 
-        List<DeltaFile> deltaFilesToMark =  mongoTemplate.find(query, DeltaFile.class);
-        deltaFilesToMark.forEach(deltaFile -> this.doMarkForDeleteAndSave(deltaFile, policy));
+        List<DeltaFile> deltaFilesToMark = mongoTemplate.find(query, DeltaFile.class);
+        deltaFilesToMark.forEach(deltaFile -> doMarkForDeleteAndSave(deltaFile, policy));
+
+        return deltaFilesToMark;
     }
 
     void doMarkForDeleteAndSave(DeltaFile deltaFile, String policy) {
-        deltaFile.markForDelete(DELETE_ACTION, policy);
+        deltaFile.markForDelete(policy);
         mongoTemplate.save(deltaFile);
     }
 
@@ -125,24 +122,26 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate, String flowName) {
+        Criteria deleteTimeCriteria = buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate);
         if (nonNull(flowName)) {
-            Criteria flow = Criteria.where(SOURCE_INFO_FLOW).is(flowName);
-            return new Criteria().andOperator(buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate), flow);
-        } else {
-            return buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate);
+            return new Criteria().andOperator(deleteTimeCriteria, Criteria.where(SOURCE_INFO_FLOW).is(flowName));
         }
+        return deleteTimeCriteria;
     }
 
     private Criteria buildDeleteTimeCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate) {
-        if (nonNull(createdBeforeDate ) && isNull(completedBeforeDate)) {
-            return createdBeforeCriteria(createdBeforeDate);
+        Criteria createdBeforeCriteria = nonNull(createdBeforeDate) ? createdBeforeCriteria(createdBeforeDate) : null;
+        Criteria completedBeforeCriteria = nonNull(completedBeforeDate) ? completedBeforeCriteria(completedBeforeDate) : null;
+
+        if (nonNull(createdBeforeCriteria) && isNull(completedBeforeCriteria)) {
+            return createdBeforeCriteria;
         }
 
-        if (nonNull(completedBeforeDate) && isNull(createdBeforeDate)) {
-            return completedBeforeCriteria(completedBeforeDate);
+        if (nonNull(completedBeforeCriteria) && isNull(createdBeforeCriteria)) {
+            return completedBeforeCriteria;
         }
 
-        return new Criteria().orOperator(createdBeforeCriteria(createdBeforeDate), completedBeforeCriteria(completedBeforeDate));
+        return new Criteria().orOperator(createdBeforeCriteria, completedBeforeCriteria);
     }
 
     private Criteria createdBeforeCriteria(OffsetDateTime createdBeforeDate) {

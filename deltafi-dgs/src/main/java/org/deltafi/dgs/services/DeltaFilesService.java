@@ -5,18 +5,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.dgs.api.repo.DeltaFileRepo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.dgs.api.types.DeltaFile;
 import org.deltafi.dgs.configuration.DeltaFiProperties;
 import org.deltafi.dgs.configuration.IngressFlowConfiguration;
 import org.deltafi.dgs.converters.DeltaFileConverter;
 import org.deltafi.dgs.converters.ErrorConverter;
+import org.deltafi.dgs.delete.DeleteConstants;
 import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.exceptions.UnexpectedActionException;
 import org.deltafi.dgs.exceptions.UnknownTypeException;
 import org.deltafi.dgs.generated.types.*;
 import org.deltafi.dgs.retry.MongoRetryable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -31,27 +32,18 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class DeltaFilesService {
+    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(16);
 
-    private static final Logger log = LoggerFactory.getLogger(DeltaFilesService.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     final DeltaFiConfigService configService;
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
     final RedisService redisService;
-    final ExecutorService executor = Executors.newFixedThreadPool(16);
-
-    static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public DeltaFilesService(DeltaFiConfigService configService, DeltaFiProperties properties, StateMachine stateMachine, DeltaFileRepo deltaFileRepo, RedisService redisService) {
-        this.configService = configService;
-        this.properties = properties;
-        this.stateMachine = stateMachine;
-        this.deltaFileRepo = deltaFileRepo;
-        this.redisService = redisService;
-    }
 
     public void addDeltaFile(DeltaFile deltaFile) {
         deltaFileRepo.save(deltaFile);
@@ -116,6 +108,9 @@ public class DeltaFilesService {
                 return error(deltaFile, event);
             case FILTER:
                 return filter(deltaFile, event);
+            case DELETE:
+                delete(deltaFile);
+                return deltaFile;
         }
 
         throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
@@ -226,7 +221,7 @@ public class DeltaFilesService {
         deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
 
         ErrorDomain errorDomain = ErrorConverter.convert(event, deltaFile);
-        DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, objectMapper.writeValueAsString(errorDomain));
+        DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, OBJECT_MAPPER.writeValueAsString(errorDomain));
 
         advanceAndSave(errorDeltaFile);
 
@@ -246,7 +241,9 @@ public class DeltaFilesService {
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
         List<String> enqueueActions = stateMachine.advance(deltaFile);
         if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE.toString())) {
-            deltaFileRepo.deleteById(deltaFile.getDid());
+            deltaFile.markForDelete("on completion");
+            deltaFileRepo.save(deltaFile);
+            enqueueDeleteAction(deltaFile);
         } else {
             deltaFileRepo.save(deltaFile);
             if (!enqueueActions.isEmpty()) {
@@ -257,11 +254,16 @@ public class DeltaFilesService {
     }
 
     public void markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy) {
-        deltaFileRepo.markForDelete(createdBefore, completedBefore, flow, policy);
+        List<DeltaFile> deltaFilesMarkedForDelete = deltaFileRepo.markForDelete(createdBefore, completedBefore, flow, policy);
+        deltaFilesMarkedForDelete.forEach(this::enqueueDeleteAction);
     }
 
-    public void delete(List<String> dids) {
-        deltaFileRepo.deleteByDidIn(dids);
+    private void enqueueDeleteAction(DeltaFile deltaFile) {
+        enqueueActions(List.of(DeleteConstants.DELETE_ACTION), deltaFile);
+    }
+
+    public void delete(DeltaFile deltaFile) {
+        deltaFileRepo.deleteById(deltaFile.getDid());
     }
 
     public void requeue() {
@@ -274,13 +276,13 @@ public class DeltaFilesService {
         return deltaFile.getActions().stream().filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli()).map(Action::getName).collect(Collectors.toList());
     }
 
-    public void getActionEvents() {
+    public void processActionEvents() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionEventInput event = redisService.dgsFeed();
-                executor.submit(() -> {
+                EXECUTOR.submit(() -> {
                     int count = 0;
-                    while(true) {
+                    while (true) {
                         try {
                             count += 1;
                             handleActionEvent(event);

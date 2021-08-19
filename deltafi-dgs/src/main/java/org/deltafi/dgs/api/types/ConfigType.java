@@ -10,5 +10,6 @@ public enum ConfigType {
     ENRICH_ACTION,
     FORMAT_ACTION,
     VALIDATE_ACTION,
-    EGRESS_ACTION
+    EGRESS_ACTION,
+    DELETE_ACTION
 }

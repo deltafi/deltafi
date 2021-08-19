@@ -2,8 +2,7 @@ package org.deltafi.common.trace;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PreDestroy;
 import java.time.OffsetDateTime;
@@ -12,10 +11,8 @@ import java.util.concurrent.*;
 
 import static java.util.Objects.nonNull;
 
+@Slf4j
 public class ZipkinService {
-
-    private static final Logger log = LoggerFactory.getLogger(ZipkinService.class);
-
     public static final String ROOT_PARENT_ID = "0";
     public static final String ROOT_SPAN_NAME = "deltafile-flow";
     public static final String SERVER = "SERVER";
