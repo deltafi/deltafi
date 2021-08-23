@@ -1,4 +1,5 @@
 # Gradle
+output/
 .gradle/
 build/
 buildSrc/build/

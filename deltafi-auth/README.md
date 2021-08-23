@@ -37,3 +37,10 @@ nifi:
   - "CN=Luke Skywalker,OU=Dataflow,OU=Company"
 ```
 
+### Testing
+
+The run tests:
+
+ ```
+ bundle exec rspec --format doc
+ ```

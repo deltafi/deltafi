@@ -7,3 +7,5 @@ auth:docker:
   extends:
     - .auth
     - .docker
+  after_script:
+    - docker run --rm ${DOCKER_TAG} bundle exec rspec --format doc
