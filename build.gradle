@@ -26,44 +26,10 @@ subprojects {
 
     apply plugin: 'java'
 
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven {
-            url groupMavenRepo
-            name "GitLab"
-            if(project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
-                credentials(HttpHeaderCredentials) {
-                    name = gitLabTokenType
-                    value = gitLabToken
-                }
-            }
-            authentication {
-                header(HttpHeaderAuthentication)
-            }
-        }
-    }
-
     dependencies {
         compileOnly "org.projectlombok:lombok:${lombokVersion}"
         annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
         testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
         testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    }
-}
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven {
-        url groupMavenRepo
-        name "GitLab"
-        credentials(HttpHeaderCredentials) {
-            name = gitLabTokenType
-            value = gitLabToken
-        }
-        authentication {
-            header(HttpHeaderAuthentication)
-        }
     }
 }

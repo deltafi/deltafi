@@ -1,11 +1,41 @@
 pluginManagement {
+    def carboniteRepoPath = "file:///${rootProject.projectDir}/${repoCarbonite}"
     repositories {
-        mavenLocal()
+        if(file(carboniteRepoPath).exists()) {
+            maven {
+                url carboniteRepoPath
+                metadataSources {
+                    artifact()
+                    gradleMetadata()
+                }
+            }
+        }
+
         mavenCentral()
         gradlePluginPortal()
     }
     plugins {
         id "${quarkusPluginId}" version "${quarkusPluginVersion}"
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
+    def carboniteRepoPath = "file:///${rootProject.projectDir}/${repoCarbonite}"
+    repositories {
+        if(file(carboniteRepoPath).exists()) {
+            maven {
+                url carboniteRepoPath
+                metadataSources {
+                    artifact()
+                    gradleMetadata()
+                }
+            }
+        }
+
+        mavenLocal()
+        mavenCentral()
     }
 }
 
