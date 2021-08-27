@@ -1,0 +1,15 @@
+deltafi:
+  dgs:
+    url: {{ .Values.deltafi.dgs_gateway_url }}
+  action_polling_start_delay_ms: 3000
+  action_polling_frequency_ms: 100
+  zipkin:
+    enabled: {{ .Values.deltafi.zipkin.enabled }}
+    url: {{ .Values.deltafi.zipkin.url }}
+    initialDelayInMilli: {{ .Values.deltafi.zipkin.initialDelayInMilli }}
+    sendFrequencyInMilli: {{ .Values.deltafi.zipkin.sendFrequencyInMilli }}
+    maxBatchSize: {{ .Values.deltafi.zipkin.maxBatchSize }}
+minio:
+  url: {{ .Values.deltafi.minio_url }}
+redis:
+  url: {{ .Values.deltafi.redis_url }}

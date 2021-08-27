@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: deltafi-apollo-gateway-service
+spec:
+  selector:
+    app: deltafi-apollo-gateway
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 4000

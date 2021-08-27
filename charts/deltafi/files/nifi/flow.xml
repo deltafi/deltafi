@@ -1,0 +1,1077 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flowController encoding-version="1.4">
+  <maxTimerDrivenThreadCount>10</maxTimerDrivenThreadCount>
+  <maxEventDrivenThreadCount>1</maxEventDrivenThreadCount>
+  <registries/>
+  <parameterContexts/>
+  <rootGroup>
+    <id>7e6ca08b-0178-1000-3d5b-d21f13ba7726</id>
+    <name>NiFi Flow</name>
+    <position x="0.0" y="0.0"/>
+    <comment/>
+    <flowfileConcurrency>UNBOUNDED</flowfileConcurrency>
+    <flowfileOutboundPolicy>STREAM_WHEN_AVAILABLE</flowfileOutboundPolicy>
+    <processor>
+      <id>0c22fe9e-017b-1000-b6a6-45ca41e7aae4</id>
+      <name>Send to DeltaFi Ingress</name>
+      <position x="552.0" y="288.0"/>
+      <styles/>
+      <comment/>
+      <class>org.apache.nifi.processors.standard.PostHTTP</class>
+      <bundle>
+        <group>org.apache.nifi</group>
+        <artifact>nifi-standard-nar</artifact>
+        <version>1.12.1</version>
+      </bundle>
+      <maxConcurrentTasks>1</maxConcurrentTasks>
+      <schedulingPeriod>0 sec</schedulingPeriod>
+      <penalizationPeriod>30 sec</penalizationPeriod>
+      <yieldPeriod>1 sec</yieldPeriod>
+      <bulletinLevel>WARN</bulletinLevel>
+      <lossTolerant>false</lossTolerant>
+      <scheduledState>RUNNING</scheduledState>
+      <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+      <executionNode>ALL</executionNode>
+      <runDurationNanos>0</runDurationNanos>
+      <property>
+        <name>URL</name>
+        <value>${DELTAFI_INGRESS_URL}</value>
+      </property>
+      <property>
+        <name>Max Batch Size</name>
+        <value>100 MB</value>
+      </property>
+      <property>
+        <name>Max Data to Post per Second</name>
+      </property>
+      <property>
+        <name>SSL Context Service</name>
+      </property>
+      <property>
+        <name>Username</name>
+      </property>
+      <property>
+        <name>Password</name>
+      </property>
+      <property>
+        <name>Send as FlowFile</name>
+        <value>false</value>
+      </property>
+      <property>
+        <name>Use Chunked Encoding</name>
+        <value>true</value>
+      </property>
+      <property>
+        <name>Compression Level</name>
+        <value>0</value>
+      </property>
+      <property>
+        <name>Connection Timeout</name>
+        <value>30 sec</value>
+      </property>
+      <property>
+        <name>Data Timeout</name>
+        <value>30 sec</value>
+      </property>
+      <property>
+        <name>Attributes to Send as HTTP Headers (Regex)</name>
+        <value>flow|filename|Metadata</value>
+      </property>
+      <property>
+        <name>User Agent</name>
+        <value>Apache-HttpClient/4.5.5 (Java/1.8.0_265)</value>
+      </property>
+      <property>
+        <name>proxy-configuration-service</name>
+      </property>
+      <property>
+        <name>Proxy Host</name>
+      </property>
+      <property>
+        <name>Proxy Port</name>
+      </property>
+      <property>
+        <name>Content-Type</name>
+        <value>application/octet-stream</value>
+      </property>
+      <autoTerminatedRelationship>success</autoTerminatedRelationship>
+      <autoTerminatedRelationship>failure</autoTerminatedRelationship>
+    </processor>
+    <processor>
+      <id>38445019-0179-1000-7288-6645dcc63c1b</id>
+      <name>Receive POST from DeltaFi Egress</name>
+      <position x="1224.0" y="-456.0"/>
+      <styles/>
+      <comment/>
+      <class>org.apache.nifi.processors.standard.ListenHTTP</class>
+      <bundle>
+        <group>org.apache.nifi</group>
+        <artifact>nifi-standard-nar</artifact>
+        <version>1.12.1</version>
+      </bundle>
+      <maxConcurrentTasks>1</maxConcurrentTasks>
+      <schedulingPeriod>0 sec</schedulingPeriod>
+      <penalizationPeriod>30 sec</penalizationPeriod>
+      <yieldPeriod>1 sec</yieldPeriod>
+      <bulletinLevel>WARN</bulletinLevel>
+      <lossTolerant>false</lossTolerant>
+      <scheduledState>RUNNING</scheduledState>
+      <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+      <executionNode>ALL</executionNode>
+      <runDurationNanos>0</runDurationNanos>
+      <property>
+        <name>Base Path</name>
+        <value/>
+      </property>
+      <property>
+        <name>Listening Port</name>
+        <value>8000</value>
+      </property>
+      <property>
+        <name>Max Data to Receive per Second</name>
+      </property>
+      <property>
+        <name>SSL Context Service</name>
+      </property>
+      <property>
+        <name>Authorized DN Pattern</name>
+        <value>.*</value>
+      </property>
+      <property>
+        <name>Max Unconfirmed Flowfile Time</name>
+        <value>60 secs</value>
+      </property>
+      <property>
+        <name>HTTP Headers to receive as Attributes (Regex)</name>
+        <value>.*</value>
+      </property>
+      <property>
+        <name>Return Code</name>
+        <value>200</value>
+      </property>
+      <property>
+        <name>multipart-request-max-size</name>
+        <value>1 MB</value>
+      </property>
+      <property>
+        <name>multipart-read-buffer-size</name>
+        <value>512 KB</value>
+      </property>
+    </processor>
+    <processor>
+      <id>0179101f-2a58-16bd-a359-d495f6e45f36</id>
+      <name>Discard Smoke Test Files</name>
+      <position x="1224.0" y="-232.0"/>
+      <styles/>
+      <comment/>
+      <class>org.apache.nifi.processors.standard.RouteOnAttribute</class>
+      <bundle>
+        <group>org.apache.nifi</group>
+        <artifact>nifi-standard-nar</artifact>
+        <version>1.12.1</version>
+      </bundle>
+      <maxConcurrentTasks>1</maxConcurrentTasks>
+      <schedulingPeriod>0 sec</schedulingPeriod>
+      <penalizationPeriod>30 sec</penalizationPeriod>
+      <yieldPeriod>1 sec</yieldPeriod>
+      <bulletinLevel>WARN</bulletinLevel>
+      <lossTolerant>false</lossTolerant>
+      <scheduledState>RUNNING</scheduledState>
+      <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+      <executionNode>ALL</executionNode>
+      <runDurationNanos>0</runDurationNanos>
+      <property>
+        <name>Routing Strategy</name>
+        <value>Route to Property name</value>
+      </property>
+      <property>
+        <name>smoke</name>
+        <value>${deltafi.flow:equals('smoke')}</value>
+      </property>
+      <autoTerminatedRelationship>smoke</autoTerminatedRelationship>
+    </processor>
+    <processor>
+      <id>177a4bed-017b-1000-3fb4-0a9195aedc51</id>
+      <name>Rename JsonAttributes to Metadata</name>
+      <position x="552.0" y="72.0"/>
+      <styles/>
+      <comment/>
+      <class>org.apache.nifi.processors.attributes.UpdateAttribute</class>
+      <bundle>
+        <group>org.apache.nifi</group>
+        <artifact>nifi-update-attribute-nar</artifact>
+        <version>1.12.1</version>
+      </bundle>
+      <maxConcurrentTasks>1</maxConcurrentTasks>
+      <schedulingPeriod>0 sec</schedulingPeriod>
+      <penalizationPeriod>30 sec</penalizationPeriod>
+      <yieldPeriod>1 sec</yieldPeriod>
+      <bulletinLevel>WARN</bulletinLevel>
+      <lossTolerant>false</lossTolerant>
+      <scheduledState>RUNNING</scheduledState>
+      <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+      <executionNode>ALL</executionNode>
+      <runDurationNanos>0</runDurationNanos>
+      <property>
+        <name>Delete Attributes Expression</name>
+        <value>JSONAttributes</value>
+      </property>
+      <property>
+        <name>Store State</name>
+        <value>Do not store state</value>
+      </property>
+      <property>
+        <name>Stateful Variables Initial Value</name>
+      </property>
+      <property>
+        <name>canonical-value-lookup-cache-size</name>
+        <value>100</value>
+      </property>
+      <property>
+        <name>Metadata</name>
+        <value>${JSONAttributes}</value>
+      </property>
+    </processor>
+    <processor>
+      <id>01781000-bdad-1e71-f1ff-77734f6c307f</id>
+      <name>AttributesToJSON</name>
+      <position x="552.0" y="-152.0"/>
+      <styles/>
+      <comment/>
+      <class>org.apache.nifi.processors.standard.AttributesToJSON</class>
+      <bundle>
+        <group>org.apache.nifi</group>
+        <artifact>nifi-standard-nar</artifact>
+        <version>1.12.1</version>
+      </bundle>
+      <maxConcurrentTasks>1</maxConcurrentTasks>
+      <schedulingPeriod>0 sec</schedulingPeriod>
+      <penalizationPeriod>30 sec</penalizationPeriod>
+      <yieldPeriod>1 sec</yieldPeriod>
+      <bulletinLevel>WARN</bulletinLevel>
+      <lossTolerant>false</lossTolerant>
+      <scheduledState>RUNNING</scheduledState>
+      <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+      <executionNode>ALL</executionNode>
+      <runDurationNanos>0</runDurationNanos>
+      <property>
+        <name>Attributes List</name>
+        <value>filename,flow</value>
+      </property>
+      <property>
+        <name>attributes-to-json-regex</name>
+      </property>
+      <property>
+        <name>Destination</name>
+        <value>flowfile-attribute</value>
+      </property>
+      <property>
+        <name>Include Core Attributes</name>
+        <value>true</value>
+      </property>
+      <property>
+        <name>Null Value</name>
+        <value>false</value>
+      </property>
+      <autoTerminatedRelationship>failure</autoTerminatedRelationship>
+    </processor>
+    <label>
+      <id>01781005-1654-1e79-623b-2443611783f8</id>
+      <position x="1176.0" y="-488.0"/>
+      <size height="704.0" width="448.0"/>
+      <styles>
+        <style name="background-color">#e8f7ff</style>
+        <style name="font-size">12px</style>
+      </styles>
+      <value>DeltaFi POC Egress
+</value>
+    </label>
+    <label>
+      <id>01781003-1654-1e79-ee8b-4b6147911ce3</id>
+      <position x="208.0" y="-488.0"/>
+      <size height="968.0" width="952.0"/>
+      <styles>
+        <style name="background-color">#e8f7ff</style>
+        <style name="font-size">12px</style>
+      </styles>
+      <value>DeltaFI POC Ingress</value>
+    </label>
+    <processGroup>
+      <id>16541e7b-1003-1178-4995-9c459f1166c3</id>
+      <name>Generate Mock Files (Smoke Test)</name>
+      <position x="240.0" y="-456.0"/>
+      <comment/>
+      <flowfileConcurrency>UNBOUNDED</flowfileConcurrency>
+      <flowfileOutboundPolicy>STREAM_WHEN_AVAILABLE</flowfileOutboundPolicy>
+      <processor>
+        <id>01791000-daf8-16a2-5df0-b94c6aef8083</id>
+        <name>Set Flow Attribute (smoke)</name>
+        <position x="216.0" y="424.0"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.attributes.UpdateAttribute</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-update-attribute-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>DISABLED</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Delete Attributes Expression</name>
+        </property>
+        <property>
+          <name>Store State</name>
+          <value>Do not store state</value>
+        </property>
+        <property>
+          <name>Stateful Variables Initial Value</name>
+        </property>
+        <property>
+          <name>canonical-value-lookup-cache-size</name>
+          <value>100</value>
+        </property>
+        <property>
+          <name>flow</name>
+          <value>smoke</value>
+        </property>
+      </processor>
+      <processor>
+        <id>01791000-929d-169c-7353-d13bb6f6565f</id>
+        <name>GenerateFlowFile</name>
+        <position x="216.0" y="208.0"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.standard.GenerateFlowFile</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-standard-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>1 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>DISABLED</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>File Size</name>
+          <value>0B</value>
+        </property>
+        <property>
+          <name>Batch Size</name>
+          <value>1</value>
+        </property>
+        <property>
+          <name>Data Format</name>
+          <value>Text</value>
+        </property>
+        <property>
+          <name>Unique FlowFiles</name>
+          <value>false</value>
+        </property>
+        <property>
+          <name>generate-ff-custom-text</name>
+          <value>${smokeData:repeat(1,64)}</value>
+        </property>
+        <property>
+          <name>character-set</name>
+          <value>UTF-8</value>
+        </property>
+        <property>
+          <name>mime-type</name>
+        </property>
+      </processor>
+      <outputPort>
+        <id>01791001-2a58-16bd-f584-fadf1fe7f266</id>
+        <name>Mock Files</name>
+        <position x="272.0" y="648.0"/>
+        <comments/>
+        <scheduledState>DISABLED</scheduledState>
+      </outputPort>
+      <connection>
+        <id>fbb90524-0179-1000-4bfb-666cf826452a</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>01791000-929d-169c-7353-d13bb6f6565f</sourceId>
+        <sourceGroupId>16541e7b-1003-1178-4995-9c459f1166c3</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>01791000-daf8-16a2-5df0-b94c6aef8083</destinationId>
+        <destinationGroupId>16541e7b-1003-1178-4995-9c459f1166c3</destinationGroupId>
+        <destinationType>PROCESSOR</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+      <connection>
+        <id>01791004-2a58-16bd-e478-4fe5d33dd189</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>01791000-daf8-16a2-5df0-b94c6aef8083</sourceId>
+        <sourceGroupId>16541e7b-1003-1178-4995-9c459f1166c3</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>01791001-2a58-16bd-f584-fadf1fe7f266</destinationId>
+        <destinationGroupId>16541e7b-1003-1178-4995-9c459f1166c3</destinationGroupId>
+        <destinationType>OUTPUT_PORT</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+    </processGroup>
+    <processGroup>
+      <id>01791029-2a58-16bd-c2cf-9374a79837ae</id>
+      <name>Write to Disk</name>
+      <position x="1208.0" y="8.0"/>
+      <comment/>
+      <flowfileConcurrency>UNBOUNDED</flowfileConcurrency>
+      <flowfileOutboundPolicy>STREAM_WHEN_AVAILABLE</flowfileOutboundPolicy>
+      <processor>
+        <id>0179102c-2a58-16bd-dd3e-0de20983b44a</id>
+        <name>Set Filename Attribute (Content)</name>
+        <position x="688.0" y="80.0"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.attributes.UpdateAttribute</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-update-attribute-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>RUNNING</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Delete Attributes Expression</name>
+        </property>
+        <property>
+          <name>Store State</name>
+          <value>Do not store state</value>
+        </property>
+        <property>
+          <name>Stateful Variables Initial Value</name>
+        </property>
+        <property>
+          <name>canonical-value-lookup-cache-size</name>
+          <value>100</value>
+        </property>
+        <property>
+          <name>filename</name>
+          <value>${deltafi.filename}</value>
+        </property>
+      </processor>
+      <processor>
+        <id>0179102f-2a58-16bd-e2e2-ae95f0922fa3</id>
+        <name>Write Metadata to Disk</name>
+        <position x="920.0000257271904" y="697.9999650615282"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.standard.PutFile</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-standard-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>RUNNING</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Directory</name>
+          <value>${NIFI_OUT}/${deltafi.flow}</value>
+        </property>
+        <property>
+          <name>Conflict Resolution Strategy</name>
+          <value>fail</value>
+        </property>
+        <property>
+          <name>Create Missing Directories</name>
+          <value>true</value>
+        </property>
+        <property>
+          <name>Maximum File Count</name>
+        </property>
+        <property>
+          <name>Last Modified Time</name>
+        </property>
+        <property>
+          <name>Permissions</name>
+        </property>
+        <property>
+          <name>Owner</name>
+        </property>
+        <property>
+          <name>Group</name>
+        </property>
+        <autoTerminatedRelationship>success</autoTerminatedRelationship>
+        <autoTerminatedRelationship>failure</autoTerminatedRelationship>
+      </processor>
+      <processor>
+        <id>0179102b-2a58-16bd-4257-aaba421ab00a</id>
+        <name>Write Content to Disk</name>
+        <position x="448.0000257271904" y="297.9999650615282"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.standard.PutFile</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-standard-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>RUNNING</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Directory</name>
+          <value>${NIFI_OUT}/${deltafi.flow}</value>
+        </property>
+        <property>
+          <name>Conflict Resolution Strategy</name>
+          <value>fail</value>
+        </property>
+        <property>
+          <name>Create Missing Directories</name>
+          <value>true</value>
+        </property>
+        <property>
+          <name>Maximum File Count</name>
+        </property>
+        <property>
+          <name>Last Modified Time</name>
+        </property>
+        <property>
+          <name>Permissions</name>
+        </property>
+        <property>
+          <name>Owner</name>
+        </property>
+        <property>
+          <name>Group</name>
+        </property>
+        <autoTerminatedRelationship>success</autoTerminatedRelationship>
+        <autoTerminatedRelationship>failure</autoTerminatedRelationship>
+      </processor>
+      <processor>
+        <id>0179102e-2a58-16bd-7434-06dd3212a47d</id>
+        <name>Set Filename Attribute (Metadata)</name>
+        <position x="920.0000257271904" y="497.9999650615282"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.attributes.UpdateAttribute</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-update-attribute-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>RUNNING</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Delete Attributes Expression</name>
+        </property>
+        <property>
+          <name>Store State</name>
+          <value>Do not store state</value>
+        </property>
+        <property>
+          <name>Stateful Variables Initial Value</name>
+        </property>
+        <property>
+          <name>canonical-value-lookup-cache-size</name>
+          <value>100</value>
+        </property>
+        <property>
+          <name>filename</name>
+          <value>${deltafi.filename}.metadata.json</value>
+        </property>
+      </processor>
+      <processor>
+        <id>0179102d-2a58-16bd-23e7-e915bd5ee858</id>
+        <name>AttributesToJSON</name>
+        <position x="920.0000257271904" y="297.9999650615282"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.standard.AttributesToJSON</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-standard-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>RUNNING</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Attributes List</name>
+        </property>
+        <property>
+          <name>attributes-to-json-regex</name>
+          <value>^deltafi\..*</value>
+        </property>
+        <property>
+          <name>Destination</name>
+          <value>flowfile-content</value>
+        </property>
+        <property>
+          <name>Include Core Attributes</name>
+          <value>true</value>
+        </property>
+        <property>
+          <name>Null Value</name>
+          <value>false</value>
+        </property>
+        <autoTerminatedRelationship>failure</autoTerminatedRelationship>
+      </processor>
+      <inputPort>
+        <id>01791034-2a58-16bd-15d3-9df69390e689</id>
+        <name>Files</name>
+        <position x="744.0" y="-8.0"/>
+        <comments/>
+        <scheduledState>RUNNING</scheduledState>
+      </inputPort>
+      <connection>
+        <id>01791033-2a58-16bd-0cb8-d2d7b3c791c8</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>0179102e-2a58-16bd-7434-06dd3212a47d</sourceId>
+        <sourceGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>0179102f-2a58-16bd-e2e2-ae95f0922fa3</destinationId>
+        <destinationGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</destinationGroupId>
+        <destinationType>PROCESSOR</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+      <connection>
+        <id>01791032-2a58-16bd-9ccf-27961fdaccd0</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>0179102d-2a58-16bd-23e7-e915bd5ee858</sourceId>
+        <sourceGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>0179102e-2a58-16bd-7434-06dd3212a47d</destinationId>
+        <destinationGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</destinationGroupId>
+        <destinationType>PROCESSOR</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+      <connection>
+        <id>01791031-2a58-16bd-9ff9-25644f3e165f</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>0179102c-2a58-16bd-dd3e-0de20983b44a</sourceId>
+        <sourceGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>0179102d-2a58-16bd-23e7-e915bd5ee858</destinationId>
+        <destinationGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</destinationGroupId>
+        <destinationType>PROCESSOR</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+      <connection>
+        <id>01791035-2a58-16bd-3664-4e44e3484076</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>01791034-2a58-16bd-15d3-9df69390e689</sourceId>
+        <sourceGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</sourceGroupId>
+        <sourceType>INPUT_PORT</sourceType>
+        <destinationId>0179102c-2a58-16bd-dd3e-0de20983b44a</destinationId>
+        <destinationGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</destinationGroupId>
+        <destinationType>PROCESSOR</destinationType>
+        <relationship/>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+      <connection>
+        <id>01791030-2a58-16bd-b1bc-ab527dc49c3c</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>0179102c-2a58-16bd-dd3e-0de20983b44a</sourceId>
+        <sourceGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>0179102b-2a58-16bd-4257-aaba421ab00a</destinationId>
+        <destinationGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</destinationGroupId>
+        <destinationType>PROCESSOR</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+    </processGroup>
+    <processGroup>
+      <id>01791008-2a58-16bd-8a65-b15f824b3af9</id>
+      <name>Read from Disk</name>
+      <position x="744.0" y="-456.0"/>
+      <comment/>
+      <flowfileConcurrency>UNBOUNDED</flowfileConcurrency>
+      <flowfileOutboundPolicy>STREAM_WHEN_AVAILABLE</flowfileOutboundPolicy>
+      <processor>
+        <id>0179100a-2a58-16bd-4aeb-899627f6c959</id>
+        <name>Read from Disk</name>
+        <position x="684.0000192232294" y="290.00002213114107"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.standard.GetFile</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-standard-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>RUNNING</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Input Directory</name>
+          <value>${NIFI_IN}</value>
+        </property>
+        <property>
+          <name>File Filter</name>
+          <value>[^\.].*</value>
+        </property>
+        <property>
+          <name>Path Filter</name>
+        </property>
+        <property>
+          <name>Batch Size</name>
+          <value>10</value>
+        </property>
+        <property>
+          <name>Keep Source File</name>
+          <value>false</value>
+        </property>
+        <property>
+          <name>Recurse Subdirectories</name>
+          <value>true</value>
+        </property>
+        <property>
+          <name>Polling Interval</name>
+          <value>0 sec</value>
+        </property>
+        <property>
+          <name>Ignore Hidden Files</name>
+          <value>true</value>
+        </property>
+        <property>
+          <name>Minimum File Age</name>
+          <value>0 sec</value>
+        </property>
+        <property>
+          <name>Maximum File Age</name>
+        </property>
+        <property>
+          <name>Minimum File Size</name>
+          <value>0 B</value>
+        </property>
+        <property>
+          <name>Maximum File Size</name>
+        </property>
+      </processor>
+      <processor>
+        <id>0179100b-2a58-16bd-aac8-42eddb2d9d7d</id>
+        <name>Set Flow Attribute</name>
+        <position x="684.0000192232294" y="490.00002213114107"/>
+        <styles/>
+        <comment/>
+        <class>org.apache.nifi.processors.attributes.UpdateAttribute</class>
+        <bundle>
+          <group>org.apache.nifi</group>
+          <artifact>nifi-update-attribute-nar</artifact>
+          <version>1.12.1</version>
+        </bundle>
+        <maxConcurrentTasks>1</maxConcurrentTasks>
+        <schedulingPeriod>0 sec</schedulingPeriod>
+        <penalizationPeriod>30 sec</penalizationPeriod>
+        <yieldPeriod>1 sec</yieldPeriod>
+        <bulletinLevel>WARN</bulletinLevel>
+        <lossTolerant>false</lossTolerant>
+        <scheduledState>RUNNING</scheduledState>
+        <schedulingStrategy>TIMER_DRIVEN</schedulingStrategy>
+        <executionNode>ALL</executionNode>
+        <runDurationNanos>0</runDurationNanos>
+        <property>
+          <name>Delete Attributes Expression</name>
+        </property>
+        <property>
+          <name>Store State</name>
+          <value>Do not store state</value>
+        </property>
+        <property>
+          <name>Stateful Variables Initial Value</name>
+        </property>
+        <property>
+          <name>canonical-value-lookup-cache-size</name>
+          <value>100</value>
+        </property>
+        <property>
+          <name>flow</name>
+          <value>${path:substringBeforeLast('/')}</value>
+        </property>
+      </processor>
+      <outputPort>
+        <id>0179100d-2a58-16bd-d7d2-cf29c8a66011</id>
+        <name>Files from Disk</name>
+        <position x="744.0" y="696.0"/>
+        <comments/>
+        <scheduledState>RUNNING</scheduledState>
+      </outputPort>
+      <connection>
+        <id>0179100e-2a58-16bd-bdb5-7b147b6b7b9c</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>0179100b-2a58-16bd-aac8-42eddb2d9d7d</sourceId>
+        <sourceGroupId>01791008-2a58-16bd-8a65-b15f824b3af9</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>0179100d-2a58-16bd-d7d2-cf29c8a66011</destinationId>
+        <destinationGroupId>01791008-2a58-16bd-8a65-b15f824b3af9</destinationGroupId>
+        <destinationType>OUTPUT_PORT</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+      <connection>
+        <id>0179100c-2a58-16bd-f32e-0a06666b2000</id>
+        <name/>
+        <bendPoints/>
+        <labelIndex>1</labelIndex>
+        <zIndex>0</zIndex>
+        <sourceId>0179100a-2a58-16bd-4aeb-899627f6c959</sourceId>
+        <sourceGroupId>01791008-2a58-16bd-8a65-b15f824b3af9</sourceGroupId>
+        <sourceType>PROCESSOR</sourceType>
+        <destinationId>0179100b-2a58-16bd-aac8-42eddb2d9d7d</destinationId>
+        <destinationGroupId>01791008-2a58-16bd-8a65-b15f824b3af9</destinationGroupId>
+        <destinationType>PROCESSOR</destinationType>
+        <relationship>success</relationship>
+        <maxWorkQueueSize>10000</maxWorkQueueSize>
+        <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+        <flowFileExpiration>0 sec</flowFileExpiration>
+        <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+        <partitioningAttribute/>
+        <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+      </connection>
+    </processGroup>
+    <connection>
+      <id>177d5f8b-017b-1000-7ab3-6a490a6d051b</id>
+      <name/>
+      <bendPoints/>
+      <labelIndex>1</labelIndex>
+      <zIndex>0</zIndex>
+      <sourceId>01781000-bdad-1e71-f1ff-77734f6c307f</sourceId>
+      <sourceGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</sourceGroupId>
+      <sourceType>PROCESSOR</sourceType>
+      <destinationId>177a4bed-017b-1000-3fb4-0a9195aedc51</destinationId>
+      <destinationGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</destinationGroupId>
+      <destinationType>PROCESSOR</destinationType>
+      <relationship>success</relationship>
+      <maxWorkQueueSize>10000</maxWorkQueueSize>
+      <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+      <flowFileExpiration>0 sec</flowFileExpiration>
+      <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+      <partitioningAttribute/>
+      <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+    </connection>
+    <connection>
+      <id>177db835-017b-1000-5701-291733477857</id>
+      <name/>
+      <bendPoints/>
+      <labelIndex>1</labelIndex>
+      <zIndex>0</zIndex>
+      <sourceId>177a4bed-017b-1000-3fb4-0a9195aedc51</sourceId>
+      <sourceGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</sourceGroupId>
+      <sourceType>PROCESSOR</sourceType>
+      <destinationId>0c22fe9e-017b-1000-b6a6-45ca41e7aae4</destinationId>
+      <destinationGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</destinationGroupId>
+      <destinationType>PROCESSOR</destinationType>
+      <relationship>success</relationship>
+      <maxWorkQueueSize>10000</maxWorkQueueSize>
+      <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+      <flowFileExpiration>0 sec</flowFileExpiration>
+      <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+      <partitioningAttribute/>
+      <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+    </connection>
+    <connection>
+      <id>01791006-2a58-16bd-df54-90905306f746</id>
+      <name/>
+      <bendPoints/>
+      <labelIndex>1</labelIndex>
+      <zIndex>0</zIndex>
+      <sourceId>01791001-2a58-16bd-f584-fadf1fe7f266</sourceId>
+      <sourceGroupId>16541e7b-1003-1178-4995-9c459f1166c3</sourceGroupId>
+      <sourceType>OUTPUT_PORT</sourceType>
+      <destinationId>01781000-bdad-1e71-f1ff-77734f6c307f</destinationId>
+      <destinationGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</destinationGroupId>
+      <destinationType>PROCESSOR</destinationType>
+      <relationship/>
+      <maxWorkQueueSize>10000</maxWorkQueueSize>
+      <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+      <flowFileExpiration>0 sec</flowFileExpiration>
+      <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+      <partitioningAttribute/>
+      <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+    </connection>
+    <connection>
+      <id>01791022-2a58-16bd-351d-6cacda63889f</id>
+      <name/>
+      <bendPoints/>
+      <labelIndex>1</labelIndex>
+      <zIndex>0</zIndex>
+      <sourceId>38445019-0179-1000-7288-6645dcc63c1b</sourceId>
+      <sourceGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</sourceGroupId>
+      <sourceType>PROCESSOR</sourceType>
+      <destinationId>0179101f-2a58-16bd-a359-d495f6e45f36</destinationId>
+      <destinationGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</destinationGroupId>
+      <destinationType>PROCESSOR</destinationType>
+      <relationship>success</relationship>
+      <maxWorkQueueSize>10000</maxWorkQueueSize>
+      <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+      <flowFileExpiration>0 sec</flowFileExpiration>
+      <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+      <partitioningAttribute/>
+      <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+    </connection>
+    <connection>
+      <id>01791037-2a58-16bd-23e8-9538a46c6c3c</id>
+      <name/>
+      <bendPoints/>
+      <labelIndex>1</labelIndex>
+      <zIndex>0</zIndex>
+      <sourceId>0179101f-2a58-16bd-a359-d495f6e45f36</sourceId>
+      <sourceGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</sourceGroupId>
+      <sourceType>PROCESSOR</sourceType>
+      <destinationId>01791034-2a58-16bd-15d3-9df69390e689</destinationId>
+      <destinationGroupId>01791029-2a58-16bd-c2cf-9374a79837ae</destinationGroupId>
+      <destinationType>INPUT_PORT</destinationType>
+      <relationship>unmatched</relationship>
+      <maxWorkQueueSize>10000</maxWorkQueueSize>
+      <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+      <flowFileExpiration>0 sec</flowFileExpiration>
+      <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+      <partitioningAttribute/>
+      <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+    </connection>
+    <connection>
+      <id>0179100f-2a58-16bd-2b66-d6a44c1bdbfe</id>
+      <name/>
+      <bendPoints/>
+      <labelIndex>1</labelIndex>
+      <zIndex>0</zIndex>
+      <sourceId>0179100d-2a58-16bd-d7d2-cf29c8a66011</sourceId>
+      <sourceGroupId>01791008-2a58-16bd-8a65-b15f824b3af9</sourceGroupId>
+      <sourceType>OUTPUT_PORT</sourceType>
+      <destinationId>01781000-bdad-1e71-f1ff-77734f6c307f</destinationId>
+      <destinationGroupId>7e6ca08b-0178-1000-3d5b-d21f13ba7726</destinationGroupId>
+      <destinationType>PROCESSOR</destinationType>
+      <relationship/>
+      <maxWorkQueueSize>10000</maxWorkQueueSize>
+      <maxWorkQueueDataSize>1 GB</maxWorkQueueDataSize>
+      <flowFileExpiration>0 sec</flowFileExpiration>
+      <loadBalanceStrategy>DO_NOT_LOAD_BALANCE</loadBalanceStrategy>
+      <partitioningAttribute/>
+      <loadBalanceCompression>DO_NOT_COMPRESS</loadBalanceCompression>
+    </connection>
+    <variable name="smokeData" value="6V2ULCkjYyyBbLob3GAAp6BfkQB1jfAS3NZDiXsWULxQGgJgNyXynF7wNXZWTrSZ"/>
+  </rootGroup>
+  <controllerServices/>
+  <reportingTasks/>
+</flowController>

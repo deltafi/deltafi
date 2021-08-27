@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deltafi-kibana-saved-objects
+data:
+  import.ndjson: |-
+{{ .Files.Get "files/kibana-saved-objects.ndjson" | indent 4 }}

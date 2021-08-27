@@ -1,0 +1,48 @@
+helm-lint:
+  image: alpine:3.14
+  stage: build
+  script:
+    - wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz --directory-prefix /opt
+    - tar xvf /opt/helm-v3.6.0-linux-amd64.tar.gz -C /opt
+    - cd charts
+    - for CHART in $(find . -maxdepth 1 -mindepth 1 -type d -not -path '*/\.*'); do
+    -   echo $CHART
+    -   cd $CHART
+    -   /opt/linux-amd64/helm dependency build
+    -   /opt/linux-amd64/helm lint
+    -   cd ..
+    - done
+
+update-helmchart:
+  stage: ci
+  only:
+    refs:
+      - main
+  image: alpine:3.14
+  # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
+  resource_group: ci-helmchart
+  before_script:
+    - apk add bash openssh-client git unzip sshpass rsync
+    - eval $(ssh-agent -s)
+    - echo "${SSH_PRIVATE_KEY}" | base64 -d | ssh-add - > /dev/null
+
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+
+    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+    - git config --global user.email "gitlab@gitlab.com"
+    - git config --global user.name "Gitlab CI/CD"
+
+    - wget -q https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/bin/yq
+  script:
+    - git clone ${DEV_CHART} -b ${CI_COMMIT_BRANCH}
+    - cd deltafi/charts/deltafi
+    - git branch -D ci || echo "CI branch does not exist"
+    - git checkout -b ci
+    - for project in $PROJECT_LIST; do DOCKER_TAG=${CI_REGISTRY_IMAGE}/${project}:${CI_COMMIT_SHA}; PATH_VAR=${project//-/_}_HELM_IMAGE_PATH; HELM_IMAGE_PATH=$(eval echo \$$PATH_VAR); yq e ".${HELM_IMAGE_PATH} = \"${DOCKER_TAG}\"" -i values.yaml; done
+    - git diff
+    - git add values.yaml
+    - git commit -am "[skip ci] CI/CD image update from ${CI_PROJECT_NAME}"
+    - git push -f -o ci-skip origin ci

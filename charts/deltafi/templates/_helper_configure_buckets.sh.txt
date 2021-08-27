@@ -1,0 +1,22 @@
+MC_CONFIG_DIR="{{ .Values.minio.configPathmc }}"
+MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+ACCESS=$(cat /config/accesskey)
+SECRET=$(cat /config/secretkey)
+INSTANCE_NAME=myminio
+
+${MC} config host add ${INSTANCE_NAME} http://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET
+
+{{- range .Values.minio.buckets }}
+BUCKET={{ .name }}
+{{- range .notifications }}
+${MC} event list ${INSTANCE_NAME}/${BUCKET} | grep {{ .arn }}
+if [ $? -ne 0 ]; then
+  ${MC} event add ${INSTANCE_NAME}/${BUCKET} {{ .arn }} --event {{ .event }}
+fi
+{{- end }}
+{{- if .ilm }}
+${MC} ilm import ${INSTANCE_NAME}/${BUCKET} << EOF
+  {{ .ilm | toJson }}
+EOF
+{{- end }}
+{{- end }}

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-apollo-gateway
+  labels:
+    app: deltafi-apollo-gateway
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-apollo-gateway
+  template:
+    metadata:
+      labels:
+        app: deltafi-apollo-gateway
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/deployment-dgs.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: deltafi-apollo-gateway
+        image: {{ .Values.deltafi.apollo_gateway.image }}
+        ports:
+        - containerPort: 4000
+        envFrom:
+          - configMapRef:
+              name: apollo-gateway-config
+      imagePullSecrets:
+      - name: docker-secret

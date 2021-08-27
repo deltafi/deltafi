@@ -1,0 +1,14 @@
+{{- if eq .Values.deltafi.auth.mode "cert" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: deltafi-auth-service
+spec:
+  selector:
+    app: deltafi-auth
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9292
+{{- end }}

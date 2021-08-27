@@ -1,0 +1,229 @@
+# DeltaFi config
+deltafi:
+  zipkin:
+    enabled: true
+    initialDelayInMilli: 500
+    maxBatchSize: 10000
+    sendFrequencyInMilli: 500
+    url: http://deltafi-zipkin:9411/api/v2/spans
+  minio_url: http://deltafi-minio:9000
+  dgs_gateway_url: http://deltafi-apollo-gateway-service/graphql
+  dgs_url: http://deltafi-dgs-service/graphql
+  redis_url: http://deltafi-redis-master:6379
+  apollo_gateway:
+    image: deltafi/deltafi-apollo-gateway:0.6.1
+  passthrough:
+    image: deltafi/deltafi-passthrough:0.6.1
+  common_actions:
+    egress_endpoint: http://nifi-egress-service
+    image: deltafi/deltafi-common-actions:0.6.1
+  dgs:
+    image: deltafi/deltafi-dgs:0.6.1
+    mongo_host: deltafi-mongodb
+  ingress:
+    image: deltafi/deltafi-ingress:0.6.1
+    envVar:
+      MINIO_PART_SIZE: 100M
+      HTTP_MAX_BODY_SIZE: 5G
+  auth:
+    image: deltafi/deltafi-auth:0.6.1
+    mode: disabled # basic, cert, or disabled
+    secret: auth-secret
+serviceList:
+  - name: dgs
+    url: http://deltafi-dgs-service/graphql
+# Kubernetes ingress config
+ingress:
+  domain: local.deltafi.org
+  tls:
+    enabled: false
+    secrets:
+      default: local-deltafi-org
+# MinIO config
+minio:
+  existingSecret: minio-keys
+  resources:
+    requests:
+      memory: 2Gi
+  replicas: 1
+  persistence:
+    enabled: true
+    existingClaim: deltafi-minio
+  ingress:
+    enabled: false
+  service:
+    type: NodePort
+    port: 9000
+  buckets:
+    - name: storage
+      policy: none
+      purge: false
+      ilm:
+        Rules:
+          - Expiration:
+              Days: 1
+            ID: AgeOff
+            Status: Enabled
+  makeBucketJob:
+    annotations:
+      "helm.sh/hook-weight": "1"
+  environment:
+    MINIO_NOTIFY_WEBHOOK_ENABLE_primary: "on"
+    MINIO_NOTIFY_WEBHOOK_ENDPOINT_primary: "http://deltafi-ingress-service/deltafile"
+    # queueing causes up to 3 seconds of latency
+    # Issue entered here: https://github.com/minio/minio/issues/12677
+    # TODO: uncomment these when the issue is resolved
+    # MINIO_NOTIFY_WEBHOOK_QUEUE_LIMIT_primary: 100000
+    # MINIO_NOTIFY_WEBHOOK_QUEUE_DIR_primary: "/export/"
+# Values for the MongoDB dependency
+mongodb:
+  architecture: standalone
+  useStatefulSet: false
+  auth:
+    existingSecret: mongodb-passwords
+    enabled: true
+    database: deltafi
+    username: mongouser
+  service:
+    type: NodePort
+  persistence:
+    enabled: true
+    existingClaim: deltafi-mongodb
+  volumePermissions:
+    enabled: true
+# ElasticSearch config
+elasticsearch:
+  antiAffinity: "soft"
+  clusterHealthCheckParams: "wait_for_status=yellow&timeout=15s"
+  esJavaOpts: "-Xmx1024m -Xms1024m"
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "1G"
+    limits:
+      cpu: "1000m"
+      memory: "2G"
+  extraVolumes:
+    - name: elasticsearch-pvc
+      persistentVolumeClaim:
+        claimName: deltafi-elasticsearch
+  extraVolumeMounts:
+    - name: elasticsearch-pvc
+      mountPath: /usr/share/elasticsearch/data
+  persistence:
+    enabled: false
+  esConfig:
+    elasticsearch.yml: |
+      discovery:
+        type: single-node
+        seed_hosts: ""
+  extraEnvs:
+    - name: discovery.type
+      value: single-node
+    - name: cluster.initial_master_nodes
+  lifecycle:
+    postStart:
+      exec:
+        command:
+          - bash
+          - -c
+          - |
+            #!/bin/bash
+            TEMPLATE_NAME=default
+            INDEX_PATTERN="*"
+            SHARD_COUNT=1
+            REPLICA_COUNT=0
+            ES_URL=http://localhost:9200
+            while [[ "$(curl -s -o /dev/null -w '%{http_code}\n' $ES_URL)" != "200" ]]; do sleep 1; done
+            curl -XPUT "$ES_URL/_template/$TEMPLATE_NAME" -H 'Content-Type: application/json' -d'{"index_patterns":['\""$INDEX_PATTERN"\"'],"settings":{"number_of_shards":'$SHARD_COUNT',"number_of_replicas":'$REPLICA_COUNT'}}'
+# Fluentd config
+fluentd:
+  configMapConfigs:
+    - deltafi-fluentd-config
+    - fluentd-prometheus-conf # Needed for readiness probe
+  fileConfigs:
+    01_sources.conf: "# Disabled"
+    02_filters.conf: "# Disabled"
+    03_dispatch.conf: "# Disabled"
+    04_outputs.conf: "# Disabled"
+  metricsAgeOffJob:
+    schedule: "0 * * * *" # Top of every hour
+    threshold: "1d"
+# Kibana config
+kibana:
+  load_saved_objects: true
+# Redis config
+redis:
+  architecture: standalone
+  auth:
+    existingSecret: redis-password
+    enabled: true
+  master:
+    persistence:
+      enabled: false
+# Zipkin config
+zipkin:
+  ingress:
+    enabled: true
+  envVars:
+    - name: STORAGE_TYPE
+      value: elasticsearch
+    - name: ES_HOSTS
+      value: http://elasticsearch-master:9200
+  tracesAgeOffJob:
+    schedule: "0 1 * * *" # Once daily at 0100
+# NiFi config
+nifi:
+  fullnameOverride: "deltafi-nifi"
+  config:
+    configMap: deltafi-nifi-conf
+  additionalContainerPorts:
+    - 8000
+  envVars:
+    - name: NIFI_IN
+      value: /data/nifi/in
+    - name: NIFI_OUT
+      value: /data/nifi/out
+    - name: DELTAFI_INGRESS_URL
+      value: http://deltafi-ingress-service/deltafile/ingress
+    - name: MINIO_URL
+      value: http://deltafi-minio.deltafi:9000
+    - name: MINIO_BUCKET
+      value: incoming
+    - name: MINIO_ACCESSKEY
+      valueFrom:
+        secretKeyRef:
+          name: minio-keys
+          key: accesskey
+    - name: MINIO_SECRETKEY
+      valueFrom:
+        secretKeyRef:
+          name: minio-keys
+          key: secretkey
+  volumes:
+    - name: nifi-data
+      persistentVolumeClaim:
+        claimName: deltafi-nifi
+  volumeMounts:
+    - name: nifi-data
+      mountPath: /data/nifi/in
+      subPath: in
+    - name: nifi-data
+      mountPath: /data/nifi/out
+      subPath: out
+# Kubernetes Dashboard config
+kubernetes-dashboard:
+  protocolHttp: true
+  service:
+    externalPort: 80
+  settings:
+    clusterName: 'DeltaFi'
+    itemsPerPage: 50
+    labelsLimit: 3
+    logsAutoRefreshTimeInterval: 5
+    resourceAutoRefreshTimeInterval: 5
+    disableAccessDeniedNotifications: false
+    defaultNamespace: deltafi
+    namespaceFallbackList:
+      - default

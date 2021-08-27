@@ -1,0 +1,67 @@
+apiVersion: v2
+name: deltafi
+description: A Helm chart to create deltafi
+
+# A chart can be either an 'application' or a 'library' chart.
+#
+# Application charts are a collection of templates that can be packaged into versioned archives
+# to be deployed.
+#
+# Library charts provide useful utilities or functions for the chart developer. They're included as
+# a dependency of application charts to inject those utilities and functions into the rendering
+# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+type: application
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.6.1
+
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+appVersion: 0.6.1
+
+dependencies:
+  - name: minio
+    version: "8.0.10"
+    repository: https://helm.min.io/
+    condition: enable.minio
+  - name: mongodb
+    version: "10.12.2"
+    repository: https://charts.bitnami.com/bitnami
+    condition: enable.mongo
+  - name: elasticsearch
+    version: "7.11.1"
+    repository: "https://helm.elastic.co"
+    condition: enable.elasticsearch
+    tags:
+      - metrics
+  - name: fluentd
+    version: "0.2.6"
+    repository: "https://fluent.github.io/helm-charts"
+    condition: enable.fluentd
+    tags:
+      - metrics
+  - name: kibana
+    version: "7.11.1"
+    repository: "https://helm.elastic.co"
+    condition: enable.kibana
+    tags:
+      - metrics
+  - name: redis
+    version: "14.6.2"
+    repository: https://charts.bitnami.com/bitnami
+    condition: enable.redis
+  - name: zipkin
+    version: 1.0.0
+    repository: file://../zipkin
+    condition: enable.zipkin
+  - name: nifi
+    version: 1.0.0
+    repository: file://../nifi
+    condition: enable.nifi
+  - name: kubernetes-dashboard
+    version: 4.3.1
+    repository: https://kubernetes.github.io/dashboard/
+    condition: enable.kubernetes-dashboard

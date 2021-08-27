@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-dgs
+  labels:
+    app: deltafi-dgs
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-dgs
+  template:
+    metadata:
+      labels:
+        app: deltafi-dgs
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-dgs.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: deltafi-dgs
+        image: {{ .Values.deltafi.dgs.image }}
+        env:
+        - name: MONGO_HOST
+          value: {{ .Values.deltafi.dgs.mongo_host }}
+        - name: MONGO_PORT
+          value: {{ .Values.mongodb.service.port | quote }}
+        - name: MONGO_DATABASE
+          value: {{ .Values.mongodb.auth.database }}
+        - name: MONGO_AUTH_DB
+          value: {{ .Values.mongodb.auth.database }}
+        - name: MONGO_USERNAME
+          value: {{ .Values.mongodb.auth.username }}
+        - name: MONGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-passwords
+              key: mongodb-password
+        - name: REDIS_URL
+          value: {{ .Values.deltafi.redis_url }}
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-password
+              key: redis-password
+        - name: ZIPKIN_URL
+          value: {{ .Values.deltafi.zipkin.url }}
+        - name: ZIPKIN_ENABLED
+          value: {{ .Values.deltafi.zipkin.enabled | quote }}
+        - name: ZIPKIN_INITIAL_DELAY
+          value: {{ .Values.deltafi.zipkin.initialDelayInMilli | quote }}
+        - name: ZIPKIN_FREQUENCY
+          value: {{ .Values.deltafi.zipkin.sendFrequencyInMilli | quote }}
+        - name: ZIPKIN_MAX_BATCH_SIZE
+          value: {{ .Values.deltafi.zipkin.maxBatchSize | quote }}
+        volumeMounts:
+        - name: dgs-config
+          mountPath: /config
+        ports:
+        - containerPort: 8080
+      volumes:
+      - name: dgs-config
+        configMap:
+          name: deltafi-dgs-config
+      imagePullSecrets:
+      - name: docker-secret
+      serviceAccountName: deltafi-dgs

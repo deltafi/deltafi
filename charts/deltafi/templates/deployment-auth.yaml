@@ -1,0 +1,32 @@
+{{- if eq .Values.deltafi.auth.mode "cert" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-auth
+  labels:
+    app: deltafi-auth
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-auth
+  template:
+    metadata:
+      labels:
+        app: deltafi-auth
+    spec:
+      containers:
+      - name: deltafi-auth
+        image: {{ .Values.deltafi.auth.image }}
+        env:
+        - name: SECRET
+          value: {{ .Values.deltafi.auth.secret }}
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9292
+      imagePullSecrets:
+      - name: docker-secret
+      serviceAccountName: deltafi-auth
+{{- end }}

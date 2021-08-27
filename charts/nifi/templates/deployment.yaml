@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nifi.fullname" . }}
+  labels:
+  {{- include "nifi.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+    {{- include "nifi.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: nifi
+      {{- include "nifi.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: nifi
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.envVars }}
+          env:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}          
+          ports:
+          - containerPort: 8080
+          {{- range .Values.additionalContainerPorts }}
+          - containerPort: {{ . }}
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+          volumeMounts:
+          {{- with .Values.volumeMounts }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+            - name: nifi-conf
+              mountPath: /opt/nifi/nifi-current/conf/configMap
+          {{- with .Values.command }}
+          command:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+      {{- with .Values.volumes }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+        - name: nifi-conf
+          configMap:
+            name: {{ .Values.config.configMap }}
+            defaultMode: 0444
+      {{- with .Values.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
