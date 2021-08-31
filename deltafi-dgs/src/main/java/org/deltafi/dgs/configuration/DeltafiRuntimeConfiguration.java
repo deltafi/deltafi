@@ -30,10 +30,9 @@ public class DeltafiRuntimeConfiguration {
     private Map<String, EgressActionConfiguration> egressActions = new HashMap<>();
     private Map<String, DeleteActionConfiguration> deleteActions = new HashMap<>();
     private Map<String, LoadActionGroupConfiguration> loadGroups = new HashMap<>();
-    private Map<String, DomainEndpointConfiguration> domainEndpoints = new HashMap<>();
 
     public List<DeltaFiConfiguration> allConfigs() {
-        return Stream.of(ingressFlows, egressFlows, transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions, deleteActions, loadGroups, domainEndpoints)
+        return Stream.of(ingressFlows, egressFlows, transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions, deleteActions, loadGroups)
                 .map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
     }
 
@@ -47,7 +46,7 @@ public class DeltafiRuntimeConfiguration {
     }
 
     public Stream<Map<String, ? extends DeltaFiConfiguration>> deltafiMaps() {
-        return Stream.of(ingressFlows, egressFlows, loadGroups, domainEndpoints);
+        return Stream.of(ingressFlows, egressFlows, loadGroups);
     }
 
     public Stream<Map<String, ? extends DeltaFiConfiguration>> actionMaps() {
@@ -62,8 +61,6 @@ public class DeltafiRuntimeConfiguration {
                 return ingressFlows;
             case EGRESS_FLOW:
                 return egressFlows;
-            case DOMAIN_ENDPOINT:
-                return domainEndpoints;
             case TRANSFORM_ACTION:
                 return transformActions;
             case LOAD_ACTION:

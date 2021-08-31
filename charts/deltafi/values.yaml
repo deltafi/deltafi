@@ -29,9 +29,6 @@ deltafi:
     image: deltafi/deltafi-auth:0.6.1
     mode: disabled # basic, cert, or disabled
     secret: auth-secret
-serviceList:
-  - name: dgs
-    url: http://deltafi-dgs-service/graphql
 # Kubernetes ingress config
 ingress:
   domain: local.deltafi.org

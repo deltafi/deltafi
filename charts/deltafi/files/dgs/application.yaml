@@ -8,8 +8,6 @@ spring:
       password: ${MONGO_PASSWORD}
       authentication-database: ${MONGO_AUTH_DB:admin}
       auto-index-creation: true
-  profiles:
-    active: default
 deltafi:
   requeueSeconds: 30
   delete:
@@ -20,10 +18,6 @@ deltafi:
         type: ageOff
         parameters:
           afterComplete: PT1H
-  configSource:
-    flows: RELOAD_FROM_PROPERTY
-    actions: RELOAD_FROM_PROPERTY
-    path: ${CONFIG_SOURCE_PATH:file:/config/bootstrap-config.yaml}
   zipkin:
     enabled: ${ZIPKIN_ENABLED:true}
     url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}

@@ -11,9 +11,6 @@ spring:
       auto-index-creation: true
 deltafi:
   requeueSeconds: 30
-  configSource:
-    flows: RELOAD_FROM_PROPERTY
-    actions: RELOAD_FROM_PROPERTY
   delete:
     onCompletion: false
     frequency: PT1S

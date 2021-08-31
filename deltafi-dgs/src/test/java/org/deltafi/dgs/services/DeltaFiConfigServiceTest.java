@@ -5,7 +5,6 @@ import org.deltafi.dgs.configuration.*;
 import org.deltafi.dgs.generated.types.ConfigQueryInput;
 import org.deltafi.dgs.generated.types.ConfigType;
 import org.deltafi.dgs.generated.types.EgressFlowConfigurationInput;
-import org.deltafi.dgs.k8s.GatewayConfigService;
 import org.deltafi.dgs.repo.DeltaFiRuntimeConfigRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,8 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectProvider;
-
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -35,10 +32,6 @@ class DeltaFiConfigServiceTest {
 
     @Mock
     private DeltaFiRuntimeConfigRepo deltaFiConfigRepo;
-
-    @SuppressWarnings("unused")
-    @Mock
-    ObjectProvider<GatewayConfigService> gatewayConfigService;
 
     private DeltafiRuntimeConfiguration config;
 
@@ -120,7 +113,7 @@ class DeltaFiConfigServiceTest {
     @Test
     void testGetConfigs_All() {
         List<DeltaFiConfiguration> configs = configService.getConfigs(null);
-        Assertions.assertThat(configs.size()).isEqualTo(11);
+        Assertions.assertThat(configs.size()).isEqualTo(10);
     }
 
     @Test
@@ -148,7 +141,7 @@ class DeltaFiConfigServiceTest {
         Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
         long removed = configService.removeDeltafiConfigs(null);
 
-        Assertions.assertThat(removed).isEqualTo(11);
+        Assertions.assertThat(removed).isEqualTo(10);
         Mockito.verify(deltaFiConfigRepo).save(Mockito.any());
     }
 
@@ -208,7 +201,7 @@ class DeltaFiConfigServiceTest {
 
     <C extends DeltaFiConfiguration> C commonChecks(Map<String, C> configs, String name) {
         Assertions.assertThat(configs).hasSize(1);
-        Assertions.assertThat(configs.containsKey(name)).isTrue();
+        Assertions.assertThat(configs).containsKey(name);
         C entry = configs.get(name);
         Assertions.assertThat(entry.getName()).isEqualTo(name);
         Assertions.assertThat(entry.getCreated()).isNotNull();
@@ -222,14 +215,14 @@ class DeltaFiConfigServiceTest {
         Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
         String yaml = new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("config-test/load.yaml")).readAllBytes());
 
-        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(11);
+        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(10);
         LoadActionConfiguration preUpdate = configService.getConfig().getLoadActions().get(ACTION_TO_FIND);
         Assertions.assertThat(preUpdate.getConsumes()).isNull();
 
         configService.mergeConfig(yaml);
 
         // SampleLoadAction already existed, so it will be replaced and 8 new entries from the config are added
-        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(19);
+        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(18);
         LoadActionConfiguration afterUpdate = configService.getConfig().getLoadActions().get(ACTION_TO_FIND);
         Assertions.assertThat(afterUpdate.getConsumes()).isEqualTo("json-utf8-sample");
         Assertions.assertThat(afterUpdate.getCreated()).isEqualTo(preUpdate.getCreated());
@@ -252,7 +245,6 @@ class DeltaFiConfigServiceTest {
         createAndAdd(EgressActionConfiguration::new, "egress", newConfig.getEgressActions());
         createAndAdd(IngressFlowConfiguration::new, "ingressFlow", newConfig.getIngressFlows());
         createAndAdd(EgressFlowConfiguration::new, "egressFlow", newConfig.getEgressFlows());
-        createAndAdd(DomainEndpointConfiguration::new, "domain", newConfig.getDomainEndpoints());
 
         return newConfig;
     }

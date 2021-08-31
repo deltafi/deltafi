@@ -117,47 +117,21 @@ class DeltafiConfigDatafetcherTest {
     }
 
     @Test
-    void registerDomainEndpointConfigurationTest() {
-        DomainEndpointConfigurationInput input = DomainEndpointConfigurationInput.newBuilder()
-                .name(NAME)
-                .apiVersion("1.0.0")
-                .domainVersion("1.0.2")
-                .url("url").build();
-
-        DeltaFiConfigsProjectionRoot projection = rootProject()
-                .onDomainEndpointConfiguration()
-                    .url()
-                    .domainVersion()
-                    .parent();
-
-        RegisterDomainEndpointGraphQLQuery register = RegisterDomainEndpointGraphQLQuery.newRequest().domainEndpointConfiguration(input).build();
-        DomainEndpointConfiguration config = executeRequest(register, projection, DomainEndpointConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-        assertEquals("1.0.0", config.getApiVersion());
-        assertEquals("1.0.2", config.getDomainVersion());
-        assertEquals("url", config.getUrl());
-    }
-
-    @Test
     void findConfigsTest() {
-        ConfigQueryInput configQueryInput = ConfigQueryInput.newBuilder().configType(ConfigType.DOMAIN_ENDPOINT).name(NAME).build();
+        ConfigQueryInput configQueryInput = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).name(NAME).build();
 
-        DomainEndpointConfigurationInput input = DomainEndpointConfigurationInput.newBuilder()
+        LoadActionConfigurationInput input = LoadActionConfigurationInput.newBuilder()
                 .name(NAME)
                 .apiVersion("1.0.0")
-                .domainVersion("1.0.2")
-                .url("url").build();
+                .consumes("json").type("org.deltafi.passthrough.action.RoteLoadAction").build();
 
         DeltaFiConfigsProjectionRoot projection = rootProject()
-                .onDomainEndpointConfiguration()
-                .url()
+                .onLoadActionConfiguration()
+                .consumes()
                 .parent();
 
-        RegisterDomainEndpointGraphQLQuery register = RegisterDomainEndpointGraphQLQuery.newRequest().domainEndpointConfiguration(input).build();
-        executeRequest(register, projection, DomainEndpointConfiguration.class);
+        RegisterLoadActionGraphQLQuery register = RegisterLoadActionGraphQLQuery.newRequest().loadActionConfiguration(input).build();
+        executeRequest(register, projection, LoadActionConfiguration.class);
 
         DeltaFiConfigsGraphQLQuery findConfig = DeltaFiConfigsGraphQLQuery.newRequest().configQuery(configQueryInput).build();
 
@@ -168,26 +142,25 @@ class DeltafiConfigDatafetcherTest {
                 "data." + findConfig.getOperationName(),
                 listOfConfigs);
 
-        assertTrue(configs.get(0) instanceof DomainEndpointConfiguration);
+        assertTrue(configs.get(0) instanceof LoadActionConfiguration);
 
-        DomainEndpointConfiguration domainConfig = (DomainEndpointConfiguration) configs.get(0);
-        assertEquals(NAME, domainConfig.getName());
-        assertEquals("url", domainConfig.getUrl());
-        Assertions.assertNull(domainConfig.getDomainVersion()); // not in the projection should be null
+        LoadActionConfiguration loadActionConfiguration = (LoadActionConfiguration) configs.get(0);
+        assertEquals(NAME, loadActionConfiguration.getName());
+        assertEquals("json", loadActionConfiguration.getConsumes());
+        Assertions.assertNull(loadActionConfiguration.getType()); // not in the projection should be null
     }
 
     @Test
     void deleteConfigsTest() {
-        DomainEndpointConfigurationInput input = DomainEndpointConfigurationInput.newBuilder()
+        LoadActionConfigurationInput input = LoadActionConfigurationInput.newBuilder()
                 .name(NAME)
                 .apiVersion("1.0.0")
-                .domainVersion("1.0.2")
-                .url("url").build();
+                .consumes("json").type("org.deltafi.passthrough.action.RoteLoadAction").build();
 
         DeltaFiConfigsProjectionRoot projection = rootProject();
 
-        RegisterDomainEndpointGraphQLQuery register = RegisterDomainEndpointGraphQLQuery.newRequest().domainEndpointConfiguration(input).build();
-        executeRequest(register, projection, DomainEndpointConfiguration.class);
+        RegisterLoadActionGraphQLQuery register = RegisterLoadActionGraphQLQuery.newRequest().loadActionConfiguration(input).build();
+        executeRequest(register, projection, LoadActionConfiguration.class);
 
         RemoveDeltaFiConfigsGraphQLQuery remove = RemoveDeltaFiConfigsGraphQLQuery.newRequest().build();
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(remove, null);

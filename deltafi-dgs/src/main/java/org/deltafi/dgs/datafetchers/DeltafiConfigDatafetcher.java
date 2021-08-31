@@ -4,7 +4,6 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import org.deltafi.dgs.configuration.DeltaFiConfiguration;
-import org.deltafi.dgs.configuration.DomainEndpointConfiguration;
 import org.deltafi.dgs.configuration.EgressActionConfiguration;
 import org.deltafi.dgs.configuration.EnrichActionConfiguration;
 import org.deltafi.dgs.configuration.FormatActionConfiguration;
@@ -56,11 +55,6 @@ public class DeltafiConfigDatafetcher {
     @DgsMutation
     public EgressActionConfiguration registerEgressAction(EgressActionConfigurationInput egressActionConfiguration) {
         return deltaFiConfigService.saveEgressAction(egressActionConfiguration);
-    }
-
-    @DgsMutation
-    public DomainEndpointConfiguration registerDomainEndpoint(DomainEndpointConfigurationInput domainEndpointConfiguration) {
-        return deltaFiConfigService.saveDomainEndpoint(domainEndpointConfiguration);
     }
 
     @DgsMutation

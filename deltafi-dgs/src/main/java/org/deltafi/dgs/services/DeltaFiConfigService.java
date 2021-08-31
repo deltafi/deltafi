@@ -5,7 +5,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.dgs.api.types.ConfigType;
 import org.deltafi.dgs.configuration.ActionConfiguration;
 import org.deltafi.dgs.configuration.DeltaFiConfiguration;
-import org.deltafi.dgs.configuration.DomainEndpointConfiguration;
 import org.deltafi.dgs.configuration.EgressActionConfiguration;
 import org.deltafi.dgs.configuration.EgressFlowConfiguration;
 import org.deltafi.dgs.configuration.EnrichActionConfiguration;
@@ -19,12 +18,9 @@ import org.deltafi.dgs.configuration.*;
 import org.deltafi.dgs.converters.KeyValueConverter;
 import org.deltafi.dgs.exceptions.ActionConfigException;
 import org.deltafi.dgs.generated.types.*;
-import org.deltafi.dgs.k8s.GatewayConfigService;
 import org.deltafi.dgs.repo.DeltaFiRuntimeConfigRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.Yaml;
@@ -62,14 +58,12 @@ public class DeltaFiConfigService {
     Yaml yaml = new Yaml(new Constructor(DeltafiRuntimeConfiguration.class), representer);
 
     private final DeltaFiRuntimeConfigRepo configRepo;
-    private final ObjectProvider<GatewayConfigService> gatewayConfigService;
 
     private DeltafiRuntimeConfiguration config;
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public DeltaFiConfigService(DeltaFiRuntimeConfigRepo configRepo, @Lazy ObjectProvider<GatewayConfigService> gatewayConfigService) {
+    public DeltaFiConfigService(DeltaFiRuntimeConfigRepo configRepo) {
         this.configRepo = configRepo;
-        this.gatewayConfigService = gatewayConfigService;
     }
 
     @PostConstruct
@@ -127,7 +121,6 @@ public class DeltaFiConfigService {
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getIngressFlows);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getEgressFlows);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getLoadGroups);
-        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getDomainEndpoints);
 
         config = configRepo.save(existing);
         return exportConfigAsYaml();
@@ -163,10 +156,6 @@ public class DeltaFiConfigService {
 
     List<String> doGetEgressFlowsWithFormatAction(String formatAction) {
         return config.getEgressFlows().values().stream().filter(egressFlowConfiguration -> formatAction.equals(egressFlowConfiguration.getFormatAction())).map(EgressFlowConfiguration::getEgressAction).collect(Collectors.toList());
-    }
-
-    public Map<String, DomainEndpointConfiguration> getDomainEndpoints() {
-        return config.getDomainEndpoints();
     }
 
     public List<String> getLoadGroupActions(String loadGroupName) {
@@ -251,27 +240,11 @@ public class DeltaFiConfigService {
         return updateConfig(egressFlowConfigurationInput, DeltafiRuntimeConfiguration::getEgressFlows, egressFlowConfigurationInput.getName(), setEgressAction, EgressFlowConfiguration.class);
     }
 
-    public DomainEndpointConfiguration saveDomainEndpoint(DomainEndpointConfigurationInput domainEndpointConfigurationInput) {
-        DomainEndpointConfiguration domainEndpointConfiguration = updateConfig(domainEndpointConfigurationInput, DeltafiRuntimeConfiguration::getDomainEndpoints, domainEndpointConfigurationInput.getName(), DomainEndpointConfiguration.class);
-        reloadApollo();
-        return domainEndpointConfiguration;
-    }
-
     public LoadActionGroupConfiguration saveLoadActionGroup(LoadActionGroupConfigurationInput loadActionGroup) {
         return updateConfig(loadActionGroup, DeltafiRuntimeConfiguration::getLoadGroups, loadActionGroup.getName(), LoadActionGroupConfiguration.class);
     }
 
-    public long removeDeltafiConfigs(ConfigQueryInput configQueryInput) {
-        long removed = doRemoveConfigs(configQueryInput);
-
-        if (removed > 0 && shouldRefreshApollo(configQueryInput)) {
-            reloadApollo();
-        }
-
-        return removed;
-    }
-
-    public long doRemoveConfigs(ConfigQueryInput configQuery) {
+    public long removeDeltafiConfigs(ConfigQueryInput configQuery) {
         if (Objects.nonNull(configQuery)) {
             ConfigType configType = mapper.convertValue(configQuery.getConfigType(), ConfigType.class);
             if (Objects.nonNull(configQuery.getName())) {
@@ -317,14 +290,6 @@ public class DeltaFiConfigService {
 
         config = configRepo.save(current);
         return removed;
-    }
-
-    private void reloadApollo() {
-        gatewayConfigService.ifAvailable(GatewayConfigService::refreshApolloConfig);
-    }
-
-    private boolean shouldRefreshApollo(ConfigQueryInput input) {
-        return Objects.isNull(input) || org.deltafi.dgs.generated.types.ConfigType.DOMAIN_ENDPOINT.equals(input.getConfigType());
     }
 
     private DeltafiRuntimeConfiguration getCurrentConfig() {

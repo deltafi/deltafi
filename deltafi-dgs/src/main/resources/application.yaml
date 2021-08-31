@@ -8,8 +8,6 @@ spring:
       password: ${MONGO_PASSWORD:password}
       authentication-database: ${MONGO_AUTH_DB:admin}
       auto-index-creation: true
-  profiles:
-    active: k8s
   task:
     scheduling:
       pool:
@@ -25,10 +23,6 @@ deltafi:
         type: ageOff
         parameters:
           afterComplete: PT1H
-  configSource:
-    flows: DEFAULT_FROM_PROPERTY
-    actions: DEFAULT_FROM_PROPERTY
-    path: ${CONFIG_SOURCE_PATH:classpath:deltafi-config.yaml}
   namespace: deltafi
   zipkin:
     enabled: ${ZIPKIN_ENABLED:true}

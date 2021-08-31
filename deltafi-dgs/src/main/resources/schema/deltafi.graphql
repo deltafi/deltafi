@@ -182,7 +182,6 @@ type Mutation {
   registerFormatAction(formatActionConfiguration: FormatActionConfigurationInput!): FormatActionConfiguration!
   registerValidateAction(validateActionConfiguration: ValidateActionConfigurationInput!): ValidateActionConfiguration!
   registerEgressAction(egressActionConfiguration: EgressActionConfigurationInput!): EgressActionConfiguration!
-  registerDomainEndpoint(domainEndpointConfiguration: DomainEndpointConfigurationInput!): DomainEndpointConfiguration!
 
   registerAction(actionSchema: ActionSchemaInput!): ActionSchema!
 
