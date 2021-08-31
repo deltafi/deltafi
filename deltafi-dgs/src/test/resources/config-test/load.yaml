@@ -52,3 +52,7 @@ loadGroups:
     loadActions:
       - SampleLoadAction
       - Sample2LoadAction
+deleteActions:
+  DeleteAction:
+    name: DeleteAction
+    type: org.deltafi.commonactions.action.delete.DeleteAction

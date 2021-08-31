@@ -121,6 +121,7 @@ public class DeltaFiConfigService {
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getIngressFlows);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getEgressFlows);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getLoadGroups);
+        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getDeleteActions);
 
         config = configRepo.save(existing);
         return exportConfigAsYaml();
