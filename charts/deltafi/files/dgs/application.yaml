@@ -9,7 +9,7 @@ spring:
       authentication-database: ${MONGO_AUTH_DB:admin}
       auto-index-creation: true
   profiles:
-    active: k8s
+    active: default
 deltafi:
   requeueSeconds: 30
   delete:

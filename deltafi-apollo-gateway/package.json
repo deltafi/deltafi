@@ -14,6 +14,7 @@
     "@apollo/gateway": "^0.34.0",
     "@apollographql/graphql-playground-middleware-express": "^1.7.15",
     "@apollographql/graphql-playground-react": "^1.7.41",
+    "@kubernetes/client-node": "^0.15.1",
     "apollo-server": "^3.0.1",
     "graphql": "15.5.0",
     "request": "^2.88.1",

@@ -4,14 +4,17 @@ const { HOST = '0.0.0.0' } = process.env;
 const { PORT = 4000 } = process.env;
 const { RETRY_DELAY = 5000 } = process.env;
 const { MAX_RETRIES = 5 } = process.env;
-const defaultServiceList = [
-  { name: "deltafi", url: "http://localhost:8080/graphql" },
-  { name: "stix", url: "http://localhost:8081/graphql" },
-];
-const SERVICE_LIST =
-  process.env.SERVICE_LIST === "null" || process.env.SERVICE_LIST === undefined
-    ? defaultServiceList
-    : JSON.parse(process.env.SERVICE_LIST);
 
-var deltaFiGatewayServer = new DeltaFiGatewayServer(HOST, PORT, SERVICE_LIST, MAX_RETRIES, RETRY_DELAY);
-deltaFiGatewayServer.start();
+if (process.env.SERVICE_LIST === "null" || process.env.SERVICE_LIST === undefined) {
+  console.log('Running in Kubernetes Service auto-discovery mode.')
+  const deltaFiGatewayServer = new DeltaFiGatewayServer(HOST, PORT, [], MAX_RETRIES, RETRY_DELAY);
+  await deltaFiGatewayServer.loadServiceListFromKubernetes();
+  await deltaFiGatewayServer.start(true);
+  deltaFiGatewayServer.watchKubernetesForServiceListChanges();
+} else {
+  console.log('Running in environment variable mode.');
+  console.log(`SERVICE_LIST=${process.env.SERVICE_LIST}`);
+  const SERVICE_LIST = JSON.parse(process.env.SERVICE_LIST);
+  const deltaFiGatewayServer = new DeltaFiGatewayServer(HOST, PORT, SERVICE_LIST, MAX_RETRIES, RETRY_DELAY);
+  deltaFiGatewayServer.start(true);
+}

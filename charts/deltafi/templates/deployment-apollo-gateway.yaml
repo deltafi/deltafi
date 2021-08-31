@@ -21,8 +21,6 @@ spec:
         image: {{ .Values.deltafi.apollo_gateway.image }}
         ports:
         - containerPort: 4000
-        envFrom:
-          - configMapRef:
-              name: apollo-gateway-config
       imagePullSecrets:
       - name: docker-secret
+      serviceAccountName: deltafi-gateway
