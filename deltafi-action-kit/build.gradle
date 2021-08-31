@@ -68,29 +68,29 @@ dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
 
     // Use DGS BOM to automatically define versions of other packages below
-    implementation(platform('com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.5.0')) {
+    implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
         because 'DGS BOM to automatically define versions of other packages below'
     }
 
     implementation project(':deltafi-common')
     implementation project(path: ':deltafi-dgs', configuration: 'jars')
 
-    implementation 'redis.clients:jedis:3.6.1'
+    implementation "redis.clients:jedis:${jedisVersion}"
 
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-resteasy-reactive'
     implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation 'io.quarkus:quarkus-kubernetes-config'
-    implementation 'io.quarkiverse.loggingjson:quarkus-logging-json:0.3.1'
-    implementation 'io.minio:minio:8.0.3'
+    implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
+    implementation "io.minio:minio:${minioVersion}"
 
     implementation 'com.netflix.graphql.dgs:graphql-dgs-client'
-    implementation 'com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:5.0.5'
+    implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
 
-    implementation 'com.graphql-java:graphql-java:16.2'
+    implementation "com.graphql-java:graphql-java:${graphqlJavaVersion}"
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
-    implementation 'com.github.victools:jsonschema-generator:4.18.0'
-    implementation 'com.github.victools:jsonschema-module-jackson:4.18.0'
+    implementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
+    implementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.quarkus:quarkus-junit5-mockito'
