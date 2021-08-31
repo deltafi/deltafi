@@ -45,7 +45,7 @@ redis-password:
 
 deltafi:
   dgs:
-    url: ${DELTAFI_DGS_URL:http://deltafi-apollo-gateway-service}
+    url: ${DELTAFI_DGS_URL:http://deltafi-gateway-service}
   action_polling_start_delay_ms: 3000
   action_polling_frequency_ms: 100
   action_registration_start_delay_ms: 1000

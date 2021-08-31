@@ -7,11 +7,11 @@ deltafi:
     sendFrequencyInMilli: 500
     url: http://deltafi-zipkin:9411/api/v2/spans
   minio_url: http://deltafi-minio:9000
-  dgs_gateway_url: http://deltafi-apollo-gateway-service/graphql
+  dgs_gateway_url: http://deltafi-gateway-service/graphql
   dgs_url: http://deltafi-dgs-service/graphql
   redis_url: http://deltafi-redis-master:6379
-  apollo_gateway:
-    image: deltafi/deltafi-apollo-gateway:0.6.1
+  gateway:
+    image: deltafi/deltafi-gateway:0.6.1
   passthrough:
     image: deltafi/deltafi-passthrough:0.6.1
   common_actions:

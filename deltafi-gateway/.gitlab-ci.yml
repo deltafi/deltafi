@@ -1,0 +1,9 @@
+.gateway:
+  variables:
+    PROJECT_NAME: deltafi-gateway
+
+gateway:docker:
+  stage: docker
+  extends:
+    - .gateway
+    - .docker

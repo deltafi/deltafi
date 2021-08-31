@@ -1,4 +1,4 @@
-# deltafi-apollo-gateway
+# deltafi-gateway
 ## Running
 Start deltafi-dgs and deltafi-stix-dgs then start up the gateway:
 ```

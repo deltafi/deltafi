@@ -1,9 +1,0 @@
-.apollo-gateway:
-  variables:
-    PROJECT_NAME: deltafi-apollo-gateway
-
-apollo-gateway:docker:
-  stage: docker
-  extends:
-    - .apollo-gateway
-    - .docker
