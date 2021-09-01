@@ -188,7 +188,7 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(validateActionConfiguration.getType()).isEqualTo("org.deltafi.stix.actions.RubberStampValidateAction");
 
         EgressActionConfiguration egressActionConfiguration = commonChecks(config.getEgressActions(), "SampleEgressAction");
-        Assertions.assertThat(egressActionConfiguration.getType()).isEqualTo("org.deltafi.commonactions.action.RestPostEgressAction");
+        Assertions.assertThat(egressActionConfiguration.getType()).isEqualTo("org.deltafi.core.action.RestPostEgressAction");
         Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("url", "http://localhost:8085/echo");
         Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("metadataPrefix", "deltafi.");
 
@@ -199,7 +199,7 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(loadGroupConfiguration.getLoadActions()).contains("Sample2LoadAction");
 
         DeleteActionConfiguration deleteActionConfiguration = commonChecks(config.getDeleteActions(), "DeleteAction");
-        Assertions.assertThat(deleteActionConfiguration.getType()).isEqualTo("org.deltafi.commonactions.action.delete.DeleteAction");
+        Assertions.assertThat(deleteActionConfiguration.getType()).isEqualTo("org.deltafi.core.action.delete.DeleteAction");
     }
 
     <C extends DeltaFiConfiguration> C commonChecks(Map<String, C> configs, String name) {

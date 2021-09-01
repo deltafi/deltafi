@@ -69,20 +69,20 @@ validateActions:
 egressActions:
   Stix2_1EgressAction:
     name: Stix2_1EgressAction
-    type: org.deltafi.commonactions.action.RestPostEgressAction
+    type: org.deltafi.core.action.RestPostEgressAction
     parameters:
       url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
       metadataPrefix: "${METADATA_PREFIX:deltafi.}"
   Stix1_XEgressAction:
     name: Stix1_XEgressAction
-    type: org.deltafi.commonactions.action.RestPostEgressAction
+    type: org.deltafi.core.action.RestPostEgressAction
     parameters:
       url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
       metadataPrefix: "${METADATA_PREFIX:deltafi.}"
 deleteActions:
   DeleteAction:
     name: DeleteAction
-    type: org.deltafi.commonactions.delete.DeleteAction
+    type: org.deltafi.core.delete.DeleteAction
 loadGroups:
   SampleLoadGroup:
     name: SampleLoadGroup

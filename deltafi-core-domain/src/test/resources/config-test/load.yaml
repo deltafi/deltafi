@@ -42,7 +42,7 @@ validateActions:
 egressActions:
   SampleEgressAction:
     name: SampleEgressAction
-    type: org.deltafi.commonactions.action.RestPostEgressAction
+    type: org.deltafi.core.action.RestPostEgressAction
     parameters:
       url: "http://localhost:8085/echo"
       metadataPrefix: "deltafi."
@@ -55,4 +55,4 @@ loadGroups:
 deleteActions:
   DeleteAction:
     name: DeleteAction
-    type: org.deltafi.commonactions.action.delete.DeleteAction
+    type: org.deltafi.core.action.delete.DeleteAction
