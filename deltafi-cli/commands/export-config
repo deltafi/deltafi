@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: export-config
+
+Usage:
+  export-config"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+RESULT=$(deltafi query "query { exportConfigAsYaml }")
+echo "$RESULT" | jq '.data.exportConfigAsYaml' | ruby -ryaml -e 'puts YAML.safe_load(ARGF.read).to_yaml'

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: list-actions
+
+Usage:
+  list-actions
+
+Options:
+  -j, --json  Show the full json response including the action schema
+  -h, --help  Show help"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+QUERY="query { actionSchemas { actionClass actionKitVersion schema }}"
+RESULT=$(deltafi query "$QUERY")
+
+if [[ " ${ARGS[@]} " =~ " --json " || " ${ARGS[@]} " =~ " -j " ]]; then
+  echo "$RESULT"
+else
+  echo "$RESULT" | jq -r '.data.actionSchemas[] | .actionClass' | sort
+fi

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: uninstall
+
+Usage: 
+  uninstall"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+KUBECTL_BIN="kubectl"
+
+read -r -p "Are you sure? [y/N] " response
+case "$response" in
+  [yY][eE][sS]|[yY])
+    cli_log "Executing helm uninstall"
+    helm uninstall $DELTAFICLI_PROJECT_NAME
+    $KUBECTL_BIN delete all --all --namespace ${DELTAFICLI_K8S_NAMESPACE}
+    ;;
+  *)
+    cli_log "Aborting uninstall"
+    exit 0
+    ;;
+esac

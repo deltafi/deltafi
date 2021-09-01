@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: redis-latency
+
+Usage:
+  redis-latency"
+  exit 1
+}
+
+KUBECTL_BIN="kubectl"
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+REDIS_PASSWORD_ENV='$REDIS_PASSWORD'
+${KUBECTL_BIN} exec -it deltafi-redis-master-0 -- sh -c "redis-cli --no-auth-warning -a $REDIS_PASSWORD_ENV --latency"

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+ARGS=($@)
+
+cd ${DELTAFICLI_WORKDIR}/commands/baskfiles/status
+
+[[ " ${ARGS[@]} " =~ " --help " ]] && $DELTAFICLI_WORKDIR/bask help status && exit
+
+export DEFAULT_COMMAND="status"
+$DELTAFICLI_WORKDIR/bask ${ARGS[@]}

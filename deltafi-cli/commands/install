@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: install
+
+Usage: 
+  install [helm flags]"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
+  cli_log "Executing helm dependencies"
+  cd $DELTAFICLI_CHART_PATH
+  helm dependencies build
+  cd - > /dev/null
+fi
+
+cli_log "Executing helm install"
+helm upgrade --install --wait \
+  --values $DELTAFICLI_CHART_PATH/values.yaml \
+  --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
+  --create-namespace ${ARGS[@]:1}

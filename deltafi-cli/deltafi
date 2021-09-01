@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -e
+export DELTAFICLI_WORKDIR=$(cd $(dirname $(readlink -f $0)) && pwd)
+# shellcheck source=common
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help() {
+  cli_name=${0##*/}
+  echo "
+DeltaFi CLI
+Version: $(cat $DELTAFICLI_WORKDIR/VERSION)
+
+Usage: $cli_name [command]
+
+Commands:
+  did           show did for filename
+  export-config export the current running configuration as yaml
+  ingress       ingress one or more files to a flow
+  install       install/upgrade via Helm
+  list-actions  list the actions registered with deltafi
+  load-config   add to or replace the deltafi config
+  mongo-cli     launch the mongo CLI
+  query         send a query to the gateway
+  redis-cli     launch the redis CLI
+  redis-latency monitor redis latency
+  redis-stats   monitor redis connection stats
+  redis-watch   watch every command issued to redis
+  secrets       show k8s secrets
+  serviceip     show service IP
+  start         (alias for install)
+  status        show status of system
+  stop          (alias for uninstall)
+  trace         show trace data for a DID
+  update        (alias for install)
+  upgrade       (alias for install)
+  uninstall     uninstall via Helm
+  versions      show running versions
+  *             show help
+
+Flags:
+  --help    show help for a specific command
+  -v        enable verbose output
+"
+  exit 1
+}
+
+[ ! -f "$DELTAFICLI_WORKDIR/config" ] \
+  && echo "ERROR: No $DELTAFICLI_WORKDIR/config file found. " \
+  && echo "cp $DELTAFICLI_WORKDIR/config.template $DELTAFICLI_WORKDIR/config and adjust." \
+  && exit 1
+
+. "$DELTAFICLI_WORKDIR/config"
+
+if [ "$2" == "-v" ]; then
+  cli_log "ENV variables"
+  env | grep "DELTAFICLI_*"
+fi
+
+case "$1" in
+  did)
+    "$DELTAFICLI_WORKDIR/commands/did" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/did.log"
+    ;;
+  export-config)
+    "$DELTAFICLI_WORKDIR/commands/export-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-config.log"
+    ;;
+  ingress)
+    "$DELTAFICLI_WORKDIR/commands/ingress" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/ingress.log"
+    ;;
+  install|update|upgrade|start)
+    "$DELTAFICLI_WORKDIR/commands/install" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/install.log"
+    ;;
+  list-actions)
+    "$DELTAFICLI_WORKDIR/commands/list-actions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-actions.log"
+    ;;
+  load-config)
+    "$DELTAFICLI_WORKDIR/commands/load-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-config.log"
+    ;;
+  mongo-cli)
+    "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@
+    ;;
+  query)
+    "$DELTAFICLI_WORKDIR/commands/query" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/query.log"
+    ;;
+  redis-cli)
+    "$DELTAFICLI_WORKDIR/commands/redis-cli" $@
+    ;;
+  redis-latency)
+    "$DELTAFICLI_WORKDIR/commands/redis-latency" $@
+    ;;
+  redis-stats)
+    "$DELTAFICLI_WORKDIR/commands/redis-stats" $@
+    ;;
+  redis-watch)
+    "$DELTAFICLI_WORKDIR/commands/redis-watch" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/redis-watch.log"
+    ;;
+  status)
+    "$DELTAFICLI_WORKDIR/commands/status" $@
+    ;;
+  uninstall|stop)
+    "$DELTAFICLI_WORKDIR/commands/uninstall" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/uninstall.log"
+    ;;
+  secrets)
+    "$DELTAFICLI_WORKDIR/commands/secrets" $@
+    ;;
+  serviceip)
+    "$DELTAFICLI_WORKDIR/commands/serviceip" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/serviceip.log"
+    ;;
+  trace)
+    "$DELTAFICLI_WORKDIR/commands/trace" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/trace.log"
+    ;;
+  versions|version)
+    "$DELTAFICLI_WORKDIR/commands/versions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/versions.log"
+    ;;
+  *)
+    cli_help
+    ;;
+esac

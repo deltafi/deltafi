@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: trace
+
+Usage:
+  trace {DID|FILENAME}"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+INPUT=${ARGS[@]:1}
+ZIPKIN_IP=$(deltafi serviceip deltafi-zipkin)
+if [[ $INPUT =~ ^\{?[A-F0-9a-f]{8}-[A-F0-9a-f]{4}-[A-F0-9a-f]{4}-[A-F0-9a-f]{4}-[A-F0-9a-f]{12}\}?$ ]]; then
+  DID=$INPUT
+else
+  DID=$(deltafi did $INPUT)
+fi
+
+QUERY="query { deltaFile(did: \"$DID\") { stage sourceInfo { filename flow } actions { name } } }"
+RESULT=$(deltafi query "$QUERY")
+STAGE=$(echo $RESULT | jq -r '.data.deltaFile.stage')
+FLOW=$(echo $RESULT | jq -r '.data.deltaFile.sourceInfo.flow')
+FILENAME=$(echo $RESULT | jq -r '.data.deltaFile.sourceInfo.filename')
+ACTION_COUNT=$(echo $RESULT | jq -r '.data.deltaFile.actions[].name' | wc -l)
+
+echo
+echo "DID      : $DID"
+echo "Filename : $FILENAME"
+echo "Flow     : $FLOW"
+echo "Stage    : $STAGE"
+
+TRIMMED_DID=$(echo $DID | sed 's/-//g')
+
+get_traces() {
+  local tmpfile="/tmp/.deltafi-trace.$$"
+  local status_code=$(curl -s -o ${tmpfile} -w "%{http_code}" http://$ZIPKIN_IP:9411/api/v2/trace/$TRIMMED_DID)
+  if [[ $status_code == "200" ]]; then
+    cat ${tmpfile}
+  else
+    echo "[]"
+  fi
+  rm -f $tmpfile
+}
+
+API_RESPONSE="$(get_traces)"
+TRACE_COUNT=$(echo "$API_RESPONSE" | jq -r '.[].name' | wc -l)
+
+until [[ $API_RESPONSE != "[]" && $((TRACE_COUNT-2)) -eq $ACTION_COUNT ]]; do
+  ((tries++)) && ((tries>=20)) && break
+  sleep 0.1
+  API_RESPONSE="$(get_traces)"
+  TRACE_COUNT=$(echo "$API_RESPONSE" | jq -r '.[].name' | wc -l)
+done
+
+if [ $API_RESPONSE == "[]" ]; then
+  echo -e "${red}Error: Trace information for ${DID} not found${normal}"
+  exit 1
+fi
+
+if [[ $((TRACE_COUNT-2)) -ne $ACTION_COUNT ]]; then
+  echo -e "\n${yellow}Warning: Trace information does not match DGS${normal}"
+fi
+
+TRACES=$(echo "$API_RESPONSE" | jq 'sort_by(.timestamp)')
+TOTAL=$(echo "$TRACES" | jq '((last.timestamp + last.duration) - first.timestamp) / 1000000')
+
+echo
+echo "$TRACES" | jq  'sort_by(.timestamp) | [.[] | {name: .name, timestamp: (.timestamp / 1000000 | strftime("%Y-%m-%dT%H:%M:%SZ")), duration: (.duration/1000000)}] |  .[] | [.name, .timestamp, .duration] | @csv' | sed 's/\\"//g' | sed 's/"//g' | sed '1 i\====,=========,========' | sed '1 i\Span,Timestamp,Duration' | sed -e "\$aTotal,-,$TOTAL" | column -t -s ','
+echo
+
+ERROR_QUERY="query { deltaFile(did: \"$DID\") { actions { name state errorCause } } }"
+ERRORS=$(deltafi query $ERROR_QUERY)
+DELIM="ॐ"
+SED_INSERT="1 i\\======$DELIM====="
+JQ_SELECT=".data.deltaFile.actions[] | select(.state==\"ERROR\") | (.name + \"$DELIM\" + .errorCause)"
+echo $ERRORS | jq -r "$JQ_SELECT" | sed "$SED_INSERT" | sed "1 i\Action${DELIM}Error" | column -t -s$DELIM
+echo

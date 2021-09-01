@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: did
+
+Usage:
+  did FILENAME"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+FILENAME=${ARGS[@]:1}
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+QUERY="query { lastWithFilename(filename: \"$FILENAME\") { did } }"
+
+deltafi query "$QUERY" | jq -r '.data.lastWithFilename.did'

@@ -1,0 +1,3 @@
+export DELTAFICLI_K8S_NAMESPACE=deltafi
+export DELTAFICLI_PROJECT_NAME=deltafi
+export DELTAFICLI_CHART_PATH=${DELTAFICLI_WORKDIR}/../charts/deltafi

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: query
+
+Usage:
+  query QUERY"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+QUERY=${ARGS[@]:1}
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+GATEWAY_IP=$(deltafi serviceip deltafi-gateway-service)
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":null}"
+
+curl -s -X POST -H "Content-Type: application/json" -d "$POST_QUERY" http://$GATEWAY_IP/graphql | jq '.'
