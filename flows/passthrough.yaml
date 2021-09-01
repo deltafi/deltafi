@@ -1,0 +1,69 @@
+  ingressFlows:
+    passthrough:
+      loadActions:
+      - PassthroughLoadAction
+      name: passthrough
+      transformActions:
+      - PassthroughTransformAction
+      type: binary
+  egressFlows:
+    passthrough:
+      egressAction: PassthroughEgressAction
+      excludeIngressFlows: []
+      formatAction: PassthroughFormatAction
+      includeIngressFlows:
+      - passthrough
+      name: passthrough
+      validateActions:
+      - PassthroughValidateAction
+  transformActions:
+    PassthroughTransformAction:
+      consumes: binary
+      name: PassthroughTransformAction
+      parameters:
+        staticMetadata:
+          passthrough_transform: Talk to me Goose...
+        name: PassthroughTransformAction
+        resultType: passthrough-binary
+      produces: passthrough-binary
+      type: org.deltafi.passthrough.action.RoteTransformAction
+  loadActions:
+    PassthroughLoadAction:
+      consumes: passthrough-binary
+      name: PassthroughLoadAction
+      parameters:
+        name: PassthroughLoadAction
+        domains:
+        - binary
+      requiresMetadata: {}
+      requiresMetadataKeyValues: []
+      type: org.deltafi.passthrough.action.RoteLoadAction
+  loadGroups: {}
+  enrichActions: {}
+  formatActions:
+    PassthroughFormatAction:
+      name: PassthroughFormatAction
+      parameters:
+        staticMetadata:
+          passthrough_format: That's a negative Ghostrider...
+        name: PassthroughFormatAction
+      requiresDomains:
+      - binary
+      requiresEnrichment: []
+      type: org.deltafi.passthrough.action.RoteFormatAction
+  validateActions:
+    PassthroughValidateAction:
+      name: PassthroughValidateAction
+      parameters:
+        name: PassthroughValidateAction
+      type: org.deltafi.passthrough.action.RubberStampValidateAction
+  egressActions:
+    PassthroughEgressAction:
+      name: PassthroughEgressAction
+      parameters:
+        metadataPrefix: deltafi.
+        staticMetadata:
+          passthrough_egress: I feel the need, the need for speed...
+        url: http://nifi-egress-service
+      type: org.deltafi.core.action.RestPostEgressAction
+  deleteActions: {}

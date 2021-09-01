@@ -1,0 +1,13 @@
+  ingressFlows: {}
+  egressFlows: {}
+  transformActions: {}
+  loadActions: {}
+  loadGroups: {}
+  enrichActions: {}
+  formatActions: {}
+  validateActions: {}
+  egressActions: {}
+  deleteActions:
+    DeleteAction:
+      name: DeleteAction
+      type: org.deltafi.commonactions.delete.DeleteAction

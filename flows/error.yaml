@@ -1,0 +1,34 @@
+  ingressFlows: {}
+  egressFlows:
+    error:
+      egressAction: ErrorEgressAction
+      excludeIngressFlows: []
+      formatAction: ErrorFormatAction
+      includeIngressFlows: []
+      name: error
+      validateActions: []
+  transformActions: {}
+  loadActions: {}
+  loadGroups: {}
+  enrichActions: {}
+  formatActions:
+    ErrorFormatAction:
+      name: ErrorFormatAction
+      parameters:
+        staticMetadata:
+          passthrough_format: Watch the birdie...
+      requiresDomains:
+      - error
+      requiresEnrichment: []
+      type: org.deltafi.core.action.SimpleErrorFormatAction
+  validateActions: {}
+  egressActions:
+    ErrorEgressAction:
+      name: ErrorEgressAction
+      parameters:
+        metadataPrefix: deltafi.
+        staticMetadata:
+          xml: It's time to buzz the tower...
+        url: http://nifi-egress-service
+      type: org.deltafi.core.action.RestPostEgressAction
+  deleteActions: {}

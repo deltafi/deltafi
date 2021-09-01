@@ -1,0 +1,70 @@
+  ingressFlows:
+    smoke:
+      loadActions:
+      - SmokeLoadAction
+      name: smoke
+      transformActions:
+      - SmokeTransformAction
+      type: binary
+  egressFlows:
+    smoke:
+      egressAction: SmokeEgressAction
+      excludeIngressFlows: []
+      formatAction: SmokeFormatAction
+      includeIngressFlows:
+      - smoke
+      name: smoke
+      validateActions:
+      - SmokeValidateAction
+  transformActions:
+    SmokeTransformAction:
+      consumes: binary
+      name: SmokeTransformAction
+      parameters:
+        staticMetadata:
+          passthrough_transform: Talk to me Goose...
+        name: SmokeTransformAction
+        resultType: passthrough-binary
+      produces: passthrough-binary
+      type: org.deltafi.passthrough.action.RoteTransformAction
+  loadActions:
+    SmokeLoadAction:
+      consumes: passthrough-binary
+      name: SmokeLoadAction
+      parameters:
+        name: SmokeLoadAction
+        domains:
+        - binary
+      requiresMetadata: {}
+      requiresMetadataKeyValues: []
+      type: org.deltafi.passthrough.action.RoteLoadAction
+  loadGroups: {}
+  enrichActions: {}
+  formatActions:
+    SmokeFormatAction:
+      name: SmokeFormatAction
+      parameters:
+        staticMetadata:
+          passthrough_format: That's a negative Ghostrider...
+        name: SmokeFormatAction
+      requiresDomains:
+      - binary
+      requiresEnrichment: []
+      type: org.deltafi.passthrough.action.RoteFormatAction
+  validateActions:
+    SmokeValidateAction:
+      name: SmokeValidateAction
+      parameters:
+        name: SmokeValidateAction
+      type: org.deltafi.passthrough.action.RubberStampValidateAction
+  egressActions:
+    SmokeEgressAction:
+      name: SmokeEgressAction
+      parameters:
+        metadataPrefix: deltafi.
+        staticMetadata:
+          passthrough_egress: Kick the tires and light the fires...
+        name: SmokeEgressAction
+        url: http://nifi-egress-service
+      type: org.deltafi.core.action.RestPostEgressAction
+  deleteActions: {}
