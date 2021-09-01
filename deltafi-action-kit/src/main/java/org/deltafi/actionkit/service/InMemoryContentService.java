@@ -3,8 +3,8 @@ package org.deltafi.actionkit.service;
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.ContentServiceConnectException;
-import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.ObjectReference;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ObjectReference;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.ByteArrayInputStream;

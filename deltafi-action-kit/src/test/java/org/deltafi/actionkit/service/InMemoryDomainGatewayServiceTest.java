@@ -1,7 +1,7 @@
 package org.deltafi.actionkit.service;
 
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import org.deltafi.dgs.generated.client.DeltaFileGraphQLQuery;
+import org.deltafi.core.domain.generated.client.DeltaFileGraphQLQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

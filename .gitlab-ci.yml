@@ -20,11 +20,11 @@ variables:
   GRADLE: "gradle -s --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
   DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
   DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
-  PROJECT_LIST: "deltafi-gateway deltafi-dgs deltafi-common-actions deltafi-passthrough deltafi-ingress deltafi-auth"
+  PROJECT_LIST: "deltafi-gateway deltafi-core-domain deltafi-core-actions deltafi-passthrough-actions deltafi-ingress deltafi-auth"
   deltafi_gateway_HELM_IMAGE_PATH: deltafi.gateway.image
-  deltafi_dgs_HELM_IMAGE_PATH: deltafi.dgs.image
-  deltafi_passthrough_HELM_IMAGE_PATH: deltafi.passthrough.image
-  deltafi_common_actions_HELM_IMAGE_PATH: deltafi.common_actions.image
+  deltafi_core_domain_HELM_IMAGE_PATH: deltafi.core_domain.image
+  deltafi_passthrough_actions_HELM_IMAGE_PATH: deltafi.passthrough_actions.image
+  deltafi_core_actions_HELM_IMAGE_PATH: deltafi.core_actions.image
   deltafi_ingress_HELM_IMAGE_PATH: deltafi.ingress.image
   deltafi_auth_HELM_IMAGE_PATH: deltafi.auth.image
 

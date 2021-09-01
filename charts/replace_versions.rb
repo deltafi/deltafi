@@ -8,7 +8,7 @@ end
 version = ARGV.first
 values_file = File.join(__dir__, 'deltafi', 'values.yaml')
 values = File.read(values_file)
-['gateway', 'dgs', 'ingress', 'passthrough'].each do |image|
+['gateway', 'core-domain', 'core-actions', 'ingress', 'passthrough-actions'].each do |image|
   values.gsub!(/image: .*deltafi-#{image}:.*$/, "image: deltafi-#{image}:#{version}")
 end
 

@@ -1,0 +1,11 @@
+.passthrough-actions:
+  variables:
+    PROJECT_NAME: deltafi-passthrough-actions
+
+passthrough-actions:docker:
+  stage: docker
+  extends:
+    - .passthrough-actions
+    - .docker
+  needs:
+    - job: "build"

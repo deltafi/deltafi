@@ -6,7 +6,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.metric.MetricType;
 import org.deltafi.common.metric.Tag;
-import org.deltafi.dgs.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.DeltaFile;
 
 @Slf4j
 public abstract class FormatAction<P extends ActionParameters> extends Action<P> {

@@ -1,10 +1,10 @@
 package org.deltafi.actionkit.action.error;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.ActionEventInput;
-import org.deltafi.dgs.generated.types.ErrorInput;
-import org.deltafi.dgs.generated.types.ActionEventType;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ErrorInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.slf4j.Logger;
 
 import java.io.PrintWriter;

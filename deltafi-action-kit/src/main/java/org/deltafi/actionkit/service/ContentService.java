@@ -1,7 +1,7 @@
 package org.deltafi.actionkit.service;
 
-import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.ObjectReference;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ObjectReference;
 
 import java.io.InputStream;
 

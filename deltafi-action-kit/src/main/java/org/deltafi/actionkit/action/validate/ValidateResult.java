@@ -1,7 +1,7 @@
 package org.deltafi.actionkit.action.validate;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.ActionEventType;
 
 public class ValidateResult extends Result {
 

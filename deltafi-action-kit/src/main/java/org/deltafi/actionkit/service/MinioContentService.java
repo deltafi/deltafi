@@ -9,8 +9,8 @@ import io.quarkus.arc.profile.IfBuildProfile;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.ContentServiceConnectException;
-import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.ObjectReference;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ObjectReference;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;

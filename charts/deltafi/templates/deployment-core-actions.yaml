@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-core-actions
+  labels:
+    app: deltafi-core-actions
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-core-actions
+  template:
+    metadata:
+      labels:
+        app: deltafi-core-actions
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-actions.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: deltafi-core-actions
+        image: "{{ .Values.deltafi.core_actions.image }}"
+      imagePullSecrets:
+      - name: docker-secret
+      serviceAccountName: deltafi-actions

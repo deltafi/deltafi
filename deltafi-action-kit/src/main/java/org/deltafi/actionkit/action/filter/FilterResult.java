@@ -1,9 +1,9 @@
 package org.deltafi.actionkit.action.filter;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.types.ActionEventInput;
-import org.deltafi.dgs.generated.types.ActionEventType;
-import org.deltafi.dgs.generated.types.FilterInput;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.FilterInput;
 
 public class FilterResult extends Result {
 

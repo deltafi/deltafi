@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-passthrough-actions
+  labels:
+    app: deltafi-passthrough-actions
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-passthrough-actions
+  template:
+    metadata:
+      labels:
+        app: deltafi-passthrough-actions
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-actions.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: deltafi-passthrough-actions
+        image: "{{ .Values.deltafi.passthrough_actions.image }}"
+      imagePullSecrets:
+      - name: docker-secret
+      serviceAccountName: deltafi-actions

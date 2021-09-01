@@ -4,8 +4,8 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.dgs.api.types.ActionInput;
-import org.deltafi.dgs.generated.types.ActionEventInput;
+import org.deltafi.core.domain.api.types.ActionInput;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -14,7 +14,7 @@ spec:
       labels:
         app: deltafi-gateway
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/deployment-dgs.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/deployment-core-domain.yaml") . | sha256sum }}
     spec:
       containers:
       - name: deltafi-gateway

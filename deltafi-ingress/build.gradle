@@ -26,7 +26,7 @@ dependencies {
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
         because 'DGS BOM to automatically define versions of other packages below'
     }
-    implementation project(path: ':deltafi-dgs', configuration: 'jars')
+    implementation project(path: ':deltafi-core-domain', configuration: 'jars')
     implementation "io.quarkus:quarkus-resteasy"
     implementation "io.quarkus:quarkus-resteasy-jackson"
     implementation "io.quarkiverse.minio:quarkus-minio:2.0.0"

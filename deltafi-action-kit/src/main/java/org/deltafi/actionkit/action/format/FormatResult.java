@@ -1,7 +1,7 @@
 package org.deltafi.actionkit.action.format;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.types.*;
+import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

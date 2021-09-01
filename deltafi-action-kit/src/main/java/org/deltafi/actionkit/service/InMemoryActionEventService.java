@@ -2,8 +2,8 @@ package org.deltafi.actionkit.service;
 
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.api.types.ActionInput;
-import org.deltafi.dgs.generated.types.ActionEventInput;
+import org.deltafi.core.domain.api.types.ActionInput;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;

@@ -1,9 +1,9 @@
 package org.deltafi.actionkit.action.enrich;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.types.ActionEventInput;
-import org.deltafi.dgs.generated.types.ActionEventType;
-import org.deltafi.dgs.generated.types.EnrichInput;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.EnrichInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

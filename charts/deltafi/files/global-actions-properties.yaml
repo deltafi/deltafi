@@ -1,6 +1,6 @@
 deltafi:
   dgs:
-    url: {{ .Values.deltafi.dgs_gateway_url }}
+    url: {{ .Values.deltafi.gateway_url }}
   action_polling_start_delay_ms: 3000
   action_polling_frequency_ms: 100
   zipkin:

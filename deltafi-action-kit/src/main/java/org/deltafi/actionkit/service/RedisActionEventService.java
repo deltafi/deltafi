@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.api.types.ActionInput;
+import org.deltafi.core.domain.api.types.ActionInput;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Objects;
 
-import static org.deltafi.dgs.api.Constants.DGS_QUEUE;
+import static org.deltafi.core.domain.api.Constants.DGS_QUEUE;
 
 public class RedisActionEventService implements ActionEventService {
     private final JedisPool jedisPool;

@@ -1,0 +1,11 @@
+.core-actions:
+  variables:
+    PROJECT_NAME: deltafi-core-actions
+
+core-actions:docker:
+  stage: docker
+  extends:
+    - .core-actions
+    - .docker
+  needs:
+    - job: "build"

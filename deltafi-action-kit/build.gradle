@@ -73,7 +73,7 @@ dependencies {
     }
 
     implementation project(':deltafi-common')
-    implementation project(path: ':deltafi-dgs', configuration: 'jars')
+    implementation project(path: ':deltafi-core-domain', configuration: 'jars')
 
     implementation "redis.clients:jedis:${jedisVersion}"
 

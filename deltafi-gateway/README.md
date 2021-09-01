@@ -1,6 +1,6 @@
 # deltafi-gateway
 ## Running
-Start deltafi-dgs and deltafi-stix-dgs then start up the gateway:
+Start deltafi-core-domain and deltafi-stix-domain then start up the gateway:
 ```
 npm install
 node app.js

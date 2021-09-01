@@ -2,9 +2,9 @@ package org.deltafi.actionkit.endpoint;
 
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import org.deltafi.actionkit.service.ActionEventService;
-import org.deltafi.dgs.api.types.ActionInput;
-import org.deltafi.dgs.api.types.DeltaFile;
-import org.deltafi.dgs.generated.types.ActionEventInput;
+import org.deltafi.core.domain.api.types.ActionInput;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;

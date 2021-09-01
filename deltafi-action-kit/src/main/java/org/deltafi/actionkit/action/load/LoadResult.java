@@ -1,9 +1,9 @@
 package org.deltafi.actionkit.action.load;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.dgs.generated.types.ActionEventInput;
-import org.deltafi.dgs.generated.types.ActionEventType;
-import org.deltafi.dgs.generated.types.LoadInput;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.LoadInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

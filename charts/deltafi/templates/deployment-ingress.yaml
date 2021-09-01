@@ -19,7 +19,7 @@ spec:
         image: {{ .Values.deltafi.ingress.image }}
         env:
         - name: DELTAFI_DGS_URL
-          value: {{ .Values.deltafi.dgs_url }}
+          value: {{ .Values.deltafi.core_domain_url }}
         - name: MINIO_URL
           value: {{ .Values.deltafi.minio_url}}
         - name: MINIO_ACCESS

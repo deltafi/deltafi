@@ -2,7 +2,7 @@ package org.deltafi.actionkit.endpoint;
 
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import org.deltafi.actionkit.service.ContentService;
-import org.deltafi.dgs.generated.types.ObjectReference;
+import org.deltafi.core.domain.generated.types.ObjectReference;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
