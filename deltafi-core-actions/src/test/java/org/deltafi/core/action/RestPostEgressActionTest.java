@@ -2,7 +2,6 @@ package org.deltafi.core.action;
 
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
-import org.deltafi.actionkit.action.egress.EgressUtility;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.HttpService;
 import org.deltafi.actionkit.service.InMemoryContentService;
@@ -29,7 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-public class RestPostEgressActionTest {
+class RestPostEgressActionTest {
 
     InMemoryContentService contentService = new InMemoryContentService();
 
@@ -51,6 +50,7 @@ public class RestPostEgressActionTest {
     static final String DID = UUID.randomUUID().toString();
 
     static final String FLOW = "theFlow";
+    static final String EGRESS_FLOW = "outFlow";
     static final String ORIG_FILENAME = "origFilename";
     static final String POST_FILENAME = "postFilename";
 
@@ -73,7 +73,7 @@ public class RestPostEgressActionTest {
                             .build()
             ))
             .build();
-    RestPostEgressParameters params = new RestPostEgressParameters(ACTION, Collections.emptyMap(), URL, PREFIX);
+    RestPostEgressParameters params = new RestPostEgressParameters(ACTION, EGRESS_FLOW, Collections.emptyMap(), URL, PREFIX);
 
     @BeforeEach
     void setup() {
@@ -89,7 +89,7 @@ public class RestPostEgressActionTest {
         Map<String, String> actual = mapCaptor.getValue();
         assertEquals(DID, actual.get(PREFIX + "did"));
         assertEquals(FLOW, actual.get(PREFIX + "ingressFlow"));
-        assertEquals(EgressUtility.flow(ACTION), actual.get(PREFIX + "flow"));
+        assertEquals(EGRESS_FLOW, actual.get(PREFIX + "flow"));
         assertEquals(POST_FILENAME, actual.get(PREFIX + "filename"));
         assertEquals(ORIG_FILENAME, actual.get(PREFIX + "originalFilename"));
 

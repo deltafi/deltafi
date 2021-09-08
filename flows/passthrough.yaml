@@ -61,6 +61,7 @@
     PassthroughEgressAction:
       name: PassthroughEgressAction
       parameters:
+        egressFlow: passthrough
         metadataPrefix: deltafi.
         staticMetadata:
           passthrough_egress: I feel the need, the need for speed...

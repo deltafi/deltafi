@@ -1,10 +1,9 @@
 package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressResult;
-import org.deltafi.actionkit.action.egress.EgressUtility;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.core.parameters.RestPostEgressParameters;
 import org.deltafi.actionkit.exception.ContentServiceConnectException;
@@ -23,7 +22,7 @@ import java.util.Map;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class RestPostEgressAction extends Action<RestPostEgressParameters> {
+public class RestPostEgressAction extends EgressAction<RestPostEgressParameters> {
 
     private static final MetricLogger metricLogger = new MetricLogger();
 
@@ -67,7 +66,7 @@ public class RestPostEgressAction extends Action<RestPostEgressParameters> {
             params.getStaticMetadata().forEach((k, v) -> headers.put(prefix + k, v));
             headers.put(prefix + "did", deltafile.getDid());
             headers.put(prefix + "ingressFlow", deltafile.getSourceInfo().getFlow());
-            headers.put(prefix + "flow", EgressUtility.flow(params.getName()));
+            headers.put(prefix + "flow", params.getEgressFlow());
             headers.put(prefix + "originalFilename", deltafile.getSourceInfo().getFilename());
             headers.put(prefix + "filename", formattedData.getFilename());
             contentService.get(formattedData.getObjectReference(),

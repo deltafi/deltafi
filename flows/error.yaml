@@ -26,6 +26,7 @@
     ErrorEgressAction:
       name: ErrorEgressAction
       parameters:
+        egressFlow: error
         metadataPrefix: deltafi.
         staticMetadata:
           xml: It's time to buzz the tower...
