@@ -5,5 +5,5 @@ plugins {
 
 docker {
     name "${project.name}:${project.version}"
-    copySpec.from(".").into(".")
+    copySpec.from(".").exclude("**/build").into(".")
 }
