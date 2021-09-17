@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: install-plugin
+
+Usage:
+  install-plugin PLUGIN_DIRECTORY [helm flags]"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+PLUGIN_DIRECTORY=${ARGS[1]}
+if [ ! -d "$PLUGIN_DIRECTORY" ]; then
+  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory not found${normal}"
+  exit 1
+fi
+
+CHARTS_DIRECTORY="$PLUGIN_DIRECTORY/charts"
+if [ ! -d "$CHARTS_DIRECTORY" ]; then
+  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory does not include a ${bold}charts${normal}${red} subdirectory${normal}"
+  exit 1
+fi
+
+CHART_YAML="$CHARTS_DIRECTORY/Chart.yaml"
+if [ ! -f "$CHART_YAML" ]; then
+  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin missing ${bold}charts/Chart.yaml${normal}"
+  exit 1
+fi
+
+PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
+
+cli_log "Installing $PLUGIN_NAME plugin"
+helm upgrade --install --wait \
+  --values $CHARTS_DIRECTORY/values.yaml \
+  --namespace $DELTAFICLI_K8S_NAMESPACE $PLUGIN_NAME $CHARTS_DIRECTORY \
+  --create-namespace ${ARGS[@]:2}
