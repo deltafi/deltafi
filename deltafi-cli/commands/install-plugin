@@ -41,7 +41,7 @@ if [ ! -d "$PLUGIN_DIRECTORY" ]; then
   cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory not found${normal}"
   exit 1
 fi
-PLUGIN_DIRECTORY=$(cd $(dirname $PLUGIN_DIRECTORY) && pwd)
+PLUGIN_DIRECTORY=$(cd $PLUGIN_DIRECTORY && pwd)
 
 CHARTS_DIRECTORY="$PLUGIN_DIRECTORY/charts"
 if [ ! -d "$CHARTS_DIRECTORY" ]; then
