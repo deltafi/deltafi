@@ -21,8 +21,10 @@ if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
   cd - > /dev/null
 fi
 
-cli_log "Executing helm install"
+cli_log "Installing DeltaFi"
 helm upgrade --install --wait \
   --values $DELTAFICLI_CHART_PATH/values.yaml \
   --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
-  --create-namespace ${ARGS[@]:1}
+  --create-namespace --timeout 10m ${ARGS[@]:1}
+
+cli_log "DeltaFi install complete"

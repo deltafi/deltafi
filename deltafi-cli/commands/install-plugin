@@ -7,10 +7,31 @@ cli_help_command() {
 Command: install-plugin
 
 Usage:
-  install-plugin PLUGIN_DIRECTORY [helm flags]"
+  install-plugin PLUGIN_DIRECTORY [OPTIONS] [helm flags]
+
+Options:
+  -l, --load-flows Load flows included with plugin (if present)
+  -h, --help       Show help"
   exit 1
 }
 
+LOAD_FLOWS=false
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -l|--load-flows)
+      LOAD_FLOWS=true
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- "${POSITIONAL[@]}"
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
@@ -20,6 +41,7 @@ if [ ! -d "$PLUGIN_DIRECTORY" ]; then
   cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory not found${normal}"
   exit 1
 fi
+PLUGIN_DIRECTORY=$(cd $(dirname $PLUGIN_DIRECTORY) && pwd)
 
 CHARTS_DIRECTORY="$PLUGIN_DIRECTORY/charts"
 if [ ! -d "$CHARTS_DIRECTORY" ]; then
@@ -35,8 +57,23 @@ fi
 
 PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
 
-cli_log "Installing $PLUGIN_NAME plugin"
+cli_log "${bold}$PLUGIN_NAME${normal}: Installing plugin"
 helm upgrade --install --wait \
   --values $CHARTS_DIRECTORY/values.yaml \
   --namespace $DELTAFICLI_K8S_NAMESPACE $PLUGIN_NAME $CHARTS_DIRECTORY \
   --create-namespace ${ARGS[@]:2}
+
+HELM_RETURN_CODE=$?
+[[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
+
+if [[ "$LOAD_FLOWS" == true ]]; then
+  FLOWS_DIRECTORY="$PLUGIN_DIRECTORY/flows"
+  if [ ! -d "$FLOWS_DIRECTORY" ]; then
+    cli_log "${yellow}${PLUGIN_NAME}: Plugin directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
+  else
+    cli_log "${bold}$PLUGIN_NAME${normal}: Loading plugin flows"
+    find $FLOWS_DIRECTORY -name *.y*ml -exec deltafi load-config {} \;
+  fi
+fi
+
+cli_log "${bold}$PLUGIN_NAME${normal}: Plugin install complete."

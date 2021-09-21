@@ -19,7 +19,7 @@ KUBECTL_BIN="kubectl"
 read -r -p "Are you sure? [y/N] " response
 case "$response" in
   [yY][eE][sS]|[yY])
-    cli_log "Executing helm uninstall"
+    cli_log "Uninstalling DeltaFi"
     helm uninstall $DELTAFICLI_PROJECT_NAME
     $KUBECTL_BIN delete all --all --namespace ${DELTAFICLI_K8S_NAMESPACE}
     ;;
@@ -28,3 +28,5 @@ case "$response" in
     exit 0
     ;;
 esac
+
+cli_log "DeltaFi uninstall complete"
