@@ -1,3 +1,5 @@
+charts/.logs
+
 # Gradle
 output/
 .gradle/
