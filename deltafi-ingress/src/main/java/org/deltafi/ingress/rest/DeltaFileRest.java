@@ -1,9 +1,10 @@
 package org.deltafi.ingress.rest;
 
+import lombok.RequiredArgsConstructor;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
-import org.deltafi.ingress.exceptions.DeltafiMinioException;
 import org.deltafi.ingress.service.DeltaFileService;
 
 import javax.ws.rs.*;
@@ -16,13 +17,9 @@ import java.util.Objects;
 
 @Path("deltafile")
 @Produces(MediaType.APPLICATION_JSON)
+@RequiredArgsConstructor
 public class DeltaFileRest {
-
-    final DeltaFileService deltaFileService;
-
-    public DeltaFileRest(DeltaFileService deltaFileService) {
-        this.deltaFileService = deltaFileService;
-    }
+    private final DeltaFileService deltaFileService;
 
     @POST
     @Path("ingress")
@@ -37,7 +34,7 @@ public class DeltaFileRest {
             String filename = getParam(filenameFromQueryParam, filenameFromHeader, "Filename");
             String did = deltaFileService.ingressData(dataStream, filename, flow, metadata);
             return Response.ok(did).build();
-        } catch (DeltafiMinioException | DeltafiGraphQLException | DeltafiException exception) {
+        } catch (ObjectStorageException | DeltafiGraphQLException | DeltafiException exception) {
             return Response.status(500).entity(exception.getMessage()).build();
         } catch (DeltafiMetadataException exception) {
             return Response.status(400).entity(exception.getMessage()).build();
@@ -51,5 +48,4 @@ public class DeltaFileRest {
 
         return Objects.nonNull(queryParam) ? queryParam : headerParam;
     }
-
 }

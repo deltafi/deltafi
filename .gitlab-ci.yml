@@ -19,6 +19,9 @@ variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   GRADLE: "gradle -s --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
   DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
+  DOCKER_HOST: "tcp://docker:2375"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
   DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
   PROJECT_LIST: "deltafi-gateway deltafi-core-domain deltafi-core-actions deltafi-passthrough-actions deltafi-ingress deltafi-auth"
   deltafi_gateway_HELM_IMAGE_PATH: deltafi.gateway.image

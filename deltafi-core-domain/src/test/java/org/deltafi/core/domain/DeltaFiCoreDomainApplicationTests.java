@@ -3,6 +3,8 @@ package org.deltafi.core.domain;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
+import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.delete.DeleteRunner;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
@@ -12,9 +14,6 @@ import org.deltafi.core.domain.services.DeltaFiConfigService;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.RedisService;
 import org.deltafi.core.domain.services.SampleEnrichmentsService;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -31,7 +30,8 @@ import java.util.*;
 import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 
@@ -390,7 +390,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(Util.equalIgnoringDates(expected, actual));
 
 		// ensure an error deltaFile was created
-		Assertions.assertNotEquals(actual, deltaFilesService.getLastCreatedDeltaFiles(1).get(0));
+		assertNotEquals(actual, deltaFilesService.getLastCreatedDeltaFiles(1).get(0));
 
 		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("ErrorFormatAction")), any());
 	}

@@ -4,7 +4,8 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.HttpService;
-import org.deltafi.actionkit.service.InMemoryContentService;
+import org.deltafi.actionkit.service.InMemoryObjectStorageService;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.parameters.RestPostEgressParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.FormattedData;
@@ -30,14 +31,14 @@ import static org.mockito.Mockito.verify;
 
 class RestPostEgressActionTest {
 
-    InMemoryContentService contentService = new InMemoryContentService();
+    InMemoryObjectStorageService inMemoryObjectStorageService = new InMemoryObjectStorageService();
 
     HttpService httpService = Mockito.mock(HttpService.class);
     ArgumentCaptor<InputStream> isCaptor = ArgumentCaptor.forClass(InputStream.class);
     @SuppressWarnings("unchecked")
     ArgumentCaptor<Map<String, String>> mapCaptor = ArgumentCaptor.forClass(Map.class);
 
-    RestPostEgressAction action = new RestPostEgressAction(contentService, httpService);
+    RestPostEgressAction action = new RestPostEgressAction(inMemoryObjectStorageService, httpService);
 
     static final String URL = "https://url.com";
     static final String PREFIX = "thePrefix";
@@ -76,9 +77,9 @@ class RestPostEgressActionTest {
     RestPostEgressParameters params = new RestPostEgressParameters(ACTION, EGRESS_FLOW, Collections.emptyMap(), URL, PREFIX);
 
     @BeforeEach
-    void setup() {
-        contentService.clear();
-        contentService.putObject(objectReference, data.getBytes());
+    void setup() throws ObjectStorageException {
+        inMemoryObjectStorageService.clear();
+        inMemoryObjectStorageService.putObject(objectReference.getBucket(), objectReference.getName(), data.getBytes());
     }
 
     @Test
@@ -102,7 +103,7 @@ class RestPostEgressActionTest {
 
     @Test
     void executeMissingData() {
-        contentService.clear();
+        inMemoryObjectStorageService.clear();
         Result result = action.execute(deltaFile, params);
 
         verify(httpService, never()).post(any(), any(), any());

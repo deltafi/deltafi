@@ -1,7 +1,8 @@
 package org.deltafi.actionkit.endpoint;
 
 import io.quarkus.arc.profile.UnlessBuildProfile;
-import org.deltafi.actionkit.service.ContentService;
+import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.core.domain.generated.types.ObjectReference;
 import org.jboss.resteasy.reactive.RestQuery;
 
@@ -19,31 +20,24 @@ public class ContentEndpoint {
     private String filename;
 
     @Inject
-    ContentService contentService;
+    ObjectStorageService objectStorageService;
 
     @POST
     @Consumes(MediaType.MEDIA_TYPE_WILDCARD)
     @Produces(MediaType.MEDIA_TYPE_WILDCARD)
-    public ObjectReference add(byte[] object) {
-        ObjectReference objectReference = ObjectReference.newBuilder()
+    public ObjectReference add(byte[] object) throws ObjectStorageException {
+        objectStorageService.putObject(bucket, filename, object);
+
+        return ObjectReference.newBuilder()
                 .bucket(bucket)
                 .name(filename)
                 .size(object.length)
-                .offset(0)
                 .build();
-        contentService.putObject(objectReference, object);
-        return objectReference;
     }
 
     @GET
     @Produces(MediaType.MEDIA_TYPE_WILDCARD)
-    public byte[] get(@RestQuery int offset, @RestQuery int size) {
-        ObjectReference objectReference = ObjectReference.newBuilder()
-                .bucket(bucket)
-                .name(filename)
-                .size(size)
-                .offset(offset)
-                .build();
-        return contentService.retrieveContent(objectReference);
+    public byte[] get(@RestQuery int offset, @RestQuery int size) throws ObjectStorageException {
+        return objectStorageService.getObject(bucket, filename, offset, size);
     }
 }

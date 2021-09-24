@@ -18,37 +18,6 @@ spec:
       - name: deltafi-ingress
         image: {{ .Values.deltafi.ingress.image }}
         env:
-        - name: DELTAFI_DGS_URL
-          value: {{ .Values.deltafi.core_domain_url }}
-        - name: MINIO_URL
-          value: {{ .Values.deltafi.minio_url}}
-        - name: MINIO_ACCESS
-          valueFrom:
-            secretKeyRef:
-              name: minio-keys
-              key: accesskey
-        - name: MINIO_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: minio-keys
-              key: secretkey
-        - name: ZIPKIN_URL
-          value: {{ .Values.deltafi.zipkin.url }}
-        - name: ZIPKIN_ENABLED
-          value: {{ .Values.deltafi.zipkin.enabled | quote }}
-        - name: ZIPKIN_INITIAL_DELAY
-          value: {{ .Values.deltafi.zipkin.initialDelayInMilli | quote }}
-        - name: ZIPKIN_FREQUENCY
-          value: {{ .Values.deltafi.zipkin.sendFrequencyInMilli | quote }}
-        - name: ZIPKIN_MAX_BATCH_SIZE
-          value: {{ .Values.deltafi.zipkin.maxBatchSize | quote }}
-        - name: REDIS_URL
-          value: {{ .Values.deltafi.redis_url}}
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: redis-password
-              key: redis-password
       {{- range $key, $val := .Values.deltafi.ingress.envVar }}
         - name: {{ $key }}
           value: {{ $val | quote }}
@@ -57,3 +26,4 @@ spec:
         - containerPort: 8080
       imagePullSecrets:
       - name: docker-secret
+      serviceAccountName: deltafi-auth

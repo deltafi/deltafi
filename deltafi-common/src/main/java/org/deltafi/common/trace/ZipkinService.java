@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.PreDestroy;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -13,36 +12,31 @@ import static java.util.Objects.nonNull;
 
 @Slf4j
 public class ZipkinService {
-    public static final String ROOT_PARENT_ID = "0";
-    public static final String ROOT_SPAN_NAME = "deltafile-flow";
-    public static final String SERVER = "SERVER";
-    public static final String DID = "did";
-    public static final String FLOW = "flow";
+    private static final String ROOT_PARENT_ID = "0";
+    private static final String ROOT_SPAN_NAME = "deltafile-flow";
+    private static final String SERVER = "SERVER";
+    private static final String DID = "did";
+    private static final String FLOW = "flow";
 
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final Queue<DeltafiSpan> spansQueue = new ConcurrentLinkedQueue<>();
+    private static final ScheduledExecutorService EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final Queue<DeltafiSpan> SPANS_QUEUE = new ConcurrentLinkedQueue<>();
 
     private final ZipkinRestClient zipkinRestClient;
     private final ZipkinConfig zipkinConfig;
 
-    public ZipkinService() {
-        zipkinRestClient = null;
-        zipkinConfig = null;
-    }
-
-    public ZipkinService(ZipkinRestClient zipkinRestClient, ZipkinConfig zipkinConfig) {
-        this.zipkinRestClient = zipkinRestClient;
+    public ZipkinService(ZipkinConfig zipkinConfig) {
         this.zipkinConfig = zipkinConfig;
+        this.zipkinRestClient = new ZipkinRestClient(zipkinConfig.url());
 
-        if (zipkinConfig.isEnabled()) {
-            scheduler.scheduleAtFixedRate(this::sendQueuedSpans, zipkinConfig.getInitialDelayInMilli(), zipkinConfig.getSendFrequencyInMilli(), TimeUnit.MILLISECONDS);
+        if (zipkinConfig.enabled()) {
+            EXECUTOR.scheduleAtFixedRate(this::sendQueuedSpans, zipkinConfig.sendInitialDelayMs(),
+                    zipkinConfig.sendPeriodMs(), TimeUnit.MILLISECONDS);
         }
     }
 
-    @PreDestroy
     public void shutdown() {
-        scheduler.shutdown();
+        EXECUTOR.shutdown();
     }
 
     /**
@@ -117,14 +111,14 @@ public class ZipkinService {
      */
     public void markSpanComplete(DeltafiSpan span) {
         span.endSpan();
-        spansQueue.add(span);
-        if (zipkinConfig.isEnabled() && spansQueue.size() >= zipkinConfig.getMaxBatchSize()) {
+        SPANS_QUEUE.add(span);
+        if (zipkinConfig.enabled() && SPANS_QUEUE.size() >= zipkinConfig.maxBatchSize()) {
             sendQueuedSpans();
         }
     }
 
     public void sendQueuedSpans() {
-        if (spansQueue.isEmpty()) {
+        if (SPANS_QUEUE.isEmpty()) {
             return;
         }
 
@@ -138,12 +132,12 @@ public class ZipkinService {
     String spansToJson() {
         List<DeltafiSpan> toSend = new ArrayList<>();
 
-        for (int cnt = 0; cnt < zipkinConfig.getMaxBatchSize() && !spansQueue.isEmpty(); cnt++) {
-            toSend.add(spansQueue.poll());
+        for (int cnt = 0; cnt < zipkinConfig.maxBatchSize() && !SPANS_QUEUE.isEmpty(); cnt++) {
+            toSend.add(SPANS_QUEUE.poll());
         }
 
         try {
-            return objectMapper.writeValueAsString(toSend);
+            return OBJECT_MAPPER.writeValueAsString(toSend);
         } catch (JsonProcessingException e) {
             log.error("Failed to send the following spans to Zipkin, {}", toSend, e);
         }
@@ -167,5 +161,4 @@ public class ZipkinService {
     private long uniqueId() {
         return ThreadLocalRandom.current().nextLong();
     }
-
 }

@@ -14,7 +14,7 @@
 # docker run -i --rm -p 8080:8080 quarkus/deltafi-core-actions-jvm
 #
 # If you want to include the debug port into your docker image
-# you will have to expose the debug port (default 5005) like this :  EXPOSE 8080 5050
+# you will have to expose the debug port (default 5005) like this :  EXPOSE 8080 5005
 #
 # Then run the container using :
 #
@@ -32,6 +32,10 @@ COPY --chown=1001 build/quarkus-app/lib/ /deployments/lib/
 COPY --chown=1001 build/quarkus-app/*.jar /deployments/
 COPY --chown=1001 build/quarkus-app/app/ /deployments/app/
 COPY --chown=1001 build/quarkus-app/quarkus/ /deployments/quarkus/
+
+#ENV JAVA_DEBUG_ENABLE=true
+#ENV JAVA_DEBUG_SUSPEND=y
+#EXPOSE 8080 5000
 
 EXPOSE 8080
 USER 1001

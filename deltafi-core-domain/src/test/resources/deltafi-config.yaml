@@ -25,7 +25,7 @@ egressFlows:
 transformActions:
   Utf8TransformAction:
     name: Utf8TransformAction
-    type: org.deltafi.dgs.TestAction
+    type: org.deltafi.core.domain.TestAction
     consumes: json
     produces: json-utf8
   SampleTransformAction:

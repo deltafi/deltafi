@@ -10,4 +10,4 @@
   deleteActions:
     DeleteAction:
       name: DeleteAction
-      type: org.deltafi.commonactions.delete.DeleteAction
+      type: org.deltafi.core.action.delete.DeleteAction

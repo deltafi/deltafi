@@ -1,14 +1,15 @@
 package org.deltafi.actionkit.service;
 
 import io.quarkus.runtime.StartupEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
-import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,25 +17,15 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-@Slf4j
 @ApplicationScoped
+@RequiredArgsConstructor
+@Slf4j
 public class HttpService {
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    @Inject
-    HttpClient httpClient;
+    private final HttpClient httpClient;
 
     // Guarantee instantiation if not injected...
     @SuppressWarnings("EmptyMethod")
     void startup(@Observes StartupEvent event) {}
-
-    static HttpService instance;
-
-    static public HttpService instance() { return instance; }
-
-    HttpService() {
-        log.info(this.getClass().getSimpleName() + " instantiated");
-        instance = this;
-    }
 
     @SuppressWarnings("UnusedReturnValue")
     @NotNull

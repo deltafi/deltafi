@@ -17,5 +17,4 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, Delta
     Page<DeltaFile> findAllByOrderByModifiedDesc(Pageable pageable);
     Page<DeltaFile> findByStageOrderByModifiedDesc(String stage, Pageable pageable);
     Page<DeltaFile> findBySourceInfoFilenameOrderByCreatedDesc(String filename, Pageable pageable);
-    //List<DeltaFile> findAllByDomainsErrorOriginatorDid(String originatorDid);
 }

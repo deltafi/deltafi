@@ -1,15 +1,15 @@
 # DeltaFi config
 deltafi:
-  zipkin:
-    enabled: true
-    initialDelayInMilli: 500
-    maxBatchSize: 10000
-    sendFrequencyInMilli: 500
-    url: http://deltafi-zipkin:9411/api/v2/spans
   minio_url: http://deltafi-minio:9000
   gateway_url: http://deltafi-gateway-service/graphql
   core_domain_url: http://deltafi-core-domain-service/graphql
   redis_url: http://deltafi-redis-master:6379
+  zipkin:
+    enabled: true
+    url: http://deltafi-zipkin:9411/api/v2/spans
+    sendInitialDelayMs: 500
+    sendPeriodMs: 500
+    maxBatchSize: 10000
   gateway:
     image: deltafi/deltafi-gateway:0.8.0
   passthrough_actions:
@@ -23,7 +23,6 @@ deltafi:
   ingress:
     image: deltafi/deltafi-ingress:0.8.0
     envVar:
-      MINIO_PART_SIZE: 100M
       HTTP_MAX_BODY_SIZE: 5G
   auth:
     image: deltafi/deltafi-auth:0.8.0

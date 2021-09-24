@@ -3,6 +3,8 @@ package org.deltafi.ingress.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import io.minio.ObjectWriteResponse;
+import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.generated.types.KeyValueInput;
@@ -10,7 +12,6 @@ import org.deltafi.core.domain.generated.types.ObjectReferenceInput;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
-import org.deltafi.ingress.exceptions.DeltafiMinioException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,8 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFileServiceTest {
@@ -35,7 +35,7 @@ class DeltaFileServiceTest {
     DeltaFileService deltaFileService;
 
     @Mock
-    MinioService minioService;
+    ObjectStorageService objectStorageService;
 
     @Mock
     GraphQLClientService graphQLClientService;
@@ -48,14 +48,14 @@ class DeltaFileServiceTest {
     ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void ingressData() throws DeltafiMinioException, DeltafiException, DeltafiMetadataException {
+    void ingressData() throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         mockMinio();
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": []}");
         Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenReturn(dgsResponse);
 
         String did = deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null);
 
-        Mockito.verify(minioService).putObject(did, OBJECT_NAME, null, -1L);
+        Mockito.verify(objectStorageService).putObject(eq(DeltaFiConstants.MINIO_BUCKET), eq(did + "/ingress-" + OBJECT_NAME), isNull(), eq(-1L));
         Mockito.verify(graphQLClientService).executeGraphQLQuery(any());
         Mockito.verify(zipkinService).createChildSpan(eq(did), eq(DeltaFileService.INGRESS_ACTION), eq(OBJECT_NAME), eq(FLOW), any());
         Mockito.verify(zipkinService).markSpanComplete(any());
@@ -69,7 +69,7 @@ class DeltaFileServiceTest {
         Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenReturn(dgsResponse);
 
         Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null));
-        Mockito.verify(minioService).removeObject(DeltaFiConstants.MINIO_BUCKET, OBJECT_NAME);
+        Mockito.verify(objectStorageService).removeObject(DeltaFiConstants.MINIO_BUCKET, OBJECT_NAME);
     }
 
     @Test
@@ -79,7 +79,7 @@ class DeltaFileServiceTest {
 
         Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null));
 
-        Mockito.verify(minioService).removeObject(DeltaFiConstants.MINIO_BUCKET, OBJECT_NAME);
+        Mockito.verify(objectStorageService).removeObject(DeltaFiConstants.MINIO_BUCKET, OBJECT_NAME);
     }
 
     @Test
@@ -89,13 +89,13 @@ class DeltaFileServiceTest {
 
         Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null));
 
-        Mockito.verify(minioService).removeObject(DeltaFiConstants.MINIO_BUCKET, OBJECT_NAME);
+        Mockito.verify(objectStorageService).removeObject(DeltaFiConstants.MINIO_BUCKET, OBJECT_NAME);
     }
 
     @Test
     void toObjectReferenceInput() {
         ObjectWriteResponse response = new ObjectWriteResponse(null, "storage", null, OBJECT_NAME, null,null);
-        Mockito.when(minioService.getObjectSize(response)).thenReturn(10L);
+        Mockito.when(objectStorageService.getObjectSize(response)).thenReturn(10L);
         ObjectReferenceInput objectReferenceInput = deltaFileService.toObjectReferenceInput(response);
 
         Assertions.assertEquals("storage", objectReferenceInput.getBucket());
@@ -133,10 +133,10 @@ class DeltaFileServiceTest {
     }
 
     void mockMinio() {
-        ObjectWriteResponse response = new ObjectWriteResponse(null, "storage", null, OBJECT_NAME, null,null);
+        ObjectWriteResponse response = new ObjectWriteResponse(null, DeltaFiConstants.MINIO_BUCKET, null, OBJECT_NAME, null,null);
         try {
-            Mockito.when(minioService.putObject(any(), eq(OBJECT_NAME), any(), eq(-1L))).thenReturn(response);
-        } catch (DeltafiMinioException e) {
+            Mockito.when(objectStorageService.putObject(eq(DeltaFiConstants.MINIO_BUCKET), any(), any(), eq(-1L))).thenReturn(response);
+        } catch (ObjectStorageException e) {
             Assertions.fail();
         }
     }

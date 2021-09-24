@@ -1,33 +1,27 @@
 package org.deltafi.actionkit.service;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import com.netflix.graphql.dgs.client.HttpResponse;
 import com.netflix.graphql.dgs.client.RequestExecutor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.DgsPostException;
 import org.jetbrains.annotations.NotNull;
 
+import javax.enterprise.context.ApplicationScoped;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @ApplicationScoped
+@RequiredArgsConstructor
+@Slf4j
 public class DgsPostService implements RequestExecutor {
-
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    @Inject
-    HttpClient httpClient;
+    private final HttpClient httpClient;
 
     private boolean healthy = true;
-
-    DgsPostService() {
-        log.info(this.getClass().getSimpleName() + " instantiated");
-    }
 
     // This is a special method specifically for GraphQLClient queries
     @NotNull

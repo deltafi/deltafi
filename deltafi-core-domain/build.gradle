@@ -84,11 +84,16 @@ dependencies {
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
 	implementation project(":deltafi-common")
+
+	implementation "javax.inject:javax.inject:1"
+
 	implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
 	implementation "org.springframework.boot:spring-boot-starter-aop"
 	implementation "org.springframework.retry:spring-retry"
 
 	implementation "redis.clients:jedis:${jedisVersion}"
+
+	implementation "io.minio:minio:${minioVersion}"
 
 	// Use DGS BOM to automatically define versions of other packages below
 	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
@@ -104,6 +109,9 @@ dependencies {
 
 	testImplementation "org.springframework.boot:spring-boot-starter-test"
 	testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.2.0"
+
+	testImplementation project(":deltafi-common-test")
+	testImplementation "org.testcontainers:testcontainers:1.16.0"
 }
 
 test {

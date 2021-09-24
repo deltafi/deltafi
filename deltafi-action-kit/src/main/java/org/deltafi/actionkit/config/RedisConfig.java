@@ -1,28 +1,25 @@
 package org.deltafi.actionkit.config;
 
 import io.quarkus.arc.profile.IfBuildProfile;
+import io.smallrye.config.ConfigMapping;
 import org.deltafi.actionkit.service.RedisActionEventService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
 import java.net.URISyntaxException;
-import java.util.Optional;
 
-@Singleton
 public class RedisConfig {
-
-    @ConfigProperty(name = "redis.url")
-    String redisUrl;
-
-    @ConfigProperty(name = "redis-password")
-    Optional<String> redisPassword;
-
-    @Produces
-    @Singleton
-    @IfBuildProfile("prod")
-    public RedisActionEventService redisService() throws URISyntaxException {
-        return new RedisActionEventService(redisUrl, redisPassword.orElse(""));
+    @ConfigMapping(prefix = "redis")
+    public interface Config {
+        String url();
     }
 
+    @ConfigProperty(name = "redis-password") // not under redis config mapping since it's pulled from redis-password secret by quarkus-kubernetes-config extension
+    String password;
+
+    @IfBuildProfile("prod")
+    @Produces
+    public RedisActionEventService redisActionEventService(Config config) throws URISyntaxException {
+        return new RedisActionEventService(config.url(), password);
+    }
 }

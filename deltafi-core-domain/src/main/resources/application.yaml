@@ -13,7 +13,9 @@ spring:
       pool:
         # provide threads for scheduled redis long poll tasks
         size: 32
+
 deltafi:
+  namespace: deltafi
   requeueSeconds: 30
   delete:
     onCompletion: false
@@ -23,13 +25,24 @@ deltafi:
         type: ageOff
         parameters:
           afterComplete: PT1H
-  namespace: deltafi
-  zipkin:
-    enabled: ${ZIPKIN_ENABLED:true}
-    url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
-    initialDelayInMilli: ${ZIPKIN_INITIAL_DELAY:500}
-    sendFrequencyInMilli: ${ZIPKIN_FREQUENCY:500}
-    maxBatchSize: ${ZIPKIN_MAX_BATCH_SIZE:10000}
+  housekeeping:
+    initialDelaySeconds: 60
+    delaySeconds: 3600
+    objectMinimumAgeForRemovalSeconds: 900
+
+minio:
+  url: ${MINIO_URL:http://deltafi-minio:9000}
+  access-key: ${MINIO_ACCESS:minioadmin}
+  secret-key: ${MINIO_SECRET:minioadmin}
+  part-size: ${MINIO_PART_SIZE:100000000}
+
 redis:
-  url: ${REDIS_URL:http://localhost:6379}
-  password: ${REDIS_PASSWORD:}
+  url: ${REDIS_URL:http://http://deltafi-redis-master:6379}
+  password: ${REDIS_PASSWORD:redis}
+
+zipkin:
+  enabled: ${ZIPKIN_ENABLED:true}
+  url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
+  send-initial-delay-ms: ${ZIPKIN_SEND_INITIAL_DELAY:500}
+  send-period-ms: ${ZIPKIN_SEND_PERIOD:500}
+  max-batch-size: ${ZIPKIN_MAX_BATCH_SIZE:10000}

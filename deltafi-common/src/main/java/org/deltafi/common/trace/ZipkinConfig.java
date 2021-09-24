@@ -1,14 +1,21 @@
 package org.deltafi.common.trace;
 
-import lombok.Getter;
-import lombok.Setter;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 
-@Getter
-@Setter
-public class ZipkinConfig {
-    private boolean enabled = true;
-    private long initialDelayInMilli = 500L;
-    private long sendFrequencyInMilli = 500L;
-    private int maxBatchSize = 10_000;
-    private String url;
+@ConfigMapping(prefix = "zipkin")
+public interface ZipkinConfig {
+    @WithDefault("true")
+    boolean enabled();
+
+    String url();
+
+    @WithDefault("500")
+    long sendInitialDelayMs();
+
+    @WithDefault("500")
+    long sendPeriodMs();
+
+    @WithDefault("10000")
+    int maxBatchSize();
 }

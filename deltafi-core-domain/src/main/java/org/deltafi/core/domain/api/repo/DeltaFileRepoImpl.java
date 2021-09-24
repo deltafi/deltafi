@@ -14,6 +14,9 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -22,6 +25,8 @@ import static java.util.Objects.nonNull;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
+    private static final String COLLECTION = "deltaFile";
+
     public static final String ID = "_id";
     public static final String VERSION = "version";
     public static final String MODIFIED = "modified";
@@ -44,6 +49,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
 
     private final MongoTemplate mongoTemplate;
+
+    @Override
+    public Set<String> readDids() {
+        return StreamSupport
+                .stream(mongoTemplate.getCollection(COLLECTION).distinct(ID, String.class).spliterator(), true)
+                .collect(Collectors.toSet());
+    }
 
     @Override
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds) {

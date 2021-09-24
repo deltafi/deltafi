@@ -1,29 +1,26 @@
 package org.deltafi.common.trace;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+@Slf4j
 public class ZipkinRestClient {
-
-    private static final Logger log = LoggerFactory.getLogger(ZipkinRestClient.class);
-
-    private final HttpClient httpClient;
     private final String url;
+    private final HttpClient httpClient;
 
-    public ZipkinRestClient(HttpClient httpClient, String url) {
-        this.httpClient = httpClient;
+    public ZipkinRestClient(String url) {
         this.url = url;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     void sendSpan(String spanJson) {
         httpClient.sendAsync(buildRequest(spanJson), HttpResponse.BodyHandlers.ofString())
-            .thenAcceptAsync(response -> processResponse(response, spanJson))
-            .exceptionally(throwable -> processException(throwable, spanJson));
+                .thenAcceptAsync(response -> processResponse(response, spanJson))
+                .exceptionally(throwable -> processException(throwable, spanJson));
     }
 
     public HttpRequest buildRequest(String spanJson) {
@@ -40,5 +37,4 @@ public class ZipkinRestClient {
         log.error("Failed to send {} to Zipkin with an exception", spanJson, throwable);
         return null;
     }
-
 }

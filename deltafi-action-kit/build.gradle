@@ -77,12 +77,13 @@ dependencies {
 
     implementation "redis.clients:jedis:${jedisVersion}"
 
+    implementation "io.minio:minio:${minioVersion}"
+
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-resteasy-reactive'
     implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation 'io.quarkus:quarkus-kubernetes-config'
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
-    implementation "io.minio:minio:${minioVersion}"
 
     implementation 'com.netflix.graphql.dgs:graphql-dgs-client'
     implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"

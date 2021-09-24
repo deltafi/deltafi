@@ -5,33 +5,33 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.minio.ObjectWriteResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatAction;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.service.ContentService;
+import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.generated.types.ObjectReference;
 
 import java.util.Objects;
 
+import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
+
+@RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings("unused")
 public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
-
-    final ContentService contentService;
-
-    public SimpleErrorFormatAction(ContentService contentService) {
-        this.contentService = contentService;
-    }
-
-    private final static ObjectMapper objectMapper =
+    private final static ObjectMapper OBJECT_MAPPER =
             JsonMapper.builder()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true)
                     .addModule(new JavaTimeModule()).build();
+
+    private final ObjectStorageService objectStorageService;
 
     @Override
     public Result execute(DeltaFile deltaFile, ActionParameters params) {
@@ -45,7 +45,7 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
 
         ErrorDomain errorDomain;
         try {
-            errorDomain = objectMapper.readValue(json, ErrorDomain.class);
+            errorDomain = OBJECT_MAPPER.readValue(json, ErrorDomain.class);
         } catch (Exception e) {
             throw new RuntimeException("Error converting JSON to ErrorDomain.\n" + json, e);
         }
@@ -61,16 +61,29 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
             throw new RuntimeException(err, t);
         }
 
-        ObjectReference objectReference = contentService.putObject(json, deltaFile, params.getName());
-
         FormatResult result = new FormatResult(params.getName(), deltaFile.getDid(), filename);
         addSourceInputMetadata(result, deltaFile);
         addProtocolStackMetadata(result, deltaFile);
-        result.setObjectReference(objectReference);
+
+        try {
+            ObjectWriteResponse objectWriteResponse = objectStorageService.putObject(
+                    MINIO_BUCKET, deltaFile.getDid() + "/" + params.getName(), json.getBytes());
+            result.setObjectReference(fromObjectWriteResponse(objectWriteResponse, json.getBytes().length));
+        } catch (ObjectStorageException e) {
+            throw new RuntimeException("Failed to write transformed data to minio " + e.getMessage());
+        }
 
         generateMetrics(deltaFile, params.getName());
 
         return result;
+    }
+
+    private ObjectReference fromObjectWriteResponse(ObjectWriteResponse response, long size) {
+        return ObjectReference.newBuilder()
+                .bucket(response.bucket())
+                .name(response.object())
+                .size(size)
+                .build();
     }
 
     @Override

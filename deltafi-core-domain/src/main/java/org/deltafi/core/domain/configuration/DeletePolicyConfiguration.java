@@ -1,13 +1,11 @@
 package org.deltafi.core.domain.configuration;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
-@Setter
+@Data
 public class DeletePolicyConfiguration {
     private String type;
     private Map<String, String> parameters = new HashMap<>();

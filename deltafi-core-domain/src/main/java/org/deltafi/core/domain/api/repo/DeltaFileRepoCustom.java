@@ -4,8 +4,14 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 
 public interface DeltaFileRepoCustom {
+    /**
+     * Reads the ids for all DeltaFiles in the repository.
+     * @return the set of ids for all DeltaFiles in the repository
+     */
+    Set<String> readDids();
 
     /**
      * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.

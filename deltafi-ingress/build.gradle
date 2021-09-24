@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'io.quarkus'
     id 'idea'
-	  id "com.palantir.docker" version "${palantirDockerVersion}"
+    id "com.palantir.docker" version "${palantirDockerVersion}"
 }
 
 java {
@@ -20,25 +20,33 @@ compileTestJava {
 }
 
 dependencies {
-    implementation project(":deltafi-common")
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+
     // Use DGS BOM to automatically define versions of other packages below
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
         because 'DGS BOM to automatically define versions of other packages below'
     }
+
+    implementation project(":deltafi-common")
     implementation project(path: ':deltafi-core-domain', configuration: 'jars')
+
+    implementation "redis.clients:jedis:${jedisVersion}"
+
+    implementation "io.minio:minio:${minioVersion}"
+
+    implementation "io.quarkus:quarkus-arc"
+    implementation "io.quarkus:quarkus-config-yaml"
+    implementation "io.quarkus:quarkus-kotlin"
     implementation "io.quarkus:quarkus-resteasy"
     implementation "io.quarkus:quarkus-resteasy-jackson"
-    implementation "io.quarkiverse.minio:quarkus-minio:2.0.0"
-    implementation "io.quarkus:quarkus-arc"
-    implementation "io.quarkus:quarkus-kotlin"
-    implementation "com.netflix.graphql.dgs:graphql-dgs-client"
-    implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
-    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+    implementation 'io.quarkus:quarkus-kubernetes-config'
     implementation("io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}") {
         because 'Plugin to allow JSON formatted logging for log scraping'
     }
-    implementation "redis.clients:jedis:${jedisVersion}"
+
+    implementation "com.netflix.graphql.dgs:graphql-dgs-client"
+    implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
+
     testImplementation "io.quarkus:quarkus-junit5"
     testImplementation "io.quarkus:quarkus-junit5-mockito"
     testImplementation "io.rest-assured:rest-assured"

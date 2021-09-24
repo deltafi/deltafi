@@ -7,7 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.service.InMemoryContentService;
+import org.deltafi.actionkit.service.InMemoryObjectStorageService;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.generated.types.KeyValue;
@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleErrorFormatActionTest {
 
-    InMemoryContentService contentService = new InMemoryContentService();
+    InMemoryObjectStorageService inMemoryObjectStorageService = new InMemoryObjectStorageService();
 
-    SimpleErrorFormatAction action = new SimpleErrorFormatAction(contentService);
+    SimpleErrorFormatAction action = new SimpleErrorFormatAction(inMemoryObjectStorageService);
 
     static final String ACTION = "MyErrorFormatAction";
 
@@ -59,7 +59,7 @@ public class SimpleErrorFormatActionTest {
 
     @BeforeEach
     void setup() throws JsonProcessingException {
-        contentService.clear();
+        inMemoryObjectStorageService.clear();
         deltaFile.setDomains(Collections.singletonList(KeyValue.newBuilder().key("error").value(objectMapper.writeValueAsString(errorDomain)).build()));
     }
 
@@ -73,7 +73,8 @@ public class SimpleErrorFormatActionTest {
         assertEquals(ACTION, formatResult.toEvent().getAction());
         assertEquals(ORIGINATOR_DID + "." + FILENAME + ".error", formatResult.getFilename());
         ObjectReference objectReference = objectMapper.convertValue(formatResult.getObjectReference(), ObjectReference.class);
-        ErrorDomain actual = objectMapper.readValue(new String(contentService.retrieveContent(objectReference)), ErrorDomain.class);
+        ErrorDomain actual = objectMapper.readValue(new String(inMemoryObjectStorageService.getObject(
+                objectReference.getBucket(), objectReference.getName(), objectReference.getOffset(), objectReference.getSize())), ErrorDomain.class);
         assertEquals(ORIGINATOR_DID, actual.getOriginatorDid());
     }
 }

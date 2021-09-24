@@ -5,9 +5,9 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
-import org.deltafi.ingress.exceptions.DeltafiMinioException;
 import org.deltafi.ingress.service.DeltaFileService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ class DeltaFileRestTest {
     DeltaFileService deltaFileService;
 
     @Test
-    void testIngress() throws DeltafiMinioException, DeltafiException, DeltafiMetadataException {
+    void testIngress() throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         RequestSpecification request = RestAssured.given();
         request.body("incoming data".getBytes(StandardCharsets.UTF_8));
         request.contentType("application/octet-stream");
@@ -65,7 +65,7 @@ class DeltaFileRestTest {
     }
 
     @Test
-    void testIngress_queryParams() throws DeltafiMinioException, DeltafiException, DeltafiMetadataException {
+    void testIngress_queryParams() throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         RequestSpecification request = RestAssured.given();
         request.body("incoming data".getBytes(StandardCharsets.UTF_8));
         request.contentType("application/octet-stream");

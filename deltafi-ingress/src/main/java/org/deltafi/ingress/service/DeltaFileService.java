@@ -9,6 +9,10 @@ import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.minio.ObjectWriteResponse;
 import io.quarkiverse.loggingjson.providers.KeyValueStructuredArgument;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.common.metric.MetricBuilder;
 import org.deltafi.common.metric.MetricType;
@@ -24,9 +28,6 @@ import org.deltafi.core.domain.generated.types.SourceInfoInput;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
-import org.deltafi.ingress.exceptions.DeltafiMinioException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.InputStream;
@@ -34,39 +35,33 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@ApplicationScoped
-public class DeltaFileService {
+import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
 
-    private static final Logger log = LoggerFactory.getLogger(DeltaFileService.class);
+@ApplicationScoped
+@RequiredArgsConstructor
+@Slf4j
+public class DeltaFileService {
+    public static final String INGRESS_ACTION = "IngressAction";
 
     private static final String FILENAME = "filename";
     private static final String FLOW = "flow";
-    public static final String METRIC_KEY = "metric";
-    public static final String METRIC_SOURCE = "ingress";
+    private static final String METRIC_KEY = "metric";
+    private static final String METRIC_SOURCE = "ingress";
     private static final String FILES_IN = "files_in";
     private static final String BYTES_IN = "bytes_in";
     private static final String FILES_DROPPED = "files_dropped";
     private static final String BYTES_DROPPED = "bytes_dropped";
-    public static final String INGRESS_ACTION = "IngressAction";
 
-    final GraphQLClientService graphQLClientService;
-    final MinioService minioService;
-    final ZipkinService zipkinService;
-    final ObjectMapper objectMapper;
+    private final GraphQLClientService graphQLClientService;
+    private final ObjectStorageService objectStorageService;
+    private final ZipkinService zipkinService;
+    private final ObjectMapper objectMapper;
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public DeltaFileService(GraphQLClientService graphQLClientService, MinioService minioService, ZipkinService zipkinService, ObjectMapper objectMapper) {
-        this.graphQLClientService = graphQLClientService;
-        this.minioService = minioService;
-        this.zipkinService = zipkinService;
-        this.objectMapper = objectMapper;
-    }
-
-    public String ingressData(InputStream inputStream, String filename, String flow, String metadata) throws DeltafiMinioException, DeltafiGraphQLException, DeltafiException, DeltafiMetadataException {
+    public String ingressData(InputStream inputStream, String filename, String flow, String metadata) throws ObjectStorageException, DeltafiGraphQLException, DeltafiException, DeltafiMetadataException {
         OffsetDateTime now = OffsetDateTime.now();
         String did = UUID.randomUUID().toString();
 
-        ObjectWriteResponse response = minioService.putObject(did, filename, inputStream, -1L);
+        ObjectWriteResponse response = objectStorageService.putObject(MINIO_BUCKET, objectName(did, filename), inputStream, -1L);
         ObjectReferenceInput objectReferenceInput = toObjectReferenceInput(response);
         SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().filename(filename).flow(flow).metadata(fromMetadataString(metadata)).build();
         IngressInput ingressInput = IngressInput.newBuilder().did(did).sourceInfo(sourceInfoInput).objectReference(objectReferenceInput).created(now).build();
@@ -76,11 +71,16 @@ public class DeltaFileService {
         return did;
     }
 
+    private String objectName(String did, String incomingName) {
+        String fileName = Objects.isNull(incomingName) ? "ingress-unknown-incomingName" : "ingress-" + incomingName;
+        return did + "/" + fileName;
+    }
+
     public ObjectReferenceInput toObjectReferenceInput(ObjectWriteResponse response) {
         return ObjectReferenceInput.newBuilder()
                 .bucket(response.bucket())
                 .name(response.object())
-                .size(minioService.getObjectSize(response))
+                .size(objectStorageService.getObjectSize(response))
                 .offset(0L).build();
     }
 
@@ -98,7 +98,7 @@ public class DeltaFileService {
 
     }
 
-    public KeyValueInput toKeyValueInput(Map.Entry<String,JsonNode> entry) {
+    public KeyValueInput toKeyValueInput(Map.Entry<String, JsonNode> entry) {
         JsonNode node = entry.getValue();
         String value = node.isTextual() ? node.asText() : node.toString();
         return KeyValueInput.newBuilder().key(entry.getKey()).value(value).build();
@@ -146,7 +146,7 @@ public class DeltaFileService {
         if (log.isWarnEnabled()) {
             log.warn("Removing object: {} from bucket: {}", objectReference.getName(), objectReference.getBucket());
         }
-        minioService.removeObject(objectReference.getBucket(), objectReference.getName());
+        objectStorageService.removeObject(objectReference.getBucket(), objectReference.getName());
     }
 
 

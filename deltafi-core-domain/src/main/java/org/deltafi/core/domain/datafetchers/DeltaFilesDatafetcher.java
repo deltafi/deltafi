@@ -5,10 +5,9 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
-import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.IngressInput;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.services.DeltaFilesService;
 
 import java.util.List;
@@ -16,12 +15,9 @@ import java.util.Objects;
 
 @DgsComponent
 public class DeltaFilesDatafetcher {
-  final DeltaFiProperties deltaFiProperties;
   final DeltaFilesService deltaFilesService;
 
-  @SuppressWarnings("CdiInjectionPointsInspection")
-  DeltaFilesDatafetcher(DeltaFiProperties deltaFiProperties, DeltaFilesService deltaFilesService) {
-    this.deltaFiProperties = deltaFiProperties;
+  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService) {
     this.deltaFilesService = deltaFilesService;
   }
 

@@ -40,9 +40,17 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public abstract class Action<P extends ActionParameters> {
+    private static final ObjectMapper OBJECT_MAPPER =
+            new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-    private static final ObjectMapper mapper = new ObjectMapper()
-        .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final SchemaGenerator SCHEMA_GENERATOR;
+
+    static {
+        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2019_09, OptionPreset.PLAIN_JSON)
+                .without(Option.SCHEMA_VERSION_INDICATOR)
+                .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM));
+        SCHEMA_GENERATOR = new SchemaGenerator(configBuilder.build());
+    }
 
     @Inject
     DomainGatewayService domainGatewayService;
@@ -59,15 +67,6 @@ public abstract class Action<P extends ActionParameters> {
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "missing-value")
     String version;
 
-    private static final SchemaGenerator generator;
-
-    static {
-        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2019_09, OptionPreset.PLAIN_JSON)
-                .without(Option.SCHEMA_VERSION_INDICATOR)
-                .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM));
-        generator = new SchemaGenerator(configBuilder.build());
-    }
-
     public void start(@Observes StartupEvent start) {
         // quarkus will prune the actions if this is not included
     }
@@ -80,16 +79,12 @@ public abstract class Action<P extends ActionParameters> {
     void startAction() {
         log.info("Starting action: {}", getFeedString());
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleWithFixedDelay(this::startListening,
-                config.action_polling_start_delay_ms,
-                config.action_polling_frequency_ms,
-                TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(this::startListening, config.actionPollingInitialDelayMs(),
+                config.actionPollingPeriodMs(), TimeUnit.MILLISECONDS);
 
         final ScheduledExecutorService registerScheduler = Executors.newScheduledThreadPool(1);
-        registerScheduler.scheduleWithFixedDelay(this::registerParamSchema,
-                config.action_registration_start_delay_ms,
-                config.action_registration_frequency_ms,
-                TimeUnit.MILLISECONDS);
+        registerScheduler.scheduleWithFixedDelay(this::registerParamSchema, config.actionRegistrationInitialDelayMs(),
+                config.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
     }
 
     private void startListening() {
@@ -148,14 +143,14 @@ public abstract class Action<P extends ActionParameters> {
 
     void doRegisterParamSchema() {
         JsonNode schemaJson = getSchema(getParamType());
-        JsonMap definition = mapper.convertValue(schemaJson, JsonMap.class);
+        JsonMap definition = OBJECT_MAPPER.convertValue(schemaJson, JsonMap.class);
         ActionSchemaInput paramInput = ActionSchemaInput.newBuilder().actionClass(getClassCanonicalName())
                 .paramClass(getParamType().getCanonicalName()).actionKitVersion(version).schema(definition).build();
 
         RegisterActionProjectionRoot projectionRoot = new RegisterActionProjectionRoot().actionClass();
 
         RegisterActionGraphQLQuery graphQLQuery = RegisterActionGraphQLQuery.newRequest().actionSchema(paramInput).build();
-                GraphQLQueryRequest request = new GraphQLQueryRequest(graphQLQuery, projectionRoot);
+        GraphQLQueryRequest request = new GraphQLQueryRequest(graphQLQuery, projectionRoot);
 
         log.trace("Registering schema: {}", schemaJson.toPrettyString());
         domainGatewayService.submit(request);
@@ -167,11 +162,11 @@ public abstract class Action<P extends ActionParameters> {
 
 
     private JsonNode getSchema(Class<?> clazz) {
-        return generator.generateSchema(clazz);
+        return SCHEMA_GENERATOR.generateSchema(clazz);
     }
 
     public P convertToParams(Map<String, Object> params) {
-        return mapper.convertValue(params, getParamType());
+        return OBJECT_MAPPER.convertValue(params, getParamType());
     }
 
 }

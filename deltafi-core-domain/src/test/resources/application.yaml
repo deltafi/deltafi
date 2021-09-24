@@ -1,23 +1,32 @@
 spring:
   main:
     allow-bean-definition-overriding: true
+  data:
+    mongodb:
+      database: deltafi-test
   mongodb:
     embedded:
       version: 4.0.23
       features: only_with_ssl, sync_delay, no_http_interface_arg
-  data:
-    mongodb:
-      database: deltafi-test
-      auto-index-creation: true
+
 deltafi:
-  requeueSeconds: 30
   delete:
-    onCompletion: false
     frequency: PT1S
     policies:
       twoSecondsAfterComplete:
         type: ageOff
         parameters:
           afterComplete: PT2S
+  housekeeping:
+    initialDelaySeconds: 60
+    delaySeconds: 3600
+    objectMinimumAgeForRemovalSeconds: 900
+
+minio:
+  url: http://localhost
+  access-key: minioadmin
+  secret-key: minioadmin
+
 redis:
-  port: 6379
+  url: http://localhost
+  password: redis

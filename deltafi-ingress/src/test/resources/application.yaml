@@ -1,0 +1,15 @@
+quarkus:
+  http:
+    test-port: 0
+  kubernetes-config:
+    enabled: false
+
+# Set these manually since kubernetes-config is disabled (above) for tests.
+accesskey: minioadmin
+secretkey: minioadmin
+redis-password: redis
+
+smallrye:
+  config:
+    mapping:
+      validate-unknown: false # @QuarkusTest erroneously pulls in application.yaml from deltafi-core-domain!

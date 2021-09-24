@@ -1,14 +1,12 @@
 package org.deltafi.core.domain.configuration;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
-@Setter
+@Data
 public class DeleteConfiguration {
     private Map<String, DeletePolicyConfiguration> policies = new HashMap<>();
     private Duration frequency = Duration.ofMinutes(10);

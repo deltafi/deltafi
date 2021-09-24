@@ -35,6 +35,18 @@ spec:
             secretKeyRef:
               name: mongodb-passwords
               key: mongodb-password
+        - name: MINIO_URL
+          value: {{ .Values.deltafi.minio_url}}
+        - name: MINIO_ACCESS
+          valueFrom:
+            secretKeyRef:
+              name: minio-keys
+              key: accesskey
+        - name: MINIO_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: minio-keys
+              key: secretkey
         - name: REDIS_URL
           value: {{ .Values.deltafi.redis_url }}
         - name: REDIS_PASSWORD
@@ -46,10 +58,10 @@ spec:
           value: {{ .Values.deltafi.zipkin.url }}
         - name: ZIPKIN_ENABLED
           value: {{ .Values.deltafi.zipkin.enabled | quote }}
-        - name: ZIPKIN_INITIAL_DELAY
-          value: {{ .Values.deltafi.zipkin.initialDelayInMilli | quote }}
-        - name: ZIPKIN_FREQUENCY
-          value: {{ .Values.deltafi.zipkin.sendFrequencyInMilli | quote }}
+        - name: ZIPKIN_SEND_INITIAL_DELAY
+          value: {{ .Values.deltafi.zipkin.sendInitialDelayMs | quote }}
+        - name: ZIPKIN_SEND_PERIOD
+          value: {{ .Values.deltafi.zipkin.sendPeriodMs | quote }}
         - name: ZIPKIN_MAX_BATCH_SIZE
           value: {{ .Values.deltafi.zipkin.maxBatchSize | quote }}
         volumeMounts:

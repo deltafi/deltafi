@@ -16,11 +16,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @TestPropertySource(properties = "enableScheduling=false")
@@ -31,6 +31,18 @@ class DeltaFileRepoTest {
     @BeforeEach
     public void setup() {
         deltaFileRepo.deleteAll();
+    }
+
+    @Test
+    void testReadDids() {
+        Set<String> dids = Set.of("a", "b", "c");
+        List<DeltaFile> deltaFiles = dids.stream().map(Util::buildDeltaFile).collect(Collectors.toList());
+        deltaFileRepo.saveAll(deltaFiles);
+
+        Set<String> didsRead = deltaFileRepo.readDids();
+
+        assertEquals(3, didsRead.size());
+        assertTrue(didsRead.containsAll(dids));
     }
 
     @Test

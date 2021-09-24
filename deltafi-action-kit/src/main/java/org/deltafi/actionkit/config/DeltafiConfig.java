@@ -1,51 +1,25 @@
 package org.deltafi.actionkit.config;
 
-import io.quarkus.arc.config.ConfigProperties;
-import io.quarkus.runtime.annotations.ConfigGroup;
-import io.quarkus.runtime.annotations.ConfigItem;
-import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.trace.ZipkinConfig;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 
-import java.util.Map;
+@ConfigMapping(prefix = "deltafi")
+public interface DeltafiConfig {
+    @WithDefault("3000")
+    long actionPollingInitialDelayMs();
 
-@Slf4j
-@ConfigProperties(prefix = "deltafi")
-@ConfigGroup
-public class DeltafiConfig {
+    @WithDefault("100")
+    long actionPollingPeriodMs();
 
-    // Quarkus config items...just terrible
-    // https://github.com/quarkusio/quarkus/issues/2765
-    // You have to specify and initialize the defaultValue for this to work...
-    @ConfigItem(defaultValue = "3000")
-    public int action_polling_start_delay_ms = 3000;
+    @WithDefault("1000")
+    long actionRegistrationInitialDelayMs();
 
-    @ConfigItem(defaultValue = "100")
-    public int action_polling_frequency_ms = 100;
+    @WithDefault("10000")
+    long actionRegistrationPeriodMs();
 
-    @ConfigItem(defaultValue = "1000")
-    public int action_registration_start_delay_ms = 1000;
-
-    @ConfigItem(defaultValue = "10000")
-    public int action_registration_frequency_ms = 10_000;
-
-    public ZipkinConfig zipkin = new ZipkinConfig();
-
-    public ZipkinConfig getZipkin() {
-        return zipkin;
+    interface DgsConfig {
+        String url();
     }
 
-    public void setZipkin(ZipkinConfig zipkin) {
-        this.zipkin = zipkin;
-    }
-
-    public static class ActionSpec {
-        @ConfigItem
-        public String name;
-
-        @ConfigItem
-        public String type;
-
-        @ConfigItem
-        public Map<String, Object> parameters;
-    }
+    DgsConfig dgs();
 }
