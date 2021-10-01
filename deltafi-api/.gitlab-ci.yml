@@ -1,0 +1,9 @@
+.api:
+  variables:
+    PROJECT_NAME: deltafi-api
+
+api:docker:
+  stage: docker
+  extends:
+    - .api
+    - .docker

@@ -28,6 +28,8 @@ deltafi:
     image: deltafi/deltafi-auth:0.9.0
     mode: disabled # basic, cert, or disabled
     secret: auth-secret
+  api:
+    image: deltafi/deltafi-api:0.9.0
 # Kubernetes ingress config
 ingress:
   domain: local.deltafi.org

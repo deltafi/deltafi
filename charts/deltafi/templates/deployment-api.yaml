@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-api
+  labels:
+    app: deltafi-api
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-api
+  template:
+    metadata:
+      labels:
+        app: deltafi-api
+    spec:
+      containers:
+      - name: deltafi-api
+        image: {{ .Values.deltafi.api.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9292
+      serviceAccountName: deltafi-api
