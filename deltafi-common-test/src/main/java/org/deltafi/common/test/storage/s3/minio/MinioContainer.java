@@ -12,7 +12,7 @@ public class MinioContainer extends GenericContainer<MinioContainer> {
     protected String secretKey;
 
     public MinioContainer(String accessKey, String secretKey) {
-        super("minio/minio:edge");
+        super("minio/minio:RELEASE.2021-02-14T04-01-33Z");
 
         this.accessKey = accessKey;
         this.secretKey = secretKey;
