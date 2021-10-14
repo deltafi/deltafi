@@ -3,6 +3,6 @@ kind: ClusterRole
 metadata:
   name: api-role
 rules:
-- apiGroups: ["metrics.k8s.io"]
-  resources: ["nodes", "pods"]
+- apiGroups: ["metrics.k8s.io", ""]
+  resources: ["nodes", "pods", "persistentvolumes"]
   verbs: ["get", "list", "watch"]

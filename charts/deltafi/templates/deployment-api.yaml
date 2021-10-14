@@ -20,6 +20,9 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292
+        env:
+        - name: RUNNING_IN_CLUSTER
+          value: "true"
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api

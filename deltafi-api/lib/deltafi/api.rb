@@ -3,6 +3,10 @@
 module Deltafi
   module API
     NAMESPACE = 'deltafi'
+
+    def self.k8s_client
+      ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path '~/.kube/config')) : K8s::Client.in_cluster_config
+    end
   end
 end
 

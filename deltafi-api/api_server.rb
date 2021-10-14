@@ -10,12 +10,11 @@ class ApiServer < Sinatra::Base
     enable :logging
   end
 
-  get '/v1/metrics/nodes/?:node_name?' do
-    Deltafi::API::Metrics.nodes(params[:node_name]).to_json
-  end
-
-  get '/v1/metrics/pods/?:pod_name?' do
-    Deltafi::API::Metrics.pods(params[:pod_name]).to_json
+  get '/v1/metrics/system/nodes' do
+    {
+      nodes: Deltafi::API::Metrics::System.nodes,
+      timestamp: Time.now
+    }.to_json
   end
 
   run! if __FILE__ == $0
