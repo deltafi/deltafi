@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'k8s-ruby'
-
 module Deltafi
   module API
     module Metrics

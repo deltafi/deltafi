@@ -5,6 +5,7 @@ source 'https://rubygems.org'
 gem 'awesome_print'
 gem 'sinatra'
 gem 'k8s-ruby'
+gem 'httparty'
 
 group :test, :development do
   gem 'rspec', '~> 3.0'
