@@ -30,6 +30,8 @@ deltafi:
     secret: auth-secret
   api:
     image: deltafi/deltafi-api:0.10.0
+  ui:
+    image: nginx:alpine
 # Kubernetes ingress config
 ingress:
   domain: local.deltafi.org

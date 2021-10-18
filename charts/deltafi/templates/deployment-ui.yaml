@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-ui
+  labels:
+    app: deltafi-ui
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-ui
+  template:
+    metadata:
+      labels:
+        app: deltafi-ui
+    spec:
+      containers:
+      - name: deltafi-ui
+        image: {{ .Values.deltafi.ui.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        env:
+        - name: RUNNING_IN_CLUSTER
+          value: "true"
+      imagePullSecrets:
+      - name: docker-secret
+      serviceAccountName: deltafi-api

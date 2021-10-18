@@ -10,19 +10,19 @@ class ApiServer < Sinatra::Base
     enable :logging
   end
 
-  get '/v1/errors' do
+  get '/api/v1/errors' do
     count = params[:count] || 10
     build_response({ errors: Deltafi::API::Errors.last_errored(count) })
   end
 
-  post '/v1/errors/retry' do
+  post '/api/v1/errors/retry' do
     raise 'did required' unless params[:did]
     raise 'Provided did is not a valid UUID' unless valid_uuid?(params[:did])
 
     build_response({ retry: Deltafi::API::Errors.retry(params[:did]) })
   end
 
-  get '/v1/metrics/system/nodes' do
+  get '/api/v1/metrics/system/nodes' do
     build_response({ nodes: Deltafi::API::Metrics::System.nodes })
   end
 
