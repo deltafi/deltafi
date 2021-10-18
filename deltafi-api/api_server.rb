@@ -10,6 +10,10 @@ class ApiServer < Sinatra::Base
     enable :logging
   end
 
+  before do
+    content_type 'application/json'
+  end
+
   get '/api/v1/errors' do
     count = params[:count] || 10
     build_response({ errors: Deltafi::API::Errors.last_errored(count) })
