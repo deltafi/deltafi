@@ -44,10 +44,15 @@
         <Column :expander="true"  field="errors.length" header="Error Count"></Column>
         <Column field="did" header="Retry"></Column>
         <template #expansion="errors">
-        <div>
-          <h5>goofy</h5>
-          <a>{{errors}}</a>
-        </div>
+          <div class="errors-Subtable">
+            <DataTable :value="errors.data.errors" >
+              <Column field="action" header="Action"></Column>
+              <Column field="state" header="State"></Column>
+              <Column field="created" header="Created"></Column>
+              <Column field="cause" header="Cause"></Column>
+              <Column field="contex" header="Contex"></Column>
+            </DataTable>
+          </div>
       </template>
       </DataTable>
   </div>
