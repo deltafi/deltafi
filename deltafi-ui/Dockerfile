@@ -1,15 +1,11 @@
-FROM node:8.11-alpine
-
-WORKDIR /usr/src/app
-
-ARG NODE_ENV
-ENV NODE_ENV $NODE_ENV
-
-COPY package*.json /usr/src/app/
+FROM node:14-alpine as build-stage
+WORKDIR /app
+COPY package*.json ./
 RUN npm install
+COPY ./ .
+RUN npm run build
 
-COPY . /usr/src/app
-
-ENV PORT 5000
-EXPOSE $PORT
-CMD [ "npm", "start" ]
+FROM nginx:1.21-alpine as production-stage
+RUN mkdir /app
+COPY --from=build-stage /app/dist /app
+COPY nginx.conf /etc/nginx/nginx.conf
