@@ -2,48 +2,73 @@
   <div class="Error's">
     <h1>Welcome to the DeltaFi Error interface.</h1>
     <span></span>
+    <a>Standard Vue</a>
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
-          <th>Parent Flow</th>
-          <th>Parent Action</th>
-          <th>Parent State</th>
-          <th>Parent DID (UUID)</th>
-          <th>Error/Child DID (UUID)</th>
+          <th>DID (UUID)</th>
+          <th>Filename</th>
+          <th>Flow</th>
+          <th>Stage</th>
           <th>Timestamp</th>
-          <th>Error</th>
+          <th>Error Count</th>
           <th>ReTry</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="error in errors" :key="error.did">
-          <td>{{ error.parent.flow }}</td>
-          <td>{{ error.parent.action }}</td>
-          <td>{{ error.parent.state }}</td>
-          <td>{{ error.parent.did }}</td>
           <td>{{ error.did }}</td>
-          <td>{{ error.timestamp }}</td>
-          <td>{{ error.cause }}</td>
-          <td><button @click="RetryClickAction(error.parent.did)">Retry</button></td>
+          <td>{{ error.filename }}</td>
+          <td>{{ error.flow }}</td>
+          <td>{{ error.stage }}</td>
+          <td>{{ error.created }}</td>
+          <td>{{ error.errors.length }}</td>
+          <td><button @click="RetryClickAction(error.did)">Retry</button></td>
         </tr>
       </tbody>
     </table>
+    <div>
+      <a>Primevue</a>
+    </div>
+      <DataTable
+        :value="errors" 
+        v-model:expandedRows="expandedRows"
+        class="p-datatable-gridlines"
+      >
+
+        <Column field="did" header="DID (UUID)"> </Column>
+        <Column field="filename" header="Filename"></Column>
+        <Column field="flow" header="Flow"></Column>
+        <Column field="stage" header="Stage"></Column>
+        <Column field="created" header="Timestamp"></Column>
+        <Column :expander="true"  field="errors.length" header="Error Count"></Column>
+        <Column field="did" header="Retry"></Column>
+        <template #expansion="errors">
+        <div>
+          <h5>goofy</h5>
+          <a>{{errors}}</a>
+        </div>
+      </template>
+      </DataTable>
   </div>
 </template>
 
 
-<script lang="ts">
+<script>
 import errors from "../test/errors.test.mock";
+
 
 export default {
   name: "errors",
   data() {
     return {
-      errors
+      errors,
+      expandedRows: [],
+      
     };
   },
   methods: {
-    RetryClickAction(p_did) {
+    RetryClickAction( p_did ) {
       alert('goofy' + p_did);
     }
   },
