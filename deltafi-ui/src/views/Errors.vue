@@ -37,8 +37,16 @@
 
 
 <script>
-import errors from "../test/errors.test.mock";
+ import errors from "../test/errors.test.mock";
+let url = '/api/v1/errors';
 
+fetch(url).then(data => {
+return data.json();
+})
+.then(post => {
+console.log(post);
+});
+ 
 
 export default {
   name: "errors",
