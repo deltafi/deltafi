@@ -57,19 +57,17 @@ public class MinioObjectStorageServiceTest {
 
     @Test
     void testGetObjectNamesWithLastModified() throws ObjectStorageException {
-        ZonedDateTime lastModified = ZonedDateTime.now();
+        ZonedDateTime lastModified = ZonedDateTime.now().plusMinutes(1);
 
         List<String> objectNames = MINIO_CLOUD_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1", lastModified);
         assertEquals(2, objectNames.size());
         assertEquals("did-1/test-action-1a", objectNames.get(0));
         assertEquals("did-1/test-action-1b", objectNames.get(1));
 
-        MINIO_CLOUD_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-1/test-action-1c", "test data 1c".getBytes());
+        lastModified = lastModified.minusMinutes(2);
 
         objectNames = MINIO_CLOUD_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1", lastModified);
-        assertEquals(2, objectNames.size());
-        assertEquals("did-1/test-action-1a", objectNames.get(0));
-        assertEquals("did-1/test-action-1b", objectNames.get(1));
+        assertEquals(0, objectNames.size());
     }
 
     @Test
