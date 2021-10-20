@@ -28,7 +28,11 @@
             <Column field="state" header="State"></Column>
             <Column field="created" header="Created"></Column>
             <Column field="cause" header="Cause"></Column>
-            <Column field="context" header="Contex"></Column>
+            <Column field="context" header="Contex">
+              <template #body="errors">
+                <pre> {{ errors.data.context }} </pre>
+              </template>
+            </Column>
           </DataTable>
         </div>
       </template>
