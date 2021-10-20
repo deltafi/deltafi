@@ -2,7 +2,30 @@
   <div class="Errors">
     <h1>Welcome to the DeltaFi Error interface.</h1>
     <span></span>
-
+      <div class="p-field p-col-12 p-md-4" align="right">
+        <label for="startTimeDate">Start Day/Time </label>
+        <Calendar 
+          id="startDateTime" 
+          v-model="startTimeDate" 
+          selectionMode="single" 
+          :inline="false" 
+          :showTime="true"  
+          :manualInput="false" 
+          hourFormat="12"
+        />
+        <label for="startTimeDate" style="padding-left:10px">End Day/Time </label>
+        <Calendar 
+          id="endDateTime" 
+          v-model="endTimeDate" 
+          selectionMode="single" 
+          :inline="false" 
+          :showTime="true"  
+          :manualInput="false" 
+          hourFormat="12"
+        />
+        <br><br>
+        <button @click="fetchErrors(startTimeDate,endTimeDate)">Search</button>
+    </div>
     <DataTable
       :value="errors"
       stripedRows
@@ -44,12 +67,19 @@
 <script>
 // import errors from "../test/errors.test.mock";
 
+var currentDateObj = new Date();
+var numberOfMlSeconds = currentDateObj.getTime();
+var addMlSeconds = 60 * 60 * 1000;
+var newDateObj = new Date(numberOfMlSeconds - addMlSeconds);
+
 export default {
   name: "errors",
   data() {
     return {
       errors: [],
       expandedRows: [],
+      startTimeDate: newDateObj,
+      endTimeDate: currentDateObj,
     };
   },
   methods: {
@@ -65,17 +95,20 @@ export default {
         console.log("Request complete! response:", res);
       });
     },
-    async fetchErrors() {
-      const request = new Request("/api/v1/errors", {
+    async fetchErrors(startD,endD) {
+      const request = new Request("/api/v1/errors?start=" + startD + "?end=" + endD, {
         referrer: "",
       });
       const res = await fetch(request);
       const data = await res.json();
       this.errors = data.errors;
+    },
+    UpdateErrors(startD,endD) {
+      alert(startD + endD);
     }
   },
   created() {
-    this.fetchErrors();
+    this.fetchErrors(this.startTimeDate,this.endTimeDate);
   },
 };
 </script>
