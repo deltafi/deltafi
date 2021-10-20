@@ -5,19 +5,17 @@
 
     <DataTable
       :value="errors"
+      stripedRows
       v-model:expandedRows="expandedRows"
       class="p-datatable-gridlines"
     >
+      <Column :expander="true"></Column>
       <Column field="did" header="DID (UUID)"> </Column>
       <Column field="filename" header="Filename" :sortable="true"></Column>
       <Column field="flow" header="Flow" :sortable="true"></Column>
       <Column field="stage" header="Stage" :sortable="true"></Column>
       <Column field="created" header="Timestamp" :sortable="true"></Column>
-      <Column
-        :expander="true"
-        field="errors.length"
-        header="Error Count"
-      ></Column>
+      <Column field="errors.length" header="Error Count"></Column>
       <Column :exportable="false" style="min-width: 8rem">
         <template #body="errors">
           <button @click="RetryClickAction(errors.data.did)">Retry</button>
@@ -52,7 +50,16 @@ export default {
   },
   methods: {
     RetryClickAction(p_did) {
-      alert(p_did);
+      //alert(p_did);
+      let data = new FormData();
+      data.append('did',p_did);
+      fetch("/api/v1/errors/retry", {
+        method: "POST", 
+        referrer: "",
+        body: data
+      }).then(res => {
+        console.log("Request complete! response:", res);
+      });
     },
     async fetchErrors() {
       const request = new Request("/api/v1/errors", {
