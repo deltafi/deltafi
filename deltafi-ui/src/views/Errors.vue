@@ -66,8 +66,6 @@
 
 
 <script>
-// import errors from "../test/errors.test.mock";
-
 var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
 var addMlSeconds = 60 * 60 * 1000;
@@ -106,7 +104,7 @@ export default {
       });
     },
     async fetchErrors(startD,endD) {
-      const request = new Request("/api/v1/errors?start=" + startD + "?end=" + endD, {
+      const request = new Request("/api/v1/errors?start=" + startD.getTime() + "&end=" + endD.getTime(), {
         referrer: "",
       });
       const res = await fetch(request);
