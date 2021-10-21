@@ -1,5 +1,6 @@
 <template>
   <div class="Errors">
+    <ConfirmPopup></ConfirmPopup>
     <h1>Welcome to the DeltaFi Error interface.</h1>
     <span></span>
       <div class="p-field p-col-12 p-md-4" align="right">
@@ -41,7 +42,7 @@
       <Column field="errors.length" header="Error Count"></Column>
       <Column :exportable="false" style="min-width: 8rem">
         <template #body="errors">
-          <button @click="RetryClickAction(errors.data.did)">Retry</button>
+          <button @click="RetryClickConfirm($event,errors.data.did)">Retry</button>
         </template>
       </Column>
       <template #expansion="errors">
@@ -83,6 +84,15 @@ export default {
     };
   },
   methods: {
+  RetryClickConfirm(event,p_did) {
+        this.$confirm.require({
+            target: event.currentTarget,
+            message: 'Are you sure you want to Retry?',
+            accept: () => {
+                this.RetryClickAction(p_did);
+            }
+        });
+    },
     RetryClickAction(p_did) {
       //alert(p_did);
       let data = new FormData();
