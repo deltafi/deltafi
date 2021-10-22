@@ -4,7 +4,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import org.deltafi.core.domain.generated.types.ActionSchemaInput;
-import org.deltafi.core.domain.api.types.ActionSchemaImpl;
+import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.services.ActionSchemaService;
 
 import java.util.Collection;
@@ -19,12 +19,12 @@ public class ActionSchemaDatafetcher {
     }
 
     @DgsQuery
-    public Collection<ActionSchemaImpl> actionSchemas() {
+    public Collection<ActionSchema> actionSchemas() {
         return actionSchemaService.getAll();
     }
 
     @DgsMutation
-    public ActionSchemaImpl registerAction(ActionSchemaInput actionSchema) {
+    public ActionSchema registerAction(ActionSchemaInput actionSchema) {
         return actionSchemaService.save(actionSchema);
     }
 

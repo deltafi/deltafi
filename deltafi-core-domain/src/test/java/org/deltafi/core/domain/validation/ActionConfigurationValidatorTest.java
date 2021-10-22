@@ -2,7 +2,7 @@ package org.deltafi.core.domain.validation;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.deltafi.core.domain.api.types.ActionSchemaImpl;
+import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
@@ -102,7 +102,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void validateAgainstSchema_inactiveAction() {
-        ActionSchemaImpl schema = actionSchema();
+        ActionSchema schema = actionSchema();
         schema.setLastHeard(OffsetDateTime.now().minusDays(1));
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.of(schema));
         List<String> errors = actionConfigurationValidator.validateAgainstSchema(egressConfig(getRequiredParams()));
@@ -152,13 +152,13 @@ class ActionConfigurationValidatorTest {
         assertThat(errors).contains("$.url: is missing but it is required; $.urlTypo: is not defined in the schema and the schema does not allow additional properties");
     }
 
-    Optional<ActionSchemaImpl> actionSchemaOptional() {
+    Optional<ActionSchema> actionSchemaOptional() {
         return Optional.of(actionSchema());
     }
 
-    ActionSchemaImpl actionSchema() {
+    ActionSchema actionSchema() {
         try {
-            ActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
+            ActionSchema actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
             actionSchema.setLastHeard(OffsetDateTime.now());
             return actionSchema;
         } catch (IOException e) {

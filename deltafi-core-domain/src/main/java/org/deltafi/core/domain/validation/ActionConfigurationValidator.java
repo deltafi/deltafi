@@ -6,7 +6,7 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
-import org.deltafi.core.domain.api.types.ActionSchemaImpl;
+import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.services.ActionSchemaService;
@@ -66,7 +66,7 @@ public class ActionConfigurationValidator {
             .orElseGet(() -> Collections.singletonList("Action type: " + actionConfiguration.getType() + " has not been registered with the system"));
     }
 
-    List<String> validateAgainstSchema(ActionSchemaImpl actionSchema, ActionConfiguration actionConfiguration) {
+    List<String> validateAgainstSchema(ActionSchema actionSchema, ActionConfiguration actionConfiguration) {
         List<String> errors = new ArrayList<>();
         if (isInactive(actionSchema)) {
             errors.add("Action type: " + actionConfiguration.getType() + " has not been active since " + actionSchema.getLastHeard());
@@ -80,7 +80,7 @@ public class ActionConfigurationValidator {
         return errors;
     }
 
-    String validateParameters(ActionConfiguration actionConfig, ActionSchemaImpl actionSchema) {
+    String validateParameters(ActionConfiguration actionConfig, ActionSchema actionSchema) {
         JsonNode schemaNode = OBJECT_MAPPER.convertValue(actionSchema.getSchema(), JsonNode.class);
         JsonNode params = OBJECT_MAPPER.convertValue(actionConfig.getParameters(), JsonNode.class);
 
@@ -100,7 +100,7 @@ public class ActionConfigurationValidator {
         return isBlank(config.getType());
     }
 
-    boolean isInactive(ActionSchemaImpl schema) {
+    boolean isInactive(ActionSchema schema) {
         return Objects.isNull(schema.getLastHeard()) || schema.getLastHeard().isBefore(OffsetDateTime.now().minus(actionInactivityThreshold));
     }
 

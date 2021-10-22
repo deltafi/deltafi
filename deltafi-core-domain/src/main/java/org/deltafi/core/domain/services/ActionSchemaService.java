@@ -1,7 +1,7 @@
 package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.deltafi.core.domain.api.types.ActionSchemaImpl;
+import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.generated.types.ActionSchemaInput;
 import org.deltafi.core.domain.repo.ActionSchemaRepo;
 import org.springframework.stereotype.Service;
@@ -20,17 +20,17 @@ public class ActionSchemaService {
         this.actionSchemaRepo = actionSchemaRepo;
     }
 
-    public ActionSchemaImpl save(ActionSchemaInput actionSchemaInput) {
-        ActionSchemaImpl actionParamDefinition = objectMapper.convertValue(actionSchemaInput, ActionSchemaImpl.class);
+    public ActionSchema save(ActionSchemaInput actionSchemaInput) {
+        ActionSchema actionParamDefinition = objectMapper.convertValue(actionSchemaInput, ActionSchema.class);
         actionParamDefinition.setLastHeard(OffsetDateTime.now());
         return actionSchemaRepo.save(actionParamDefinition);
     }
 
-    public List<ActionSchemaImpl> getAll() {
+    public List<ActionSchema> getAll() {
         return actionSchemaRepo.findAll();
     }
 
-    public Optional<ActionSchemaImpl> getByActionClass(String actionClass) {
+    public Optional<ActionSchema> getByActionClass(String actionClass) {
         return actionSchemaRepo.findById(actionClass);
     }
 

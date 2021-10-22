@@ -8,7 +8,6 @@ import org.deltafi.core.domain.generated.types.ActionEventInput;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -18,7 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class InMemoryActionEventService implements ActionEventService {
 
     private final ConcurrentMap<String, LinkedBlockingQueue<ActionInput>> incoming = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, BlockingQueue<ActionEventInput>> outgoing = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, LinkedBlockingQueue<ActionEventInput>> outgoing = new ConcurrentHashMap<>();
 
     public void putAction(String actionClassName, ActionInput actionInput) {
         incoming.computeIfAbsent(actionClassName, k -> new LinkedBlockingQueue<>());

@@ -1,11 +1,10 @@
 package org.deltafi.core.domain.api.types;
 
-import org.deltafi.core.domain.generated.types.ActionSchema;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document("actionSchema")
-public class ActionSchemaImpl extends ActionSchema {
+public class ActionSchema extends org.deltafi.core.domain.generated.types.ActionSchema {
 
     @Id
     @Override
