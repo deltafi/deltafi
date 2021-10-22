@@ -41,6 +41,8 @@ publishing {
 }
 
 dependencies {
+    implementation "redis.clients:jedis:${jedisVersion}"
+
     implementation "io.minio:minio:${minioVersion}"
 
     implementation "org.slf4j:slf4j-api:1.7.30"

@@ -209,7 +209,7 @@ public class DeltaFilesService {
     @MongoRetryable
     public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
         ErrorInput errorInput = event.getError();
-        if(deltaFile.hasErrorDomain()) {
+        if (deltaFile.hasErrorDomain()) {
             log.error("DeltaFile with error domain has thrown an error:\n" +
                     "Error DID: " + deltaFile.getDid() + "\n" +
                     "Errored in action : " + event.getAction() + "\n" +
@@ -312,9 +312,9 @@ public class DeltaFilesService {
         }
     }
 
-    public void enqueueActions(List<String> actions, DeltaFile deltaFile) {
+    private void enqueueActions(List<String> actionNames, DeltaFile deltaFile) {
         try {
-            redisService.enqueue(actions, deltaFile);
+            redisService.enqueue(actionNames, deltaFile);
         } catch (ActionConfigException e) {
             log.error("Failed to enqueue {} with error {}", deltaFile.getDid(), e.getMessage());
             ErrorInput error = ErrorInput.newBuilder().cause(e.getMessage()).build();
