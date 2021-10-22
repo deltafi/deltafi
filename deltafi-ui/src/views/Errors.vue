@@ -1,32 +1,42 @@
 <template>
   <div class="Errors">
-    <ConfirmPopup></ConfirmPopup>
-    <h1>Welcome to the DeltaFi Error interface.</h1>
-    <span></span>
-    <div class="p-field p-col-12 p-md-4" align="right">
-      <label for="startTimeDate">Start Day/Time </label>
-      <Calendar
-        id="startDateTime"
-        v-model="startTimeDate"
-        selectionMode="single"
-        :inline="false"
-        :showTime="true"
-        :manualInput="false"
-        hourFormat="12"
-      />
-      <label for="startTimeDate" style="padding-left: 10px">End Day/Time </label>
-      <Calendar
-        id="endDateTime"
-        v-model="endTimeDate"
-        selectionMode="single"
-        :inline="false"
-        :showTime="true"
-        :manualInput="false"
-        hourFormat="12"
-      />
-      <br /><br />
-      <button @click="fetchErrors(startTimeDate, endTimeDate)">Search</button>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+      <h1 class="h2">Errors</h1>
+      <div class="btn-toolbar mb-md-0">
+        <div class="input-group ml-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon1">Start Time</span>
+          </div>
+          <Calendar
+            id="startDateTime"
+            v-model="startTimeDate"
+            selectionMode="single"
+            :inline="false"
+            :showTime="true"
+            :manualInput="false"
+            hourFormat="12"
+          />
+        </div>
+        <div class="input-group ml-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon1">End Time</span>
+          </div>
+          <Calendar
+            id="endDateTime"
+            v-model="endTimeDate"
+            selectionMode="single"
+            :inline="false"
+            :showTime="true"
+            :manualInput="false"
+            hourFormat="12"
+          />
+        </div>
+        <div class="btn-group mb-3 ml-3">
+          <button @click="fetchErrors(startTimeDate, endTimeDate)" class="btn btn-sm btn-outline-secondary">Search</button>
+        </div>
+      </div>
     </div>
+    <ConfirmPopup></ConfirmPopup>
     <DataTable
       :value="errors"
       stripedRows
@@ -42,7 +52,7 @@
       <Column field="errors.length" header="Error Count"></Column>
       <Column :exportable="false" style="min-width: 8rem">
         <template #body="errors">
-          <button @click="RetryClickConfirm($event, errors.data.did)">Retry</button>
+          <button @click="RetryClickConfirm($event, errors.data.did)" class="btn btn-sm btn-outline-secondary">Retry</button>
         </template>
       </Column>
       <template #expansion="errors">

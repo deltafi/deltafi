@@ -1,31 +1,36 @@
 <template>
-  <div id="nav">
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link> |
-    <router-link to="/errors"> Errors</router-link>
+  <div class="app">
+    <AppTopBar />
+    <div class="container-fluid">
+      <div class="row">
+        <div id="sidebarMenu">
+          <AppMenu />
+        </div>
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+          <router-view />
+        </main>
+      </div>
+    </div>
   </div>
-<router-view/>
 </template>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
+<script>
+import AppTopBar from './AppTopBar.vue';
+import AppMenu from './AppMenu.vue';
 
-#nav {
-  padding: 30px;
+export default {
+  name: "App",
+  watch: {
+    $route: {
+      immediate: true,
+      handler(to, from) {
+        document.title = to.meta.title || 'DeltaFi';
+      }
+    },
+  },
+  components: {
+    'AppTopBar': AppTopBar,
+    'AppMenu': AppMenu
+  }
 }
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
-}
-</style>
+</script>
