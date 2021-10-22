@@ -2,38 +2,29 @@
   <div class="Errors">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
       <h1 class="h2">Errors</h1>
-      <div class="btn-toolbar mb-md-0">
-        <div class="input-group ml-3">
-          <div class="input-group-prepend">
-            <span class="input-group-text" id="basic-addon1">Start Time</span>
-          </div>
-          <Calendar
-            id="startDateTime"
-            v-model="startTimeDate"
-            selectionMode="single"
-            :inline="false"
-            :showTime="true"
-            :manualInput="false"
-            hourFormat="12"
-          />
-        </div>
-        <div class="input-group ml-3">
-          <div class="input-group-prepend">
-            <span class="input-group-text" id="basic-addon1">End Time</span>
-          </div>
-          <Calendar
-            id="endDateTime"
-            v-model="endTimeDate"
-            selectionMode="single"
-            :inline="false"
-            :showTime="true"
-            :manualInput="false"
-            hourFormat="12"
-          />
-        </div>
-        <div class="btn-group mb-3 ml-3">
-          <button @click="fetchErrors(startTimeDate, endTimeDate)" class="btn btn-sm btn-outline-secondary">Search</button>
-        </div>
+      <div class="time-range btn-toolbar mb-2 mb-md-0">
+        <Calendar
+          id="startDateTime"
+          v-model="startTimeDate"
+          selectionMode="single"
+          :inline="false"
+          :showTime="true"
+          :manualInput="false"
+          hourFormat="12"
+          inputClass="form-control form-control-sm ml-3"
+        />
+        <span class="mt-1 ml-3">&mdash;</span>
+        <Calendar
+          id="endDateTime"
+          v-model="endTimeDate"
+          selectionMode="single"
+          :inline="false"
+          :showTime="true"
+          :manualInput="false"
+          hourFormat="12"
+          inputClass="form-control form-control-sm ml-3"
+        />
+        <button @click="fetchErrors(startTimeDate, endTimeDate)" class="btn btn-sm btn-outline-secondary ml-3">Search</button>
       </div>
     </div>
     <ConfirmPopup></ConfirmPopup>
@@ -41,7 +32,7 @@
       :value="errors"
       stripedRows
       v-model:expandedRows="expandedRows"
-      class="p-datatable-gridlines"
+      class="p-datatable-gridlines p-datatable-sm"
     >
       <Column :expander="true"></Column>
       <Column field="did" header="DID (UUID)"> </Column>
@@ -101,7 +92,6 @@ export default {
       });
     },
     RetryClickAction(p_did) {
-      //alert(p_did);
       let data = new FormData();
       data.append("did", p_did);
       fetch("/api/v1/errors/retry", {
@@ -132,3 +122,10 @@ export default {
   },
 };
 </script>
+
+<style>
+.time-range .form-control:disabled,
+.time-range .form-control[readonly] {
+  background-color: #ffffff;
+}
+</style>
