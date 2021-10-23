@@ -16,6 +16,7 @@ module Deltafi
                   name
                   state
                   created
+                  modified
                   errorCause
                   errorContext
                 }
@@ -53,6 +54,7 @@ module Deltafi
                 action: a['name'],
                 state: a['state'],
                 created: a['created'],
+                modified: a['modified'],
                 cause: a['errorCause'],
                 context: a['errorContext']
               }
@@ -64,6 +66,7 @@ module Deltafi
               stage: e['stage'],
               created: e['created'],
               modified: e['modified'],
+              last_error_cause: errored_actions.sort_by { |ea| ea[:modified] }.last[:cause],
               errors: errored_actions
             }
           end
