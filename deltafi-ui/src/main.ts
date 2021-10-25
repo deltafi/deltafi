@@ -6,8 +6,10 @@ import router from './router'
 import store from './store'
 
 import PrimeVue from 'primevue/config';
+import Button from 'primevue/button';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
+import Dialog from 'primevue/dialog';
 import Calendar from 'primevue/calendar';
 import ConfirmPopup from 'primevue/confirmpopup';
 import ConfirmationService from 'primevue/confirmationservice';
@@ -27,7 +29,9 @@ app.use(ConfirmationService)
 
 app.component('Column', Column)
 app.component('DataTable', DataTable)
+app.component('Dialog', Dialog)
 app.component('Calendar',Calendar)
 app.component('ConfirmPopup', ConfirmPopup)
+app.component('Button', Button)
 
 app.mount('#app')

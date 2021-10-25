@@ -53,9 +53,13 @@
             <Column field="state" header="State"></Column>
             <Column field="created" header="Created"></Column>
             <Column field="cause" header="Cause"></Column>
-            <Column field="context" header="Contex">
+            <Column field="context" header="Context">
               <template #body="errors">
-                <pre> {{ errors.data.context }} </pre>
+                <Button label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog"  v-if="errors.data.context" />
+                <span v-else>No context provided</span>
+                <Dialog header="Error Context" v-model:visible="showContextDialog" :style="{width: '75vw'}" :maximizable="true" :modal="true">
+                  <pre class="dark">{{ errors.data.context }}</pre>
+                </Dialog>
               </template>
             </Column>
           </DataTable>
@@ -79,6 +83,7 @@ export default {
       expandedRows: [],
       startTimeDate: newDateObj,
       endTimeDate: currentDateObj,
+      showContextDialog: false
     };
   },
   methods: {
@@ -116,6 +121,12 @@ export default {
     UpdateErrors(startD, endD) {
       alert(startD + endD);
     },
+    openContextDialog() {
+      this.showContextDialog = true;
+    },
+    closeContextDialog() {
+      this.showContextDialog = false;
+    },
   },
   created() {
     this.fetchErrors(this.startTimeDate, this.endTimeDate);
@@ -127,5 +138,11 @@ export default {
 .time-range .form-control:disabled,
 .time-range .form-control[readonly] {
   background-color: #ffffff;
+}
+
+pre.dark {
+  background-color: #333333;
+  color: #dddddd;
+  padding: 1em;
 }
 </style>
