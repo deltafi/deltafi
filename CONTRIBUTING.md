@@ -27,7 +27,8 @@
 
 7. Install CentOS:
    1. Start the VM. The installation settings for CentOS should appear.
-   2. Set a host name and turn Ethernet (enp0s3) on under Network & Host Name (NOTE: make sure only one adapter is enabled).
+   2. Set a hostname and turn Ethernet (enp0s3) on under Network & Host Name (NOTE: make sure only one adapter is enabled).
+      - Hostname should not be `localhost`. Please set it to `<something>.local.deltafi.org`.
    3. Set the root password under Root Password.
    4. Create a user account under User Creation.
    5. Choose Begin Installation.
