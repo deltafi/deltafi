@@ -18,6 +18,10 @@ export default class ApiService {
     return this.get("/metrics/system/nodes");
   }
 
+  getConfig() {
+    return this.get("/config");
+  }
+
   getErrors(startD: Date, endD: Date) {
     let searchParams = new URLSearchParams({
       start: startD.getTime().toString(),

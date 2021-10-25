@@ -21,6 +21,7 @@
     "express": "~4.16.0",
     "faker": "^5.5.3",
     "http-errors": "~1.6.2",
+    "jquery": "^3.6.0",
     "json-server": "^0.17.0",
     "morgan": "~1.9.0",
     "primeicons": "^4.1.0",
