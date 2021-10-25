@@ -40,6 +40,8 @@
       <Column field="flow" header="Flow" :sortable="true"></Column>
       <Column field="stage" header="Stage" :sortable="true"></Column>
       <Column field="created" header="Timestamp" :sortable="true"></Column>
+      <Column field="modified" header="Modified" :sortable="true"></Column>
+      <Column field="last_error_cause" header="Last Error"></column>
       <Column field="errors.length" header="Error Count"></Column>
       <Column :exportable="false" style="min-width: 8rem">
         <template #body="errors">
@@ -52,6 +54,7 @@
             <Column field="action" header="Action"></Column>
             <Column field="state" header="State"></Column>
             <Column field="created" header="Created"></Column>
+            <Column field="modified" header="Modified"></Column>            
             <Column field="cause" header="Cause"></Column>
             <Column field="context" header="Context">
               <template #body="errors">
