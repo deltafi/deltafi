@@ -77,6 +77,7 @@ var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
 var addMlSeconds = 60 * 60 * 1000;
 var newDateObj = new Date(numberOfMlSeconds - addMlSeconds);
+import ApiService from "../service/ApiService";
 
 export default {
   name: "errors",
@@ -86,7 +87,7 @@ export default {
       expandedRows: [],
       startTimeDate: newDateObj,
       endTimeDate: currentDateObj,
-      showContextDialog: false
+      showContextDialog: false,
     };
   },
   methods: {
@@ -113,14 +114,7 @@ export default {
       });
     },
     async fetchErrors(startD, endD) {
-      const request = new Request(
-        "/api/v1/errors?start=" + startD.getTime() + "&end=" + endD.getTime(),
-        {
-          referrer: "",
-        }
-      );
-      const res = await fetch(request);
-      const data = await res.json();
+      const data = await this.apiService.getErrors(startD, endD);
       this.errors = data.errors;
     },
     UpdateErrors(startD, endD) {
@@ -133,7 +127,9 @@ export default {
       this.showContextDialog = false;
     },
   },
+  apiService: null,
   created() {
+    this.apiService = new ApiService();
     this.fetchErrors(this.startTimeDate, this.endTimeDate);
   },
 };
