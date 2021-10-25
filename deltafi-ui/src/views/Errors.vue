@@ -107,7 +107,9 @@ export default {
         referrer: "",
         body: data,
       }).then((res) => {
-        console.log("Request complete! response:", res);
+        if(res.status === 200) {
+          this.fetchErrors(this.startTimeDate,this.endTimeDate);
+        }
       });
     },
     async fetchErrors(startD, endD) {
