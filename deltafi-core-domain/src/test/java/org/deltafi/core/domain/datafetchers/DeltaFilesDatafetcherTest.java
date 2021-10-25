@@ -4,13 +4,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import org.deltafi.core.domain.generated.client.DeltaFileGraphQLQuery;
-import org.deltafi.core.domain.generated.client.DeltaFileProjectionRoot;
-import org.deltafi.core.domain.generated.client.IngressGraphQLQuery;
-import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.generated.DgsConstants;
+import org.deltafi.core.domain.generated.client.*;
+import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFiConfigService;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.StateMachine;
@@ -27,6 +26,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.core.domain.Util.equalIgnoringDates;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
@@ -57,9 +57,68 @@ class DeltaFilesDatafetcherTest {
     final String did = UUID.randomUUID().toString();
     final IngressInput ingressInput = new IngressInput(did, sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
 
+    final DeltaFilesProjectionRoot deltaFilesProjectionRoot = new DeltaFilesProjectionRoot()
+            .deltaFiles()
+                .did()
+                .stage()
+                .parent()
+                .actions()
+                .name()
+                .created()
+                .modified()
+                .errorCause()
+                .errorContext()
+                .state()
+                .parent()
+                .parent()
+                .protocolStack()
+                .type()
+                .metadata()
+                .key()
+                .value()
+                .parent()
+                .objectReference()
+                .name()
+                .bucket()
+                .offset()
+                .size()
+                .parent()
+                .parent()
+                .sourceInfo()
+                .filename()
+                .flow()
+                .metadata()
+                .key()
+                .value()
+                .parent()
+                .parent()
+                .enrichment()
+                .key()
+                .value()
+                .parent()
+                .domains()
+                .key()
+                .value()
+                .parent()
+                .formattedData()
+                .filename()
+                .formatAction()
+                .objectReference()
+                .bucket()
+                .offset()
+                .name()
+                .size()
+                .parent()
+                .parent()
+            .parent()
+            .offset()
+            .count()
+            .totalCount();
+
     final DeltaFileProjectionRoot deltaFileProjectionRoot = new DeltaFileProjectionRoot()
             .did()
             .stage()
+                .parent()
             .actions()
                 .name()
                 .created()
@@ -111,6 +170,7 @@ class DeltaFilesDatafetcherTest {
 
     @BeforeEach
     public void setup() {
+        deltaFilesService.deleteAllDeltaFiles();
         IngressFlowConfiguration flowConfiguration = new IngressFlowConfiguration();
         flowConfiguration.setType(fileType);
         Mockito.when(deltaFiConfigService.getIngressFlow(flow)).thenReturn(Optional.of(flowConfiguration));
@@ -165,7 +225,8 @@ class DeltaFilesDatafetcherTest {
         assertTrue(deltaFile.getFormattedData().isEmpty());
     }
 
-    @Test void deltaFile() {
+    @Test
+    void deltaFile() {
         DeltaFile expected = deltaFilesService.addDeltaFile(ingressInput);
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
@@ -180,5 +241,36 @@ class DeltaFilesDatafetcherTest {
         );
 
         assertTrue(equalIgnoringDates(expected, actual));
+    }
+
+    @Test
+    void deltaFiles() {
+        DeltaFiles expected = DeltaFiles.newBuilder()
+                .offset(0)
+                .count(1)
+                .totalCount(1)
+                .deltaFiles(List.of(deltaFilesService.addDeltaFile(ingressInput)))
+                .build();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
+                new DeltaFilesGraphQLQuery.Builder()
+                        .offset(0)
+                        .limit(5)
+                        .filter(DeltaFilesFilter.newBuilder().createdBefore(OffsetDateTime.now()).build())
+                        .orderBy(DeltaFileOrder.newBuilder().field(DeltaFileField.created).direction(DeltaFileDirection.DESC).build())
+                        .build(),
+                deltaFilesProjectionRoot
+        );
+
+        DeltaFiles actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + DgsConstants.QUERY.DeltaFiles,
+                DeltaFiles.class
+        );
+
+        assertEquals(expected.getOffset(), actual.getOffset());
+        assertEquals(expected.getCount(), actual.getCount());
+        assertEquals(expected.getTotalCount(), actual.getTotalCount());
+        assertTrue(equalIgnoringDates(expected.getDeltaFiles().get(0), actual.getDeltaFiles().get(0)));
     }
 }

@@ -1,10 +1,9 @@
 package org.deltafi.core.domain.api.repo;
 
 import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.generated.types.Action;
-import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.generated.types.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +13,7 @@ import org.springframework.test.context.TestPropertySource;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,6 +24,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class DeltaFileRepoTest {
     @Autowired
     private DeltaFileRepo deltaFileRepo;
+
+    // mongo eats microseconds, jump through hoops
+    private final OffsetDateTime MONGO_NOW =  OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
 
     @BeforeEach
     public void setup() {
@@ -47,20 +47,18 @@ class DeltaFileRepoTest {
 
     @Test
     void testUpdateForRequeue() {
-        // mongo eats microseconds, jump through hoops
-        OffsetDateTime now = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
-        Action shouldRequeue = Action.newBuilder().name("hit").modified(now.minusSeconds(1000)).state(ActionState.QUEUED).build();
-        Action shouldStay = Action.newBuilder().name("miss").modified(now.plusSeconds(1000)).state(ActionState.QUEUED).build();
+        Action shouldRequeue = Action.newBuilder().name("hit").modified(MONGO_NOW.minusSeconds(1000)).state(ActionState.QUEUED).build();
+        Action shouldStay = Action.newBuilder().name("miss").modified(MONGO_NOW.plusSeconds(1000)).state(ActionState.QUEUED).build();
 
-        DeltaFile hit = Util.buildDeltaFile("did", null, null, now, now);
+        DeltaFile hit = Util.buildDeltaFile("did", null, null, MONGO_NOW, MONGO_NOW);
         hit.setActions(Arrays.asList(shouldRequeue, shouldStay));
         deltaFileRepo.save(hit);
 
-        DeltaFile miss = Util.buildDeltaFile("did2", null, null, now, now);
+        DeltaFile miss = Util.buildDeltaFile("did2", null, null, MONGO_NOW, MONGO_NOW);
         miss.setActions(Arrays.asList(shouldStay, shouldStay));
         deltaFileRepo.save(miss);
 
-        List<DeltaFile> hits = deltaFileRepo.updateForRequeue(now, 30);
+        List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30);
 
         assertEquals(1, hits.size());
         assertEquals(hit.getDid(), hits.get(0).getDid());
@@ -98,11 +96,11 @@ class DeltaFileRepoTest {
         deltaFileRepo.markForDelete(OffsetDateTime.now().plusSeconds(1), null, null, "policy");
 
         DeltaFile after = loadDeltaFile(deltaFile1.getDid());
-        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        assertEquals(DeltaFileStage.DELETE, after.getStage());
         after = loadDeltaFile(deltaFile2.getDid());
-        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        assertEquals(DeltaFileStage.DELETE, after.getStage());
         after = loadDeltaFile(deltaFile3.getDid());
-        assertEquals(DeltaFileStage.INGRESS.name(), after.getStage());
+        assertEquals(DeltaFileStage.INGRESS, after.getStage());
     }
 
     @Test
@@ -117,11 +115,11 @@ class DeltaFileRepoTest {
         deltaFileRepo.markForDelete(null, OffsetDateTime.now().plusSeconds(1), null, "policy");
 
         DeltaFile after = loadDeltaFile(deltaFile1.getDid());
-        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        assertEquals(DeltaFileStage.DELETE, after.getStage());
         after = loadDeltaFile(deltaFile2.getDid());
-        assertEquals(DeltaFileStage.COMPLETE.name(), after.getStage());
+        assertEquals(DeltaFileStage.COMPLETE, after.getStage());
         after = loadDeltaFile(deltaFile3.getDid());
-        assertEquals(DeltaFileStage.ERROR.name(), after.getStage());
+        assertEquals(DeltaFileStage.ERROR, after.getStage());
     }
 
     @Test
@@ -134,9 +132,9 @@ class DeltaFileRepoTest {
         deltaFileRepo.markForDelete(OffsetDateTime.now().plusSeconds(1), null, "a", "policy");
 
         DeltaFile after = loadDeltaFile(deltaFile1.getDid());
-        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        assertEquals(DeltaFileStage.DELETE, after.getStage());
         after = loadDeltaFile(deltaFile2.getDid());
-        assertEquals(DeltaFileStage.ERROR.name(), after.getStage());
+        assertEquals(DeltaFileStage.ERROR, after.getStage());
     }
 
     @Test
@@ -149,8 +147,117 @@ class DeltaFileRepoTest {
         deltaFileRepo.markForDelete(OffsetDateTime.now(), null, null, "policy");
 
         DeltaFile after = loadDeltaFile(deltaFile1.getDid());
-        assertEquals(DeltaFileStage.DELETE.name(), after.getStage());
+        assertEquals(DeltaFileStage.DELETE, after.getStage());
         assertEquals(oneSecondAgo.toEpochSecond(), after.getModified().toEpochSecond());
+    }
+
+    @Test
+    void testDeltaFiles_all() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
+        deltaFileRepo.save(deltaFile2);
+
+        DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
+        assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile2, deltaFile1));
+    }
+
+    @Test
+    void testDeltaFiles_limit() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
+        deltaFileRepo.save(deltaFile2);
+
+        DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 1, new DeltaFilesFilter(), null);
+        assertEquals(1, deltaFiles.getCount());
+        assertEquals(2, deltaFiles.getTotalCount());
+
+        deltaFiles = deltaFileRepo.deltaFiles(null, 2, new DeltaFilesFilter(), null);
+        assertEquals(2, deltaFiles.getCount());
+        assertEquals(2, deltaFiles.getTotalCount());
+
+        deltaFiles = deltaFileRepo.deltaFiles(null, 100, new DeltaFilesFilter(), null);
+        assertEquals(2, deltaFiles.getCount());
+        assertEquals(2, deltaFiles.getTotalCount());
+    }
+
+    @Test
+    void testDeltaFiles_offset() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.plusSeconds(2));
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+        deltaFileRepo.save(deltaFile2);
+
+        DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(0, 50, new DeltaFilesFilter(), null);
+        assertEquals(0, deltaFiles.getOffset());
+        assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
+
+        deltaFiles = deltaFileRepo.deltaFiles(1, 50, new DeltaFilesFilter(), null);
+        assertEquals(1, deltaFiles.getOffset());
+        assertEquals(List.of(deltaFile1), deltaFiles.getDeltaFiles());
+
+        deltaFiles = deltaFileRepo.deltaFiles(2, 50, new DeltaFilesFilter(), null);
+        assertEquals(2, deltaFiles.getOffset());
+        assertEquals(Collections.emptyList(), deltaFiles.getDeltaFiles());
+    }
+
+    @Test
+    void testDeltaFiles_sort() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.plusSeconds(2));
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+        deltaFileRepo.save(deltaFile2);
+
+        DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field(DeltaFileField.created).build());
+        assertEquals(List.of(deltaFile1, deltaFile2), deltaFiles.getDeltaFiles());
+
+        deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field(DeltaFileField.created).build());
+        assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
+
+        deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field(DeltaFileField.modified).build());
+        assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
+
+        deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field(DeltaFileField.modified).build());
+        assertEquals(List.of(deltaFile1, deltaFile2), deltaFiles.getDeltaFiles());
+    }
+
+    @Test
+    void testDeltaFiles_filter() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.plusSeconds(2));
+        deltaFile1.setDomains(List.of(KeyValue.newBuilder().key("domain1").build()));
+        deltaFile1.setEnrichment(List.of(KeyValue.newBuilder().key("enrichment1").build()));
+        deltaFile1.setMarkedForDelete(MONGO_NOW);
+        deltaFile1.setSourceInfo(SourceInfo.newBuilder().flow("flow1").filename("filename1").build());
+        deltaFileRepo.save(deltaFile1);
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+        deltaFile2.setDomains(List.of(KeyValue.newBuilder().key("domain1").build(), KeyValue.newBuilder().key("domain2").build()));
+        deltaFile2.setEnrichment(List.of(KeyValue.newBuilder().key("enrichment1").build(), KeyValue.newBuilder().key("enrichment2").build()));
+        deltaFile2.setSourceInfo(SourceInfo.newBuilder().flow("flow2").filename("filename2").build());
+        deltaFileRepo.save(deltaFile2);
+
+        testFilter(DeltaFilesFilter.newBuilder().createdAfter(MONGO_NOW).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().createdBefore(MONGO_NOW).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1")).build(), deltaFile2, deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1", "domain2")).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().enrichment(List.of("enrichment1")).build(), deltaFile2, deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().enrichment(List.of("enrichment1", "enrichment2")).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().isMarkedForDelete(true).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().isMarkedForDelete(false).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().modifiedAfter(MONGO_NOW).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().modifiedBefore(MONGO_NOW).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.COMPLETE).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("filename1").build()).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().flow("flow2").build()).build(), deltaFile2);
+    }
+
+    private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
+        DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
+        assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
     }
 
     private DeltaFile loadDeltaFile(String did) {

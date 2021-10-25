@@ -1,9 +1,9 @@
 package org.deltafi.core.domain;
 
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.generated.types.SourceInfo;
-import org.deltafi.core.domain.api.types.DeltaFile;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class Util {
         return DeltaFile.newBuilder()
                 .did(did)
                 .sourceInfo(SourceInfo.newBuilder().flow(flow).build())
-                .stage(stage != null ? stage.name() : null)
+                .stage(stage)
                 .created(created)
                 .modified(modified)
                 .actions(new ArrayList<>())

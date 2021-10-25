@@ -1,12 +1,12 @@
 package org.deltafi.core.domain.services;
 
 import org.deltafi.common.trace.ZipkinService;
+import org.deltafi.core.domain.Util;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
-import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -105,7 +105,7 @@ class StateMachineTest {
     @Test
     void testAdvanceToValidateAction() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.EGRESS.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS);
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
 
@@ -120,7 +120,7 @@ class StateMachineTest {
 
         stateMachine.advance(deltaFile);
 
-        assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.EGRESS, deltaFile.getStage());
         assertEquals(ActionState.QUEUED, deltaFile.actionNamed("ValidateAction1").orElseThrow().getState());
         assertEquals(ActionState.QUEUED, deltaFile.actionNamed("ValidateAction2").orElseThrow().getState());
     }
@@ -128,7 +128,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteValidateAction_onePending() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.EGRESS.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS);
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action completedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -145,7 +145,7 @@ class StateMachineTest {
 
         stateMachine.advance(deltaFile);
 
-        assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.EGRESS, deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, completedAction.getState());
         assertEquals(ActionState.QUEUED, dispatchedAction.getState());
     }
@@ -153,7 +153,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteValidateAction_allComplete() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.EGRESS.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS);
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action completedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -172,13 +172,13 @@ class StateMachineTest {
 
         assertEquals(ActionState.COMPLETE, completedAction.getState());
         assertEquals(ActionState.COMPLETE, dispatchedAction.getState());
-        assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.EGRESS, deltaFile.getStage());
     }
 
     @Test
     void testAdvanceToEgressAction() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.EGRESS.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS);
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action validateAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -200,7 +200,7 @@ class StateMachineTest {
 
         stateMachine.advance(deltaFile);
 
-        assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.EGRESS, deltaFile.getStage());
         assertEquals(ActionState.QUEUED, deltaFile.actionNamed("FlowEgressAction").orElseThrow().getState());
         assertEquals(ActionState.QUEUED, deltaFile.actionNamed("Flow2EgressAction").orElseThrow().getState());
     }
@@ -208,7 +208,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteEgressAction_onePending() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.EGRESS.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS);
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action validateAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -232,7 +232,7 @@ class StateMachineTest {
 
         stateMachine.advance(deltaFile);
 
-        assertEquals(DeltaFileStage.EGRESS.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.EGRESS, deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("FlowEgressAction").orElseThrow().getState());
         assertEquals(ActionState.QUEUED, deltaFile.actionNamed("Flow2EgressAction").orElseThrow().getState());
     }
@@ -240,7 +240,7 @@ class StateMachineTest {
     @Test
     void testAdvanceCompleteEgressAction_allComplete() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
-        deltaFile.setStage(DeltaFileStage.EGRESS.name());
+        deltaFile.setStage(DeltaFileStage.EGRESS);
 
         Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         Action validateAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
@@ -264,7 +264,7 @@ class StateMachineTest {
 
         stateMachine.advance(deltaFile);
 
-        assertEquals(DeltaFileStage.COMPLETE.name(), deltaFile.getStage());
+        assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("FlowEgressAction").orElseThrow().getState());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("Flow2EgressAction").orElseThrow().getState());
     }

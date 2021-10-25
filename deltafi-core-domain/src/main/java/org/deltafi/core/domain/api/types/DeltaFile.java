@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 @CompoundIndex(name = "dispatch_index", def = "{'actions.name': 1, 'actions.state': 1, 'actions.modified': 1}")
 @CompoundIndex(name = "completed_before_index", def="{'stage': 1, 'modified': 1, 'sourceInfo.flow': 1}")
 @CompoundIndex(name = "created_before_index", def="{'created': 1, 'sourceInfo.flow': 1}")
+@CompoundIndex(name = "modified_before_index", def="{'modified': 1, 'sourceInfo.flow': 1}")
 public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile {
 
     @Version
@@ -47,7 +48,8 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
     }
 
     public void queueNewAction(String name) {
-        getActions().add(Action.newBuilder().name(name).state(ActionState.QUEUED).build());
+        OffsetDateTime now = OffsetDateTime.now();
+        getActions().add(Action.newBuilder().name(name).state(ActionState.QUEUED).created(now).modified(now).build());
     }
 
     public Optional<Action> actionNamed(String name) {
@@ -208,7 +210,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
                     action.setErrorCause("DeltaFile marked for deletion by " + policy + " policy");
                 });
         queueAction(DeleteConstants.DELETE_ACTION);
-        setStage(DeltaFileStage.DELETE.name());
+        setStage(DeltaFileStage.DELETE);
         setModified(now);
     }
 
@@ -235,7 +237,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
     public static class Builder extends org.deltafi.core.domain.generated.types.DeltaFile.Builder {
         private String did;
-        private String stage;
+        private DeltaFileStage stage;
         private List<Action> actions;
         private SourceInfo sourceInfo;
         private List<ProtocolLayer> protocolStack;
@@ -265,7 +267,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
             return this;
         }
 
-        public Builder stage(String stage) {
+        public Builder stage(DeltaFileStage stage) {
             this.stage = stage;
             return this;
         }

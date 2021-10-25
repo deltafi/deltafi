@@ -24,6 +24,11 @@ input SourceInfoInput {
   metadata: [KeyValueInput!]
 }
 
+input SourceInfoFilter {
+  filename: String
+  flow: String
+}
+
 """
 An ObjectReference represents data stored in an S3 repository.
 """
@@ -35,7 +40,8 @@ type ObjectReference {
 }
 
 """
-A ProtocolLayer is for ...
+Ingress and transform actions create objectReferences and express additional metadata through ProtocolLayers
+Followon actions get the latest "state" of the transformed object from the top of the ProtocolLayer stack
 """
 type ProtocolLayer {
   "This is the type of the ProtocolLayer"
@@ -116,7 +122,7 @@ input ActionEventInput {
 
 type DeltaFile {
   did: String!
-  stage: String!
+  stage: DeltaFileStage!
   actions: [Action!]!
   sourceInfo: SourceInfo!
   protocolStack: [ProtocolLayer]!
@@ -158,7 +164,43 @@ input FilterInput {
   message: String!
 }
 
+type DeltaFiles {
+  offset: Int
+  count: Int
+  totalCount: Int
+  deltaFiles: [DeltaFile!]!
+}
+
+input DeltaFileOrder {
+  direction: DeltaFileDirection!
+  field: DeltaFileField!
+}
+
+enum DeltaFileDirection {
+  ASC
+  DESC
+}
+
+enum DeltaFileField {
+  # these are passed directly to the DB for sort, match casing in the deltaFile
+  created
+  modified
+}
+
+input DeltaFilesFilter {
+  createdAfter: DateTime
+  createdBefore: DateTime
+  domains: [String!]
+  enrichment: [String!]
+  isMarkedForDelete: Boolean
+  modifiedAfter: DateTime
+  modifiedBefore: DateTime
+  sourceInfo: SourceInfoFilter
+  stage: DeltaFileStage
+}
+
 type Query {
+  deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile
   lastCreated(last: Int) : [DeltaFile]!
   lastModified(last: Int) : [DeltaFile]!

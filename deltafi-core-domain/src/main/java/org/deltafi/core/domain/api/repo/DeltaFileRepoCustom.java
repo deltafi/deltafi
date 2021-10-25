@@ -1,6 +1,9 @@
 package org.deltafi.core.domain.api.repo;
 
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.generated.types.DeltaFileOrder;
+import org.deltafi.core.domain.generated.types.DeltaFilesFilter;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -33,4 +36,13 @@ public interface DeltaFileRepoCustom {
      */
     List<DeltaFile> markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy);
 
+    /** Return a list of DeltaFiles matching the given criteria
+     *
+     * @param offset Offset to use for pagination (defaults to 0)
+     * @param limit Maximum number of DeltaFiles to return (defaults to 50)
+     * @param filter Filters are used to constrain DeltaFiles that are returned
+     * @param orderBy Determines what fields the returned records will be sorted by
+     * @return the list of DeltaFiles
+     */
+    DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy);
 }

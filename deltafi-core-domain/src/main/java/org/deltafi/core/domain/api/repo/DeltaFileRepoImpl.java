@@ -3,18 +3,16 @@ package org.deltafi.core.domain.api.repo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
+import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.generated.types.*;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -32,7 +30,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String MODIFIED = "modified";
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
+    public static final String DOMAINS_KEY = "domains.key";
+    public static final String ENRICHMENT_KEY = "enrichment.key";
+    public static final String MARKED_FOR_DELETE = "markedForDelete";
 
+    public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
 
     public static final String ACTIONS = "actions";
@@ -77,6 +79,31 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         deltaFilesToMark.forEach(deltaFile -> doMarkForDeleteAndSave(deltaFile, policy));
 
         return deltaFilesToMark;
+    }
+
+    @Override
+    public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy) {
+        Query query = new Query(buildDeltaFilesCriteria(filter));
+
+        long total = mongoTemplate.count(query, DeltaFile.class);
+
+        if (nonNull(offset) && offset > 0) {
+            query.skip(offset);
+        } else {
+            offset = 0;
+        }
+
+        query.limit(limit);
+
+        addDeltaFilesOrderBy(query, orderBy);
+
+        DeltaFiles deltaFiles = new DeltaFiles();
+        deltaFiles.setOffset(offset);
+        deltaFiles.setTotalCount((int) total);
+        deltaFiles.setDeltaFiles(mongoTemplate.find(query, DeltaFile.class));
+        deltaFiles.setCount(deltaFiles.getDeltaFiles().size());
+
+        return deltaFiles;
     }
 
     void doMarkForDeleteAndSave(DeltaFile deltaFile, String policy) {
@@ -140,6 +167,80 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return deleteTimeCriteria;
     }
 
+    private Criteria buildDeltaFilesCriteria(DeltaFilesFilter filter) {
+        Criteria criteria = new Criteria();
+
+        if (isNull(filter)) {
+            return criteria;
+        }
+
+        List<Criteria> andCriteria = new ArrayList<>();
+
+        if (nonNull(filter.getCreatedAfter())) {
+            andCriteria.add(Criteria.where(CREATED).gt(filter.getCreatedAfter()));
+        }
+
+        if (nonNull(filter.getCreatedBefore())) {
+            andCriteria.add(Criteria.where(CREATED).lt(filter.getCreatedBefore()));
+        }
+
+        if (nonNull(filter.getDomains())) {
+            andCriteria.add(Criteria.where(DOMAINS_KEY).all(filter.getDomains()));
+        }
+
+        if (nonNull(filter.getEnrichment())) {
+            andCriteria.add(Criteria.where(ENRICHMENT_KEY).all(filter.getEnrichment()));
+        }
+
+        if (nonNull(filter.getIsMarkedForDelete())) {
+            if (filter.getIsMarkedForDelete()) {
+                andCriteria.add(Criteria.where(MARKED_FOR_DELETE).ne(null));
+            } else {
+                andCriteria.add(Criteria.where(MARKED_FOR_DELETE).is(null));
+            }
+        }
+
+        if (nonNull(filter.getModifiedAfter())) {
+            andCriteria.add(Criteria.where(MODIFIED).gt(filter.getModifiedAfter()));
+        }
+
+        if (nonNull(filter.getModifiedBefore())) {
+            andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
+        }
+
+        if (nonNull(filter.getStage())) {
+            andCriteria.add(Criteria.where(STAGE).is(filter.getStage().name()));
+        }
+
+        if (nonNull(filter.getSourceInfo())) {
+            if (nonNull(filter.getSourceInfo().getFilename())) {
+                andCriteria.add(Criteria.where(SOURCE_INFO_FILENAME).is(filter.getSourceInfo().getFilename()));
+            }
+
+            if (nonNull(filter.getSourceInfo().getFlow())) {
+                andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getSourceInfo().getFlow()));
+            }
+        }
+
+        if (!andCriteria.isEmpty()) {
+            if (andCriteria.size() == 1) {
+                criteria = andCriteria.get(0);
+            } else {
+                criteria.andOperator(andCriteria.toArray(new Criteria[0]));
+            }
+        }
+
+        return criteria;
+    }
+
+    private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
+        if (isNull(orderBy)) {
+            orderBy = DeltaFileOrder.newBuilder().field(DeltaFileField.created).direction(DeltaFileDirection.DESC).build();
+        }
+
+        query.with(Sort.by(Collections.singletonList(new Sort.Order(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField().name()))));
+    }
+
     private Criteria buildDeleteTimeCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate) {
         Criteria createdBeforeCriteria = nonNull(createdBeforeDate) ? createdBeforeCriteria(createdBeforeDate) : null;
         Criteria completedBeforeCriteria = nonNull(completedBeforeDate) ? completedBeforeCriteria(completedBeforeDate) : null;
@@ -156,13 +257,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Criteria createdBeforeCriteria(OffsetDateTime createdBeforeDate) {
-        Criteria notDeleted = Criteria.where(STAGE).ne(DeltaFileStage.DELETE.name());
+        Criteria notDeleted = Criteria.where(STAGE).ne(DeltaFileStage.DELETE);
         Criteria created = Criteria.where(CREATED).lt(createdBeforeDate);
         return new Criteria().andOperator(notDeleted, created);
     }
 
     private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {
-        Criteria completed = Criteria.where(STAGE).is(DeltaFileStage.COMPLETE.name());
+        Criteria completed = Criteria.where(STAGE).is(DeltaFileStage.COMPLETE);
         Criteria lastModified = Criteria.where(MODIFIED).lt(completedBeforeDate);
         return new Criteria().andOperator(completed, lastModified);
     }

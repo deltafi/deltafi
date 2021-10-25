@@ -156,7 +156,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postTransformUtf8DeltaFile(String did) {
 		DeltaFile deltaFile = postIngressDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.INGRESS.name());
+		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("Utf8TransformAction");
 		deltaFile.queueAction("SampleTransformAction");
 		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
@@ -190,7 +190,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postTransformDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.INGRESS.name());
+		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("SampleTransformAction");
 		deltaFile.queueAction("SampleLoadAction");
 		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
@@ -225,7 +225,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.EGRESS.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
 		deltaFile.addDomain("sample", null);
@@ -275,7 +275,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postEnrichDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.EGRESS.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleFormatAction");
 		deltaFile.completeAction("SampleEnrichAction");
 		try {
@@ -306,7 +306,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postFormatDeltaFile(String did) {
 		DeltaFile deltaFile = postEnrichDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.EGRESS.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueActionsIfNew(Arrays.asList("AuthorityValidateAction", "SampleValidateAction"));
 		deltaFile.completeAction("SampleFormatAction");
 		deltaFile.getFormattedData().add(FormattedData.newBuilder()
@@ -346,7 +346,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postValidateDeltaFile(String did) {
 		DeltaFile deltaFile = postFormatDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.EGRESS.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.completeAction("SampleValidateAction");
 		return deltaFile;
 	}
@@ -370,7 +370,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postErrorDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.ERROR.name());
+		deltaFile.setStage(DeltaFileStage.ERROR);
 		deltaFile.errorAction("AuthorityValidateAction", "Authority XYZ not recognized", "Dead beef feed face cafe");
 		return deltaFile;
 	}
@@ -415,7 +415,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postValidateAuthorityDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.EGRESS.name());
+		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleEgressAction");
 		deltaFile.completeAction("AuthorityValidateAction");
 		return deltaFile;
@@ -442,7 +442,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postEgressDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateAuthorityDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.COMPLETE.name());
+		deltaFile.setStage(DeltaFileStage.COMPLETE);
 		deltaFile.completeAction("SampleEgressAction");
 		return deltaFile;
 	}
@@ -477,13 +477,13 @@ class DeltaFiCoreDomainApplicationTests {
 		Action lastAction = deltaFile.getActions().get(deltaFile.getActions().size()-1);
 		assertEquals("SampleEgressAction", lastAction.getName());
 		assertEquals(ActionState.FILTERED, lastAction.getState());
-		assertEquals(DeltaFileStage.COMPLETE.name(), deltaFile.getStage());
+		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 
 		Mockito.verify(redisService, never()).enqueue(any(), any());
 	}
 
 	@Test
-	void test22EgressDeleteCompleted() throws IOException, ActionConfigException {
+	void test22EgressDeleteCompleted() throws IOException, ActionConfigException, InterruptedException {
 		deltaFiProperties.getDelete().setOnCompletion(true);
 
 		String did = UUID.randomUUID().toString();
@@ -509,7 +509,7 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class).getDid();
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertThat(DeltaFileStage.ERROR.name()).isEqualTo(deltaFile.getStage());
+		assertThat(DeltaFileStage.ERROR).isEqualTo(deltaFile.getStage());
 
 		Action errored = deltaFile.actionNamed("SampleTransformAction").orElseThrow();
 		assertThat(errored.getErrorCause()).isEqualTo("action not found");
@@ -517,7 +517,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Test
 	void deleteActionAddedToRedisQueueAfterCompletion() throws Exception {
-		deltaFileRepo.save(DeltaFile.newBuilder().did("a").stage(DeltaFileStage.COMPLETE.name())
+		deltaFileRepo.save(DeltaFile.newBuilder().did("a").stage(DeltaFileStage.COMPLETE)
 				.modified(OffsetDateTime.now()).actions(Collections.emptyList()).build());
 		Thread.sleep(1000);
 		Mockito.verify(redisService, never()).enqueue(any(), any());

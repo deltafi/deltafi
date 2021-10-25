@@ -4,19 +4,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.converters.DeltaFileConverter;
 import org.deltafi.core.domain.converters.ErrorConverter;
+import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.exceptions.UnexpectedActionException;
 import org.deltafi.core.domain.exceptions.UnknownTypeException;
 import org.deltafi.core.domain.generated.types.*;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.retry.MongoRetryable;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +40,8 @@ public class DeltaFilesService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
+    private static final int DEFAULT_QUERY_LIMIT = 50;
+
     final DeltaFiConfigService configService;
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
@@ -53,6 +56,10 @@ public class DeltaFilesService {
         return deltaFileRepo.findById(did).orElse(null);
     }
 
+    public DeltaFiles getDeltaFiles(Integer offset, Integer limit, DeltaFilesFilter filter, DeltaFileOrder orderBy) {
+        return deltaFileRepo.deltaFiles(offset, (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT, filter, orderBy);
+    }
+
     public List<DeltaFile> getLastCreatedDeltaFiles(Integer last) {
         PageRequest pageRequest = PageRequest.of(0, last);
         return deltaFileRepo.findAllByOrderByCreatedDesc(pageRequest).getContent();
@@ -65,7 +72,7 @@ public class DeltaFilesService {
 
     public List<DeltaFile> getLastErroredDeltaFiles(Integer last) {
         PageRequest pageRequest = PageRequest.of(0, last);
-        return deltaFileRepo.findByStageOrderByModifiedDesc(DeltaFileStage.ERROR.name(), pageRequest).getContent();
+        return deltaFileRepo.findByStageOrderByModifiedDesc(DeltaFileStage.ERROR, pageRequest).getContent();
     }
 
     public DeltaFile getLastWithFilename(String filename) {
@@ -233,14 +240,14 @@ public class DeltaFilesService {
         DeltaFile deltaFile = getDeltaFile(did);
 
         deltaFile.retryErrors();
-        deltaFile.setStage(DeltaFileStage.INGRESS.name());
+        deltaFile.setStage(DeltaFileStage.INGRESS);
 
         return advanceAndSave(deltaFile);
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
         List<String> enqueueActions = stateMachine.advance(deltaFile);
-        if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE.toString())) {
+        if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
             deltaFile.markForDelete("on completion");
             deltaFileRepo.save(deltaFile);
             enqueueDeleteAction(deltaFile);
@@ -318,5 +325,9 @@ public class DeltaFilesService {
                 log.error("Failed to create error for " + deltaFile.getDid() + " with event " + event + ": " + e.getMessage());
             }
         }
+    }
+
+    public void deleteAllDeltaFiles() {
+        deltaFileRepo.deleteAll();
     }
 }

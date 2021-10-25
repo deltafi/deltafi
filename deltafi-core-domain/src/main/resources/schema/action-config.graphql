@@ -22,7 +22,7 @@ interface ActionConfiguration {
     apiVersion: String
 }
 
-type TransformActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -42,7 +42,7 @@ input TransformActionConfigurationInput {
     parameters: JSON
 }
 
-type LoadActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -62,7 +62,7 @@ input LoadActionConfigurationInput {
     parameters: JSON
 }
 
-type EnrichActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+type EnrichActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -82,7 +82,7 @@ input EnrichActionConfigurationInput {
     parameters: JSON
 }
 
-type FormatActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+type FormatActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -102,7 +102,7 @@ input FormatActionConfigurationInput {
     parameters: JSON
 }
 
-type ValidateActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+type ValidateActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -118,7 +118,7 @@ input ValidateActionConfigurationInput {
     parameters: JSON
 }
 
-type EgressActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+type EgressActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!
@@ -134,7 +134,7 @@ input EgressActionConfigurationInput {
     parameters: JSON
 }
 
-type DeleteActionConfiguration implements ActionConfiguration, DeltaFiConfiguration {
+type DeleteActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     created: DateTime!
     modified: DateTime!

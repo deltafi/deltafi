@@ -3,6 +3,7 @@ package org.deltafi.core.domain.services;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.com.google.common.collect.Iterables;
 import org.deltafi.common.trace.ZipkinService;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
@@ -10,7 +11,6 @@ import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.converters.KeyValueConverter;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.generated.types.ProtocolLayer;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ public class StateMachine {
      */
     public List<String> advance(DeltaFile deltaFile) {
         List<String> enqueueActions = new ArrayList<>();
-        switch (DeltaFileStage.valueOf(deltaFile.getStage())) {
+        switch (deltaFile.getStage()) {
             case INGRESS:
                 if (deltaFile.hasErroredAction()) {
                     break;
@@ -61,7 +61,7 @@ public class StateMachine {
                 }
 
                 // if transform and load are complete, move to egress stage
-                deltaFile.setStage(DeltaFileStage.EGRESS.name());
+                deltaFile.setStage(DeltaFileStage.EGRESS);
             case EGRESS:
                 // enrich
                 List<String> enrichActions = getEnrichActions(deltaFile);
@@ -84,7 +84,7 @@ public class StateMachine {
         }
 
         if (!deltaFile.hasPendingActions()) {
-            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR.name() : DeltaFileStage.COMPLETE.name());
+            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
             sendTrace(deltaFile);
         }
 

@@ -52,6 +52,7 @@ generateJava {
     packageName = 'org.deltafi.core.domain.generated'
     generateClient = true
     typeMapping = [
+	  "DeltaFiles": "org.deltafi.core.domain.api.types.DeltaFiles",
 	  "JSON": "org.deltafi.core.domain.api.types.JsonMap",
 	  "Long": "java.lang.Long"
     ]

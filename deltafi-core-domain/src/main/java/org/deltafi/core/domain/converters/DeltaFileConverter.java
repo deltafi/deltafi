@@ -3,8 +3,8 @@ package org.deltafi.core.domain.converters;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.*;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public class DeltaFileConverter {
         OffsetDateTime now = OffsetDateTime.now();
         return DeltaFile.newBuilder()
                 .did(did)
-                .stage(DeltaFileStage.INGRESS.name())
+                .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>())
                 .sourceInfo(mapper.convertValue(sourceInfoInput, SourceInfo.class))
                 .protocolStack(Collections.singletonList(protocolLayer))
@@ -38,7 +38,7 @@ public class DeltaFileConverter {
         OffsetDateTime now = OffsetDateTime.now();
         return DeltaFile.newBuilder()
                 .did(UUID.randomUUID().toString())
-                .stage(DeltaFileStage.EGRESS.name())
+                .stage(DeltaFileStage.EGRESS)
                 .actions(new ArrayList<>())
                 .sourceInfo(originator.getSourceInfo())
                 .protocolStack(Collections.emptyList())

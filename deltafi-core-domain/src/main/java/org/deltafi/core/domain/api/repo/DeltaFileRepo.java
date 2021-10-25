@@ -1,6 +1,7 @@
 package org.deltafi.core.domain.api.repo;
 
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -15,6 +16,6 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, Delta
 
     Page<DeltaFile> findAllByOrderByCreatedDesc(Pageable pageable);
     Page<DeltaFile> findAllByOrderByModifiedDesc(Pageable pageable);
-    Page<DeltaFile> findByStageOrderByModifiedDesc(String stage, Pageable pageable);
+    Page<DeltaFile> findByStageOrderByModifiedDesc(DeltaFileStage stage, Pageable pageable);
     Page<DeltaFile> findBySourceInfoFilenameOrderByCreatedDesc(String filename, Pageable pageable);
 }
