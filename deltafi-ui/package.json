@@ -1,15 +1,13 @@
 {
   "name": "deltafi-ui",
-  "version": "0.0.0",
+  "version": "0.11.0",
   "private": true,
   "scripts": {
     "serve-app": "vue-cli-service serve",
     "development": "vue-cli-service serve --mode development",
     "staging": "vue-cli-service serve --mode staging",
     "build": "vue-cli-service build",
-    "start": "node ./bin/www",
-    "test": "mocha",
-    "serve-json": "json-server --watch ./server/database.json"
+    "test": "mocha"
   },
   "dependencies": {
     "@vue/cli": "^4.5.13",
@@ -35,7 +33,6 @@
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
-    "@vue/cli-plugin-pwa": "~4.5.0",
     "@vue/cli-plugin-router": "~4.5.0",
     "@vue/cli-plugin-typescript": "~4.5.0",
     "@vue/cli-plugin-vuex": "~4.5.0",
