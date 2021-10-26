@@ -30,17 +30,24 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String MODIFIED = "modified";
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
+    public static final String STATE = "state";
     public static final String DOMAINS_KEY = "domains.key";
     public static final String ENRICHMENT_KEY = "enrichment.key";
     public static final String MARKED_FOR_DELETE = "markedForDelete";
+    public static final String KEY = "key";
+    public static final String VALUE = "value";
 
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
+    public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
+
+    public static final String FORMATTED_DATA_FILENAME = "formattedData.filename";
+    public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
+    public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
+    public static final String FORMATTED_DATA_EGRESS_ACTIONS = "formattedData.egressActions";
 
     public static final String ACTIONS = "actions";
-    public static final String ACTIONS_STATE = "state";
-    public static final String ACTIONS_NAME = "name";
-    public static final String ACTIONS_MODIFIED = "modified";
+    public static final String ACTIONS_NAME = "actions.name";
 
     public static final String ACTION_MODIFIED = "action.modified";
     public static final String ACTION_STATE = "action.state";
@@ -140,10 +147,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds) {
-        Criteria queued = Criteria.where(ACTIONS_STATE).is(ActionState.QUEUED.name());
+        Criteria queued = Criteria.where(STATE).is(ActionState.QUEUED.name());
 
         long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
-        Criteria expired = Criteria.where(ACTIONS_MODIFIED).lt(new Date(epochMs));
+        Criteria expired = Criteria.where(MODIFIED).lt(new Date(epochMs));
 
         Criteria actionElemMatch = new Criteria().andOperator(queued, expired);
 
@@ -151,8 +158,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildRequeuedQuery(OffsetDateTime requeueTime) {
-        Criteria queued = Criteria.where(ACTIONS_STATE).is(ActionState.QUEUED.name());
-        Criteria requeuedTime = Criteria.where(ACTIONS_MODIFIED).is(requeueTime);
+        Criteria queued = Criteria.where(STATE).is(ActionState.QUEUED.name());
+        Criteria requeuedTime = Criteria.where(MODIFIED).is(requeueTime);
 
         Criteria actionElemMatch = new Criteria().andOperator(queued, requeuedTime);
 
@@ -184,11 +191,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             andCriteria.add(Criteria.where(CREATED).lt(filter.getCreatedBefore()));
         }
 
-        if (nonNull(filter.getDomains())) {
+        if (nonNull(filter.getDomains()) && !filter.getDomains().isEmpty()) {
             andCriteria.add(Criteria.where(DOMAINS_KEY).all(filter.getDomains()));
         }
 
-        if (nonNull(filter.getEnrichment())) {
+        if (nonNull(filter.getEnrichment()) && !filter.getEnrichment().isEmpty()) {
             andCriteria.add(Criteria.where(ENRICHMENT_KEY).all(filter.getEnrichment()));
         }
 
@@ -219,6 +226,32 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
             if (nonNull(filter.getSourceInfo().getFlow())) {
                 andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getSourceInfo().getFlow()));
+            }
+
+            if (nonNull(filter.getSourceInfo().getMetadata())) {
+                filter.getSourceInfo().getMetadata().forEach(m -> andCriteria.add(Criteria.where(SOURCE_INFO_METADATA).elemMatch(Criteria.where(KEY).is(m.getKey()).and(VALUE).is(m.getValue()))));
+            }
+        }
+
+        if (nonNull(filter.getActions()) && !filter.getActions().isEmpty()) {
+            andCriteria.add(Criteria.where(ACTIONS_NAME).all(filter.getActions()));
+        }
+
+        if (nonNull(filter.getFormattedData())) {
+            if (nonNull(filter.getFormattedData().getFilename())) {
+                andCriteria.add(Criteria.where(FORMATTED_DATA_FILENAME).is(filter.getFormattedData().getFilename()));
+            }
+
+            if (nonNull(filter.getFormattedData().getFormatAction())) {
+                andCriteria.add(Criteria.where(FORMATTED_DATA_FORMAT_ACTION).is(filter.getFormattedData().getFormatAction()));
+            }
+
+            if (nonNull(filter.getFormattedData().getMetadata())) {
+                filter.getFormattedData().getMetadata().forEach(m -> andCriteria.add(Criteria.where(FORMATTED_DATA_METADATA).elemMatch(Criteria.where(KEY).is(m.getKey()).and(VALUE).is(m.getValue()))));
+            }
+
+            if (nonNull(filter.getFormattedData().getEgressActions()) && !filter.getFormattedData().getEgressActions().isEmpty()) {
+                andCriteria.add(Criteria.where(FORMATTED_DATA_EGRESS_ACTIONS).all(filter.getFormattedData().getEgressActions()));
             }
         }
 

@@ -27,6 +27,7 @@ input SourceInfoInput {
 input SourceInfoFilter {
   filename: String
   flow: String
+  metadata: [KeyValueInput!]
 }
 
 """
@@ -69,6 +70,13 @@ type FormattedData {
   metadata: [KeyValue!]
   objectReference: ObjectReference!
   egressActions: [String!]!
+}
+
+input FormattedDataFilter {
+  filename: String
+  formatAction: String
+  metadata: [KeyValueInput!]
+  egressActions: [String!]
 }
 
 enum DeltaFileStage {
@@ -197,6 +205,8 @@ input DeltaFilesFilter {
   modifiedBefore: DateTime
   sourceInfo: SourceInfoFilter
   stage: DeltaFileStage
+  actions: [String!]
+  formattedData: FormattedDataFilter
 }
 
 type Query {

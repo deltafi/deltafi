@@ -232,18 +232,24 @@ class DeltaFileRepoTest {
         deltaFile1.setDomains(List.of(KeyValue.newBuilder().key("domain1").build()));
         deltaFile1.setEnrichment(List.of(KeyValue.newBuilder().key("enrichment1").build()));
         deltaFile1.setMarkedForDelete(MONGO_NOW);
-        deltaFile1.setSourceInfo(SourceInfo.newBuilder().flow("flow1").filename("filename1").build());
+        deltaFile1.setSourceInfo(SourceInfo.newBuilder().flow("flow1").filename("filename1").metadata(List.of(KeyValue.newBuilder().key("key1").value("value1").build(), KeyValue.newBuilder().key("key2").value("value2").build())).build());
+        deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
+        deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename1").formatAction("formatAction1").metadata(List.of(KeyValue.newBuilder().key("formattedKey1").value("formattedValue1").build(), KeyValue.newBuilder().key("formattedKey2").value("formattedValue2").build())).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
         deltaFileRepo.save(deltaFile1);
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
         deltaFile2.setDomains(List.of(KeyValue.newBuilder().key("domain1").build(), KeyValue.newBuilder().key("domain2").build()));
         deltaFile2.setEnrichment(List.of(KeyValue.newBuilder().key("enrichment1").build(), KeyValue.newBuilder().key("enrichment2").build()));
         deltaFile2.setSourceInfo(SourceInfo.newBuilder().flow("flow2").filename("filename2").build());
+        deltaFile2.setActions(List.of(Action.newBuilder().name("action1").build(), Action.newBuilder().name("action2").build()));
+        deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename2").formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));
         deltaFileRepo.save(deltaFile2);
 
         testFilter(DeltaFilesFilter.newBuilder().createdAfter(MONGO_NOW).build(), deltaFile2);
         testFilter(DeltaFilesFilter.newBuilder().createdBefore(MONGO_NOW).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().domains(Collections.emptyList()).build(), deltaFile2, deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1")).build(), deltaFile2, deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1", "domain2")).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().enrichment(Collections.emptyList()).build(), deltaFile2, deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().enrichment(List.of("enrichment1")).build(), deltaFile2, deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().enrichment(List.of("enrichment1", "enrichment2")).build(), deltaFile2);
         testFilter(DeltaFilesFilter.newBuilder().isMarkedForDelete(true).build(), deltaFile1);
@@ -253,6 +259,19 @@ class DeltaFileRepoTest {
         testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.COMPLETE).build(), deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("filename1").build()).build(), deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().flow("flow2").build()).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(KeyValueInput.newBuilder().key("key1").value("value1").build())).build()).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(KeyValueInput.newBuilder().key("key1").value("value1").build(), KeyValueInput.newBuilder().key("key2").value("value2").build())).build()).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(KeyValueInput.newBuilder().key("key1").value("value1").build(), KeyValueInput.newBuilder().key("key2").value("value1").build())).build()).build());
+        testFilter(DeltaFilesFilter.newBuilder().actions(Collections.emptyList()).build(), deltaFile2, deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1")).build(), deltaFile2, deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1", "action2")).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().filename("formattedFilename1").build()).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().formatAction("formatAction2").build()).build(), deltaFile2);
+        testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().metadata(List.of(KeyValueInput.newBuilder().key("formattedKey1").value("formattedValue1").build())).build()).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().metadata(List.of(KeyValueInput.newBuilder().key("formattedKey1").value("formattedValue1").build(), KeyValueInput.newBuilder().key("formattedKey2").value("formattedValue2").build())).build()).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().metadata(List.of(KeyValueInput.newBuilder().key("formattedKey1").value("formattedValue1").build(), KeyValueInput.newBuilder().key("formattedKey2").value("formattedValue1").build())).build()).build());
+        testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().egressActions(List.of("EgressAction1")).build()).build(), deltaFile2, deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().egressActions(List.of("EgressAction1", "EgressAction2")).build()).build(), deltaFile1);
     }
 
     private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
