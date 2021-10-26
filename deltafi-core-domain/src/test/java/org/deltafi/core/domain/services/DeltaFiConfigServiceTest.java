@@ -2,10 +2,12 @@ package org.deltafi.core.domain.services;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.generated.types.ConfigQueryInput;
 import org.deltafi.core.domain.generated.types.ConfigType;
 import org.deltafi.core.domain.generated.types.EgressFlowConfigurationInput;
 import org.deltafi.core.domain.repo.DeltaFiRuntimeConfigRepo;
+import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,12 +15,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +32,9 @@ class DeltaFiConfigServiceTest {
 
     @Mock
     private DeltaFiRuntimeConfigRepo deltaFiConfigRepo;
+
+    @Mock
+    private DeltafiRuntimeConfigurationValidator configValidator;
 
     private DeltafiRuntimeConfiguration config;
 
@@ -92,6 +95,25 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(saved.getModified()).isNotNull();
 
         Assertions.assertThat(configService.getEgressFlow("myFlow")).contains(mocked);
+    }
+
+    @Test
+    void testUpdateConfig_invalidChange() {
+        EgressFlowConfigurationInput egressFlow = new EgressFlowConfigurationInput();
+        egressFlow.setFormatAction("formatAction");
+        egressFlow.setName("myFlow");
+        egressFlow.setApiVersion("v1");
+
+        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
+        Mockito.when(configValidator.validate(Mockito.any())).thenReturn(List.of("Failed validation"));
+
+        Assertions.assertThatThrownBy(()-> {
+            configService.saveEgressFlow(egressFlow);
+        }).isInstanceOf(DeltafiConfigurationException.class)
+                .hasMessage("Failed validation");
+
+        Mockito.verify(deltaFiConfigRepo, Mockito.times(0)).save(Mockito.any());
+
     }
 
     @Test
@@ -258,4 +280,5 @@ class DeltaFiConfigServiceTest {
         configItem.setName(name);
         configs.put(name, configItem);
     }
+
 }

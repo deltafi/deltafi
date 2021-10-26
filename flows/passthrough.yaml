@@ -19,20 +19,16 @@
   transformActions:
     PassthroughTransformAction:
       consumes: binary
-      name: PassthroughTransformAction
       parameters:
         staticMetadata:
           passthrough_transform: Talk to me Goose...
-        name: PassthroughTransformAction
         resultType: passthrough-binary
       produces: passthrough-binary
       type: org.deltafi.passthrough.action.RoteTransformAction
   loadActions:
     PassthroughLoadAction:
       consumes: passthrough-binary
-      name: PassthroughLoadAction
       parameters:
-        name: PassthroughLoadAction
         domains:
         - binary
       requiresMetadata: {}
@@ -42,24 +38,19 @@
   enrichActions: {}
   formatActions:
     PassthroughFormatAction:
-      name: PassthroughFormatAction
       parameters:
         staticMetadata:
           passthrough_format: That's a negative Ghostrider...
-        name: PassthroughFormatAction
       requiresDomains:
       - binary
       requiresEnrichment: []
       type: org.deltafi.passthrough.action.RoteFormatAction
   validateActions:
     PassthroughValidateAction:
-      name: PassthroughValidateAction
-      parameters:
-        name: PassthroughValidateAction
+      parameters: {}
       type: org.deltafi.passthrough.action.RubberStampValidateAction
   egressActions:
     PassthroughEgressAction:
-      name: PassthroughEgressAction
       parameters:
         egressFlow: passthrough
         metadataPrefix: deltafi.

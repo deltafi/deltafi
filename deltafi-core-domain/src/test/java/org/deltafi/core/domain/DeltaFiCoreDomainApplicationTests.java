@@ -14,6 +14,7 @@ import org.deltafi.core.domain.services.DeltaFiConfigService;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.RedisService;
 import org.deltafi.core.domain.services.SampleEnrichmentsService;
+import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +22,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 
 import java.io.IOException;
@@ -58,6 +60,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
     DeltaFiConfigService configService;
+
+	@MockBean
+	DeltafiRuntimeConfigurationValidator configValidator;
 
 	@TestConfiguration
 	public static class Configuration {

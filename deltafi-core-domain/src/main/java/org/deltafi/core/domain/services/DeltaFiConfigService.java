@@ -16,9 +16,11 @@ import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
 import org.deltafi.core.domain.converters.KeyValueConverter;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
+import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.api.types.ConfigType;
 import org.deltafi.core.domain.repo.DeltaFiRuntimeConfigRepo;
+import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -37,6 +39,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 @Service
 public class DeltaFiConfigService {
 
@@ -47,7 +52,7 @@ public class DeltaFiConfigService {
         @Override
         protected NodeTuple representJavaBeanProperty(Object javaBean, Property property,
                                                       Object propertyValue, Tag customTag) {
-            if (Objects.isNull(propertyValue) || propertyValue instanceof OffsetDateTime) {
+            if (isNull(propertyValue) || propertyValue instanceof OffsetDateTime) {
                 return null;
             } else {
                 return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
@@ -57,13 +62,15 @@ public class DeltaFiConfigService {
 
     Yaml yaml = new Yaml(new Constructor(DeltafiRuntimeConfiguration.class), representer);
 
+    private final DeltafiRuntimeConfigurationValidator configurationValidator;
     private final DeltaFiRuntimeConfigRepo configRepo;
 
     private DeltafiRuntimeConfiguration config;
 
     @SuppressWarnings("CdiInjectionPointsInspection")
-    public DeltaFiConfigService(DeltaFiRuntimeConfigRepo configRepo) {
+    public DeltaFiConfigService(DeltaFiRuntimeConfigRepo configRepo, DeltafiRuntimeConfigurationValidator configurationValidator) {
         this.configRepo = configRepo;
+        this.configurationValidator = configurationValidator;
     }
 
     @PostConstruct
@@ -97,7 +104,8 @@ public class DeltaFiConfigService {
         DeltafiRuntimeConfiguration incoming = yaml.load(configInput);
         incoming.allConfigs().forEach(this::setTimes);
         incoming.getEgressFlows().values().forEach(this::setEgressActionName);
-        config = configRepo.save(incoming);
+        ensureNamesSet(incoming);
+        saveConfig(incoming);
         return exportConfigAsYaml();
     }
 
@@ -110,6 +118,7 @@ public class DeltaFiConfigService {
     public String mergeConfig(String configInput) {
         DeltafiRuntimeConfiguration incoming = yaml.load(configInput);
         incoming.getEgressFlows().values().forEach(this::setEgressActionName);
+        ensureNamesSet(incoming);
         DeltafiRuntimeConfiguration existing = getCurrentConfig();
 
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getTransformActions);
@@ -123,12 +132,12 @@ public class DeltaFiConfigService {
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getLoadGroups);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getDeleteActions);
 
-        config = configRepo.save(existing);
+        saveConfig(existing);
         return exportConfigAsYaml();
     }
 
     public void setEgressActionName(EgressFlowConfiguration egressFlowConfiguration) {
-        if (Objects.isNull(egressFlowConfiguration.getEgressAction()) || egressFlowConfiguration.getEgressAction().isBlank()) {
+        if (isNull(egressFlowConfiguration.getEgressAction()) || egressFlowConfiguration.getEgressAction().isBlank()) {
             egressFlowConfiguration.setEgressAction(EgressConfiguration.egressActionName(egressFlowConfiguration.getName()));
         }
     }
@@ -263,7 +272,7 @@ public class DeltaFiConfigService {
         int removing = toClear.size();
         if (removing > 0) {
             toClear.clear();
-            config = configRepo.save(current);
+            saveConfig(current);
         }
         return removing;
     }
@@ -273,7 +282,7 @@ public class DeltaFiConfigService {
         Map<String, ? extends DeltaFiConfiguration> toClear = current.getMapByType(configType);
         DeltaFiConfiguration removed = toClear.remove(configName);
         if (Objects.nonNull(removed)) {
-            config = configRepo.save(current);
+            saveConfig(current);
             return 1;
         }
         return 0;
@@ -289,7 +298,7 @@ public class DeltaFiConfigService {
             toClear.clear();
         }
 
-        config = configRepo.save(current);
+        saveConfig(current);
         return removed;
     }
 
@@ -300,7 +309,7 @@ public class DeltaFiConfigService {
     public <C extends DeltaFiConfiguration> C getConfigFromMap(Function<DeltafiRuntimeConfiguration, Map<String, C>> mapFunction, String name) {
         C actionConfig = mapFunction.apply(config).get(name);
 
-        if (Objects.isNull(actionConfig)) {
+        if (isNull(actionConfig)) {
             refreshConfig();
             actionConfig = mapFunction.apply(config).get(name);
         }
@@ -332,7 +341,8 @@ public class DeltaFiConfigService {
         }
 
         configs.put(inputName, configToSave);
-        config = configRepo.save(current);
+
+        saveConfig(current);
 
         return configToSave;
     }
@@ -352,6 +362,39 @@ public class DeltaFiConfigService {
 
             existingMap.put(key, configEntry);
         }
+    }
+
+    private void ensureNamesSet(DeltafiRuntimeConfiguration incomingConfig) {
+        incomingConfig.actionMaps().map(Map::entrySet).flatMap(Set::stream).forEach(this::ensureParamNameAndConfigNameSet);
+        incomingConfig.deltafiMaps().map(Map::entrySet).flatMap(Set::stream).forEach(this::ensureConfigNameIsSet);
+    }
+
+    private void ensureConfigNameIsSet(Map.Entry<String,? extends DeltaFiConfiguration> entry) {
+        ensureConfigNameIsSet(entry.getKey(), entry.getValue());
+    }
+
+    private void ensureConfigNameIsSet(String key, DeltaFiConfiguration configItem) {
+        if (isNull(configItem.getName())) {
+            configItem.setName(key);
+        }
+    }
+
+    private void ensureParamNameAndConfigNameSet(Map.Entry<String, ? extends ActionConfiguration> entry) {
+        String key = entry.getKey();
+        ActionConfiguration actionConfig = entry.getValue();
+        ensureConfigNameIsSet(key, actionConfig);
+        if (nonNull(actionConfig.getParameters()) && isNull(actionConfig.getParameters().get("name"))) {
+            actionConfig.getParameters().put("name", key);
+        }
+    }
+
+    private void saveConfig(DeltafiRuntimeConfiguration updated) {
+        List<String> errors = configurationValidator.validate(updated);
+        if (!errors.isEmpty()) {
+            throw new DeltafiConfigurationException(String.join("; ", errors));
+        }
+
+        config = configRepo.save(updated);
     }
 
 }

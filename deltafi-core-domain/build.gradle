@@ -101,6 +101,7 @@ dependencies {
 		because 'DGS BOM to automatically define versions of other packages below'
 	}
 
+	implementation "com.networknt:json-schema-validator:1.0.58"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter"
 	implementation "org.springframework.boot:spring-boot-starter-web"

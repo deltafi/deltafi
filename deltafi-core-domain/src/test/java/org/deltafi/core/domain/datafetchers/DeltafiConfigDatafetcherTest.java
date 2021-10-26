@@ -5,15 +5,17 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
-import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
 import org.deltafi.core.domain.repo.DeltaFiRuntimeConfigRepo;
+import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
@@ -34,6 +36,9 @@ class DeltafiConfigDatafetcherTest {
 
     @Autowired
     DeltaFiRuntimeConfigRepo deltaFiConfigRepo;
+
+    @MockBean
+    DeltafiRuntimeConfigurationValidator configValidator;
 
     @BeforeEach
     public void setup() {

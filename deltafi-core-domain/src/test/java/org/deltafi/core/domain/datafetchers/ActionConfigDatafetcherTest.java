@@ -6,9 +6,11 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
 import static graphql.Assert.assertNotNull;
@@ -28,6 +30,9 @@ class ActionConfigDatafetcherTest {
 
     @Autowired
     DgsQueryExecutor dgsQueryExecutor;
+
+    @MockBean
+    DeltafiRuntimeConfigurationValidator configValidator;
 
     @Test
     void addTransformConfigTest() {

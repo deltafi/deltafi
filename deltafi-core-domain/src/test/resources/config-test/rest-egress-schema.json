@@ -1,0 +1,35 @@
+{
+  "actionClass": "org.deltafi.core.action.RestPostEgressAction",
+  "actionKitVersion": "0.7.0-SNAPSHOT",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "egressFlow": {
+        "type": "string",
+        "description": "Name of the egress flow the DeltaFile is flowing through"
+      },
+      "metadataPrefix": {
+        "type": "string",
+        "description": "The prefix to use in the metadata file keys"
+      },
+      "name": {
+        "type": "string",
+        "description": "Name of the action used to track data"
+      },
+      "staticMetadata": {
+        "type": "object",
+        "description": "Static metadata that can be attached to the metadata of the DeltaFile when a DeltaFile is processed by the action"
+      },
+      "url": {
+        "type": "string",
+        "description": "The URL to post the DeltaFile to"
+      }
+    },
+    "required": [
+      "egressFlow",
+      "name",
+      "url"
+    ],
+    "additionalProperties": false
+  }
+}

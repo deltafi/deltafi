@@ -2,10 +2,12 @@ package org.deltafi.core.domain.configuration;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import net.minidev.json.annotate.JsonIgnore;
-import org.deltafi.core.domain.generated.types.KeyValue;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.domain.converters.KeyValueConverter;
+import org.deltafi.core.domain.generated.types.KeyValue;
 import org.springframework.data.annotation.Transient;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,5 +33,11 @@ public class LoadActionConfiguration extends org.deltafi.core.domain.generated.t
     @SuppressWarnings("unused")
     public void setRequiresMetadata(Map<String, String> requiresMetadata) {
         this.requiresMetadata = requiresMetadata;
+    }
+
+    @Override
+    public List<String> validate() {
+        return StringUtils.isBlank(this.getConsumes()) ?
+                List.of("Required property consumes is not set") : Collections.emptyList();
     }
 }

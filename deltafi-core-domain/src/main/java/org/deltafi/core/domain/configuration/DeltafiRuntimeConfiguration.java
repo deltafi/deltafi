@@ -49,7 +49,7 @@ public class DeltafiRuntimeConfiguration {
         return Stream.of(ingressFlows, egressFlows, loadGroups);
     }
 
-    public Stream<Map<String, ? extends DeltaFiConfiguration>> actionMaps() {
+    public Stream<Map<String, ? extends ActionConfiguration>> actionMaps() {
         return Stream.of(transformActions, loadActions, enrichActions, formatActions, validateActions, egressActions, deleteActions);
     }
 

@@ -73,5 +73,5 @@ type LoadActionGroupConfiguration implements DeltaFiConfiguration {
 input LoadActionGroupConfigurationInput {
     name: String!
     apiVersion: String
-    loadActions: [String]!
+    loadActions: [String!]!
 }

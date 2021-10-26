@@ -4,15 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.victools.jsonschema.generator.*;
-import com.github.victools.jsonschema.module.jackson.JacksonModule;
-import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.actionkit.config.DeltafiConfig;
 import org.deltafi.actionkit.exception.DgsPostException;
 import org.deltafi.actionkit.service.ActionEventService;
@@ -42,15 +40,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class Action<P extends ActionParameters> {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
-
-    private static final SchemaGenerator SCHEMA_GENERATOR;
-
-    static {
-        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2019_09, OptionPreset.PLAIN_JSON)
-                .without(Option.SCHEMA_VERSION_INDICATOR)
-                .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM));
-        SCHEMA_GENERATOR = new SchemaGenerator(configBuilder.build());
-    }
 
     @Inject
     DomainGatewayService domainGatewayService;
@@ -142,7 +131,7 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     void doRegisterParamSchema() {
-        JsonNode schemaJson = getSchema(getParamType());
+        JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(getParamType());
         JsonMap definition = OBJECT_MAPPER.convertValue(schemaJson, JsonMap.class);
         ActionSchemaInput paramInput = ActionSchemaInput.newBuilder().actionClass(getClassCanonicalName())
                 .paramClass(getParamType().getCanonicalName()).actionKitVersion(version).schema(definition).build();
@@ -158,11 +147,6 @@ public abstract class Action<P extends ActionParameters> {
 
     private String getClassCanonicalName() {
         return this instanceof Subclass ? this.getClass().getSuperclass().getCanonicalName() : this.getClass().getCanonicalName();
-    }
-
-
-    private JsonNode getSchema(Class<?> clazz) {
-        return SCHEMA_GENERATOR.generateSchema(clazz);
     }
 
     public P convertToParams(Map<String, Object> params) {
