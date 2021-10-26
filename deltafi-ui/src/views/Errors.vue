@@ -34,6 +34,9 @@
       v-model:expandedRows="expandedRows"
       class="p-datatable-gridlines p-datatable-sm"
     >
+      <template #empty>
+        No Errors found
+      </template>
       <Column :expander="true"></Column>
       <Column field="did" header="DID (UUID)"> </Column>
       <Column field="filename" header="Filename" :sortable="true"></Column>
