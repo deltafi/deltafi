@@ -8,16 +8,18 @@ const routes: Array<RouteRecordRaw> = [
     component: Dashboard,
     meta: {
       title: 'DeltaFi',
-      menuIconClass: 'pi pi-desktop'
+      menuIconClass: 'pi pi-desktop',
+      menuOrder: 1
     }
   },
   {
-    path: '/metrics',
-    name: 'Metrics',
-    component: () => import('../views/Metrics.vue'),
+    path: '/metrics/system',
+    name: 'System Metrics',
+    component: () => import('../views/SystemMetrics.vue'),
     meta: {
       title: 'Metrics - DeltaFi',
-      menuIconClass: 'pi pi-chart-bar'
+      menuIconClass: 'pi pi-chart-bar',
+      menuOrder: 2
     }
   },
   {
@@ -26,7 +28,8 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../views/Errors.vue'),
     meta: {
       title: 'Errors - DeltaFi',
-      menuIconClass: 'pi pi-times-circle'
+      menuIconClass: 'pi pi-times-circle',
+      menuOrder: 2
     }
   }
 ]

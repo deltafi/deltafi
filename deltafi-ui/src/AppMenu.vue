@@ -32,7 +32,9 @@ export default {
     },
   },
   mounted() {
-    this.routes = Router.getRoutes();
+    this.routes = Router.getRoutes().sort((a, b) => {
+      return a.meta.menuOrder - b.meta.menuOrder;
+    });
   },
   watch: {
     $route(to, from) {
