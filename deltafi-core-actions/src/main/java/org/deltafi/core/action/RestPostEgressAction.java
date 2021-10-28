@@ -9,13 +9,11 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.HttpService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.common.metric.MetricLogger;
-import org.deltafi.common.metric.MetricType;
-import org.deltafi.common.metric.Tag;
-import org.deltafi.core.parameters.RestPostEgressParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FormattedData;
 import org.deltafi.core.domain.generated.types.ObjectReference;
+import org.deltafi.core.parameters.RestPostEgressParameters;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,13 +23,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class RestPostEgressAction extends EgressAction<RestPostEgressParameters> {
-
-    private static final MetricLogger metricLogger = new MetricLogger();
-
-    static final String LOG_SOURCE = "egress";
-    static final String FILES_OUT = "files_out";
-    static final String BYTES_OUT = "bytes_out";
-
     private final ObjectStorageService objectStorageService;
     private final HttpService httpPostService;
 
@@ -48,9 +39,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
 
             Map<String, String> headers = new HashMap<>();
             if (formattedData.getMetadata() != null) {
-                formattedData.getMetadata().forEach(pair -> {
-                    headers.put(prefix + pair.getKey(), pair.getValue());
-                });
+                formattedData.getMetadata().forEach(pair -> headers.put(prefix + pair.getKey(), pair.getValue()));
             }
             params.getStaticMetadata().forEach((k, v) -> headers.put(prefix + k, v));
             headers.put(prefix + "did", deltafile.getDid());
@@ -64,13 +53,13 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
                 // TODO: POSTing nothing is ok???
                 httpPostService.post(url, headers, InputStream.nullInputStream());
 
-                generateEgressMetrics(deltafile, 0, url);
+                logEgressMetrics(deltafile, 0, url);
             } else {
                 try (InputStream stream = objectStorageService.getObjectAsInputStream(objectReference.getBucket(),
                         objectReference.getName(), objectReference.getOffset(), objectReference.getSize())) {
                     httpPostService.post(url, headers, stream);
 
-                    generateEgressMetrics(deltafile, formattedData.getObjectReference().getSize(), url);
+                    logEgressMetrics(deltafile, formattedData.getObjectReference().getSize(), url);
                 } catch (IOException e) {
                     log.error("Unable to close minio input stream", e);
                 }
@@ -85,16 +74,9 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
         }
     }
 
-    private void generateEgressMetrics(DeltaFile deltafile, long size, String endpoint) {
-        Tag[] tags = {
-                new Tag("did", deltafile.getDid()),
-                new Tag("flow", deltafile.getSourceInfo().getFlow()),
-                new Tag("endpoint", endpoint),
-                new Tag("action", getClass().getSimpleName())
-        };
-
-        metricLogger.logMetric(LOG_SOURCE, MetricType.COUNTER, FILES_OUT, 1, tags);
-        metricLogger.logMetric(LOG_SOURCE, MetricType.COUNTER, BYTES_OUT, size, tags);
+    private void logEgressMetrics(DeltaFile deltaFile, long size, String endpoint) {
+        logMetric(ActionEventType.EGRESS, deltaFile, "files_out", 1);
+        logMetric(ActionEventType.EGRESS, deltaFile, "bytes_out", size, Map.of("endpoint", endpoint));
     }
 
     @Override

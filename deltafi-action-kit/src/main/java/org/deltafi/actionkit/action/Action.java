@@ -15,6 +15,7 @@ import org.deltafi.actionkit.config.DeltafiConfig;
 import org.deltafi.actionkit.exception.DgsPostException;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
+import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.ActionInput;
@@ -22,6 +23,7 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.generated.client.RegisterActionGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterActionProjectionRoot;
+import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.ActionSchemaInput;
 import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -31,6 +33,7 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,20 +45,21 @@ public abstract class Action<P extends ActionParameters> {
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     @Inject
-    DomainGatewayService domainGatewayService;
+    protected DomainGatewayService domainGatewayService;
 
     @Inject
-    ZipkinService zipkinService;
+    protected ZipkinService zipkinService;
 
     @Inject
-    ActionEventService actionEventService;
+    protected ActionEventService actionEventService;
 
     @Inject
-    DeltafiConfig config;
+    protected DeltafiConfig config;
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "missing-value")
     String version;
 
+    @SuppressWarnings("unused")
     public void start(@Observes StartupEvent start) {
         // quarkus will prune the actions if this is not included
     }
@@ -74,6 +78,24 @@ public abstract class Action<P extends ActionParameters> {
         final ScheduledExecutorService registerScheduler = Executors.newScheduledThreadPool(1);
         registerScheduler.scheduleWithFixedDelay(this::registerParamSchema, config.actionRegistrationInitialDelayMs(),
                 config.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
+    }
+
+    protected void logFilesProcessedMetric(ActionEventType actionEventType, DeltaFile deltaFile) {
+        logMetric(actionEventType, deltaFile, "files_processed", 1);
+    }
+
+    protected void logMetric(ActionEventType actionEventType, DeltaFile deltaFile, String name, long value) {
+        logMetric(actionEventType, deltaFile, name, value, Map.of());
+    }
+
+    protected void logMetric(ActionEventType actionEventType, DeltaFile deltaFile, String name, long value,
+                             Map<String, String> extraTags) {
+        HashMap<String, String> tags = new HashMap<>();
+        tags.put("action", getClass().getSimpleName());
+        tags.putAll(extraTags);
+
+        MetricLogger.logMetric(actionEventType.name().toLowerCase(), deltaFile.getDid(),
+                deltaFile.getSourceInfo().getFlow(), name, value, tags);
     }
 
     private void startListening() {
@@ -152,5 +174,4 @@ public abstract class Action<P extends ActionParameters> {
     public P convertToParams(Map<String, Object> params) {
         return OBJECT_MAPPER.convertValue(params, getParamType());
     }
-
 }

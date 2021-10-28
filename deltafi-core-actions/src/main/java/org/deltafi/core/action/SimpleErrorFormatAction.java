@@ -3,7 +3,6 @@ package org.deltafi.core.action;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.minio.ObjectWriteResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +14,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.generated.types.ObjectReference;
 
@@ -25,11 +25,10 @@ import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
 @RequiredArgsConstructor
 @Slf4j
 public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
-    private final static ObjectMapper OBJECT_MAPPER =
-            JsonMapper.builder()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true)
-                    .addModule(new JavaTimeModule()).build();
+    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true)
+            .registerModule(new JavaTimeModule());
 
     private final ObjectStorageService objectStorageService;
 
@@ -73,7 +72,7 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
             throw new RuntimeException("Failed to write transformed data to minio " + e.getMessage());
         }
 
-        generateMetrics(deltaFile, params.getName());
+        logFilesProcessedMetric(ActionEventType.FORMAT, deltaFile);
 
         return result;
     }

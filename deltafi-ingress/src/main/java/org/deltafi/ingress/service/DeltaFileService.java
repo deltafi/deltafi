@@ -8,15 +8,11 @@ import com.netflix.graphql.dgs.client.GraphQLError;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.minio.ObjectWriteResponse;
-import io.quarkiverse.loggingjson.providers.KeyValueStructuredArgument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.common.metric.Metric;
-import org.deltafi.common.metric.MetricBuilder;
-import org.deltafi.common.metric.MetricType;
-import org.deltafi.common.metric.Tag;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.generated.client.IngressGraphQLQuery;
@@ -42,15 +38,6 @@ import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
 @Slf4j
 public class DeltaFileService {
     public static final String INGRESS_ACTION = "IngressAction";
-
-    private static final String FILENAME = "filename";
-    private static final String FLOW = "flow";
-    private static final String METRIC_KEY = "metric";
-    private static final String METRIC_SOURCE = "ingress";
-    private static final String FILES_IN = "files_in";
-    private static final String BYTES_IN = "bytes_in";
-    private static final String FILES_DROPPED = "files_dropped";
-    private static final String BYTES_DROPPED = "bytes_dropped";
 
     private final GraphQLClientService graphQLClientService;
     private final ObjectStorageService objectStorageService;
@@ -95,7 +82,6 @@ public class DeltaFileService {
         } catch (JsonProcessingException e) {
             throw new DeltafiMetadataException("Could not parse metadata, metadata must be a JSON Object" + e.getMessage());
         }
-
     }
 
     public KeyValueInput toKeyValueInput(Map.Entry<String, JsonNode> entry) {
@@ -107,7 +93,7 @@ public class DeltaFileService {
     private void ingressDeltaFile(IngressInput ingressInput) throws DeltafiException {
         try {
             sendIngressInput(ingressInput);
-            logInMetrics(ingressInput);
+            logMetrics(ingressInput, "files_in", "bytes_in");
             sendTrace(ingressInput);
         } catch (DeltafiGraphQLException deltafiException) {
             handleUnrecoverableError(ingressInput);
@@ -133,12 +119,14 @@ public class DeltaFileService {
     }
 
     private void sendTrace(IngressInput ingressInput) {
-        DeltafiSpan span = zipkinService.createChildSpan(ingressInput.getDid(), INGRESS_ACTION, getFilename(ingressInput), getFlow(ingressInput), ingressInput.getCreated());
+        DeltafiSpan span = zipkinService.createChildSpan(ingressInput.getDid(), INGRESS_ACTION,
+                ingressInput.getSourceInfo().getFilename(), ingressInput.getSourceInfo().getFlow(),
+                ingressInput.getCreated());
         zipkinService.markSpanComplete(span);
     }
 
     private void handleUnrecoverableError(IngressInput ingressInput) {
-        logDroppedMetrics(ingressInput);
+        logMetrics(ingressInput, "files_dropped", "bytes_dropped");
         removeInvalidObject(ingressInput.getObjectReference());
     }
 
@@ -149,47 +137,11 @@ public class DeltaFileService {
         objectStorageService.removeObject(objectReference.getBucket(), objectReference.getName());
     }
 
-
-    private void logInMetrics(IngressInput ingressInput) {
-        logMetrics(ingressInput, FILES_IN, BYTES_IN);
-    }
-
-    private void logDroppedMetrics(IngressInput ingressInput) {
-        logMetrics(ingressInput, FILES_DROPPED, BYTES_DROPPED);
-    }
-
     private void logMetrics(IngressInput ingressInput, String fileMetric, String byteMetric) {
-        Tag filename = getFilenameTag(ingressInput);
-        Tag flow = getFlowTag(ingressInput);
-        Tag didTag = new Tag("did", ingressInput.getDid());
-        logForMetrics(fileMetric, 1, flow, didTag);
-        logForMetrics(byteMetric, ingressInput.getObjectReference().getSize(), filename, flow, didTag);
-    }
-
-    private void logForMetrics(String name, long value, Tag... tags) {
-        Metric metric = new MetricBuilder()
-                .setType(MetricType.COUNTER)
-                .setName(name)
-                .setValue(value)
-                .setSource(METRIC_SOURCE)
-                .addTags(tags)
-                .createMetric();
-        log.info("{}", KeyValueStructuredArgument.kv(METRIC_KEY, metric));
-    }
-
-    private Tag getFilenameTag(IngressInput ingressInput) {
-        return new Tag(FILENAME, getFilename(ingressInput));
-    }
-
-    private Tag getFlowTag(IngressInput ingressInput) {
-        return new Tag(FLOW, getFlow(ingressInput));
-    }
-
-    private String getFilename(IngressInput ingressInput) {
-        return ingressInput.getSourceInfo().getFilename();
-    }
-
-    private String getFlow(IngressInput ingressInput) {
-        return ingressInput.getSourceInfo().getFlow();
+        MetricLogger.logMetric("ingress", ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(), fileMetric, 1,
+                Map.of("filename", ingressInput.getSourceInfo().getFilename()));
+        MetricLogger.logMetric("ingress", ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(),
+                byteMetric, ingressInput.getObjectReference().getSize(),
+                Map.of("filename", ingressInput.getSourceInfo().getFilename()));
     }
 }

@@ -4,13 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.common.metric.MetricLogger;
-import org.deltafi.common.metric.MetricType;
-import org.deltafi.common.metric.Tag;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.passthrough.param.RoteLoadParameters;
 
-@SuppressWarnings("unused")
 @Slf4j
 public class RoteLoadAction extends Action<RoteLoadParameters> {
 
@@ -21,23 +18,9 @@ public class RoteLoadAction extends Action<RoteLoadParameters> {
 
         params.getDomains().forEach(result::addDomain);
 
-        generateMetrics(deltafile);
+        logFilesProcessedMetric(ActionEventType.LOAD, deltafile);
 
         return result;
-    }
-
-    private static final MetricLogger metricLogger = new MetricLogger();
-    static final String LOG_SOURCE = "load";
-    static final String FILES_PROCESSED = "files_processed";
-
-    void generateMetrics(DeltaFile deltafile) {
-        Tag[] tags = {
-                new Tag("did", deltafile.getDid()),
-                new Tag("flow", deltafile.getSourceInfo().getFlow()),
-                new Tag("action", getClass().getSimpleName())
-        };
-
-        metricLogger.logMetric(LOG_SOURCE, MetricType.COUNTER, FILES_PROCESSED, 1, tags);
     }
 
     @Override
