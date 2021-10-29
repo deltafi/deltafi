@@ -2,6 +2,18 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
+# Compatability with GNU sed and BSD sed (MacOS)
+_sed_prepend() {
+  if sed --help >/dev/null 2>&1
+  then # GNU
+    sed "1 i\\${@}"
+  else # BSD
+    sed "1i\\
+${@}
+"
+  fi
+}
+
 cli_help_command() {
   echo "
 Command: trace
@@ -72,13 +84,12 @@ TRACES=$(echo "$API_RESPONSE" | jq 'sort_by(.timestamp)')
 TOTAL=$(echo "$TRACES" | jq '((last.timestamp + last.duration) - first.timestamp) / 1000000')
 
 echo
-echo "$TRACES" | jq  'sort_by(.timestamp) | [.[] | {name: .name, timestamp: (.timestamp / 1000000 | strftime("%Y-%m-%dT%H:%M:%SZ")), duration: (.duration/1000000)}] |  .[] | [.name, .timestamp, .duration] | @csv' | sed 's/\\"//g' | sed 's/"//g' | sed '1 i\====,=========,========' | sed '1 i\Span,Timestamp,Duration' | sed -e "\$aTotal,-,$TOTAL" | column -t -s ','
+echo "$TRACES" | jq  'sort_by(.timestamp) | [.[] | {name: .name, timestamp: (.timestamp / 1000000 | strftime("%Y-%m-%dT%H:%M:%SZ")), duration: (.duration/1000000)}] |  .[] | [.name, .timestamp, .duration] | @csv' | sed 's/\\"//g' | sed 's/"//g' | _sed_prepend '====,=========,========' | _sed_prepend 'Span,Timestamp,Duration' | sed -e "\$aTotal,-,$TOTAL" | column -t -s ','
 echo
 
 ERROR_QUERY="query { deltaFile(did: \"$DID\") { actions { name state errorCause } } }"
 ERRORS=$(deltafi query $ERROR_QUERY)
 DELIM="ॐ"
-SED_INSERT="1 i\\======$DELIM====="
 JQ_SELECT=".data.deltaFile.actions[] | select(.state==\"ERROR\") | (.name + \"$DELIM\" + .errorCause)"
-echo $ERRORS | jq -r "$JQ_SELECT" | sed "$SED_INSERT" | sed "1 i\Action${DELIM}Error" | column -t -s$DELIM
+echo $ERRORS | jq -r "$JQ_SELECT" | _sed_prepend "======$DELIM=====" | _sed_prepend "Action${DELIM}Error" | column -t -s$DELIM
 echo

@@ -11,6 +11,18 @@ Usage:
   exit 1
 }
 
+# Compatability with GNU sed and BSD sed (MacOS)
+_sed_prepend() {
+  if sed --help >/dev/null 2>&1
+  then # GNU
+    sed "1 i\\${@}"
+  else # BSD
+    sed "1i\\
+${@}
+"
+  fi
+}
+
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
@@ -19,4 +31,4 @@ KUBECTL_CMD="${KUBECTL_BIN} get pods --namespace ${DELTAFICLI_K8S_NAMESPACE}"
 
 ${KUBECTL_CMD} -o json \
   | jq -r '.items[] | [(.metadata.labels."app.kubernetes.io/name", .metadata.labels.app | select(. != null) )][0] as $app | .spec.containers[] | [$app, .name, .image | split(":")] | flatten | @csv' \
-  | sort -u | sed 's/\\"//g' | sed 's/"//g' | sed '1 i\===,=========,=====,===' | sed '1 i\App,Container,Image,Tag' | column -t -s ','
+  | sort -u | sed 's/\\"//g' | sed 's/"//g' | _sed_prepend '===,=========,=====,===' | _sed_prepend 'App,Container,Image,Tag' | column -t -s ','
