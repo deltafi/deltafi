@@ -49,3 +49,5 @@ include 'deltafi-passthrough-actions'
 include 'deltafi-ingress'
 include 'deltafi-gateway'
 include 'deltafi-common-test'
+include 'deltafi-config-server'
+

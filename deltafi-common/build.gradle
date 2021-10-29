@@ -46,6 +46,7 @@ dependencies {
     implementation "io.minio:minio:${minioVersion}"
 
     implementation "org.slf4j:slf4j-api:1.7.30"
+    implementation 'org.springframework.boot:spring-boot:2.4.5'
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'

@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: deltafi-core-domain-config
-data:
-{{ (.Files.Glob "files/dgs/*").AsConfig | indent 2 }}

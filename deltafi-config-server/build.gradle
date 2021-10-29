@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id "com.palantir.docker" version "${palantirDockerVersion}"
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'org.springframework.boot' version '2.4.5'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2020.0.3'
+    }
+}
+
+java {
+    sourceCompatibility = javaSourceCompatibility
+    targetCompatibility = javaTargetCompatibility
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+
+task renameJar (type: Copy) {
+    from ('build/libs/')
+    include "deltafi-config-server-${project.version}.jar"
+    destinationDir file('build/libs/')
+    rename "deltafi-config-server-${project.version}.jar", 'deltafi-config-server.jar'
+}
+
+assemble.finalizedBy(renameJar)
+
+dependencies {
+    implementation 'org.springframework.cloud:spring-cloud-config-server'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+}
+
+docker {
+    dependsOn compileJava
+    dependsOn build
+    name "${project.name}:${project.version}"
+    copySpec.from("build/libs/").into("build/libs/")
+}

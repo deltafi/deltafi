@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: global-actions-config
-data:
-  application.yaml: |-
-{{ tpl (.Files.Get "files/global-actions-properties.yaml") . | indent 4 }}

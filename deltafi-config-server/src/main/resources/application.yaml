@@ -1,0 +1,12 @@
+server:
+  port: 8888
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${GIT_CONFIG_REPO:https://gitlab.com/systolic/deltafi/deltafi-config.git}
+          username: ${USERNAME:config-server}
+          password: ${CONFIG_TOKEN}
+          defaultLabel: ${DEFAULT_LABEL:main}
+          clone-on-start: ${CLONE_ON_START:true}

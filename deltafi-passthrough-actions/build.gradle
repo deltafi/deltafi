@@ -40,7 +40,8 @@ dependencies {
     implementation "io.quarkus:quarkus-config-yaml"
     implementation "io.quarkus:quarkus-jackson"
     implementation "io.quarkus:quarkus-kotlin"
-    implementation "io.quarkus:quarkus-kubernetes-config"
+    implementation 'io.quarkus:quarkus-spring-cloud-config-client'
+    implementation 'io.quarkus:quarkus-spring-boot-properties'
     implementation "io.quarkus:quarkus-rest-client"
     implementation "io.quarkus:quarkus-resteasy"
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"

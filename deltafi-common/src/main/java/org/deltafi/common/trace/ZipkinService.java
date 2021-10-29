@@ -3,6 +3,7 @@ package org.deltafi.common.trace;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.properties.ZipkinProperties;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -23,15 +24,15 @@ public class ZipkinService {
     private static final Queue<DeltafiSpan> SPANS_QUEUE = new ConcurrentLinkedQueue<>();
 
     private final ZipkinRestClient zipkinRestClient;
-    private final ZipkinConfig zipkinConfig;
+    private final ZipkinProperties zipkinProperties;
 
-    public ZipkinService(ZipkinConfig zipkinConfig) {
-        this.zipkinConfig = zipkinConfig;
-        this.zipkinRestClient = new ZipkinRestClient(zipkinConfig.url());
+    public ZipkinService(ZipkinProperties zipkinProperties) {
+        this.zipkinProperties = zipkinProperties;
+        this.zipkinRestClient = new ZipkinRestClient(zipkinProperties.getUrl());
 
-        if (zipkinConfig.enabled()) {
-            EXECUTOR.scheduleAtFixedRate(this::sendQueuedSpans, zipkinConfig.sendInitialDelayMs(),
-                    zipkinConfig.sendPeriodMs(), TimeUnit.MILLISECONDS);
+        if (zipkinProperties.isEnabled()) {
+            EXECUTOR.scheduleAtFixedRate(this::sendQueuedSpans, zipkinProperties.getSendInitialDelayMs(),
+                    zipkinProperties.getSendPeriodMs(), TimeUnit.MILLISECONDS);
         }
     }
 
@@ -112,7 +113,7 @@ public class ZipkinService {
     public void markSpanComplete(DeltafiSpan span) {
         span.endSpan();
         SPANS_QUEUE.add(span);
-        if (zipkinConfig.enabled() && SPANS_QUEUE.size() >= zipkinConfig.maxBatchSize()) {
+        if (zipkinProperties.isEnabled() && SPANS_QUEUE.size() >= zipkinProperties.getMaxBatchSize()) {
             sendQueuedSpans();
         }
     }
@@ -132,7 +133,7 @@ public class ZipkinService {
     String spansToJson() {
         List<DeltafiSpan> toSend = new ArrayList<>();
 
-        for (int cnt = 0; cnt < zipkinConfig.maxBatchSize() && !SPANS_QUEUE.isEmpty(); cnt++) {
+        for (int cnt = 0; cnt < zipkinProperties.getMaxBatchSize() && !SPANS_QUEUE.isEmpty(); cnt++) {
             toSend.add(SPANS_QUEUE.poll());
         }
 

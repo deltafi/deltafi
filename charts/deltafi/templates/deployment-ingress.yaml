@@ -17,11 +17,10 @@ spec:
       containers:
       - name: deltafi-ingress
         image: {{ .Values.deltafi.ingress.image }}
+        {{- with .Values.deltafi.envVars }}
         env:
-      {{- range $key, $val := .Values.deltafi.ingress.envVar }}
-        - name: {{ $key }}
-          value: {{ $val | quote }}
-      {{- end}}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         ports:
         - containerPort: 8080
       imagePullSecrets:

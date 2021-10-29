@@ -13,12 +13,13 @@ spec:
     metadata:
       labels:
         app: deltafi-passthrough-actions
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap-actions.yaml") . | sha256sum }}
     spec:
       containers:
       - name: deltafi-passthrough-actions
         image: "{{ .Values.deltafi.passthrough_actions.image }}"
+        {{- with .Values.deltafi.envVars }}
+        env:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       imagePullSecrets:
       - name: docker-secret
-      serviceAccountName: deltafi-actions

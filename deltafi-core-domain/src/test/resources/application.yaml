@@ -1,6 +1,9 @@
 spring:
   main:
     allow-bean-definition-overriding: true
+  cloud:
+    config:
+      enabled: false
   data:
     mongodb:
       database: deltafi-test
@@ -11,6 +14,7 @@ spring:
 
 deltafi:
   delete:
+    onCompletion: false
     frequency: PT1S
     policies:
       twoSecondsAfterComplete:

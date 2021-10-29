@@ -1,60 +1,6 @@
 quarkus:
-  http:
-    port: 8085
-  log:
-    level: INFO
-    console:
-      json: true
-      color: true
-  # quarkus-kubernetes-config extension
-  kubernetes-config:
+  spring-cloud-config:
     enabled: true
-    fail-on-missing-config: false
-    namespace: ${ACTION_NAMESPACE:deltafi}
-    config-maps: ${ACTION_CONFIG_MAP:global-actions-config}
-    secrets:
-      enabled: true
-      ~: minio-keys,redis-password # use null (~) key here so enabled sub-key can be set
-
-deltafi:
-  dgs:
-    url: ${DELTAFI_DGS_URL:http://deltafi-gateway-service/graphql}
-  action-polling-initial-delay-ms: 3000
-  action-polling-period-ms: 100
-  action-registration-initial-delay-ms: 1000
-  action-registration-period-ms: 10000
-
-minio:
-  url: ${MINIO_URL:http://deltafi-minio:9000}
-  part-size: ${MINIO_PART_SIZE:100000000}
-
-redis:
-  url: ${REDIS_URL:http://deltafi-redis-master:6379}
-
-zipkin:
-  enabled: ${ZIPKIN_ENABLED:true}
-  url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
-  send-initial-delay-ms: ${ZIPKIN_SEND_INITIAL_DELAY:500}
-  send-period-ms: ${ZIPKIN_SEND_PERIOD:500}
-  max-batch-size: ${ZIPKIN_MAX_BATCH_SIZE:10000}
-
-
-# dev profile overrides
-"%dev":
-  quarkus:
-    log:
-      console:
-        json: false
-    # quarkus-kubernetes-config extension
-    kubernetes-config:
-      enabled: false
-  deltafi:
-    dgs:
-      url: ${DELTAFI_DGS_URL:http://localhost:8080/graphql}
-  minio:
-    url: ${MINIO_URL:http://localhost:9000}
-  redis:
-    url: ${REDIS_URL:http://localhost:6379}
-  zipkin:
-    enabled: ${ZIPKIN_ENABLED:false}
-    url: http://localhost:9411/api/v2/spans
+    url: ${CONFIG_SERVER_URL:http://deltafi-config-server}
+    fail-fast: ${CONFIG_FAIL_FAST:true}
+    label: ${CONFIG_SERVER_LABEL:main}

@@ -3,7 +3,7 @@ package org.deltafi.actionkit.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
-@ConfigMapping(prefix = "deltafi")
+@ConfigMapping(prefix = "actions")
 public interface DeltafiConfig {
     @WithDefault("3000")
     long actionPollingInitialDelayMs();
@@ -16,10 +16,4 @@ public interface DeltafiConfig {
 
     @WithDefault("10000")
     long actionRegistrationPeriodMs();
-
-    interface DgsConfig {
-        String url();
-    }
-
-    DgsConfig dgs();
 }

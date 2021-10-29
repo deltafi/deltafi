@@ -1,53 +1,7 @@
 quarkus:
-  http:
-    port: 8080
-    limits:
-      max-body-size: ${HTTP_MAX_BODY_SIZE:5G}
-  log:
-    level: INFO
-    console:
-      json: true
-      color: true
-  # quarkus-kubernetes-config extension
-  kubernetes-config:
+  application:
+    name: deltafi-ingress
+  # enable retrieval of configuration from the Config Server - this is off by default
+  spring-cloud-config:
     enabled: true
-    fail-on-missing-config: false
-    namespace: deltafi
-    secrets:
-      enabled: true
-      ~: minio-keys,redis-password # use null (~) key here so enabled sub-key can be set
-
-deltafi:
-  dgs:
-    url: ${DELTAFI_DGS_URL:http://deltafi-core-domain-service/graphql} # ingress doesn't go through apollo gateway
-
-minio:
-  url: ${MINIO_URL:http://deltafi-minio:9000}
-  part-size: ${MINIO_PART_SIZE:100000000}
-
-redis:
-  url: ${REDIS_URL:http://deltafi-redis-master:6379}
-
-zipkin:
-  enabled: ${ZIPKIN_ENABLED:true}
-  url: ${ZIPKIN_URL:http://deltafi-zipkin:9411/api/v2/spans}
-  send-initial-delay-ms: ${ZIPKIN_SEND_INITIAL_DELAY:500}
-  send-period-ms: ${ZIPKIN_SEND_PERIOD:500}
-  max-batch-size: ${ZIPKIN_MAX_BATCH_SIZE:10000}
-
-
-# dev profile overrides
-"%dev":
-  quarkus:
-    log:
-      console:
-        json: false
-    # quarkus-kubernetes-config extension
-    kubernetes-config:
-      enabled: false
-  minio:
-    url: ${MINIO_URL:http://localhost:9000}
-  redis:
-    url: ${REDIS_URL:http://localhost:6379}
-  zipkin:
-    enabled: ${ZIPKIN_ENABLED:false}
+    url: ${CONFIG_SERVER_URL:http://deltafi-config-server}

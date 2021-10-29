@@ -1,13 +1,21 @@
 quarkus:
   http:
     test-port: 0
-  kubernetes-config:
+  spring-cloud-config:
     enabled: false
 
-# Set these manually since kubernetes-config is disabled (above) for tests.
-accesskey: minioadmin
-secretkey: minioadmin
-redis-password: redis
+# Set these manually since spring-cloud-config is disabled and these are required properties
+graphql:
+  urls:
+    gateway: "http://localhost"
+    core-domain: "http://localhost"
+minio:
+  url: localhost
+  access-key: minioadmin
+  secret-key: minioadmin
+redis:
+  url: localhost
+  password: redis
 
 smallrye:
   config:

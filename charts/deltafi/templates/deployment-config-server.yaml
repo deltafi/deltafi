@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-config-server
+  labels:
+    app: deltafi-config-server
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-config-server
+  template:
+    metadata:
+      labels:
+        app: deltafi-config-server
+    spec:
+      containers:
+      - name: deltafi-config-server
+        image: "{{ .Values.deltafi.config_server.image }}"
+        {{- with .Values.deltafi.config_server.envVars }}
+        env:
+        {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.deltafi.config_server.volumeMounts }}
+        volumeMounts:
+        {{- toYaml . | nindent 12 }}
+        {{- end }}
+      {{- with .Values.deltafi.config_server.volumes }}
+      volumes:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      imagePullSecrets:
+      - name: docker-secret
