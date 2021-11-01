@@ -1,6 +1,7 @@
 package org.deltafi.actionkit.action.error;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ErrorInput;
@@ -10,50 +11,48 @@ import org.slf4j.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class ErrorResult extends Result {
+public class ErrorResult<P extends ActionParameters> extends Result<P> {
+    private final String errorCause;
+    private final String errorContext;
+    private final String errorSummary;
 
-    final String errorCause;
-    final String errorContext;
-    final private String errorSummary;
+    public ErrorResult(DeltaFile deltaFile, P params, String errorMessage, Throwable throwable) {
+        super(deltaFile, params);
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public ErrorResult(String action, DeltaFile deltafile, String errorMessage, Throwable throwable) {
-        super(action, deltafile.getDid());
         this.errorCause = errorMessage;
 
         StringWriter stackWriter = new StringWriter();
         throwable.printStackTrace(new PrintWriter(stackWriter));
         this.errorContext = throwable + "\n" + stackWriter;
-        this.errorSummary = errorMessage + ": " + deltafile.getDid() + "\n" + errorContext;
+        this.errorSummary = errorMessage + ": " + deltaFile.getDid() + "\n" + errorContext;
     }
 
     @SuppressWarnings("unused")
-    public ErrorResult(String action, DeltaFile deltafile, String errorMessage) {
-        super(action, deltafile.getDid());
+    public ErrorResult(DeltaFile deltaFile, P params, String errorMessage) {
+        super(deltaFile, params);
+
         this.errorCause = errorMessage;
         this.errorContext = "";
-        this.errorSummary = errorMessage + ": " + deltafile.getDid();
+        this.errorSummary = errorMessage + ": " + deltaFile.getDid();
     }
 
-    public ErrorResult logErrorTo(Logger logger) {
+    public ErrorResult<P> logErrorTo(Logger logger) {
         logger.error(errorSummary);
         return this;
     }
 
-    private ErrorInput errorInput() {
-        return ErrorInput.newBuilder()
-                .cause(errorCause)
-                .context(errorContext)
-                .build();
+    @Override
+    public final ActionEventType actionEventType() {
+        return ActionEventType.ERROR;
     }
 
     @Override
-    final public ActionEventType actionEventType() { return ActionEventType.ERROR; }
-
-    @Override
-    final public ActionEventInput toEvent() {
+    public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setError(errorInput());
+        event.setError(ErrorInput.newBuilder()
+                .cause(errorCause)
+                .context(errorContext)
+                .build());
         return event;
     }
 }

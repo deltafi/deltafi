@@ -1,77 +1,38 @@
 package org.deltafi.actionkit.action.transform;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.core.domain.generated.types.*;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.ProtocolLayerInput;
+import org.deltafi.core.domain.generated.types.TransformInput;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+public class TransformResult<P extends ActionParameters> extends Result<P> {
+    private final String type;
 
-public class TransformResult extends Result {
+    public TransformResult(DeltaFile deltaFile, P params, String type) {
+        super(deltaFile, params);
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public TransformResult(String name, String did) {
-        super(name, did);
-    }
-
-    protected final List<KeyValueInput> metadata = new ArrayList<>();
-    protected ObjectReferenceInput objectReferenceInput;
-    protected String type;
-
-    private TransformInput transformInput() {
-        return TransformInput.newBuilder()
-                .protocolLayer(
-                        new ProtocolLayerInput.Builder()
-                                .metadata(metadata)
-                                .type(type)
-                                .objectReference(objectReferenceInput)
-                                .build())
-                .build();
-    }
-
-    public void addMetadata(@NotNull String key, @NotNull String value) {
-        metadata.add(new KeyValueInput(key, value));
-    }
-
-    public void addMetadata(@NotNull Map<String, String> map) {
-        map.forEach(this::addMetadata);
-    }
-
-    public void addMetadata(@NotNull KeyValue keyValue) {
-        addMetadata(keyValue.getKey(), keyValue.getValue());
-    }
-
-    @SuppressWarnings("unused")
-    public void addMetadata(@NotNull List<KeyValue> keyValues) {
-        keyValues.forEach(this::addMetadata);
-    }
-
-    public void setType(String type) {
         this.type = type;
     }
 
-    public void setObjectReference(@NotNull ObjectReference objectReference) {
-        objectReferenceInput = new ObjectReferenceInput.Builder()
-                .bucket(objectReference.getBucket())
-                .name(objectReference.getName())
-                .size(objectReference.getSize())
-                .offset(objectReference.getOffset())
-                .build();
-    }
-
-    @SuppressWarnings("unused")
-    public void setObjectReference(@NotNull String name, @NotNull String bucket, long size, long offset) {
-        objectReferenceInput = new ObjectReferenceInput(name, bucket, offset, size);
+    @Override
+    public final ActionEventType actionEventType() {
+        return ActionEventType.TRANSFORM;
     }
 
     @Override
-    final public ActionEventType actionEventType() { return ActionEventType.TRANSFORM; }
-
-    @Override
-    final public ActionEventInput toEvent() {
+    public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setTransform(transformInput());
+        event.setTransform(TransformInput.newBuilder()
+                .protocolLayer(
+                        new ProtocolLayerInput.Builder()
+                                .type(type)
+                                .objectReference(objectReferenceInput)
+                                .metadata(metadata)
+                                .build())
+                .build());
         return event;
     }
 }

@@ -1,15 +1,17 @@
 package org.deltafi.actionkit.action.validate;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 
-public class ValidateResult extends Result {
-
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public ValidateResult(String name, String did) {
-        super(name, did);
+public class ValidateResult extends Result<ActionParameters> {
+    public ValidateResult(DeltaFile deltaFile, ActionParameters params) {
+        super(deltaFile, params);
     }
 
     @Override
-    final public ActionEventType actionEventType() { return ActionEventType.VALIDATE; }
+    public final ActionEventType actionEventType() {
+        return ActionEventType.VALIDATE;
+    }
 }

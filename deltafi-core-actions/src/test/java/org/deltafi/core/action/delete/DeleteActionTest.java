@@ -46,7 +46,7 @@ public class DeleteActionTest {
         DeleteAction deleteAction = new DeleteAction(MINIO_CLOUD_STORAGE_SERVICE);
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters("name", Collections.emptyMap());
-        Result result = deleteAction.execute(deltaFile, actionParameters);
+        Result<ActionParameters> result = deleteAction.execute(deltaFile, actionParameters);
 
         assertTrue(result instanceof DeleteResult);
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());
@@ -64,11 +64,11 @@ public class DeleteActionTest {
 
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters("name", Collections.emptyMap());
-        Result result = deleteAction.execute(deltaFile, actionParameters);
+        Result<ActionParameters> result = deleteAction.execute(deltaFile, actionParameters);
 
         assertTrue(result instanceof ErrorResult);
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());
-        assertEquals(DeleteAction.class.getCanonicalName(), result.toEvent().getAction());
+        assertEquals(actionParameters.getName(), result.toEvent().getAction());
         assertEquals("Unable to remove all objects for delta file.", result.toEvent().getError().getCause());
     }
 }

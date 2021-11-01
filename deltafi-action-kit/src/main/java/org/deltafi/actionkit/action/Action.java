@@ -9,13 +9,15 @@ import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.metrics.ActionMetricsGenerator;
+import org.deltafi.actionkit.action.metrics.ActionMetricsLogger;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.actionkit.config.DeltafiConfig;
 import org.deltafi.actionkit.exception.DgsPostException;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
-import org.deltafi.common.metric.MetricLogger;
+import org.deltafi.common.metric.Metric;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.ActionInput;
@@ -33,14 +35,15 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public abstract class Action<P extends ActionParameters> {
+public abstract class Action<P extends ActionParameters> implements ActionMetricsGenerator<P> {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
@@ -59,18 +62,28 @@ public abstract class Action<P extends ActionParameters> {
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "missing-value")
     String version;
 
+    private final Class<P> paramType;
+    private final ActionEventType actionEventType;
+    private final ActionMetricsLogger<P> actionMetricsLogger;
+
+    public Action(Class<P> paramType, ActionEventType actionEventType) {
+        this.paramType = paramType;
+        this.actionEventType = actionEventType;
+
+        actionMetricsLogger = new ActionMetricsLogger<>(this);
+    }
+
     @SuppressWarnings("unused")
     public void start(@Observes StartupEvent start) {
         // quarkus will prune the actions if this is not included
     }
 
-    public abstract Result execute(DeltaFile deltaFile, P params);
-
-    public abstract Class<P> getParamType();
+    public abstract Result<P> execute(DeltaFile deltaFile, P params);
 
     @PostConstruct
-    void startAction() {
+    public void startAction() {
         log.info("Starting action: {}", getFeedString());
+
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleWithFixedDelay(this::startListening, config.actionPollingInitialDelayMs(),
                 config.actionPollingPeriodMs(), TimeUnit.MILLISECONDS);
@@ -78,24 +91,6 @@ public abstract class Action<P extends ActionParameters> {
         final ScheduledExecutorService registerScheduler = Executors.newScheduledThreadPool(1);
         registerScheduler.scheduleWithFixedDelay(this::registerParamSchema, config.actionRegistrationInitialDelayMs(),
                 config.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
-    }
-
-    protected void logFilesProcessedMetric(ActionEventType actionEventType, DeltaFile deltaFile) {
-        logMetric(actionEventType, deltaFile, "files_processed", 1);
-    }
-
-    protected void logMetric(ActionEventType actionEventType, DeltaFile deltaFile, String name, long value) {
-        logMetric(actionEventType, deltaFile, name, value, Map.of());
-    }
-
-    protected void logMetric(ActionEventType actionEventType, DeltaFile deltaFile, String name, long value,
-                             Map<String, String> extraTags) {
-        HashMap<String, String> tags = new HashMap<>();
-        tags.put("action", getClass().getSimpleName());
-        tags.putAll(extraTags);
-
-        MetricLogger.logMetric(actionEventType.name().toLowerCase(), deltaFile.getDid(),
-                deltaFile.getSourceInfo().getFlow(), name, value, tags);
     }
 
     private void startListening() {
@@ -119,9 +114,15 @@ public abstract class Action<P extends ActionParameters> {
 
     private void executeAction(DeltaFile deltaFile, P params, DeltafiSpan span) throws JsonProcessingException {
         try {
-            Result result = execute(deltaFile, params);
+            Result<P> result = execute(deltaFile, params);
             if (result != null) {
                 actionEventService.submitResult(result);
+
+                if (!(result instanceof ErrorResult)) {
+                    actionMetricsLogger.logMetrics(result);
+                }
+
+                // TODO: Log metrics on error result???
             }
             zipkinService.markSpanComplete(span);
         } catch (DgsPostException ignored) {
@@ -131,8 +132,10 @@ public abstract class Action<P extends ActionParameters> {
             e.printStackTrace(new PrintWriter(stackWriter));
             String reason = "Action execution exception: " + "\n" + e.getMessage() + "\n" + stackWriter;
             log.error(params.getName() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
-            ErrorResult err = new ErrorResult(params.getName(), deltaFile, "Action execution exception", e).logErrorTo(log);
-            actionEventService.submitResult(err);
+            ErrorResult<P> errorResult = new ErrorResult<>(deltaFile, params, "Action execution exception", e).logErrorTo(log);
+            actionEventService.submitResult(errorResult);
+
+            // TODO: Log metrics on error caused by exception???
         }
     }
 
@@ -153,10 +156,10 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     void doRegisterParamSchema() {
-        JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(getParamType());
+        JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
         JsonMap definition = OBJECT_MAPPER.convertValue(schemaJson, JsonMap.class);
         ActionSchemaInput paramInput = ActionSchemaInput.newBuilder().actionClass(getClassCanonicalName())
-                .paramClass(getParamType().getCanonicalName()).actionKitVersion(version).schema(definition).build();
+                .paramClass(paramType.getCanonicalName()).actionKitVersion(version).schema(definition).build();
 
         RegisterActionProjectionRoot projectionRoot = new RegisterActionProjectionRoot().actionClass();
 
@@ -172,6 +175,16 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     public P convertToParams(Map<String, Object> params) {
-        return OBJECT_MAPPER.convertValue(params, getParamType());
+        return OBJECT_MAPPER.convertValue(params, paramType);
+    }
+
+    @Override
+    public ActionEventType getActionEventType() {
+        return actionEventType;
+    }
+
+    @Override
+    public Collection<Metric> generateMetrics(Result<P> result) {
+        return List.of(Metric.builder().name("files_processed").value(1).build());
     }
 }

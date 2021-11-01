@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.service.InMemoryObjectStorageService;
@@ -20,7 +19,6 @@ import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleErrorFormatActionTest {
 
@@ -65,13 +63,10 @@ public class SimpleErrorFormatActionTest {
 
     @Test
     void execute() throws JsonProcessingException {
-        Result result = action.execute(deltaFile, params);
-
-        assertTrue(result instanceof FormatResult);
-        FormatResult formatResult = (FormatResult) result;
+        FormatResult formatResult = (FormatResult) action.execute(deltaFile, params);
         assertEquals(DID, formatResult.toEvent().getDid());
         assertEquals(ACTION, formatResult.toEvent().getAction());
-        assertEquals(ORIGINATOR_DID + "." + FILENAME + ".error", formatResult.getFilename());
+        assertEquals(ORIGINATOR_DID + "." + FILENAME + ".error", formatResult.toEvent().getFormat().getFilename());
         ObjectReference objectReference = objectMapper.convertValue(formatResult.getObjectReference(), ObjectReference.class);
         ErrorDomain actual = objectMapper.readValue(new String(inMemoryObjectStorageService.getObject(
                 objectReference.getBucket(), objectReference.getName(), objectReference.getOffset(), objectReference.getSize())), ErrorDomain.class);

@@ -5,24 +5,20 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.minio.ObjectWriteResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatAction;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.generated.types.ObjectReference;
 
 import java.util.Objects;
 
-import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
-
-@RequiredArgsConstructor
 @Slf4j
 public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -32,8 +28,14 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
 
     private final ObjectStorageService objectStorageService;
 
+    public SimpleErrorFormatAction(ObjectStorageService objectStorageService) {
+        super(ActionParameters.class);
+
+        this.objectStorageService = objectStorageService;
+    }
+
     @Override
-    public Result execute(DeltaFile deltaFile, ActionParameters params) {
+    public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
         log.warn(params.getName() + " formatting (" + deltaFile.getDid() + ")");
 
         if (Objects.isNull(deltaFile.getDomain("error"))) {
@@ -60,19 +62,17 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
             throw new RuntimeException(err, t);
         }
 
-        FormatResult result = new FormatResult(params.getName(), deltaFile.getDid(), filename);
+        FormatResult result = new FormatResult(deltaFile, params, filename);
         addSourceInputMetadata(result, deltaFile);
         addProtocolStackMetadata(result, deltaFile);
 
         try {
             ObjectWriteResponse objectWriteResponse = objectStorageService.putObject(
-                    MINIO_BUCKET, deltaFile.getDid() + "/" + params.getName(), json.getBytes());
+                    DeltaFiConstants.MINIO_BUCKET, deltaFile.getDid() + "/" + params.getName(), json.getBytes());
             result.setObjectReference(fromObjectWriteResponse(objectWriteResponse, json.getBytes().length));
         } catch (ObjectStorageException e) {
             throw new RuntimeException("Failed to write transformed data to minio " + e.getMessage());
         }
-
-        logFilesProcessedMetric(ActionEventType.FORMAT, deltaFile);
 
         return result;
     }
@@ -83,10 +83,5 @@ public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
                 .name(response.object())
                 .size(size)
                 .build();
-    }
-
-    @Override
-    public Class<ActionParameters> getParamType() {
-        return ActionParameters.class;
     }
 }

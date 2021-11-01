@@ -1,6 +1,8 @@
 package org.deltafi.actionkit.action.enrich;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.EnrichInput;
@@ -9,19 +11,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EnrichResult extends Result {
+public class EnrichResult extends Result<ActionParameters> {
+    private final List<String> enrichments = new ArrayList<>();
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public EnrichResult(String name, String did) {
-        super(name, did);
-    }
-
-    protected final List<String> enrichments = new ArrayList<>();
-
-    private EnrichInput enrichInput() {
-        return EnrichInput.newBuilder()
-                .enrichments(enrichments)
-                .build();
+    public EnrichResult(DeltaFile deltaFile, ActionParameters params) {
+        super(deltaFile, params);
     }
 
     @SuppressWarnings("unused")
@@ -30,12 +24,14 @@ public class EnrichResult extends Result {
     }
 
     @Override
-    final public ActionEventType actionEventType() { return ActionEventType.ENRICH; }
+    public final ActionEventType actionEventType() {
+        return ActionEventType.ENRICH;
+    }
 
     @Override
-    final public ActionEventInput toEvent() {
+    public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setEnrich(enrichInput());
+        event.setEnrich(EnrichInput.newBuilder().enrichments(enrichments).build());
         return event;
     }
 }

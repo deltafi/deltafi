@@ -1,33 +1,30 @@
 package org.deltafi.actionkit.action.filter;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FilterInput;
 
-public class FilterResult extends Result {
+public class FilterResult extends Result<ActionParameters> {
+    private final String message;
 
-    final String filterMessage;
+    public FilterResult(DeltaFile deltaFile, ActionParameters params, String message) {
+        super(deltaFile, params);
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public FilterResult(String name, String did, String filterMessage) {
-        super(name, did);
-        this.filterMessage = filterMessage;
-    }
-
-    private FilterInput filterInput() {
-        return FilterInput.newBuilder()
-                .message(filterMessage)
-                .build();
+        this.message = message;
     }
 
     @Override
-    final public ActionEventType actionEventType() { return ActionEventType.FILTER; }
+    public final ActionEventType actionEventType() {
+        return ActionEventType.FILTER;
+    }
 
     @Override
-    final public ActionEventInput toEvent() {
+    public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setFilter(filterInput());
+        event.setFilter(FilterInput.newBuilder().message(message).build());
         return event;
     }
 }

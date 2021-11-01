@@ -67,8 +67,8 @@ input ProtocolLayerInput {
 type FormattedData {
   filename: String!
   formatAction: String!
-  metadata: [KeyValue!]
   objectReference: ObjectReference!
+  metadata: [KeyValue!]
   egressActions: [String!]!
 }
 
@@ -164,8 +164,8 @@ input EnrichInput {
 
 input FormatInput {
   filename: String!
-  metadata: [KeyValueInput!]
   objectReference: ObjectReferenceInput!
+  metadata: [KeyValueInput!]
 }
 
 input FilterInput {

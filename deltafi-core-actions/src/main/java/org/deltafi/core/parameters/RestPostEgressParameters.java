@@ -13,17 +13,6 @@ import java.util.Map;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class RestPostEgressParameters extends EgressActionParameters {
-
-    public RestPostEgressParameters() {}
-
-    public RestPostEgressParameters(String name, String egressFlow, Map<String, String> staticMetadata, String url, String metadataPrefix) {
-        super(name, staticMetadata);
-
-        setEgressFlow(egressFlow);
-        this.url = url;
-        this.metadataPrefix = metadataPrefix;
-    }
-
     @JsonProperty(required = true)
     @JsonPropertyDescription("The URL to post the DeltaFile to")
     public String url;
@@ -31,4 +20,12 @@ public class RestPostEgressParameters extends EgressActionParameters {
     @JsonPropertyDescription("The prefix to use in the metadata file keys")
     public String metadataPrefix;
 
+    public RestPostEgressParameters() {}
+
+    public RestPostEgressParameters(String name, Map<String, String> staticMetadata, String egressFlow, String url, String metadataPrefix) {
+        super(name, staticMetadata, egressFlow);
+
+        this.url = url;
+        this.metadataPrefix = metadataPrefix;
+    }
 }
