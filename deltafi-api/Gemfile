@@ -3,12 +3,13 @@
 source 'https://rubygems.org'
 
 gem 'awesome_print'
-gem 'sinatra'
-gem 'k8s-ruby'
 gem 'httparty'
+gem 'k8s-ruby'
+gem 'sinatra'
 
 group :test, :development do
-  gem 'rspec', '~> 3.0'
-  gem 'rack-test'
   gem 'pry'
+  gem 'rack-test'
+  gem 'rerun'
+  gem 'rspec', '~> 3.0'
 end

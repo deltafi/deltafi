@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deltafi-status-checks
+  namespace: deltafi
+data:
+  DeploymentCheck: |
+    expected_deployments:
+    - deltafi-api
+    - deltafi-config-server
+    - deltafi-core-actions
+    - deltafi-core-domain
+    - deltafi-gateway
+    - deltafi-ingress
+    - deltafi-kibana
+    - deltafi-kubernetes-dashboard
+    - deltafi-minio
+    - deltafi-mongodb
+    - deltafi-nifi
+    - deltafi-passthrough-actions
+    - deltafi-ui
+    - deltafi-zipkin
+  IngressCheck: |
+    expected_ingresses:
+    - deltafi-gateway-ingress
+    - deltafi-ingress
+    - deltafi-kibana
+    - deltafi-kubernetes-dashboard
+    - deltafi-minio
+    - deltafi-ui-ingress
+    - deltafi-zipkin
+    - nifi-ui-ingress
+  ServiceCheck: |
+    expected_services:
+    - deltafi-api-service
+    - deltafi-config-server
+    - deltafi-core-domain-service
+    - deltafi-fluentd
+    - deltafi-gateway-service
+    - deltafi-ingress-service
+    - deltafi-kibana
+    - deltafi-kubernetes-dashboard
+    - deltafi-minio
+    - deltafi-mongodb
+    - deltafi-redis-headless
+    - deltafi-redis-master
+    - deltafi-ui-service
+    - deltafi-zipkin
+    - elasticsearch-master
+    - elasticsearch-master-headless
+    - nifi-egress-service
+    - nifi-ui-service
+  StorageCheck: |
+    expected_volumes:
+    - deltafi-elasticsearch
+    - deltafi-minio
+    - deltafi-mongodb
+    - deltafi-nifi

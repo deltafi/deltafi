@@ -66,7 +66,7 @@ module Deltafi
               stage: e['stage'],
               created: e['created'],
               modified: e['modified'],
-              last_error_cause: errored_actions.sort_by { |ea| ea[:modified] }.last[:cause],
+              last_error_cause: errored_actions.max_by { |ea| ea[:modified] }[:cause],
               errors: errored_actions
             }
           end

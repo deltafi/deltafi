@@ -5,6 +5,10 @@ $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
 require 'deltafi/api'
 require 'sinatra/base'
 
+STATUS_INTERVAL = 5 # seconds
+
+$status_service = Deltafi::API::Status::Service.new(STATUS_INTERVAL)
+
 class ApiServer < Sinatra::Base
   configure :production, :development, :test do
     enable :logging
@@ -16,10 +20,10 @@ class ApiServer < Sinatra::Base
 
   get '/api/v1/config' do
     build_response({
-      config: {
-        system: Deltafi::API::Config::System.config
-      }
-    })
+                     config: {
+                       system: Deltafi::API::Config::System.config
+                     }
+                   })
   end
 
   get '/api/v1/errors' do
@@ -36,6 +40,10 @@ class ApiServer < Sinatra::Base
 
   get '/api/v1/metrics/system/nodes' do
     build_response({ nodes: Deltafi::API::Metrics::System.nodes })
+  end
+
+  get '/api/v1/status' do
+    build_response({ status: $status_service.status })
   end
 
   def build_response(object)
