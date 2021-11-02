@@ -6,7 +6,14 @@
     responsiveLayout="scroll"
     stripedRows
     class="p-datatable-gridlines p-datatable-sm"
+    :loading="loading"
   >
+  <template #empty>
+    No System Metrics available
+  </template>
+  <template #loading>
+    Loading System Metrics Data. Please wait.
+  </template>
     <Column :expander="true"></Column>
     <Column field="name" header="Node Name" sortable></Column>
     <Column header="Pods">
@@ -61,13 +68,15 @@ export default {
     return {
       nodes: [],
       expandedRows: [],
-      autoRefresh: null
+      autoRefresh: null,
+      loading: true,
     };
   },
   methods: {
     async fetchNodes() {
       let response = await this.apiService.getNodes();
       this.nodes = response.nodes;
+      this.loading = false;
     },
     formattedBytes(resource) {
       return [

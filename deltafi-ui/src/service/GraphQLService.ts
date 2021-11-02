@@ -104,7 +104,7 @@ export default class GraphQLService {
       mutation: {
         retry: {
           __args: {
-            did: "did"
+            did: did
           },
           did
         },

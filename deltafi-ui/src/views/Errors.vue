@@ -34,9 +34,13 @@
       stripedRows
       v-model:expandedRows="expandedRows"
       class="p-datatable-gridlines p-datatable-sm"
+      :loading="loading"
     >
       <template #empty>
-        No Errors found
+        No errors in the selected time range
+      </template>
+      <template #loading>
+        Loading Errors Data. Please wait.
       </template>
       <Column :expander="true"></Column>
       <Column field="did" header="DID (UUID)"> </Column>
@@ -97,6 +101,7 @@ export default {
       startTimeDate: newDateObj,
       endTimeDate: currentDateObj,
       showContextDialog: false,
+      loading: true,
     };
   },
   methods: {
@@ -130,8 +135,10 @@ export default {
       });
     },
     async fetchErrors(startD, endD) {
+      this.loading = true;
       const data = await this.graphQLService.getErrors(startD, endD);
       this.errors = data.data.deltaFiles.deltaFiles;
+      this.loading = false;
     },
     UpdateErrors(startD, endD) {
       alert(startD + endD);
