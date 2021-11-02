@@ -3,6 +3,21 @@ kind: ClusterRole
 metadata:
   name: api-role
 rules:
-- apiGroups: ["metrics.k8s.io", ""]
-  resources: ["nodes", "pods", "persistentvolumes"]
-  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - ""
+  - apps
+  - metrics.k8s.io
+  - networking.k8s.io
+  resources:
+  - configmaps
+  - deployments
+  - ingresses
+  - nodes
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
