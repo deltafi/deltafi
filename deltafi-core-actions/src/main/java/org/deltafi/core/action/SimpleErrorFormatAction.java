@@ -5,10 +5,11 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.minio.ObjectWriteResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.format.FormatAction;
 import org.deltafi.actionkit.action.format.FormatResult;
+import org.deltafi.actionkit.action.format.SimpleFormatAction;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -19,20 +20,15 @@ import org.deltafi.core.domain.generated.types.ObjectReference;
 
 import java.util.Objects;
 
+@RequiredArgsConstructor
 @Slf4j
-public class SimpleErrorFormatAction extends FormatAction<ActionParameters> {
+public class SimpleErrorFormatAction extends SimpleFormatAction {
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true)
             .registerModule(new JavaTimeModule());
 
     private final ObjectStorageService objectStorageService;
-
-    public SimpleErrorFormatAction(ObjectStorageService objectStorageService) {
-        super(ActionParameters.class);
-
-        this.objectStorageService = objectStorageService;
-    }
 
     @Override
     public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {

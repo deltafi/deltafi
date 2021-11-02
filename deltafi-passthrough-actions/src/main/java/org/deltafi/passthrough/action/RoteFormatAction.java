@@ -2,17 +2,13 @@ package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.format.FormatAction;
 import org.deltafi.actionkit.action.format.FormatResult;
+import org.deltafi.actionkit.action.format.SimpleFormatAction;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
 
 @Slf4j
-public class RoteFormatAction extends FormatAction<ActionParameters> {
-    public RoteFormatAction() {
-        super(ActionParameters.class);
-    }
-
+public class RoteFormatAction extends SimpleFormatAction {
     public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
         log.trace(params.getName() + " formatting (" + deltaFile.getDid() + ")");
 
