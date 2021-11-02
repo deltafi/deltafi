@@ -13,6 +13,8 @@ import Dialog from 'primevue/dialog';
 import Calendar from 'primevue/calendar';
 import ConfirmPopup from 'primevue/confirmpopup';
 import ConfirmationService from 'primevue/confirmationservice';
+import ToastService from 'primevue/toastservice';
+import Toast from 'primevue/toast';
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
@@ -26,7 +28,9 @@ app.use(store)
 app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
+app.use(ToastService)
 
+app.component('Toast',Toast)
 app.component('Column', Column)
 app.component('DataTable', DataTable)
 app.component('Dialog', Dialog)

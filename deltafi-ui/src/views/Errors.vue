@@ -28,6 +28,7 @@
       </div>
     </div>
     <ConfirmPopup></ConfirmPopup>
+    <Toast position="top-right"></Toast>
     <DataTable
       :value="errors"
       stripedRows
@@ -39,13 +40,17 @@
       </template>
       <Column :expander="true"></Column>
       <Column field="did" header="DID (UUID)"> </Column>
-      <Column field="filename" header="Filename" :sortable="true"></Column>
-      <Column field="flow" header="Flow" :sortable="true"></Column>
+      <Column field="sourceInfo.filename" header="Filename" :sortable="true"></Column>
+      <Column field="sourceInfo.flow" header="Flow" :sortable="true"></Column>
       <Column field="stage" header="Stage" :sortable="true"></Column>
       <Column field="created" header="Timestamp" :sortable="true"></Column>
       <Column field="modified" header="Modified" :sortable="true"></Column>
-      <Column field="last_error_cause" header="Last Error"></column>
-      <Column field="errors.length" header="Error Count"></Column>
+      <Column field="last_error_cause" header="Last Error">
+        <template #body="errors">
+          {{findLatestError(errors.data.actions)}}
+        </template>
+      </Column>
+      <Column field="actions.length" header="Error Count"></Column>
       <Column :exportable="false" style="min-width: 8rem">
         <template #body="errors">
           <button @click="RetryClickConfirm($event, errors.data.did)" class="btn btn-sm btn-outline-secondary">Retry</button>
@@ -53,18 +58,18 @@
       </Column>
       <template #expansion="errors">
         <div class="errors-Subtable">
-          <DataTable :value="errors.data.errors">
-            <Column field="action" header="Action"></Column>
+          <DataTable :value="errors.data.actions">
+            <Column field="name" header="Action"></Column>
             <Column field="state" header="State"></Column>
             <Column field="created" header="Created"></Column>
-            <Column field="modified" header="Modified"></Column>            
-            <Column field="cause" header="Cause"></Column>
-            <Column field="context" header="Context">
+            <Column field="modified" header="Modified"></Column>
+            <Column field="errorCause" header="Cause"></Column>
+            <Column field="errorContext" header="Context">
               <template #body="errors">
-                <Button label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog"  v-if="errors.data.context" />
+                <Button label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog"  v-if="errors.data.errorContext" />
                 <span v-else>No context provided</span>
                 <Dialog header="Error Context" v-model:visible="showContextDialog" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-                  <pre class="dark">{{ errors.data.context }}</pre>
+                  <pre class="dark">{{ errors.data.errorContext }}</pre>
                 </Dialog>
               </template>
             </Column>
@@ -80,7 +85,8 @@ var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
 var addMlSeconds = 60 * 60 * 1000;
 var newDateObj = new Date(numberOfMlSeconds - addMlSeconds);
-import ApiService from "../service/ApiService";
+currentDateObj = new Date(numberOfMlSeconds + addMlSeconds);
+import GraphQLService from "../service/GraphQLService";
 
 export default {
   name: "errors",
@@ -104,21 +110,28 @@ export default {
       });
     },
     RetryClickAction(p_did) {
-      let data = new FormData();
-      data.append("did", p_did);
-      fetch("/api/v1/errors/retry", {
-        method: "POST",
-        referrer: "",
-        body: data,
-      }).then((res) => {
-        if(res.status === 200) {
-          this.fetchErrors(this.startTimeDate,this.endTimeDate);
+      this.graphQLService.postErrorRetry(p_did).then((res) => {
+        if (res.data !== null) {
+          this.$toast.add({
+            severity: "success",
+            summary: "Retry Successful",
+            detail: "",
+            life: 3000,
+          });
+          this.fetchErrors(this.startTimeDate, this.endTimeDate);
+        } else {
+          this.$toast.add({
+            severity: "error",
+            summary: "Retry Failed",
+            detail: res.errors[0].message,
+            life: 10000,
+          });
         }
       });
     },
     async fetchErrors(startD, endD) {
-      const data = await this.apiService.getErrors(startD, endD);
-      this.errors = data.errors;
+      const data = await this.graphQLService.getErrors(startD, endD);
+      this.errors = data.data.deltaFiles.deltaFiles;
     },
     UpdateErrors(startD, endD) {
       alert(startD + endD);
@@ -129,15 +142,18 @@ export default {
     closeContextDialog() {
       this.showContextDialog = false;
     },
+    findLatestError(errors) {
+      return errors.sort((a, b) => (a.modified < b.modified ? 1 : -1))[0]
+        .errorCause;
+    },
   },
-  apiService: null,
+  graphQLService: null,
   created() {
-    this.apiService = new ApiService();
+    this.graphQLService = new GraphQLService();
     this.fetchErrors(this.startTimeDate, this.endTimeDate);
   },
 };
 </script>
-
 <style>
 .time-range .form-control:disabled,
 .time-range .form-control[readonly] {
