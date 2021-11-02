@@ -29,4 +29,22 @@ export default class ApiService {
     });
     return this.get("/errors", searchParams);
   }
+
+  getStatus() {
+    return this.get("/status").catch(error => {
+      return {
+        status: {
+          code: 2,
+          state: "Error",
+          checks: [
+            {
+              description: "Unable to communicate with API",
+              code: 2,
+              message: error.message
+            }
+          ]
+        }
+      }
+    });
+  }
 }

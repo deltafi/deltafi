@@ -9,5 +9,10 @@ module.exports = {
         target: process.env.DELTAFI_GATEWAY_URL || 'https://gateway.dev.deltafi.org'
       }
     }
+  },
+  pwa: {
+    manifestOptions: {
+      icons: []
+    }
   }
 }

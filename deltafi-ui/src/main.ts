@@ -13,6 +13,10 @@ import Dialog from 'primevue/dialog';
 import Calendar from 'primevue/calendar';
 import ConfirmPopup from 'primevue/confirmpopup';
 import ConfirmationService from 'primevue/confirmationservice';
+import Message from 'primevue/message';
+import Tag from 'primevue/tag';
+import Tooltip from 'primevue/tooltip';
+import InlineMessage from 'primevue/inlinemessage';
 import ToastService from 'primevue/toastservice';
 import Toast from 'primevue/toast';
 
@@ -37,5 +41,10 @@ app.component('Dialog', Dialog)
 app.component('Calendar',Calendar)
 app.component('ConfirmPopup', ConfirmPopup)
 app.component('Button', Button)
+app.component('Tag', Tag)
+app.component('Message', Message)
+app.component('InlineMessage', InlineMessage)
+
+app.directive('tooltip', Tooltip);
 
 app.mount('#app')
