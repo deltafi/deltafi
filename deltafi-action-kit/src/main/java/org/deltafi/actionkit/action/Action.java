@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
+import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
@@ -23,10 +25,10 @@ import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.JsonMap;
-import org.deltafi.core.domain.generated.client.RegisterActionGraphQLQuery;
-import org.deltafi.core.domain.generated.client.RegisterActionProjectionRoot;
+import org.deltafi.core.domain.generated.client.RegisterGenericSchemaGraphQLQuery;
+import org.deltafi.core.domain.generated.client.RegisterGenericSchemaProjectionRoot;
+import org.deltafi.core.domain.generated.types.GenericActionSchemaInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.ActionSchemaInput;
 import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -155,22 +157,41 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
         }
     }
 
-    void doRegisterParamSchema() {
-        JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
-        JsonMap definition = OBJECT_MAPPER.convertValue(schemaJson, JsonMap.class);
-        ActionSchemaInput paramInput = ActionSchemaInput.newBuilder().actionClass(getClassCanonicalName())
-                .paramClass(paramType.getCanonicalName()).actionKitVersion(version).schema(definition).build();
-
-        RegisterActionProjectionRoot projectionRoot = new RegisterActionProjectionRoot().actionClass();
-
-        RegisterActionGraphQLQuery graphQLQuery = RegisterActionGraphQLQuery.newRequest().actionSchema(paramInput).build();
-        GraphQLQueryRequest request = new GraphQLQueryRequest(graphQLQuery, projectionRoot);
-
-        log.trace("Registering schema: {}", schemaJson.toPrettyString());
-        domainGatewayService.submit(request);
+    protected String getVersion() {
+        return version;
     }
 
-    private String getClassCanonicalName() {
+    protected String getParamClass() {
+        return paramType.getCanonicalName();
+    }
+
+    protected JsonMap getDefinition() {
+        JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
+        JsonMap definition = OBJECT_MAPPER.convertValue(schemaJson, JsonMap.class);
+        log.trace("Registering schema: {}", schemaJson.toPrettyString());
+        return definition;
+    }
+
+    public GraphQLQuery getRegistrationQuery() {
+        GenericActionSchemaInput paramInput = GenericActionSchemaInput.newBuilder()
+            .id(getClassCanonicalName())
+            .paramClass(getParamClass())
+            .actionKitVersion(getVersion())
+            .schema(getDefinition())
+            .build();
+        return RegisterGenericSchemaGraphQLQuery.newRequest().actionSchema(paramInput).build();
+    }
+
+    void doRegisterParamSchema() {
+        domainGatewayService.submit(new GraphQLQueryRequest(
+                    getRegistrationQuery(), getRegistrationProjection()));
+    }
+
+    protected BaseProjectionNode getRegistrationProjection() {
+        return new RegisterGenericSchemaProjectionRoot(). id();
+    }
+
+    protected String getClassCanonicalName() {
         return this instanceof Subclass ? this.getClass().getSuperclass().getCanonicalName() : this.getClass().getCanonicalName();
     }
 

@@ -5,12 +5,21 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.enrich.EnrichResult;
 import org.deltafi.actionkit.action.enrich.SimpleEnrichAction;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.DeltaFile;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 public class RoteEnrichAction extends SimpleEnrichAction {
     public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
         log.trace(params.getName() + " enrich (" + deltaFile.getDid() + ")");
         return new EnrichResult(deltaFile, params);
+    }
+
+    @Override
+    public List<String> getRequiresDomains() {
+        return Arrays.asList(DeltaFiConstants.MATCHES_ANY);
     }
 }

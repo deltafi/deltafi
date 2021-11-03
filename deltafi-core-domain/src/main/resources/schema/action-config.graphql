@@ -1,18 +1,3 @@
-type ActionSchema {
-    actionClass: String!
-    paramClass: String!
-    actionKitVersion: String!
-    schema: JSON
-    lastHeard: DateTime!
-}
-
-input ActionSchemaInput {
-    actionClass: String!
-    paramClass: String!
-    actionKitVersion: String!
-    schema: JSON
-}
-
 interface ActionConfiguration {
     name: String!
     type: String!

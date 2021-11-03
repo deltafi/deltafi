@@ -3,6 +3,7 @@ package org.deltafi.core.domain.validation;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.core.domain.api.types.ActionSchema;
+import org.deltafi.core.domain.api.types.GenericActionSchemaImpl;
 import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
@@ -102,8 +103,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void validateAgainstSchema_inactiveAction() {
-        ActionSchema schema = actionSchema();
-        schema.setLastHeard(OffsetDateTime.now().minusDays(1));
+        ActionSchema schema = actionSchemaMinus1Day();
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.of(schema));
         List<String> errors = actionConfigurationValidator.validateAgainstSchema(egressConfig(getRequiredParams()));
         assertThat(errors).hasSize(1);
@@ -158,8 +158,19 @@ class ActionConfigurationValidatorTest {
 
     ActionSchema actionSchema() {
         try {
-            ActionSchema actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
+            GenericActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
             actionSchema.setLastHeard(OffsetDateTime.now());
+            return actionSchema;
+        } catch (IOException e) {
+            Assertions.fail("Could not read sample action schema");
+        }
+        return null;
+    }
+
+    ActionSchema actionSchemaMinus1Day() {
+        try {
+            GenericActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
+            actionSchema.setLastHeard(OffsetDateTime.now().minusDays(1));
             return actionSchema;
         } catch (IOException e) {
             Assertions.fail("Could not read sample action schema");

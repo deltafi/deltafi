@@ -4,9 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.LoadResult;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.passthrough.param.RoteLoadParameters;
-
 @Slf4j
 public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
     public RoteLoadAction() {
@@ -19,5 +19,9 @@ public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
         LoadResult<RoteLoadParameters> result = new LoadResult<>(deltaFile, params);
         params.getDomains().forEach(result::addDomain);
         return result;
+    }
+    @Override
+    public String getConsumes() {
+        return DeltaFiConstants.MATCHES_ANY;
     }
 }

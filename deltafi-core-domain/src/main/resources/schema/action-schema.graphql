@@ -1,0 +1,97 @@
+interface ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+}
+
+type TransformActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+    consumes: String!
+    produces: String!
+}
+
+input TransformActionSchemaInput {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    consumes: String!
+    produces: String!
+}
+
+type LoadActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+    consumes: String!
+}
+
+input LoadActionSchemaInput {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    consumes: String!
+}
+
+type EnrichActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+}
+
+input EnrichActionSchemaInput {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+}
+
+type FormatActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+}
+
+input FormatActionSchemaInput {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    requiresDomains: [String]!
+    requiresEnrichment: [String]
+}
+
+type GenericActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+}
+
+input GenericActionSchemaInput {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+}
+

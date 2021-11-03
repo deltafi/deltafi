@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.passthrough.param.RoteTransformParameters;
 
@@ -22,4 +23,15 @@ public class RoteTransformAction extends TransformAction<RoteTransformParameters
         result.addMetadata(params.getStaticMetadata());
         return result;
     }
+
+    @Override
+    public String getConsumes() {
+        return DeltaFiConstants.MATCHES_ANY;
+    }
+
+    @Override
+    public String getProduces() {
+        return DeltaFiConstants.MATCHES_ANY;
+    }
+
 }

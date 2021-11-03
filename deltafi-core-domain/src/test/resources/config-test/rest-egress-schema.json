@@ -1,5 +1,5 @@
 {
-  "actionClass": "org.deltafi.core.action.RestPostEgressAction",
+  "id": "org.deltafi.core.action.RestPostEgressAction",
   "actionKitVersion": "0.7.0-SNAPSHOT",
   "schema": {
     "type": "object",
