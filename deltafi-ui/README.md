@@ -1,74 +1,58 @@
-# demo
+# DeltaFi UI
 
-Downloads of this project should be limited to the test branch for stability.
-This project was created as a merge of a GitLab template project (Node/Express) and a new
-Vue.js project.  
-This project has been developed using VSCode running on GitBash (GitForWindows) and was created using the following command:
-$ winpty vue.cmd create deltafi-ui
+Web front-end for DeltaFi. Written in Vue.js.
 
-An initial UI view to display Nodes and Pods is currently displayed.  Routing is implemented, as demonstrated by the presence of an About page.
+## Development
 
-vue.conf defines the project configuration which includes the following plugins:
-[Vue 3] babel
-typescript
-pwa
-router
-vuex
+This section describes how to set up a deltafi-ui development environment.
 
-## Version Information
-$ node -v
-v16.11.0
-$ npm -v
-8.0.0
-$ 
-vue CLI v4.5.13
+#### Prerequisites
 
+- Node.js >= 16.x
+- [Visual Studio Code](https://code.visualstudio.com/)
+  - [Vetur](https://marketplace.visualstudio.com/items?itemName=octref.vetur)
 
-## Project setup - local machine
-```
-The only option available at this time for running the UI is to:
-Download/install the source code 
-install Node.js and npm
-install Vue.js
-Run the app using NPM
+#### Install Dependencies
 
-Follow the steps below.
+    npm install
 
-1. Install the latest LTS verson of Node.js and NPM on your machine
-$ npm install -g @vue/cli
-2. Navigate to https://gitlab.com/systolic/deltafi/deltafi-ui  and download zip archive of the test branch to your workspace directory on your linux machine
+#### Visual Studio Code
 
+- Start __Visual Studio Code__.
+- Select __File__ > __Open Workspace from File...__
+- Select the file named `deltafi-ui.code-workspace` at the root of this repo.
 
-# RUNNING THE UI
-```
-### Option 1: Compile, run and access UI on localhost
-Run the app using the Vue CLI service.
-$ npm run serve-app
-The application will be served at browser URL http://localhost:8080 or other localhost port as indicated
+#### Run Dev Server
 
-```
-### Option 2: Use Vue Dashboard interface to import and run UI
-$ vue ui
-The Vue interface will be displayed at http://localhost:8000.  Navigate to the Vue Project Manager.  Select "Import" and import the deltafi-ui project to the dashboard
-Click on the deltafi-ui project.  The Vue Project Manager automatically starts the localhost host and the appliation will be served via browser URL http://localhost:8000
+To start the dev server, run:
 
+    npm run development
 
-```
+The app should then be available at http://localhost:8080/.
 
-# DEVELOPERS
-### Run localhost JSON server generating fake data for UI (not yet implemented)
-npm serve-json
-Localhost JSON server will be served at URL http://localhost:3000
+##### API/GraphQL Proxy
 
-### Compiles and hot-reloads for development
-```
-npm run serve-app
-```
+By default, the internal Dev Server is configured to proxy `/api` and `/graphql` requests to dev.deltafi.org. This can be overridden using the environment variables described in the table below.
 
-### Compiles and minifies for production
-```
-npm run build
-```
+| Path       | Default Proxy Destination       | Override Environment Variable |
+| ---------- | ------------------------------- | ----------------------------- |
+| `/api`     | https://dev.deltafi.org         | `DELTAFI_API_URL`             |
+| `/graphql` | https://gateway.dev.deltafi.org | `DELTAFI_GATEWAY_URL`         |
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+For example, to run the app and point the proxy at your local DeltaFi instance, you could run:
+
+    export DELTAFI_API_URL="http://$(deltafi serviceip deltafi-api)"
+    export DELTAFI_GATEWAY_URL="http://$(deltafi serviceip deltafi-gateway)"
+    npm run development
+
+## Production
+
+This section describes how to build deltafi-ui for production.
+
+#### Prerequisites
+
+- Docker
+
+#### Build Docker Image
+
+    docker build -t deltafi-ui:latest .
