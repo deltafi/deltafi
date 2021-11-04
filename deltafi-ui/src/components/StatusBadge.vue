@@ -1,17 +1,17 @@
 <template>
   <div>
-    <Tag class="p-mr-3 mr-3 status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" v-tooltip.left="'Click for more info'" @click="openStatusDialog()"></Tag>
-    <Dialog icon header="System Status Checks" v-model:visible="showStatusDialog" :style="{width: '50vw'}" :maximizable="false" :modal="true" position="center">
+    <Tag v-tooltip.left="'Click for more info'" class="p-mr-3 mr-3 status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" @click="openStatusDialog()" />
+    <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{width: '50vw'}" :maximizable="false" :modal="true" position="center">
       <span v-for="check in status.checks" :key="check.description">
         <Message :severity="messageSeverity(check.code)" :closable="false">
-          {{check.description}}
+          {{ check.description }}
         </Message>
         <div v-if="check.message">
-          <div class="message" v-html="markdown(check.message)"></div>
+          <div class="message" v-html="markdown(check.message)" />
         </div>
       </span>
-      <template #footer v-if="timestamp">
-        <small class="text-muted">Last Updated: {{timestamp}}</small >
+      <template v-if="timestamp" #footer>
+        <small class="text-muted">Last Updated: {{ timestamp }}</small>
       </template>
     </Dialog>
   </div>
@@ -35,6 +35,19 @@ export default {
       autoRefresh: null,
       showStatusDialog: false,
     };
+  },
+  created() {
+    this.apiService = new ApiService();
+    this.markdownIt = new MarkdownIt();
+  },
+  mounted() {
+    this.fetchStatus();
+    this.autoRefresh = setInterval(
+      function () {
+        this.fetchStatus();
+      }.bind(this),
+      refreshInterval
+    );
   },
   methods: {
     async fetchStatus() {
@@ -66,19 +79,6 @@ export default {
   },
   apiService: null,
   markdownIt: null,
-  created() {
-    this.apiService = new ApiService();
-    this.markdownIt = new MarkdownIt();
-  },
-  mounted() {
-    this.fetchStatus();
-    this.autoRefresh = setInterval(
-      function () {
-        this.fetchStatus();
-      }.bind(this),
-      refreshInterval
-    );
-  },
 };
 </script>
 

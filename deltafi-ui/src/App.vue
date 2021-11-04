@@ -20,17 +20,17 @@ import AppMenu from './AppMenu.vue';
 
 export default {
   name: "App",
-  watch: {
-    $route: {
-      immediate: true,
-      handler(to, from) {
-        document.title = to.meta.title || 'DeltaFi';
-      }
-    },
-  },
   components: {
     'AppTopBar': AppTopBar,
     'AppMenu': AppMenu
+  },
+  watch: {
+    $route: {
+      immediate: true,
+      handler(to) {
+        document.title = to.meta.title || 'DeltaFi';
+      }
+    },
   }
 }
 </script>

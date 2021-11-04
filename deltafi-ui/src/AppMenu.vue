@@ -2,9 +2,9 @@
   <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
     <div class="sidebar-sticky pt-3">
       <ul class="nav flex-column">
-        <li class="nav-item" v-for="route in routes" :key="route.path">
-          <router-link v-bind:to="route.path" v-bind:class="menuItemClass(route)">
-            <i v-bind:class="route.meta.menuIconClass"></i>
+        <li v-for="route in routes" :key="route.path" class="nav-item">
+          <router-link :to="route.path" :class="menuItemClass(route)">
+            <i :class="route.meta.menuIconClass" />
             {{ route.name }}
           </router-link>
         </li>
@@ -24,11 +24,9 @@ export default {
       activePage: null,
     };
   },
-  methods: {
-    menuItemClass(route) {
-      let classes = ["nav-link"];
-      if (route.name === this.activePage) classes.push("active");
-      return classes.join(" ");
+  watch: {
+    $route(to) {
+      this.activePage = to.name;
     },
   },
   mounted() {
@@ -36,9 +34,11 @@ export default {
       return a.meta.menuOrder - b.meta.menuOrder;
     });
   },
-  watch: {
-    $route(to, from) {
-      this.activePage = to.name;
+  methods: {
+    menuItemClass(route) {
+      let classes = ["nav-link"];
+      if (route.name === this.activePage) classes.push("active");
+      return classes.join(" ");
     },
   },
 };

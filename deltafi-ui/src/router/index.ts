@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import Dashboard from '../views/Dashboard.vue';
+import Dashboard from '../pages/DashboardPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -15,7 +15,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/metrics/system',
     name: 'System Metrics',
-    component: () => import('../views/SystemMetrics.vue'),
+    component: () => import('../pages/SystemMetricsPage.vue'),
     meta: {
       title: 'Metrics - DeltaFi',
       menuIconClass: 'pi pi-chart-bar',
@@ -25,7 +25,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/errors',
     name: 'Errors',
-    component: () => import('../views/Errors.vue'),
+    component: () => import('../pages/ErrorsPage.vue'),
     meta: {
       title: 'Errors - DeltaFi',
       menuIconClass: 'pi pi-times-circle',

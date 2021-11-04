@@ -1,38 +1,42 @@
 <template>
   <div class="Errors">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">Errors</h1>
+      <h1 class="h2">
+        Errors
+      </h1>
       <div class="time-range btn-toolbar mb-2 mb-md-0">
         <Calendar
           id="startDateTime"
           v-model="startTimeDate"
-          selectionMode="single"
+          selection-mode="single"
           :inline="false"
-          :showTime="true"
-          :manualInput="false"
-          hourFormat="12"
-          inputClass="form-control form-control-sm ml-3"
+          :show-time="true"
+          :manual-input="false"
+          hour-format="12"
+          input-class="form-control form-control-sm ml-3"
         />
         <span class="mt-1 ml-3">&mdash;</span>
         <Calendar
           id="endDateTime"
           v-model="endTimeDate"
-          selectionMode="single"
+          selection-mode="single"
           :inline="false"
-          :showTime="true"
-          :manualInput="false"
-          hourFormat="12"
-          inputClass="form-control form-control-sm ml-3"
+          :show-time="true"
+          :manual-input="false"
+          hour-format="12"
+          input-class="form-control form-control-sm ml-3"
         />
-        <button @click="fetchErrors(startTimeDate, endTimeDate)" class="btn btn-sm btn-outline-secondary ml-3">Search</button>
+        <button class="btn btn-sm btn-outline-secondary ml-3" @click="fetchErrors(startTimeDate, endTimeDate)">
+          Search
+        </button>
       </div>
     </div>
-    <ConfirmPopup></ConfirmPopup>
-    <Toast position="top-right"></Toast>
+    <ConfirmPopup />
+    <Toast position="top-right" />
     <DataTable
-      :value="errors"
-      stripedRows
       v-model:expandedRows="expandedRows"
+      :value="errors"
+      striped-rows
       class="p-datatable-gridlines p-datatable-sm"
       :loading="loading"
     >
@@ -42,38 +46,40 @@
       <template #loading>
         Loading Errors Data. Please wait.
       </template>
-      <Column :expander="true"></Column>
-      <Column field="did" header="DID (UUID)"> </Column>
-      <Column field="sourceInfo.filename" header="Filename" :sortable="true"></Column>
-      <Column field="sourceInfo.flow" header="Flow" :sortable="true"></Column>
-      <Column field="stage" header="Stage" :sortable="true"></Column>
-      <Column field="created" header="Timestamp" :sortable="true"></Column>
-      <Column field="modified" header="Modified" :sortable="true"></Column>
+      <Column :expander="true" />
+      <Column field="did" header="DID (UUID)" />
+      <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
+      <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
+      <Column field="stage" header="Stage" :sortable="true" />
+      <Column field="created" header="Timestamp" :sortable="true" />
+      <Column field="modified" header="Modified" :sortable="true" />
       <Column field="last_error_cause" header="Last Error">
-        <template #body="errors">
-          {{findLatestError(errors.data.actions)}}
+        <template #body="error">
+          {{ findLatestError(error.data.actions) }}
         </template>
       </Column>
-      <Column field="actions.length" header="Error Count"></Column>
+      <Column field="actions.length" header="Error Count" />
       <Column :exportable="false" style="min-width: 8rem">
-        <template #body="errors">
-          <button @click="RetryClickConfirm($event, errors.data.did)" class="btn btn-sm btn-outline-secondary">Retry</button>
+        <template #body="error">
+          <button class="btn btn-sm btn-outline-secondary" @click="RetryClickConfirm($event, error.data.did)">
+            Retry
+          </button>
         </template>
       </Column>
-      <template #expansion="errors">
+      <template #expansion="error">
         <div class="errors-Subtable">
-          <DataTable :value="errors.data.actions">
-            <Column field="name" header="Action"></Column>
-            <Column field="state" header="State"></Column>
-            <Column field="created" header="Created"></Column>
-            <Column field="modified" header="Modified"></Column>
-            <Column field="errorCause" header="Cause"></Column>
+          <DataTable :value="error.data.actions">
+            <Column field="name" header="Action" />
+            <Column field="state" header="State" />
+            <Column field="created" header="Created" />
+            <Column field="modified" header="Modified" />
+            <Column field="errorCause" header="Cause" />
             <Column field="errorContext" header="Context">
-              <template #body="errors">
-                <Button label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog"  v-if="errors.data.errorContext" />
+              <template #body="action">
+                <Button v-if="action.data.errorContext" label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog" />
                 <span v-else>No context provided</span>
-                <Dialog header="Error Context" v-model:visible="showContextDialog" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-                  <pre class="dark">{{ errors.data.errorContext }}</pre>
+                <Dialog v-model:visible="showContextDialog" header="Error Context" :style="{width: '75vw'}" :maximizable="true" :modal="true">
+                  <pre class="dark">{{ action.data.errorContext }}</pre>
                 </Dialog>
               </template>
             </Column>
@@ -93,7 +99,7 @@ currentDateObj = new Date(numberOfMlSeconds + addMlSeconds);
 import GraphQLService from "../service/GraphQLService";
 
 export default {
-  name: "errors",
+  name: "ErrorsPage",
   data() {
     return {
       errors: [],
@@ -103,6 +109,10 @@ export default {
       showContextDialog: false,
       loading: true,
     };
+  },
+  created() {
+    this.graphQLService = new GraphQLService();
+    this.fetchErrors(this.startTimeDate, this.endTimeDate);
   },
   methods: {
     RetryClickConfirm(event, p_did) {
@@ -155,10 +165,6 @@ export default {
     },
   },
   graphQLService: null,
-  created() {
-    this.graphQLService = new GraphQLService();
-    this.fetchErrors(this.startTimeDate, this.endTimeDate);
-  },
 };
 </script>
 <style>

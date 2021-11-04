@@ -1,0 +1,14 @@
+image: node
+
+stages:
+  - lint
+
+eslint:
+  stage: lint
+  script:
+    # Install eslint
+    - |
+      npm install eslint \
+      eslint-plugin-vue
+    # Run eslint
+    - node_modules/eslint/bin/eslint.js --ext .js,.vue src
