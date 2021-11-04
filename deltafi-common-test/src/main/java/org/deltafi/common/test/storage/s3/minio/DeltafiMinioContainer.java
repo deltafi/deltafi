@@ -12,7 +12,7 @@ public class DeltafiMinioContainer extends MinioContainer {
         super(accessKey, secretKey);
     }
 
-    public MinioClient start(String defaultBucket) throws Exception {
+    public MinioClient start(String defaultBucket) {
         super.start();
 
         MinioClient minioClient = MinioClient.builder()
@@ -20,11 +20,15 @@ public class DeltafiMinioContainer extends MinioContainer {
                 .credentials(accessKey, secretKey)
                 .build();
 
-        // Create the default bucket (created by Helm in production - see MinIO config in charts/deltafi/values.yaml).
-        minioClient.makeBucket(MakeBucketArgs.builder().bucket(defaultBucket).build());
-        minioClient.setBucketLifecycle(SetBucketLifecycleArgs.builder().bucket(defaultBucket).config(
-                new LifecycleConfiguration(List.of(new LifecycleRule(Status.ENABLED, null,
-                        new Expiration((ResponseDate) null, 1, null), new RuleFilter(""), "AgeOff", null, null, null)))).build());
+        try {
+            // Create the default bucket (created by Helm in production - see MinIO config in charts/deltafi/values.yaml).
+            minioClient.makeBucket(MakeBucketArgs.builder().bucket(defaultBucket).build());
+            minioClient.setBucketLifecycle(SetBucketLifecycleArgs.builder().bucket(defaultBucket).config(
+                    new LifecycleConfiguration(List.of(new LifecycleRule(Status.ENABLED, null,
+                            new Expiration((ResponseDate) null, 1, null), new RuleFilter(""), "AgeOff", null, null, null)))).build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return minioClient;
     }

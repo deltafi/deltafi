@@ -121,6 +121,7 @@ dependencies {
 	testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.2.0"
 
 	testImplementation project(":deltafi-common-test")
+	testImplementation 'org.awaitility:awaitility:4.1.0'
 	testImplementation "org.testcontainers:testcontainers:1.16.0"
 }
 

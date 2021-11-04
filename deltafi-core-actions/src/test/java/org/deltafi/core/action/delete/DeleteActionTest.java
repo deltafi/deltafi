@@ -10,7 +10,6 @@ import org.deltafi.common.storage.s3.minio.MinioObjectStorageService;
 import org.deltafi.common.test.storage.s3.minio.DeltafiMinioContainer;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -21,29 +20,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DeleteActionTest {
-    private static DeltafiMinioContainer DELTAFI_MINIO_CONTAINER;
-    private static MinioObjectStorageService MINIO_CLOUD_STORAGE_SERVICE;
-
-    @BeforeAll
-    static void setupClass() throws Exception {
-        DELTAFI_MINIO_CONTAINER = new DeltafiMinioContainer("accessKey", "secretKey");
-        MinioClient minioClient = DELTAFI_MINIO_CONTAINER.start(MINIO_BUCKET);
-
-        MINIO_CLOUD_STORAGE_SERVICE = new MinioObjectStorageService(minioClient, 100_000_000L);
-    }
+    private static final DeltafiMinioContainer DELTAFI_MINIO_CONTAINER = new DeltafiMinioContainer("accessKey", "secretKey");
+    private static final MinioClient MINIO_CLIENT = DELTAFI_MINIO_CONTAINER.start(MINIO_BUCKET);
+    private static final MinioObjectStorageService MINIO_OBJECT_STORAGE_SERVICE = new MinioObjectStorageService(MINIO_CLIENT, 100_000_000L);
 
     @AfterAll
-    static void teardownClass() {
+    public static void teardownClass() {
         DELTAFI_MINIO_CONTAINER.stop();
     }
 
     @Test
     void testExecute() throws ObjectStorageException {
-        MINIO_CLOUD_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-1/test-action-1a", "test data 1a".getBytes());
-        MINIO_CLOUD_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-1/test-action-1b", "test data 1b".getBytes());
-        MINIO_CLOUD_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-2/test-action-2a", "test data 2a".getBytes());
+        MINIO_OBJECT_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-1/test-action-1a", "test data 1a".getBytes());
+        MINIO_OBJECT_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-1/test-action-1b", "test data 1b".getBytes());
+        MINIO_OBJECT_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-2/test-action-2a", "test data 2a".getBytes());
 
-        DeleteAction deleteAction = new DeleteAction(MINIO_CLOUD_STORAGE_SERVICE);
+        DeleteAction deleteAction = new DeleteAction(MINIO_OBJECT_STORAGE_SERVICE);
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters("name", Collections.emptyMap());
         Result<ActionParameters> result = deleteAction.execute(deltaFile, actionParameters);
@@ -52,8 +44,8 @@ public class DeleteActionTest {
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());
         assertEquals(actionParameters.getName(), result.toEvent().getAction());
 
-        assertEquals(0, MINIO_CLOUD_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1").size());
-        assertEquals(1, MINIO_CLOUD_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-2").size());
+        assertEquals(0, MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1").size());
+        assertEquals(1, MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-2").size());
     }
 
     @Test

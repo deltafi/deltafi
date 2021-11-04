@@ -22,9 +22,10 @@ deltafi:
         parameters:
           afterComplete: PT2S
   housekeeping:
-    initialDelaySeconds: 60
-    delaySeconds: 3600
-    objectMinimumAgeForRemovalSeconds: 900
+    minio:
+      initialDelaySeconds: 0
+      delaySeconds: 1
+      objectMinimumAgeForRemovalSeconds: 5
 
 minio:
   url: http://localhost
