@@ -23,7 +23,7 @@ export default class ApiService {
   }
 
   getErrors(startD: Date, endD: Date) {
-    let searchParams = new URLSearchParams({
+    const searchParams = new URLSearchParams({
       start: startD.getTime().toString(),
       end: endD.getTime().toString(),
     });

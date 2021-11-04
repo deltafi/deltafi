@@ -1,3 +1,5 @@
+/* eslint vue/multi-word-component-names: 0 */
+
 import { createApp } from 'vue'
 import App from './App.vue'
 

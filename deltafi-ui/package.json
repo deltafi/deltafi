@@ -7,6 +7,8 @@
     "development": "vue-cli-service serve --mode development",
     "staging": "vue-cli-service serve --mode staging",
     "build": "vue-cli-service build",
+    "lint": "npx eslint --ext .js,.vue,.ts .",
+    "lint:fix": "npm run lint -- --fix",
     "test": "mocha"
   },
   "dependencies": {
@@ -41,6 +43,7 @@
     "@vue/cli-plugin-vuex": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
     "@vue/compiler-sfc": "^3.0.0",
+    "@vue/eslint-config-typescript": "^9.0.1",
     "eslint": "^8.1.0",
     "eslint-plugin-vue": "^8.0.3",
     "mocha": "^5.1.1",

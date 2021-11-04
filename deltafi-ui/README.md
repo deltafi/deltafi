@@ -45,6 +45,16 @@ For example, to run the app and point the proxy at your local DeltaFi instance, 
     export DELTAFI_GATEWAY_URL="http://$(deltafi serviceip deltafi-gateway)"
     npm run development
 
+#### ESLint
+
+To run the linter, run:
+
+    npm run lint
+
+To run the linter and try to automatically fix issues, run:
+
+    npm run lint:fix
+
 ## Production
 
 This section describes how to build deltafi-ui for production.
