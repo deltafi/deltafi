@@ -61,7 +61,7 @@ deltafi:
   api:
     image: deltafi/deltafi-api:0.11.0
   ui:
-    image: deltafi/deltafi-ui:0.11.0
+    image: deltafi/deltafi-ui:0.11.1
 # Kubernetes ingress config
 ingress:
   domain: local.deltafi.org
