@@ -3,7 +3,7 @@ image: docker:latest
 services:
   - name: docker:dind
     entrypoint: ["dockerd-entrypoint.sh"]
-    command: ["--max-concurrent-downloads", "10"]
+    command: ["--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
 
 stages:
   - build
@@ -60,7 +60,7 @@ trigger_deltafi_stix:
   services:
     - name: docker:18-dind
       entrypoint: ["dockerd-entrypoint.sh"]
-      command: ["--max-concurrent-downloads", "10"]
+      command: ["--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
   script:
     - test -n "$PROJECT_NAME"
     - export DOCKER_NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME//\//_}
@@ -113,3 +113,13 @@ build:
 
 include:
   - local: '*/.gitlab-ci.yml'
+
+hub_docker_quota_check:
+    stage: build
+    image: alpine:latest
+    before_script:
+      - apk add curl jq
+    when: manual
+    script:
+      - |
+        TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq --raw-output .token) && curl --head --header "Authorization: Bearer $TOKEN" "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>&1
