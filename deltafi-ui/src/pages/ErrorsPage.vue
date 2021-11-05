@@ -55,10 +55,14 @@
       <Column field="modified" header="Modified" :sortable="true" />
       <Column field="last_error_cause" header="Last Error">
         <template #body="error">
-          {{ findLatestError(error.data.actions) }}
+          {{ latestError(error.data.actions).errorCause }}
         </template>
       </Column>
-      <Column field="actions.length" header="Error Count" />
+      <Column field="actions.length" header="Error Count">
+        <template #body="error">
+          {{ countErrors(error.data.actions) }}
+        </template>
+      </Column>
       <Column :exportable="false" style="min-width: 8rem">
         <template #body="error">
           <button class="btn btn-sm btn-outline-secondary" @click="RetryClickConfirm($event, error.data.did)">
@@ -73,20 +77,29 @@
             <Column field="state" header="State" />
             <Column field="created" header="Created" />
             <Column field="modified" header="Modified" />
-            <Column field="errorCause" header="Cause" />
+            <Column field="errorCause" header="Cause">
+              <template #body="action">
+                <span v-if="(action.data.state === 'ERROR') && (action.data.errorCause !== null)">{{ action.data.errorCause }}</span>
+                <span v-else>N/A</span>
+              </template>
+            </Column>
             <Column field="errorContext" header="Context">
               <template #body="action">
-                <Button v-if="action.data.errorContext" label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog" />
-                <span v-else>No context provided</span>
-                <Dialog v-model:visible="showContextDialog" header="Error Context" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-                  <pre class="dark">{{ action.data.errorContext }}</pre>
-                </Dialog>
+                <div v-if="action.data.errorContext">
+                  <Button  label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog(action.data.errorContext)" />
+                </div>
+                <div v-else>
+                  <span>No context provided</span>
+                </div>
               </template>
             </Column>
           </DataTable>
         </div>
       </template>
     </DataTable>
+      <Dialog v-model:visible="showContextDialog" header="Error Context" :style="{width: '75vw'}" :maximizable="true" :modal="true">
+        <pre class="dark">{{ contextDialogData }}</pre>
+      </Dialog>
   </div>
 </template>
 
@@ -108,6 +121,7 @@ export default {
       endTimeDate: currentDateObj,
       showContextDialog: false,
       loading: true,
+      contextDialogData: "",
     };
   },
   created() {
@@ -153,15 +167,26 @@ export default {
     UpdateErrors(startD, endD) {
       alert(startD + endD);
     },
-    openContextDialog() {
+    openContextDialog(contextData) {
+      this.contextDialogData = contextData;
       this.showContextDialog = true;
     },
     closeContextDialog() {
       this.showContextDialog = false;
+      this.contextDialogData = "";
     },
-    findLatestError(errors) {
-      return errors.sort((a, b) => (a.modified < b.modified ? 1 : -1))[0]
-        .errorCause;
+    filterErrors(actions) {
+      return actions.filter((action) => {
+        return action.state === "ERROR";
+      });
+    },
+    latestError(actions) {
+      return this.filterErrors(actions).sort((a, b) =>
+        a.modified < b.modified ? 1 : -1
+      )[0];
+    },
+    countErrors(actions) {
+      return this.filterErrors(actions).length;
     },
   },
   graphQLService: null,
