@@ -97,9 +97,9 @@
         </div>
       </template>
     </DataTable>
-      <Dialog v-model:visible="showContextDialog" header="Error Context" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-        <pre class="dark">{{ contextDialogData }}</pre>
-      </Dialog>
+    <Dialog v-model:visible="showContextDialog" header="Error Context" :style="{width: '75vw'}" :maximizable="true" :modal="true">
+      <pre class="dark">{{ contextDialogData }}</pre>
+    </Dialog>
   </div>
 </template>
 
