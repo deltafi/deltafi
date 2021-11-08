@@ -2,6 +2,17 @@
 
 Web front-end for DeltaFi. Written in Vue.js.
 
+- [Development](#development)
+  - [Prerequisites](#prerequisites)
+  - [Install Dependencies](#install-dependencies)
+  - [Visual Studio Code](#visual-studio-code)
+  - [Run Dev Server](#run-dev-server)
+    - [API/GraphQL Proxy](#apigraphql-proxy)
+  - [ESLint](#eslint)
+- [Production](#production)
+  - [Prerequisites](#prerequisites-1)
+  - [Build Docker Image](#build-docker-image)
+
 ## Development
 
 This section describes how to set up a deltafi-ui development environment.
