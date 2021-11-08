@@ -2,11 +2,55 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
+cli_help_command() {
+  echo "
+Command: status
+
+Usage:
+  status"
+  exit 1
+}
+
 ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -gt 1 ]] && cli_help_command
 
-cd ${DELTAFICLI_WORKDIR}/commands/baskfiles/status
+ICONS=('\u2714' '\u26A0' '\u2715')
+COLORS=($green $yellow $red)
 
-[[ " ${ARGS[@]} " =~ " --help " ]] && $DELTAFICLI_WORKDIR/bask help status && exit
+API_HOST=$(deltafi serviceip deltafi-api-service)
+API_URL="http://${API_HOST}/api/v1/status"
 
-export DEFAULT_COMMAND="status"
-$DELTAFICLI_WORKDIR/bask ${ARGS[@]}
+STATUS=$(curl --connect-timeout 3 -s ${API_URL})
+if [ $? -ne 0 ]; then
+  echo -e "\nSystem State: ${red}Unhealthy\n\n ${ICONS[2]}${normal} Unable to communicate with API: ${API_URL}\n"
+  exit 1
+fi
+
+OVERALL_CODE=$(echo ${STATUS} | jq '.status.code' -r)
+OVERALL_COLOR=$(echo ${STATUS} | jq '.status.color' -r)
+OVERALL_STATE=$(echo ${STATUS} | jq '.status.state' -r)
+
+echo -e "\nSystem State: ${!OVERALL_COLOR}${OVERALL_STATE}${normal}\n"
+CHECKS=$(echo ${STATUS} | jq -r ".status.checks[] | [.code, .description] | @csv" | tr -d '"')
+IFS=$'\n'
+for CHECK in $CHECKS; do
+  IFS=',' read -r CODE NAME <<< ${CHECK}
+  echo -e " ${COLORS[$CODE]}${ICONS[$CODE]}${normal} ${NAME}"
+done
+
+MARKDOWN=$(echo ${STATUS} | jq '.status.checks[] | .message | select(length > 0)' -r)
+
+if [ "$MARKDOWN" != "" ]; then
+  which mdless > /dev/null 2>$1
+  if [ $? -eq 0 ]; then
+    echo "${MARKDOWN}" | mdless -P
+  else
+    echo -e "\n${MARKDOWN}\n"
+    echo -e "${yellow}For better output, install mdless:\n\t$ gem install mdless\n${normal}"
+  fi
+else
+  echo
+fi
+
+exit ${OVERALL_CODE}
