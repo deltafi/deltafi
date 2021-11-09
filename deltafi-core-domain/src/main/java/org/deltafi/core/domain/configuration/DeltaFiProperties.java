@@ -11,6 +11,7 @@ import java.time.Duration;
 @Data
 public class DeltaFiProperties {
     private int requeueSeconds = 30;
+    private int dbFileAgeOffSeconds = 1209600; /* 14 days */
     private DeleteConfiguration delete = new DeleteConfiguration();
     private Duration actionInactivityThreshold = Duration.ofMinutes(5);
 }

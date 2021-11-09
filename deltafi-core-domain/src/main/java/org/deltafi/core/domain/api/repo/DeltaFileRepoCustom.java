@@ -4,7 +4,9 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.DeltaFileOrder;
 import org.deltafi.core.domain.generated.types.DeltaFilesFilter;
+import org.springframework.data.mongodb.core.index.IndexInfo;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +17,27 @@ public interface DeltaFileRepoCustom {
      * @return the set of ids for all DeltaFiles in the repository
      */
     Set<String> readDids();
+
+    /**
+     * Set or verify the expiration TTL value on the collection.
+     *
+     * @param expirationSeconds - number of seconds until expiration
+     */
+    void setExpirationIndex(long expirationSeconds);
+
+    /**
+     * Get a list of all indexes on the collection.
+     *
+     * @return - list of indexes.
+     */
+    List<IndexInfo> getIndexes();
+
+    /**
+     * Get the current expiration TTL on the collection.
+     *
+     * @return - Duration, current TTL value, or null if not set.
+     */
+    Duration getTtlExpiration();
 
     /**
      * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.

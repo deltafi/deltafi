@@ -4,17 +4,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.annotation.PostConstruct;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -24,6 +29,7 @@ import static java.util.Objects.nonNull;
 @Slf4j
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String COLLECTION = "deltaFile";
+    private static final String TTL_INDEX_NAME = "ttl_index";
 
     public static final String ID = "_id";
     public static final String VERSION = "version";
@@ -58,8 +64,42 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
 
     private final MongoTemplate mongoTemplate;
+    private final DeltaFiProperties deltaFiProperties;
+
+    @PostConstruct
+    void setup() {
+        long seconds = deltaFiProperties.getDbFileAgeOffSeconds();
+        setExpirationIndex(seconds);
+    }
 
     @Override
+    public void setExpirationIndex(long expirationSeconds) {
+        Duration currentTtl = getTtlExpiration();
+        if ((currentTtl == null) || (currentTtl.getSeconds() != expirationSeconds)) {
+            if (currentTtl != null) {
+                mongoTemplate.indexOps(COLLECTION).dropIndex(TTL_INDEX_NAME);
+            }
+            mongoTemplate.indexOps(COLLECTION).ensureIndex(new Index().on(CREATED, Sort.Direction.ASC).named(TTL_INDEX_NAME).expire(expirationSeconds));
+        }
+    }
+
+    @Override
+    public Duration getTtlExpiration() {
+        Optional<IndexInfo> indexInfo = getIndexes().stream().filter(index -> index.getName().equals(TTL_INDEX_NAME)).findFirst();
+        if (indexInfo.isPresent()) {
+            final Optional<Duration> expireAfter = indexInfo.get().getExpireAfter();
+            if (expireAfter.isPresent()) {
+                return expireAfter.get();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<IndexInfo> getIndexes() {
+        return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
+    }
+
     public Set<String> readDids() {
         return StreamSupport
                 .stream(mongoTemplate.getCollection(COLLECTION).distinct(ID, String.class).spliterator(), true)

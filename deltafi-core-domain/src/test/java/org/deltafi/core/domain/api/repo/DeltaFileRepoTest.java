@@ -3,11 +3,13 @@ package org.deltafi.core.domain.api.repo;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
@@ -25,12 +27,32 @@ class DeltaFileRepoTest {
     @Autowired
     private DeltaFileRepo deltaFileRepo;
 
+    @Autowired
+    private DeltaFiProperties deltaFiProperties;
+
     // mongo eats microseconds, jump through hoops
     private final OffsetDateTime MONGO_NOW =  OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
 
     @BeforeEach
     public void setup() {
         deltaFileRepo.deleteAll();
+    }
+
+    @Test
+    void testExpirationIndexConstructor() {
+        assertEquals(deltaFiProperties.getDbFileAgeOffSeconds(), deltaFileRepo.getTtlExpiration().getSeconds());
+    }
+
+    @Test
+    void testExpirationIndexUpdate() {
+        final long newTtlValue = 123456;
+
+        List<IndexInfo> oldIndexList = deltaFileRepo.getIndexes();
+        deltaFileRepo.setExpirationIndex(newTtlValue);
+        List<IndexInfo> newIndexList = deltaFileRepo.getIndexes();
+
+        assertEquals(oldIndexList.size(), newIndexList.size());
+        assertEquals(newTtlValue, deltaFileRepo.getTtlExpiration().getSeconds());
     }
 
     @Test
