@@ -7,7 +7,7 @@
     "development": "vue-cli-service serve --mode development",
     "staging": "vue-cli-service serve --mode staging",
     "build": "vue-cli-service build",
-    "lint": "npx eslint --ext .js,.vue,.ts .",
+    "lint": "npx eslint --max-warnings=0 --ext .js,.vue,.ts .",
     "lint:fix": "npm run lint -- --fix",
     "test": "mocha"
   },
