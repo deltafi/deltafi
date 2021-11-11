@@ -2,8 +2,6 @@
 
 import { createApp } from 'vue'
 import App from './App.vue'
-
-// import './registerServiceWorker'
 import router from './router'
 import store from './store'
 
@@ -36,11 +34,11 @@ app.use(PrimeVue)
 app.use(ConfirmationService)
 app.use(ToastService)
 
-app.component('Toast',Toast)
+app.component('Toast', Toast)
 app.component('Column', Column)
 app.component('DataTable', DataTable)
 app.component('Dialog', Dialog)
-app.component('Calendar',Calendar)
+app.component('Calendar', Calendar)
 app.component('ConfirmPopup', ConfirmPopup)
 app.component('Button', Button)
 app.component('Tag', Tag)

@@ -16,14 +16,12 @@
 </template>
 
 <script>
-import ApiService from "../service/ApiService";
+import { mapState } from "vuex";
 
 export default {
   name: "DashboardPage",
-  apiService: null,
   data() {
     return {
-      domain: null,
       helpful_links: [
         {
           name: "GraphQL Gateway",
@@ -58,17 +56,10 @@ export default {
       ],
     };
   },
-  created() {
-    this.apiService = new ApiService();
-    this.fetchConfig();
-  },
+  computed: mapState(["uiConfig"]),
   methods: {
-    async fetchConfig() {
-      let response = await this.apiService.getConfig();
-      this.domain = response.config.system.domain;
-    },
     subdomainUrl(subdomain) {
-      return `https://${subdomain}.${this.domain}`;
+      return `https://${subdomain}.${this.uiConfig.domain}`;
     },
   },
 };

@@ -1,23 +1,26 @@
 <template>
   <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
     <router-link to="/" class="navbar-brand col-md-3 col-lg-2 mr-0 px-3">
-      DeltaFi
+      {{ uiConfig.title }}
     </router-link>
     <StatusBadge />
-    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-toggle="collapse" data-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+    <button
+      class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-toggle="collapse" data-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation"
+    >
       <span class="navbar-toggler-icon" />
     </button>
   </nav>
 </template>
 
 <script>
-import StatusBadge from '@/components/StatusBadge.vue';
+import StatusBadge from "@/components/StatusBadge.vue";
+import { mapState } from "vuex";
 
 export default {
   components: { StatusBadge },
+  computed: mapState(["uiConfig"]),
 };
 </script>
-
 <style scoped>
 .navbar-brand {
   padding-top: 0.75rem;

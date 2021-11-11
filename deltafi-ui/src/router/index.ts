@@ -7,7 +7,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Dashboard',
     component: Dashboard,
     meta: {
-      title: 'DeltaFi',
       menuIconClass: 'pi pi-desktop',
       menuOrder: 1
     }
@@ -17,7 +16,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'System Metrics',
     component: () => import('../pages/SystemMetricsPage.vue'),
     meta: {
-      title: 'Metrics - DeltaFi',
+      title: 'Metrics',
       menuIconClass: 'pi pi-chart-bar',
       menuOrder: 2
     }
@@ -27,7 +26,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Errors',
     component: () => import('../pages/ErrorsPage.vue'),
     meta: {
-      title: 'Errors - DeltaFi',
+      title: 'Errors',
       menuIconClass: 'pi pi-times-circle',
       menuOrder: 2
     }
