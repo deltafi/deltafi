@@ -95,11 +95,11 @@ public class InMemoryActionEventServiceTest {
     @Test
     void testOutgoing() {
         String actionClassName = "vanillaWafers";
-        EgressResult<EgressActionParameters> result = new EgressResult<>(DeltaFile.newBuilder().did("did").build(),
+        EgressResult result = new EgressResult(DeltaFile.newBuilder().did("did").build(),
                 new EgressActionParameters(actionClassName, null, null), "destination", 0);
         FilterResult result2 = new FilterResult(DeltaFile.newBuilder().did("did2").build(),
                 new ActionParameters("anotherName", null), "message");
-        TransformResult<ActionParameters> result3 = new TransformResult<>(DeltaFile.newBuilder().did("did3").build(),
+        TransformResult result3 = new TransformResult(DeltaFile.newBuilder().did("did3").build(),
                 new ActionParameters(actionClassName, null), "type");
 
         actionEventService.submitResult(result);

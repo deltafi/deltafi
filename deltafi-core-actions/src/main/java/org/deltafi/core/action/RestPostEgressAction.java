@@ -30,7 +30,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
         this.httpPostService = httpPostService;
     }
 
-    public Result<RestPostEgressParameters> execute(DeltaFile deltaFile, RestPostEgressParameters params) {
+    public Result execute(DeltaFile deltaFile, RestPostEgressParameters params) {
         log.debug(params.getName() + " posting (" + deltaFile.getDid() + ") to: " + params.getUrl());
 
         // TODO: Catch exceptions from post, generate error query
@@ -57,7 +57,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
                 // TODO: POSTing nothing is ok???
                 httpPostService.post(url, headers, InputStream.nullInputStream());
                 log.debug("Successful egress: " + params.getName() + ": " + deltaFile.getDid() + " (" + url + ")");
-                return new EgressResult<>(deltaFile, params, url, 0);
+                return new EgressResult(deltaFile, params, url, 0);
             }
 
             try (InputStream stream = objectStorageService.getObjectAsInputStream(objectReference.getBucket(),
@@ -68,12 +68,12 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
             }
 
             log.debug("Successful egress: " + params.getName() + ": " + deltaFile.getDid() + " (" + url + ")");
-            return new EgressResult<>(deltaFile, params, url, formattedData.getObjectReference().getSize());
+            return new EgressResult(deltaFile, params, url, formattedData.getObjectReference().getSize());
         } catch (ObjectStorageException e) {
             log.error("Unable to get object from minio", e);
             return null;
         } catch (Throwable e) {
-            return new ErrorResult<>(deltaFile, params, "Unable to complete egress", e).logErrorTo(log);
+            return new ErrorResult(deltaFile, params, "Unable to complete egress", e).logErrorTo(log);
         }
     }
 }

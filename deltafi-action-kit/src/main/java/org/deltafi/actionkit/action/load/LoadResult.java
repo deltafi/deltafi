@@ -11,10 +11,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LoadResult<P extends ActionParameters> extends Result<P> {
+public class LoadResult extends Result {
     private final List<String> domains = new ArrayList<>();
 
-    public LoadResult(DeltaFile deltaFile, P params) {
+    public LoadResult(DeltaFile deltaFile, ActionParameters params) {
         super(deltaFile, params);
     }
 

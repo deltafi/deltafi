@@ -7,7 +7,7 @@ import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FilterInput;
 
-public class FilterResult extends Result<ActionParameters> {
+public class FilterResult extends Result {
     private final String message;
 
     public FilterResult(DeltaFile deltaFile, ActionParameters params, String message) {

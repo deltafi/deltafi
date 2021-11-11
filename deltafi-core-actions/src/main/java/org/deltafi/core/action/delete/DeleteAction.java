@@ -23,16 +23,16 @@ public class DeleteAction extends Action<ActionParameters> {
     }
 
     @Override
-    public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
+    public Result execute(DeltaFile deltaFile, ActionParameters params) {
         if (!objectStorageService.removeObjects(DeltaFiConstants.MINIO_BUCKET, deltaFile.getDid())) {
-            return new ErrorResult<>(deltaFile, params, "Unable to remove all objects for delta file.");
+            return new ErrorResult(deltaFile, params, "Unable to remove all objects for delta file.");
         }
 
         return new DeleteResult(deltaFile, params);
     }
 
     @Override
-    public Collection<Metric> generateMetrics(Result<ActionParameters> result) {
+    public Collection<Metric> generateMetrics(Result result) {
         // The default is to include files_processed, which we don't want for the delete action.
         return Collections.emptyList();
     }

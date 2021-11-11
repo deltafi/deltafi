@@ -7,7 +7,7 @@ import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FormatInput;
 
-public class FormatResult extends Result<ActionParameters> {
+public class FormatResult extends Result {
     private final String filename;
 
     public FormatResult(DeltaFile deltaFile, ActionParameters params, String filename) {

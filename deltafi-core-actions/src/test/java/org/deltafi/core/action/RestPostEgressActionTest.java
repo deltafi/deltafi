@@ -84,7 +84,7 @@ class RestPostEgressActionTest {
 
     @Test
     void execute() throws IOException {
-        Result<RestPostEgressParameters> result = action.execute(deltaFile, params);
+        Result result = action.execute(deltaFile, params);
 
         verify(httpService).post(eq(URL), mapCaptor.capture(), isCaptor.capture());
         Map<String, String> actual = mapCaptor.getValue();
@@ -104,7 +104,7 @@ class RestPostEgressActionTest {
     @Test
     void executeMissingData() {
         inMemoryObjectStorageService.clear();
-        Result<RestPostEgressParameters> result = action.execute(deltaFile, params);
+        Result result = action.execute(deltaFile, params);
 
         verify(httpService, never()).post(any(), any(), any());
 

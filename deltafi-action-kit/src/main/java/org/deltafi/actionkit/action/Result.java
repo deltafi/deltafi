@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public abstract class Result<P extends ActionParameters> {
+public abstract class Result {
     protected final DeltaFile deltaFile;
-    protected final P params;
+    protected final ActionParameters params;
 
     protected ObjectReferenceInput objectReferenceInput;
     protected List<KeyValueInput> metadata = new ArrayList<>();

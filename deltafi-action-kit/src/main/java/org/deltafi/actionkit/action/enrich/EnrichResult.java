@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EnrichResult extends Result<ActionParameters> {
+public class EnrichResult extends Result {
     private final List<String> enrichments = new ArrayList<>();
 
     public EnrichResult(DeltaFile deltaFile, ActionParameters params) {

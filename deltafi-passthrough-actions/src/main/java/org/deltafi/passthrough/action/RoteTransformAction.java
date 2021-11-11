@@ -14,11 +14,11 @@ public class RoteTransformAction extends TransformAction<RoteTransformParameters
         super(RoteTransformParameters.class);
     }
 
-    public Result<RoteTransformParameters> execute(DeltaFile deltaFile, RoteTransformParameters params) {
+    public Result execute(DeltaFile deltaFile, RoteTransformParameters params) {
         log.trace(params.getName() + " transforming (" + deltaFile.getDid() + ")");
 
-        TransformResult<RoteTransformParameters> result =
-                new TransformResult<>(deltaFile, params, params.getResultType());
+        TransformResult result =
+                new TransformResult(deltaFile, params, params.getResultType());
         result.setObjectReference(deltaFile.getProtocolStack().get(0).getObjectReference());
         result.addMetadata(params.getStaticMetadata());
         return result;

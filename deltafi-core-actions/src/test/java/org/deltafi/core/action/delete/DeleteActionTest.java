@@ -38,7 +38,7 @@ public class DeleteActionTest {
         DeleteAction deleteAction = new DeleteAction(MINIO_OBJECT_STORAGE_SERVICE);
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters("name", Collections.emptyMap());
-        Result<ActionParameters> result = deleteAction.execute(deltaFile, actionParameters);
+        Result result = deleteAction.execute(deltaFile, actionParameters);
 
         assertTrue(result instanceof DeleteResult);
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());
@@ -56,7 +56,7 @@ public class DeleteActionTest {
 
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters("name", Collections.emptyMap());
-        Result<ActionParameters> result = deleteAction.execute(deltaFile, actionParameters);
+        Result result = deleteAction.execute(deltaFile, actionParameters);
 
         assertTrue(result instanceof ErrorResult);
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());

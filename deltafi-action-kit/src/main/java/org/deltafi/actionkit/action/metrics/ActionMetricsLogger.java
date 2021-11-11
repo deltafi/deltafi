@@ -10,10 +10,10 @@ import java.util.Collection;
 import java.util.HashMap;
 
 @RequiredArgsConstructor
-public class ActionMetricsLogger<P extends ActionParameters> {
-    private final ActionMetricsGenerator<P> actionMetricsGenerator;
+public class ActionMetricsLogger {
+    private final ActionMetricsGenerator actionMetricsGenerator;
 
-    public void logMetrics(Result<P> result) {
+    public void logMetrics(Result result) {
         Collection<Metric> metrics = actionMetricsGenerator.generateMetrics(result);
 
         for (Metric metric : metrics) {

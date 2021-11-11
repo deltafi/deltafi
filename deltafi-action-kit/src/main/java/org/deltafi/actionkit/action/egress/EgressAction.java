@@ -15,12 +15,12 @@ public abstract class EgressAction<P extends EgressActionParameters> extends Act
     }
 
     @Override
-    public Collection<Metric> generateMetrics(Result<P> result) {
+    public Collection<Metric> generateMetrics(Result result) {
         ArrayList<Metric> metrics = new ArrayList<>();
 
-        Map<String, String> tags = Map.of("endpoint", ((EgressResult<P>) result).getDestination());
+        Map<String, String> tags = Map.of("endpoint", ((EgressResult) result).getDestination());
         metrics.add(Metric.builder().name("files_out").value(1).tags(tags).build());
-        metrics.add(Metric.builder().name("bytes_out").value(((EgressResult<P>) result).getBytesEgressed()).tags(tags).build());
+        metrics.add(Metric.builder().name("bytes_out").value(((EgressResult) result).getBytesEgressed()).tags(tags).build());
 
         return metrics;
     }

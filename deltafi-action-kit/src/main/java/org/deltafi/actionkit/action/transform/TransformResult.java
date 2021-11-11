@@ -8,10 +8,10 @@ import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.ProtocolLayerInput;
 import org.deltafi.core.domain.generated.types.TransformInput;
 
-public class TransformResult<P extends ActionParameters> extends Result<P> {
+public class TransformResult extends Result {
     private final String type;
 
-    public TransformResult(DeltaFile deltaFile, P params, String type) {
+    public TransformResult(DeltaFile deltaFile, ActionParameters params, String type) {
         super(deltaFile, params);
 
         this.type = type;

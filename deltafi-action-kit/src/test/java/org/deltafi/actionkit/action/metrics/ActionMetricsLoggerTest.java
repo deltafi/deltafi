@@ -28,7 +28,7 @@ public class ActionMetricsLoggerTest {
         }
 
         @Override
-        public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
+        public Result execute(DeltaFile deltaFile, ActionParameters params) {
             return null;
         }
     }
@@ -39,12 +39,12 @@ public class ActionMetricsLoggerTest {
         }
 
         @Override
-        public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
+        public Result execute(DeltaFile deltaFile, ActionParameters params) {
             return null;
         }
 
         @Override
-        public Collection<Metric> generateMetrics(Result<ActionParameters> result) {
+        public Collection<Metric> generateMetrics(Result result) {
             return List.of(Metric.builder().name("metric1").value(5).tags(Map.of("a", "1", "b", "2")).build(),
                     Metric.builder().name("metric2").value(10).build());
         }
@@ -57,7 +57,7 @@ public class ActionMetricsLoggerTest {
             .sourceInfo(SourceInfo.newBuilder().flow("flow").build())
             .build();
 
-    private static final Result<ActionParameters> RESULT =
+    private static final Result RESULT =
             new FormatResult(DELTA_FILE, ActionParameters.builder().name("action").build(), "filename");
 
     @Test
@@ -65,7 +65,7 @@ public class ActionMetricsLoggerTest {
     public void logsDefaultMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
 
-        ActionMetricsLogger<ActionParameters> actionMetricsLogger = new ActionMetricsLogger<>(new TestAction());
+        ActionMetricsLogger actionMetricsLogger = new ActionMetricsLogger(new TestAction());
 
         actionMetricsLogger.logMetrics(RESULT);
 
@@ -83,7 +83,7 @@ public class ActionMetricsLoggerTest {
     public void logsOverriddenMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
 
-        ActionMetricsLogger<ActionParameters> actionMetricsLogger = new ActionMetricsLogger<>(new TestActionWithCustomMetrics());
+        ActionMetricsLogger actionMetricsLogger = new ActionMetricsLogger(new TestActionWithCustomMetrics());
 
         actionMetricsLogger.logMetrics(RESULT);
 

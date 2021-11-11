@@ -13,10 +13,10 @@ public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
         super(RoteLoadParameters.class);
     }
 
-    public Result<RoteLoadParameters> execute(DeltaFile deltaFile, RoteLoadParameters params) {
+    public Result execute(DeltaFile deltaFile, RoteLoadParameters params) {
         log.trace(params.getName() + " loading (" + deltaFile.getDid() + ")");
 
-        LoadResult<RoteLoadParameters> result = new LoadResult<>(deltaFile, params);
+        LoadResult result = new LoadResult(deltaFile, params);
         params.getDomains().forEach(result::addDomain);
         return result;
     }

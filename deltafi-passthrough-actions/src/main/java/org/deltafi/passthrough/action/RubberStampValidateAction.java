@@ -9,7 +9,7 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 
 @Slf4j
 public class RubberStampValidateAction extends SimpleValidateAction {
-    public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
+    public Result execute(DeltaFile deltaFile, ActionParameters params) {
         log.trace(params.getName() + " validating (" + deltaFile.getDid() + ")");
         return new ValidateResult(deltaFile, params);
     }

@@ -7,8 +7,8 @@ import org.deltafi.core.domain.generated.types.ActionEventType;
 
 import java.util.Collection;
 
-public interface ActionMetricsGenerator<P extends ActionParameters> {
+public interface ActionMetricsGenerator {
     ActionEventType getActionEventType();
 
-    Collection<Metric> generateMetrics(Result<P> result);
+    Collection<Metric> generateMetrics(Result result);
 }

@@ -18,7 +18,6 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.generated.types.ObjectReference;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,11 +33,11 @@ public class SimpleErrorFormatAction extends SimpleFormatAction {
 
     @Override
     public List<String> getRequiresDomains() {
-        return Arrays.asList("error");
+        return List.of("error");
     }
 
     @Override
-    public Result<ActionParameters> execute(DeltaFile deltaFile, ActionParameters params) {
+    public Result execute(DeltaFile deltaFile, ActionParameters params) {
         log.warn(params.getName() + " formatting (" + deltaFile.getDid() + ")");
 
         if (Objects.isNull(deltaFile.getDomain("error"))) {

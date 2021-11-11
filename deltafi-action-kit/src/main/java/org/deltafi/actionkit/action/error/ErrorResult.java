@@ -11,12 +11,12 @@ import org.slf4j.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class ErrorResult<P extends ActionParameters> extends Result<P> {
+public class ErrorResult extends Result {
     private final String errorCause;
     private final String errorContext;
     private final String errorSummary;
 
-    public ErrorResult(DeltaFile deltaFile, P params, String errorMessage, Throwable throwable) {
+    public ErrorResult(DeltaFile deltaFile, ActionParameters params, String errorMessage, Throwable throwable) {
         super(deltaFile, params);
 
         this.errorCause = errorMessage;
@@ -28,7 +28,7 @@ public class ErrorResult<P extends ActionParameters> extends Result<P> {
     }
 
     @SuppressWarnings("unused")
-    public ErrorResult(DeltaFile deltaFile, P params, String errorMessage) {
+    public ErrorResult(DeltaFile deltaFile, ActionParameters params, String errorMessage) {
         super(deltaFile, params);
 
         this.errorCause = errorMessage;
@@ -36,7 +36,7 @@ public class ErrorResult<P extends ActionParameters> extends Result<P> {
         this.errorSummary = errorMessage + ": " + deltaFile.getDid();
     }
 
-    public ErrorResult<P> logErrorTo(Logger logger) {
+    public ErrorResult logErrorTo(Logger logger) {
         logger.error(errorSummary);
         return this;
     }

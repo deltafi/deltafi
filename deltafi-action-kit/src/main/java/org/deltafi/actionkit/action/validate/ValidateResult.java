@@ -5,7 +5,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 
-public class ValidateResult extends Result<ActionParameters> {
+public class ValidateResult extends Result {
     public ValidateResult(DeltaFile deltaFile, ActionParameters params) {
         super(deltaFile, params);
     }

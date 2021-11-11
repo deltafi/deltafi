@@ -20,5 +20,7 @@ public class ActionParameters {
     private String name;
 
     @JsonPropertyDescription("Static metadata that can be attached to the metadata of the DeltaFile when a DeltaFile is processed by the action")
+    @Builder.Default
     private Map<String, String> staticMetadata = new HashMap<>();
 }
+

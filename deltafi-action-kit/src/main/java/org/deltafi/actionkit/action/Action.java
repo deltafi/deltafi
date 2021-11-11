@@ -45,7 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public abstract class Action<P extends ActionParameters> implements ActionMetricsGenerator<P> {
+public abstract class Action<P extends ActionParameters> implements ActionMetricsGenerator {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
@@ -66,13 +66,13 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
 
     private final Class<P> paramType;
     private final ActionEventType actionEventType;
-    private final ActionMetricsLogger<P> actionMetricsLogger;
+    private final ActionMetricsLogger actionMetricsLogger;
 
     public Action(Class<P> paramType, ActionEventType actionEventType) {
         this.paramType = paramType;
         this.actionEventType = actionEventType;
 
-        actionMetricsLogger = new ActionMetricsLogger<>(this);
+        actionMetricsLogger = new ActionMetricsLogger(this);
     }
 
     @SuppressWarnings("unused")
@@ -80,7 +80,7 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
         // quarkus will prune the actions if this is not included
     }
 
-    public abstract Result<P> execute(DeltaFile deltaFile, P params);
+    public abstract Result execute(DeltaFile deltaFile, P params);
 
     @PostConstruct
     public void startAction() {
@@ -116,7 +116,7 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
 
     private void executeAction(DeltaFile deltaFile, P params, DeltafiSpan span) throws JsonProcessingException {
         try {
-            Result<P> result = execute(deltaFile, params);
+            Result result = execute(deltaFile, params);
             if (result != null) {
                 actionEventService.submitResult(result);
 
@@ -134,7 +134,7 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
             e.printStackTrace(new PrintWriter(stackWriter));
             String reason = "Action execution exception: " + "\n" + e.getMessage() + "\n" + stackWriter;
             log.error(params.getName() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
-            ErrorResult<P> errorResult = new ErrorResult<>(deltaFile, params, "Action execution exception", e).logErrorTo(log);
+            ErrorResult errorResult = new ErrorResult(deltaFile, params, "Action execution exception", e).logErrorTo(log);
             actionEventService.submitResult(errorResult);
 
             // TODO: Log metrics on error caused by exception???
@@ -205,7 +205,7 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
     }
 
     @Override
-    public Collection<Metric> generateMetrics(Result<P> result) {
+    public Collection<Metric> generateMetrics(Result result) {
         return List.of(Metric.builder().name("files_processed").value(1).build());
     }
 }

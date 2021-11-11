@@ -2,15 +2,16 @@ package org.deltafi.actionkit.action.egress;
 
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 
 @Getter
-public class EgressResult<P extends EgressActionParameters> extends Result<P> {
+public class EgressResult extends Result {
     private final String destination;
     private final long bytesEgressed;
 
-    public EgressResult(DeltaFile deltaFile, P params, String destination, long bytesEgressed) {
+    public EgressResult(DeltaFile deltaFile, ActionParameters params, String destination, long bytesEgressed) {
         super(deltaFile, params);
 
         this.destination = destination;
