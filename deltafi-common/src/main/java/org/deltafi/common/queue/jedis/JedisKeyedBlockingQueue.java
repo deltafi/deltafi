@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -15,7 +16,7 @@ import redis.clients.jedis.resps.KeyedZSetElement;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 
 /**
  * A keyed blocking queue based on the Jedis client library for Redis.
@@ -31,9 +32,9 @@ public class JedisKeyedBlockingQueue {
     /**
      * Constructs a JedisKeyedBlockingQueue.
      *
-     * @param url the url of the redis server
+     * @param url      the url of the redis server
      * @param password the password for the redis server
-     * @param maxIdle the maximum number of idle pooled connections to the redis server
+     * @param maxIdle  the maximum number of idle pooled connections to the redis server
      * @param maxTotal the maximum number of pooled connections to the redis server. This should be set higher than the
      *                 expected number of keys in the queue.
      * @throws URISyntaxException if the provided url is not valid
@@ -52,7 +53,7 @@ public class JedisKeyedBlockingQueue {
     /**
      * Puts an object into the queue.
      *
-     * @param key the key for the object
+     * @param key    the key for the object
      * @param object the object
      * @throws JsonProcessingException if the object cannot be converted to a JSON string
      */
@@ -70,14 +71,14 @@ public class JedisKeyedBlockingQueue {
     /**
      * Puts multiple objects into the queue.
      *
-     * @param objectMap a map of objects to put into the queue
+     * @param items a list of key/object pairss to put into the queue
      * @throws JsonProcessingException if any object in the map cannot be converted to a JSON string. Objects retrieved
-     * from objectMap before the exception occurred will be placed in the queue, all others will not
+     *                                 from objectMap before the exception occurred will be placed in the queue, all others will not
      */
-    public void put(Map<String, Object> objectMap) throws JsonProcessingException {
+    public void put(List<Pair<String, Object>> items) throws JsonProcessingException {
         try (Jedis jedis = jedisPool.getResource()) {
-            for (Map.Entry<String, Object> mapEntry : objectMap.entrySet()) {
-                put(jedis, mapEntry.getKey(), mapEntry.getValue());
+            for (Pair<String, Object> item : items) {
+                put(jedis, item.getKey(), item.getValue());
             }
         }
     }
@@ -88,12 +89,12 @@ public class JedisKeyedBlockingQueue {
      * This method will block until an object for the provided key is available. When multiple objects are available for
      * the provided key, the earliest one put into the queue is retrieved.
      *
-     * @param key the key for the object
+     * @param key         the key for the object
      * @param objectClass the class of the object
-     * @param <T> the type of the class of the object
+     * @param <T>         the type of the class of the object
      * @return the object
      * @throws JsonProcessingException if the JSON string retrieved from the queue cannot be converted to the provided
-     * type
+     *                                 type
      */
     public <T> T take(String key, Class<T> objectClass) throws JsonProcessingException {
         try (Jedis jedis = jedisPool.getResource()) {
