@@ -23,9 +23,10 @@ spec:
         env:
         - name: RUNNING_IN_CLUSTER
           value: "true"
-        - name: DELTAFI_INGRESS_DOMAIN
+        - name: DELTAFI_UI_DOMAIN
           value: {{ .Values.ingress.domain }}
+        - name: DELTAFI_UI_TITLE
+          value: {{ coalesce .Values.deltafi.ui.title "DeltaFi" }}
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api
-      

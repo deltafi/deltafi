@@ -19,11 +19,8 @@ class ApiServer < Sinatra::Base
   end
 
   get '/api/v1/config' do
-    build_response({
-                     config: {
-                       system: Deltafi::API::Config::System.config
-                     }
-                   })
+    config = { ui: Deltafi::API::Config::UI.config }
+    build_response({ config: config })
   end
 
   get '/api/v1/errors' do

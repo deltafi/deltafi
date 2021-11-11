@@ -3,11 +3,12 @@
 module Deltafi
   module API
     module Config
-      module System
+      module UI
         class << self
           def config
             {
-              domain: ENV['DELTAFI_INGRESS_DOMAIN']
+              domain: ENV['DELTAFI_UI_DOMAIN'] || 'example.deltafi.org',
+              title: ENV['DELTAFI_UI_TITLE'] || 'DeltaFi',
             }
           end
         end
