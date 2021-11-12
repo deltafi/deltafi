@@ -1,0 +1,1 @@
+org.springframework.boot.BootstrapRegistryInitializer = org.deltafi.core.bootstrap.ConfigClientRetryBootstrapper

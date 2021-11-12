@@ -3,7 +3,7 @@ deltafi:
   envVars:
     # notation needed spring-boot apps
     - name: SPRING_CONFIG_IMPORT
-      value: configserver:http://deltafi-config-server?fail-fast=true&max-attempts=10&max-interval=1500&multiplier=1.2&initial-interval=1100
+      value: configserver:http://deltafi-config-server
     # notation needed for quarkus apps
     - name: CONFIG_SERVER_URL
       value: http://deltafi-config-server
