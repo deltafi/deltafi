@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@TestPropertySource(properties = "enableScheduling=false")
+@TestPropertySource(properties = {"enableScheduling=false", "deltafi.dbFileAgeOffSeconds:100"})
 class DeltaFileRepoTest {
     @Autowired
     private DeltaFileRepo deltaFileRepo;
@@ -40,7 +40,7 @@ class DeltaFileRepoTest {
 
     @Test
     void testExpirationIndexConstructor() {
-        assertEquals(deltaFiProperties.getDbFileAgeOffSeconds(), deltaFileRepo.getTtlExpiration().getSeconds());
+        assertEquals(100, deltaFileRepo.getTtlExpiration().getSeconds());
     }
 
     @Test

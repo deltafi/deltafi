@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
-import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -14,12 +14,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import javax.annotation.PostConstruct;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -64,12 +64,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
 
     private final MongoTemplate mongoTemplate;
-    private final DeltaFiProperties deltaFiProperties;
+
+    @Value("${deltafi.dbFileAgeOffSeconds:1209600}")
+    private int dbFileAgeOffSeconds; /* 14 days */
 
     @PostConstruct
-    void setup() {
-        long seconds = deltaFiProperties.getDbFileAgeOffSeconds();
-        setExpirationIndex(seconds);
+    public void setup() {
+        setExpirationIndex(dbFileAgeOffSeconds);
     }
 
     @Override
