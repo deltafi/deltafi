@@ -36,7 +36,6 @@ jar {
 	enabled = true
 	archiveClassifier.set('api')
 	include('org/deltafi/core/domain/api/**')
-	include('org/deltafi/core/domain/configuration/DeltaFiProperties.class')
 	include('org/deltafi/core/domain/generated/client/**')
 	include('org/deltafi/core/domain/generated/types/**')
 }
