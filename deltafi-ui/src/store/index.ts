@@ -5,7 +5,8 @@ export interface State {
   uiConfig: {
     title: String,
     domain: String
-  }
+  },
+  sidebarHidden: boolean
 }
 
 export default createStore<State>({
@@ -13,11 +14,15 @@ export default createStore<State>({
     uiConfig: {
       title: 'DeltaFi',
       domain: 'example.deltafi.org'
-    }
+    },
+    sidebarHidden: false
   },
   mutations: {
     SET_UI_CONFIG(state: State, payload: Object) {
       Object.assign(state.uiConfig, payload)
+    },
+    TOGGLE_SIDEBAR(state: State) {
+      state.sidebarHidden = !state.sidebarHidden
     }
   },
   actions: {
@@ -26,6 +31,9 @@ export default createStore<State>({
       apiService.getConfig().then(response => {
         context.commit('SET_UI_CONFIG', response.config.ui)
       })
+    },
+    toggleSidebar(context) {
+      context.commit('TOGGLE_SIDEBAR')
     }
   },
   getters: {

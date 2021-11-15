@@ -1,10 +1,15 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"vetur.format.defaultFormatter.html": "none"
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "vetur.format.defaultFormatter.html": "prettyhtml",
+        "vetur.format.defaultFormatterOptions": {
+            "prettyhtml": {
+                "printWidth": 500,
+            }
+        },
+    }
 }

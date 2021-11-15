@@ -1,14 +1,14 @@
 <template>
-  <div class="app">
-    <AppTopBar />
+  <div>
+    <app-top-bar />
     <div class="container-fluid">
       <div class="row">
-        <div id="sidebarMenu">
-          <AppMenu />
+        <div :class="sidebarClasses">
+          <app-menu />
         </div>
-        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+        <div role="main" class="col">
           <router-view />
-        </main>
+        </div>
       </div>
     </div>
   </div>
@@ -25,19 +25,24 @@ export default {
     AppTopBar: AppTopBar,
     AppMenu: AppMenu,
   },
-  computed: mapState(["uiConfig"]),
+  computed: {
+    sidebarClasses() {
+      return this.sidebarHidden ? "col sidebar hidden" : "col sidebar";
+    },
+    ...mapState(["uiConfig", "sidebarHidden"]),
+  },
   watch: {
     $route: {
       immediate: true,
       handler(to) {
-        this.setPageTitle(to.meta.title);
+        this.setPageTitle(to.name);
       },
     },
     uiConfig: {
       deep: true,
       handler() {
-        this.setPageTitle(this.$route.meta.title);
-      }
+        this.setPageTitle(this.$route.name);
+      },
     },
   },
   beforeCreate() {
@@ -53,3 +58,20 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+* {
+  transition: all 0.3s;
+}
+
+.sidebar {
+  -ms-flex: 0 0 300px;
+  flex: 0 0 300px;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar.hidden {
+  margin-left: -300px;
+}
+</style>
