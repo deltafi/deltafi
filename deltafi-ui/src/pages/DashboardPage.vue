@@ -44,11 +44,6 @@ export default {
           description: "MinIO storage dashboard",
         },
         {
-          name: "NiFi",
-          subdomain: "nifi",
-          description: "Internal NiFi dashboard",
-        },
-        {
           name: "Zipkin",
           subdomain: "zipkin",
           description: "DeltaFile tracing dashboard",
