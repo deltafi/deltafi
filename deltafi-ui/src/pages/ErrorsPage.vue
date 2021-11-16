@@ -5,6 +5,15 @@
         Errors
       </h1>
       <div class="time-range btn-toolbar mb-2 mb-md-0">
+        <Dropdown
+          v-model="ingressFlowNameSelected"
+          placeholder="Select a Flow"
+          :options="ingressFlowNames" 
+          option-label="name"
+          show-clear
+          :editable="false"
+          class="ingress-flow-name-select"
+        />
         <Calendar
           id="startDateTime"
           v-model="startTimeDate"
@@ -26,7 +35,7 @@
           hour-format="12"
           input-class="form-control form-control-sm ml-3"
         />
-        <button class="btn btn-sm btn-outline-secondary ml-3" @click="fetchErrors(startTimeDate, endTimeDate)">
+        <button class="btn btn-sm btn-outline-secondary ml-3" @click="fetchErrors(startTimeDate, endTimeDate, ingressFlowNameSelected)">
           Search
         </button>
       </div>
@@ -104,18 +113,39 @@
 </template>
 
 <script>
+import GraphQLService from "../service/GraphQLService";
+import Toast from 'primevue/toast';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
+import Dialog from 'primevue/dialog';
+import Calendar from 'primevue/calendar';
+import Dropdown from 'primevue/dropdown';
+import ConfirmPopup from 'primevue/confirmpopup';
+import Button from 'primevue/button';
+
 var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
 var addMlSeconds = 60 * 60 * 1000;
 var newDateObj = new Date(numberOfMlSeconds - addMlSeconds);
 currentDateObj = new Date(numberOfMlSeconds + addMlSeconds);
-import GraphQLService from "../service/GraphQLService";
 
 export default {
   name: "ErrorsPage",
+  components: {
+    Toast,
+    Column,
+    DataTable,
+    Dialog,
+    Calendar,
+    Dropdown,
+    ConfirmPopup,
+    Button,
+  },
   data() {
     return {
       errors: [],
+      ingressFlowNameSelected: null,
+      ingressFlowNames: [],
       expandedRows: [],
       startTimeDate: newDateObj,
       endTimeDate: currentDateObj,
@@ -126,7 +156,8 @@ export default {
   },
   created() {
     this.graphQLService = new GraphQLService();
-    this.fetchErrors(this.startTimeDate, this.endTimeDate);
+    this.fetchIngressFlows();
+    this.fetchErrors(this.startTimeDate, this.endTimeDate, this.ingressFlowNameSelected);
   },
   methods: {
     RetryClickConfirm(event, p_did) {
@@ -147,7 +178,8 @@ export default {
             detail: "",
             life: 3000,
           });
-          this.fetchErrors(this.startTimeDate, this.endTimeDate);
+    
+          this.fetchErrors(this.startTimeDate, this.endTimeDate, this.ingressFlowNameSelected);
         } else {
           this.$toast.add({
             severity: "error",
@@ -158,9 +190,16 @@ export default {
         }
       });
     },
-    async fetchErrors(startD, endD) {
+    async fetchIngressFlows() {
+      const ingressFlowData = await this.graphQLService.getFlowsByType("INGRESS_FLOW");
+      this.ingressFlowNames = ingressFlowData.data.deltaFiConfigs;
+    },
+    async fetchErrors(startD, endD, ingressFlowName) {
+      if (ingressFlowName != null) {
+          ingressFlowName = ingressFlowName.name;
+      }
       this.loading = true;
-      const data = await this.graphQLService.getErrors(startD, endD);
+      const data = await this.graphQLService.getErrors(startD, endD, ingressFlowName);
       this.errors = data.data.deltaFiles.deltaFiles;
       this.loading = false;
     },
@@ -202,5 +241,16 @@ pre.dark {
   background-color: #333333;
   color: #dddddd;
   padding: 1em;
+}
+
+.ingress-flow-name-select {
+  width: 212px;
+  height: 34px;
+}
+
+.ingress-flow-name-select .p-dropdown-label {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 10px;
 }
 </style>

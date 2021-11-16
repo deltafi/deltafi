@@ -65,11 +65,19 @@
 <script>
 import ApiService from "../service/ApiService";
 import * as filesize from "filesize";
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
+import ProgressBar from 'primevue/progressbar'
 
 const refreshInterval = 5000; // 5 seconds
 
 export default {
   name: "SystemMetricsPage",
+  components: {
+    Column,
+    DataTable,
+    ProgressBar,
+  },
   data() {
     return {
       nodes: [],

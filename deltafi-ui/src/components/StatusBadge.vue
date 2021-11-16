@@ -20,10 +20,18 @@
 <script>
 import ApiService from "../service/ApiService";
 import MarkdownIt from "markdown-it";
+import Dialog from 'primevue/dialog';
+import Tag from 'primevue/tag';
+import Message from 'primevue/message';
 
 const refreshInterval = 5000; // 5 seconds
 
 export default {
+  components: {
+    Dialog,
+    Tag,
+    Message,
+  },
   data() {
     return {
       status: {

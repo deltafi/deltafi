@@ -20,7 +20,23 @@ export default class GraphQLService {
     });
   }
 
-  getErrors(startD: Date, endD: Date) {
+  getFlowsByType(flowType: string) {
+    const flowTypeSearchParams = {
+      query: {
+        deltaFiConfigs: {
+          __args: {
+            configQuery: {
+              configType: new EnumType(flowType)
+            }  
+          },
+          name: true
+        }
+      }
+    }
+    return this.query(flowTypeSearchParams);
+  }
+
+  getErrors(startD: Date, endD: Date, flowEventName?: string) {
     const searchParams = {
       query: {
         deltaFiles: {
@@ -28,6 +44,9 @@ export default class GraphQLService {
             offset: 0,
             limit: 50,
             filter: {
+              sourceInfo: {
+                flow: flowEventName
+              },
               stage: new EnumType('ERROR'),
               modifiedBefore: endD.toISOString(),
               modifiedAfter: startD.toISOString()
