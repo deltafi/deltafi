@@ -5,11 +5,6 @@
         }
     ],
     "settings": {
-        "vetur.format.defaultFormatter.html": "prettyhtml",
-        "vetur.format.defaultFormatterOptions": {
-            "prettyhtml": {
-                "printWidth": 500,
-            }
-        },
+        "vetur.format.defaultFormatter.html": "none",
     }
 }

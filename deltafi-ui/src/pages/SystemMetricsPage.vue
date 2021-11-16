@@ -21,20 +21,20 @@
       </Column>
       <Column header="CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
         <template #body="node">
-          <ProgressBar v-tooltip.top="node.data.resources.cpu.usage + 'm / ' + node.data.resources.cpu.limit + 'm'" :value="Math.round((node.data.resources.cpu.usage / node.data.resources.cpu.limit ) * 100)" />
+          <ProgressBar v-tooltip.top="node.data.resources.cpu.usage + 'm / ' + node.data.resources.cpu.limit + 'm'" :value="calculatePercent(node.data.resources.cpu.usage, node.data.resources.cpu.limit)" />
         </template>
       </Column>
       <Column header="Memory" field="resources.memory.usage" :sortable="true" class="resource-column">
         <template #body="node">
-          <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="Math.round((node.data.resources.memory.usage/ node.data.resources.memory.limit ) * 100)">
-            {{ formattedBytes(node.data.resources.memory.usage) }} ({{ Math.round((node.data.resources.memory.usage/ node.data.resources.memory.limit ) * 100) }}%)
+          <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)">
+            {{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%)
           </ProgressBar>
         </template>
       </Column>
       <Column header="Disk" field="resources.disk.usage" :sortable="true" class="resource-column">
         <template #body="node">
-          <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.request)" :value="Math.round((node.data.resources.disk.usage/ node.data.resources.disk.request ) * 100)">
-            {{ formattedBytes(node.data.resources.disk.usage) }} ({{ Math.round((node.data.resources.disk.usage/ node.data.resources.disk.request ) * 100) }}%)
+          <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">
+            {{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)
           </ProgressBar>
         </template>
       </Column>
@@ -42,15 +42,16 @@
         <div class="pods-subtable">
           <DataTable :value="node.data.pods" responsive-layout="scroll" class="pod-table">
             <Column header="Pod Name" field="name" :sortable="true" />
+            <Column header="Namespace" field="namespace" :sortable="true" />
             <Column header="Pod CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
               <template #body="pod">
-                <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'cpu', formattedCPU)" :value="Math.round((pod.data.resources.cpu.usage / (pod.data.resources.cpu.limit||node.data.resources.cpu.limit) ) * 100)" />
+                <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'cpu', formattedCPU)" :value="calculatePercent(pod.data.resources.cpu.usage, (pod.data.resources.cpu.limit||node.data.resources.cpu.limit))" />
               </template>
             </Column>
             <Column header="Pod Memory" field="resources.memory.usage" :sortable="true" class="resource-column">
               <template #body="pod">
-                <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'memory', formattedBytes)" :value="Math.round((pod.data.resources.memory.usage / pod.data.resources.memory.limit ) * 100)">
-                  {{ formattedBytes(pod.data.resources.memory.usage) }} ({{ Math.round((pod.data.resources.memory.usage / (pod.data.resources.memory.limit||node.data.resources.memory.limit)) * 100) }}%)
+                <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'memory', formattedBytes)" :value="calculatePercent(pod.data.resources.memory.usage, (pod.data.resources.memory.limit||node.data.resources.memory.limit))">
+                  {{ formattedBytes(pod.data.resources.memory.usage) }} ({{ calculatePercent(pod.data.resources.memory.usage, (pod.data.resources.memory.limit||node.data.resources.memory.limit)) }}%)
                 </ProgressBar>
               </template>
             </Column>
@@ -65,9 +66,9 @@
 <script>
 import ApiService from "../service/ApiService";
 import * as filesize from "filesize";
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
-import ProgressBar from 'primevue/progressbar'
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import ProgressBar from "primevue/progressbar";
 
 const refreshInterval = 5000; // 5 seconds
 
@@ -128,6 +129,9 @@ export default {
         "\n",
         `(${limitType} Limit)`,
       ].join(" ");
+    },
+    calculatePercent(numerator, denominator) {
+      return Math.round((numerator / denominator) * 100);
     },
   },
   apiService: null,
