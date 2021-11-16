@@ -27,9 +27,9 @@
       name: ErrorEgressAction
       parameters:
         egressFlow: error
-        metadataPrefix: deltafi.
+        metadataKey: deltafiMetadata
         staticMetadata:
           xml: It's time to buzz the tower...
-        url: http://nifi-egress-service
+        url: http://deltafi-egress-sink-service
       type: org.deltafi.core.action.RestPostEgressAction
   deleteActions: {}

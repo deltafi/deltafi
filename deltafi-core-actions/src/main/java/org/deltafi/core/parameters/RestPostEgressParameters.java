@@ -17,15 +17,15 @@ public class RestPostEgressParameters extends EgressActionParameters {
     @JsonPropertyDescription("The URL to post the DeltaFile to")
     public String url;
 
-    @JsonPropertyDescription("The prefix to use in the metadata file keys")
-    public String metadataPrefix;
+    @JsonPropertyDescription("Send metadata as JSON in this HTTP header field")
+    public String metadataKey;
 
     public RestPostEgressParameters() {}
 
-    public RestPostEgressParameters(String name, Map<String, String> staticMetadata, String egressFlow, String url, String metadataPrefix) {
+    public RestPostEgressParameters(String name, Map<String, String> staticMetadata, String egressFlow, String url, String metadataKey) {
         super(name, staticMetadata, egressFlow);
 
         this.url = url;
-        this.metadataPrefix = metadataPrefix;
+        this.metadataKey = metadataKey;
     }
 }

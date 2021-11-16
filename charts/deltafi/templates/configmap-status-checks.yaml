@@ -10,13 +10,13 @@ data:
     - deltafi-config-server
     - deltafi-core-actions
     - deltafi-core-domain
+    - deltafi-egress-sink
     - deltafi-gateway
     - deltafi-ingress
     - deltafi-kibana
     - deltafi-kubernetes-dashboard
     - deltafi-minio
     - deltafi-mongodb
-    - deltafi-nifi
     - deltafi-passthrough-actions
     - deltafi-ui
     - deltafi-zipkin
@@ -29,12 +29,12 @@ data:
     - deltafi-minio
     - deltafi-ui-ingress
     - deltafi-zipkin
-    - nifi-ui-ingress
   ServiceCheck: |
     expected_services:
     - deltafi-api-service
     - deltafi-config-server
     - deltafi-core-domain-service
+    - deltafi-egress-sink-service
     - deltafi-fluentd
     - deltafi-gateway-service
     - deltafi-ingress-service
@@ -48,11 +48,9 @@ data:
     - deltafi-zipkin
     - elasticsearch-master
     - elasticsearch-master-headless
-    - nifi-egress-service
-    - nifi-ui-service
   StorageCheck: |
     expected_volumes:
     - deltafi-elasticsearch
     - deltafi-minio
     - deltafi-mongodb
-    - deltafi-nifi
+    - deltafi-egress-sink

@@ -53,9 +53,9 @@
     PassthroughEgressAction:
       parameters:
         egressFlow: passthrough
-        metadataPrefix: deltafi.
+        metadataKey: deltafiMetadata
         staticMetadata:
           passthrough_egress: I feel the need, the need for speed...
-        url: http://nifi-egress-service
+        url: http://deltafi-egress-sink-service
       type: org.deltafi.core.action.RestPostEgressAction
   deleteActions: {}

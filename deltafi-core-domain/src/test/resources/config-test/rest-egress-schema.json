@@ -8,9 +8,9 @@
         "type": "string",
         "description": "Name of the egress flow the DeltaFile is flowing through"
       },
-      "metadataPrefix": {
+      "metadataKey": {
         "type": "string",
-        "description": "The prefix to use in the metadata file keys"
+        "description": "Send metadata as JSON in this HTTP header field"
       },
       "name": {
         "type": "string",

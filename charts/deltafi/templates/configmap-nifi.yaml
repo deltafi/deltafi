@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: deltafi-nifi-conf
-data:
-{{ (.Files.Glob "files/nifi/*").AsConfig | indent 2 }}

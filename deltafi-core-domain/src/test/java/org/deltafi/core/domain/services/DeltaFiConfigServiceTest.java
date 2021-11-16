@@ -212,7 +212,7 @@ class DeltaFiConfigServiceTest {
         EgressActionConfiguration egressActionConfiguration = commonChecks(config.getEgressActions(), "SampleEgressAction");
         Assertions.assertThat(egressActionConfiguration.getType()).isEqualTo("org.deltafi.core.action.RestPostEgressAction");
         Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("url", "http://localhost:8085/echo");
-        Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("metadataPrefix", "deltafi.");
+        Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("metadataKey", "deltafiMetadata");
 
         LoadActionGroupConfiguration loadGroupConfiguration = commonChecks(config.getLoadGroups(), "SampleLoadGroup");
         Assertions.assertThat(loadGroupConfiguration.getName()).isEqualTo("SampleLoadGroup");

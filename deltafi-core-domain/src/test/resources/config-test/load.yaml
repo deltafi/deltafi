@@ -45,7 +45,7 @@ egressActions:
     type: org.deltafi.core.action.RestPostEgressAction
     parameters:
       url: "http://localhost:8085/echo"
-      metadataPrefix: "deltafi."
+      metadataKey: "deltafiMetadata"
 loadGroups:
   SampleLoadGroup:
     name: SampleLoadGroup

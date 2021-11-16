@@ -62,10 +62,10 @@
       name: SmokeEgressAction
       parameters:
         egressFlow: smoke
-        metadataPrefix: deltafi.
+        metadataKey: deltafiMetadata
         staticMetadata:
           passthrough_egress: Kick the tires and light the fires...
         name: SmokeEgressAction
-        url: http://nifi-egress-service
+        url: http://deltafi-egress-sink-service
       type: org.deltafi.core.action.RestPostEgressAction
   deleteActions: {}

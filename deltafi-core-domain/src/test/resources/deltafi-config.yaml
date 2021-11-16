@@ -72,13 +72,13 @@ egressActions:
     type: org.deltafi.core.action.RestPostEgressAction
     parameters:
       url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
-      metadataPrefix: "${METADATA_PREFIX:deltafi.}"
+      metadataKey: deltafiMetadata
   Stix1_XEgressAction:
     name: Stix1_XEgressAction
     type: org.deltafi.core.action.RestPostEgressAction
     parameters:
       url: "${EGRESS_ENDPOINT:http://localhost:8085/echo}"
-      metadataPrefix: "${METADATA_PREFIX:deltafi.}"
+      metadataKey: deltafiMetadata
 deleteActions:
   DeleteAction:
     name: DeleteAction

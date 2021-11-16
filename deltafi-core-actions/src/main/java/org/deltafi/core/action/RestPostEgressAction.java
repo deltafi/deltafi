@@ -1,5 +1,7 @@
 package org.deltafi.core.action;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressAction;
@@ -15,6 +17,7 @@ import org.deltafi.core.parameters.RestPostEgressParameters;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +25,8 @@ import java.util.Map;
 public class RestPostEgressAction extends EgressAction<RestPostEgressParameters> {
     private final ObjectStorageService objectStorageService;
     private final HttpService httpPostService;
+
+    private final static ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public RestPostEgressAction(ObjectStorageService objectStorageService, HttpService httpPostService) {
         super(RestPostEgressParameters.class);
@@ -35,7 +40,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
 
         // TODO: Catch exceptions from post, generate error query
         try {
-            String prefix = params.getMetadataPrefix();
+            String metadataKey = params.getMetadataKey();
             String url = params.getUrl();
 
             // egressFeed is guaranteed to return only 1 formattedData
@@ -43,26 +48,26 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
 
             Map<String, String> headers = new HashMap<>();
             if (formattedData.getMetadata() != null) {
-                formattedData.getMetadata().forEach(pair -> headers.put(prefix + pair.getKey(), pair.getValue()));
+                formattedData.getMetadata().forEach(pair -> headers.put(pair.getKey(), pair.getValue()));
             }
-            params.getStaticMetadata().forEach((k, v) -> headers.put(prefix + k, v));
-            headers.put(prefix + "did", deltaFile.getDid());
-            headers.put(prefix + "ingressFlow", deltaFile.getSourceInfo().getFlow());
-            headers.put(prefix + "flow", params.getEgressFlow());
-            headers.put(prefix + "originalFilename", deltaFile.getSourceInfo().getFilename());
-            headers.put(prefix + "filename", formattedData.getFilename());
+            headers.putAll(params.getStaticMetadata());
+            headers.put("did", deltaFile.getDid());
+            headers.put("ingressFlow", deltaFile.getSourceInfo().getFlow());
+            headers.put("flow", params.getEgressFlow());
+            headers.put("originalFilename", deltaFile.getSourceInfo().getFilename());
+            headers.put("filename", formattedData.getFilename());
 
             ObjectReference objectReference = formattedData.getObjectReference();
             if (objectReference.getSize() == 0) {
                 // TODO: POSTing nothing is ok???
-                httpPostService.post(url, headers, InputStream.nullInputStream());
+                httpPostService.post(url, Collections.singletonMap(metadataKey, objectMapper.writeValueAsString(headers)), InputStream.nullInputStream());
                 log.debug("Successful egress: " + params.getName() + ": " + deltaFile.getDid() + " (" + url + ")");
                 return new EgressResult(deltaFile, params, url, 0);
             }
 
             try (InputStream stream = objectStorageService.getObjectAsInputStream(objectReference.getBucket(),
                     objectReference.getName(), objectReference.getOffset(), objectReference.getSize())) {
-                httpPostService.post(url, headers, stream);
+                httpPostService.post(url, Collections.singletonMap(metadataKey, objectMapper.writeValueAsString(headers)), stream);
             } catch (IOException e) {
                 log.error("Unable to close minio input stream", e);
             }

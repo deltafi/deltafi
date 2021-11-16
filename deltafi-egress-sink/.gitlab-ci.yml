@@ -1,0 +1,9 @@
+.egress-sink:
+  variables:
+    PROJECT_NAME: deltafi-egress-sink
+
+egress_sink:docker:
+  stage: docker
+  extends:
+    - .egress-sink
+    - .docker

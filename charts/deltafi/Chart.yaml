@@ -57,10 +57,6 @@ dependencies:
     version: 1.0.0
     repository: file://../zipkin
     condition: enable.zipkin
-  - name: nifi
-    version: 1.0.0
-    repository: file://../nifi
-    condition: enable.nifi
   - name: kubernetes-dashboard
     version: 4.3.1
     repository: https://kubernetes.github.io/dashboard/

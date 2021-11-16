@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-egress-sink
+  labels:
+    app: deltafi-egress-sink
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-egress-sink
+  template:
+    metadata:
+      labels:
+        app: deltafi-egress-sink
+    spec:
+      volumes:
+        - name: deltafi-egress-sink
+          persistentVolumeClaim:
+            claimName: deltafi-egress-sink
+      containers:
+      - name: deltafi-egress-sink
+        image: {{ .Values.deltafi.egress_sink.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9292
+        volumeMounts:
+          - name: deltafi-egress-sink
+            mountPath: /data/deltafi/egress-sink
+
+

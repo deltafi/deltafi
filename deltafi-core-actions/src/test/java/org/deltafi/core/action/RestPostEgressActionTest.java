@@ -1,5 +1,8 @@
 package org.deltafi.core.action;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -22,8 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -41,7 +43,7 @@ class RestPostEgressActionTest {
     RestPostEgressAction action = new RestPostEgressAction(inMemoryObjectStorageService, httpService);
 
     static final String URL = "https://url.com";
-    static final String PREFIX = "thePrefix";
+    static final String METADATA_KEY = "theMetadataKey";
     static final String ACTION = "MyRestEgressAction";
 
     static final String data = "data to be egressed";
@@ -54,6 +56,8 @@ class RestPostEgressActionTest {
     static final String EGRESS_FLOW = "outFlow";
     static final String ORIG_FILENAME = "origFilename";
     static final String POST_FILENAME = "postFilename";
+
+    private final static ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     ObjectReference objectReference = ObjectReference.newBuilder()
             .bucket(CONTENT_BUCKET)
@@ -74,7 +78,7 @@ class RestPostEgressActionTest {
                             .build()
             ))
             .build();
-    RestPostEgressParameters params = new RestPostEgressParameters(ACTION, Collections.emptyMap(), EGRESS_FLOW, URL, PREFIX);
+    RestPostEgressParameters params = new RestPostEgressParameters(ACTION, Collections.emptyMap(), EGRESS_FLOW, URL, METADATA_KEY);
 
     @BeforeEach
     void setup() throws ObjectStorageException {
@@ -88,11 +92,13 @@ class RestPostEgressActionTest {
 
         verify(httpService).post(eq(URL), mapCaptor.capture(), isCaptor.capture());
         Map<String, String> actual = mapCaptor.getValue();
-        assertEquals(DID, actual.get(PREFIX + "did"));
-        assertEquals(FLOW, actual.get(PREFIX + "ingressFlow"));
-        assertEquals(EGRESS_FLOW, actual.get(PREFIX + "flow"));
-        assertEquals(POST_FILENAME, actual.get(PREFIX + "filename"));
-        assertEquals(ORIG_FILENAME, actual.get(PREFIX + "originalFilename"));
+        assertNotNull(actual.get(METADATA_KEY));
+        Map<String, String> metadata = objectMapper.readValue(actual.get(METADATA_KEY), new TypeReference<>() {});
+        assertEquals(DID, metadata.get("did"));
+        assertEquals(FLOW, metadata.get("ingressFlow"));
+        assertEquals(EGRESS_FLOW, metadata.get("flow"));
+        assertEquals(POST_FILENAME, metadata.get("filename"));
+        assertEquals(ORIG_FILENAME, metadata.get("originalFilename"));
 
         assertEquals(data, new String(isCaptor.getValue().readAllBytes()));
 

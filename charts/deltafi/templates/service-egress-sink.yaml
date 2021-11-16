@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nifi-egress-service
+  name: deltafi-egress-sink-service
 spec:
   selector:
-    app: nifi
+    app: deltafi-egress-sink
   type: NodePort
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 8000
+    targetPort: 9292

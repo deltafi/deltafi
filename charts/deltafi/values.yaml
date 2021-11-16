@@ -45,8 +45,8 @@ deltafi:
   passthrough_actions:
     image: deltafi/deltafi-passthrough-actions:0.12.1
   core_actions:
-    egress_endpoint: http://nifi-egress-service
-    image: deltafi/deltafi-core-actions:0.12.1
+    egress_endpoint: http://deltafi-egress-sink-service
+    image: deltafi-core-actions:0.13.0-SNAPSHOT
   core_domain:
     image: deltafi/deltafi-core-domain:0.12.1
     mongo_host: deltafi-mongodb
@@ -63,6 +63,9 @@ deltafi:
   ui:
     image: deltafi/deltafi-ui:0.12.1
     title: DeltaFi
+  egress_sink:
+    image: deltafi-egress-sink:test
+
 # Kubernetes ingress config
 ingress:
   domain: local.deltafi.org
@@ -204,45 +207,6 @@ zipkin:
       value: http://elasticsearch-master:9200
   tracesAgeOffJob:
     schedule: "0 1 * * *" # Once daily at 0100
-# NiFi config
-nifi:
-  fullnameOverride: "deltafi-nifi"
-  config:
-    configMap: deltafi-nifi-conf
-  additionalContainerPorts:
-    - 8000
-  envVars:
-    - name: NIFI_IN
-      value: /data/nifi/in
-    - name: NIFI_OUT
-      value: /data/nifi/out
-    - name: DELTAFI_INGRESS_URL
-      value: http://deltafi-ingress-service/deltafile/ingress
-    - name: MINIO_URL
-      value: http://deltafi-minio.deltafi:9000
-    - name: MINIO_BUCKET
-      value: incoming
-    - name: MINIO_ACCESSKEY
-      valueFrom:
-        secretKeyRef:
-          name: minio-keys
-          key: accesskey
-    - name: MINIO_SECRETKEY
-      valueFrom:
-        secretKeyRef:
-          name: minio-keys
-          key: secretkey
-  volumes:
-    - name: nifi-data
-      persistentVolumeClaim:
-        claimName: deltafi-nifi
-  volumeMounts:
-    - name: nifi-data
-      mountPath: /data/nifi/in
-      subPath: in
-    - name: nifi-data
-      mountPath: /data/nifi/out
-      subPath: out
 # Kubernetes Dashboard config
 kubernetes-dashboard:
   protocolHttp: true

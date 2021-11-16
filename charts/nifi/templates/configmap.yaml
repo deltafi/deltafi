@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: nifi-conf
-data:
-{{ (.Files.Glob "conf/*").AsConfig | indent 2 }}
