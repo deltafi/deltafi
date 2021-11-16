@@ -6,8 +6,8 @@ module Deltafi
       module System
         class << self
           def nodes
-            nodes = Deltafi::API.k8s_client.api('v1').resource('nodes').get('').items
-            node_usage = Deltafi::API.k8s_client.api('metrics.k8s.io/v1beta1').resource('nodes').get('').items
+            nodes = Deltafi::API.k8s_client.api('v1').resource('nodes').list
+            node_usage = Deltafi::API.k8s_client.api('metrics.k8s.io/v1beta1').resource('nodes').list
 
             pods = pods_by_node
             pvs = pvs_by_node
@@ -28,7 +28,7 @@ module Deltafi
                     usage: normalize_bytes(node_usage.find { |n| n.metadata.name == node.metadata.name }.usage.memory)
                   },
                   disk: {
-                    limit: 0, # TODO
+                    limit: pvs[node.metadata.name].reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) },
                     request: pvs[node.metadata.name].reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) },
                     usage: 0 # TODO
                   }
@@ -41,12 +41,13 @@ module Deltafi
           private
 
           def pods_by_node
-            pods_by_node = Deltafi::API.k8s_client.api('v1').resource('pods', namespace: NAMESPACE).get('').items.group_by { |p| p.spec.nodeName }
-            pod_usage = Deltafi::API.k8s_client.api('metrics.k8s.io/v1beta1').resource('pods', namespace: NAMESPACE).get('').items
+            pods_by_node = Deltafi::API.k8s_client.api('v1').resource('pods').list(fieldSelector: {'status.phase' => 'Running'}).group_by { |p| p.spec.nodeName }
+            pod_usage = Deltafi::API.k8s_client.api('metrics.k8s.io/v1beta1').resource('pods').list
             pods_by_node.transform_values do |pods|
               pods.map do |pod|
                 {
                   name: pod.metadata.name,
+                  namespace: pod.metadata.namespace,
                   resources: {
                     cpu: {
                       limit: pod.spec.containers.reduce(0) { |ptotal, c| ptotal + normalize_cpu(c.resources.limits&.cpu || 0) },
@@ -65,7 +66,7 @@ module Deltafi
           end
 
           def pvs_by_node
-            Deltafi::API.k8s_client.api('v1').resource('persistentvolumes').get('').items.group_by do |pv|
+            Deltafi::API.k8s_client.api('v1').resource('persistentvolumes').list.group_by do |pv|
               pv.spec.nodeAffinity.required.nodeSelectorTerms.first.matchExpressions.first.values.first
             end
           end
