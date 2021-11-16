@@ -60,7 +60,7 @@ export default {
 </script>
 
 <style scoped>
-* {
+.sidebar {
   transition: all 0.3s;
 }
 
