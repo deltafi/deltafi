@@ -231,26 +231,7 @@ export default {
   graphQLService: null,
 };
 </script>
-<style>
-.time-range .form-control:disabled,
-.time-range .form-control[readonly] {
-  background-color: #ffffff;
-}
 
-pre.dark {
-  background-color: #333333;
-  color: #dddddd;
-  padding: 1em;
-}
-
-.ingress-flow-name-select {
-  width: 212px;
-  height: 34px;
-}
-
-.ingress-flow-name-select .p-dropdown-label {
-  padding-top: 5px;
-  padding-bottom: 5px;
-  padding-left: 10px;
-}
+<style lang="scss">
+  @import "../styles/errors-page.scss";
 </style>

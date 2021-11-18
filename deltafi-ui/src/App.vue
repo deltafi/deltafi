@@ -59,19 +59,6 @@ export default {
 };
 </script>
 
-<style scoped>
-.sidebar {
-  transition: all 0.3s;
-}
-
-.sidebar {
-  -ms-flex: 0 0 300px;
-  flex: 0 0 300px;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar.hidden {
-  margin-left: -300px;
-}
+<style scoped lang="scss">
+  @import "./styles/app.scss";
 </style>

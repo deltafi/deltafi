@@ -90,18 +90,6 @@ export default {
 };
 </script>
 
-<style>
-.status-tag {
-  cursor: pointer;
-}
-.message {
-  margin-left: 1rem;
-  margin-right: 1rem;
-}
-.message pre {
-  background-color: #333333;
-  color: #dddddd;
-  padding: 1em;
-  border-radius: 4px;
-}
+<style scoped lang="scss">
+  @import "../styles/status-badge.scss";
 </style>

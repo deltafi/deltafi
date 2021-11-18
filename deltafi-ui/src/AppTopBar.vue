@@ -38,31 +38,6 @@ export default {
 };
 </script>
 
-<style scoped>
-.navbar-brand {
-  padding-top: 0.6rem;
-  padding-bottom: 0.6rem;
-  font-size: 1.1rem;
-  background-color: rgba(0, 0, 0, 0.25);
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
-  -ms-flex: 0 0 300px;
-  flex: 0 0 300px;
-}
-
-.navbar-brand .title {
-  align-items: center;
-  display: flex;
-  font-weight: 300;
-}
-
-.navbar-brand .navbar-toggler:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.navbar .form-control {
-  padding: 0.75rem 1rem;
-  border-width: 0;
-  border-radius: 0;
-}
+<style scoped lang="scss">
+  @import "./styles/app-top-bar.scss";
 </style>

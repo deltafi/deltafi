@@ -138,18 +138,6 @@ export default {
 };
 </script>
 
-<style>
-.p-progressbar {
-  background: #dadada;
-}
-.p-progressbar .p-progressbar-value {
-  background: #60a0ff;
-}
-.resource-column {
-  width: 20%;
-}
-.expander-column,
-.pods-column {
-  width: 1%;
-}
+<style lang="scss">
+  @import "../styles/system-metrics-page.scss";
 </style>

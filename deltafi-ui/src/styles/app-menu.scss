@@ -1,0 +1,54 @@
+.menu {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 100; /* Behind the navbar */
+  padding: 48px 0 0; /* Height of navbar */
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
+  width: 300px;
+}
+
+.menu .nav-link {
+  font-weight: 500;
+  color: #333;
+}
+
+.menu .nav-link.folder {
+  font-weight: 300;
+  color: #999;
+  cursor: pointer;
+}
+
+.menu .nav-link.indent {
+  padding-left: 40px;
+}
+
+.menu .nav-link .pi {
+  margin-right: 4px;
+  color: #999;
+}
+
+.menu .nav-link.active {
+  font-weight: 600;
+  background-color: #e6e6e6;
+}
+
+.menu .submenu {
+  transition: all 0.2s ease;
+  max-height: 4rem;
+}
+
+.menu .submenu.hidden {
+  max-height: 0px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
