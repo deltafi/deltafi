@@ -156,6 +156,7 @@ input TransformInput {
 
 input LoadInput {
   domains: [String!]
+  protocolLayer: ProtocolLayerInput!
 }
 
 input EnrichInput {

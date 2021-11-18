@@ -7,6 +7,25 @@ mutation {
             type: LOAD
             load: {
                 domains: ["sample"]
+                protocolLayer: {
+                    type: "json-utf8-sample-load"
+                    metadata: [
+                        {
+                            key: "loadSampleType",
+                            value: "load-sample-type"
+                        },
+                        {
+                            key: "loadSampleVersion",
+                            value: "2.2"
+                        }
+                    ]
+                    objectReference: {
+                        name: "objectName"
+                        bucket: "objectBucket"
+                        offset: 0
+                        size: 500
+                    }
+                }
             }
         }
     ) {

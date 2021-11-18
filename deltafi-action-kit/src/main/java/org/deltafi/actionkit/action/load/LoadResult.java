@@ -6,6 +6,7 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.LoadInput;
+import org.deltafi.core.domain.generated.types.ProtocolLayerInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class LoadResult extends Result {
 
     public LoadResult(DeltaFile deltaFile, ActionParameters params) {
         super(deltaFile, params);
+        setObjectReference(deltaFile.getProtocolStack().get(deltaFile.getProtocolStack().size() -1).getObjectReference());
     }
 
     public void addDomain(@NotNull String domain) {
@@ -30,7 +32,16 @@ public class LoadResult extends Result {
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setLoad(LoadInput.newBuilder().domains(domains).build());
+        event.setLoad(LoadInput.newBuilder()
+                .domains(domains)
+                .protocolLayer(
+                        new ProtocolLayerInput.Builder()
+                                .type(params.getName())
+                                .objectReference(objectReferenceInput)
+                                .metadata(metadata)
+                                .build())
+                .build());
+
         return event;
     }
 }

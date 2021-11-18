@@ -85,7 +85,10 @@ class DeltaFiCoreDomainApplicationTests {
 
 	final static ObjectMapper objectMapper = new ObjectMapper();
 
-	final static List <KeyValue> sampleMetadata = Arrays.asList(
+	final static List <KeyValue> loadSampleMetadata = Arrays.asList(
+			KeyValue.newBuilder().key("loadSampleType").value("load-sample-type").build(),
+			KeyValue.newBuilder().key("loadSampleVersion").value("2.2").build());
+	final static List <KeyValue> transformSampleMetadata = Arrays.asList(
 			KeyValue.newBuilder().key("sampleType").value("sample-type").build(),
 			KeyValue.newBuilder().key("sampleVersion").value("2.1").build());
 
@@ -200,7 +203,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.queueAction("SampleLoadAction");
 		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
 				.type("json-utf8-sample")
-				.metadata(sampleMetadata)
+				.metadata(transformSampleMetadata)
 				.objectReference(ObjectReference.newBuilder()
 						.name("objectName")
 						.bucket("objectBucket")
@@ -234,6 +237,14 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
 		deltaFile.addDomain("sample", null);
+		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
+				.type("json-utf8-sample-load")
+				.metadata(loadSampleMetadata)
+				.objectReference(ObjectReference.newBuilder()
+						.name("objectName")
+						.bucket("objectBucket")
+						.offset(0)
+						.size(500).build()).build());
 		return deltaFile;
 	}
 

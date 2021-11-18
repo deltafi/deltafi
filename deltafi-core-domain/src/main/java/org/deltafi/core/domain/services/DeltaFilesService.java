@@ -144,10 +144,15 @@ public class DeltaFilesService {
     public DeltaFile load(DeltaFile deltaFile, ActionEventInput event) {
         deltaFile.completeAction(event.getAction());
 
-        if (event.getLoad() != null && event.getLoad().getDomains() != null) {
-            for (String domain : event.getLoad().getDomains()) {
-                if (Objects.isNull(deltaFile.getDomain(domain))) {
-                    deltaFile.addDomain(domain, null);
+        if (event.getLoad() != null) {
+            if (event.getLoad().getProtocolLayer() != null) {
+                deltaFile.getProtocolStack().add(DeltaFileConverter.convert(event.getLoad().getProtocolLayer()));
+            }
+            if (event.getLoad().getDomains() != null) {
+                for (String domain : event.getLoad().getDomains()) {
+                    if (Objects.isNull(deltaFile.getDomain(domain))) {
+                        deltaFile.addDomain(domain, null);
+                    }
                 }
             }
         }
