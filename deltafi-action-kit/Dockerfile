@@ -21,7 +21,7 @@
 # docker run -i --rm -p 8080:8080 -p 5005:5005 -e JAVA_ENABLE_DEBUG="true" quarkus/deltafi-ingress-jvm
 #
 ###
-FROM deltafi/deltafi-action-base:0.11.0
+FROM deltafi/deltafi-action-base:0.12.2
 
 RUN echo "securerandom.source=file:/dev/urandom" >> /etc/alternatives/jre/lib/security/java.security
 
