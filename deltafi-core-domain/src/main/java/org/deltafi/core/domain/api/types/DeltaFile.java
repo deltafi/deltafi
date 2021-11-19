@@ -214,6 +214,14 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         setModified(now);
     }
 
+    public String sourceMetadata(String key) {
+        return sourceMetadata(key, null);
+    }
+
+    public String sourceMetadata(String key, String defaultValue) {
+        return getSourceInfo().getMetadata().stream().filter(k-> k.getKey().equals(key)).findFirst().map(KeyValue::getValue).orElse(defaultValue);
+    }
+
     public static Builder newBuilder() {
         return new Builder();
     }
