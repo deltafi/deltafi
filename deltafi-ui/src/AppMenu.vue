@@ -97,6 +97,11 @@ export default {
               icon: "pi pi-times-circle",
               path: "/errors",
             },
+            {
+              name: "Viewer",
+              icon: "pi pi-file",
+              path: "/deltafile/viewer/",
+            },
           ],
         },
       ],

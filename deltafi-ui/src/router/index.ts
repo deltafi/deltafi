@@ -18,6 +18,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/ErrorsPage.vue'),
   },
   {
+    path: '/deltafile/viewer/:did?',
+    name: 'DeltaFile Viewer',
+    component: () => import('../pages/DeltaFileViewerPage.vue'),
+  },
+  {
     path: "/:catchAll(.*)",
     name: "404 Not Found",
     component: () => import('../pages/PageNotFound.vue')

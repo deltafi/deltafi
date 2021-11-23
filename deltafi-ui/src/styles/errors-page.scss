@@ -1,12 +1,8 @@
+@use 'common';
+
 .time-range .form-control:disabled,
 .time-range .form-control[readonly] {
   background-color: #ffffff;
-}
-
-pre.dark {
-  background-color: #333333;
-  color: #dddddd;
-  padding: 1em;
 }
 
 .ingress-flow-name-select {

@@ -59,3 +59,7 @@ export default {
   },
 };
 </script>
+
+<style scoped lang="scss">
+  @import "../styles/dashboard-page.scss";
+</style>

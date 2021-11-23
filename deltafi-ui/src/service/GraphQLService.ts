@@ -132,4 +132,74 @@ export default class GraphQLService {
     };
     return this.query(postString);
   }
+
+  getDeltaFile(did: string) {
+    const searchParams = {
+      query: {
+        deltaFile: {
+          __args: {
+            did: did,
+          },
+          did: true,
+          sourceInfo: {
+            filename: true,
+            flow: true,
+            metadata: {
+              key: true,
+              value: true,
+            },
+          },
+          stage: true,
+          created: true,
+          modified: true,
+          actions: {
+            name: true,
+            state: true,
+            created: true,
+            modified: true,
+            errorCause: true,
+            errorContext: true,
+          },
+          domains: {
+            value: true,
+            key: true,
+          },
+          enrichment: {
+            key: true,
+            value: true,
+          },
+          formattedData: {
+            filename: true,
+            metadata: {
+              key: true,
+              value: true,
+            },
+            formatAction: true,
+            egressActions: true,
+            objectReference: {
+              bucket: true,
+              name: true,
+              offset: true,
+              size: true,
+            },
+          },
+          protocolStack: {
+            metadata: {
+              key: true,
+              value: true,
+            },
+            objectReference: {
+              bucket: true,
+              name: true,
+              offset: true,
+              size: true,
+            },
+          },
+          markedForDelete: true,
+          markedForDeleteReason: true,
+        },
+      }
+    };
+    return this.query(searchParams);
+  }
 }

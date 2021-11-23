@@ -8,7 +8,7 @@
         <Dropdown
           v-model="ingressFlowNameSelected"
           placeholder="Select a Flow"
-          :options="ingressFlowNames" 
+          :options="ingressFlowNames"
           option-label="name"
           show-clear
           :editable="false"
@@ -56,11 +56,14 @@
         Loading Errors Data. Please wait.
       </template>
       <Column :expander="true" />
-      <Column field="did" header="DID (UUID)" />
+      <Column field="did" header="DID (UUID)">
+        <template #body="error">
+          <a class="monospace" :href="`/deltafile/viewer/${error.data.did}`">{{ error.data.did }}</a>
+        </template>
+      </Column>
       <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
       <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
-      <Column field="stage" header="Stage" :sortable="true" />
-      <Column field="created" header="Timestamp" :sortable="true" />
+      <Column field="created" header="Created" :sortable="true" />
       <Column field="modified" header="Modified" :sortable="true" />
       <Column field="last_error_cause" header="Last Error">
         <template #body="error">
@@ -174,16 +177,16 @@ export default {
         if (res.data !== null) {
           this.$toast.add({
             severity: "success",
-            summary: "Retry Successful",
-            detail: "",
+            summary: "Retry request sent successfully",
+            detail: p_did,
             life: 3000,
           });
-    
+
           this.fetchErrors(this.startTimeDate, this.endTimeDate, this.ingressFlowNameSelected);
         } else {
           this.$toast.add({
             severity: "error",
-            summary: "Retry Failed",
+            summary: "Retry request failed",
             detail: res.errors[0].message,
             life: 10000,
           });
