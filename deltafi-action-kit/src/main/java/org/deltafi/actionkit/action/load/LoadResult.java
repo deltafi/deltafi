@@ -1,5 +1,6 @@
 package org.deltafi.actionkit.action.load;
 
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 public class LoadResult extends DataAmendedResult {
     private final List<String> domains = new ArrayList<>();
 

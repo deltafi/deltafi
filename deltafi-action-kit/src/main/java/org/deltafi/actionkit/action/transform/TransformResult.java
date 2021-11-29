@@ -1,5 +1,6 @@
 package org.deltafi.actionkit.action.transform;
 
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -8,6 +9,7 @@ import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.ProtocolLayerInput;
 import org.deltafi.core.domain.generated.types.TransformInput;
 
+@EqualsAndHashCode(callSuper = true)
 public class TransformResult extends DataAmendedResult {
     private final String type;
 

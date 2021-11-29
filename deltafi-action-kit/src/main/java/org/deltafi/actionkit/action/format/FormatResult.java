@@ -1,5 +1,6 @@
 package org.deltafi.actionkit.action.format;
 
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -7,6 +8,7 @@ import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FormatInput;
 
+@EqualsAndHashCode(callSuper = true)
 public class FormatResult extends DataAmendedResult {
     private final String filename;
 

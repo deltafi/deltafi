@@ -1,5 +1,6 @@
 package org.deltafi.actionkit.action.enrich;
 
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result {
     private final List<String> enrichments = new ArrayList<>();
 

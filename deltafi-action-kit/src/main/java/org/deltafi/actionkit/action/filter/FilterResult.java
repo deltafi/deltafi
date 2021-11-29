@@ -1,5 +1,6 @@
 package org.deltafi.actionkit.action.filter;
 
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -7,6 +8,7 @@ import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FilterInput;
 
+@EqualsAndHashCode(callSuper = true)
 public class FilterResult extends Result {
     private final String message;
 

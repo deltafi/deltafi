@@ -1,5 +1,6 @@
 package org.deltafi.actionkit.action.error;
 
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@EqualsAndHashCode(callSuper = true)
 public class ErrorResult extends Result {
     private final String errorCause;
     private final String errorContext;
