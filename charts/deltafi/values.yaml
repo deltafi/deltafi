@@ -46,7 +46,7 @@ deltafi:
     image: deltafi/deltafi-passthrough-actions:0.13.0
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
-    image: deltafi-core-actions:0.13.0-SNAPSHOT
+    image: deltafi/deltafi-core-actions:0.13.0
   core_domain:
     image: deltafi/deltafi-core-domain:0.13.0
     mongo_host: deltafi-mongodb
@@ -64,7 +64,7 @@ deltafi:
     image: deltafi/deltafi-ui:0.13.0
     title: DeltaFi
   egress_sink:
-    image: deltafi-egress-sink:test
+    image: deltafi/deltafi-egress-sink:0.13.0
 
 # Kubernetes ingress config
 ingress:
