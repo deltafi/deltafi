@@ -194,7 +194,7 @@ export default {
       });
     },
     async fetchIngressFlows() {
-      const ingressFlowData = await this.graphQLService.getFlowsByType("INGRESS_FLOW");
+      const ingressFlowData = await this.graphQLService.getConfigByType("INGRESS_FLOW");
       this.ingressFlowNames = ingressFlowData.data.deltaFiConfigs;
     },
     async fetchErrors(startD, endD, ingressFlowName) {

@@ -89,8 +89,7 @@ export default {
             {
               name: "Search",
               icon: "pi pi-search",
-              path: "/deltafiles",
-              hidden: true,
+              path: "/deltafile/search",
             },
             {
               name: "Errors",

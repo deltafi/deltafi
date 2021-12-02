@@ -1,3 +1,4 @@
+import { query } from 'express';
 import { EnumType, jsonToGraphQLQuery } from 'json-to-graphql-query';
 export default class GraphQLService {
   basePath: string;
@@ -6,37 +7,117 @@ export default class GraphQLService {
     this.basePath = basePath;
   }
 
-  query(queryString: Object) {
-    const graphQLquery = jsonToGraphQLQuery(queryString, { pretty: true });
+  query(queryString: string) {
     return fetch(this.basePath, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ query: graphQLquery })
+      body: queryString
     }).then(res => {
       return res.json();
     });
   }
 
-  getFlowsByType(flowType: string) {
-    const flowTypeSearchParams = {
+  convertJsonToGraphQLQuery(queryString: Object){
+    const graphQLquery = jsonToGraphQLQuery(queryString, { pretty: true });
+    return this.query(JSON.stringify({ query: graphQLquery }));
+  }
+
+  // This function allows for the querying of enum types and returns there associated enums.
+  getEnumValuesByEnumType(enumType: string) {
+  const data = JSON.stringify({
+      query: `{
+        __type(name: "${enumType}") {
+          enumValues {
+            name
+          }
+        }
+      }`,
+    });
+    return this.query(data);
+  }
+
+  getConfigByType(typeParam: string) {
+    const typeSearchParams = {
       query: {
         deltaFiConfigs: {
           __args: {
             configQuery: {
-              configType: new EnumType(flowType)
+              configType: new EnumType(typeParam)
             }  
           },
           name: true
         }
       }
     }
-    return this.query(flowTypeSearchParams);
+    return this.convertJsonToGraphQLQuery(typeSearchParams);
   }
 
-  getErrors(startD: Date, endD: Date, flowEventName?: string) {
+  getDeltaFiFileNames(startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) {
+    const flowTypeSearchParams = {
+      query: {
+        deltaFiles: {
+          __args: {
+            offset: 0,
+            limit: 10000,
+            filter: {
+              sourceInfo: {
+                flow: flowName,
+                filename: fileName
+              },
+              stage: stageName ? new EnumType(stageName) : null,
+              actions: actionName,
+              modifiedBefore: endD.toISOString(),
+              modifiedAfter: startD.toISOString()
+            },
+            orderBy: {
+              direction: new EnumType('DESC'),
+              field: new EnumType('modified')
+            }
+          },
+          deltaFiles: {
+            sourceInfo: {
+              filename: true,
+            }
+          }
+        }
+      }
+    };
+    return this.convertJsonToGraphQLQuery(flowTypeSearchParams);
+  }
+
+  getRecordCount(startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) {
+    const searchRecordCountParams = {
+      query: {
+        deltaFiles: {
+          __args: {
+            offset: 0,
+            limit: 50,
+            filter: {
+              sourceInfo: {
+                flow: flowName,
+                filename: fileName
+              },
+              stage: stageName ? new EnumType(stageName) : null,
+              actions: actionName,
+              modifiedBefore: endD.toISOString(),
+              modifiedAfter: startD.toISOString()
+            },
+            orderBy: {
+              direction: new EnumType('DESC'),
+              field: new EnumType('modified')
+            }
+          },
+          totalCount: true,
+        }
+      }
+    };
+    return this.convertJsonToGraphQLQuery(searchRecordCountParams);       
+  }
+
+  getErrors(startD: Date, endD: Date, flowName?: string) {
     const searchParams = {
       query: {
         deltaFiles: {
@@ -45,7 +126,7 @@ export default class GraphQLService {
             limit: 50,
             filter: {
               sourceInfo: {
-                flow: flowEventName
+                flow: flowName
               },
               stage: new EnumType('ERROR'),
               modifiedBefore: endD.toISOString(),
@@ -115,7 +196,49 @@ export default class GraphQLService {
         }
       }
     };
-    return this.query(searchParams);
+    return this.convertJsonToGraphQLQuery(searchParams);
+  }
+
+
+  getDeltaFileSearchData(startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) {
+    const searchParams = {
+      query: {
+        deltaFiles: {
+          __args: {
+            offset: 0,
+            limit: 50,
+            filter: {
+              sourceInfo: {
+                flow: flowName,
+                filename: fileName
+              },
+              stage: stageName ? new EnumType(stageName) : null,
+              actions: actionName,
+              modifiedBefore: endD.toISOString(),
+              modifiedAfter: startD.toISOString()
+            },
+            orderBy: {
+              direction: new EnumType('DESC'),
+              field: new EnumType('modified')
+            }
+          },
+          offset: true,
+          count: true,
+          totalCount: true,
+          deltaFiles: {
+            did: true,
+            stage: true,
+            modified: true,
+            created: true,
+            sourceInfo: {
+              filename: true,
+              flow: true,
+            },
+          }
+        }
+      }
+    };
+    return this.convertJsonToGraphQLQuery(searchParams);
   }
 
   postErrorRetry(did: string) {
@@ -130,7 +253,7 @@ export default class GraphQLService {
       }
 
     };
-    return this.query(postString);
+    return this.convertJsonToGraphQLQuery(postString);
   }
 
   getDeltaFile(did: string) {
@@ -200,6 +323,6 @@ export default class GraphQLService {
         },
       }
     };
-    return this.query(searchParams);
+    return this.convertJsonToGraphQLQuery(searchParams);
   }
 }

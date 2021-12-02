@@ -9,6 +9,7 @@ import PrimeVue from 'primevue/config';
 import ConfirmationService from 'primevue/confirmationservice';
 import Tooltip from 'primevue/tooltip';
 import ToastService from 'primevue/toastservice';
+import BadgeDirective from 'primevue/badgedirective';
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
@@ -23,6 +24,7 @@ app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
 app.use(ToastService)
+app.directive('badge', BadgeDirective);
 
 app.directive('tooltip', Tooltip);
 
