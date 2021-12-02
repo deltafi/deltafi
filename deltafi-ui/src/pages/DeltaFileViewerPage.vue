@@ -166,6 +166,12 @@ export default {
       this.graphQLService.getDeltaFile(this.did).then((res) => {
         if (res.data.deltaFile) {
           this.deltaFileData = res.data.deltaFile;
+          let domain = this.deltaFileData.domains.length > 0 ?
+              this.deltaFileData.domains[0].key :
+              "N/A"
+          let originalFileSize = this.deltaFileData.protocolStack.length > 0 ?
+              filesize(this.deltaFileData.protocolStack[0].objectReference.size, {base:10}) :
+              "N/A";
           this.pageHeader = `DeltaFile Viewer: ${this.deltaFileData.sourceInfo.filename}`;
           this.metadata = [];
           this.metadata.push(["DID", this.deltaFileData.did]);
@@ -173,13 +179,9 @@ export default {
             "Original Filename",
             this.deltaFileData.sourceInfo.filename,
           ]);
-          this.metadata.push([
-            "Original File Size",
-            filesize(this.deltaFileData.protocolStack[0].objectReference.size, {
-              base: 10,
-            }),
-          ]);
+          this.metadata.push(["Original File Size", originalFileSize]);
           this.metadata.push(["Flow", this.deltaFileData.sourceInfo.flow]);
+          this.metadata.push(["Domain", domain]);
           this.metadata.push(["Stage", this.deltaFileData.stage]);
           this.metadata.push(["Created", this.deltaFileData.created]);
           this.metadata.push(["Modified", this.deltaFileData.modified]);
