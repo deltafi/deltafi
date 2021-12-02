@@ -221,7 +221,6 @@ export default {
       this.fetchRecordCount();
     },
     fileNameOptionSelected() {
-      this.fetchAdvancedOptions();
       this.fetchRecordCount();
     },
     actionTypeOptionSelected() {

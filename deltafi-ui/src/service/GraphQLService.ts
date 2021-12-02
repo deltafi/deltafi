@@ -94,7 +94,7 @@ export default class GraphQLService {
         deltaFiles: {
           __args: {
             offset: 0,
-            limit: 50,
+            limit: 0,
             filter: {
               sourceInfo: {
                 flow: flowName,
