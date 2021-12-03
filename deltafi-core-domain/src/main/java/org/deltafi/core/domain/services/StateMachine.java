@@ -31,7 +31,8 @@ public class StateMachine {
         this.zipkinService = zipkinService;
     }
 
-    /** Advance the state of the given DeltaFile
+    /**
+     * Advance the state of the given DeltaFile
      *
      * @param deltaFile The deltaFile to advance
      * @return a list of actions that should receive this DeltaFile next
@@ -138,8 +139,12 @@ public class StateMachine {
                 deltaFile.hasEnrichments(config.getRequiresEnrichment());
     }
 
-    private List<String> getFormatActions(DeltaFile deltaFile) {
-        return configService.getFormatActions().stream().filter(key -> formatActionReady(key, deltaFile)).collect(Collectors.toList());
+    List<String> getFormatActions(DeltaFile deltaFile) {
+        return configService.getEgressFlows().stream()
+                .filter(egressFlow -> matchesFlowFilter(egressFlow, deltaFile))
+                .map(e -> e.getFormatAction())
+                .filter(f -> formatActionReady(f, deltaFile))
+                .collect(Collectors.toList());
     }
 
     private boolean formatActionReady(String formatActionName, DeltaFile deltaFile) {
@@ -149,16 +154,21 @@ public class StateMachine {
                 deltaFile.hasEnrichments(config.getRequiresEnrichment());
     }
 
-    private List<String> getValidateActions(DeltaFile deltaFile) {
+    List<String> getValidateActions(DeltaFile deltaFile) {
         return configService.getEgressFlows().stream()
-                .filter(f -> deltaFile.hasTerminalAction(f.getFormatAction()))
+                .filter(egressFlow -> validateActionsReady(egressFlow, deltaFile))
                 .flatMap(f -> f.getValidateActions().stream())
                 .filter(v -> !deltaFile.hasTerminalAction(v))
                 .distinct()
                 .collect(Collectors.toList());
     }
 
-    public List<String> getEgressActions(DeltaFile deltaFile) {
+    private boolean validateActionsReady(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
+        return deltaFile.hasTerminalAction(egressFlow.getFormatAction()) &&
+                matchesFlowFilter(egressFlow, deltaFile);
+    }
+
+    List<String> getEgressActions(DeltaFile deltaFile) {
         return configService.getEgressFlows().stream()
                 .filter(egressFlow -> egressActionReady(egressFlow, deltaFile))
                 .map(org.deltafi.core.domain.generated.types.EgressFlowConfiguration::getEgressAction)
@@ -166,15 +176,19 @@ public class StateMachine {
                 .collect(Collectors.toList());
     }
 
-    private boolean egressActionReady(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
-        return deltaFile.hasCompletedAction(egressFlow.getFormatAction()) &&
-                deltaFile.hasCompletedActions(egressFlow.getValidateActions()) &&
-                (egressFlow.getIncludeIngressFlows() == null ||
-                        egressFlow.getIncludeIngressFlows().isEmpty() ||
-                        egressFlow.getIncludeIngressFlows().contains(deltaFile.getSourceInfo().getFlow())) &&
+    private boolean matchesFlowFilter(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
+        return (egressFlow.getIncludeIngressFlows() == null ||
+                egressFlow.getIncludeIngressFlows().isEmpty() ||
+                egressFlow.getIncludeIngressFlows().contains(deltaFile.getSourceInfo().getFlow())) &&
                 (egressFlow.getExcludeIngressFlows() == null ||
                         egressFlow.getExcludeIngressFlows().isEmpty() ||
                         !egressFlow.getExcludeIngressFlows().contains(deltaFile.getSourceInfo().getFlow()));
+    }
+
+    private boolean egressActionReady(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
+        return deltaFile.hasCompletedAction(egressFlow.getFormatAction()) &&
+                deltaFile.hasCompletedActions(egressFlow.getValidateActions()) &&
+                matchesFlowFilter(egressFlow, deltaFile);
     }
 
     private void sendTrace(DeltaFile deltaFile) {

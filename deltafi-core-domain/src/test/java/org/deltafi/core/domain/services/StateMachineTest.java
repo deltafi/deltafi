@@ -4,6 +4,7 @@ import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
+import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
@@ -39,7 +40,7 @@ class StateMachineTest {
     RedisService redisService;
 
     @Test
-    void testGetFormatActionsNotIncluded() {
+    void testGetEgressActionsNotIncluded() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "notIncludedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -55,7 +56,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testGetFormatActionsIncluded() {
+    void testGetEgressActionsIncluded() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "includedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -71,7 +72,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testGetFormatActionsExcluded() {
+    void testGetEgressActionsExcluded() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "excludedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -87,7 +88,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testGetFormatActionsNotExcluded() {
+    void testGetEgressActionsNotExcluded() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "notExcludedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
@@ -100,6 +101,201 @@ class StateMachineTest {
         Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
 
         assertEquals(Collections.singletonList("TheEgressAction"), stateMachine.getEgressActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsNotIncluded() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "notIncludedFlow");
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        assertEquals(Collections.emptyList(), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsIncluded() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "includedFlow");
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
+        config.setFormatAction("FormatAction");
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("FormatAction");
+        Mockito.when(deltaFiConfigService.getFormatAction("FormatAction")).thenReturn(format);
+
+        assertEquals(Collections.singletonList("FormatAction"), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsExcluded() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "excludedFlow");
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
+        config.setFormatAction("FormatAction");
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        assertEquals(Collections.emptyList(), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsNotExcluded() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "notExcludedFlow");
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
+        config.setFormatAction("FormatAction");
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("FormatAction");
+        Mockito.when(deltaFiConfigService.getFormatAction("FormatAction")).thenReturn(format);
+
+        assertEquals(Collections.singletonList("FormatAction"), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsAlreadyComplete() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
+        Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
+        deltaFile.getActions().add(action);
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setFormatAction("FormatAction");
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        assertEquals(Collections.emptyList(), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsMatchesDomainAndEnrichment() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
+        deltaFile.addDomain("domain", "value");
+        deltaFile.addEnrichment("enrich", "value");
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setFormatAction("FormatAction");
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("FormatAction");
+        format.setRequiresDomains(Collections.singletonList("domain"));
+        format.setRequiresEnrichment(Collections.singletonList("enrich"));
+
+        Mockito.when(deltaFiConfigService.getFormatAction("FormatAction")).thenReturn(format);
+
+        assertEquals(Collections.singletonList("FormatAction"), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsDomainDiffers() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
+        deltaFile.addDomain("domain", "value");
+        deltaFile.addEnrichment("enrich", "value");
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setFormatAction("FormatAction");
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("FormatAction");
+        format.setRequiresDomains(Collections.singletonList("otherDomain"));
+        format.setRequiresEnrichment(Collections.singletonList("enrich"));
+
+        Mockito.when(deltaFiConfigService.getFormatAction("FormatAction")).thenReturn(format);
+
+        assertEquals(Collections.emptyList(), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetFormatActionsEnrichDiffers() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
+        deltaFile.addDomain("domain", "value");
+        deltaFile.addEnrichment("enrich", "value");
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setFormatAction("FormatAction");
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("FormatAction");
+        format.setRequiresDomains(Collections.singletonList("domain"));
+        format.setRequiresEnrichment(Collections.singletonList("otherEnrich"));
+
+        Mockito.when(deltaFiConfigService.getFormatAction("FormatAction")).thenReturn(format);
+
+        assertEquals(Collections.emptyList(), stateMachine.getFormatActions(deltaFile));
+    }
+
+    @Test
+    void testGetValidateActionsNotIncluded() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "notIncludedFlow");
+        Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
+        deltaFile.getActions().add(action);
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
+        config.setFormatAction("FormatAction");
+        config.setValidateActions(Collections.singletonList("ValidateAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        assertEquals(Collections.emptyList(), stateMachine.getValidateActions(deltaFile));
+    }
+
+    @Test
+    void testGetValidateActionsIncluded() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "includedFlow");
+        Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
+        deltaFile.getActions().add(action);
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
+        config.setFormatAction("FormatAction");
+        config.setValidateActions(Collections.singletonList("ValidateAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        assertEquals(Collections.singletonList("ValidateAction"), stateMachine.getValidateActions(deltaFile));
+    }
+
+    @Test
+    void testGetValidateActionsAlreadyComplete() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
+        Action fAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
+        Action vAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction").build();
+        deltaFile.getActions().add(fAction);
+        deltaFile.getActions().add(vAction);
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setFormatAction("FormatAction");
+        config.setValidateActions(Collections.singletonList("ValidateAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        assertEquals(Collections.emptyList(), stateMachine.getValidateActions(deltaFile));
     }
 
     @Test
