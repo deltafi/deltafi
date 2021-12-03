@@ -12,3 +12,11 @@ a {
   font-family: monospace, monospace;
   font-size: 95%;
 }
+
+.p-tooltip {
+  max-width: 300px;
+
+  .p-tooltip-text {
+    font-size: 80%;
+  }
+}

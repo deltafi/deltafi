@@ -1,0 +1,14 @@
+@use 'common';
+
+.property-set {
+  .p-panel-content {
+    padding: 0;
+  }
+  .p-cell-editing {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    input {
+      width: 100%;
+    }
+  }
+}

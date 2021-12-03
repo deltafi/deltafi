@@ -60,13 +60,11 @@ export default {
         {
           name: "Configuration",
           expand: true,
-          hidden: true,
           children: [
             {
-              name: "System",
+              name: "System Properties",
               icon: "pi pi-cog",
               path: "/config/system",
-              hidden: true,
             },
             {
               name: "Flows",

@@ -20,6 +20,37 @@ export default class GraphQLService {
     });
   }
 
+  getPropertySets() {
+    const getPropertySetsQuery = {
+      query: {
+        getPropertySets: {
+          id: true,
+          displayName: true,
+          description: true,
+          properties: {
+            key: true,
+            value: true,
+            hidden: true,
+            editable: true,
+            refreshable: true,
+            description: true,
+            propertySource: true
+          }
+        }
+      }
+    }
+    return this.convertJsonToGraphQLQuery(getPropertySetsQuery);
+  }
+
+  updateProperties(updates: Array<Object>) {
+    const query = 'mutation($updates: [PropertyUpdate]!) { updateProperties(updates: $updates) }'
+    const variables = {
+      updates: updates
+    }
+    const body = JSON.stringify({query: query, variables: variables})
+    return this.query(body);
+  }
+
   convertJsonToGraphQLQuery(queryString: Object){
     const graphQLquery = jsonToGraphQLQuery(queryString, { pretty: true });
     return this.query(JSON.stringify({ query: graphQLquery }));
@@ -46,7 +77,7 @@ export default class GraphQLService {
           __args: {
             configQuery: {
               configType: new EnumType(typeParam)
-            }  
+            }
           },
           name: true
         }
@@ -114,7 +145,7 @@ export default class GraphQLService {
         }
       }
     };
-    return this.convertJsonToGraphQLQuery(searchRecordCountParams);       
+    return this.convertJsonToGraphQLQuery(searchRecordCountParams);
   }
 
   getErrors(startD: Date, endD: Date, flowName?: string) {
