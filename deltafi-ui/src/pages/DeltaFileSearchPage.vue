@@ -58,6 +58,22 @@
             </div>
           </div>
           <div class="row align-items-center py-2">
+            <div class="col-1 text-right align-text-bottom">
+              <label for="flowId">Flow:</label>
+            </div>
+            <div class="col-md-auto">
+              <Dropdown
+                id="flowId"
+                v-model="flowOptionSelected"
+                placeholder="Select a Flow"
+                :options="flowOptions"
+                show-clear
+                :editable="false"
+                class="advanced-options-dropdown"
+              />
+            </div>
+          </div>
+          <div class="row align-items-center py-2">
             <div class="col-1 text-right">
               <label for="stageId">Stage:</label>
             </div>
@@ -68,22 +84,6 @@
                 placeholder="Select a Stage"
                 :options="stageOptions"
                 option-label="name"
-                show-clear
-                :editable="false"
-                class="advanced-options-dropdown"
-              />
-            </div>
-          </div>
-          <div class="row align-items-center py-2">
-            <div class="col-1 text-right align-text-bottom">
-              <label for="flowId">Flow:</label>
-            </div>
-            <div class="col-md-auto">
-              <Dropdown
-                id="flowId"
-                v-model="flowOptionSelected"
-                placeholder="Select a Flow"
-                :options="flowOptions"
                 show-clear
                 :editable="false"
                 class="advanced-options-dropdown"
@@ -120,7 +120,7 @@
       </div>
     </div>
     <DataTable
-      :value="tableData"
+      :value="results"
       striped-rows
       class="p-datatable-gridlines p-datatable-sm"
       :loading="loading"
@@ -141,8 +141,13 @@
       <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
       <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
       <Column field="stage" header="Stage" :sortable="true" />
-      <Column field="created" header="Timestamp" :sortable="true" />
+      <Column field="created" header="Created" :sortable="true" />
       <Column field="modified" header="Modified" :sortable="true" />
+      <Column field="elapsed" header="Elapsed" :sortable="true">
+        <template #body="row">
+          {{ row.data.elapsed }}ms
+        </template>
+      </Column>
     </DataTable>
   </div>
 </template>
@@ -211,6 +216,14 @@ export default {
       collapsed: true,
     };
   },
+  computed: {
+    results() {
+      return this.tableData.map(row => {
+        row.elapsed = new Date(row.modified) - new Date(row.created)
+        return row;
+      });
+    }
+  },
   watch: {
     startTimeDate() {
       this.fetchAdvancedOptions();
@@ -260,11 +273,11 @@ export default {
       let enumsConfigTypes = await this.graphQLService.getEnumValuesByEnumType("ConfigType");
       this.configTypeNames = enumsConfigTypes.data.__type.enumValues;
 
-      // Convert array of ConfigType objects with 
+      // Convert array of ConfigType objects with
       let result = this.configTypeNames.map(a => a.name);
       for (const element of result) {
         if(element.includes("FLOW")) {
-          flowTypes.push(element);         
+          flowTypes.push(element);
         } else {
           actionTypes.push(element);
         }
@@ -310,7 +323,7 @@ export default {
       this.recordCount = fetchRecordCount.data.deltaFiles.totalCount.toString();
     },
     setQueryParams() {
-      this.fileName = this.fileNameOptionSelected ? this.fileNameOptionSelected.name : null;    
+      this.fileName = this.fileNameOptionSelected ? this.fileNameOptionSelected.name : null;
       this.stageName = this.stageOptionSelected ? this.stageOptionSelected.name : null;
       this.actionName = this.actionTypeOptionSelected ? this.actionTypeOptionSelected.name : null;
       this.flowName = this.flowOptionSelected ? this.flowOptionSelected : null;
@@ -318,7 +331,7 @@ export default {
     dedupArrayOfObjects(values) {
      return values.filter((value, index, self) =>
         index === self.findIndex((t) => (
-          t.name === value.name 
+          t.name === value.name
         ))
       )
     },

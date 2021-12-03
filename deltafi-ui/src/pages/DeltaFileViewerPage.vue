@@ -47,7 +47,7 @@
       <div class="row mb-3">
         <div class="col-12">
           <Panel header="Actions" class="actions-panel">
-            <DataTable :value="deltaFileData.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm" :row-class="actionRowClass" @row-click="actionRowClick">
+            <DataTable :value="actions" responsive-layout="scroll" striped-rows class="p-datatable-sm" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column field="name" header="Action" :sortable="true" />
               <Column field="state" header="State" :sortable="true">
                 <template #body="action">
@@ -56,6 +56,11 @@
               </Column>
               <Column field="created" header="Created" :sortable="true" />
               <Column field="modified" header="Modified" :sortable="true" />
+              <Column field="elapsed" header="Elapsed" :sortable="true">
+                <template #body="action">
+                  {{ action.data.elapsed }}ms
+                </template>
+              </Column>
             </DataTable>
           </Panel>
         </div>
@@ -128,6 +133,12 @@ export default {
     },
     hasErrors() {
       return this.deltaFileData.stage === 'ERROR';
+    },
+    actions() {
+      return this.deltaFileData.actions.map(action => {
+        action.elapsed = new Date(action.modified) - new Date(action.created)
+        return action;
+      });
     }
   },
   watch: {
