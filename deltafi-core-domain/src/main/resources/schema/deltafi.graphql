@@ -197,6 +197,7 @@ enum DeltaFileField {
 }
 
 input DeltaFilesFilter {
+  dids: [String!]
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]

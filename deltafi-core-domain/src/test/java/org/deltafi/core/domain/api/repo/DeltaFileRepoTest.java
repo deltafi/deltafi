@@ -290,6 +290,11 @@ class DeltaFileRepoTest {
         testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().metadata(List.of(KeyValueInput.newBuilder().key("formattedKey1").value("formattedValue1").build(), KeyValueInput.newBuilder().key("formattedKey2").value("formattedValue1").build())).build()).build());
         testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().egressActions(List.of("EgressAction1")).build()).build(), deltaFile2, deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().egressActions(List.of("EgressAction1", "EgressAction2")).build()).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().dids(Collections.emptyList()).build(), deltaFile2, deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().dids(Collections.singletonList("1")).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "3")).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "2")).build(), deltaFile2, deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().dids(List.of("3", "4")).build());
     }
 
     private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {

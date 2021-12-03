@@ -218,6 +218,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         List<Criteria> andCriteria = new ArrayList<>();
 
+        if (nonNull(filter.getDids()) && !filter.getDids().isEmpty()) {
+            andCriteria.add(Criteria.where(ID).in(filter.getDids()));
+        }
+
         if (nonNull(filter.getCreatedAfter())) {
             andCriteria.add(Criteria.where(CREATED).gt(filter.getCreatedAfter()));
         }
