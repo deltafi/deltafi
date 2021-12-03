@@ -52,10 +52,11 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         getActions().add(Action.newBuilder().name(name).state(ActionState.QUEUED).created(now).modified(now).build());
     }
 
+    /* Get the most recent action with the given name */
     public Optional<Action> actionNamed(String name) {
         return getActions().stream()
                 .filter(a -> a.getName().equals(name))
-                .findFirst();
+                .reduce((first, second) -> second);
     }
 
     public boolean isNewAction(String name) {
@@ -86,10 +87,18 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
                 .forEach(action -> setActionState(action, ActionState.ERROR, errorCause, errorContext));
     }
 
-    public void retryErrors() {
-        getActions().stream()
+    public List<String> retryErrors() {
+        List<Action> actionsToRetry = getActions().stream()
                 .filter(action -> action.getState().equals(ActionState.ERROR))
-                .forEach(action -> setActionState(action, ActionState.QUEUED));
+                .collect(Collectors.toList());
+
+        // this must be separate from the above stream since it mutates the original list
+        actionsToRetry.forEach(action -> {
+            action.setState(ActionState.RETRIED);
+            queueNewAction(action.getName());
+        });
+
+        return actionsToRetry.stream().map(Action::getName).collect(Collectors.toList());
     }
 
     private void setActionState(Action action, ActionState actionState) {

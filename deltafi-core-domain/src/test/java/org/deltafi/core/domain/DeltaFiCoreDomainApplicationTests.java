@@ -411,6 +411,13 @@ class DeltaFiCoreDomainApplicationTests {
 		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("ErrorFormatAction")), any());
 	}
 
+	DeltaFile postRetryDeltaFile(String did) {
+		DeltaFile deltaFile = postErrorDeltaFile(did);
+		deltaFile.retryErrors();
+		deltaFile.setStage(DeltaFileStage.EGRESS);
+		return deltaFile;
+	}
+
 	@Test
 	void test18Retry() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
@@ -422,11 +429,12 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
+		assertTrue(Util.equalIgnoringDates(postRetryDeltaFile(did), deltaFile));
 
-		// it is not immediately added to the queue, the scheduled requeue task will pick it up
-		Mockito.verify(redisService, never()).enqueue(any(), any());
-		assertTrue(Util.equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("AuthorityValidateAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(Util.equalIgnoringDates(postRetryDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postValidateAuthorityDeltaFile(String did) {

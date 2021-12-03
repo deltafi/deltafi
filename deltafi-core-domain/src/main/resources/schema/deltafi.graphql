@@ -91,6 +91,7 @@ enum ActionState {
   QUEUED
   COMPLETE
   ERROR
+  RETRIED
   FILTERED
 }
 

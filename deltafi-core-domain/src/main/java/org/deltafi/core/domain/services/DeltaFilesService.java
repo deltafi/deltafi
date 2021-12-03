@@ -244,10 +244,12 @@ public class DeltaFilesService {
     public DeltaFile retry(String did) {
         DeltaFile deltaFile = getDeltaFile(did);
 
-        deltaFile.retryErrors();
+        List<String> requeueActions = deltaFile.retryErrors();
         deltaFile.setStage(DeltaFileStage.INGRESS);
+        advanceAndSave(deltaFile);
+        enqueueActions(requeueActions, deltaFile);
 
-        return advanceAndSave(deltaFile);
+        return deltaFile;
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
