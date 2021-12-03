@@ -33,7 +33,7 @@
     </div>
     <div class="row mb-3">
       <div class="col-12">
-        <Panel header="Search Options" :toggleable="true" :collapsed="collapsed">
+        <Panel ref="panelHeaderRef" header="Search Options" :toggleable="true" :collapsed="true" @click="panelHeaderToggle">
           <template #icons>
             <button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
               <span class="pi pi-cog" />
@@ -213,7 +213,6 @@ export default {
       stageOptions: [],
       stageOptionSelected: null,
       recordCount:"",
-      collapsed: true,
     };
   },
   computed: {
@@ -256,6 +255,12 @@ export default {
   methods: {
     toggle(event) {
       this.$refs.menu.toggle(event);
+    },
+    panelHeaderToggle(event) {
+      let panelHeader = event.target.getAttribute('class');
+      if (panelHeader == "p-panel-header") {
+       this.$refs.panelHeaderRef.d_collapsed = !this.$refs.panelHeaderRef.d_collapsed;
+      }
     },
     async fetchAdvancedOptions() {
       this.fileNameDataArray = [];
