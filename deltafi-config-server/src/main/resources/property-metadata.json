@@ -1,0 +1,255 @@
+[
+  {
+    "id": "deltafi-common",
+    "displayName": "Common Properties",
+    "description": "Properties used across all parts of the system.",
+    "properties": [
+      {
+        "key": "spring.data.mongodb.host",
+        "description": "Mongo server host. Cannot be set with URI.",
+        "defaultValue": null
+      },
+      {
+        "key": "spring.data.mongodb.port",
+        "description": "Mongo server port. Cannot be set with URI.",
+        "defaultValue": null
+      },
+      {
+        "key": "spring.data.mongodb.database",
+        "description": "Database name.",
+        "defaultValue": null
+      },
+      {
+        "key": "spring.data.mongodb.username",
+        "description": "Login user of the mongo server. Cannot be set with URI.",
+        "defaultValue": null
+      },
+      {
+        "key": "spring.data.mongodb.password",
+        "description": "Login password of the mongo server. Cannot be set with URI.",
+        "defaultValue": null
+      },
+      {
+        "key": "spring.data.mongodb.authentication-database",
+        "description": "Authentication database name.",
+        "defaultValue": null
+      },
+      {
+        "key": "spring.data.mongodb.auto-index-creation",
+        "description": "Whether to enable auto-index creation.",
+        "defaultValue": null
+      },
+      {
+        "key": "spring.task.scheduling.pool.size",
+        "description": "Maximum allowed number of threads.",
+        "defaultValue": "1"
+      },
+      {
+        "key": "quarkus.http.port",
+        "description": "The HTTP port the application will run on.",
+        "defaultValue": "8080"
+      },
+      {
+        "key": "quarkus.http.limits.max-body-size",
+        "description": "The maximum size of a request body.",
+        "defaultValue": "10240K"
+      },
+      {
+        "key": "quarkus.log.level",
+        "description": "The log level of the root category, which is used as the default log level for all categories.",
+        "defaultValue": "INFO",
+        "hidden": true,
+        "refreshable": false,
+        "editable": false
+      },
+      {
+        "key": "quarkus.log.console.json",
+        "description": "Determine whether to enable the JSON console formatting extension, which disables \"normal\" console formatting.",
+        "defaultValue": "true",
+        "hidden": true,
+        "refreshable": false,
+        "editable": false
+      },
+      {
+        "key": "quarkus.log.console.color",
+        "description": "Enable colors in console logs.",
+        "defaultValue": "true",
+        "hidden": true,
+        "refreshable": false,
+        "editable": false
+      },
+      {
+        "key": "deltafi.requeueSeconds",
+        "description": "Time to wait for an action to finish processing a DeltaFile before requeuing the action.",
+        "defaultValue": "30",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.deltaFileTtl",
+        "description": "Duration that a DeltaFile should live, any records older will be removed.",
+        "defaultValue": "14d",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.delete.onCompletion",
+        "description": "Immediately remove DeltaFile after it is processed.",
+        "defaultValue": "false",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.delete.frequency",
+        "description": "Frequency that the delete action is triggered.",
+        "defaultValue": "PT1M",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.delete.policies.oneHourAfterComplete.type",
+        "description": "OneHourAfterComplete policy type.",
+        "defaultValue": "ageOff",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.delete.policies.oneHourAfterComplete.parameters.afterComplete",
+        "description": "Parameters for the OneHourAfterComplete ageoff policy",
+        "defaultValue": "PT1H",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.housekeeping.minio.initialDelaySeconds",
+        "description": "Initial delay before starting the housekeeping job.",
+        "defaultValue": "60",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.housekeeping.minio.delaySeconds",
+        "description": "Frequency that the housekeeping job should run.",
+        "defaultValue": "3600",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.housekeeping.minio.objectMinimumAgeForRemovalSeconds",
+        "description": "Objects that have existed longer than this threshold will be removed.",
+        "defaultValue": "900",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "graphql.urls.gateway",
+        "description": "URL of the gateway service.",
+        "defaultValue": "http://deltafi-gateway-service/graphql"
+      },
+      {
+        "key": "graphql.urls.core-domain",
+        "description": "URL of the core-domain service",
+        "defaultValue": "http://deltafi-core-domain-service/graphql"
+      },
+      {
+        "key": "smallrye.config.mapping.validate-unknown",
+        "description": "When true unknown properties will cause the application to fail to start.",
+        "defaultValue": "true",
+        "hidden": true,
+        "refreshable": false,
+        "editable": false
+      },
+      {
+        "key": "minio.url",
+        "description": "The URL used to reach MinIO",
+        "defaultValue": "http://deltafi-minio:9000"
+      },
+      {
+        "key": "minio.access-key",
+        "description": "The access-key used to access MinIO",
+        "defaultValue": "${MINIO_ACCESSKEY}"
+      },
+      {
+        "key": "minio.secret-key",
+        "description": "The secret-key used to access MinIO",
+        "defaultValue": "${MINIO_SECRETKEY}"
+      },
+      {
+        "key": "minio.part-size",
+        "description": "Limit the upload size to MinIO to the given size.",
+        "defaultValue": "100000000"
+      },
+      {
+        "key": "redis.url",
+        "description": "The URL used to reach redis",
+        "defaultValue": "http://deltafi-redis-master:6379"
+      },
+      {
+        "key": "redis.password",
+        "description": "The password used to access redis",
+        "defaultValue": "${REDIS_PASSWORD}"
+      },
+      {
+        "key": "zipkin.enabled",
+        "description": "Toggle Zipkin tracing on or off.",
+        "defaultValue": "true"
+      },
+      {
+        "key": "zipkin.url",
+        "description": "URL to send spans to.",
+        "defaultValue": "http//deltafi-zipkin:9411/api/v2/spans"
+      },
+      {
+        "key": "zipkin.send-initial-delay-ms",
+        "description": "Initial delay before attempting to send spans.",
+        "defaultValue": "500"
+      },
+      {
+        "key": "zipkin.send-period-ms",
+        "description": "How often spans should be sent to Zipkin.",
+        "defaultValue": "500"
+      },
+      {
+        "key": "zipkin.max-batch-size",
+        "description": "Maximum number of spans to send at once to Zipkin.",
+        "defaultValue": "10000"
+      }
+    ]
+  },
+  {
+    "id": "action-kit",
+    "displayName": "Action-Kit Properties",
+    "description": "Properties shared across all installed actions.",
+    "properties": [
+      {
+        "key": "actions.action-polling-initial-delay-ms",
+        "description": "Initial delay before actions begin listening for work.",
+        "defaultValue": "3000"
+      },
+      {
+        "key": "actions.action-polling-period-ms",
+        "description": "Set how often actions should listen for new work.",
+        "defaultValue": "100"
+      },
+      {
+        "key": "actions.action-registration-initial-delay-ms",
+        "description": "Initial delay in milliseconds before actions attempt to register.",
+        "defaultValue": "1000"
+      },
+      {
+        "key": "actions.action-registration-period-ms",
+        "description": "Frequency that the actions register with the core system.",
+        "defaultValue": "10000"
+      }
+    ]
+  }
+]

@@ -21,9 +21,9 @@ public interface DeltaFileRepoCustom {
     /**
      * Set or verify the expiration TTL value on the collection.
      *
-     * @param expirationSeconds - number of seconds until expiration
+     * @param expirationDuration - duration until expiration
      */
-    void setExpirationIndex(long expirationSeconds);
+    void setExpirationIndex(Duration expirationDuration);
 
     /**
      * Get a list of all indexes on the collection.

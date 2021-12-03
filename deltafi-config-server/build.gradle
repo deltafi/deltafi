@@ -1,9 +1,11 @@
 plugins {
     id 'java'
     id 'idea'
+    id "com.netflix.dgs.codegen" version "${dgsCodegenVersion}"
     id "com.palantir.docker" version "${palantirDockerVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'org.springframework.boot' version '2.4.5'
+    id 'jacoco'
 }
 
 dependencyManagement {
@@ -36,9 +38,54 @@ task renameJar (type: Copy) {
 
 assemble.finalizedBy(renameJar)
 
+generateJava {
+    packageName = 'org.deltafi.config.server.domain.generated'
+    generateClient = false
+    generateDataTypes = false
+    typeMapping = [
+            "Property": "org.deltafi.config.server.domain.Property",
+            "PropertySource": "org.deltafi.config.server.domain.PropertySource",
+            "PropertyUpdate": "org.deltafi.config.server.domain.PropertyUpdate",
+            "PropertyInput": "org.deltafi.config.server.domain.Property",
+            "PropertySet": "org.deltafi.config.server.domain.PropertySet",
+            "PropertySetInput": "org.deltafi.config.server.domain.PropertySet"
+    ]
+}
+
 dependencies {
+    // Use DGS BOM to automatically define versions of other packages below
+    implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
+        because 'DGS BOM to automatically define versions of other packages below'
+    }
+
+    implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
+    implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter"
+
     implementation 'org.springframework.cloud:spring-cloud-config-server'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.2.0"
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
+        csv.enabled true
+        html.destination layout.buildDirectory.dir('jacocoHtmlReport').get().asFile
+    }
+
+}
+
+jacoco {
+    reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
 }
 
 docker {

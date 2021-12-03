@@ -1,0 +1,8 @@
+spring:
+  data:
+    mongodb:
+      database: deltafi-test
+  mongodb:
+    embedded:
+      version: 4.0.23
+      features: only_with_ssl, sync_delay, no_http_interface_arg

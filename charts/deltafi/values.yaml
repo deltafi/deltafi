@@ -33,11 +33,20 @@ deltafi:
         value: main
       - name: CLONE_ON_START
         value: "true"
+      - name: MONGO_HOST
+        value: deltafi-mongodb
+      - name: MONGO_AUTH_DB
+        value: deltafi
       - name: CONFIG_TOKEN
         valueFrom:
           secretKeyRef:
             name: config-repo-secret
             key: config-token
+      - name: MONGO_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mongodb-passwords
+            key: mongodb-password
     volumes: []
     volumeMounts: []
   gateway:

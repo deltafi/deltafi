@@ -1,13 +1,13 @@
 package org.deltafi.core.domain.services;
 
-import org.deltafi.core.domain.generated.types.Action;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.deltafi.core.domain.generated.types.Action;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.ActionState;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +15,9 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.EnableRetry;
@@ -28,6 +30,7 @@ import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, DeltaFiProperties.class})
+@ImportAutoConfiguration(RefreshAutoConfiguration.class)
 @MockBean({StateMachine.class, DeltaFiConfigService.class, RedisService.class})
 @EnableRetry
 public class DeltaFileServiceRetryTest {

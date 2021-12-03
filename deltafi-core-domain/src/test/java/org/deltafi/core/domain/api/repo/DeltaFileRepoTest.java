@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -22,7 +23,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@TestPropertySource(properties = {"enableScheduling=false", "deltafi.dbFileAgeOffSeconds:100"})
+@TestPropertySource(properties = {"enableScheduling=false"})
 class DeltaFileRepoTest {
     @Autowired
     private DeltaFileRepo deltaFileRepo;
@@ -39,20 +40,15 @@ class DeltaFileRepoTest {
     }
 
     @Test
-    void testExpirationIndexConstructor() {
-        assertEquals(100, deltaFileRepo.getTtlExpiration().getSeconds());
-    }
-
-    @Test
     void testExpirationIndexUpdate() {
-        final long newTtlValue = 123456;
+        final Duration newTtlValue = Duration.ofSeconds(123456);
 
         List<IndexInfo> oldIndexList = deltaFileRepo.getIndexes();
         deltaFileRepo.setExpirationIndex(newTtlValue);
         List<IndexInfo> newIndexList = deltaFileRepo.getIndexes();
 
         assertEquals(oldIndexList.size(), newIndexList.size());
-        assertEquals(newTtlValue, deltaFileRepo.getTtlExpiration().getSeconds());
+        assertEquals(newTtlValue.getSeconds(), deltaFileRepo.getTtlExpiration().getSeconds());
     }
 
     @Test

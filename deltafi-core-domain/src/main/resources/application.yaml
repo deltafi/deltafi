@@ -1,3 +1,7 @@
 spring:
   application:
     name: deltafi-core-domain
+  cloud:
+    config:
+      watch:
+        enabled: true

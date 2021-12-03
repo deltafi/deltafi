@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -14,7 +13,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -64,36 +62,32 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
 
     private final MongoTemplate mongoTemplate;
-
-    @Value("${deltafi.dbFileAgeOffSeconds:1209600}")
-    private int dbFileAgeOffSeconds; /* 14 days */
-
-    @PostConstruct
-    public void setup() {
-        setExpirationIndex(dbFileAgeOffSeconds);
-    }
+    private Duration cachedTtlDuration;
 
     @Override
-    public void setExpirationIndex(long expirationSeconds) {
+    public void setExpirationIndex(Duration newTtl) {
         Duration currentTtl = getTtlExpiration();
-        if ((currentTtl == null) || (currentTtl.getSeconds() != expirationSeconds)) {
-            if (currentTtl != null) {
+        if (Objects.nonNull(newTtl) && !newTtl.equals(currentTtl)) {
+            log.info("DeltaFile TTL was {}, changing it to {}", currentTtl, newTtl);
+            if (Objects.nonNull(currentTtl)) {
                 mongoTemplate.indexOps(COLLECTION).dropIndex(TTL_INDEX_NAME);
             }
-            mongoTemplate.indexOps(COLLECTION).ensureIndex(new Index().on(CREATED, Sort.Direction.ASC).named(TTL_INDEX_NAME).expire(expirationSeconds));
+            mongoTemplate.indexOps(COLLECTION).ensureIndex(new Index().on(CREATED, Sort.Direction.ASC).named(TTL_INDEX_NAME).expire(newTtl.getSeconds()));
+            cachedTtlDuration = newTtl;
         }
     }
 
     @Override
     public Duration getTtlExpiration() {
-        Optional<IndexInfo> indexInfo = getIndexes().stream().filter(index -> index.getName().equals(TTL_INDEX_NAME)).findFirst();
-        if (indexInfo.isPresent()) {
-            final Optional<Duration> expireAfter = indexInfo.get().getExpireAfter();
-            if (expireAfter.isPresent()) {
-                return expireAfter.get();
-            }
+        if (Objects.isNull(cachedTtlDuration)) {
+            cachedTtlDuration = getTtlExpirationFromMongo();
         }
-        return null;
+        return cachedTtlDuration;
+    }
+
+    private Duration getTtlExpirationFromMongo() {
+        return getIndexes().stream().filter(index -> index.getName().equals(TTL_INDEX_NAME)).findFirst()
+                .flatMap(IndexInfo::getExpireAfter).orElse(null);
     }
 
     @Override
