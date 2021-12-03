@@ -145,7 +145,7 @@
       <Column field="modified" header="Modified" :sortable="true" />
       <Column field="elapsed" header="Elapsed" :sortable="true">
         <template #body="row">
-          {{ row.data.elapsed }}ms
+          {{ row.data.elapsed }}
         </template>
       </Column>
     </DataTable>
@@ -218,7 +218,24 @@ export default {
   computed: {
     results() {
       return this.tableData.map(row => {
-        row.elapsed = new Date(row.modified) - new Date(row.created)
+        var timeElapsed = new Date(row.modified) - new Date(row.created)
+        let seconds = (timeElapsed / 1000).toFixed(1);
+        let minutes = (timeElapsed / (1000 * 60)).toFixed(1);
+        let hours = (timeElapsed / (1000 * 60 * 60)).toFixed(1);
+        let days = (timeElapsed / (1000 * 60 * 60 * 24)).toFixed(1);
+        if (seconds < 1 ) {
+          timeElapsed = timeElapsed + "ms";
+        } else if (seconds < 60) {
+          timeElapsed = seconds + "s";
+        } else if (minutes < 60) {
+          timeElapsed = minutes + "m";
+        } else if (hours < 24) {
+          timeElapsed = hours + "h";
+        } else {
+          timeElapsed = days + "d";
+        }
+
+        row.elapsed  = timeElapsed;
         return row;
       });
     }
