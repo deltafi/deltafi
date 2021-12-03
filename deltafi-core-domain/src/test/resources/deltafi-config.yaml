@@ -16,6 +16,8 @@ egressFlows:
   sample:
     name: sample
     formatAction: SampleFormatAction
+    enrichActions:
+      - SampleEnrichAction
     validateActions:
       - AuthorityValidateAction
       - SampleValidateAction

@@ -18,7 +18,7 @@ class EgressFlowValidatorTest {
         Optional<String> error = egressFlowValidator.validate(new DeltafiRuntimeConfiguration(), new EgressFlowConfiguration());
         assertThat(error)
                 .isPresent()
-                .contains("Egress Flow Configuration: EgressFlowConfiguration{name='null',created='null',modified='null',apiVersion='null',egressAction='null',formatAction='null',validateActions='[]',includeIngressFlows='[]',excludeIngressFlows='[]'} has the following errors: \n" +
+                .contains("Egress Flow Configuration: EgressFlowConfiguration{name='null',created='null',modified='null',apiVersion='null',egressAction='null',formatAction='null',enrichActions='[]',validateActions='[]',includeIngressFlows='[]',excludeIngressFlows='[]'} has the following errors: \n" +
                         "Required property formatAction is not set; Required property name is not set; Required property egressAction is not set");
     }
 
@@ -71,6 +71,23 @@ class EgressFlowValidatorTest {
 
         deltafiRuntimeConfiguration.getFormatActions().put("Formatter", new FormatActionConfiguration());
         assertThat(egressFlowValidator.getFormatActionErrors(deltafiRuntimeConfiguration, config)).isEmpty();
+    }
+
+    @Test
+    void getEnrichActionErrors() {
+        DeltafiRuntimeConfiguration runtimeConfiguration = new DeltafiRuntimeConfiguration();
+        runtimeConfiguration.getEnrichActions().put("a", new EnrichActionConfiguration());
+
+        EgressFlowConfiguration flowConfig = new EgressFlowConfiguration();
+        flowConfig.getEnrichActions().add("a");
+
+        assertThat(egressFlowValidator.getEnrichActionErrors(runtimeConfiguration, flowConfig)).isEmpty();
+
+        flowConfig.getEnrichActions().add("b");
+        assertThat(egressFlowValidator.getEnrichActionErrors(runtimeConfiguration, flowConfig)).hasSize(1).contains("The referenced Enrich Action named: b was not found");
+
+        flowConfig.setEnrichActions(null);
+        assertThat(egressFlowValidator.getEnrichActionErrors(runtimeConfiguration, flowConfig)).isEmpty();
     }
 
     @Test

@@ -184,6 +184,8 @@ class DeltaFiConfigServiceTest {
         EgressFlowConfiguration egressFlowConfiguration = commonChecks(config.getEgressFlows(), "sample");
         Assertions.assertThat(egressFlowConfiguration.getEgressAction()).contains("SampleEgressAction");
         Assertions.assertThat(egressFlowConfiguration.getFormatAction()).isEqualTo("SampleFormatAction");
+        Assertions.assertThat(egressFlowConfiguration.getEnrichActions()).hasSize(1);
+        Assertions.assertThat(egressFlowConfiguration.getEnrichActions()).contains("SampleEnrichAction");
         Assertions.assertThat(egressFlowConfiguration.getValidateActions()).hasSize(1);
         Assertions.assertThat(egressFlowConfiguration.getValidateActions()).contains("SampleValidateAction");
 

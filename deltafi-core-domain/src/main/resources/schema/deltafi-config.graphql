@@ -48,6 +48,7 @@ type EgressFlowConfiguration implements DeltaFiConfiguration {
     apiVersion: String
     egressAction: String!
     formatAction: String!
+    enrichActions: [String]
     validateActions: [String]
     includeIngressFlows: [String]
     excludeIngressFlows: [String]
@@ -57,6 +58,7 @@ input EgressFlowConfigurationInput {
     name: String!
     formatAction: String!
     apiVersion: String
+    enrichActions: [String]
     validateActions: [String]
     includeIngressFlows: [String]
     excludeIngressFlows: [String]

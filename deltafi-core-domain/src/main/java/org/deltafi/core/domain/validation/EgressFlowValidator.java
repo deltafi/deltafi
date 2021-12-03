@@ -1,9 +1,12 @@
 package org.deltafi.core.domain.validation;
 
-import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
+import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -33,6 +36,7 @@ public class EgressFlowValidator implements RuntimeConfigValidator<EgressFlowCon
         List<String> errors = new ArrayList<>();
 
         getFormatActionErrors(config, egressFlowConfiguration).ifPresent(errors::add);
+        errors.addAll(getEnrichActionErrors(config, egressFlowConfiguration));
         errors.addAll(getValidateActionErrors(config, egressFlowConfiguration));
 
         if (isBlank(egressFlowConfiguration.getName())) {
@@ -85,6 +89,17 @@ public class EgressFlowValidator implements RuntimeConfigValidator<EgressFlowCon
         return Optional.empty();
     }
 
+    List<String> getEnrichActionErrors(DeltafiRuntimeConfiguration config, EgressFlowConfiguration egressFlowConfiguration) {
+        if (isNull(egressFlowConfiguration.getEnrichActions())) {
+            return emptyList();
+        }
+
+        return egressFlowConfiguration.getEnrichActions().stream()
+                .filter(enrichAction -> isEnrichActionMissing(config, enrichAction))
+                .map(name -> RuntimeConfigValidator.referenceError("Enrich Action", name))
+                .collect(Collectors.toList());
+    }
+
     List<String> getValidateActionErrors(DeltafiRuntimeConfiguration config, EgressFlowConfiguration egressFlowConfiguration) {
         if (isNull(egressFlowConfiguration.getValidateActions())) {
             return emptyList();
@@ -98,6 +113,10 @@ public class EgressFlowValidator implements RuntimeConfigValidator<EgressFlowCon
 
     boolean isIngressFlowMissing(DeltafiRuntimeConfiguration runtimeConfiguration, String flowName) {
         return !runtimeConfiguration.getIngressFlows().containsKey(flowName);
+    }
+
+    boolean isEnrichActionMissing(DeltafiRuntimeConfiguration runtimeConfiguration, String actionName) {
+        return !runtimeConfiguration.getEnrichActions().containsKey(actionName);
     }
 
     boolean isValidateActionMissing(DeltafiRuntimeConfiguration runtimeConfiguration, String actionName) {

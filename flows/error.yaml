@@ -6,6 +6,7 @@
       formatAction: ErrorFormatAction
       includeIngressFlows: []
       name: error
+      enrichActions: []
       validateActions: []
   transformActions: {}
   loadActions: {}

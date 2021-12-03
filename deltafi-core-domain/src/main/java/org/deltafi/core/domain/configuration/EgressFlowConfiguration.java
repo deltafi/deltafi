@@ -10,6 +10,7 @@ import java.util.ArrayList;
 public class EgressFlowConfiguration extends org.deltafi.core.domain.generated.types.EgressFlowConfiguration implements DeltaFiConfiguration {
 
     public EgressFlowConfiguration() {
+        setEnrichActions(new ArrayList<>());
         setValidateActions(new ArrayList<>());
         setIncludeIngressFlows(new ArrayList<>());
         setExcludeIngressFlows(new ArrayList<>());

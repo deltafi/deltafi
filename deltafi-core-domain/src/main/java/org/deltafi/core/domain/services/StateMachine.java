@@ -128,8 +128,13 @@ public class StateMachine {
         return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadata.get(k)));
     }
 
-    private List<String> getEnrichActions(DeltaFile deltaFile) {
-        return configService.getEnrichActions().stream().filter(key -> enrichActionReady(key, deltaFile)).collect(Collectors.toList());
+    List<String> getEnrichActions(DeltaFile deltaFile) {
+        return configService.getEgressFlows().stream()
+                .filter(egressFlow -> matchesFlowFilter(egressFlow, deltaFile))
+                .flatMap(f -> f.getEnrichActions().stream())
+                .filter(e -> enrichActionReady(e, deltaFile))
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private boolean enrichActionReady(String enrichActionName, DeltaFile deltaFile) {

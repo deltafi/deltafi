@@ -14,6 +14,7 @@
       includeIngressFlows:
       - passthrough
       name: passthrough
+      enrichActions: []
       validateActions:
       - PassthroughValidateAction
   transformActions:
