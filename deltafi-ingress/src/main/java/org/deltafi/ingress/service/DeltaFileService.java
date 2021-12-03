@@ -37,7 +37,10 @@ import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileService {
+    private static final String INGRESS = "ingress";
     public static final String INGRESS_ACTION = "IngressAction";
+    private static final String ACTION = "action";
+    private static final String FILENAME = "filename";
 
     private final GraphQLClientService graphQLClientService;
     private final ObjectStorageService objectStorageService;
@@ -138,10 +141,9 @@ public class DeltaFileService {
     }
 
     private void logMetrics(IngressInput ingressInput, String fileMetric, String byteMetric) {
-        MetricLogger.logMetric("ingress", ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(), fileMetric, 1,
-                Map.of("filename", ingressInput.getSourceInfo().getFilename()));
-        MetricLogger.logMetric("ingress", ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(),
-                byteMetric, ingressInput.getObjectReference().getSize(),
-                Map.of("filename", ingressInput.getSourceInfo().getFilename()));
+        Map<String, String> tags = Map.of(FILENAME, ingressInput.getSourceInfo().getFilename(), ACTION, INGRESS_ACTION);
+        MetricLogger.logMetric(INGRESS, ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(), fileMetric, 1, tags);
+        MetricLogger.logMetric(INGRESS, ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(),
+                byteMetric, ingressInput.getObjectReference().getSize(), tags);
     }
 }
