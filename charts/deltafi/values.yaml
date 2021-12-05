@@ -23,7 +23,7 @@ deltafi:
           name: minio-keys
           key: secretkey
   config_server:
-    image: deltafi/deltafi-config-server:0.14.0
+    image: deltafi/deltafi-config-server:0.14.1
     envVars:
       - name: GIT_CONFIG_REPO
         value: https://gitlab.com/systolic/deltafi/deltafi-config.git
@@ -50,30 +50,30 @@ deltafi:
     volumes: []
     volumeMounts: []
   gateway:
-    image: deltafi/deltafi-gateway:0.14.0
+    image: deltafi/deltafi-gateway:0.14.1
   passthrough_actions:
-    image: deltafi/deltafi-passthrough-actions:0.14.0
+    image: deltafi/deltafi-passthrough-actions:0.14.1
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
-    image: deltafi/deltafi-core-actions:0.14.0
+    image: deltafi/deltafi-core-actions:0.14.1
   core_domain:
-    image: deltafi/deltafi-core-domain:0.14.0
+    image: deltafi/deltafi-core-domain:0.14.1
     mongo_host: deltafi-mongodb
   ingress:
-    image: deltafi/deltafi-ingress:0.14.0
+    image: deltafi/deltafi-ingress:0.14.1
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:0.14.0
+    image: deltafi/deltafi-auth:0.14.1
     mode: disabled # basic, cert, or disabled
     secret: auth-secret
   api:
-    image: deltafi/deltafi-api:0.14.0
+    image: deltafi/deltafi-api:0.14.1
   ui:
-    image: deltafi/deltafi-ui:0.14.0
+    image: deltafi/deltafi-ui:0.14.1
     title: DeltaFi
   egress_sink:
-    image: deltafi/deltafi-egress-sink:0.14.0
+    image: deltafi/deltafi-egress-sink:0.14.1
 
 # Kubernetes ingress config
 ingress:
