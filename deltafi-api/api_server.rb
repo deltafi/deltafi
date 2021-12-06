@@ -43,6 +43,10 @@ class ApiServer < Sinatra::Base
     build_response({ status: $status_service.status })
   end
 
+  get '/api/v1/versions' do
+    build_response({ versions: Deltafi::API::Versions.apps })
+  end
+
   def build_response(object)
     object[:timestamp] = Time.now
     object.to_json

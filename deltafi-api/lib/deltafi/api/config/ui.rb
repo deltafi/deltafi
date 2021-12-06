@@ -8,7 +8,7 @@ module Deltafi
           def config
             {
               domain: ENV['DELTAFI_UI_DOMAIN'] || 'example.deltafi.org',
-              title: ENV['DELTAFI_UI_TITLE'] || 'DeltaFi',
+              title: ENV['DELTAFI_UI_TITLE'] || 'DeltaFi'
             }
           end
         end

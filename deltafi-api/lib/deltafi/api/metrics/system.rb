@@ -41,7 +41,7 @@ module Deltafi
           private
 
           def pods_by_node
-            pods_by_node = Deltafi::API.k8s_client.api('v1').resource('pods').list(fieldSelector: {'status.phase' => 'Running'}).group_by { |p| p.spec.nodeName }
+            pods_by_node = Deltafi::API.k8s_client.api('v1').resource('pods').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName }
             pod_usage = Deltafi::API.k8s_client.api('metrics.k8s.io/v1beta1').resource('pods').list
             pods_by_node.transform_values do |pods|
               pods.map do |pod|
