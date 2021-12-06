@@ -47,18 +47,18 @@ export default class GraphQLService {
     const variables = {
       updates: updates
     }
-    const body = JSON.stringify({query: query, variables: variables})
+    const body = JSON.stringify({ query: query, variables: variables })
     return this.query(body);
   }
 
-  convertJsonToGraphQLQuery(queryString: Object){
+  convertJsonToGraphQLQuery(queryString: Object) {
     const graphQLquery = jsonToGraphQLQuery(queryString, { pretty: true });
     return this.query(JSON.stringify({ query: graphQLquery }));
   }
 
   // This function allows for the querying of enum types and returns there associated enums.
   getEnumValuesByEnumType(enumType: string) {
-  const data = JSON.stringify({
+    const data = JSON.stringify({
       query: `{
         __type(name: "${enumType}") {
           enumValues {
@@ -105,7 +105,7 @@ export default class GraphQLService {
             },
             orderBy: {
               direction: new EnumType('DESC'),
-              field: new EnumType('modified')
+              field: 'modified'
             }
           },
           deltaFiles: {
@@ -138,7 +138,7 @@ export default class GraphQLService {
             },
             orderBy: {
               direction: new EnumType('DESC'),
-              field: new EnumType('modified')
+              field: 'modified'
             }
           },
           totalCount: true,
@@ -165,7 +165,7 @@ export default class GraphQLService {
             },
             orderBy: {
               direction: new EnumType('DESC'),
-              field: new EnumType('modified')
+              field: 'modified'
             }
           },
           offset: true,
@@ -250,7 +250,7 @@ export default class GraphQLService {
             },
             orderBy: {
               direction: new EnumType('DESC'),
-              field: new EnumType('modified')
+              field: 'modified'
             }
           },
           offset: true,
