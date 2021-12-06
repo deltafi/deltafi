@@ -101,6 +101,7 @@ export default {
             },
           ],
         },
+        { name: "Versions", icon: "pi pi-info-circle", path: "/versions" },
       ],
     };
   },

@@ -47,4 +47,8 @@ export default class ApiService {
       }
     });
   }
+
+  getVersions() {
+    return this.get("/versions");
+  }
 }
