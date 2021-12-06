@@ -4,7 +4,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
 @ConfigMapping(prefix = "actions")
-public interface DeltafiConfig {
+public interface ActionKitConfig {
     @WithDefault("3000")
     long actionPollingInitialDelayMs();
 
@@ -16,4 +16,6 @@ public interface DeltafiConfig {
 
     @WithDefault("10000")
     long actionRegistrationPeriodMs();
+
+    String hostname();
 }

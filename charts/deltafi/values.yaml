@@ -22,6 +22,10 @@ deltafi:
         secretKeyRef:
           name: minio-keys
           key: secretkey
+    - name: ACTIONS_HOSTNAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
   config_server:
     image: deltafi/deltafi-config-server:0.14.1
     envVars:
