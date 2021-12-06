@@ -19,7 +19,7 @@ module Deltafi
                 }
               }
             end
-          end.flatten.sort_by { |p| p[:app] }
+          end.flatten.uniq.sort_by { |p| p[:app] }
         end
       end
     end
