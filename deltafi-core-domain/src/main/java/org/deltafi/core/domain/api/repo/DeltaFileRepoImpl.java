@@ -307,10 +307,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
         if (isNull(orderBy)) {
-            orderBy = DeltaFileOrder.newBuilder().field(DeltaFileField.created).direction(DeltaFileDirection.DESC).build();
+            orderBy = DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.DESC).build();
         }
 
-        query.with(Sort.by(Collections.singletonList(new Sort.Order(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField().name()))));
+        query.with(Sort.by(Collections.singletonList(new Sort.Order(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()))));
     }
 
     private Criteria buildDeleteTimeCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate) {

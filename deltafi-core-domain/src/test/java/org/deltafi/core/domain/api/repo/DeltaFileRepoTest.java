@@ -3,7 +3,6 @@ package org.deltafi.core.domain.api.repo;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
-import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,9 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class DeltaFileRepoTest {
     @Autowired
     private DeltaFileRepo deltaFileRepo;
-
-    @Autowired
-    private DeltaFiProperties deltaFiProperties;
 
     // mongo eats microseconds, jump through hoops
     private final OffsetDateTime MONGO_NOW =  OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
@@ -228,19 +224,19 @@ class DeltaFileRepoTest {
         deltaFileRepo.save(deltaFile2);
 
         DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field(DeltaFileField.created).build());
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("created").build());
         assertEquals(List.of(deltaFile1, deltaFile2), deltaFiles.getDeltaFiles());
 
         deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field(DeltaFileField.created).build());
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field("created").build());
         assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
 
         deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field(DeltaFileField.modified).build());
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("modified").build());
         assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
 
         deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field(DeltaFileField.modified).build());
+                DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field("modified").build());
         assertEquals(List.of(deltaFile1, deltaFile2), deltaFiles.getDeltaFiles());
     }
 

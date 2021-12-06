@@ -183,18 +183,14 @@ type DeltaFiles {
 
 input DeltaFileOrder {
   direction: DeltaFileDirection!
-  field: DeltaFileField!
+  # The field name is passed directly to the DB for sort
+  # this is not ideal, but better than requiring hard-coding every possibility
+  field: String!
 }
 
 enum DeltaFileDirection {
   ASC
   DESC
-}
-
-enum DeltaFileField {
-  # these are passed directly to the DB for sort, match casing in the deltaFile
-  created
-  modified
 }
 
 input DeltaFilesFilter {

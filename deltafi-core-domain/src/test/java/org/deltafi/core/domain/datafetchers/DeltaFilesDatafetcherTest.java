@@ -257,7 +257,7 @@ class DeltaFilesDatafetcherTest {
                         .offset(0)
                         .limit(5)
                         .filter(DeltaFilesFilter.newBuilder().createdBefore(OffsetDateTime.now()).build())
-                        .orderBy(DeltaFileOrder.newBuilder().field(DeltaFileField.created).direction(DeltaFileDirection.DESC).build())
+                        .orderBy(DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.DESC).build())
                         .build(),
                 deltaFilesProjectionRoot
         );
