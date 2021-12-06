@@ -1,8 +1,8 @@
 package org.deltafi.config.server.service;
 
-import org.deltafi.config.server.domain.Property;
-import org.deltafi.config.server.domain.PropertySet;
-import org.deltafi.config.server.domain.PropertyUpdate;
+import org.deltafi.config.server.api.domain.Property;
+import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.deltafi.config.server.environment.GitEnvironmentRepository;
 import org.deltafi.config.server.repo.PropertyRepository;
 import org.deltafi.config.server.testUtil.DataProviderUtil;

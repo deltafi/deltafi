@@ -3,9 +3,9 @@ package org.deltafi.config.server.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.config.server.domain.Property;
-import org.deltafi.config.server.domain.PropertySet;
-import org.deltafi.config.server.domain.PropertyUpdate;
+import org.deltafi.config.server.api.domain.Property;
+import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.deltafi.config.server.environment.DeltaFiNativeEnvironmentRepository;
 import org.deltafi.config.server.environment.GitEnvironmentRepository;
 import org.deltafi.config.server.repo.PropertyRepository;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.deltafi.config.server.domain.PropertySource.*;
+import static org.deltafi.config.server.api.domain.PropertySource.*;
 
 @Slf4j
 @Service

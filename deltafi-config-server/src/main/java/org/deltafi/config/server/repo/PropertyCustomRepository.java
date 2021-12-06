@@ -1,6 +1,6 @@
 package org.deltafi.config.server.repo;
 
-import org.deltafi.config.server.domain.PropertyUpdate;
+import org.deltafi.config.server.api.domain.PropertyUpdate;
 
 import java.util.List;
 import java.util.Set;

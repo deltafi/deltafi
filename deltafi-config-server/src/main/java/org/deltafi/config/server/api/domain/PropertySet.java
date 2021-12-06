@@ -1,4 +1,4 @@
-package org.deltafi.config.server.domain;
+package org.deltafi.config.server.api.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;

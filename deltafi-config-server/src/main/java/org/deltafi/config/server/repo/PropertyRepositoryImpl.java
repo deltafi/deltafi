@@ -1,8 +1,8 @@
 package org.deltafi.config.server.repo;
 
 import com.mongodb.bulk.BulkWriteResult;
-import org.deltafi.config.server.domain.PropertySet;
-import org.deltafi.config.server.domain.PropertyUpdate;
+import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;

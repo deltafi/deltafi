@@ -1,7 +1,7 @@
 package org.deltafi.config.server.testUtil;
 
-import org.deltafi.config.server.domain.Property;
-import org.deltafi.config.server.domain.PropertySet;
+import org.deltafi.config.server.api.domain.Property;
+import org.deltafi.config.server.api.domain.PropertySet;
 
 public class DataProviderUtil {
 

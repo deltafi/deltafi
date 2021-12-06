@@ -1,7 +1,7 @@
 package org.deltafi.config.server.environment;
 
 import org.deltafi.config.server.constants.PropertyConstants;
-import org.deltafi.config.server.domain.PropertySet;
+import org.deltafi.config.server.api.domain.PropertySet;
 import org.deltafi.config.server.service.PropertyService;
 import org.deltafi.config.server.service.StateHolderService;
 import org.springframework.cloud.config.environment.Environment;

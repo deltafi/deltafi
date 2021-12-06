@@ -2,9 +2,9 @@ package org.deltafi.config.server.repo;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.config.server.constants.PropertyConstants;
-import org.deltafi.config.server.domain.Property;
-import org.deltafi.config.server.domain.PropertySet;
-import org.deltafi.config.server.domain.PropertyUpdate;
+import org.deltafi.config.server.api.domain.Property;
+import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.deltafi.config.server.testUtil.DataProviderUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

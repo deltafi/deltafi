@@ -5,8 +5,8 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import graphql.ExecutionResult;
 import org.assertj.core.api.Assertions;
 import org.deltafi.config.server.constants.PropertyConstants;
-import org.deltafi.config.server.domain.PropertySet;
-import org.deltafi.config.server.domain.PropertyUpdate;
+import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.deltafi.config.server.repo.PropertyRepository;
 import org.deltafi.config.server.service.PropertyService;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ import static org.deltafi.config.server.testUtil.DataProviderUtil.getPropertySet
 
 @SpringBootTest
 @ActiveProfiles("native")
-class PropertiesFetcherTest {
+class PropertiesDatafetcherTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String REMOVE_TEMPLATE = "mutation {removePluginPropertySet(propertySetId: \"%s\")}";

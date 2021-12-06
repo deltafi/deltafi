@@ -5,6 +5,7 @@ plugins {
     id "com.palantir.docker" version "${palantirDockerVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'org.springframework.boot' version '2.4.5'
+    id 'maven-publish'
     id 'jacoco'
 }
 
@@ -38,18 +39,55 @@ task renameJar (type: Copy) {
 
 assemble.finalizedBy(renameJar)
 
+jar {
+    enabled = true
+    archiveClassifier.set('api')
+    include('org/deltafi/config/server/api/**')
+}
+
+configurations {
+    jars
+}
+
+artifacts {
+    jars jar
+}
+
 generateJava {
-    packageName = 'org.deltafi.config.server.domain.generated'
-    generateClient = false
+    packageName = 'org.deltafi.config.server.api.generated'
+    generateClient = true
     generateDataTypes = false
     typeMapping = [
-            "Property": "org.deltafi.config.server.domain.Property",
-            "PropertySource": "org.deltafi.config.server.domain.PropertySource",
-            "PropertyUpdate": "org.deltafi.config.server.domain.PropertyUpdate",
-            "PropertyInput": "org.deltafi.config.server.domain.Property",
-            "PropertySet": "org.deltafi.config.server.domain.PropertySet",
-            "PropertySetInput": "org.deltafi.config.server.domain.PropertySet"
+            "Property": "org.deltafi.config.server.api.domain.Property",
+            "PropertySource": "org.deltafi.config.server.api.domain.PropertySource",
+            "PropertyUpdate": "org.deltafi.config.server.api.domain.PropertyUpdate",
+            "PropertyInput": "org.deltafi.config.server.api.domain.Property",
+            "PropertySet": "org.deltafi.config.server.api.domain.PropertySet",
+            "PropertySetInput": "org.deltafi.config.server.api.domain.PropertySet"
     ]
+}
+
+publishing {
+    publications {
+        java(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        if(project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
+            maven {
+                url projectMavenRepo
+                credentials(HttpHeaderCredentials) {
+                    // the following variable reside in ~/.gradle/gradle.properties
+                    name = gitLabTokenType
+                    value = gitLabToken
+                }
+                authentication {
+                    header(HttpHeaderAuthentication)
+                }
+            }
+        }
+    }
 }
 
 dependencies {

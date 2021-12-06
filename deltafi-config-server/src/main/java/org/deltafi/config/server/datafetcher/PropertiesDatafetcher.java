@@ -5,18 +5,18 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import org.deltafi.config.server.constants.PropertyConstants;
-import org.deltafi.config.server.domain.PropertySet;
-import org.deltafi.config.server.domain.PropertyUpdate;
+import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.deltafi.config.server.service.PropertyService;
 
 import java.util.List;
 
 @DgsComponent
-public class PropertiesFetcher {
+public class PropertiesDatafetcher {
 
     private final PropertyService propertiesService;
 
-    public PropertiesFetcher(PropertyService propertiesService) {
+    public PropertiesDatafetcher(PropertyService propertiesService) {
         this.propertiesService = propertiesService;
     }
 
