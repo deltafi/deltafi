@@ -1,28 +1,5 @@
 plugins {
-    id 'java'
-    id 'io.quarkus'
-    id 'idea'
-    id 'jacoco'
-    id 'maven-publish'
     id 'org.kordamp.gradle.jandex' version '0.11.0'
-}
-
-java {
-    sourceCompatibility = javaSourceCompatibility
-    targetCompatibility = javaTargetCompatibility
-}
-
-sourceCompatibility = '1.11'
-targetCompatibility = '1.11'
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
-}
-
-compileTestJava {
-    options.encoding = 'UTF-8'
-    dependsOn 'jandex'
 }
 
 jar {
@@ -35,33 +12,6 @@ configurations {
 
 artifacts {
 	jars jar
-}
-
-quarkusDev {
-    dependsOn 'jandex'
-}
-
-publishing {
-	publications {
-		java(MavenPublication) {
-			artifact jar
-		}
-	}
-	repositories {
-		if(project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
-			maven {
-				url projectMavenRepo
-				credentials(HttpHeaderCredentials) {
-					// the following variable reside in ~/.gradle/gradle.properties
-					name = gitLabTokenType
-					value = gitLabToken
-				}
-				authentication {
-					header(HttpHeaderAuthentication)
-				}
-			}
-		}
-	}
 }
 
 dependencies {
@@ -104,25 +54,5 @@ dependencies {
 test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
-    dependsOn 'jandex'
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.enabled true
-        csv.enabled true
-        html.destination layout.buildDirectory.dir('jacocoHtmlReport').get().asFile
-    }
-
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: ['org/deltafi/dgs/generated/**', '**/*Application.class'])
-        }))
-    }
-
-}
-
-jacoco {
-    reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
+    dependsOn jandex
 }

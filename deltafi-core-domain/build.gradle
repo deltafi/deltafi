@@ -2,25 +2,8 @@ plugins {
 	id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
 	id 'com.github.ben-manes.versions' version '0.38.0'
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
-	id 'java'
-	id 'jacoco'
-	id 'maven-publish'
 	id 'org.springframework.boot' version '2.4.5'
 	id "com.palantir.docker" version "${palantirDockerVersion}"
-}
-
-java {
-    sourceCompatibility = javaSourceCompatibility
-    targetCompatibility = javaTargetCompatibility
-}
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
-}
-
-compileTestJava {
-    options.encoding = 'UTF-8'
 }
 
 task renameJar (type: Copy) {
@@ -57,29 +40,6 @@ generateJava {
 	  "JSON": "org.deltafi.core.domain.api.types.JsonMap",
 	  "Long": "java.lang.Long"
     ]
-}
-
-publishing {
-	publications {
-		java(MavenPublication) {
-			artifact jar
-		}
-	}
-	repositories {
-		if(project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
-			maven {
-				url projectMavenRepo
-				credentials(HttpHeaderCredentials) {
-					// the following variable reside in ~/.gradle/gradle.properties
-					name = gitLabTokenType
-					value = gitLabToken
-				}
-				authentication {
-					header(HttpHeaderAuthentication)
-				}
-			}
-		}
-	}
 }
 
 dependencyManagement {
@@ -123,31 +83,6 @@ dependencies {
 	testImplementation project(":deltafi-common-test")
 	testImplementation 'org.awaitility:awaitility:4.1.0'
 	testImplementation "org.testcontainers:testcontainers:1.16.0"
-}
-
-test {
-	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.enabled true
-		csv.enabled true
-		html.destination layout.buildDirectory.dir('jacocoHtmlReport').get().asFile
-	}
-
-	afterEvaluate {
-		classDirectories.setFrom(files(classDirectories.files.collect {
-			fileTree(dir: it, exclude: ['org/deltafi/core/domain/generated/**', '**/*Application.class'])
-		}))
-	}
-
-}
-
-jacoco {
-	reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
 }
 
 docker {

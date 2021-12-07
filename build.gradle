@@ -3,11 +3,6 @@ plugins {
   id 'test-summary' // Local plugin
 }
 
-ext {
-    javaSourceCompatibility = JavaVersion.VERSION_11
-    javaTargetCompatibility = JavaVersion.VERSION_11
-}
-
 reckon {
     scopeFromProp()
     snapshotFromProp()
@@ -25,6 +20,71 @@ subprojects {
     group 'org.deltafi'
 
     apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    compileJava {
+        options.encoding = 'UTF-8'
+        options.compilerArgs << '-parameters'
+    }
+
+    compileTestJava {
+        options.encoding = 'UTF-8'
+    }
+
+    apply plugin: 'jacoco'
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.enabled true
+            csv.enabled true
+            html.destination layout.buildDirectory.dir('jacocoHtmlReport').get().asFile
+        }
+
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: ['**/generated/**', '**/*Application.class'])
+            }))
+        }
+    }
+
+    jacoco {
+        reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
+    }
+
+    apply plugin: 'maven-publish'
+
+    publishing {
+        publications {
+            java(MavenPublication) {
+                artifact jar
+            }
+        }
+        repositories {
+            if (project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
+                maven {
+                    url projectMavenRepo
+                    credentials(HttpHeaderCredentials) {
+                        // the following variables reside in ~/.gradle/gradle.properties
+                        name = gitLabTokenType
+                        value = gitLabToken
+                    }
+                    authentication {
+                        header(HttpHeaderAuthentication)
+                    }
+                }
+            }
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+        finalizedBy jacocoTestReport
+    }
 
     dependencies {
         compileOnly "org.projectlombok:lombok:${lombokVersion}"

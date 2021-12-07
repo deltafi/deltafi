@@ -1,53 +1,7 @@
-plugins {
-    id 'java'
-    id 'maven-publish'
-    id 'org.kordamp.gradle.jandex' version '0.11.0'
-}
-
-java {
-    sourceCompatibility = javaSourceCompatibility
-    targetCompatibility = javaTargetCompatibility
-}
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
-}
-
-compileTestJava {
-    options.encoding = 'UTF-8'
-}
-
-publishing {
-    publications {
-        java(MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        if(project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
-            maven {
-                url projectMavenRepo
-                credentials(HttpHeaderCredentials) {
-                    name = gitLabTokenType
-                    value = gitLabToken
-                }
-                authentication {
-                    header(HttpHeaderAuthentication)
-                }
-            }
-        }
-    }
-}
-
 dependencies {
     implementation 'io.minio:minio:8.0.3'
     implementation 'org.testcontainers:testcontainers:1.16.0'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-}
-
-test {
-    useJUnitPlatform()
 }

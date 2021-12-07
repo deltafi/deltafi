@@ -1,22 +1,6 @@
 plugins {
-    id 'java'
     id 'io.quarkus'
-    id 'idea'
     id "com.palantir.docker" version "${palantirDockerVersion}"
-}
-
-java {
-    sourceCompatibility = javaSourceCompatibility
-    targetCompatibility = javaTargetCompatibility
-}
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs << '-parameters'
-}
-
-compileTestJava {
-    options.encoding = 'UTF-8'
 }
 
 dependencies {
