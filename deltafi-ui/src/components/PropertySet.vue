@@ -33,7 +33,7 @@
         </Column>
       </DataTable>
     </Panel>
-    <Toast position="top-right" />
+    <Toast position="bottom-right" />
   </div>
 </template>
 

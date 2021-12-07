@@ -41,7 +41,7 @@
       </div>
     </div>
     <ConfirmPopup />
-    <Toast position="top-right" />
+    <Toast position="bottom-right" />
     <DataTable
       v-model:expandedRows="expandedRows"
       :value="errors"

@@ -13,7 +13,7 @@
         </button>
       </div>
     </div>
-    <Toast position="top-right" />
+    <Toast position="bottom-right" />
     <div v-if="showForm" class="p-float-label">
       <div class="row">
         <div class="col-4">
