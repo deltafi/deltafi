@@ -133,7 +133,7 @@
       </template>
       <Column field="did" header="DID (UUID)">
         <template #body="tData">
-          <router-link :to="{path: 'viewer/' + tData.data.did}">
+          <router-link class="text-monospace" :to="{path: 'viewer/' + tData.data.did}">
             {{ tData.data.did }}
           </router-link>
         </template>
