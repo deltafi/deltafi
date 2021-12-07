@@ -148,13 +148,13 @@ export default class GraphQLService {
     return this.convertJsonToGraphQLQuery(searchRecordCountParams);
   }
 
-  getErrors(startD: Date, endD: Date, flowName?: string) {
+  getErrors(startD: Date, endD: Date, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string) {
     const searchParams = {
       query: {
         deltaFiles: {
           __args: {
-            offset: 0,
-            limit: 50,
+            limit: perPage,
+            offset: offSet,
             filter: {
               sourceInfo: {
                 flow: flowName
@@ -164,8 +164,8 @@ export default class GraphQLService {
               modifiedAfter: startD.toISOString()
             },
             orderBy: {
-              direction: new EnumType('DESC'),
-              field: 'modified'
+              direction: new EnumType(sortDirection),
+              field: sortBy,
             }
           },
           offset: true,

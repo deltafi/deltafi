@@ -35,7 +35,7 @@
           hour-format="12"
           input-class="form-control form-control-sm ml-3"
         />
-        <button class="btn btn-sm btn-outline-secondary ml-3" @click="fetchErrors(startTimeDate, endTimeDate, ingressFlowNameSelected)">
+        <button class="btn btn-sm btn-outline-secondary ml-3" @click="fetchErrors(startTimeDate, endTimeDate, offset, perPage, sortField, sortDirection, ingressFlowNameSelected)">
           Search
         </button>
       </div>
@@ -48,6 +48,16 @@
       striped-rows
       class="p-datatable-gridlines p-datatable-sm"
       :loading="loading"
+      :paginator="true"
+      :rows="10"
+      paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+      current-page-report-template="Showing {first} to {last} of {totalRecords} Errors"
+      :rows-per-page-options="[10,20,50]"
+      :lazy="true"
+      :total-records="totalErrors"
+      :always-show-paginator="false"
+      @page="onPage($event)"
+      @sort="onSort($event)"
     >
       <template #empty>
         No errors in the selected time range
@@ -117,14 +127,14 @@
 
 <script>
 import GraphQLService from "../service/GraphQLService";
-import Toast from 'primevue/toast';
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
-import Dialog from 'primevue/dialog';
-import Calendar from 'primevue/calendar';
-import Dropdown from 'primevue/dropdown';
-import ConfirmPopup from 'primevue/confirmpopup';
-import Button from 'primevue/button';
+import Toast from "primevue/toast";
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import Dialog from "primevue/dialog";
+import Calendar from "primevue/calendar";
+import Dropdown from "primevue/dropdown";
+import ConfirmPopup from "primevue/confirmpopup";
+import Button from "primevue/button";
 
 var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
@@ -155,12 +165,25 @@ export default {
       showContextDialog: false,
       loading: true,
       contextDialogData: "",
+      totalErrors: 0,
+      offset: 10,
+      perPage: 10,
+      sortField: "modified",
+      sortDirection: "DESC",
     };
   },
   created() {
     this.graphQLService = new GraphQLService();
     this.fetchIngressFlows();
-    this.fetchErrors(this.startTimeDate, this.endTimeDate, this.ingressFlowNameSelected);
+    this.fetchErrors(
+      this.startTimeDate,
+      this.endTimeDate,
+      this.offset,
+      this.perPage,
+      this.sortField,
+      this.sortDirection,
+      this.ingressFlowNameSelected
+    );
   },
   methods: {
     RetryClickConfirm(event, p_did) {
@@ -182,7 +205,15 @@ export default {
             life: 3000,
           });
 
-          this.fetchErrors(this.startTimeDate, this.endTimeDate, this.ingressFlowNameSelected);
+          this.fetchErrors(
+            this.startTimeDate,
+            this.endTimeDate,
+            this.offset,
+            this.perPage,
+            this.sortField,
+            this.sortDirection,
+            this.ingressFlowNameSelected
+          );
         } else {
           this.$toast.add({
             severity: "error",
@@ -194,16 +225,35 @@ export default {
       });
     },
     async fetchIngressFlows() {
-      const ingressFlowData = await this.graphQLService.getConfigByType("INGRESS_FLOW");
+      const ingressFlowData = await this.graphQLService.getConfigByType(
+        "INGRESS_FLOW"
+      );
       this.ingressFlowNames = ingressFlowData.data.deltaFiConfigs;
     },
-    async fetchErrors(startD, endD, ingressFlowName) {
+    async fetchErrors(
+      startD,
+      endD,
+      offset,
+      perPage,
+      sortField,
+      sortDirection,
+      ingressFlowName
+    ) {
       if (ingressFlowName != null) {
-          ingressFlowName = ingressFlowName.name;
+        ingressFlowName = ingressFlowName.name;
       }
       this.loading = true;
-      const data = await this.graphQLService.getErrors(startD, endD, ingressFlowName);
+      const data = await this.graphQLService.getErrors(
+        startD,
+        endD,
+        offset,
+        perPage,
+        sortField,
+        sortDirection,
+        ingressFlowName
+      );
       this.errors = data.data.deltaFiles.deltaFiles;
+      this.totalErrors = data.data.deltaFiles.totalCount;
       this.loading = false;
     },
     UpdateErrors(startD, endD) {
@@ -230,11 +280,39 @@ export default {
     countErrors(actions) {
       return this.filterErrors(actions).length;
     },
+    onPage(event) {
+      this.offset = event.first;
+      this.perPage = event.rows;
+      this.fetchErrors(
+        this.startTimeDate,
+        this.endTimeDate,
+        this.offset,
+        this.perPage,
+        this.sortField,
+        this.sortDirection,
+        this.ingressFlowNameSelected
+      );
+    },
+    onSort(event) {
+      this.offset = event.first;
+      this.perPage = event.rows;
+      this.sortField = event.sortField;
+      this.sortDirection = event.sortOrder > 0 ? "DESC" : "ASC";
+      this.fetchErrors(
+        this.startTimeDate,
+        this.endTimeDate,
+        this.offset,
+        this.perPage,
+        this.sortField,
+        this.sortDirection,
+        this.ingressFlowNameSelected
+      );
+    },
   },
   graphQLService: null,
 };
 </script>
 
 <style lang="scss">
-  @import "../styles/errors-page.scss";
+@import "../styles/errors-page.scss";
 </style>
