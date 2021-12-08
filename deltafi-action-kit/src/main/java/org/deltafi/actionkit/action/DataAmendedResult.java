@@ -1,7 +1,6 @@
 package org.deltafi.actionkit.action;
 
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.KeyValue;
 import org.deltafi.core.domain.generated.types.KeyValueInput;
 import org.deltafi.core.domain.generated.types.ObjectReference;
@@ -19,8 +18,8 @@ public abstract class DataAmendedResult extends Result {
     protected ObjectReferenceInput objectReferenceInput;
     protected List<KeyValueInput> metadata = new ArrayList<>();
 
-    public DataAmendedResult(DeltaFile deltaFile, ActionParameters params) {
-        super(deltaFile, params);
+    public DataAmendedResult(ActionContext actionContext) {
+        super(actionContext);
     }
 
     public void addMetadata(@NotNull String key, @NotNull String value) {

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.service.InMemoryObjectStorageService;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.generated.types.KeyValue;
@@ -53,7 +54,7 @@ public class SimpleErrorFormatActionTest {
                     .flow(FLOW)
                     .build())
             .build();
-    ActionParameters params = new ActionParameters(ACTION, Collections.emptyMap());
+    ActionParameters params = new ActionParameters();
 
     @BeforeEach
     void setup() throws JsonProcessingException {
@@ -63,7 +64,8 @@ public class SimpleErrorFormatActionTest {
 
     @Test
     void execute() throws JsonProcessingException {
-        FormatResult formatResult = (FormatResult) action.execute(deltaFile, params);
+        ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
+        FormatResult formatResult = (FormatResult) action.execute(deltaFile, actionContext, params);
         assertEquals(DID, formatResult.toEvent().getDid());
         assertEquals(ACTION, formatResult.toEvent().getAction());
         assertEquals(ORIGINATOR_DID + "." + FILENAME + ".error", formatResult.toEvent().getFormat().getFilename());

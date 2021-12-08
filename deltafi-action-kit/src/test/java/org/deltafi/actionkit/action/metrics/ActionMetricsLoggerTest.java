@@ -6,9 +6,9 @@ import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.common.metric.MetricLogger;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
@@ -28,7 +28,7 @@ public class ActionMetricsLoggerTest {
         }
 
         @Override
-        public Result execute(DeltaFile deltaFile, ActionParameters params) {
+        public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
             return null;
         }
     }
@@ -39,7 +39,7 @@ public class ActionMetricsLoggerTest {
         }
 
         @Override
-        public Result execute(DeltaFile deltaFile, ActionParameters params) {
+        public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
             return null;
         }
 
@@ -51,18 +51,11 @@ public class ActionMetricsLoggerTest {
     }
 
     private static final MockedStatic<MetricLogger> MOCKED_METRIC_LOGGER = Mockito.mockStatic(MetricLogger.class);
-
-    private static final DeltaFile DELTA_FILE = DeltaFile.newBuilder()
-            .did("did")
-            .sourceInfo(SourceInfo.newBuilder().flow("flow").build())
-            .build();
-
-    private static final Result RESULT =
-            new FormatResult(DELTA_FILE, ActionParameters.builder().name("action").build(), "filename");
+    private static final Result RESULT = new FormatResult(ActionContext.builder().did("did").name("action").ingressFlow("flow").build(), "filename");
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public void logsDefaultMetrics() {
+    void logsDefaultMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
 
         ActionMetricsLogger actionMetricsLogger = new ActionMetricsLogger(new TestAction());
@@ -80,7 +73,7 @@ public class ActionMetricsLoggerTest {
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public void logsOverriddenMetrics() {
+    void logsOverriddenMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
 
         ActionMetricsLogger actionMetricsLogger = new ActionMetricsLogger(new TestActionWithCustomMetrics());

@@ -3,8 +3,7 @@ package org.deltafi.actionkit.action.egress;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 
 @Getter
@@ -13,8 +12,8 @@ public class EgressResult extends Result {
     private final String destination;
     private final long bytesEgressed;
 
-    public EgressResult(DeltaFile deltaFile, ActionParameters params, String destination, long bytesEgressed) {
-        super(deltaFile, params);
+    public EgressResult(ActionContext actionContext, String destination, long bytesEgressed) {
+        super(actionContext);
 
         this.destination = destination;
         this.bytesEgressed = bytesEgressed;

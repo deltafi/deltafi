@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.core.domain.api.Constants;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.JsonMap;
@@ -44,10 +45,17 @@ public class RedisService {
         ActionInput actionInput = new ActionInput();
         actionInput.setDeltaFile(deltaFile.forQueue(actionName));
 
+        ActionContext actionContext = ActionContext.builder()
+                .did(deltaFile.getDid())
+                .name(actionName)
+                .ingressFlow(deltaFile.getSourceInfo().getFlow()).build();
+
+        actionInput.setActionContext(actionContext);
+
         if (Objects.isNull(params.getParameters())) {
             params.setParameters(new JsonMap());
         }
-        params.getParameters().put("name", params.getName());
+
         actionInput.setActionParams(params.getParameters());
         return actionInput;
     }

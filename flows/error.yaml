@@ -5,7 +5,6 @@
       excludeIngressFlows: []
       formatAction: ErrorFormatAction
       includeIngressFlows: []
-      name: error
       enrichActions: []
       validateActions: []
   transformActions: {}
@@ -14,10 +13,7 @@
   enrichActions: {}
   formatActions:
     ErrorFormatAction:
-      name: ErrorFormatAction
       parameters:
-        staticMetadata:
-          passthrough_format: Watch the birdie...
       requiresDomains:
       - error
       requiresEnrichment: []
@@ -25,12 +21,9 @@
   validateActions: {}
   egressActions:
     ErrorEgressAction:
-      name: ErrorEgressAction
       parameters:
         egressFlow: error
         metadataKey: deltafiMetadata
-        staticMetadata:
-          xml: It's time to buzz the tower...
         url: http://deltafi-egress-sink-service
       type: org.deltafi.core.action.RestPostEgressAction
   deleteActions: {}

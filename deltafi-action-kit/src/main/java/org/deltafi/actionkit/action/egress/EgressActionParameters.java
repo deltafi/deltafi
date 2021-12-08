@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.Map;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EgressActionParameters extends ActionParameters {
@@ -17,9 +15,7 @@ public class EgressActionParameters extends ActionParameters {
 
     public EgressActionParameters() {}
 
-    public EgressActionParameters(String name, Map<String, String> staticMetadata, String egressFlow) {
-        super(name, staticMetadata);
-
+    public EgressActionParameters(String egressFlow) {
         this.egressFlow = egressFlow;
     }
 }

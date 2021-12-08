@@ -2,7 +2,7 @@ package org.deltafi.actionkit.action.load;
 
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
@@ -17,8 +17,8 @@ import java.util.List;
 public class LoadResult extends DataAmendedResult {
     private final List<String> domains = new ArrayList<>();
 
-    public LoadResult(DeltaFile deltaFile, ActionParameters params) {
-        super(deltaFile, params);
+    public LoadResult(ActionContext actionContext, DeltaFile deltaFile) {
+        super(actionContext);
         setObjectReference(deltaFile.getProtocolStack().get(deltaFile.getProtocolStack().size() -1).getObjectReference());
     }
 
@@ -38,7 +38,7 @@ public class LoadResult extends DataAmendedResult {
                 .domains(domains)
                 .protocolLayer(
                         new ProtocolLayerInput.Builder()
-                                .type(params.getName())
+                                .type(actionContext.getName())
                                 .objectReference(objectReferenceInput)
                                 .metadata(metadata)
                                 .build())

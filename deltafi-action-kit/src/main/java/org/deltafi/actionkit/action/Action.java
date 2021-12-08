@@ -22,13 +22,14 @@ import org.deltafi.actionkit.service.DomainGatewayService;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.generated.client.RegisterGenericSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterGenericSchemaProjectionRoot;
-import org.deltafi.core.domain.generated.types.GenericActionSchemaInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.GenericActionSchemaInput;
 import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -80,7 +81,7 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
         // quarkus will prune the actions if this is not included
     }
 
-    public abstract Result execute(DeltaFile deltaFile, P params);
+    public abstract Result execute(DeltaFile deltaFile, ActionContext actionContext, P params);
 
     @PostConstruct
     public void startAction() {
@@ -99,24 +100,25 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionInput actionInput = actionEventService.getAction(getFeedString());
+                ActionContext actionContext = actionInput.getActionContext();
 
                 log.trace("Running action with input {}", actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();
                 P params = convertToParams(actionInput.getActionParams());
 
                 SourceInfo sourceInfo = deltaFile.getSourceInfo();
-                DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), params.getName(), sourceInfo.getFilename(), sourceInfo.getFlow());
+                DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), actionContext.getName(), sourceInfo.getFilename(), sourceInfo.getFlow());
 
-                executeAction(deltaFile, params, span);
+                executeAction(deltaFile, actionContext, params, span);
             }
         } catch (Throwable e) {
             log.error("Tell Jeremy he really, really needs to fix this exception: " + e.getMessage());
         }
     }
 
-    private void executeAction(DeltaFile deltaFile, P params, DeltafiSpan span) throws JsonProcessingException {
+    private void executeAction(DeltaFile deltaFile, ActionContext actionContext, P params, DeltafiSpan span) throws JsonProcessingException {
         try {
-            Result result = execute(deltaFile, params);
+            Result result = execute(deltaFile, actionContext, params);
             if (result != null) {
                 actionEventService.submitResult(result);
 
@@ -133,8 +135,8 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
             StringWriter stackWriter = new StringWriter();
             e.printStackTrace(new PrintWriter(stackWriter));
             String reason = "Action execution exception: " + "\n" + e.getMessage() + "\n" + stackWriter;
-            log.error(params.getName() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
-            ErrorResult errorResult = new ErrorResult(deltaFile, params, "Action execution exception", e).logErrorTo(log);
+            log.error(actionContext.getName() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
+            ErrorResult errorResult = new ErrorResult(actionContext, "Action execution exception", e).logErrorTo(log);
             actionEventService.submitResult(errorResult);
 
             // TODO: Log metrics on error caused by exception???

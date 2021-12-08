@@ -1,25 +1,32 @@
 package org.deltafi.actionkit.action;
 
-import lombok.Data;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
 
 import java.time.OffsetDateTime;
 
-@Data
 public abstract class Result {
-    protected final DeltaFile deltaFile;
-    protected final ActionParameters params;
+
+    protected ActionContext actionContext;
+
+    public Result(ActionContext actionContext) {
+        this.actionContext = actionContext;
+    }
 
     public abstract ActionEventType actionEventType();
 
     public ActionEventInput toEvent() {
         return ActionEventInput.newBuilder()
-                .did(deltaFile.getDid())
-                .action(params.getName())
+                .did(actionContext.getDid())
+                .action(actionContext.getName())
                 .time(OffsetDateTime.now())
                 .type(actionEventType())
                 .build();
     }
+
+    public ActionContext getActionContext() {
+        return actionContext;
+    }
+
 }

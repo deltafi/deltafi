@@ -2,8 +2,7 @@ package org.deltafi.actionkit.action.format;
 
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FormatInput;
@@ -12,9 +11,8 @@ import org.deltafi.core.domain.generated.types.FormatInput;
 public class FormatResult extends DataAmendedResult {
     private final String filename;
 
-    public FormatResult(DeltaFile deltaFile, ActionParameters params, String filename) {
-        super(deltaFile, params);
-
+    public FormatResult(ActionContext actionContext, String filename) {
+        super(actionContext);
         this.filename = filename;
     }
 

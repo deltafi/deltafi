@@ -7,8 +7,6 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.deltafi.actionkit.action.egress.EgressActionParameters;
 
-import java.util.Map;
-
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -22,8 +20,8 @@ public class RestPostEgressParameters extends EgressActionParameters {
 
     public RestPostEgressParameters() {}
 
-    public RestPostEgressParameters(String name, Map<String, String> staticMetadata, String egressFlow, String url, String metadataKey) {
-        super(name, staticMetadata, egressFlow);
+    public RestPostEgressParameters(String egressFlow, String url, String metadataKey) {
+        super(egressFlow);
 
         this.url = url;
         this.metadataKey = metadataKey;

@@ -6,22 +6,10 @@
       "additionalProperties" : false,
       "description" : "complex type should not allow additional properties"
     },
-    "name" : {
-      "type" : "string",
-      "description" : "Name of the action used to track data"
-    },
     "parameter" : {
       "type" : "string",
       "description" : "my great property"
-    },
-    "staticMetadata" : {
-      "type" : "object",
-      "additionalProperties" : {
-        "type" : "string"
-      },
-      "description" : "Static metadata that can be attached to the metadata of the DeltaFile when a DeltaFile is processed by the action"
     }
   },
-  "required" : [ "name" ],
   "additionalProperties" : false
 }

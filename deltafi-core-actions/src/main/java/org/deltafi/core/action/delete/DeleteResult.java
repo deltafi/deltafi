@@ -1,13 +1,13 @@
 package org.deltafi.core.action.delete;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 
 public class DeleteResult extends Result {
-    public DeleteResult(DeltaFile deltaFile, ActionParameters params) {
-        super(deltaFile, params);
+
+    public DeleteResult(ActionContext actionContext) {
+        super(actionContext);
     }
 
     @Override

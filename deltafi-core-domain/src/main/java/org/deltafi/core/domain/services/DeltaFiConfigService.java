@@ -2,7 +2,7 @@ package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.api.types.ConfigType;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
@@ -14,11 +14,11 @@ import org.deltafi.core.domain.configuration.LoadActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionGroupConfiguration;
 import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
+import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.converters.KeyValueConverter;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.generated.types.*;
-import org.deltafi.core.domain.api.types.ConfigType;
 import org.deltafi.core.domain.repo.DeltaFiRuntimeConfigRepo;
 import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.slf4j.Logger;
@@ -40,7 +40,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @Service
 public class DeltaFiConfigService {
@@ -53,6 +52,8 @@ public class DeltaFiConfigService {
         protected NodeTuple representJavaBeanProperty(Object javaBean, Property property,
                                                       Object propertyValue, Tag customTag) {
             if (isNull(propertyValue) || propertyValue instanceof OffsetDateTime) {
+                return null;
+            } else if (property.getName().equals("name")) {
                 return null;
             } else {
                 return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
@@ -365,7 +366,7 @@ public class DeltaFiConfigService {
     }
 
     private void ensureNamesSet(DeltafiRuntimeConfiguration incomingConfig) {
-        incomingConfig.actionMaps().map(Map::entrySet).flatMap(Set::stream).forEach(this::ensureParamNameAndConfigNameSet);
+        incomingConfig.actionMaps().map(Map::entrySet).flatMap(Set::stream).forEach(this::ensureConfigNameIsSet);
         incomingConfig.deltafiMaps().map(Map::entrySet).flatMap(Set::stream).forEach(this::ensureConfigNameIsSet);
     }
 
@@ -376,15 +377,6 @@ public class DeltaFiConfigService {
     private void ensureConfigNameIsSet(String key, DeltaFiConfiguration configItem) {
         if (isNull(configItem.getName())) {
             configItem.setName(key);
-        }
-    }
-
-    private void ensureParamNameAndConfigNameSet(Map.Entry<String, ? extends ActionConfiguration> entry) {
-        String key = entry.getKey();
-        ActionConfiguration actionConfig = entry.getValue();
-        ensureConfigNameIsSet(key, actionConfig);
-        if (nonNull(actionConfig.getParameters()) && isNull(actionConfig.getParameters().get("name"))) {
-            actionConfig.getParameters().put("name", key);
         }
     }
 

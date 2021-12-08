@@ -2,7 +2,6 @@ package org.deltafi.actionkit.action.metrics;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.common.metric.MetricLogger;
 
@@ -18,14 +17,14 @@ public class ActionMetricsLogger {
 
         for (Metric metric : metrics) {
             HashMap<String, String> tags = new HashMap<>();
-            tags.put("action", result.getParams().getName());
+            tags.put("action", result.getActionContext().getName());
 
             if (metric.getTags() != null) {
                 tags.putAll(metric.getTags());
             }
 
-            MetricLogger.logMetric(actionMetricsGenerator.getActionEventType().name().toLowerCase(), result.getDeltaFile().getDid(),
-                    result.getDeltaFile().getSourceInfo().getFlow(), metric.getName(), metric.getValue(), tags);
+            MetricLogger.logMetric(actionMetricsGenerator.getActionEventType().name().toLowerCase(), result.getActionContext().getDid(),
+                    result.getActionContext().getIngressFlow(), metric.getName(), metric.getValue(), tags);
         }
     }
 }

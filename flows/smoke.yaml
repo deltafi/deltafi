@@ -22,18 +22,13 @@
       consumes: binary
       name: SmokeTransformAction
       parameters:
-        staticMetadata:
-          passthrough_transform: Talk to me Goose...
-        name: SmokeTransformAction
         resultType: passthrough-binary
       produces: passthrough-binary
       type: org.deltafi.passthrough.action.RoteTransformAction
   loadActions:
     SmokeLoadAction:
       consumes: passthrough-binary
-      name: SmokeLoadAction
       parameters:
-        name: SmokeLoadAction
         domains:
         - binary
       requiresMetadata: {}
@@ -43,20 +38,14 @@
   enrichActions: {}
   formatActions:
     SmokeFormatAction:
-      name: SmokeFormatAction
-      parameters:
-        staticMetadata:
-          passthrough_format: That's a negative Ghostrider...
-        name: SmokeFormatAction
+      parameters: {}
       requiresDomains:
       - binary
       requiresEnrichment: []
       type: org.deltafi.passthrough.action.RoteFormatAction
   validateActions:
     SmokeValidateAction:
-      name: SmokeValidateAction
-      parameters:
-        name: SmokeValidateAction
+      parameters: {}
       type: org.deltafi.passthrough.action.RubberStampValidateAction
   egressActions:
     SmokeEgressAction:
@@ -64,9 +53,6 @@
       parameters:
         egressFlow: smoke
         metadataKey: deltafiMetadata
-        staticMetadata:
-          passthrough_egress: Kick the tires and light the fires...
-        name: SmokeEgressAction
         url: http://deltafi-egress-sink-service
       type: org.deltafi.core.action.RestPostEgressAction
   deleteActions: {}

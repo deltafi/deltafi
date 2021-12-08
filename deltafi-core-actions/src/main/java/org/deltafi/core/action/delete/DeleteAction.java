@@ -7,6 +7,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 
@@ -23,12 +24,12 @@ public class DeleteAction extends Action<ActionParameters> {
     }
 
     @Override
-    public Result execute(DeltaFile deltaFile, ActionParameters params) {
+    public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
         if (!objectStorageService.removeObjects(DeltaFiConstants.MINIO_BUCKET, deltaFile.getDid())) {
-            return new ErrorResult(deltaFile, params, "Unable to remove all objects for delta file.");
+            return new ErrorResult(actionContext, "Unable to remove all objects for delta file.");
         }
 
-        return new DeleteResult(deltaFile, params);
+        return new DeleteResult(actionContext);
     }
 
     @Override

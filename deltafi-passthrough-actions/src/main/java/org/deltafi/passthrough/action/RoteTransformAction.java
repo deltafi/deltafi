@@ -5,6 +5,7 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.passthrough.param.RoteTransformParameters;
 
@@ -14,13 +15,12 @@ public class RoteTransformAction extends TransformAction<RoteTransformParameters
         super(RoteTransformParameters.class);
     }
 
-    public Result execute(DeltaFile deltaFile, RoteTransformParameters params) {
-        log.trace(params.getName() + " transforming (" + deltaFile.getDid() + ")");
+    public Result execute(DeltaFile deltaFile, ActionContext actionContext, RoteTransformParameters params) {
+        log.trace(actionContext.getName() + " transforming (" + deltaFile.getDid() + ")");
 
         TransformResult result =
-                new TransformResult(deltaFile, params, params.getResultType());
+                new TransformResult(actionContext, params.getResultType());
         result.setObjectReference(deltaFile.getProtocolStack().get(0).getObjectReference());
-        result.addMetadata(params.getStaticMetadata());
         return result;
     }
 

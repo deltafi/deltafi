@@ -2,8 +2,7 @@ package org.deltafi.actionkit.action.enrich;
 
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.EnrichInput;
@@ -16,8 +15,8 @@ import java.util.List;
 public class EnrichResult extends Result {
     private final List<String> enrichments = new ArrayList<>();
 
-    public EnrichResult(DeltaFile deltaFile, ActionParameters params) {
-        super(deltaFile, params);
+    public EnrichResult(ActionContext actionContext) {
+        super(actionContext);
     }
 
     @SuppressWarnings("unused")

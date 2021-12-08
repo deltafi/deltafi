@@ -1,12 +1,10 @@
 package org.deltafi.actionkit.service;
 
-import org.deltafi.actionkit.action.egress.EgressActionParameters;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InMemoryActionEventServiceTest {
+class InMemoryActionEventServiceTest {
     InMemoryActionEventService actionEventService = new InMemoryActionEventService();
 
     @BeforeEach
@@ -95,12 +93,12 @@ public class InMemoryActionEventServiceTest {
     @Test
     void testOutgoing() {
         String actionClassName = "vanillaWafers";
-        EgressResult result = new EgressResult(DeltaFile.newBuilder().did("did").build(),
-                new EgressActionParameters(actionClassName, null, null), "destination", 0);
-        FilterResult result2 = new FilterResult(DeltaFile.newBuilder().did("did2").build(),
-                new ActionParameters("anotherName", null), "message");
-        TransformResult result3 = new TransformResult(DeltaFile.newBuilder().did("did3").build(),
-                new ActionParameters(actionClassName, null), "type");
+
+        EgressResult result = new EgressResult(getActionContext("did", actionClassName), "destination", 0);
+
+        FilterResult result2 = new FilterResult(getActionContext("did2", "anotherName"), "message");
+
+        TransformResult result3 = new TransformResult(getActionContext("did3", actionClassName), "type");
 
         actionEventService.submitResult(result);
         actionEventService.submitResult(result2);
@@ -110,5 +108,9 @@ public class InMemoryActionEventServiceTest {
         assertEquals(2, results.size());
         assertEquals("did", results.get(0).getDid());
         assertEquals("did3", results.get(1).getDid());
+    }
+
+    ActionContext getActionContext(String did, String actionName) {
+        return ActionContext.builder().did(did).name(actionName).build();
     }
 }

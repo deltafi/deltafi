@@ -2,8 +2,7 @@ package org.deltafi.actionkit.action.filter;
 
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FilterInput;
@@ -12,8 +11,8 @@ import org.deltafi.core.domain.generated.types.FilterInput;
 public class FilterResult extends Result {
     private final String message;
 
-    public FilterResult(DeltaFile deltaFile, ActionParameters params, String message) {
-        super(deltaFile, params);
+    public FilterResult(ActionContext actionContext, String message) {
+        super(actionContext);
 
         this.message = message;
     }

@@ -9,11 +9,12 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.HttpService;
 import org.deltafi.actionkit.service.InMemoryObjectStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.core.parameters.RestPostEgressParameters;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.FormattedData;
 import org.deltafi.core.domain.generated.types.ObjectReference;
 import org.deltafi.core.domain.generated.types.SourceInfo;
+import org.deltafi.core.parameters.RestPostEgressParameters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +41,8 @@ class RestPostEgressActionTest {
     @SuppressWarnings("unchecked")
     ArgumentCaptor<Map<String, String>> mapCaptor = ArgumentCaptor.forClass(Map.class);
 
+    ActionContext actionContext = ActionContext.builder()
+            .did(DID).name(ACTION).build();
     RestPostEgressAction action = new RestPostEgressAction(inMemoryObjectStorageService, httpService);
 
     static final String URL = "https://url.com";
@@ -78,7 +81,8 @@ class RestPostEgressActionTest {
                             .build()
             ))
             .build();
-    RestPostEgressParameters params = new RestPostEgressParameters(ACTION, Collections.emptyMap(), EGRESS_FLOW, URL, METADATA_KEY);
+
+    RestPostEgressParameters params = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY);
 
     @BeforeEach
     void setup() throws ObjectStorageException {
@@ -88,7 +92,7 @@ class RestPostEgressActionTest {
 
     @Test
     void execute() throws IOException {
-        Result result = action.execute(deltaFile, params);
+        Result result = action.execute(deltaFile, actionContext, params);
 
         verify(httpService).post(eq(URL), mapCaptor.capture(), isCaptor.capture());
         Map<String, String> actual = mapCaptor.getValue();
@@ -110,7 +114,8 @@ class RestPostEgressActionTest {
     @Test
     void executeMissingData() {
         inMemoryObjectStorageService.clear();
-        Result result = action.execute(deltaFile, params);
+
+        Result result = action.execute(deltaFile, actionContext, params);
 
         verify(httpService, never()).post(any(), any(), any());
 

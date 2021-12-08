@@ -2,8 +2,7 @@ package org.deltafi.actionkit.action.transform;
 
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.ProtocolLayerInput;
@@ -13,8 +12,8 @@ import org.deltafi.core.domain.generated.types.TransformInput;
 public class TransformResult extends DataAmendedResult {
     private final String type;
 
-    public TransformResult(DeltaFile deltaFile, ActionParameters params, String type) {
-        super(deltaFile, params);
+    public TransformResult(ActionContext actionContext, String type) {
+        super(actionContext);
 
         this.type = type;
     }

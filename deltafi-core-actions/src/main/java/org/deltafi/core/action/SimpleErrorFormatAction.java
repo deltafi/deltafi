@@ -14,6 +14,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.generated.types.ObjectReference;
@@ -37,8 +38,8 @@ public class SimpleErrorFormatAction extends SimpleFormatAction {
     }
 
     @Override
-    public Result execute(DeltaFile deltaFile, ActionParameters params) {
-        log.warn(params.getName() + " formatting (" + deltaFile.getDid() + ")");
+    public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
+        log.warn(actionContext.getName() + " formatting (" + deltaFile.getDid() + ")");
 
         if (Objects.isNull(deltaFile.getDomain("error"))) {
             log.error("Error domain missing with did: {}", deltaFile.getDid());
@@ -64,13 +65,13 @@ public class SimpleErrorFormatAction extends SimpleFormatAction {
             throw new RuntimeException(err, t);
         }
 
-        FormatResult result = new FormatResult(deltaFile, params, filename);
+        FormatResult result = new FormatResult(actionContext, filename);
         addSourceInputMetadata(result, deltaFile);
         addProtocolStackMetadata(result, deltaFile);
 
         try {
             ObjectWriteResponse objectWriteResponse = objectStorageService.putObject(
-                    DeltaFiConstants.MINIO_BUCKET, deltaFile.getDid() + "/" + params.getName(), json.getBytes());
+                    DeltaFiConstants.MINIO_BUCKET, deltaFile.getDid() + "/" + actionContext.getName(), json.getBytes());
             result.setObjectReference(fromObjectWriteResponse(objectWriteResponse, json.getBytes().length));
         } catch (ObjectStorageException e) {
             throw new RuntimeException("Failed to write transformed data to minio " + e.getMessage());
