@@ -166,7 +166,7 @@ export default {
       loading: true,
       contextDialogData: "",
       totalErrors: 0,
-      offset: 10,
+      offset: 0,
       perPage: 10,
       sortField: "modified",
       sortDirection: "DESC",

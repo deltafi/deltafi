@@ -124,6 +124,16 @@
       striped-rows
       class="p-datatable-gridlines p-datatable-sm"
       :loading="loading"
+      :paginator="true"
+      :rows="10"
+      :lazy="true"
+      :rows-per-page-options="[10,20,50,100]"
+      :total-records="totalRecords"
+      :always-show-paginator="false"
+      paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+      current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
+      @page="onPage($event)"
+      @sort="onSort($event)"
     >
       <template #empty>
         No DeltaFi data in the selected time range
@@ -133,7 +143,7 @@
       </template>
       <Column field="did" header="DID (UUID)">
         <template #body="tData">
-          <router-link class="text-monospace" :to="{path: 'viewer/' + tData.data.did}">
+          <router-link class="monospace" :to="{path: 'viewer/' + tData.data.did}">
             {{ tData.data.did }}
           </router-link>
         </template>
@@ -143,7 +153,7 @@
       <Column field="stage" header="Stage" :sortable="true" />
       <Column field="created" header="Created" :sortable="true" />
       <Column field="modified" header="Modified" :sortable="true" />
-      <Column field="elapsed" header="Elapsed" :sortable="true">
+      <Column field="elapsed" header="Elapsed" :sortable="false">
         <template #body="row">
           {{ row.data.elapsed }}
         </template>
@@ -213,6 +223,11 @@ export default {
       stageOptions: [],
       stageOptionSelected: null,
       recordCount:"",
+      totalRecords: 0,
+      offset: 0,
+      perPage: 10,
+      sortField: "modified",
+      sortDirection: "DESC",
     };
   },
   computed: {
@@ -334,9 +349,10 @@ export default {
 
       this.loading = true;
       this.fetchRecordCount();
-      let data = await this.graphQLService.getDeltaFileSearchData(this.startTimeDate, this.endTimeDate, this.fileName, this.stageName, this.actionName, this.flowName);
+      let data = await this.graphQLService.getDeltaFileSearchData(this.startTimeDate, this.endTimeDate, this.offset, this.perPage, this.sortField, this.sortDirection, this.fileName, this.stageName, this.actionName, this.flowName);
       this.tableData = data.data.deltaFiles.deltaFiles;
       this.loading = false;
+      this.totalRecords = data.data.deltaFiles.totalCount;
     },
     async fetchRecordCount() {
       this.setQueryParams();
@@ -357,6 +373,19 @@ export default {
         ))
       )
     },
+    onSort(event) {
+      this.offset = event.first;
+      this.perPage = event.rows;
+      this.sortField = event.sortField;
+      this.sortDirection = event.sortOrder > 0 ? "DESC" : "ASC";
+      this.fetchDeltaFilesData();
+    },
+    onPage(event) {
+      this.offset = event.first;
+      this.perPage = event.rows;
+      this.fetchDeltaFilesData();
+    },
+
   },
 };
 </script>

@@ -231,13 +231,13 @@ export default class GraphQLService {
   }
 
 
-  getDeltaFileSearchData(startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) {
+  getDeltaFileSearchData(startD: Date, endD: Date, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) {
     const searchParams = {
       query: {
         deltaFiles: {
           __args: {
-            offset: 0,
-            limit: 50,
+            offset: offSet,
+            limit: perPage,
             filter: {
               sourceInfo: {
                 flow: flowName,
@@ -249,8 +249,8 @@ export default class GraphQLService {
               modifiedAfter: startD.toISOString()
             },
             orderBy: {
-              direction: new EnumType('DESC'),
-              field: 'modified'
+              direction: new EnumType(sortDirection),
+              field: sortBy
             }
           },
           offset: true,
