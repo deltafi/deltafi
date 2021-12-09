@@ -3,6 +3,8 @@ package org.deltafi.actionkit.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
+import java.util.Optional;
+
 @ConfigMapping(prefix = "actions")
 public interface ActionKitConfig {
     @WithDefault("3000")
@@ -17,5 +19,5 @@ public interface ActionKitConfig {
     @WithDefault("10000")
     long actionRegistrationPeriodMs();
 
-    String hostname();
+    Optional<String> hostname();
 }

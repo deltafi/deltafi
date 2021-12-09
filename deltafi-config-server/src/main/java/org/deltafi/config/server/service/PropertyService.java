@@ -1,6 +1,5 @@
 package org.deltafi.config.server.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.config.server.api.domain.Property;
@@ -9,15 +8,14 @@ import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.deltafi.config.server.environment.DeltaFiNativeEnvironmentRepository;
 import org.deltafi.config.server.environment.GitEnvironmentRepository;
 import org.deltafi.config.server.repo.PropertyRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
@@ -36,28 +34,12 @@ public class PropertyService {
     private final Optional<GitEnvironmentRepository> gitEnvironmentRepository;
     private final Optional<DeltaFiNativeEnvironmentRepository> nativeEnvironmentRepository;
 
-    @Value("classpath:property-metadata.json")
-    private Resource propertyMetadata;
-
     public PropertyService(PropertyRepository repo, StateHolderService stateHolderService, Optional<GitEnvironmentRepository> gitEnvironmentRepository,
                            Optional<DeltaFiNativeEnvironmentRepository> nativeEnvironmentRepository) {
         this.repo = repo;
         this.stateHolderService = stateHolderService;
         this.gitEnvironmentRepository = gitEnvironmentRepository;
         this.nativeEnvironmentRepository = nativeEnvironmentRepository;
-    }
-
-    @PostConstruct
-    public void loadDefaultPropertySets()  {
-        if (shouldLoadPropertyMetadata()) {
-            try {
-                List<PropertySet> propertySets = OBJECT_MAPPER.readValue(propertyMetadata.getInputStream(), new TypeReference<>() {});
-                repo.saveAll(propertySets);
-                log.info("Loaded default property sets");
-            } catch (IOException e) {
-                log.error("Failed to load default property sets", e);
-            }
-        }
     }
 
     public Optional<PropertySet> findById(String application) {
@@ -168,10 +150,6 @@ public class PropertyService {
                 .orElse(EMPTY_ENV);
     }
 
-    private boolean shouldLoadPropertyMetadata() {
-        return Objects.nonNull(propertyMetadata) && repo.count() == 0 && propertyMetadata.exists() && propertyMetadata.isReadable();
-    }
-
     private Set<String> getPropertySetIds() {
         return repo.getIds();
     }
@@ -184,7 +162,4 @@ public class PropertyService {
         return copy;
     }
 
-    public void setPropertyMetadata(Resource resource) {
-        this.propertyMetadata = resource;
-    }
 }

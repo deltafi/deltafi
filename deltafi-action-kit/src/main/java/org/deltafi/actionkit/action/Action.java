@@ -19,7 +19,9 @@ import org.deltafi.actionkit.config.ActionKitConfig;
 import org.deltafi.actionkit.exception.DgsPostException;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
+import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.metric.Metric;
+import org.deltafi.common.properties.DeltaFiSystemProperties;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.ActionContext;
@@ -61,6 +63,12 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
 
     @Inject
     protected ActionKitConfig config;
+
+    @Inject
+    protected HostnameService hostnameService;
+
+    @Inject
+    protected DeltaFiSystemProperties deltaFiSystemProperties;
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "missing-value")
     String version;
@@ -164,7 +172,11 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
     }
 
     public final String getHostname() {
-        return config.hostname();
+        return hostnameService.getHostname();
+    }
+
+    public final String getSystemName() {
+        return deltaFiSystemProperties.getSystemName();
     }
 
     protected String getParamClass() {

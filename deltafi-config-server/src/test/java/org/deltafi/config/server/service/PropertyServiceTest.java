@@ -14,10 +14,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
-import org.springframework.core.io.Resource;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,43 +45,9 @@ class PropertyServiceTest {
     @Mock
     GitEnvironmentRepository gitRepo;
 
-    @Mock
-    Resource boostrapProps;
-
     @BeforeEach
     public void setup() {
         propertyService = new PropertyService(propertyRepository, stateHolderService, Optional.of(gitRepo), Optional.empty());
-        propertyService.setPropertyMetadata(boostrapProps);
-    }
-
-
-    @Test
-    void loadDefaultPropertySets() throws IOException {
-        Mockito.when(boostrapProps.exists()).thenReturn(true);
-        Mockito.when(boostrapProps.isReadable()).thenReturn(true);
-        Mockito.when(boostrapProps.getInputStream()).thenReturn(new ByteArrayInputStream("[]]".getBytes()));
-
-        Mockito.when(propertyRepository.count()).thenReturn(0L);
-
-        propertyService.loadDefaultPropertySets();
-        Mockito.verify(propertyRepository).saveAll(Mockito.anyList());
-    }
-
-    @Test
-    void loadDefaultPropertySets_alreadyLoaded() {
-        Mockito.when(propertyRepository.count()).thenReturn(1L);
-
-        propertyService.loadDefaultPropertySets();
-        Mockito.verify(propertyRepository, times(0)).saveAll(Mockito.anyList());
-    }
-
-    @Test
-    void loadDefaultPropertySets_noBootstrapFile() {
-        Mockito.when(boostrapProps.exists()).thenReturn(false);
-        Mockito.when(propertyRepository.count()).thenReturn(0L);
-
-        propertyService.loadDefaultPropertySets();
-        Mockito.verify(propertyRepository, times(0)).saveAll(Mockito.anyList());
     }
 
     @Test

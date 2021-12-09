@@ -222,6 +222,12 @@
         "key": "zipkin.max-batch-size",
         "description": "Maximum number of spans to send at once to Zipkin.",
         "defaultValue": "10000"
+      },
+      {
+        "key": "deltafi.systemName",
+        "description": "Name of the DeltaFi cluster",
+        "defaultValue": "deltafi",
+        "editable": true
       }
     ]
   },
@@ -249,6 +255,11 @@
         "key": "actions.action-registration-period-ms",
         "description": "Frequency that the actions register with the core system.",
         "defaultValue": "10000"
+      },
+      {
+        "key": "actions.hostname",
+        "description": "Hostname of the server running the action.",
+        "defaultValue": null
       }
     ]
   }
