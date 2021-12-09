@@ -4,14 +4,13 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
-import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.client.RegisterTransformSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterTransformSchemaProjectionRoot;
 import org.deltafi.core.domain.generated.types.TransformActionSchemaInput;
 
 public abstract class TransformAction<P extends ActionParameters> extends Action<P> {
     public TransformAction(Class<P> actionParametersClass) {
-        super(actionParametersClass, ActionEventType.TRANSFORM);
+        super(actionParametersClass);
     }
 
     public abstract String getConsumes();

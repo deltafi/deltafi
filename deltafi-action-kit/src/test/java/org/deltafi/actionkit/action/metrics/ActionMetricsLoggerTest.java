@@ -1,99 +1,95 @@
 package org.deltafi.actionkit.action.metrics;
 
-import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.egress.EgressResult;
+import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.metric.Metric;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.eq;
 
 public class ActionMetricsLoggerTest {
-    private static class TestAction extends Action<ActionParameters> {
-        public TestAction() {
-            super(ActionParameters.class, ActionEventType.FORMAT);
-        }
-
-        @Override
-        public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
-            return null;
-        }
-    }
-
-    private static class TestActionWithCustomMetrics extends Action<ActionParameters> {
-        public TestActionWithCustomMetrics() {
-            super(ActionParameters.class, ActionEventType.FORMAT);
-        }
-
-        @Override
-        public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
-            return null;
-        }
-
-        @Override
-        public Collection<Metric> generateMetrics(Result result) {
-            return List.of(Metric.builder().name("metric1").value(5).tags(Map.of("a", "1", "b", "2")).build(),
-                    Metric.builder().name("metric2").value(10).build());
-        }
-    }
-
     private static final MockedStatic<MetricLogger> MOCKED_METRIC_LOGGER = Mockito.mockStatic(MetricLogger.class);
-    private static final Result RESULT = new FormatResult(ActionContext.builder().did("did").name("action").ingressFlow("flow").build(), "filename");
+    private static final Result EGRESS_RESULT = new EgressResult(
+            new ActionContext("did", "egressaction", "flow", "flow"), "destination", 123L);
+    private static final Result ERROR_RESULT = new ErrorResult(
+            new ActionContext("did", "erroraction", "flow", "flow"), "error mesg", new Throwable("exception"));
+    private static final Result FILTER_RESULT = new FilterResult(
+            new ActionContext("did", "filteraction", "flow", "flow"), "message");
+    private static final Result FORMAT_RESULT = new FormatResult(
+            new ActionContext("did", "formataction", "flow", "flow"), "filename");
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
-    void logsDefaultMetrics() {
+    public void logsDefaultMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
-
-        ActionMetricsLogger actionMetricsLogger = new ActionMetricsLogger(new TestAction());
-
-        actionMetricsLogger.logMetrics(RESULT);
-
+        ActionMetricsLogger.logMetrics(FORMAT_RESULT);
         ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
-        MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq("format"), eq("did"), eq("flow"),
-                eq("files_processed"), eq(1L), mapArgumentCaptor.capture()));
-
-        Map<String, String> tags = (Map<String, String>) mapArgumentCaptor.getValue();
-        assertEquals(1, tags.size());
-        assertEquals("action", tags.get("action"));
+        verifyCoreMetrics(mapArgumentCaptor, "format", "files_completed");
     }
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
-    void logsOverriddenMetrics() {
+    public void logsEgressMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
 
-        ActionMetricsLogger actionMetricsLogger = new ActionMetricsLogger(new TestActionWithCustomMetrics());
-
-        actionMetricsLogger.logMetrics(RESULT);
+        ActionMetricsLogger.logMetrics(EGRESS_RESULT);
 
         ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+        verifyCoreMetrics(mapArgumentCaptor, "egress", "files_completed");
 
-        MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq("format"), eq("did"), eq("flow"),
-                eq("metric1"), eq(5L), mapArgumentCaptor.capture()));
+        MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq("egress"),
+                eq("did"), eq("flow"), eq("files_out"), eq(1L),
+                mapArgumentCaptor.capture()));
+        MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq("egress"),
+                eq("did"), eq("flow"), eq("bytes_out"), eq(123L),
+                mapArgumentCaptor.capture()));
+
         Map<String, String> tags = (Map<String, String>) mapArgumentCaptor.getValue();
-        assertEquals(3, tags.size());
-        assertEquals("action", tags.get("action"));
-        assertEquals("1", tags.get("a"));
-        assertEquals("2", tags.get("b"));
+        assertEquals(2, tags.size());
+        assertEquals("egressaction", tags.get("action"));
+        assertEquals("destination", tags.get("endpoint"));
+    }
 
-        MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq("format"), eq("did"), eq("flow"),
-                eq("metric2"), eq(10L), mapArgumentCaptor.capture()));
-        tags = (Map<String, String>) mapArgumentCaptor.getValue();
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void logsErrorMetrics() {
+        MOCKED_METRIC_LOGGER.clearInvocations();
+        ActionMetricsLogger.logMetrics(ERROR_RESULT);
+        ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+        verifyCoreMetrics(mapArgumentCaptor, "error", "files_errored");
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void logsFilterMetrics() {
+        MOCKED_METRIC_LOGGER.clearInvocations();
+        ActionMetricsLogger.logMetrics(FILTER_RESULT);
+        ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+        verifyCoreMetrics(mapArgumentCaptor, "filter", "files_filtered");
+    }
+
+    private void verifyCoreMetrics(ArgumentCaptor<Map> mapArgumentCaptor, String actionType, String metric) {
+        String actionName = actionType + "action";
+        MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq(actionType),
+                eq("did"), eq("flow"), eq("files_in"), eq(1L),
+                mapArgumentCaptor.capture()));
+        MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq(actionType),
+                eq("did"), eq("flow"), eq(metric), eq(1L),
+                mapArgumentCaptor.capture()));
+
+        Map<String, String> tags = (Map<String, String>) mapArgumentCaptor.getValue();
         assertEquals(1, tags.size());
-        assertEquals("action", tags.get("action"));
+        assertEquals(actionName, tags.get("action"));
     }
 }

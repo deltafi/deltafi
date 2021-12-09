@@ -9,7 +9,6 @@ import org.deltafi.common.metric.Metric;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.generated.types.ActionEventType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,7 +17,7 @@ public class DeleteAction extends Action<ActionParameters> {
     private final ObjectStorageService objectStorageService;
 
     public DeleteAction(ObjectStorageService objectStorageService) {
-        super(ActionParameters.class, ActionEventType.DELETE);
+        super(ActionParameters.class);
 
         this.objectStorageService = objectStorageService;
     }
@@ -30,11 +29,5 @@ public class DeleteAction extends Action<ActionParameters> {
         }
 
         return new DeleteResult(actionContext);
-    }
-
-    @Override
-    public Collection<Metric> generateMetrics(Result result) {
-        // The default is to include files_processed, which we don't want for the delete action.
-        return Collections.emptyList();
     }
 }

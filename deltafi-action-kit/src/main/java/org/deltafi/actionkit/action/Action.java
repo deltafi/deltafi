@@ -9,9 +9,9 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.metrics.ActionMetricsGenerator;
 import org.deltafi.actionkit.action.metrics.ActionMetricsLogger;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
@@ -20,7 +20,6 @@ import org.deltafi.actionkit.exception.DgsPostException;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
 import org.deltafi.actionkit.service.HostnameService;
-import org.deltafi.common.metric.Metric;
 import org.deltafi.common.properties.DeltaFiSystemProperties;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
@@ -30,7 +29,6 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.generated.client.RegisterGenericSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterGenericSchemaProjectionRoot;
-import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.GenericActionSchemaInput;
 import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -40,15 +38,14 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public abstract class Action<P extends ActionParameters> implements ActionMetricsGenerator {
+@RequiredArgsConstructor
+public abstract class Action<P extends ActionParameters> {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
@@ -74,15 +71,6 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
     String version;
 
     private final Class<P> paramType;
-    private final ActionEventType actionEventType;
-    private final ActionMetricsLogger actionMetricsLogger;
-
-    public Action(Class<P> paramType, ActionEventType actionEventType) {
-        this.paramType = paramType;
-        this.actionEventType = actionEventType;
-
-        actionMetricsLogger = new ActionMetricsLogger(this);
-    }
 
     @SuppressWarnings("unused")
     public void start(@Observes StartupEvent start) {
@@ -129,12 +117,7 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
             Result result = execute(deltaFile, actionContext, params);
             if (result != null) {
                 actionEventService.submitResult(result);
-
-                if (!(result instanceof ErrorResult)) {
-                    actionMetricsLogger.logMetrics(result);
-                }
-
-                // TODO: Log metrics on error result???
+                ActionMetricsLogger.logMetrics(result);
             }
             zipkinService.markSpanComplete(span);
         } catch (DgsPostException ignored) {
@@ -215,15 +198,5 @@ public abstract class Action<P extends ActionParameters> implements ActionMetric
 
     public P convertToParams(Map<String, Object> params) {
         return OBJECT_MAPPER.convertValue(params, paramType);
-    }
-
-    @Override
-    public ActionEventType getActionEventType() {
-        return actionEventType;
-    }
-
-    @Override
-    public Collection<Metric> generateMetrics(Result result) {
-        return List.of(Metric.builder().name("files_processed").value(1).build());
     }
 }
