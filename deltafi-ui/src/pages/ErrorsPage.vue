@@ -108,7 +108,7 @@
             <Column field="errorContext" header="Context">
               <template #body="action">
                 <div v-if="action.data.errorContext">
-                  <Button label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog(action.data.errorContext)" />
+                  <Button label="Show Context" icon="fas fa-external-link-alt" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog(action.data.errorContext)" />
                 </div>
                 <div v-else>
                   <span>No context provided</span>

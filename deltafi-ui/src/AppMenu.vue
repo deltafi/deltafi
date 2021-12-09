@@ -39,19 +39,19 @@ export default {
       routes: [],
       activePage: null,
       menuItems: [
-        { name: "Dashboard", icon: "pi pi-desktop", path: "/" },
+        { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/" },
         {
           name: "Metrics",
           expand: true,
           children: [
             {
               name: "System Metrics",
-              icon: "pi pi-chart-bar",
+              icon: "far fa-chart-bar fa-fw",
               path: "/metrics/system",
             },
             {
               name: "Action Metrics",
-              icon: "pi pi-chart-line",
+              icon: "far fa-chart-bar fa-fw",
               path: "/metrics/actions",
               hidden: true,
             },
@@ -63,18 +63,18 @@ export default {
           children: [
             {
               name: "System Properties",
-              icon: "pi pi-cog",
+              icon: "fas fa-cogs fa-fw",
               path: "/config/system",
             },
             {
               name: "Flows",
-              icon: "pi pi-sitemap",
+              icon: "fas fa-sitemap fa-fw",
               path: "/config/flow",
               hidden: true,
             },
             {
               name: "Plugins",
-              icon: "pi pi-plus",
+              icon: "fas fa-plus fa-fw",
               path: "/config/plugin",
               hidden: true,
             },
@@ -86,22 +86,22 @@ export default {
           children: [
             {
               name: "Search",
-              icon: "pi pi-search",
+              icon: "fas fa-search fa-fw",
               path: "/deltafile/search",
             },
             {
               name: "Errors",
-              icon: "pi pi-times-circle",
+              icon: "fas fa-exclamation-circle fa-fw",
               path: "/errors",
             },
             {
               name: "Viewer",
-              icon: "pi pi-file",
+              icon: "far fa-file fa-fw",
               path: "/deltafile/viewer/",
             },
           ],
         },
-        { name: "Versions", icon: "pi pi-info-circle", path: "/versions" },
+        { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions" },
       ],
     };
   },
@@ -124,7 +124,7 @@ export default {
   },
   methods: {
     folderIcon(item) {
-      return item.expand ? "pi pi-angle-down" : "pi pi-angle-right";
+      return item.expand ? "fas fa-angle-down fa-fw" : "fas fa-angle-right fa-fw";
     },
     menuItemClass(item, isChild = false) {
       let classes = ["nav-link noselect"];

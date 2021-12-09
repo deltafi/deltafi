@@ -36,7 +36,7 @@
         <Panel ref="panelHeaderRef" header="Search Options" :toggleable="true" :collapsed="true" @click="panelHeaderToggle">
           <template #icons>
             <button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
-              <span class="pi pi-cog" />
+              <span class="fas fa-cog" />
             </button>
             <Menu id="config_menu" ref="menu" :model="items" :popup="true" />
           </template>
@@ -195,7 +195,7 @@ export default {
         label: 'Options',
         items: [{
           label: 'Clear Options',
-          icon: 'pi pi-times',
+          icon: 'fas fa-times',
           command: () => {
             this.actionTypeOptionSelected = null;
             this.fileNameOptionSelected = null;

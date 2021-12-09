@@ -4,7 +4,7 @@
       <template #header>
         <span class="p-panel-title">
           {{ propSet.displayName }}
-          <i v-if="propSet.description" v-tooltip.right="propSet.description" class="ml-2 text-muted pi pi-info-circle" />
+          <i v-if="propSet.description" v-tooltip.right="propSet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
       <DataTable sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped" @cell-edit-complete="onCellEditComplete">
@@ -14,7 +14,7 @@
         <Column header="Key" field="key" :sortable="true">
           <template #body="property">
             <span :class="{'text-muted': !property.data.editable}">{{ property.data.key }}</span>
-            <i v-if="tooltipText(property.data)" v-tooltip.right="tooltipText(property.data)" class="ml-2 text-muted pi pi-info-circle" />
+            <i v-if="tooltipText(property.data)" v-tooltip.right="tooltipText(property.data)" class="ml-2 text-muted fas fa-info-circle fa-fw" />
           </template>
         </Column>
         <Column header="Value" field="value" :sortable="true">
