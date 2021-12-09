@@ -28,7 +28,12 @@ public class GitEnvironmentRepository extends JGitEnvironmentRepository {
     public GitEnvironmentRepository(ConfigurableEnvironment environment, JGitEnvironmentProperties properties, StateHolderService stateHolderService) {
         super(environment, properties);
         this.stateHolderService = stateHolderService;
-        this.label = properties.getDefaultLabel() ;
+        this.label = properties.getDefaultLabel();
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
         cachedVersion = getLocations(PropertyConstants.DELTAFI_PROPERTY_SET, getDefaultLabel(), label).getVersion();
     }
 

@@ -11,7 +11,10 @@ spring:
           uri: ${GIT_CONFIG_REPO:https://gitlab.com/systolic/deltafi/deltafi-config.git}
           username: ${USERNAME:config-server}
           password: ${CONFIG_TOKEN}
-          clone-on-start: ${CLONE_ON_START:false}
+          clone-on-start: ${CLONE_ON_START:true}
+          private-key: ${PRIVATE_KEY}
+          ignore-local-ssh-settings: ${IGNORE_LOCAL_SSH_SETTINGS:true}
+          strict-host-key-checking: ${STRICT_HOST_KEY_CHECKING:false}
         default-label: ${DEFAULT_LABEL:main}
   data:
     mongodb:
