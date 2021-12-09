@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'date'
+
 module Deltafi
   module API
     module Status
@@ -16,6 +18,10 @@ module Deltafi
           self.code = 0
           self.message_lines = []
           self.timestamp = Time.now
+        end
+
+        def name
+          description
         end
 
         def message
@@ -43,6 +49,21 @@ module Deltafi
             puts "No configuration found for #{class_name}"
             {}
           end
+        end
+
+        def generate_metric(type:, name:, value:, timestamp: DateTime.now.strftime('%Q'), source: 'api', tags: {})
+          metric = {
+            timestamp: DateTime.now.strftime('%Q'),
+            metric: {
+              source: source,
+              name: name,
+              value: value,
+              type: type,
+              timestamp: timestamp,
+              tags: tags
+            }
+          }
+          puts metric.to_json
         end
 
         def run

@@ -5,6 +5,7 @@ source 'https://rubygems.org'
 gem 'awesome_print'
 gem 'httparty'
 gem 'k8s-ruby'
+gem 'redis'
 gem 'sinatra'
 
 group :test, :development do

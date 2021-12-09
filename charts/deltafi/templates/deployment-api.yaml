@@ -27,6 +27,11 @@ spec:
           value: {{ .Values.ingress.domain }}
         - name: DELTAFI_UI_TITLE
           value: {{ coalesce .Values.deltafi.ui.title "DeltaFi" }}
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-password
+              key: redis-password
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api

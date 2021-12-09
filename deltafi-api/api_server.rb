@@ -14,6 +14,8 @@ class ApiServer < Sinatra::Base
     enable :logging
   end
 
+  set :show_exceptions, :after_handler
+
   before do
     content_type 'application/json'
   end
@@ -21,11 +23,6 @@ class ApiServer < Sinatra::Base
   get '/api/v1/config' do
     config = { ui: Deltafi::API::Config::UI.config }
     build_response({ config: config })
-  end
-
-  get '/api/v1/errors' do
-    count = params[:count] || 10
-    build_response({ errors: Deltafi::API::Errors.last_errored(count) })
   end
 
   post '/api/v1/errors/retry' do
@@ -39,12 +36,29 @@ class ApiServer < Sinatra::Base
     build_response({ nodes: Deltafi::API::Metrics::System.nodes })
   end
 
+  get '/api/v1/metrics/queues' do
+    build_response({ queues: Deltafi::API::Metrics::Action.queues })
+  end
+
+  get '/api/v1/metrics/action' do
+    last = params[:last] || '5m'
+    build_response({ actions: Deltafi::API::Metrics::Action.metrics_by_action_by_family(last: last) })
+  end
+
   get '/api/v1/status' do
     build_response({ status: $status_service.status })
   end
 
   get '/api/v1/versions' do
     build_response({ versions: Deltafi::API::Versions.apps })
+  end
+
+  error StandardError do
+    build_response({ error: env['sinatra.error'].message })
+  end
+
+  not_found do
+    build_response({ error: 'API endpoint not found.' })
   end
 
   def build_response(object)

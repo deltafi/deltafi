@@ -24,7 +24,7 @@ module Deltafi
           }
           self.interval = interval
           self.checks = Status::Checks.constants.map { |c| Status::Checks.const_get(c) }
-          spawn_worker
+          spawn_worker unless ENV['NO_CHECKS']
         end
 
         private
@@ -32,13 +32,12 @@ module Deltafi
         def spawn_worker
           Thread.new do
             loop do
-              begin
-                time_spent = Benchmark.measure { run_checks }.real
-              rescue StandardError => e
-                puts 'Error occurred while running checks!'
-                puts e.message, e.backtrace
-              end
+              time_spent = Benchmark.measure { run_checks }.real
               sleep [(interval - time_spent), 1].max
+            rescue StandardError => e
+              puts 'Error occurred while running checks!'
+              puts e.message, e.backtrace
+              sleep interval
             end
           end
         end
@@ -67,7 +66,7 @@ module Deltafi
             code: overall_code,
             color: COLORS[overall_code],
             state: STATES[overall_code],
-            checks: results.sort_by(&:code).reverse.map(&:to_hash)
+            checks: results.sort_by { |r| [-r.code, r.name] }.map(&:to_hash)
           }
         end
       end
