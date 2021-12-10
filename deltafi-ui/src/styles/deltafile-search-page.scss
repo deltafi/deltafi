@@ -1,13 +1,7 @@
-@use 'common';
-
 .time-range .form-control:disabled,
 .time-range .form-control[readonly] {
   background-color: #ffffff;
 }
-
-.advanced-options-dropdown {
-  min-width: 16em;
- }
 
 .icon-index {
   z-index: 1;

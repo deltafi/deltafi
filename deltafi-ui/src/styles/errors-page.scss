@@ -1,17 +1,4 @@
-@use 'common';
-
 .time-range .form-control:disabled,
 .time-range .form-control[readonly] {
   background-color: #ffffff;
-}
-
-.ingress-flow-name-select {
-  width: 212px;
-  height: 34px;
-}
-
-.ingress-flow-name-select .p-dropdown-label {
-  padding-top: 5px;
-  padding-bottom: 5px;
-  padding-left: 10px;
 }

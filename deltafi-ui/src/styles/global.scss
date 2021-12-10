@@ -1,3 +1,7 @@
+html {
+  font-size: 14px;
+}
+
 pre.dark {
   background-color: #333333;
   color: #dddddd;
@@ -19,4 +23,15 @@ a {
   .p-tooltip-text {
     font-size: 80%;
   }
+}
+
+.deltafi-input-field {
+  min-width: 16em;
+  height: 32px;
+}
+
+.deltafi-input-field .p-dropdown-label {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 10px;
 }

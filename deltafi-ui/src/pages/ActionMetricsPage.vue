@@ -5,8 +5,8 @@
         Action Metrics
       </h1>
       <div class="btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="layout" :options="layoutOptions" option-label="name" placeholder="Layout" class="ml-3" />
-        <Dropdown v-model="time_range" :options="time_ranges" option-label="name" placeholder="Time Range" class="ml-3" @change="timeRangeChange" />
+        <Dropdown v-model="layout" :options="layoutOptions" option-label="name" placeholder="Layout" class="deltafi-input-field ml-3" />
+        <Dropdown v-model="time_range" :options="time_ranges" option-label="name" placeholder="Time Range" class="deltafi-input-field ml-3" @change="timeRangeChange" />
       </div>
     </div>
     <div v-show="layout.grouped" class="row pr-2 pl-2">

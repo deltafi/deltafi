@@ -12,7 +12,7 @@
           option-label="name"
           show-clear
           :editable="false"
-          class="ingress-flow-name-select"
+          class="deltafi-input-field"
         />
         <Calendar
           id="startDateTime"
@@ -22,7 +22,7 @@
           :show-time="true"
           :manual-input="false"
           hour-format="12"
-          input-class="form-control form-control-sm ml-3"
+          input-class="deltafi-input-field ml-3"
         />
         <span class="mt-1 ml-3">&mdash;</span>
         <Calendar
@@ -33,11 +33,11 @@
           :show-time="true"
           :manual-input="false"
           hour-format="12"
-          input-class="form-control form-control-sm ml-3"
+          input-class="deltafi-input-field ml-3"
         />
-        <button class="btn btn-sm btn-outline-secondary ml-3" @click="fetchErrors(startTimeDate, endTimeDate, offset, perPage, sortField, sortDirection, ingressFlowNameSelected)">
+        <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchErrors(startTimeDate, endTimeDate, offset, perPage, sortField, sortDirection, ingressFlowNameSelected)">
           Search
-        </button>
+        </Button>
       </div>
     </div>
     <ConfirmPopup />
@@ -87,9 +87,9 @@
       </Column>
       <Column :exportable="false" style="min-width: 8rem">
         <template #body="error">
-          <button class="btn btn-sm btn-outline-secondary" @click="RetryClickConfirm($event, error.data.did)">
+          <Button class="p-button-sm p-button-secondary p-button-outlined" @click="RetryClickConfirm($event, error.data.did)">
             Retry
-          </button>
+          </Button>
         </template>
       </Column>
       <template #expansion="error">

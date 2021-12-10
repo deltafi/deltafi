@@ -13,7 +13,7 @@
           :show-time="true"
           :manual-input="false"
           hour-format="12"
-          input-class="form-control form-control-sm ml-3"
+          input-class="deltafi-input-field ml-3"
         />
         <span class="mt-1 ml-3">&mdash;</span>
         <Calendar
@@ -24,20 +24,20 @@
           :show-time="true"
           :manual-input="false"
           hour-format="12"
-          input-class="form-control form-control-sm ml-3"
+          input-class="deltafi-input-field ml-3"
         />
-        <button class="btn btn-sm btn-outline-secondary ml-3" @click="fetchDeltaFilesData()">
+        <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchDeltaFilesData()">
           Search
-        </button>
+        </Button>
       </div>
     </div>
     <div class="row mb-3">
       <div class="col-12">
         <Panel ref="panelHeaderRef" header="Search Options" :toggleable="true" :collapsed="true" @click="panelHeaderToggle">
           <template #icons>
-            <button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
+            <Button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
               <span class="fas fa-cog" />
-            </button>
+            </Button>
             <Menu id="config_menu" ref="menu" :model="items" :popup="true" />
           </template>
           <div class="row align-items-center py-2">
@@ -53,7 +53,7 @@
                 option-label="name"
                 :filter="true"
                 :show-clear="true"
-                class="advanced-options-dropdown"
+                class="deltafi-input-field"
               />
             </div>
           </div>
@@ -69,7 +69,7 @@
                 :options="flowOptions"
                 show-clear
                 :editable="false"
-                class="advanced-options-dropdown"
+                class="deltafi-input-field"
               />
             </div>
           </div>
@@ -86,7 +86,7 @@
                 option-label="name"
                 show-clear
                 :editable="false"
-                class="advanced-options-dropdown"
+                class="deltafi-input-field"
               />
             </div>
           </div>
@@ -103,7 +103,7 @@
                 option-label="name"
                 :filter="true"
                 :show-clear="true"
-                class="advanced-options-dropdown"
+                class="deltafi-input-field"
               />
             </div>
           </div>
@@ -112,7 +112,7 @@
             <div class="col-1">
               <span class="float-left">
                 <i v-badge="recordCount" class="pi align-top p-text-secondary float-right icon-index" style="font-size: 2rem" />
-                <Button type="button" label="Search" class="p-button-secondary p-button-outlined float-right" @click="fetchDeltaFilesData()" />
+                <Button type="button" label="Search" class="p-button-sm p-button-secondary p-button-outlined float-right" @click="fetchDeltaFilesData()" />
               </span>
             </div>
           </div>
