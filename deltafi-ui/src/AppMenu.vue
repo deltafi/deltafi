@@ -51,9 +51,13 @@ export default {
             },
             {
               name: "Action Metrics",
-              icon: "far fa-chart-bar fa-fw",
-              path: "/metrics/actions",
-              hidden: true,
+              icon: "fas fa-chart-line fa-fw",
+              path: "/metrics/action",
+            },
+            {
+              name: "Queue Metrics",
+              icon: "fas fa-list-alt fa-fw",
+              path: "/metrics/queue",
             },
           ],
         },

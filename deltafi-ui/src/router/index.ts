@@ -18,6 +18,16 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../pages/DeltaFileSearchPage.vue'),
   },
   {
+    path: '/metrics/action',
+    name: 'Action Metrics',
+    component: () => import('../pages/ActionMetricsPage.vue')
+  },
+  {
+    path: '/metrics/queue',
+    name: 'Queue Metrics',
+    component: () => import('../pages/QueueMetricsPage.vue')
+  },
+  {
     path: '/errors',
     name: 'Errors',
     component: () => import('../pages/ErrorsPage.vue'),

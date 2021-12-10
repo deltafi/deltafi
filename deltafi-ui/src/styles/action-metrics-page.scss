@@ -1,0 +1,28 @@
+@use 'common';
+
+.action-metrics {
+  .p-panel-content {
+    padding: 0;
+  }
+  .p-tabview .p-tabview-panels {
+    padding: 1rem 0 0 0;
+  }
+  .p-tabview-nav-link:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  .p-tabview-nav-link:hover {
+    text-decoration: none;
+  }
+}
+
+.action-metrics  {
+  .col-6 .metric-column {
+    text-align: right !important;
+    width: 20%;
+  }
+  .col-12 .metric-column {
+    text-align: right !important;
+    width: 15%;
+  }
+}

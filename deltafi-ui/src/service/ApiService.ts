@@ -22,14 +22,6 @@ export default class ApiService {
     return this.get("/config");
   }
 
-  getErrors(startD: Date, endD: Date) {
-    const searchParams = new URLSearchParams({
-      start: startD.getTime().toString(),
-      end: endD.getTime().toString(),
-    });
-    return this.get("/errors", searchParams);
-  }
-
   getStatus() {
     return this.get("/status").catch(error => {
       return {
