@@ -70,7 +70,7 @@ class ActionConfigurationValidatorTest {
         Optional<String> errors = actionConfigurationValidator.validateActionConfiguration(config);
 
         assertThat(errors).contains("Action Configuration: EgressActionConfiguration{name='null',created='null',modified='null',apiVersion='0.7.0',type='org.deltafi.core.action.RestPostEgressAction',parameters='{egressFlow=out, url2=https://egress, name=RestEgress}'} has the following errors: \n" +
-                "Required property name is not set; $.url: is missing but it is required; $.url2: is not defined in the schema and the schema does not allow additional properties");
+                "Required property name is not set; Parameter Errors: $.url: is missing but it is required; $.url2: is not defined in the schema and the schema does not allow additional properties");
     }
 
     @Test
@@ -118,7 +118,7 @@ class ActionConfigurationValidatorTest {
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
         List<String> errors = actionConfigurationValidator.runValidateActionConfiguration(egressConfig(params));
 
-        assertThat(errors).contains("$.url: is missing but it is required");
+        assertThat(errors).contains("Parameter Errors: $.url: is missing but it is required");
     }
 
     @Test
@@ -128,7 +128,7 @@ class ActionConfigurationValidatorTest {
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
         List<String> errors = actionConfigurationValidator.runValidateActionConfiguration(egressConfig(params));
-        assertThat(errors).contains("$.url: boolean found, string expected");
+        assertThat(errors).contains("Parameter Errors: $.url: boolean found, string expected");
     }
 
     @Test
@@ -138,7 +138,7 @@ class ActionConfigurationValidatorTest {
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
         List<String> errors = actionConfigurationValidator.runValidateActionConfiguration(egressConfig(params));
-        assertThat(errors).contains("$.unknownField: is not defined in the schema and the schema does not allow additional properties");
+        assertThat(errors).contains("Parameter Errors: $.unknownField: is not defined in the schema and the schema does not allow additional properties");
     }
 
     @Test
@@ -149,7 +149,7 @@ class ActionConfigurationValidatorTest {
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
         List<String> errors = actionConfigurationValidator.runValidateActionConfiguration(egressConfig(params));
-        assertThat(errors).contains("$.url: is missing but it is required; $.urlTypo: is not defined in the schema and the schema does not allow additional properties");
+        assertThat(errors).contains("Parameter Errors: $.url: is missing but it is required; $.urlTypo: is not defined in the schema and the schema does not allow additional properties");
     }
 
     Optional<ActionSchema> actionSchemaOptional() {

@@ -38,14 +38,12 @@
   enrichActions: {}
   formatActions:
     SmokeFormatAction:
-      parameters: {}
       requiresDomains:
       - binary
       requiresEnrichment: []
       type: org.deltafi.passthrough.action.RoteFormatAction
   validateActions:
     SmokeValidateAction:
-      parameters: {}
       type: org.deltafi.passthrough.action.RubberStampValidateAction
   egressActions:
     SmokeEgressAction:

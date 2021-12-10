@@ -7,6 +7,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import org.deltafi.core.domain.api.types.ActionSchema;
+import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.services.ActionSchemaService;
@@ -82,14 +83,21 @@ public class ActionConfigurationValidator {
 
     String validateParameters(ActionConfiguration actionConfig, ActionSchema actionSchema) {
         JsonNode schemaNode = OBJECT_MAPPER.convertValue(actionSchema.getSchema(), JsonNode.class);
-        JsonNode params = OBJECT_MAPPER.convertValue(actionConfig.getParameters(), JsonNode.class);
+
+        JsonMap paramMap = Objects.nonNull(actionConfig.getParameters()) ? actionConfig.getParameters() : new JsonMap();
+        JsonNode params = OBJECT_MAPPER.convertValue(paramMap, JsonNode.class);
 
         final JsonSchema schema = factory.getSchema(schemaNode);
 
         schema.initializeValidators();
 
         Set<ValidationMessage> errors = schema.validate(params);
-        return errors.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("; "));
+        String schemaErrors = errors.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("; "));
+        if (!schemaErrors.isBlank()) {
+            return "Parameter Errors: " + schemaErrors;
+        }
+
+        return "";
     }
 
     boolean missingName(ActionConfiguration config) {

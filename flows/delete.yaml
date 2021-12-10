@@ -10,4 +10,3 @@
   deleteActions:
     DeleteAction:
       type: org.deltafi.core.action.delete.DeleteAction
-      parameters: {}

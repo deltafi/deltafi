@@ -37,14 +37,12 @@
   enrichActions: {}
   formatActions:
     PassthroughFormatAction:
-      parameters: {}
       requiresDomains:
       - binary
       requiresEnrichment: []
       type: org.deltafi.passthrough.action.RoteFormatAction
   validateActions:
     PassthroughValidateAction:
-      parameters: {}
       type: org.deltafi.passthrough.action.RubberStampValidateAction
   egressActions:
     PassthroughEgressAction:

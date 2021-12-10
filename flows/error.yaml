@@ -13,7 +13,6 @@
   enrichActions: {}
   formatActions:
     ErrorFormatAction:
-      parameters: {}
       requiresDomains:
       - error
       requiresEnrichment: []
