@@ -76,6 +76,11 @@ deltafi:
   ui:
     image: deltafi/deltafi-ui:0.14.1
     title: DeltaFi
+    # Provide extra links for the Dashboard
+    # links:
+    #   - name: GraphQL Documentation
+    #     url: https://graphql.org/learn/
+    #     description: Introduction to GraphQL
   egress_sink:
     image: deltafi/deltafi-egress-sink:0.14.1
 

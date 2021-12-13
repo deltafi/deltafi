@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deltafi-ui-config
+data:
+  domain: {{ .Values.ingress.domain }}
+  title: {{ default "DeltaFi" .Values.deltafi.ui.title }}
+  links: |-
+    ---
+    - url: https://gateway.{{ .Values.ingress.domain }}/
+      name: GraphQL Gateway
+      description: GraphQL query interface
+    - url: https://kibana.{{ .Values.ingress.domain }}/app/dashboards#/view/cf08cb00-aeac-11eb-ac19-f330c8b60a55
+      name: Kibana Dashboard
+      description: Action logging and metrics visualization
+    - url: https://k8s.{{ .Values.ingress.domain }}/#/workloads?namespace=deltafi
+      name: Kubernetes Dashboard
+      description: Kubernetes admin interface
+    - url: https://minio.{{ .Values.ingress.domain }}/
+      name: MinIO
+      description: MinIO storage dashboard
+    - url: https://zipkin.{{ .Values.ingress.domain }}/zipkin/
+      name: Zipkin
+      description: DeltaFile tracing dashboard
+{{ if .Values.deltafi.ui.links -}}
+{{ .Values.deltafi.ui.links | toYaml | indent 4 }}
+{{ end -}}
