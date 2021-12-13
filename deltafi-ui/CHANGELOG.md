@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Toast messages now appear in bottom right
 - Replaced Vue.js favicon
 - Replaced PrimeIcons with FontAwesome
+- Error dialog will now pretty print JSON
 
 ### Fixed
 - App scaling issue
