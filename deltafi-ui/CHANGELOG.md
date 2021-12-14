@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Replaced Vue.js favicon
 - Replaced PrimeIcons with FontAwesome
 - Error dialog will now pretty print JSON
+- External Links now appear in the menu and are populated by the API
 
 ### Fixed
 - App scaling issue

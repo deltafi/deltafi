@@ -1,62 +1,40 @@
 <template>
-  <div>
+  <div class="dashboard">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
       <h1 class="h2">
         Dashboard
       </h1>
     </div>
-
-    <h5>Helpful Links</h5>
-    <ul>
-      <li v-for="link in helpful_links" :key="link.subdomain">
-        <a :href="subdomainUrl(link.subdomain)">{{ link.name }}</a> - {{ link.description }}
-      </li>
-    </ul>
+    <div class="row pl-2 pr-2">
+      <div class="col-md-12 col-lg-6 col-xl-4 pl-2 pr-2">
+        <Panel header="External Links" class="links-panel pl-0" :toggleable="true">
+          <div class="list-group list-group-flush">
+            <a v-for="link in externalLinks" :key="link" :href="link.url" target="_blank" class="list-group-item list-group-item-action">
+              <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-0">{{ link.name }}</h5>
+                <i class="fas fa-external-link-alt" />
+              </div>
+              <small class="mb-1 text-muted">{{ link.description }}</small>
+            </a>
+          </div>
+        </Panel>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { mapState } from "vuex";
+import { mapGetters } from "vuex";
+import Panel from "primevue/panel";
 
 export default {
   name: "DashboardPage",
-  data() {
-    return {
-      helpful_links: [
-        {
-          name: "GraphQL Gateway",
-          subdomain: "gateway",
-          description: "GraphQL query interface",
-        },
-        {
-          name: "Kibana",
-          subdomain: "kibana",
-          description: "Action logging and metrics visualization",
-        },
-        {
-          name: "Kubernetes Dashboard",
-          subdomain: "k8s",
-          description: "Kubernetes admin interface",
-        },
-        {
-          name: "MinIO",
-          subdomain: "minio",
-          description: "MinIO storage dashboard",
-        },
-        {
-          name: "Zipkin",
-          subdomain: "zipkin",
-          description: "DeltaFile tracing dashboard",
-        },
-      ],
-    };
+  components: {
+    Panel
   },
-  computed: mapState(["uiConfig"]),
-  methods: {
-    subdomainUrl(subdomain) {
-      return `https://${subdomain}.${this.uiConfig.domain}`;
-    },
-  },
+  computed: {
+    ...mapGetters(["externalLinks"]),
+  }
 };
 </script>
 

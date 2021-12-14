@@ -5,7 +5,14 @@ import GraphQLService from "../service/GraphQLService";
 export interface State {
   uiConfig: {
     title: String,
-    domain: String
+    domain: String,
+    dashboard: {
+      links: Array<{
+        name: String,
+        url: String,
+        description: String
+      }>
+    }
   },
   sidebarHidden: boolean,
   propertySets: Array<Object>,
@@ -16,7 +23,10 @@ export default createStore<State>({
   state: {
     uiConfig: {
       title: 'DeltaFi',
-      domain: 'example.deltafi.org'
+      domain: 'example.deltafi.org',
+      dashboard: {
+        links: []
+      }
     },
     sidebarHidden: false,
     propertySets: [],
@@ -25,6 +35,7 @@ export default createStore<State>({
   mutations: {
     SET_UI_CONFIG(state: State, payload: Object) {
       Object.assign(state.uiConfig, payload)
+      state.uiConfig.dashboard.links.sort((a, b) => (a.name > b.name) ? 1 : -1)
     },
     TOGGLE_SIDEBAR(state: State) {
       state.sidebarHidden = !state.sidebarHidden
@@ -64,6 +75,9 @@ export default createStore<State>({
     },
     loadingPropertySets: state => {
       return (state.loadingPropertySets && state.propertySets.length === 0);
+    },
+    externalLinks: state => {
+      return state.uiConfig.dashboard.links;
     },
   },
   modules: {}

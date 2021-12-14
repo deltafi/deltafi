@@ -4,22 +4,30 @@
       <ul class="nav flex-column">
         <div v-for="(item,i) in menuItems" :key="i">
           <div v-if="!item.hidden">
-            <li class="nav-item">
+            <li v-tooltip.right="item.description" class="nav-item">
               <span v-if="item.children" :class="menuItemClass(item)" @click.prevent="item.expand = !item.expand">
                 <i :class="folderIcon(item)" />
                 {{ item.name }}
               </span>
-              <router-link v-else :to="item.path" :class="menuItemClass(item)">
+              <router-link v-else-if="item.path" :to="item.path" :class="menuItemClass(item)">
                 <i :class="item.icon" />
                 {{ item.name }}
               </router-link>
+              <a v-else-if="item.url" :href="item.url" target="_blank" :class="menuItemClass(item)">
+                <i :class="item.icon" />
+                {{ item.name }}
+              </a>
             </li>
             <div v-for="child in item.children" :key="child" :class="{hidden: !item.expand, submenu: true}">
-              <li v-if="!child.hidden" class="nav-item">
+              <li v-if="!child.hidden" v-tooltip.right="child.description" class="nav-item">
                 <router-link v-if="child.path" :to="child.path" :class="menuItemClass(child, true)">
                   <i :class="child.icon" />
                   {{ child.name }}
                 </router-link>
+                <a v-else-if="child.url" :href="child.url" target="_blank" :class="menuItemClass(child, true)">
+                  <i :class="child.icon" />
+                  {{ child.name }}
+                </a>
               </li>
             </div>
           </div>
@@ -30,7 +38,7 @@
 </template>
 
 <script>
-import Router from "./router";
+import { mapGetters } from "vuex";
 
 export default {
   name: "AppMenu",
@@ -38,7 +46,7 @@ export default {
     return {
       routes: [],
       activePage: null,
-      menuItems: [
+      staticMenuItems: [
         { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/" },
         {
           name: "Metrics",
@@ -110,21 +118,26 @@ export default {
     };
   },
   computed: {
-    visibleMenuItems() {
-      return this.menuItems.filter((item) => {
-        return !item.hidden;
-      });
+    menuItems() {
+      let items = this.staticMenuItems
+      if (this.externalLinks.length > 0) {
+        items.splice(4, 0,{
+          name: "External Links",
+          expand: true,
+          children: this.externalLinks.map(link => {
+            link.icon = "fas fa-external-link-alt fa-fw";
+            return link;
+          })
+        });
+      }
+      return items;
     },
+    ...mapGetters(["externalLinks"]),
   },
   watch: {
     $route(to) {
       this.activePage = to.path;
     },
-  },
-  mounted() {
-    this.routes = Router.getRoutes().sort((a, b) => {
-      return a.meta.menuOrder - b.meta.menuOrder;
-    });
   },
   methods: {
     folderIcon(item) {
