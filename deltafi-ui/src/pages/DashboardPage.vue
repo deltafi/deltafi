@@ -7,7 +7,7 @@
     </div>
     <div class="row pl-2 pr-2">
       <div class="col-md-12 col-lg-6 col-xl-4 pl-2 pr-2">
-        <Panel header="External Links" class="links-panel pl-0" :toggleable="true">
+        <CollapsiblePanel header="External Links" class="links-panel pl-0">
           <div class="list-group list-group-flush">
             <a v-for="link in externalLinks" :key="link" :href="link.url" target="_blank" class="list-group-item list-group-item-action">
               <div class="d-flex w-100 justify-content-between">
@@ -17,7 +17,7 @@
               <small class="mb-1 text-muted">{{ link.description }}</small>
             </a>
           </div>
-        </Panel>
+        </CollapsiblePanel>
       </div>
     </div>
   </div>
@@ -25,12 +25,12 @@
 
 <script>
 import { mapGetters } from "vuex";
-import Panel from "primevue/panel";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
 export default {
   name: "DashboardPage",
   components: {
-    Panel
+    CollapsiblePanel
   },
   computed: {
     ...mapGetters(["externalLinks"]),

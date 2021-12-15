@@ -33,7 +33,7 @@
     </div>
     <div class="row mb-3">
       <div class="col-12">
-        <Panel ref="panelHeaderRef" header="Search Options" :toggleable="true" :collapsed="true" @click="panelHeaderToggle">
+        <CollapsiblePanel header="Search Options" :collapsed="true">
           <template #icons>
             <Button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
               <span class="fas fa-cog" />
@@ -116,7 +116,7 @@
               </span>
             </div>
           </div>
-        </Panel>
+        </CollapsiblePanel>
       </div>
     </div>
     <DataTable
@@ -170,7 +170,7 @@ import DataTable from 'primevue/datatable';
 import Dropdown from 'primevue/dropdown';
 import GraphQLService from "../service/GraphQLService";
 import Menu from "primevue/menu";
-import Panel from "primevue/panel";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
 var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
@@ -187,7 +187,7 @@ export default {
     DataTable,
     Dropdown,
     Menu,
-    Panel,
+    CollapsiblePanel,
   },
   data() {
     return {
@@ -287,12 +287,6 @@ export default {
   methods: {
     toggle(event) {
       this.$refs.menu.toggle(event);
-    },
-    panelHeaderToggle(event) {
-      let panelHeader = event.target.getAttribute('class');
-      if (panelHeader == "p-panel-header") {
-       this.$refs.panelHeaderRef.d_collapsed = !this.$refs.panelHeaderRef.d_collapsed;
-      }
     },
     async fetchAdvancedOptions() {
       this.fileNameDataArray = [];

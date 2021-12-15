@@ -30,7 +30,7 @@
     <div v-else>
       <div class="row mb-3">
         <div class="col-12">
-          <Panel header="Metadata">
+          <CollapsiblePanel header="Metadata">
             <div class="row">
               <div v-for="field in metadataFields" :key="field" class="col-12 col-md-6 col-xl-3">
                 <dl>
@@ -41,12 +41,12 @@
                 </dl>
               </div>
             </div>
-          </Panel>
+          </CollapsiblePanel>
         </div>
       </div>
       <div class="row mb-3">
         <div class="col-12">
-          <Panel header="Actions" class="actions-panel">
+          <CollapsiblePanel header="Actions" class="actions-panel">
             <DataTable :value="actions" responsive-layout="scroll" striped-rows class="p-datatable-sm" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column field="name" header="Action" :sortable="true" />
               <Column field="state" header="State" :sortable="true">
@@ -62,7 +62,7 @@
                 </template>
               </Column>
             </DataTable>
-          </Panel>
+          </CollapsiblePanel>
         </div>
       </div>
     </div>
@@ -82,7 +82,7 @@
 <script>
 import InputText from "primevue/inputtext";
 import GraphQLService from "../service/GraphQLService";
-import Panel from "primevue/panel";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Toast from "primevue/toast";
@@ -98,7 +98,7 @@ const uuidRegex = new RegExp(
 export default {
   components: {
     InputText,
-    Panel,
+    CollapsiblePanel,
     Column,
     DataTable,
     Toast,
@@ -279,7 +279,7 @@ export default {
       let jsonIdentifierRegEx = /\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(""))*\}))*\}))*\}))*\}))*\}))*\}))*\}))*\}/g
 
       formattedString = formattedString.replace(jsonIdentifierRegEx, match => parseMatch(match));
-      
+
       function parseMatch(match) {
           try {
             JSON.parse(match);

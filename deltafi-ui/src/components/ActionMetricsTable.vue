@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Panel :header="title" class="metrics-panel" :toggleable="true">
+    <CollapsiblePanel :header="title" class="metrics-panel">
       <DataTable :value="tableData" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading" sort-field="action_name" :sort-order="1">
         <template #empty>
           No {{ title }} available.
@@ -15,14 +15,14 @@
           </template>
         </Column>
       </DataTable>
-    </Panel>
+    </CollapsiblePanel>
   </div>
 </template>
 
 <script>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Panel from "primevue/panel";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import * as filesize from "filesize";
 
 export default {
@@ -30,7 +30,7 @@ export default {
   components: {
     DataTable,
     Column,
-    Panel,
+    CollapsiblePanel
   },
   props: {
     family: {

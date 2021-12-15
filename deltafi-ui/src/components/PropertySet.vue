@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Panel :header="propSet.displayName" :toggleable="true" class="property-set mb-3">
+    <CollapsiblePanel :header="propSet.displayName" class="property-set mb-3">
       <template #header>
         <span class="p-panel-title">
           {{ propSet.displayName }}
@@ -32,7 +32,7 @@
           </template>
         </Column>
       </DataTable>
-    </Panel>
+    </CollapsiblePanel>
     <Toast position="bottom-right" />
   </div>
 </template>
@@ -41,7 +41,7 @@
 import GraphQLService from "../service/GraphQLService";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Panel from "primevue/panel";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import InputText from "primevue/inputtext";
 import Toast from 'primevue/toast';
 
@@ -50,7 +50,7 @@ export default {
   components: {
     DataTable,
     Column,
-    Panel,
+    CollapsiblePanel,
     InputText,
     Toast
   },
