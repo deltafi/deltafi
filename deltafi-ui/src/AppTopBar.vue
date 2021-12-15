@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import StatusBadge from "@/components/StatusBadge.vue";
+import StatusBadge from "@/components/StatusBadge";
 import { mapState } from "vuex";
 
 export default {
@@ -39,5 +39,5 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  @import "./styles/app-top-bar.scss";
+  @import "@/styles/app-top-bar.scss";
 </style>

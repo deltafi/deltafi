@@ -155,5 +155,5 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  @import "./styles/app-menu.scss";
+  @import "@/styles/app-menu.scss";
 </style>

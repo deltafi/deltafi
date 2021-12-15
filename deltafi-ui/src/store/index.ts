@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
-import ApiService from "../service/ApiService";
-import GraphQLService from "../service/GraphQLService";
+import ApiService from "@/service/ApiService";
+import GraphQLService from "@/service/GraphQLService";
 
 export interface State {
   uiConfig: {

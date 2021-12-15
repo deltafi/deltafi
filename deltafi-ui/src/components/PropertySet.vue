@@ -38,10 +38,10 @@
 </template>
 
 <script>
-import GraphQLService from "../service/GraphQLService";
+import GraphQLService from "@/service/GraphQLService";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 import InputText from "primevue/inputtext";
 import Toast from 'primevue/toast';
 
@@ -52,7 +52,7 @@ export default {
     Column,
     CollapsiblePanel,
     InputText,
-    Toast
+    Toast,
   },
   props: {
     propSet: {

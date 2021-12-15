@@ -81,7 +81,8 @@
 
 <script>
 import InputText from "primevue/inputtext";
-import GraphQLService from "../service/GraphQLService";
+import GraphQLService from "@/service/GraphQLService";
+import { UtilFunctions } from "@/utils/UtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -171,6 +172,7 @@ export default {
   },
   created() {
     this.graphQLService = new GraphQLService();
+    this.utilFunctions = new UtilFunctions();
   },
   mounted() {
     if (this.$route.params.did) {
@@ -237,7 +239,7 @@ export default {
         visible: true,
         action: action.name,
         cause: action.errorCause,
-        context: this.formmatContextData(action.errorContext),
+        context: this.utilFunctions.formatContextData(action.errorContext),
       }
     },
     actionRowClass(data) {
@@ -272,30 +274,12 @@ export default {
         }
       });
     },
-    formmatContextData(contextData) {
-      let formattedString = contextData;
-      // Javascript does not provide the PCRE recursive parameter (?R) which would allow for the matching against nested JSON using regex: /\{(?:[^{}]|(?R))*\}/g. In order to
-      // capture nested JSON we have to have this long regex.
-      let jsonIdentifierRegEx = /\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(""))*\}))*\}))*\}))*\}))*\}))*\}))*\}))*\}/g
-
-      formattedString = formattedString.replace(jsonIdentifierRegEx, match => parseMatch(match));
-
-      function parseMatch(match) {
-          try {
-            JSON.parse(match);
-          } catch (e) {
-            return match;
-          }
-          return JSON.stringify(JSON.parse(match), null, 2);
-      }
-
-      return formattedString;
-    },
   },
   graphQLService: null,
+  utilFunctions: null,
 };
 </script>
 
 <style lang="scss">
-@import "../styles/deltafile-viewer-page.scss";
+@import "@/styles/pages/deltafile-viewer-page.scss";
 </style>

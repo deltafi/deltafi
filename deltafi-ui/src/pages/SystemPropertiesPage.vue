@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import PropertySet from "@/components/PropertySet.vue";
+import PropertySet from "@/components/PropertySet";
 import ProgressBar from "primevue/progressbar"
 import { mapGetters } from "vuex";
 
@@ -31,5 +31,5 @@ export default {
 </script>
 
 <style lang="scss">
-  @import "../styles/system-properties-page.scss";
+  @import "@/styles/pages/system-properties-page.scss";
 </style>

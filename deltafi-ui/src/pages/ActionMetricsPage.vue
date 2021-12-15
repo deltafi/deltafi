@@ -50,7 +50,7 @@
 
 <script>
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
-import ApiService from "../service/ApiService";
+import ApiService from "@/service/ApiService";
 import Dropdown from "primevue/dropdown";
 import ProgressBar from "primevue/progressbar";
 
@@ -159,5 +159,5 @@ export default {
 </script>
 
 <style lang="scss">
-@import "../styles/action-metrics-page.scss";
+@import "@/styles/pages/action-metrics-page.scss";
 </style>

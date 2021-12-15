@@ -126,7 +126,8 @@
 </template>
 
 <script>
-import GraphQLService from "../service/GraphQLService";
+import GraphQLService from "@/service/GraphQLService";
+import { UtilFunctions } from "@/utils/UtilFunctions";
 import Toast from "primevue/toast";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -174,6 +175,7 @@ export default {
   },
   created() {
     this.graphQLService = new GraphQLService();
+    this.utilFunctions = new UtilFunctions();
     this.fetchIngressFlows();
     this.fetchErrors(
       this.startTimeDate,
@@ -260,7 +262,7 @@ export default {
       alert(startD + endD);
     },
     openContextDialog(contextData) {
-      this.contextDialogData = this.formmatContextData(contextData);
+      this.contextDialogData = this.utilFunctions.formatContextData(contextData);
       this.showContextDialog = true;
     },
     closeContextDialog() {
@@ -308,30 +310,12 @@ export default {
         this.ingressFlowNameSelected
       );
     },
-    formmatContextData(contextData) {
-      let formattedString = contextData;
-      // Javascript does not provide the PCRE recursive parameter (?R) which would allow for the matching against nested JSON using regex: /\{(?:[^{}]|(?R))*\}/g. In order to
-      // capture nested JSON we have to have this long regex.
-      let jsonIdentifierRegEx = /\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(""))*\}))*\}))*\}))*\}))*\}))*\}))*\}))*\}/g
-
-      formattedString = formattedString.replace(jsonIdentifierRegEx, match => parseMatch(match));
-      
-      function parseMatch(match) {
-          try {
-            JSON.parse(match);
-          } catch (e) {
-            return match;
-          }
-          return JSON.stringify(JSON.parse(match), null, 2);
-      }
-
-      return formattedString;
-    },
   },
   graphQLService: null,
+  utilFunctions: null,
 };
 </script>
 
 <style lang="scss">
-@import "../styles/errors-page.scss";
+@import "@/styles/pages/errors-page.scss";
 </style>

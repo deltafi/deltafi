@@ -22,7 +22,7 @@
 <script>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 import * as filesize from "filesize";
 
 export default {

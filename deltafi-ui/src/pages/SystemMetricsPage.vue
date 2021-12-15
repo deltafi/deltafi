@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import ApiService from "../service/ApiService";
+import ApiService from "@/service/ApiService";
 import * as filesize from "filesize";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -139,5 +139,5 @@ export default {
 </script>
 
 <style lang="scss">
-  @import "../styles/system-metrics-page.scss";
+  @import "@/styles/pages/system-metrics-page.scss";
 </style>

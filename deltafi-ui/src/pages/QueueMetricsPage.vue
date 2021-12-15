@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import ApiService from "../service/ApiService";
+import ApiService from "@/service/ApiService";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import ProgressBar from "primevue/progressbar";

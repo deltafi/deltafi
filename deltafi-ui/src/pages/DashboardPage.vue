@@ -25,7 +25,7 @@
 
 <script>
 import { mapGetters } from "vuex";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 
 export default {
   name: "DashboardPage",
@@ -39,5 +39,5 @@ export default {
 </script>
 
 <style lang="scss">
-  @import "../styles/dashboard-page.scss";
+  @import "@/styles/pages/dashboard-page.scss";
 </style>

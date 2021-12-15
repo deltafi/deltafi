@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import ApiService from "../service/ApiService";
+import ApiService from "@/service/ApiService";
 import MarkdownIt from "markdown-it";
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
@@ -91,5 +91,5 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  @import "../styles/status-badge.scss";
+  @import "@/styles/components/status-badge.scss";
 </style>

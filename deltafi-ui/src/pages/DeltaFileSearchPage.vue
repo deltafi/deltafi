@@ -168,7 +168,7 @@ import Calendar from 'primevue/calendar';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import Dropdown from 'primevue/dropdown';
-import GraphQLService from "../service/GraphQLService";
+import GraphQLService from "@/service/GraphQLService";
 import Menu from "primevue/menu";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
@@ -385,5 +385,5 @@ export default {
 </script>
 
 <style lang="scss">
-  @import "../styles/deltafile-search-page.scss";
+  @import "@/styles/pages/deltafile-search-page.scss";
 </style>

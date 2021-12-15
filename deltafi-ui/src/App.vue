@@ -15,8 +15,8 @@
 </template>
 
 <script>
-import AppTopBar from "./AppTopBar.vue";
-import AppMenu from "./AppMenu.vue";
+import AppTopBar from "@/AppTopBar";
+import AppMenu from "@/AppMenu";
 import { mapState } from "vuex";
 
 export default {
@@ -60,5 +60,5 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  @import "./styles/app.scss";
+  @import "@/styles/app.scss";
 </style>

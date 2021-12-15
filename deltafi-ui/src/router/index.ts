@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import Dashboard from '../pages/DashboardPage.vue';
+import Dashboard from '@/pages/DashboardPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -10,47 +10,47 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/metrics/system',
     name: 'System Metrics',
-    component: () => import('../pages/SystemMetricsPage.vue')
+    component: () => import('@/pages/SystemMetricsPage.vue')
   },
   {
     path: '/deltafile/search',
     name: 'DeltaFile Search',
-    component: () => import('../pages/DeltaFileSearchPage.vue'),
+    component: () => import('@/pages/DeltaFileSearchPage.vue'),
   },
   {
     path: '/metrics/action',
     name: 'Action Metrics',
-    component: () => import('../pages/ActionMetricsPage.vue')
+    component: () => import('@/pages/ActionMetricsPage.vue')
   },
   {
     path: '/metrics/queue',
     name: 'Queue Metrics',
-    component: () => import('../pages/QueueMetricsPage.vue')
+    component: () => import('@/pages/QueueMetricsPage.vue')
   },
   {
     path: '/errors',
     name: 'Errors',
-    component: () => import('../pages/ErrorsPage.vue'),
+    component: () => import('@/pages/ErrorsPage.vue'),
   },
   {
     path: '/deltafile/viewer/:did?',
     name: 'DeltaFile Viewer',
-    component: () => import('../pages/DeltaFileViewerPage.vue'),
+    component: () => import('@/pages/DeltaFileViewerPage.vue'),
   },
   {
     path: "/config/system",
     name: "System Properties",
-    component: () => import('../pages/SystemPropertiesPage.vue'),
+    component: () => import('@/pages/SystemPropertiesPage.vue'),
   },
   {
     path: "/versions",
     name: "Versions",
-    component: () => import('../pages/VersionsPage.vue'),
+    component: () => import('@/pages/VersionsPage.vue'),
   },
   {
     path: "/:catchAll(.*)",
     name: "404 Not Found",
-    component: () => import('../pages/PageNotFound.vue')
+    component: () => import('@/pages/PageNotFound.vue')
   }
 ]
 
