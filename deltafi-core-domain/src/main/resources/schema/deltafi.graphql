@@ -209,6 +209,8 @@ input DeltaFilesFilter {
 }
 
 type Query {
+  flowPlans: [FlowPlan]!
+
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile
   lastCreated(last: Int) : [DeltaFile]!
@@ -222,6 +224,9 @@ type Query {
 }
 
 type Mutation {
+  saveFlowPlan(flowPlan: FlowPlanInput!) : FlowPlan!
+  removeFlowPlan(name: String!) : Boolean!
+
   ingress(input: IngressInput!): DeltaFile!
   actionEvent(event: ActionEventInput!): DeltaFile!
 

@@ -1,0 +1,52 @@
+"""
+Temporarily added until Plugin branch merged...
+"""
+type PluginCoordinates {
+    groupId: String!
+    artifactId: String!
+    version: String!
+}
+
+input PluginCoordinatesInput {
+    groupId: String!
+    artifactId: String!
+    version: String!
+}
+
+input FlowPlanInput {
+  name: String!
+  description: String!
+  version: String!
+  draft: Boolean!
+
+  ingressFlowConfigurations: [IngressFlowConfigurationInput!]
+  egressFlowConfigurations: [EgressFlowConfigurationInput!]
+
+  transformActionConfigurations: [TransformActionConfigurationInput!]
+  loadActionConfigurations: [LoadActionConfigurationInput!]
+  enrichActionConfigurations: [EnrichActionConfigurationInput!]
+  formatActionConfigurations: [FormatActionConfigurationInput!]
+  validateActionConfigurations: [ValidateActionConfigurationInput!]
+  egressActionConfigurations: [EgressActionConfigurationInput!]
+
+  pluginCoordinates: [PluginCoordinatesInput!]
+}
+
+type FlowPlan {
+  name: String!
+  description: String!
+  version: String!
+  draft: Boolean!
+
+  ingressFlowConfigurations: [IngressFlowConfiguration!]
+  egressFlowConfigurations: [EgressFlowConfiguration!]
+
+  transformActionConfigurations: [TransformActionConfiguration!]
+  loadActionConfigurations: [LoadActionConfiguration!]
+  enrichActionConfigurations: [EnrichActionConfiguration!]
+  formatActionConfigurations: [FormatActionConfiguration!]
+  validateActionConfigurations: [ValidateActionConfiguration!]
+  egressActionConfigurations: [EgressActionConfiguration!]
+
+  pluginCoordinates: [PluginCoordinates!]
+}
