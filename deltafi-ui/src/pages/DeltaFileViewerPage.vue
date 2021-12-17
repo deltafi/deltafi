@@ -5,12 +5,10 @@
         {{ pageHeader }}
       </h1>
       <div class="btn-toolbar">
-        <button v-show="!showForm && hasErrors" class="btn btn-sm btn-outline-secondary" @click="retryConfirm($event)">
-          Retry
-        </button>
-        <button v-show="!showForm" class="btn btn-sm btn-outline-secondary ml-2" @click="viewDeltaFileJSON()">
-          View Raw JSON
-        </button>
+        <Menu id="config_menu" ref="menu" :model="items" :popup="true" />
+        <Button v-if="!showForm" class="p-button-secondary p-button-outlined" @click="toggle">
+          <span class="fas fa-bars" />
+        </Button>
       </div>
     </div>
     <Toast position="bottom-right" />
@@ -75,7 +73,7 @@
       <strong>Error Context</strong>
       <pre class="dark">{{ errorDialog.context }}</pre>
     </Dialog>
-    <ConfirmPopup />
+    <ConfirmDialog />
   </div>
 </template>
 
@@ -89,8 +87,10 @@ import DataTable from "primevue/datatable";
 import Toast from "primevue/toast";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
-import ConfirmPopup from 'primevue/confirmpopup';
+import ConfirmDialog from 'primevue/confirmdialog';
 import * as filesize from "filesize";
+import Menu from "primevue/menu";
+import { mapState } from "vuex";
 
 const uuidRegex = new RegExp(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -105,7 +105,8 @@ export default {
     Toast,
     Button,
     Dialog,
-    ConfirmPopup,
+    ConfirmDialog,
+    Menu,
   },
   data() {
     return {
@@ -120,7 +121,31 @@ export default {
         action: null,
         cause: null,
         context: null,
-      }
+      },
+      items: [
+        {
+          label: 'Retry',
+          icon: 'fas fa-redo fa-fw',
+          visible: () => this.isError(),
+          command: () => {
+            this.retryConfirm();
+          }
+        },
+        {
+          label: 'View Raw JSON',
+          icon: 'fas fa-file-code fa-fw',
+          command: () => {
+            this.viewDeltaFileJSON();
+          }
+        },
+        {
+          label: 'Zipkin Trace',
+          icon: 'fas fa-external-link-alt fa-fw',
+          command: () => {
+            this.openZipkinURL()
+          }
+        }
+      ],
     };
   },
   computed: {
@@ -157,7 +182,8 @@ export default {
         action.elapsed = timeElapsed;
         return action;
       });
-    }
+    },
+    ...mapState(["uiConfig"]),
   },
   watch: {
     $route(to) {
@@ -181,6 +207,16 @@ export default {
     }
   },
   methods: {
+  toggle(event) {
+    this.$refs.menu.toggle(event);
+  },
+    openZipkinURL() {
+      const zipkinURL = `https://zipkin.${this.uiConfig.domain}/zipkin/traces/${this.did.replaceAll("-", "")}`;
+      window.open(zipkinURL, '_blank');
+    },
+    isError() {
+      return (this.deltaFileData.stage === 'ERROR' ? true : false);
+    },
     clearData() {
       this.did = "";
       this.deltaFileData = {};
@@ -245,9 +281,8 @@ export default {
     actionRowClass(data) {
       return data.state === 'ERROR' ? 'table-danger action-error': null;
     },
-    retryConfirm(event) {
+    retryConfirm() {
       this.$confirm.require({
-        target: event.currentTarget,
         message: "Are you sure you want to retry this DeltaFile?",
         accept: () => {
           this.retry();

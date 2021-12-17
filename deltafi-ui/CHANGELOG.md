@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Queue Metrics page
 - Versions page
 - Paging on Search and Errors pages
+- New menu button to DeltaFile Viewer page
+- Direct link to Zipkin from DeltaFile Viewer page
 
 ### Changed
 - Updated `sass-loader` library
