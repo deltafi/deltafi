@@ -32,6 +32,22 @@ spec:
             secretKeyRef:
               name: redis-password
               key: redis-password
+        startupProbe:
+          httpGet:
+            port: 9292
+            path: /api/v1/config
+          periodSeconds: 1
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            port: 9292
+            path: /api/v1/config
+          periodSeconds: 30
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 2
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api

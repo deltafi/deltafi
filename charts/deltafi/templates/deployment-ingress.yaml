@@ -14,6 +14,16 @@ spec:
       labels:
         app: deltafi-ingress
     spec:
+      initContainers:
+      - name: wait-for-config-server
+        image: busybox:1.34.1
+        command:
+        - 'sh'
+        - '-c'
+        - >
+          until nc -z -w 2 deltafi-config-server 80 && echo config-server ok;
+            do sleep 1;
+          done
       containers:
       - name: deltafi-ingress
         image: {{ .Values.deltafi.ingress.image }}
@@ -23,6 +33,22 @@ spec:
         {{- end }}
         ports:
         - containerPort: 8080
+        startupProbe:
+          httpGet:
+            port: 8080
+            path: /
+          periodSeconds: 1
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 15
+        livenessProbe:
+          httpGet:
+            port: 8080
+            path: /
+          periodSeconds: 30
+          timeoutSeconds: 20
+          successThreshold: 1
+          failureThreshold: 2
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-auth

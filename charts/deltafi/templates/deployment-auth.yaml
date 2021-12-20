@@ -26,6 +26,14 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292
+        startupProbe:
+          httpGet:
+            port: 9292
+            path: /
+          periodSeconds: 1
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 30
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-auth

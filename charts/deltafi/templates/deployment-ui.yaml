@@ -23,6 +23,22 @@ spec:
         env:
         - name: RUNNING_IN_CLUSTER
           value: "true"
+        startupProbe:
+          httpGet:
+            port: 80
+            path: /
+          periodSeconds: 1
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 45
+        livenessProbe:
+          httpGet:
+            port: 80
+            path: /
+          periodSeconds: 30
+          timeoutSeconds: 20
+          successThreshold: 1
+          failureThreshold: 2
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api

@@ -14,9 +14,35 @@ spec:
       labels:
         app: deltafi-config-server
     spec:
+      initContainers:
+      - name: wait-for-mongo
+        image: busybox:1.34.1
+        command:
+        - 'sh'
+        - '-c'
+        - >
+          until nc -z -w 2 deltafi-mongodb 27017 && echo mongodb ok;
+            do sleep 1;
+          done
       containers:
       - name: deltafi-config-server
         image: "{{ .Values.deltafi.config_server.image }}"
+        startupProbe:
+          httpGet:
+            port: 8888
+            path: /deltafi/prod
+          periodSeconds: 1
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 18
+        livenessProbe:
+          httpGet:
+            port: 8888
+            path: /deltafi/prod
+          periodSeconds: 10
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 1
         {{- with .Values.deltafi.config_server.envVars }}
         env:
         {{- toYaml . | nindent 12 }}
