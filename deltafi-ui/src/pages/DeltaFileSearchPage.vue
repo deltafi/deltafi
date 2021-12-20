@@ -171,6 +171,7 @@ import Dropdown from 'primevue/dropdown';
 import GraphQLService from "@/service/GraphQLService";
 import Menu from "primevue/menu";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import { UtilFunctions } from "@/utils/UtilFunctions";
 
 var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
@@ -233,25 +234,11 @@ export default {
   computed: {
     results() {
       return this.tableData.map(row => {
-        var timeElapsed = new Date(row.modified) - new Date(row.created)
-        let seconds = (timeElapsed / 1000).toFixed(1);
-        let minutes = (timeElapsed / (1000 * 60)).toFixed(1);
-        let hours = (timeElapsed / (1000 * 60 * 60)).toFixed(1);
-        let days = (timeElapsed / (1000 * 60 * 60 * 24)).toFixed(1);
-        if (seconds < 1 ) {
-          timeElapsed = timeElapsed + "ms";
-        } else if (seconds < 60) {
-          timeElapsed = seconds + "s";
-        } else if (minutes < 60) {
-          timeElapsed = minutes + "m";
-        } else if (hours < 24) {
-          timeElapsed = hours + "h";
-        } else {
-          timeElapsed = days + "d";
+        const timeElapsed = (new Date(row.modified) - new Date(row.created));
+        return {
+          ...row,
+          elapsed: this.utilFunctions.duration(timeElapsed)
         }
-
-        row.elapsed  = timeElapsed;
-        return row;
       });
     }
   },
@@ -278,6 +265,7 @@ export default {
     }
   },
   created() {
+    this.utilFunctions = new UtilFunctions();
     this.graphQLService = new GraphQLService();
     this.fetchDeltaFilesData();
     this.fetchAdvancedOptions();
@@ -379,7 +367,6 @@ export default {
       this.perPage = event.rows;
       this.fetchDeltaFilesData();
     },
-
   },
 };
 </script>

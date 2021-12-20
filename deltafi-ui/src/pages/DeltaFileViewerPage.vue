@@ -162,25 +162,11 @@ export default {
     },
     actions() {
       return this.deltaFileData.actions.map(action => {
-        var timeElapsed = new Date(action.modified) - new Date(action.created)
-        let seconds = (timeElapsed / 1000).toFixed(1);
-        let minutes = (timeElapsed / (1000 * 60)).toFixed(1);
-        let hours = (timeElapsed / (1000 * 60 * 60)).toFixed(1);
-        let days = (timeElapsed / (1000 * 60 * 60 * 24)).toFixed(1);
-        if (seconds < 1 ) {
-          timeElapsed = timeElapsed + "ms";
-        } else if (seconds < 60) {
-          timeElapsed = seconds + "s";
-        } else if (minutes < 60) {
-          timeElapsed = minutes + "m";
-        } else if (hours < 24) {
-          timeElapsed = hours + "h";
-        } else {
-          timeElapsed = days + "d";
+        const timeElapsed = (new Date(action.modified) - new Date(action.created));
+        return {
+          ...action,
+          elapsed: this.utilFunctions.duration(timeElapsed)
         }
-
-        action.elapsed = timeElapsed;
-        return action;
       });
     },
     ...mapState(["uiConfig"]),
@@ -207,9 +193,9 @@ export default {
     }
   },
   methods: {
-  toggle(event) {
-    this.$refs.menu.toggle(event);
-  },
+    toggle(event) {
+      this.$refs.menu.toggle(event);
+    },
     openZipkinURL() {
       const zipkinURL = `https://zipkin.${this.uiConfig.domain}/zipkin/traces/${this.did.replaceAll("-", "")}`;
       window.open(zipkinURL, '_blank');

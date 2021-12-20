@@ -6,7 +6,7 @@ export class UtilFunctions {
     const jsonIdentifierRegEx = /\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(""))*\}))*\}))*\}))*\}))*\}))*\}))*\}))*\}/g
 
     formattedString = formattedString.replace(jsonIdentifierRegEx, match => parseMatch(match));
-    
+
     function parseMatch(match: string) {
         try {
           JSON.parse(match);
@@ -17,5 +17,23 @@ export class UtilFunctions {
     }
 
     return formattedString;
+  }
+
+  duration(milliseconds: number, precision: number = 1) {
+    const seconds = (milliseconds / 1000);
+    const minutes = (milliseconds / (1000 * 60));
+    const hours = (milliseconds / (1000 * 60 * 60));
+    const days = (milliseconds / (1000 * 60 * 60 * 24));
+    if (seconds < 1 ) {
+      return milliseconds + "ms";
+    } else if (seconds < 60) {
+      return seconds.toFixed(precision) + "s";
+    } else if (minutes < 60) {
+      return minutes.toFixed(precision) + "m";
+    } else if (hours < 24) {
+      return hours.toFixed(precision) + "h";
+    } else {
+      return days.toFixed(precision) + "d";
+    }
   }
 }
