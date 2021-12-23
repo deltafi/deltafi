@@ -11,8 +11,8 @@
         </Button>
       </div>
     </div>
-    <Toast position="bottom-right" />
-    <div v-if="showForm" class="p-float-label">
+    <ProgressBar v-if="showProgressBar" mode="indeterminate" style="height: .5em" />
+    <div v-else-if="showForm" class="p-float-label">
       <div class="row">
         <div class="col-4">
           <div class="p-inputgroup">
@@ -64,6 +64,7 @@
         </div>
       </div>
     </div>
+    <Toast position="bottom-right" />
     <Dialog v-model:visible="showJSONDialog" header="DeltaFile JSON" :style="{width: '75vw'}" :maximizable="true" :modal="true">
       <pre class="dark">{{ deltaFileData }}</pre>
     </Dialog>
@@ -91,6 +92,7 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import * as filesize from "filesize";
 import Menu from "primevue/menu";
 import { mapState } from "vuex";
+import ProgressBar from 'primevue/progressbar';
 
 const uuidRegex = new RegExp(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -107,11 +109,13 @@ export default {
     Dialog,
     ConfirmDialog,
     Menu,
+    ProgressBar,
   },
   data() {
     return {
       pageHeader: "DeltaFile Viewer",
       showForm: true,
+      showProgressBar: false,
       did: null,
       deltaFileData: {},
       metadata: [],
@@ -175,6 +179,7 @@ export default {
     $route(to) {
       this.clearData();
       if (to.params.did) {
+        this.showProgressBar = true;
         this.did = to.params.did;
         this.loadDeltaFileData();
       } else {
@@ -189,6 +194,7 @@ export default {
   mounted() {
     if (this.$route.params.did) {
       this.did = this.$route.params.did;
+      this.showProgressBar = true;
       this.loadDeltaFileData();
     }
   },
@@ -211,10 +217,14 @@ export default {
     },
     navigateToDID() {
       if (this.did === null) return;
-      else if (this.did === this.$route.params.did) this.loadDeltaFileData();
+      else if (this.did === this.$route.params.did) {
+        this.showProgressBar = true;
+        this.loadDeltaFileData();
+      }
       else this.$router.push({ path: `/deltafile/viewer/${this.did}` });
     },
     async loadDeltaFileData() {
+      this.showProgressBar = true;
       this.graphQLService.getDeltaFile(this.did).then((res) => {
         if (res.data.deltaFile) {
           this.deltaFileData = res.data.deltaFile;
@@ -238,6 +248,7 @@ export default {
           this.metadata.push(["Created", this.deltaFileData.created]);
           this.metadata.push(["Modified", this.deltaFileData.modified]);
           this.showForm = false;
+          this.showProgressBar = false;
         } else {
           console.debug(res.errors);
           this.$toast.add({
@@ -246,6 +257,7 @@ export default {
             detail: "Please check the DID and try again",
             life: 5000,
           });
+          this.showProgressBar = false;
           this.showForm = true;
         }
       });
