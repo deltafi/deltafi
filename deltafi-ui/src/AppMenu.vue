@@ -79,10 +79,10 @@ export default {
               path: "/config/system",
             },
             {
-              name: "Flows",
-              icon: "fas fa-sitemap fa-fw",
+              name: "Flow Configuration",
+              icon: "fas fa-random fa-fw",
               path: "/config/flow",
-              hidden: true,
+              hidden: false,
             },
             {
               name: "Plugins",

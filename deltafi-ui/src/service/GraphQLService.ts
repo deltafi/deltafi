@@ -356,4 +356,16 @@ export default class GraphQLService {
     };
     return this.convertJsonToGraphQLQuery(searchParams);
   }
+
+  getFlowConfigYaml() {
+    const data = {
+      query: {
+        exportConfigAsYaml: true
+      },
+    }
+    return this.convertJsonToGraphQLQuery(data)
+    // return this.query(data).then(res => {
+    //   return res.data.exportConfigAsYaml;
+    // });
+  }
 }

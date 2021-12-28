@@ -43,6 +43,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/SystemPropertiesPage.vue'),
   },
   {
+    path: "/config/flow",
+    name: "Flow Configuration",
+    component: () => import('@/pages/FlowConfigurationPage.vue'),
+  },
+  {
     path: "/versions",
     name: "Versions",
     component: () => import('@/pages/VersionsPage.vue'),

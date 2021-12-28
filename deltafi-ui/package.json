@@ -13,6 +13,7 @@
     "test": "mocha"
   },
   "dependencies": {
+    "@highlightjs/vue-plugin": "^2.1.0",
     "@vue/cli": "^4.5.13",
     "axios": "^0.22.0",
     "bootstrap": "^4.6.0",
@@ -22,6 +23,7 @@
     "express": "~4.16.0",
     "faker": "^5.5.3",
     "graphql": "^15.7.1",
+    "highlight.js": "^11.3.1",
     "http-errors": "~1.6.2",
     "jquery": "^3.6.0",
     "json-server": "^0.17.0",
