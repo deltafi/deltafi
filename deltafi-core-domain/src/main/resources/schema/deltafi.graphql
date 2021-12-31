@@ -208,6 +208,12 @@ input DeltaFilesFilter {
   formattedData: FormattedDataFilter
 }
 
+type RetryResult {
+  did: String!
+  success: Boolean!
+  error: String
+}
+
 type Query {
   flowPlans: [FlowPlan]!
 
@@ -230,7 +236,7 @@ type Mutation {
   ingress(input: IngressInput!): DeltaFile!
   actionEvent(event: ActionEventInput!): DeltaFile!
 
-  retry(did: String!) : DeltaFile!
+  retry(dids: [String!]!) : [RetryResult!]!
 
   registerTransformAction(transformActionConfiguration: TransformActionConfigurationInput!): TransformActionConfiguration!
   registerLoadAction(loadActionConfiguration: LoadActionConfigurationInput!): LoadActionConfiguration!

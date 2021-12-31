@@ -2,16 +2,19 @@ package org.deltafi.core.domain.datafetchers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
+import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.generated.DgsConstants;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFiConfigService;
 import org.deltafi.core.domain.services.DeltaFilesService;
+import org.deltafi.core.domain.services.RedisService;
 import org.deltafi.core.domain.services.StateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,8 +29,8 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.core.domain.Util.equalIgnoringDates;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 
 @SpringBootTest
 @TestPropertySource(properties = "enableScheduling=false")
@@ -44,6 +47,9 @@ class DeltaFilesDatafetcherTest {
 
     @MockBean
     DeltaFiConfigService deltaFiConfigService;
+
+    @MockBean
+    RedisService redisService;
 
     final String fileType = "theType";
     final String filename = "theFilename";
@@ -272,5 +278,34 @@ class DeltaFilesDatafetcherTest {
         assertEquals(expected.getCount(), actual.getCount());
         assertEquals(expected.getTotalCount(), actual.getTotalCount());
         assertTrue(equalIgnoringDates(expected.getDeltaFiles().get(0), actual.getDeltaFiles().get(0)));
+    }
+
+    @Test
+    void retry() throws ActionConfigException {
+        DeltaFile input = deltaFilesService.addDeltaFile(ingressInput);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
+                new RetryGraphQLQuery.Builder()
+                        .dids(List.of(input.getDid(), "badDid"))
+                        .build(),
+                new RetryProjectionRoot().did().success().error()
+        );
+
+        List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + DgsConstants.MUTATION.Retry,
+                new TypeRef<>() {}
+        );
+
+        assertEquals(2, results.size());
+
+        assertEquals(input.getDid(), results.get(0).getDid());
+        assertTrue(results.get(0).getSuccess());
+        assertNull(results.get(0).getError());
+
+        assertEquals("badDid", results.get(1).getDid());
+        assertFalse(results.get(1).getSuccess());
+        assertEquals("DeltaFile with did badDid not found", results.get(1).getError());
+
+        Mockito.verify(redisService).enqueue(any(), any());
     }
 }

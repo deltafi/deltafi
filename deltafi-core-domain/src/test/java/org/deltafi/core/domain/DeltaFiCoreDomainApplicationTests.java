@@ -2,6 +2,7 @@ package org.deltafi.core.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.core.domain.api.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -426,7 +427,7 @@ class DeltaFiCoreDomainApplicationTests {
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("18.retry"), did),
 				"data." + DgsConstants.MUTATION.Retry,
-				DeltaFile.class);
+				new TypeRef<>() {});
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(Util.equalIgnoringDates(postRetryDeltaFile(did), deltaFile));

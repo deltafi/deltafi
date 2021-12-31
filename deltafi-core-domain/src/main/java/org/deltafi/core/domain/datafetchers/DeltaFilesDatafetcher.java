@@ -7,10 +7,7 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.DeltaFileOrder;
-import org.deltafi.core.domain.generated.types.DeltaFilesFilter;
-import org.deltafi.core.domain.generated.types.IngressInput;
+import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFilesService;
 
 import java.util.List;
@@ -81,7 +78,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public DeltaFile retry(String did) {
-    return deltaFilesService.retry(did);
+  public List<RetryResult> retry(List<String> dids) {
+    return deltaFilesService.retry(dids);
   }
 }

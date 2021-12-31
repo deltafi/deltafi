@@ -1,14 +1,9 @@
 mutation {
     retry(
-        did: "%1$s"
+        dids: ["%1$s"]
     ) {
         did
-        stage
-        actions {
-            name
-            state
-            errorCause
-            errorContext
-        }
+        success
+        error
     }
 }

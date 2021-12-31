@@ -240,16 +240,34 @@ public class DeltaFilesService {
         return advanceAndSave(deltaFile);
     }
 
-    @MongoRetryable
-    public DeltaFile retry(String did) {
-        DeltaFile deltaFile = getDeltaFile(did);
+    public List<RetryResult> retry(List<String> dids) {
+        return dids.stream()
+                .map(did -> {
+                    RetryResult result = RetryResult.newBuilder()
+                            .did(did)
+                            .success(true)
+                            .build();
 
-        List<String> requeueActions = deltaFile.retryErrors();
-        deltaFile.setStage(DeltaFileStage.INGRESS);
-        advanceAndSave(deltaFile);
-        enqueueActions(requeueActions, deltaFile);
+                    try {
+                        DeltaFile deltaFile = getDeltaFile(did);
 
-        return deltaFile;
+                        if (Objects.isNull(deltaFile)) {
+                            result.setSuccess(false);
+                            result.setError("DeltaFile with did " + did + " not found");
+                        } else {
+                            List<String> requeueActions = deltaFile.retryErrors();
+                            deltaFile.setStage(DeltaFileStage.INGRESS);
+                            advanceAndSave(deltaFile);
+                            enqueueActions(requeueActions, deltaFile);
+                        }
+
+                    } catch (Exception e) {
+                        result.setSuccess(false);
+                        result.setError(e.getMessage());
+                    }
+                    return result;
+                })
+                .collect(Collectors.toList());
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
