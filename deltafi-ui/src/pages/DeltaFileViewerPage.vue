@@ -66,7 +66,7 @@
     </div>
     <Toast position="bottom-right" />
     <Dialog v-model:visible="showJSONDialog" header="DeltaFile JSON" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-      <pre class="dark">{{ deltaFileData }}</pre>
+      <HighlightedCode language="json" :code="formattedDeltaFileData" />
     </Dialog>
     <Dialog v-model:visible="errorDialog.visible" :header="errorDialog.action" :style="{width: '75vw'}" :maximizable="true" :modal="true">
       <strong>Error Cause</strong>
@@ -83,6 +83,7 @@ import InputText from "primevue/inputtext";
 import GraphQLService from "@/service/GraphQLService";
 import { UtilFunctions } from "@/utils/UtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import HighlightedCode from "@/components/HighlightedCode.vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Toast from "primevue/toast";
@@ -110,6 +111,7 @@ export default {
     ConfirmDialog,
     Menu,
     ProgressBar,
+    HighlightedCode,
   },
   data() {
     return {
@@ -172,6 +174,9 @@ export default {
           elapsed: this.utilFunctions.duration(timeElapsed)
         }
       });
+    },
+    formattedDeltaFileData() {
+      return JSON.stringify(this.deltaFileData, null, 2);
     },
     ...mapState(["uiConfig"]),
   },

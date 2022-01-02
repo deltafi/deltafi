@@ -5,20 +5,18 @@
         Flow Configuration
       </h1>
     </div>
-    <highlightjs :code="flowConfigData" language="yaml" />
+    <HighlightedCode language="yaml" :code="flowConfigData" />
   </div>
 </template>
 
 <script>
 import GraphQLService from "@/service/GraphQLService";
-import hljsVuePlugin from "@highlightjs/vue-plugin";
-import "highlight.js/lib/common";
-import "highlight.js/styles/lioshi.css";
+import HighlightedCode from "@/components/HighlightedCode.vue";
 
 export default {
   name: "FlowConfigurationPage",
   components: {
-    highlightjs: hljsVuePlugin.component,
+    HighlightedCode,
   },
   data() {
     return {
