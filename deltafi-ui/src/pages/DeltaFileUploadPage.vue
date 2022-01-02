@@ -41,7 +41,7 @@
 
     <div class="mb-3 row">
       <div class="col-12">
-        <FileUpload ref="fileUpload" :multiple="true" choose-label="Add Files" cancel-label="Clear" :custom-upload="true" @uploader="onUpload">
+        <FileUpload ref="fileUpload" :multiple="true" choose-label="Add Files" cancel-label="Clear" :custom-upload="true" @uploader="onUpload" @select="onSelect">
           <template #empty>
             <i class="ml-3">Drag and drop files to here to upload.</i>
           </template>
@@ -223,6 +223,9 @@ export default {
     },
     uploadsRowClass(data) {
       return data.error ? 'table-danger': null;
+    },
+    onSelect() {
+      this.$refs.fileUpload.progress = 0;
     }
   },
   graphQLService: null,
