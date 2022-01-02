@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Loading indicator to DeltaFile Viewer
 - Flow Configuation page
+- JSON highlighting to Raw DeltaFile view
+- DeltaFile Upload page
 
 ## [0.15.0] - 2021-12-20
 ### Added

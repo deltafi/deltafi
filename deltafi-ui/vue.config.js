@@ -7,7 +7,10 @@ module.exports = {
       },
       '^/graphql': {
         target: process.env.DELTAFI_GATEWAY_URL || 'https://gateway.dev.deltafi.org'
-      }
+      },
+      '^/deltafile/ingress': {
+        target: process.env.DELTAFI_INGRESS_URL || 'https://ingress.dev.deltafi.org'
+      },
     }
   },
   pwa: {

@@ -111,6 +111,11 @@ export default {
               icon: "far fa-file fa-fw",
               path: "/deltafile/viewer/",
             },
+            {
+              name: "Upload",
+              icon: "fas fa-upload fa-fw",
+              path: "/deltafile/upload/",
+            },
           ],
         },
         { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions" },

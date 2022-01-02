@@ -1,0 +1,26 @@
+.metadata-panel {
+  .p-panel-header {
+    display: block;
+  }
+  .p-inputtext:disabled {
+    background: #eeeeee !important;
+  }
+}
+.p-fileupload-empty {
+  padding: 1.5rem 1rem;
+}
+.p-fileupload-content {
+  padding: 0 !important;
+  .p-fileupload-row {
+    div:first-child {
+      display: none;
+    }
+    div.p-fileupload-filename {
+      padding-left: 2rem !important;
+    }
+    div:last-child {
+      width: 0;
+      padding-right: 1.25rem !important;
+    }
+  }
+}
