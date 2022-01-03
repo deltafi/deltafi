@@ -19,25 +19,26 @@ public class ZipkinService {
     private static final String DID = "did";
     private static final String FLOW = "flow";
 
-    private static final ScheduledExecutorService EXECUTOR = Executors.newSingleThreadScheduledExecutor();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Queue<DeltafiSpan> SPANS_QUEUE = new ConcurrentLinkedQueue<>();
 
     private final ZipkinRestClient zipkinRestClient;
     private final ZipkinProperties zipkinProperties;
 
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
     public ZipkinService(ZipkinProperties zipkinProperties) {
         this.zipkinProperties = zipkinProperties;
         this.zipkinRestClient = new ZipkinRestClient(zipkinProperties.getUrl());
 
         if (zipkinProperties.isEnabled()) {
-            EXECUTOR.scheduleAtFixedRate(this::sendQueuedSpans, zipkinProperties.getSendInitialDelayMs(),
+            executor.scheduleAtFixedRate(this::sendQueuedSpans, zipkinProperties.getSendInitialDelayMs(),
                     zipkinProperties.getSendPeriodMs(), TimeUnit.MILLISECONDS);
         }
     }
 
     public void shutdown() {
-        EXECUTOR.shutdown();
+        executor.shutdown();
     }
 
     /**

@@ -33,7 +33,7 @@ Content-Type: application/json
     "protocolStack": [
       {
         "type": "binary",
-        "objectReference": {
+        "contentReference": {
           "offset": 0,
           "size": 2560,
           "name": "cde6dbcd-10a5-4393-bb85-bb6c2f9a66d3/ingress-df2cf33c-3363-4ab6-b535-96d5cc990ba1",

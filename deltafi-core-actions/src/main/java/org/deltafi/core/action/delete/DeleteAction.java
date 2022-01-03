@@ -4,27 +4,22 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.metric.Metric;
-import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 
-import java.util.Collection;
-import java.util.Collections;
-
 public class DeleteAction extends Action<ActionParameters> {
-    private final ObjectStorageService objectStorageService;
+    private final ContentStorageService contentStorageService;
 
-    public DeleteAction(ObjectStorageService objectStorageService) {
+    public DeleteAction(ContentStorageService contentStorageService) {
         super(ActionParameters.class);
 
-        this.objectStorageService = objectStorageService;
+        this.contentStorageService = contentStorageService;
     }
 
     @Override
     public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
-        if (!objectStorageService.removeObjects(DeltaFiConstants.MINIO_BUCKET, deltaFile.getDid())) {
+        if (!contentStorageService.deleteAll(deltaFile.getDid())) {
             return new ErrorResult(actionContext, "Unable to remove all objects for delta file.");
         }
 

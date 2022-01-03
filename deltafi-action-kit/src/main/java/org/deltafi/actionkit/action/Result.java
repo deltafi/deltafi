@@ -57,12 +57,8 @@ public abstract class Result {
         }
 
         ArrayList<Metric> metrics = new ArrayList<>();
-        metricCounters.stream()
-                .forEach(counter -> {
-                    metrics.add(Metric.builder().name(counter).value(1).build());
-                });
+        metricCounters.forEach(counter -> metrics.add(Metric.builder().name(counter).value(1).build()));
         metrics.addAll(getCustomMetrics());
         return metrics;
-
     }
 }

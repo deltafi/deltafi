@@ -26,7 +26,7 @@ public class FormatResult extends DataAmendedResult {
         ActionEventInput event = super.toEvent();
         event.setFormat(FormatInput.newBuilder()
                 .filename(filename)
-                .objectReference(objectReferenceInput)
+                .contentReference(contentReference)
                 .metadata(metadata)
                 .build());
         return event;

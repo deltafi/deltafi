@@ -3,10 +3,10 @@ package org.deltafi.actionkit.action.enrich;
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.EnrichInput;
-import org.deltafi.core.domain.generated.types.KeyValueInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result {
-    private final List<KeyValueInput> enrichments = new ArrayList<>();
+    private final List<KeyValue> enrichments = new ArrayList<>();
 
     public EnrichResult(ActionContext actionContext) {
         super(actionContext);
@@ -22,7 +22,7 @@ public class EnrichResult extends Result {
 
     @SuppressWarnings("unused")
     public void addEnrichment(@NotNull String enrichmentName, String value) {
-        enrichments.add(KeyValueInput.newBuilder().key(enrichmentName).value(value).build());
+        enrichments.add(new KeyValue(enrichmentName, value));
     }
 
     @Override

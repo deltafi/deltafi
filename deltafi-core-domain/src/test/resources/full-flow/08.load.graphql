@@ -9,6 +9,13 @@ mutation {
                 domains: [ { key: "sample", value: "sampleDomain" } ]
                 protocolLayer: {
                     type: "json-utf8-sample-load"
+                    action: "SampleLoadAction"
+                    contentReference: {
+                        uuid: "objectName"
+                        offset: 0
+                        size: 500
+                        did: "%1$s"
+                    }
                     metadata: [
                         {
                             key: "loadSampleType",
@@ -19,12 +26,6 @@ mutation {
                             value: "2.2"
                         }
                     ]
-                    objectReference: {
-                        name: "objectName"
-                        bucket: "objectBucket"
-                        offset: 0
-                        size: 500
-                    }
                 }
             }
         }

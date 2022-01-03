@@ -3,9 +3,9 @@ package org.deltafi.actionkit.action.transform;
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.ProtocolLayerInput;
 import org.deltafi.core.domain.generated.types.TransformInput;
 
 @EqualsAndHashCode(callSuper = true)
@@ -27,12 +27,7 @@ public class TransformResult extends DataAmendedResult {
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
         event.setTransform(TransformInput.newBuilder()
-                .protocolLayer(
-                        new ProtocolLayerInput.Builder()
-                                .type(type)
-                                .objectReference(objectReferenceInput)
-                                .metadata(metadata)
-                                .build())
+                .protocolLayer(new ProtocolLayer(type, actionContext.getName(), contentReference, metadata))
                 .build());
         return event;
     }

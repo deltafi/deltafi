@@ -1,36 +1,37 @@
 package org.deltafi.core.domain.housekeeping.minio;
 
-import lombok.RequiredArgsConstructor;
 import org.awaitility.Awaitility;
+import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.deltafi.core.domain.housekeeping.HousekeepingConfiguration;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.mockito.Mockito;
 
 import java.time.Duration;
 
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@RequiredArgsConstructor(onConstructor = @__(@Autowired)) // SpringBootTest doesn't like @Inject, must use @Autowired
 public class UnreferencedObjectCleanUpJobTest {
-    @TestConfiguration
-    public static class Config {
-        @Bean
-        public UnreferencedObjectCleanUp unreferencedObjectCleanUp() {
-            return mock(UnreferencedObjectCleanUp.class);
-        }
-    }
-
-    private final UnreferencedObjectCleanUp unreferencedObjectCleanUp;
-
     @Test
     public void unreferencedObjectCleanupCalledPeriodically() {
+        DeltaFiProperties deltaFiProperties = DeltaFiProperties.builder()
+                .housekeeping(HousekeepingConfiguration.builder()
+                        .minio(MinioHousekeepingConfiguration.builder()
+                                .initialDelaySeconds(0)
+                                .delaySeconds(1)
+                                .build())
+                        .build())
+                .build();
+
+        UnreferencedObjectCleanUp unreferencedObjectCleanUp = Mockito.mock(UnreferencedObjectCleanUp.class);
+
+        UnreferencedObjectCleanUpJob unreferencedObjectCleanUpJob = new UnreferencedObjectCleanUpJob(deltaFiProperties, unreferencedObjectCleanUp);
+
         clearInvocations(unreferencedObjectCleanUp);
 
         Awaitility.await()
                 .atMost(Duration.ofMillis(2999))
                 .untilAsserted(() -> verify(unreferencedObjectCleanUp, times(2)).removeUnreferencedObjects());
+
+        unreferencedObjectCleanUpJob.preDestroy();
     }
 }

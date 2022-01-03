@@ -1,8 +1,7 @@
 package org.deltafi.common.storage.s3;
 
-import io.minio.ObjectWriteResponse;
-
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -14,19 +13,21 @@ public interface ObjectStorageService {
 
     List<String> getObjectNames(String bucket, String prefix, ZonedDateTime lastModifiedBefore);
 
-    InputStream getObjectAsInputStream(String bucket, String name, long offset, long length) throws ObjectStorageException;
+    InputStream getObject(ObjectReference objectReference) throws ObjectStorageException;
 
-    byte[] getObject(String bucket, String name, long offset, long length) throws ObjectStorageException;
-
-    default ObjectWriteResponse putObject(String bucket, String name, byte[] object) throws ObjectStorageException {
-        return putObject(bucket, name, new ByteArrayInputStream(object), object.length);
+    default byte[] getObjectAsByteArray(ObjectReference objectReference) throws ObjectStorageException, IOException {
+        return getObject(objectReference).readAllBytes();
     }
 
-    ObjectWriteResponse putObject(String bucket, String name, InputStream inputStream, long size) throws ObjectStorageException;
+    ObjectReference putObject(ObjectReference objectReference, InputStream inputStream) throws ObjectStorageException;
 
-    void removeObject(String bucket, String name);
+    default ObjectReference putObjectAsByteArray(ObjectReference objectReference, byte[] object) throws ObjectStorageException {
+        return putObject(objectReference, new ByteArrayInputStream(object));
+    }
+
+    void removeObject(ObjectReference objectReference);
 
     boolean removeObjects(String bucket, String prefix);
 
-    long getObjectSize(ObjectWriteResponse writeResponse);
+    long getObjectSize(String bucket, String name);
 }

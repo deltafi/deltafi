@@ -1,35 +1,34 @@
 package org.deltafi.actionkit.service;
 
+import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class InMemoryObjectStorageServiceTest {
-    InMemoryObjectStorageService inMemoryObjectStorageService = new InMemoryObjectStorageService();
+    private final InMemoryObjectStorageService inMemoryObjectStorageService = new InMemoryObjectStorageService();
+
+    private final byte[] object = "the object".getBytes();
 
     @BeforeEach
-    void setup() {
+    void beforeEach() throws ObjectStorageException {
         inMemoryObjectStorageService.clear();
+        inMemoryObjectStorageService.putObjectAsByteArray(new ObjectReference("hello", "hi"), object);
     }
 
     @Test
-    void testStorage() throws ObjectStorageException {
-        byte[] object = "the object".getBytes();
-        inMemoryObjectStorageService.putObject("hello", "hi", object);
-
-        assertEquals(new String(object), new String(inMemoryObjectStorageService.getObject("hello", "hi", 0, object.length)));
+    void testGetsObjectAsByteArray() throws ObjectStorageException, IOException {
+        assertArrayEquals(object, inMemoryObjectStorageService.getObjectAsByteArray(new ObjectReference("hello", "hi")));
     }
 
     @Test
-    void testRetrievePortion() throws ObjectStorageException {
-        byte[] object = "the object".getBytes();
-        inMemoryObjectStorageService.putObject("hello", "hi", new ByteArrayInputStream(object), object.length - 1);
-
-        assertEquals(new String(object).substring(1, object.length - 1),
-                new String(inMemoryObjectStorageService.getObject("hello", "hi", 1, object.length - 2)));
+    void testGetsPortionOfObjectAsByteArray() throws ObjectStorageException, IOException {
+        assertArrayEquals(Arrays.copyOfRange(object, 1, object.length - 1),
+                inMemoryObjectStorageService.getObjectAsByteArray(new ObjectReference("hello", "hi", 1, object.length - 2)));
     }
 }

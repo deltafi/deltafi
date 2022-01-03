@@ -9,7 +9,6 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -18,16 +17,14 @@ public class RoteFormatAction extends SimpleFormatAction {
         log.trace(actionContext.getName() + " formatting (" + deltaFile.getDid() + ")");
 
         FormatResult result = new FormatResult(actionContext, deltaFile.getSourceInfo().getFilename());
-
-        deltaFile.getSourceInfo().getMetadata().forEach(kv -> result.addMetadata("sourceInfo." + kv.getKey(), kv.getValue()));
-
-        result.setObjectReference(deltaFile.getProtocolStack().get(0).getObjectReference());
-
+        result.setContentReference(deltaFile.getProtocolStack().get(0).getContentReference());
+        addSourceInputMetadata(result, deltaFile);
+        addProtocolStackMetadata(result, deltaFile);
         return result;
     }
 
     @Override
     public List<String> getRequiresDomains() {
-        return Arrays.asList(DeltaFiConstants.MATCHES_ANY);
+        return List.of(DeltaFiConstants.MATCHES_ANY);
     }
 }

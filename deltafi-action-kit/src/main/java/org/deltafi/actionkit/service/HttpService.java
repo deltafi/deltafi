@@ -33,7 +33,7 @@ public class HttpService {
         Supplier<InputStream> is = () -> body;
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .setHeader("content-type",MediaType.APPLICATION_OCTET_STREAM)
+                .setHeader("content-type", MediaType.APPLICATION_OCTET_STREAM)
                 .POST(HttpRequest.BodyPublishers.ofInputStream(is));
         addHeaders(requestBuilder, headers);
 
@@ -53,7 +53,7 @@ public class HttpService {
         if (!headers.isEmpty()) {
             // Flatten out the map to fit the silly, silly API
             builder.headers(
-                    headers.entrySet().stream().flatMap( x -> Stream.of(x.getKey(), x.getValue())).toArray(String[]::new)
+                    headers.entrySet().stream().flatMap(x -> Stream.of(x.getKey(), x.getValue())).toArray(String[]::new)
             );
         }
     }

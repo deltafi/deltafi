@@ -7,6 +7,9 @@ import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.CountingInputStream;
+import org.deltafi.common.properties.MinioProperties;
+import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 
@@ -23,58 +26,59 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MinioObjectStorageService implements ObjectStorageService {
     protected final MinioClient minioClient;
-    protected final long partSize;
+    protected final MinioProperties minioProperties;
 
     @Override
     public List<String> getObjectNames(String bucket, String prefix, ZonedDateTime lastModifiedBefore) {
         List<String> names = new ArrayList<>();
         
         Iterable<Result<Item>> objects = minioClient.listObjects(ListObjectsArgs.builder().bucket(bucket).prefix(prefix).recursive(true).build());
-        for (Result<Item> item : objects) {
-            Item itemObj = null;
+        for (Result<Item> itemResult : objects) {
+            Item item;
             try {
-                itemObj = item.get();
+                item = itemResult.get();
             } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | XmlParserException e) {
                 log.error("Failed to retrieve minio object for did {}", prefix, e);
                 continue;
             }
 
-            if (itemObj.isDir()) {
+            if (item.isDir()) {
                 continue;
             }
 
-            if ((lastModifiedBefore == null) || (itemObj.lastModified().isBefore(lastModifiedBefore))) {
-                names.add(itemObj.objectName());
+            if ((lastModifiedBefore == null) || (item.lastModified().isBefore(lastModifiedBefore))) {
+                names.add(item.objectName());
             }
         }
         return names;
     }
 
     @Override
-    public InputStream getObjectAsInputStream(String bucket, String name, long offset, long length) throws ObjectStorageException {
+    public InputStream getObject(ObjectReference objectReference) throws ObjectStorageException {
         try {
-            return minioClient.getObject(GetObjectArgs.builder().bucket(bucket).object(name).offset(offset).length(length).build());
+            return minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(objectReference.getBucket())
+                    .object(objectReference.getName())
+                    .offset(objectReference.getOffset())
+                    .length(objectReference.getSize())
+                    .build());
         } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
             throw new ObjectStorageException("Failed to get object from minio", e);
         }
     }
 
     @Override
-    public byte[] getObject(String bucket, String name, long offset, long length) throws ObjectStorageException {
-        try (InputStream stream = getObjectAsInputStream(bucket, name, offset, length)) {
-            return stream.readAllBytes();
-        } catch (IOException e) {
-            throw new ObjectStorageException("Failed to close minio input stream", e);
-        }
-    }
+    public ObjectReference putObject(ObjectReference objectReference, InputStream inputStream) throws ObjectStorageException {
+        CountingInputStream countingInputStream = new CountingInputStream(inputStream);
 
-    @Override
-    public ObjectWriteResponse putObject(String bucket, String name, InputStream inputStream, long size) throws ObjectStorageException {
         try {
-            return minioClient.putObject(PutObjectArgs.builder().bucket(bucket)
-                    .object(name)
-                    .stream(inputStream, size, partSize)
+            ObjectWriteResponse objectWriteResponse = minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(objectReference.getBucket())
+                    .object(objectReference.getName())
+                    .stream(countingInputStream, objectReference.getSize(), minioProperties.getPartSize())
                     .build());
+            return new ObjectReference(objectWriteResponse.bucket(), objectWriteResponse.object(), 0,
+                    countingInputStream.getByteCount());
         } catch (ErrorResponseException | InsufficientDataException | InternalException |
                 InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
                 ServerException | XmlParserException e) {
@@ -90,15 +94,12 @@ public class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public void removeObject(String bucket, String name) {
+    public void removeObject(ObjectReference objectReference) {
         try {
-            minioClient.removeObject(RemoveObjectArgs.builder()
-                    .bucket(bucket)
-                    .object(name)
-                    .build());
+            minioClient.removeObject(RemoveObjectArgs.builder().bucket(objectReference.getBucket()).object(objectReference.getName()).build());
         } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
                 InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
-            log.error("Failed to remove object {} from bucket {}", name, bucket);
+            log.error("Failed to remove object {} from bucket {}", objectReference.getName(), objectReference.getBucket());
         }
     }
 
@@ -106,10 +107,8 @@ public class MinioObjectStorageService implements ObjectStorageService {
     public boolean removeObjects(String bucket, String prefix) {
         List<DeleteObject> objectsInStorage = getObjectNames(bucket, prefix).stream().map(DeleteObject::new).collect(Collectors.toList());
 
-        RemoveObjectsArgs removeArgs = RemoveObjectsArgs.builder()
-                .bucket(bucket).objects(objectsInStorage).build();
-
-        Iterable<Result<DeleteError>> removeResults = minioClient.removeObjects(removeArgs);
+        Iterable<Result<DeleteError>> removeResults =
+                minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucket).objects(objectsInStorage).build());
 
         for (Result<DeleteError> removeResult : removeResults) {
             try {
@@ -124,16 +123,13 @@ public class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public long getObjectSize(ObjectWriteResponse writeResponse) {
+    public long getObjectSize(String bucket, String name) {
         try {
-            return minioClient.statObject(StatObjectArgs.builder()
-                    .bucket(writeResponse.bucket())
-                    .object(writeResponse.object())
-                    .build()).size();
+            return minioClient.statObject(StatObjectArgs.builder().bucket(bucket).object(name).build()).size();
         } catch (ErrorResponseException | InsufficientDataException | InternalException |
                 InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
                 ServerException | XmlParserException e) {
-            log.error("Failed to retrieve object stats for {}/{}", writeResponse.bucket(), writeResponse.object(), e);
+            log.error("Failed to retrieve object stats for {}/{}", bucket, name, e);
         }
         return 0L;
     }

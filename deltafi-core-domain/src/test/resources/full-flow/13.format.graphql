@@ -17,11 +17,11 @@ mutation {
                         value: "value2"
                     }
                 ]
-                objectReference: {
-                    name: "formattedObjectName"
-                    bucket: "formattedBucketName"
+                contentReference: {
+                    uuid: "formattedObjectName"
                     offset: 0
                     size: 1000
+                    did: "%1$s"
                 }
             }
         }

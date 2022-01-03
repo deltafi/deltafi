@@ -8,6 +8,13 @@ mutation {
             transform: {
                 protocolLayer: {
                     type: "json-utf8-sample"
+                    action: "SampleTransformAction"
+                    contentReference: {
+                        uuid: "objectName"
+                        offset: 0
+                        size: 500
+                        did: "%1$s"
+                    }
                     metadata: [
                         {
                             key: "sampleType",
@@ -18,12 +25,6 @@ mutation {
                             value: "2.1"
                         }
                     ]
-                    objectReference: {
-                        name: "objectName"
-                        bucket: "objectBucket"
-                        offset: 0
-                        size: 500
-                    }
                 }
             }
         }

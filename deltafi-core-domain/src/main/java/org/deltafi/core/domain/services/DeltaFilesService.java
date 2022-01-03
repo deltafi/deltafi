@@ -6,18 +6,19 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
-import org.deltafi.core.domain.converters.DeltaFileConverter;
 import org.deltafi.core.domain.converters.ErrorConverter;
 import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.exceptions.UnexpectedActionException;
 import org.deltafi.core.domain.exceptions.UnknownTypeException;
 import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.retry.MongoRetryable;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -26,8 +27,7 @@ import org.springframework.stereotype.Service;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -36,8 +36,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFilesService {
-    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(16);
-
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
@@ -48,6 +46,9 @@ public class DeltaFilesService {
     final DeltaFileRepo deltaFileRepo;
     final RedisService redisService;
 
+    private final ExecutorService executor = Executors.newFixedThreadPool(16);
+
+    // TODO: Remove, only used for tests!!!
     public void addDeltaFile(DeltaFile deltaFile) {
         deltaFileRepo.save(deltaFile);
     }
@@ -127,14 +128,25 @@ public class DeltaFilesService {
         String flow = input.getSourceInfo().getFlow();
         IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
-        DeltaFile deltaFile = DeltaFileConverter.convert(input.getDid(), input.getSourceInfo(), input.getObjectReference(), input.getCreated(), flowConfiguration.getType());
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .did(input.getDid())
+                .stage(DeltaFileStage.INGRESS)
+                .actions(new ArrayList<>())
+                .sourceInfo(input.getSourceInfo())
+                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), "ingress", input.getContentReference(), null)))
+                .domains(Collections.emptyList())
+                .enrichment(Collections.emptyList())
+                .formattedData(Collections.emptyList())
+                .created(input.getCreated())
+                .modified(OffsetDateTime.now())
+                .build();
 
         return advanceAndSave(deltaFile);
     }
 
     public DeltaFile transform(DeltaFile deltaFile, ActionEventInput event) {
         if (event.getTransform().getProtocolLayer() != null) {
-            deltaFile.getProtocolStack().add(DeltaFileConverter.convert(event.getTransform().getProtocolLayer()));
+            deltaFile.getProtocolStack().add(event.getTransform().getProtocolLayer());
         }
         deltaFile.completeAction(event.getAction());
 
@@ -146,10 +158,10 @@ public class DeltaFilesService {
 
         if (event.getLoad() != null) {
             if (event.getLoad().getProtocolLayer() != null) {
-                deltaFile.getProtocolStack().add(DeltaFileConverter.convert(event.getLoad().getProtocolLayer()));
+                deltaFile.getProtocolStack().add(event.getLoad().getProtocolLayer());
             }
             if (event.getLoad().getDomains() != null) {
-                for (KeyValueInput domain : event.getLoad().getDomains()) {
+                for (KeyValue domain : event.getLoad().getDomains()) {
                     deltaFile.addDomain(domain.getKey(), domain.getValue());
                 }
             }
@@ -162,7 +174,7 @@ public class DeltaFilesService {
         deltaFile.completeAction(event.getAction());
 
         if (event.getEnrich() != null && event.getEnrich().getEnrichments() != null) {
-            for (KeyValueInput enrichment : event.getEnrich().getEnrichments()) {
+            for (KeyValue enrichment : event.getEnrich().getEnrichments()) {
                 deltaFile.addEnrichment(enrichment.getKey(), enrichment.getValue());
             }
         }
@@ -174,8 +186,8 @@ public class DeltaFilesService {
         FormattedData formattedData = FormattedData.newBuilder()
                 .formatAction(event.getAction())
                 .filename(event.getFormat().getFilename())
-                .metadata(DeltaFileConverter.convertKeyValueInputs(event.getFormat().getMetadata()))
-                .objectReference(DeltaFileConverter.convert(event.getFormat().getObjectReference()))
+                .metadata(event.getFormat().getMetadata())
+                .contentReference(event.getFormat().getContentReference())
                 .egressActions(configService.getEgressFlowsWithFormatAction(event.getAction()))
                 .build();
         deltaFile.getFormattedData().add(formattedData);
@@ -229,11 +241,27 @@ public class DeltaFilesService {
         deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
 
         ErrorDomain errorDomain = ErrorConverter.convert(event, deltaFile);
-        DeltaFile errorDeltaFile = DeltaFileConverter.convert(deltaFile, OBJECT_MAPPER.writeValueAsString(errorDomain));
+        DeltaFile errorDeltaFile = convert(deltaFile, OBJECT_MAPPER.writeValueAsString(errorDomain));
 
         advanceAndSave(errorDeltaFile);
 
         return advanceAndSave(deltaFile);
+    }
+
+    private DeltaFile convert(DeltaFile originator, String errorDomain) {
+        OffsetDateTime now = OffsetDateTime.now();
+        return DeltaFile.newBuilder()
+                .did(UUID.randomUUID().toString())
+                .stage(DeltaFileStage.EGRESS)
+                .actions(new ArrayList<>())
+                .sourceInfo(originator.getSourceInfo())
+                .protocolStack(Collections.emptyList())
+                .domains(Collections.singletonList(new KeyValue("error", errorDomain)))
+                .enrichment(new ArrayList<>())
+                .formattedData(Collections.emptyList())
+                .created(now)
+                .modified(now)
+                .build();
     }
 
     public List<RetryResult> retry(List<String> dids) {
@@ -308,7 +336,7 @@ public class DeltaFilesService {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionEventInput event = redisService.dgsFeed();
-                EXECUTOR.submit(() -> {
+                executor.submit(() -> {
                     int count = 0;
                     while (true) {
                         try {

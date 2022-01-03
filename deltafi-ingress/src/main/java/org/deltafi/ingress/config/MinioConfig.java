@@ -8,12 +8,15 @@ import org.deltafi.common.storage.s3.minio.MinioObjectStorageService;
 import javax.enterprise.inject.Produces;
 
 public class MinioConfig {
+    @Produces
+    public MinioClient minioClient(MinioProperties minioProperties) {
+        return MinioClient.builder()
+                .endpoint(minioProperties.getUrl())
+                .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey()).build();
+    }
 
     @Produces
-    public ObjectStorageService objectStorageService(MinioProperties minioProperties) {
-        MinioClient minioClient = MinioClient.builder()
-                .endpoint(minioProperties.getUrl()).credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey()).build();
-
-        return new MinioObjectStorageService(minioClient, minioProperties.getPartSize());
+    public ObjectStorageService minioObjectStorageService(MinioClient minioClient, MinioProperties minioProperties) {
+        return new MinioObjectStorageService(minioClient, minioProperties);
     }
 }

@@ -8,11 +8,12 @@ mutation {
             transform: {
                 protocolLayer: {
                     type: "json-utf8"
-                    objectReference: {
-                        name: "utf8ObjectName"
-                        bucket: "utf8ObjectBucket"
+                    action: "Utf8TransformAction"
+                    contentReference: {
+                        uuid: "utf8ObjectName"
                         offset: 0
                         size: 500
+                        did: "%1$s"
                     }
                 }
             }

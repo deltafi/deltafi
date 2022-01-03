@@ -1,8 +1,8 @@
 package org.deltafi.actionkit.service;
 
-import io.minio.ObjectWriteResponse;
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 
@@ -37,16 +37,16 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public InputStream getObjectAsInputStream(String bucket, String name, long offset, long length) {
-        return new ByteArrayInputStream(getObject(bucket, name, offset, length));
-    }
-
-    @Override
-    public byte[] getObject(String bucket, String name, long offset, long length) {
-        if (!data.containsKey(key(bucket, name))) {
-            return null;
+    public InputStream getObject(ObjectReference objectReference) throws ObjectStorageException {
+        String key = key(objectReference.getBucket(), objectReference.getName());
+        if (!data.containsKey(key)) {
+            throw new ObjectStorageException("Failed to get object from in-memory object storage",
+                    new Exception("Object does not exist"));
         }
-        return trimmedArray(data.get(key(bucket, name)), offset, length);
+        byte[] object = data.get(key);
+        long size = objectReference.getSize() == -1 ? (object.length - objectReference.getOffset()) :
+                Math.min(objectReference.getSize(), (object.length - objectReference.getOffset()));
+        return new ByteArrayInputStream(trimmedArray(object, objectReference.getOffset(), size));
     }
 
     private String key(String bucket, String name) {
@@ -58,19 +58,20 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public ObjectWriteResponse putObject(String bucket, String name, InputStream inputStream, long size) throws ObjectStorageException {
+    public ObjectReference putObject(ObjectReference objectReference, InputStream inputStream) throws ObjectStorageException {
+        String key = key(objectReference.getBucket(), objectReference.getName());
         try {
-            data.put(key(bucket, name), inputStream.readAllBytes());
+            data.put(key, inputStream.readAllBytes());
         } catch (IOException e) {
             throw new ObjectStorageException("Unable to read stream", e);
         }
 
-        return new ObjectWriteResponse(null, bucket, null, name, null, null);
+        return new ObjectReference(objectReference.getBucket(), objectReference.getName(), 0, data.get(key).length);
     }
 
     @Override
-    public void removeObject(String bucket, String name) {
-        data.remove(key(bucket, name));
+    public void removeObject(ObjectReference objectReference) {
+        data.remove(key(objectReference.getBucket(), objectReference.getName()));
     }
 
     @Override
@@ -80,7 +81,7 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public long getObjectSize(ObjectWriteResponse writeResponse) {
-        return 0;
+    public long getObjectSize(String bucket, String name) {
+        return data.get(key(bucket, name)).length;
     }
 }

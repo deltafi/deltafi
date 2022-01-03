@@ -4,13 +4,13 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.com.google.common.collect.Iterables;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.converters.KeyValueConverter;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
-import org.deltafi.core.domain.generated.types.ProtocolLayer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -139,7 +139,7 @@ public class StateMachine {
     List<String> getFormatActions(DeltaFile deltaFile) {
         return configService.getEgressFlows().stream()
                 .filter(egressFlow -> matchesFlowFilter(egressFlow, deltaFile))
-                .map(e -> e.getFormatAction())
+                .map(EgressFlowConfiguration::getFormatAction)
                 .filter(f -> formatActionReady(f, deltaFile))
                 .collect(Collectors.toList());
     }

@@ -4,6 +4,7 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
@@ -57,10 +58,10 @@ class ActionConfigDatafetcherTest {
 
     @Test
     void addLoadActionConfigTest() {
-        KeyValueInput keyValueInput = KeyValueInput.newBuilder().key("version").value("1").build();
+        KeyValue keyValue = new KeyValue("version", "1");
 
         LoadActionConfigurationInput loadConfigInput = LoadActionConfigurationInput.newBuilder().name(NAME)
-                .consumes(CONSUMES).requiresMetadataKeyValues(singletonList(keyValueInput)).type(CLASS_NAME).build();
+                .consumes(CONSUMES).requiresMetadataKeyValues(singletonList(keyValue)).type(CLASS_NAME).build();
 
         DeltaFiConfigsProjectionRoot projection = rootProject().onLoadActionConfiguration()
                 .consumes()

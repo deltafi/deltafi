@@ -1,7 +1,10 @@
 package org.deltafi.core.domain.api.types;
 
 import org.deltafi.core.domain.delete.DeleteConstants;
-import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.generated.types.Action;
+import org.deltafi.core.domain.generated.types.ActionState;
+import org.deltafi.core.domain.generated.types.DeltaFileStage;
+import org.deltafi.core.domain.generated.types.FormattedData;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -146,7 +149,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         if (kv.isPresent()) {
             kv.get().setValue(domainValue);
         } else {
-            getDomains().add(KeyValue.newBuilder().key(domainKey).value(domainValue).build());
+            getDomains().add(new KeyValue(domainKey, domainValue));
         }
     }
 
@@ -171,7 +174,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         if (kv.isPresent()) {
             kv.get().setValue(enrichmentValue);
         } else {
-            getEnrichment().add(KeyValue.newBuilder().key(enrichmentKey).value(enrichmentValue).build());
+            getEnrichment().add(new KeyValue(enrichmentKey, enrichmentValue));
         }
     }
 
@@ -229,6 +232,12 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
     public String sourceMetadata(String key, String defaultValue) {
         return getSourceInfo().getMetadata().stream().filter(k-> k.getKey().equals(key)).findFirst().map(KeyValue::getValue).orElse(defaultValue);
+    }
+
+    public Optional<ProtocolLayer> getProtocolLayer(String type) {
+        return getProtocolStack().stream()
+                .filter(protocolLayer -> protocolLayer.getType().equals(type))
+                .findFirst();
     }
 
     public static Builder newBuilder() {

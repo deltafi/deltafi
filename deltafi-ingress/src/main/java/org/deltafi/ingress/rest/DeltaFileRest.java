@@ -41,7 +41,7 @@ public class DeltaFileRest {
         }
     }
 
-    String getParam(String queryParam, String headerParam, String paramName) throws DeltafiMetadataException {
+    private String getParam(String queryParam, String headerParam, String paramName) throws DeltafiMetadataException {
         if (Objects.isNull(queryParam) && Objects.isNull(headerParam)) {
             throw new DeltafiMetadataException(paramName + " must be passed in as a query parameter or header");
         }

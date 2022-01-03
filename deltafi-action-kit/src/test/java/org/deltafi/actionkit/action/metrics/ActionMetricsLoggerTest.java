@@ -19,6 +19,7 @@ import static org.mockito.Mockito.eq;
 
 public class ActionMetricsLoggerTest {
     private static final MockedStatic<MetricLogger> MOCKED_METRIC_LOGGER = Mockito.mockStatic(MetricLogger.class);
+
     private static final Result EGRESS_RESULT = new EgressResult(
             new ActionContext("did", "egressaction", "flow", "flow"), "destination", 123L);
     private static final Result ERROR_RESULT = new ErrorResult(

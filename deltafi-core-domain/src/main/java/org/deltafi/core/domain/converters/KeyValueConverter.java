@@ -1,7 +1,6 @@
 package org.deltafi.core.domain.converters;
 
-import org.deltafi.core.domain.generated.types.KeyValue;
-import org.deltafi.core.domain.generated.types.KeyValueInput;
+import org.deltafi.core.domain.api.types.KeyValue;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,18 +19,6 @@ public class KeyValueConverter {
         return keyValueMap;
     }
 
-    public static Map<String, String> convertKeyValueInputs(List<KeyValueInput> keyValues) {
-        if (Objects.isNull(keyValues)) {
-            return Collections.emptyMap();
-        }
-        Map<String, String> keyValueMap = new HashMap<>();
-        for (KeyValueInput keyValue : keyValues) {
-            keyValueMap.put(keyValue.getKey(), keyValue.getValue());
-        }
-
-        return keyValueMap;
-    }
-
     public static List<KeyValue> fromMap(Map<String, String> map) {
         if (Objects.isNull(map)) {
             return Collections.emptyList();
@@ -40,7 +27,7 @@ public class KeyValueConverter {
     }
 
     public static KeyValue fromMapEntry(Map.Entry<String, String> entry) {
-        return KeyValue.newBuilder().key(entry.getKey()).value(entry.getValue()).build();
+        return new KeyValue(entry.getKey(), entry.getValue());
     }
 
 }

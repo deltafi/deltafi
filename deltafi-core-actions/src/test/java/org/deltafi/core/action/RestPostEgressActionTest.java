@@ -7,104 +7,100 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.HttpService;
-import org.deltafi.actionkit.service.InMemoryObjectStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.FormattedData;
-import org.deltafi.core.domain.generated.types.ObjectReference;
-import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.deltafi.core.parameters.RestPostEgressParameters;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class RestPostEgressActionTest {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    InMemoryObjectStorageService inMemoryObjectStorageService = new InMemoryObjectStorageService();
+    private static final String DID = UUID.randomUUID().toString();
+    private static final String ORIG_FILENAME = "origFilename";
+    private static final String FLOW = "theFlow";
+    private static final String POST_FILENAME = "postFilename";
 
-    HttpService httpService = Mockito.mock(HttpService.class);
-    ArgumentCaptor<InputStream> isCaptor = ArgumentCaptor.forClass(InputStream.class);
-    @SuppressWarnings("unchecked")
-    ArgumentCaptor<Map<String, String>> mapCaptor = ArgumentCaptor.forClass(Map.class);
+    private static final String ACTION = "MyRestEgressAction";
+    private static final String EGRESS_FLOW = "outFlow";
+    private static final String URL = "https://url.com";
+    private static final String METADATA_KEY = "theMetadataKey";
 
-    ActionContext actionContext = ActionContext.builder()
-            .did(DID).name(ACTION).build();
-    RestPostEgressAction action = new RestPostEgressAction(inMemoryObjectStorageService, httpService);
+    private static final String CONTENT_NAME = "contentName";
+    private static final byte[] DATA = "data to be egressed".getBytes();
 
-    static final String URL = "https://url.com";
-    static final String METADATA_KEY = "theMetadataKey";
-    static final String ACTION = "MyRestEgressAction";
+    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_NAME, 0, DATA.length, DID);
 
-    static final String data = "data to be egressed";
-    static final String CONTENT_BUCKET = "contentBucket";
-    static final String CONTENT_NAME = "contentName";
-
-    static final String DID = UUID.randomUUID().toString();
-
-    static final String FLOW = "theFlow";
-    static final String EGRESS_FLOW = "outFlow";
-    static final String ORIG_FILENAME = "origFilename";
-    static final String POST_FILENAME = "postFilename";
-
-    private final static ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-
-    ObjectReference objectReference = ObjectReference.newBuilder()
-            .bucket(CONTENT_BUCKET)
-            .name(CONTENT_NAME)
-            .size(data.length())
-            .offset(0).build();
-
-    DeltaFile deltaFile = DeltaFile.newBuilder()
+    private static final DeltaFile DELTA_FILE = DeltaFile.newBuilder()
             .did(DID)
-            .sourceInfo(SourceInfo.newBuilder()
-                    .filename(ORIG_FILENAME)
-                    .flow(FLOW)
-                    .build())
+            .sourceInfo(new SourceInfo(ORIG_FILENAME, FLOW, List.of()))
             .formattedData(Collections.singletonList(
                     FormattedData.newBuilder()
                             .filename(POST_FILENAME)
-                            .objectReference(objectReference)
+                            .contentReference(CONTENT_REFERENCE)
                             .build()
             ))
             .build();
 
-    RestPostEgressParameters params = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY);
+    private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY);
 
-    @BeforeEach
-    void setup() throws ObjectStorageException {
-        inMemoryObjectStorageService.clear();
-        inMemoryObjectStorageService.putObject(objectReference.getBucket(), objectReference.getName(), data.getBytes());
-    }
+    @Mock
+    private ContentStorageService contentStorageService;
+
+    @Mock
+    private HttpService httpService;
+
+    @InjectMocks
+    private RestPostEgressAction action;
 
     @Test
-    void execute() throws IOException {
-        Result result = action.execute(deltaFile, actionContext, params);
+    public void execute() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
+        runTestExpectedToSucceed();
+    }
 
-        verify(httpService).post(eq(URL), mapCaptor.capture(), isCaptor.capture());
-        Map<String, String> actual = mapCaptor.getValue();
+    private void runTestExpectedToSucceed() throws IOException {
+        ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
+        Result result = action.execute(DELTA_FILE, actionContext, PARAMS);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<InputStream> bodyCaptor = ArgumentCaptor.forClass(InputStream.class);
+        verify(httpService).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture());
+
+        Map<String, String> actual = headersCaptor.getValue();
         assertNotNull(actual.get(METADATA_KEY));
-        Map<String, String> metadata = objectMapper.readValue(actual.get(METADATA_KEY), new TypeReference<>() {});
+        Map<String, String> metadata = OBJECT_MAPPER.readValue(actual.get(METADATA_KEY), new TypeReference<>() {});
         assertEquals(DID, metadata.get("did"));
         assertEquals(FLOW, metadata.get("ingressFlow"));
         assertEquals(EGRESS_FLOW, metadata.get("flow"));
         assertEquals(POST_FILENAME, metadata.get("filename"));
         assertEquals(ORIG_FILENAME, metadata.get("originalFilename"));
 
-        assertEquals(data, new String(isCaptor.getValue().readAllBytes()));
+        assertArrayEquals(DATA, bodyCaptor.getValue().readAllBytes());
 
         assertTrue(result instanceof EgressResult);
         assertEquals(DID, result.toEvent().getDid());
@@ -112,15 +108,33 @@ class RestPostEgressActionTest {
     }
 
     @Test
-    void executeMissingData() {
-        inMemoryObjectStorageService.clear();
+    public void executeMissingData() throws ObjectStorageException {
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
 
-        Result result = action.execute(deltaFile, actionContext, params);
+        ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
+        Result result = action.execute(DELTA_FILE, actionContext, PARAMS);
 
         verify(httpService, never()).post(any(), any(), any());
 
         assertTrue(result instanceof ErrorResult);
         assertEquals(DID, result.toEvent().getDid());
         assertEquals(ACTION, result.toEvent().getAction());
+    }
+
+    private static class TestInputStream extends ByteArrayInputStream {
+        public TestInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        @Override
+        public void close() throws IOException {
+            throw new IOException();
+        }
+    }
+
+    @Test
+    public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new TestInputStream(DATA));
+        runTestExpectedToSucceed();
     }
 }

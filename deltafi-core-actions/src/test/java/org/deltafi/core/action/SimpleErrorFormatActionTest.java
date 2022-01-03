@@ -1,77 +1,77 @@
 package org.deltafi.core.action;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.service.InMemoryObjectStorageService;
+import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
-import org.deltafi.core.domain.generated.types.KeyValue;
-import org.deltafi.core.domain.generated.types.ObjectReference;
-import org.deltafi.core.domain.generated.types.SourceInfo;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
+import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(MockitoExtension.class)
 public class SimpleErrorFormatActionTest {
-
-    InMemoryObjectStorageService inMemoryObjectStorageService = new InMemoryObjectStorageService();
-
-    SimpleErrorFormatAction action = new SimpleErrorFormatAction(inMemoryObjectStorageService);
-
-    static final String ACTION = "MyErrorFormatAction";
-
-    static final String ORIGINATOR_DID = UUID.randomUUID().toString();
-    static final String DID = UUID.randomUUID().toString();
-
-    static final String FLOW = "theFlow";
-    static final String FILENAME = "origFilename";
-
-    ErrorDomain errorDomain = ErrorDomain.newBuilder()
-            .fromAction("errored action")
-            .originator(DeltaFile.newBuilder().did(ORIGINATOR_DID).build())
-            .originatorDid(ORIGINATOR_DID)
-            .cause("something bad")
-            .context("more details")
-            .build();
-
-    ObjectMapper objectMapper = new ObjectMapper()
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    DeltaFile deltaFile = DeltaFile.newBuilder()
-            .did(DID)
-            .sourceInfo(SourceInfo.newBuilder()
-                    .filename(FILENAME)
-                    .flow(FLOW)
-                    .build())
-            .build();
-    ActionParameters params = new ActionParameters();
+    private static final String DID = UUID.randomUUID().toString();
+    private static final String ACTION = "MyErrorFormatAction";
+    private static final String ORIGINATOR_DID = UUID.randomUUID().toString();
+    private static final String FILENAME = "origFilename";
+    private static final String FLOW = "theFlow";
 
-    @BeforeEach
-    void setup() throws JsonProcessingException {
-        inMemoryObjectStorageService.clear();
-        deltaFile.setDomains(Collections.singletonList(KeyValue.newBuilder().key("error").value(objectMapper.writeValueAsString(errorDomain)).build()));
-    }
+    @Mock
+    private ContentStorageService contentStorageService;
+
+    @InjectMocks
+    private SimpleErrorFormatAction simpleErrorFormatAction;
 
     @Test
-    void execute() throws JsonProcessingException {
+    void execute() throws IOException, ObjectStorageException {
+        ContentReference contentReference = new ContentReference(FILENAME, DID);
+        Mockito.when(contentStorageService.save(Mockito.eq(DID), (byte[]) Mockito.any())).thenReturn(contentReference);
+
+        ErrorDomain errorDomain = ErrorDomain.newBuilder()
+                .fromAction("errored action")
+                .originator(DeltaFile.newBuilder().did(ORIGINATOR_DID).build())
+                .originatorDid(ORIGINATOR_DID)
+                .cause("something bad")
+                .context("more details")
+                .build();
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .did(DID)
+                .sourceInfo(new SourceInfo(FILENAME, FLOW, List.of()))
+                .domains(List.of(new KeyValue("error", OBJECT_MAPPER.writeValueAsString(errorDomain))))
+                .build();
         ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
-        FormatResult formatResult = (FormatResult) action.execute(deltaFile, actionContext, params);
+        FormatResult formatResult = (FormatResult) simpleErrorFormatAction.execute(deltaFile, actionContext, new ActionParameters());
+
         assertEquals(DID, formatResult.toEvent().getDid());
         assertEquals(ACTION, formatResult.toEvent().getAction());
         assertEquals(ORIGINATOR_DID + "." + FILENAME + ".error", formatResult.toEvent().getFormat().getFilename());
-        ObjectReference objectReference = objectMapper.convertValue(formatResult.getObjectReference(), ObjectReference.class);
-        ErrorDomain actual = objectMapper.readValue(new String(inMemoryObjectStorageService.getObject(
-                objectReference.getBucket(), objectReference.getName(), objectReference.getOffset(), objectReference.getSize())), ErrorDomain.class);
+
+        ArgumentCaptor<byte[]> fileContentArgumentCaptor = ArgumentCaptor.forClass(byte[].class);
+        Mockito.verify(contentStorageService).save(Mockito.eq(DID), fileContentArgumentCaptor.capture());
+        ErrorDomain actual = OBJECT_MAPPER.readValue(fileContentArgumentCaptor.getValue(), ErrorDomain.class);
         assertEquals(ORIGINATOR_DID, actual.getOriginatorDid());
     }
 }

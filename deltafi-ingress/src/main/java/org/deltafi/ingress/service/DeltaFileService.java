@@ -7,20 +7,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.client.GraphQLError;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import io.minio.ObjectWriteResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.IngressGraphQLQuery;
 import org.deltafi.core.domain.generated.client.IngressProjectionRoot;
 import org.deltafi.core.domain.generated.types.IngressInput;
-import org.deltafi.core.domain.generated.types.KeyValueInput;
-import org.deltafi.core.domain.generated.types.ObjectReferenceInput;
-import org.deltafi.core.domain.generated.types.SourceInfoInput;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
@@ -31,50 +29,71 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
-
 @ApplicationScoped
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileService {
-    private static final String INGRESS = "ingress";
-    public static final String INGRESS_ACTION = "IngressAction";
-    private static final String ACTION = "action";
-    private static final String FILENAME = "filename";
-
     private final GraphQLClientService graphQLClientService;
-    private final ObjectStorageService objectStorageService;
+    private final ContentStorageService contentStorageService;
     private final ZipkinService zipkinService;
     private final ObjectMapper objectMapper;
 
-    public String ingressData(InputStream inputStream, String filename, String flow, String metadata) throws ObjectStorageException, DeltafiGraphQLException, DeltafiException, DeltafiMetadataException {
-        OffsetDateTime now = OffsetDateTime.now();
+    public String ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString)
+            throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         String did = UUID.randomUUID().toString();
+        OffsetDateTime created = OffsetDateTime.now();
 
-        ObjectWriteResponse response = objectStorageService.putObject(MINIO_BUCKET, objectName(did, filename), inputStream, -1L);
-        ObjectReferenceInput objectReferenceInput = toObjectReferenceInput(response);
-        SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().filename(filename).flow(flow).metadata(fromMetadataString(metadata)).build();
-        IngressInput ingressInput = IngressInput.newBuilder().did(did).sourceInfo(sourceInfoInput).objectReference(objectReferenceInput).created(now).build();
+        ContentReference contentReference = contentStorageService.save(did, inputStream);
 
-        ingressDeltaFile(ingressInput);
+        try {
+            sendToIngressGraphQl(did, sourceFileName, flow, metadataString, contentReference, created);
+        } catch (Exception e) {
+            contentStorageService.delete(contentReference);
+            throw e;
+        }
+
+        logMetric(did, sourceFileName, flow, "files_in", 1);
+        logMetric(did, sourceFileName, flow, "bytes_in", contentReference.getSize());
+
+        sendTrace(did, sourceFileName, flow, created);
 
         return did;
     }
 
-    private String objectName(String did, String incomingName) {
-        String fileName = Objects.isNull(incomingName) ? "ingress-unknown-incomingName" : "ingress-" + incomingName;
-        return did + "/" + fileName;
+    private KeyValue toKeyValueInput(Map.Entry<String, JsonNode> entry) {
+        JsonNode node = entry.getValue();
+        String value = node.isTextual() ? node.asText() : node.toString();
+        return new KeyValue(entry.getKey(), value);
     }
 
-    public ObjectReferenceInput toObjectReferenceInput(ObjectWriteResponse response) {
-        return ObjectReferenceInput.newBuilder()
-                .bucket(response.bucket())
-                .name(response.object())
-                .size(objectStorageService.getObjectSize(response))
-                .offset(0L).build();
+    private void sendToIngressGraphQl(String did, String sourceFileName, String flow, String metadataString,
+            ContentReference contentReference, OffsetDateTime created) throws DeltafiMetadataException, DeltafiException {
+        IngressInput ingressInput = IngressInput.newBuilder()
+                .did(did)
+                .sourceInfo(new SourceInfo(sourceFileName, flow, fromMetadataString(metadataString)))
+                .contentReference(contentReference)
+                .created(created)
+                .build();
+
+        GraphQLResponse response;
+        try {
+            response = graphQLClientService.executeGraphQLQuery(toGraphQlRequest(ingressInput));
+        } catch (DeltafiGraphQLException e) {
+            logMetric(did, sourceFileName, flow, "files_dropped", 1);
+            throw e;
+        } catch (Exception e) {
+            logMetric(did, sourceFileName, flow, "files_dropped", 1);
+            throw new DeltafiException(e.getMessage());
+        }
+
+        if (response.hasErrors()) {
+            logMetric(did, sourceFileName, flow, "files_dropped", 1);
+            throw new DeltafiGraphQLException(
+                    response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining(",")));
+        }
     }
 
-    public List<KeyValueInput> fromMetadataString(String metadata) throws DeltafiMetadataException {
+    List<KeyValue> fromMetadataString(String metadata) throws DeltafiMetadataException {
         if (Objects.isNull(metadata)) {
             return Collections.emptyList();
         }
@@ -87,63 +106,18 @@ public class DeltaFileService {
         }
     }
 
-    public KeyValueInput toKeyValueInput(Map.Entry<String, JsonNode> entry) {
-        JsonNode node = entry.getValue();
-        String value = node.isTextual() ? node.asText() : node.toString();
-        return KeyValueInput.newBuilder().key(entry.getKey()).value(value).build();
-    }
-
-    private void ingressDeltaFile(IngressInput ingressInput) throws DeltafiException {
-        try {
-            sendIngressInput(ingressInput);
-            logMetrics(ingressInput, "files_in", "bytes_in");
-            sendTrace(ingressInput);
-        } catch (DeltafiGraphQLException deltafiException) {
-            handleUnrecoverableError(ingressInput);
-            throw deltafiException;
-        } catch (Exception exception) {
-            log.error("Ingress failed for event: {}", ingressInput, exception);
-            handleUnrecoverableError(ingressInput);
-            throw new DeltafiException(exception.getMessage());
-        }
-    }
-
-    private void sendIngressInput(IngressInput ingressInput) throws DeltafiGraphQLException {
-        GraphQLResponse response = graphQLClientService.executeGraphQLQuery(toGraphQlRequest(ingressInput));
-        if (response.hasErrors()) {
-            throw new DeltafiGraphQLException(response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining(",")));
-        }
-    }
-
     private GraphQLQueryRequest toGraphQlRequest(IngressInput ingressInput) {
         IngressGraphQLQuery ingressGraphQLQuery = IngressGraphQLQuery.newRequest().input(ingressInput).build();
         IngressProjectionRoot projectionRoot = new IngressProjectionRoot().did();
         return new GraphQLQueryRequest(ingressGraphQLQuery, projectionRoot);
     }
 
-    private void sendTrace(IngressInput ingressInput) {
-        DeltafiSpan span = zipkinService.createChildSpan(ingressInput.getDid(), INGRESS_ACTION,
-                ingressInput.getSourceInfo().getFilename(), ingressInput.getSourceInfo().getFlow(),
-                ingressInput.getCreated());
-        zipkinService.markSpanComplete(span);
+    private void logMetric(String did, String fileName, String flow, String metric, long value) {
+        Map<String, String> tags = Map.of("filename", fileName, "action", "IngressAction");
+        MetricLogger.logMetric("ingress", did, flow, metric, value, tags);
     }
 
-    private void handleUnrecoverableError(IngressInput ingressInput) {
-        logMetrics(ingressInput, "files_dropped", "bytes_dropped");
-        removeInvalidObject(ingressInput.getObjectReference());
-    }
-
-    private void removeInvalidObject(ObjectReferenceInput objectReference) {
-        if (log.isWarnEnabled()) {
-            log.warn("Removing object: {} from bucket: {}", objectReference.getName(), objectReference.getBucket());
-        }
-        objectStorageService.removeObject(objectReference.getBucket(), objectReference.getName());
-    }
-
-    private void logMetrics(IngressInput ingressInput, String fileMetric, String byteMetric) {
-        Map<String, String> tags = Map.of(FILENAME, ingressInput.getSourceInfo().getFilename(), ACTION, INGRESS_ACTION);
-        MetricLogger.logMetric(INGRESS, ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(), fileMetric, 1, tags);
-        MetricLogger.logMetric(INGRESS, ingressInput.getDid(), ingressInput.getSourceInfo().getFlow(),
-                byteMetric, ingressInput.getObjectReference().getSize(), tags);
+    private void sendTrace(String did, String fileName, String flow, OffsetDateTime created) {
+        zipkinService.markSpanComplete(zipkinService.createChildSpan(did, "IngressAction", fileName, flow, created));
     }
 }

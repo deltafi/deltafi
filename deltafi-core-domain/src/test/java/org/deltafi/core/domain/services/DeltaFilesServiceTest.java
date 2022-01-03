@@ -1,14 +1,14 @@
 package org.deltafi.core.domain.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.generated.types.IngressInput;
-import org.deltafi.core.domain.generated.types.ObjectReferenceInput;
-import org.deltafi.core.domain.generated.types.SourceInfoInput;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,9 +46,9 @@ class DeltaFilesServiceTest {
         final String flow = "theFlow";
         when(deltaFiConfigService.getIngressFlow(flow)).thenReturn(Optional.of(new IngressFlowConfiguration()));
         String did = UUID.randomUUID().toString();
-        SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().flow(flow).build();
-        ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput();
-        IngressInput ingressInput = new IngressInput(did, sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
+        SourceInfo sourceInfo = new SourceInfo(null, flow, List.of());
+        ContentReference contentReference = new ContentReference();
+        IngressInput ingressInput = new IngressInput(did, sourceInfo, contentReference, OffsetDateTime.now());
 
         DeltaFile deltaFile = deltaFilesService.addDeltaFile(ingressInput);
 
@@ -60,9 +60,9 @@ class DeltaFilesServiceTest {
 
     @Test
     void setThrowsOnMissingFlow() {
-        SourceInfoInput sourceInfoInput = SourceInfoInput.newBuilder().flow("nonsense").build();
-        ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput();
-        IngressInput ingressInput = new IngressInput("did", sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
+        SourceInfo sourceInfo = new SourceInfo(null, "nonsense", List.of());
+        ContentReference contentReference = new ContentReference();
+        IngressInput ingressInput = new IngressInput("did", sourceInfo, contentReference, OffsetDateTime.now());
 
         assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.addDeltaFile(ingressInput));
     }

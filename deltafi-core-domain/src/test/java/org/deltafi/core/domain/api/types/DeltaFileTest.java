@@ -2,8 +2,6 @@ package org.deltafi.core.domain.api.types;
 
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.KeyValue;
-import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -15,15 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class DeltaFileTest {
     @Test
     void testSourceMetadata() {
-        SourceInfo sourceInfo = SourceInfo.newBuilder()
-                .metadata(List.of(
-                        KeyValue.newBuilder().key("key1").value("value1").build(),
-                        KeyValue.newBuilder().key("key2").value("value2").build()
-                ))
-                .build();
-
         DeltaFile deltaFile = DeltaFile.newBuilder()
-                .sourceInfo(sourceInfo)
+                .sourceInfo(new SourceInfo(null, null,
+                        List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value2"))))
                 .build();
 
         assertEquals("value1", deltaFile.sourceMetadata("key1"));

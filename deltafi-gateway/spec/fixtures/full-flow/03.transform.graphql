@@ -4,7 +4,7 @@ mutation {
         fromTransformAction: "JsonUtf8StixTransformAction"
         protocolLayer: {
             type: "json-utf8-stix"
-            objectReference: {
+            contentReference: {
                 name: "objectName"
                 bucket: "objectBucket"
                 offset: 0

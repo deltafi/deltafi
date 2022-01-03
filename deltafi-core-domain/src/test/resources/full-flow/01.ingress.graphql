@@ -10,11 +10,11 @@ mutation {
                     value: "XYZ"
                 }
             }
-            objectReference: {
-                name: "objectName"
-                bucket: "objectBucket"
+            contentReference: {
+                uuid: "objectName"
                 offset: 0
                 size: 500
+                did: "%1$s"
             }
             created: "2021-07-11T13:44:22.183Z"
         })

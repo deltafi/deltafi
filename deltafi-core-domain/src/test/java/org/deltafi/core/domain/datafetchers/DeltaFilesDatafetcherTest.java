@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.generated.DgsConstants;
@@ -55,13 +58,12 @@ class DeltaFilesDatafetcherTest {
     final String filename = "theFilename";
     final String flow = "theFlow";
     final Long size = 500L;
-    final String objectName = "theName";
-    final String objectBucket = "theBucket";
-    final List<KeyValueInput> metadata = Arrays.asList(new KeyValueInput("k1", "v1"), new KeyValueInput("k2", "v2"));
-    final ObjectReferenceInput objectReferenceInput = new ObjectReferenceInput(objectName, objectBucket, 0, size);
-    final SourceInfoInput sourceInfoInput = new SourceInfoInput(filename, flow, metadata);
+    final String objectUuid = "theUuid";
     final String did = UUID.randomUUID().toString();
-    final IngressInput ingressInput = new IngressInput(did, sourceInfoInput, objectReferenceInput, OffsetDateTime.now());
+    final List<KeyValue> metadata = Arrays.asList(new KeyValue("k1", "v1"), new KeyValue("k2", "v2"));
+    final ContentReference contentReference = new ContentReference(objectUuid, 0, size, did);
+    final SourceInfo sourceInfo = new SourceInfo(filename, flow, metadata);
+    final IngressInput ingressInput = new IngressInput(did, sourceInfo, contentReference, OffsetDateTime.now());
 
     final DeltaFilesProjectionRoot deltaFilesProjectionRoot = new DeltaFilesProjectionRoot()
             .deltaFiles()
@@ -79,15 +81,16 @@ class DeltaFilesDatafetcherTest {
                 .parent()
                 .protocolStack()
                 .type()
+                .action()
+                .contentReference()
+                .uuid()
+                .offset()
+                .size()
+                .did()
+                .parent()
                 .metadata()
                 .key()
                 .value()
-                .parent()
-                .objectReference()
-                .name()
-                .bucket()
-                .offset()
-                .size()
                 .parent()
                 .parent()
                 .sourceInfo()
@@ -109,11 +112,11 @@ class DeltaFilesDatafetcherTest {
                 .formattedData()
                 .filename()
                 .formatAction()
-                .objectReference()
-                .bucket()
+                .contentReference()
+                .uuid()
                 .offset()
-                .name()
                 .size()
+                .did()
                 .parent()
                 .parent()
             .parent()
@@ -136,15 +139,16 @@ class DeltaFilesDatafetcherTest {
                 .parent()
             .protocolStack()
               .type()
+              .action()
+              .contentReference()
+                  .uuid()
+                  .offset()
+                  .size()
+                  .did()
+                  .parent()
               .metadata()
                 .key()
                 .value()
-                .parent()
-            .objectReference()
-                .name()
-                .bucket()
-                .offset()
-                .size()
                 .parent()
               .parent()
             .sourceInfo()
@@ -166,11 +170,11 @@ class DeltaFilesDatafetcherTest {
             .formattedData()
                 .filename()
                 .formatAction()
-                .objectReference()
-                    .bucket()
+                .contentReference()
+                    .uuid()
                     .offset()
-                    .name()
                     .size()
+                    .did()
                     .parent()
                 .parent();
 
@@ -197,10 +201,10 @@ class DeltaFilesDatafetcherTest {
         assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(flow);
         assertThat(deltaFile.getSourceInfo().getMetadata()).isEqualTo(new ObjectMapper().convertValue(metadata, new TypeReference<List<KeyValue>>(){}));
         assertThat(deltaFile.getProtocolStack().get(0).getType()).isEqualTo(fileType);
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getName()).isEqualTo(objectName);
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getBucket()).isEqualTo(objectBucket);
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getOffset()).isZero();
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getSize()).isEqualTo(size);
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getUuid()).isEqualTo(objectUuid);
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getOffset()).isZero();
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getSize()).isEqualTo(size);
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getDid()).isEqualTo(did);
         assertTrue(deltaFile.getEnrichment().isEmpty());
         assertTrue(deltaFile.getDomains().isEmpty());
         assertTrue(deltaFile.getFormattedData().isEmpty());
@@ -208,7 +212,7 @@ class DeltaFilesDatafetcherTest {
 
     @Test
     void addDeltaFileNoMetadata() {
-        sourceInfoInput.setMetadata(Collections.emptyList());
+        sourceInfo.setMetadata(Collections.emptyList());
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
                 IngressGraphQLQuery.newRequest().input(ingressInput).build(),
@@ -222,10 +226,10 @@ class DeltaFilesDatafetcherTest {
         assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(flow);
         assertTrue(deltaFile.getSourceInfo().getMetadata().isEmpty());
         assertThat(deltaFile.getProtocolStack().get(0).getType()).isEqualTo(fileType);
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getName()).isEqualTo(objectName);
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getBucket()).isEqualTo(objectBucket);
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getOffset()).isZero();
-        assertThat(deltaFile.getProtocolStack().get(0).getObjectReference().getSize()).isEqualTo(size);
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getUuid()).isEqualTo(objectUuid);
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getOffset()).isZero();
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getSize()).isEqualTo(size);
+        assertThat(deltaFile.getProtocolStack().get(0).getContentReference().getDid()).isEqualTo(did);
         assertTrue(deltaFile.getEnrichment().isEmpty());
         assertTrue(deltaFile.getDomains().isEmpty());
         assertTrue(deltaFile.getFormattedData().isEmpty());

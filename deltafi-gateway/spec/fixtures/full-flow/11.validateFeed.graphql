@@ -5,7 +5,7 @@ query {
         did
         formattedData {
             formatAction
-            objectReference {
+            contentReference {
                 bucket
                 name
                 size

@@ -4,7 +4,11 @@ import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.ProtocolLayer;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.core.domain.generated.types.LoadInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -12,15 +16,15 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 public class LoadResult extends DataAmendedResult {
-    private final List<KeyValueInput> domains = new ArrayList<>();
+    private final List<KeyValue> domains = new ArrayList<>();
 
     public LoadResult(ActionContext actionContext, DeltaFile deltaFile) {
         super(actionContext);
-        setObjectReference(deltaFile.getProtocolStack().get(deltaFile.getProtocolStack().size() -1).getObjectReference());
+        setContentReference(deltaFile.getProtocolStack().get(deltaFile.getProtocolStack().size() - 1).getContentReference());
     }
 
     public void addDomain(@NotNull String domainName, String value) {
-        domains.add(KeyValueInput.newBuilder().key(domainName).value(value).build());
+        domains.add(new KeyValue(domainName, value));
     }
 
     @Override
@@ -33,12 +37,7 @@ public class LoadResult extends DataAmendedResult {
         ActionEventInput event = super.toEvent();
         event.setLoad(LoadInput.newBuilder()
                 .domains(domains)
-                .protocolLayer(
-                        new ProtocolLayerInput.Builder()
-                                .type(actionContext.getName())
-                                .objectReference(objectReferenceInput)
-                                .metadata(metadata)
-                                .build())
+                .protocolLayer(new ProtocolLayer(actionContext.getName(), actionContext.getName(), contentReference, metadata))
                 .build());
 
         return event;

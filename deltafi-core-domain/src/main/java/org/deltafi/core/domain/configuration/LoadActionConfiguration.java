@@ -3,8 +3,8 @@ package org.deltafi.core.domain.configuration;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import net.minidev.json.annotate.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.converters.KeyValueConverter;
-import org.deltafi.core.domain.generated.types.KeyValue;
 import org.springframework.data.annotation.Transient;
 
 import java.util.Collections;

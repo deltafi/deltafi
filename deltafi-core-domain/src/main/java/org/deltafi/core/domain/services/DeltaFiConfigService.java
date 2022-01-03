@@ -215,7 +215,7 @@ public class DeltaFiConfigService {
     }
 
     public LoadActionConfiguration saveLoadAction(LoadActionConfigurationInput loadActionConfigurationInput) {
-        Consumer<LoadActionConfiguration> convertKeyValueInputs = c -> c.setRequiresMetadata(KeyValueConverter.convertKeyValueInputs(loadActionConfigurationInput.getRequiresMetadataKeyValues()));
+        Consumer<LoadActionConfiguration> convertKeyValueInputs = c -> c.setRequiresMetadata(KeyValueConverter.convertKeyValues(loadActionConfigurationInput.getRequiresMetadataKeyValues()));
         return updateConfig(loadActionConfigurationInput, DeltafiRuntimeConfiguration::getLoadActions, loadActionConfigurationInput.getName(), convertKeyValueInputs, LoadActionConfiguration.class);
     }
 

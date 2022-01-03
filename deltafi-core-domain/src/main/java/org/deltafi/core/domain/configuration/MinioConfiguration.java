@@ -8,18 +8,18 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.net.URISyntaxException;
-
 @Configuration
 @EnableConfigurationProperties(MinioProperties.class)
 public class MinioConfiguration {
-
     @Bean
-    public ObjectStorageService objectStorageService(MinioProperties minioProperties) throws URISyntaxException {
-        MinioClient minioClient = MinioClient.builder()
+    public MinioClient minioClient(MinioProperties minioProperties) {
+        return MinioClient.builder()
                 .endpoint(minioProperties.getUrl())
                 .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey()).build();
+    }
 
-        return new MinioObjectStorageService(minioClient, minioProperties.getPartSize());
+    @Bean
+    public ObjectStorageService objectStorageService(MinioClient minioClient, MinioProperties minioProperties) {
+        return new MinioObjectStorageService(minioClient, minioProperties);
     }
 }

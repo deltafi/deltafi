@@ -1,33 +1,32 @@
 package org.deltafi.core.domain.housekeeping.minio;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.time.Clock;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-@Named
+@Service
 @Slf4j
 public class UnreferencedObjectCleanUp {
-    private final ObjectStorageService objectStorageService;
+    private final ContentStorageService contentStorageService;
     private final DeltaFileRepo deltaFileRepo;
     private final Clock clock;
     private final int objectMinimumAgeForRemovalSeconds;
 
     @Inject
-    public UnreferencedObjectCleanUp(ObjectStorageService objectStorageService, DeltaFileRepo deltaFileRepo,
-            Clock clock, @Value("${deltafi.housekeeping.minio.objectMinimumAgeForRemovalSeconds}") int objectMinimumAgeForRemovalSeconds) {
-        this.objectStorageService = objectStorageService;
+    public UnreferencedObjectCleanUp(ContentStorageService contentStorageService, DeltaFileRepo deltaFileRepo,
+            Clock clock, DeltaFiProperties deltaFiProperties) {
+        this.contentStorageService = contentStorageService;
         this.deltaFileRepo = deltaFileRepo;
         this.clock = clock;
-        this.objectMinimumAgeForRemovalSeconds = objectMinimumAgeForRemovalSeconds;
+        this.objectMinimumAgeForRemovalSeconds = deltaFiProperties.getHousekeeping().getMinio().getObjectMinimumAgeForRemovalSeconds();
     }
 
     public void removeUnreferencedObjects() {
@@ -35,16 +34,13 @@ public class UnreferencedObjectCleanUp {
 
         ZonedDateTime lastModifiedBefore = ZonedDateTime.now(clock).minusSeconds(objectMinimumAgeForRemovalSeconds);
 
-        Set<String> didsInObjectStorage = objectStorageService.getObjectNames(DeltaFiConstants.MINIO_BUCKET, "",
-                        lastModifiedBefore).stream()
-                .map(objectName -> objectName.substring(0, objectName.indexOf('/')))
-                .collect(Collectors.toSet());
+        Set<String> didsInObjectStorage = new HashSet<>(contentStorageService.findDidsLastModifiedBefore(lastModifiedBefore));
 
         didsInObjectStorage.removeAll(deltaFileRepo.readDids());
 
         didsInObjectStorage.forEach(did -> {
             log.info("Removing unreferenced objects from object storage with prefix {}", did);
-            objectStorageService.removeObjects(DeltaFiConstants.MINIO_BUCKET, did);
+            contentStorageService.deleteAll(did);
         });
     }
 }

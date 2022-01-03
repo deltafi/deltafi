@@ -1,108 +1,227 @@
 package org.deltafi.common.storage.s3.minio;
 
-import io.minio.MinioClient;
+import io.minio.*;
+import io.minio.errors.*;
+import io.minio.messages.DeleteError;
+import io.minio.messages.Item;
+import lombok.AllArgsConstructor;
+import okhttp3.Headers;
+import org.deltafi.common.properties.MinioProperties;
+import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.test.storage.s3.minio.DeltafiMinioContainer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Mockito;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-import static org.deltafi.common.constant.DeltaFiConstants.MINIO_BUCKET;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MinioObjectStorageServiceTest {
-    private static final DeltafiMinioContainer DELTAFI_MINIO_CONTAINER = new DeltafiMinioContainer("accessKey", "secretKey");
-    private static final MinioClient MINIO_CLIENT = DELTAFI_MINIO_CONTAINER.start(MINIO_BUCKET);
-    private static final MinioObjectStorageService MINIO_OBJECT_STORAGE_SERVICE = new MinioObjectStorageService(MINIO_CLIENT, 100_000_000L);
+    private static final String BUCKET = "bucket";
 
-    @AfterAll
-    static void teardownClass() {
-        DELTAFI_MINIO_CONTAINER.stop();
-    }
+    @AllArgsConstructor
+    private static class TestItem extends Item {
+        private String objectName;
+        private ZonedDateTime lastModified;
+        private boolean isDir;
 
-    @BeforeEach
-    void setup() throws ObjectStorageException {
-        MINIO_OBJECT_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-1/test-action-1a", "test data 1a".getBytes());
-        MINIO_OBJECT_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-1/test-action-1b", "test data 1b".getBytes());
-        MINIO_OBJECT_STORAGE_SERVICE.putObject(MINIO_BUCKET, "did-2/test-action-2a", "test data 2a".getBytes());
-    }
+        public String objectName() {
+            return objectName;
+        }
 
-    @AfterEach()
-    void teardown() {
-        MINIO_OBJECT_STORAGE_SERVICE.removeObjects(MINIO_BUCKET, "");
+        public ZonedDateTime lastModified() {
+            return lastModified;
+        }
+
+        public boolean isDir() {
+            return isDir;
+        }
     }
 
     @Test
-    void testGetObjectNames() {
-        List<String> objectNames = MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1");
+    void testGetObjectNames() throws ServerException, InsufficientDataException, ErrorResponseException, IOException,
+            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException,
+            InternalException {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        ZonedDateTime testTime = ZonedDateTime.now();
+
+        ArrayList<Result<Item>> objects = new ArrayList<>();
+        objects.add(new Result<>(new TestItem("objectName1", testTime, false)));
+        objects.add(new Result<>(new TestItem("objectName2", testTime.minusSeconds(10), false)));
+        objects.add(new Result<>(new TestItem("objectName3", testTime, true)));
+        @SuppressWarnings("unchecked")
+        Result<Item> mockResult = Mockito.mock(Result.class);
+        Mockito.when(mockResult.get()).thenThrow(IOException.class);
+        objects.add(mockResult);
+        Mockito.when(minioClient.listObjects(
+                Mockito.eq(ListObjectsArgs.builder().bucket(BUCKET).prefix("did-1").recursive(true).build())))
+                .thenReturn(objects);
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                new MinioProperties());
+
+        List<String> objectNames = minioObjectStorageService.getObjectNames(BUCKET, "did-1");
         assertEquals(2, objectNames.size());
-        assertEquals("did-1/test-action-1a", objectNames.get(0));
-        assertEquals("did-1/test-action-1b", objectNames.get(1));
+        assertEquals("objectName1", objectNames.get(0));
+        assertEquals("objectName2", objectNames.get(1));
 
-        objectNames = MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-2");
+        objectNames = minioObjectStorageService.getObjectNames(BUCKET, "did-1", testTime.minusSeconds(5));
         assertEquals(1, objectNames.size());
-        assertEquals("did-2/test-action-2a", objectNames.get(0));
-    }
+        assertEquals("objectName2", objectNames.get(0));
 
-    @Test
-    void testGetObjectNamesWithLastModified() {
-        ZonedDateTime lastModified = ZonedDateTime.now().plusMinutes(1);
+        objectNames = minioObjectStorageService.getObjectNames(BUCKET, "did-2");
+        assertTrue(objectNames.isEmpty());
 
-        List<String> objectNames = MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1", lastModified);
-        assertEquals(2, objectNames.size());
-        assertEquals("did-1/test-action-1a", objectNames.get(0));
-        assertEquals("did-1/test-action-1b", objectNames.get(1));
-
-        lastModified = lastModified.minusMinutes(2);
-
-        objectNames = MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1", lastModified);
-        assertEquals(0, objectNames.size());
-    }
-
-    @Test
-    void testGetObjectAsInputStream() throws ObjectStorageException, IOException {
-        InputStream inputStream = MINIO_OBJECT_STORAGE_SERVICE.getObjectAsInputStream(MINIO_BUCKET, "did-1/test-action-1a", 0, 12);
-        assertEquals(new String("test data 1a".getBytes()), new String(inputStream.readAllBytes()));
-        inputStream.close();
-
-        inputStream = MINIO_OBJECT_STORAGE_SERVICE.getObjectAsInputStream(MINIO_BUCKET, "did-1/test-action-1a", 1, 10);
-        assertEquals(new String("est data 1".getBytes()), new String(inputStream.readAllBytes()));
-        inputStream.close();
-    }
-
-    @Test
-    void testGetObject() throws ObjectStorageException {
-        byte[] object = MINIO_OBJECT_STORAGE_SERVICE.getObject(MINIO_BUCKET, "did-1/test-action-1a", 0, 12);
-        assertEquals(new String("test data 1a".getBytes()), new String(object));
-
-        object = MINIO_OBJECT_STORAGE_SERVICE.getObject(MINIO_BUCKET, "did-1/test-action-1a", 1, 10);
-        assertEquals(new String("est data 1".getBytes()), new String(object));
-    }
-
-    @Test
-    void testRemoveObject() {
-        MINIO_OBJECT_STORAGE_SERVICE.removeObject(MINIO_BUCKET, "did-1/test-action-1b");
-
-        List<String> objectNames = MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1");
-        assertEquals(1, objectNames.size());
-        assertEquals("did-1/test-action-1a", objectNames.get(0));
-    }
-
-    @Test
-    void testRemoveObjects() {
-        assertTrue(MINIO_OBJECT_STORAGE_SERVICE.removeObjects(MINIO_BUCKET, "did-1"));
-
-        List<String> objectNames = MINIO_OBJECT_STORAGE_SERVICE.getObjectNames(MINIO_BUCKET, "did-1");
+        objectNames = minioObjectStorageService.getObjectNames("unused", "did-1");
         assertTrue(objectNames.isEmpty());
     }
 
     @Test
-    void testGetObjectSize() throws ObjectStorageException {
-        assertEquals(5, MINIO_OBJECT_STORAGE_SERVICE.getObjectSize(
-                MINIO_OBJECT_STORAGE_SERVICE.putObject(MINIO_BUCKET, "name", "12345".getBytes())));
+    void testGetObject() throws ObjectStorageException, IOException, ServerException, InsufficientDataException,
+            ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException,
+            XmlParserException, InternalException {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                new MinioProperties());
+
+        GetObjectResponse getObjectResponse = new GetObjectResponse(null, null, null, null, null);
+        Mockito.when(minioClient.getObject(
+                Mockito.eq(GetObjectArgs.builder().bucket(BUCKET).object("objectName").offset(0L).length(10L).build())))
+                .thenReturn(getObjectResponse)
+                .thenThrow(IOException.class);
+
+        assertEquals(getObjectResponse, minioObjectStorageService.getObject(new ObjectReference(BUCKET, "objectName", 0, 10)));
+        assertThrows(ObjectStorageException.class,
+                () -> minioObjectStorageService.getObject(new ObjectReference(BUCKET, "objectName", 0, 10)));
+    }
+
+    @AllArgsConstructor
+    private static class PutObjectArgsMatcher implements ArgumentMatcher<PutObjectArgs> {
+        private String bucket;
+        private String object;
+
+        @Override
+        public boolean matches(PutObjectArgs putObjectArgs) {
+            return putObjectArgs.bucket().equals(bucket) && putObjectArgs.object().equals(object);
+        }
+    }
+
+    @Test
+    void testPutObject() throws ServerException, InsufficientDataException, ErrorResponseException, IOException,
+            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException,
+            InternalException, ObjectStorageException {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioProperties minioProperties = new MinioProperties();
+        minioProperties.setPartSize(-1);
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                minioProperties);
+
+        ObjectWriteResponse objectWriteResponse =
+                new ObjectWriteResponse(null, BUCKET, null, "objectName", null, null);
+        // Use arg matcher since eq doesn't match for PutObjectArgs (tags are constructed and compared by reference)
+        Mockito.when(minioClient.putObject(Mockito.argThat(new PutObjectArgsMatcher(BUCKET, "objectName"))))
+                .thenReturn(objectWriteResponse)
+                .thenThrow(IOException.class);
+
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(new ByteArrayInputStream("".getBytes()));
+
+        assertEquals(new ObjectReference(BUCKET, "objectName", 0, 0),
+                minioObjectStorageService.putObject(new ObjectReference(BUCKET, "objectName", 0, 0), bufferedInputStream));
+
+        assertThrows(ObjectStorageException.class,
+                () -> minioObjectStorageService.putObject(new ObjectReference(BUCKET, "objectName", 0, 0), bufferedInputStream));
+    }
+
+    @Test
+    void testRemoveObject() throws ServerException, InsufficientDataException, ErrorResponseException, IOException,
+            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException,
+            InternalException {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                new MinioProperties());
+
+        minioObjectStorageService.removeObject(new ObjectReference(BUCKET, "objectName"));
+
+        Mockito.verify(minioClient).removeObject(
+                Mockito.eq(RemoveObjectArgs.builder().bucket(BUCKET).object("objectName").build()));
+    }
+
+    @AllArgsConstructor
+    private static class TestDeleteError extends DeleteError {
+        private String objectName;
+        private String message;
+
+        @Override
+        public String objectName() {
+            return objectName;
+        }
+
+        @Override
+        public String message() {
+            return message;
+        }
+    }
+
+    @Test
+    void testRemoveObjects() {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        ZonedDateTime testTime = ZonedDateTime.now();
+
+        ArrayList<Result<Item>> objects = new ArrayList<>();
+        objects.add(new Result<>(new TestItem("objectName1", testTime, false)));
+        objects.add(new Result<>(new TestItem("objectName2", testTime, false)));
+        Mockito.when(minioClient.listObjects(
+                Mockito.eq(ListObjectsArgs.builder().bucket(BUCKET).prefix("did-1").recursive(true).build())))
+                .thenReturn(objects);
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                new MinioProperties());
+
+        ArrayList<Result<DeleteError>> results = new ArrayList<>();
+        results.add(new Result<>(new TestDeleteError("objectName1", "message1")));
+        results.add(new Result<>(new TestDeleteError("objectName2", "message2")));
+
+        Mockito.when(minioClient.removeObjects(Mockito.any()))
+                        .thenReturn(new ArrayList<>())
+                        .thenReturn(results);
+
+        assertTrue(minioObjectStorageService.removeObjects(BUCKET, "did-1"));
+
+        assertFalse(minioObjectStorageService.removeObjects(BUCKET, "did-1"));
+    }
+
+    @Test
+    void testGetObjectSize() throws ServerException, InsufficientDataException, ErrorResponseException, IOException,
+            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException,
+            InternalException {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient, new MinioProperties());
+
+        StatObjectResponse statObjectResponse = new StatObjectResponse(
+                Headers.of("Content-Length", "123", "Last-Modified", "Mon, 06 Dec 2021 00:00:00 GMT"), BUCKET,
+                null, "objectName");
+        Mockito.when(minioClient.statObject(
+                Mockito.eq(StatObjectArgs.builder().bucket(BUCKET).object("objectName").build())))
+                .thenReturn(statObjectResponse)
+                .thenThrow(IOException.class);
+
+        assertEquals(123, minioObjectStorageService.getObjectSize(BUCKET, "objectName"));
+
+        assertEquals(0, minioObjectStorageService.getObjectSize(BUCKET, "objectName"));
     }
 }

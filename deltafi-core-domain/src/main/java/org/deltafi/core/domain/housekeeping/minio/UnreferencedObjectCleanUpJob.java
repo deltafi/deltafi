@@ -1,29 +1,30 @@
 package org.deltafi.core.domain.housekeeping.minio;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-@Named
+@ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = true)
+@Service
 public class UnreferencedObjectCleanUpJob {
-    private static final ScheduledExecutorService EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
-    public UnreferencedObjectCleanUpJob(
-            @Value("${deltafi.housekeeping.minio.initialDelaySeconds}") int initialDelaySeconds,
-            @Value("${deltafi.housekeeping.minio.delaySeconds}") int delaySeconds,
+    public UnreferencedObjectCleanUpJob(DeltaFiProperties deltaFiProperties,
             UnreferencedObjectCleanUp unreferencedObjectCleanUp) {
-        EXECUTOR.scheduleWithFixedDelay(unreferencedObjectCleanUp::removeUnreferencedObjects, initialDelaySeconds,
-                delaySeconds, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(unreferencedObjectCleanUp::removeUnreferencedObjects,
+                deltaFiProperties.getHousekeeping().getMinio().getInitialDelaySeconds(),
+                deltaFiProperties.getHousekeeping().getMinio().getDelaySeconds(), TimeUnit.SECONDS);
     }
 
     @PreDestroy
     public void preDestroy() {
-        EXECUTOR.shutdownNow();
+        executor.shutdown();
     }
 }

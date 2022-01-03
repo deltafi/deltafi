@@ -8,7 +8,7 @@ mutation {
                 key: "type"
                 value: "attack-pattern"
             } ]
-            objectReference: {
+            contentReference: {
                 name: "formattedName"
                 bucket: "formattedBucketName"
                 offset: 0

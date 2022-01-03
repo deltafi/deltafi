@@ -8,7 +8,7 @@ mutation {
                 value: "XYZ"
             }
         }
-        objectReference: {
+        contentReference: {
             name: "objectName"
             bucket: "objectBucket"
             offset: 0

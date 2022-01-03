@@ -21,24 +21,25 @@ import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.properties.DeltaFiSystemProperties;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.JsonMap;
+import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.generated.client.RegisterGenericSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterGenericSchemaProjectionRoot;
 import org.deltafi.core.domain.generated.types.GenericActionSchemaInput;
-import org.deltafi.core.domain.generated.types.SourceInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +52,9 @@ public abstract class Action<P extends ActionParameters> {
 
     @Inject
     protected DomainGatewayService domainGatewayService;
+
+    @Inject
+    protected ContentStorageService contentStorageService;
 
     @Inject
     protected ZipkinService zipkinService;
@@ -184,8 +188,7 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     void doRegisterParamSchema() {
-        domainGatewayService.submit(new GraphQLQueryRequest(
-                    getRegistrationQuery(), getRegistrationProjection()));
+        domainGatewayService.submit(new GraphQLQueryRequest(getRegistrationQuery(), getRegistrationProjection()));
     }
 
     protected BaseProjectionNode getRegistrationProjection() {
@@ -198,5 +201,21 @@ public abstract class Action<P extends ActionParameters> {
 
     public P convertToParams(Map<String, Object> params) {
         return OBJECT_MAPPER.convertValue(params, paramType);
+    }
+
+    protected InputStream loadContent(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
+        return contentStorageService.load(getContentReference(deltaFile, protocolLayerType));
+    }
+
+    protected ContentReference saveContent(String did, byte[] content) throws ObjectStorageException {
+        return contentStorageService.save(did, content);
+    }
+
+    private ContentReference getContentReference(DeltaFile deltaFile, String protocolLayerType) {
+        Optional<ProtocolLayer> protocolLayerOptional = deltaFile.getProtocolLayer(protocolLayerType);
+        if (protocolLayerOptional.isEmpty()) {
+            throw new RuntimeException("Missing protocol layer for " + protocolLayerType);
+        }
+        return protocolLayerOptional.get().getContentReference();
     }
 }

@@ -28,12 +28,12 @@ module Deltafi
                 enrichment { key value }
                 protocolStack {
                   type
-                  objectReference { name bucket offset size }
+                  contentReference { name bucket offset size }
                   metadata { key value }
                 }
                 domains { key value }
                 formattedData {
-                  objectReference { name bucket offset size }
+                  contentReference { name bucket offset size }
                   filename
                   formatAction
                   egressActions

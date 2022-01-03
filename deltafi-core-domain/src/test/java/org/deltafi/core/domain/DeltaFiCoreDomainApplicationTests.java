@@ -3,8 +3,12 @@ package org.deltafi.core.domain;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.ProtocolLayer;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.delete.DeleteRunner;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
@@ -80,11 +84,11 @@ class DeltaFiCoreDomainApplicationTests {
 	RedisService redisService;
 
 	final static List <KeyValue> loadSampleMetadata = Arrays.asList(
-			KeyValue.newBuilder().key("loadSampleType").value("load-sample-type").build(),
-			KeyValue.newBuilder().key("loadSampleVersion").value("2.2").build());
+			new KeyValue("loadSampleType", "load-sample-type"),
+			new KeyValue("loadSampleVersion", "2.2"));
 	final static List <KeyValue> transformSampleMetadata = Arrays.asList(
-			KeyValue.newBuilder().key("sampleType").value("sample-type").build(),
-			KeyValue.newBuilder().key("sampleVersion").value("2.1").build());
+			new KeyValue("sampleType", "sample-type"),
+			new KeyValue("sampleVersion", "2.1"));
 
 	@BeforeEach
 	void setup() throws IOException {
@@ -120,20 +124,8 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postIngressDeltaFile(String did) {
 		DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
 		deltaFile.queueAction("Utf8TransformAction");
-		deltaFile.setSourceInfo(SourceInfo.newBuilder()
-				.filename("input.txt")
-				.flow("sample")
-				.metadata(Collections.singletonList(KeyValue.newBuilder()
-						.key("AuthorizedBy")
-						.value("XYZ").build())).build());
-		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
-				.type("json")
-				.metadata(new ArrayList<>())
-				.objectReference(ObjectReference.newBuilder()
-						.name("objectName")
-						.bucket("objectBucket")
-						.offset(0)
-						.size(500).build()).build());
+		deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", List.of(new KeyValue("AuthorizedBy", "XYZ"))));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json", "ingress", new ContentReference("objectName", 0, 500, did), null));
 		return deltaFile;
 	}
 
@@ -161,13 +153,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("Utf8TransformAction");
 		deltaFile.queueAction("SampleTransformAction");
-		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
-				.type("json-utf8")
-				.objectReference(ObjectReference.newBuilder()
-						.name("utf8ObjectName")
-						.bucket("utf8ObjectBucket")
-						.offset(0)
-						.size(500).build()).build());
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8", "Utf8TransformAction", new ContentReference("utf8ObjectName", 0, 500, did), null));
 		return deltaFile;
 	}
 
@@ -179,7 +165,7 @@ class DeltaFiCoreDomainApplicationTests {
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("03.transformUtf8"), did),
 				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class).getDid();
+				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(Util.equalIgnoringDates(postTransformUtf8DeltaFile(did), deltaFile));
@@ -195,14 +181,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("SampleTransformAction");
 		deltaFile.queueAction("SampleLoadAction");
-		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
-				.type("json-utf8-sample")
-				.metadata(transformSampleMetadata)
-				.objectReference(ObjectReference.newBuilder()
-						.name("objectName")
-						.bucket("objectBucket")
-						.offset(0)
-						.size(500).build()).build());
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", new ContentReference("objectName", 0, 500, did), transformSampleMetadata));
 		return deltaFile;
 	}
 
@@ -231,14 +210,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
 		deltaFile.addDomain("sample", "sampleDomain");
-		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
-				.type("json-utf8-sample-load")
-				.metadata(loadSampleMetadata)
-				.objectReference(ObjectReference.newBuilder()
-						.name("objectName")
-						.bucket("objectBucket")
-						.offset(0)
-						.size(500).build()).build());
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", new ContentReference("objectName", 0, 500, did), loadSampleMetadata));
 		return deltaFile;
 	}
 
@@ -298,13 +270,8 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.getFormattedData().add(FormattedData.newBuilder()
 				.formatAction("SampleFormatAction")
 				.filename("output.txt")
-				.metadata(Arrays.asList(KeyValue.newBuilder().key("key1").value("value1").build(), KeyValue.newBuilder().key("key2").value("value2").build()))
-				.objectReference(ObjectReference.newBuilder()
-						.name("formattedObjectName")
-						.bucket("formattedBucketName")
-						.offset(0)
-						.size(1000)
-						.build())
+				.metadata(Arrays.asList(new KeyValue("key1", "value1"), new KeyValue("key2", "value2")))
+				.contentReference(new ContentReference("formattedObjectName", 0, 1000, did))
 				.egressActions(Collections.singletonList("SampleEgressAction"))
 				.build());
 		return deltaFile;
