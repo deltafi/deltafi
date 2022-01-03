@@ -4,6 +4,7 @@ metadata:
   name: deltafi-ui-ingress
   annotations:
   {{- include "authAnnotations" . | nindent 4 }}
+    nginx.ingress.kubernetes.io/proxy-body-size: "{{ default 0 .Values.deltafi.ingress.envVar.HTTP_MAX_BODY_SIZE }}"
 spec:
   {{- if eq .Values.ingress.tls.enabled true }}
   tls:
@@ -32,5 +33,12 @@ spec:
         backend:
           service:
             name: deltafi-gateway-service
+            port:
+              number: 80
+      - path: /deltafile/ingress
+        pathType: Prefix
+        backend:
+          service:
+            name: deltafi-ingress-service
             port:
               number: 80
