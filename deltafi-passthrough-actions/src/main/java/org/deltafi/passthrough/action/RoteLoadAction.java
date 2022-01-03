@@ -18,7 +18,7 @@ public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
         log.trace(actionContext.getName() + " loading (" + deltaFile.getDid() + ")");
 
         LoadResult result = new LoadResult(actionContext, deltaFile);
-        params.getDomains().forEach(result::addDomain);
+        params.getDomains().forEach(d -> result.addDomain(d, null));
         return result;
     }
     @Override

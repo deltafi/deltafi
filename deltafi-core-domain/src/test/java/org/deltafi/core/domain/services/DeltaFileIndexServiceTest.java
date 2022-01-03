@@ -1,6 +1,6 @@
 package org.deltafi.core.domain.services;
 
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,7 @@ package org.deltafi.core.domain.services;
 
 import org.deltafi.core.domain.converters.ErrorConverter;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.springframework.stereotype.Service;
 

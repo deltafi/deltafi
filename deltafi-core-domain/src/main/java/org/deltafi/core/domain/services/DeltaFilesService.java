@@ -6,7 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
@@ -149,10 +149,8 @@ public class DeltaFilesService {
                 deltaFile.getProtocolStack().add(DeltaFileConverter.convert(event.getLoad().getProtocolLayer()));
             }
             if (event.getLoad().getDomains() != null) {
-                for (String domain : event.getLoad().getDomains()) {
-                    if (Objects.isNull(deltaFile.getDomain(domain))) {
-                        deltaFile.addDomain(domain, null);
-                    }
+                for (KeyValueInput domain : event.getLoad().getDomains()) {
+                    deltaFile.addDomain(domain.getKey(), domain.getValue());
                 }
             }
         }
@@ -163,11 +161,9 @@ public class DeltaFilesService {
     public DeltaFile enrich(DeltaFile deltaFile, ActionEventInput event) {
         deltaFile.completeAction(event.getAction());
 
-        if (event.getLoad() != null && event.getEnrich().getEnrichments() != null) {
-            for (String enrichment : event.getEnrich().getEnrichments()) {
-                if (Objects.isNull(deltaFile.getEnrichment(enrichment))) {
-                    deltaFile.addEnrichment(enrichment, null);
-                }
+        if (event.getEnrich() != null && event.getEnrich().getEnrichments() != null) {
+            for (KeyValueInput enrichment : event.getEnrich().getEnrichments()) {
+                deltaFile.addEnrichment(enrichment.getKey(), enrichment.getValue());
             }
         }
 

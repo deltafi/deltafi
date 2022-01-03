@@ -6,7 +6,7 @@ mutation {
             time: "2021-07-11T13:44:22.183Z"
             type: LOAD
             load: {
-                domains: ["sample"]
+                domains: [ { key: "sample", value: "sampleDomain" } ]
                 protocolLayer: {
                     type: "json-utf8-sample-load"
                     metadata: [

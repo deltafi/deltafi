@@ -1,4 +1,4 @@
-package org.deltafi.core.domain.api.configuration;
+package org.deltafi.core.domain.configuration;
 
 import org.deltafi.core.domain.api.converters.OffsetDateTimeReadConverter;
 import org.deltafi.core.domain.api.converters.OffsetDateTimeWriteConverter;

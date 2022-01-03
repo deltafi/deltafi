@@ -1,4 +1,4 @@
-package org.deltafi.core.domain.api.repo;
+package org.deltafi.core.domain.repo;
 
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;

@@ -1,7 +1,0 @@
-type SampleEnrichment {
-    enriched: Boolean!
-}
-
-extend type Mutation {
-    addSampleEnrichment(did: String!, enriched: Boolean!) : DeltaFile!
-}

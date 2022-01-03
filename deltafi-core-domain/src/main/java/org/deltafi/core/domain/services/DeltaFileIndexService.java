@@ -1,7 +1,7 @@
 package org.deltafi.core.domain.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;

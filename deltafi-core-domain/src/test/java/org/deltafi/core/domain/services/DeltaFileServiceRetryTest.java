@@ -1,7 +1,7 @@
 package org.deltafi.core.domain.services;
 
 import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.Action;

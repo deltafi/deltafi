@@ -1,4 +1,4 @@
-package org.deltafi.core.domain.api.repo;
+package org.deltafi.core.domain.repo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

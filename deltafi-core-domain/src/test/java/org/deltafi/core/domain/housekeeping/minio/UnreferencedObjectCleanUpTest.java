@@ -7,7 +7,7 @@ import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.storage.s3.minio.MinioObjectStorageService;
 import org.deltafi.common.test.storage.s3.minio.DeltafiMinioContainer;
 import org.deltafi.common.test.time.TestClock;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;

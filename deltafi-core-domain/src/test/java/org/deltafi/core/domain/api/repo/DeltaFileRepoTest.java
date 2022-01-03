@@ -4,6 +4,7 @@ import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

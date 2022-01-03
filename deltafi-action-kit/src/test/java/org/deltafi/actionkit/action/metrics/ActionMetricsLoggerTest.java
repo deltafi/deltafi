@@ -5,7 +5,6 @@ import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.format.FormatResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.junit.jupiter.api.Test;

@@ -156,12 +156,12 @@ input TransformInput {
 }
 
 input LoadInput {
-  domains: [String!]
+  domains: [KeyValueInput!]!
   protocolLayer: ProtocolLayerInput!
 }
 
 input EnrichInput {
-  enrichments: [String!]
+  enrichments: [KeyValueInput!]!
 }
 
 input FormatInput {

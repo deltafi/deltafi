@@ -6,7 +6,7 @@ mutation {
             time: "2021-07-11T13:44:22.183Z"
             type: ENRICH
             enrich: {
-                enrichments: ["sampleEnrichment"]
+                enrichments: [ { key: "sampleEnrichment", value: "enrichmentData" } ]
             }
         }
     ) {

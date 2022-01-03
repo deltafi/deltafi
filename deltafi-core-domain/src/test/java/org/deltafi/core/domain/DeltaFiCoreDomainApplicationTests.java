@@ -1,10 +1,9 @@
 package org.deltafi.core.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.delete.DeleteRunner;
@@ -14,7 +13,6 @@ import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFiConfigService;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.RedisService;
-import org.deltafi.core.domain.services.SampleEnrichmentsService;
 import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,9 +55,6 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFileRepo deltaFileRepo;
 
 	@Autowired
-    SampleEnrichmentsService sampleEnrichmentsService;
-
-	@Autowired
     DeltaFiConfigService configService;
 
 	@MockBean
@@ -83,8 +78,6 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	RedisService redisService;
-
-	final static ObjectMapper objectMapper = new ObjectMapper();
 
 	final static List <KeyValue> loadSampleMetadata = Arrays.asList(
 			KeyValue.newBuilder().key("loadSampleType").value("load-sample-type").build(),
@@ -237,7 +230,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
-		deltaFile.addDomain("sample", null);
+		deltaFile.addDomain("sample", "sampleDomain");
 		deltaFile.getProtocolStack().add(ProtocolLayer.newBuilder()
 				.type("json-utf8-sample-load")
 				.metadata(loadSampleMetadata)
@@ -269,35 +262,12 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(Util.equalIgnoringDates(postLoadDeltaFile(did), deltaFile));
 	}
 
-	SampleEnrichment sampleEnrichment() {
-		return SampleEnrichment.newBuilder()
-				.enriched(true)
-				.build();
-	}
-
-	@Test
-	void test10AddSampleEnrichment() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
-
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("10.addSampleEnrichment"), did),
-				"data." + DgsConstants.MUTATION.AddSampleEnrichment,
-				DeltaFile.class);
-
-		assertThat(deltaFile.getDid()).isEqualTo(did);
-		assertThat(sampleEnrichment()).isEqualTo(objectMapper.readValue(deltaFile.getEnrichment("sampleEnrichment"), SampleEnrichment.class));
-		assertThat(sampleEnrichment()).isEqualTo(objectMapper.readValue(deltaFilesService.getDeltaFile(did).getEnrichment("sampleEnrichment"), SampleEnrichment.class));
-	}
-
 	DeltaFile postEnrichDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleFormatAction");
 		deltaFile.completeAction("SampleEnrichAction");
-		try {
-			deltaFile.addEnrichment("sampleEnrichment", objectMapper.writeValueAsString(sampleEnrichment()));
-		} catch(JsonProcessingException ignored) {}
+		deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
 		return deltaFile;
 	}
 
@@ -305,7 +275,6 @@ class DeltaFiCoreDomainApplicationTests {
 	void test11Enrich() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
-		sampleEnrichmentsService.addSampleEnrichment(did, sampleEnrichment());
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("11.enrich"), did),
@@ -345,7 +314,6 @@ class DeltaFiCoreDomainApplicationTests {
 	void test13Format() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		deltaFilesService.addDeltaFile(postEnrichDeltaFile(did));
-		sampleEnrichmentsService.addSampleEnrichment(did, sampleEnrichment());
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("13.format"), did),
@@ -508,7 +476,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test22EgressDeleteCompleted() throws IOException, ActionConfigException, InterruptedException {
+	void test22EgressDeleteCompleted() throws IOException, ActionConfigException {
 		deltaFiProperties.getDelete().setOnCompletion(true);
 
 		String did = UUID.randomUUID().toString();

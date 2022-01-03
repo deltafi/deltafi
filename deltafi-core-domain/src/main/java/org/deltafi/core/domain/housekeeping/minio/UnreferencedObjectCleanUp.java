@@ -3,7 +3,7 @@ package org.deltafi.core.domain.housekeeping.minio;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.core.domain.api.repo.DeltaFileRepo;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.springframework.beans.factory.annotation.Value;
 
 import javax.inject.Inject;

@@ -6,6 +6,7 @@ import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.EnrichInput;
+import org.deltafi.core.domain.generated.types.KeyValueInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -13,15 +14,15 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result {
-    private final List<String> enrichments = new ArrayList<>();
+    private final List<KeyValueInput> enrichments = new ArrayList<>();
 
     public EnrichResult(ActionContext actionContext) {
         super(actionContext);
     }
 
     @SuppressWarnings("unused")
-    public void addEnrichment(@NotNull String enrichment) {
-        enrichments.add(enrichment);
+    public void addEnrichment(@NotNull String enrichmentName, String value) {
+        enrichments.add(KeyValueInput.newBuilder().key(enrichmentName).value(value).build());
     }
 
     @Override
