@@ -169,7 +169,7 @@ public class StateMachine {
     }
 
     private boolean validateActionsReady(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
-        return deltaFile.hasTerminalAction(egressFlow.getFormatAction()) &&
+        return deltaFile.hasCompletedAction(egressFlow.getFormatAction()) &&
                 matchesFlowFilter(egressFlow, deltaFile);
     }
 

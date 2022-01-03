@@ -377,6 +377,23 @@ class StateMachineTest {
     }
 
     @Test
+    void testGetValidateActionsNoFormatErrorAllowed() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "includedFlow");
+        Action action = Action.newBuilder().state(ActionState.ERROR).name("FormatAction").build();
+        deltaFile.getActions().add(action);
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
+        config.setFormatAction("FormatAction");
+        config.setValidateActions(Collections.singletonList("ValidateAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        assertEquals(Collections.emptyList(), stateMachine.getValidateActions(deltaFile));
+    }
+
+    @Test
     void testGetValidateActionsAlreadyComplete() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
         Action fAction = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
