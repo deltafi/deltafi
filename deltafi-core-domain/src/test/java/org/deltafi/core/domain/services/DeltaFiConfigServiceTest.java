@@ -178,8 +178,9 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(ingressFlow.getType()).isEqualTo("json");
         Assertions.assertThat(ingressFlow.getTransformActions()).hasSize(1);
         Assertions.assertThat(ingressFlow.getTransformActions()).contains("SampleTransformAction");
-        Assertions.assertThat(ingressFlow.getLoadActions()).hasSize(1);
-        Assertions.assertThat(ingressFlow.getLoadActions()).contains("SampleLoadGroup");
+        Assertions.assertThat(ingressFlow.getLoadActions()).hasSize(2);
+        Assertions.assertThat(ingressFlow.getLoadActions()).contains("SampleLoadAction");
+        Assertions.assertThat(ingressFlow.getLoadActions()).contains("Sample2LoadAction");
 
         EgressFlowConfiguration egressFlowConfiguration = commonChecks(config.getEgressFlows(), "sample");
         Assertions.assertThat(egressFlowConfiguration.getEgressAction()).contains("SampleEgressAction");
@@ -216,12 +217,6 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("url", "http://localhost:8085/echo");
         Assertions.assertThat(egressActionConfiguration.getParameters()).containsEntry("metadataKey", "deltafiMetadata");
 
-        LoadActionGroupConfiguration loadGroupConfiguration = commonChecks(config.getLoadGroups(), "SampleLoadGroup");
-        Assertions.assertThat(loadGroupConfiguration.getName()).isEqualTo("SampleLoadGroup");
-        Assertions.assertThat(loadGroupConfiguration.getLoadActions()).hasSize(2);
-        Assertions.assertThat(loadGroupConfiguration.getLoadActions()).contains("SampleLoadAction");
-        Assertions.assertThat(loadGroupConfiguration.getLoadActions()).contains("Sample2LoadAction");
-
         DeleteActionConfiguration deleteActionConfiguration = commonChecks(config.getDeleteActions(), "DeleteAction");
         Assertions.assertThat(deleteActionConfiguration.getType()).isEqualTo("org.deltafi.core.action.delete.DeleteAction");
     }
@@ -249,7 +244,7 @@ class DeltaFiConfigServiceTest {
         configService.mergeConfig(yaml);
 
         // SampleLoadAction already existed, so it will be replaced and 8 new entries from the config are added
-        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(19);
+        Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(18);
         LoadActionConfiguration afterUpdate = configService.getConfig().getLoadActions().get(ACTION_TO_FIND);
         Assertions.assertThat(afterUpdate.getConsumes()).isEqualTo("json-utf8-sample");
         Assertions.assertThat(afterUpdate.getCreated()).isEqualTo(preUpdate.getCreated());

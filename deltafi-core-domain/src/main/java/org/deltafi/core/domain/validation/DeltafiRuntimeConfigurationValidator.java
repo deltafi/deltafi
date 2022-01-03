@@ -11,21 +11,18 @@ import java.util.*;
 public class DeltafiRuntimeConfigurationValidator {
 
     private final ActionConfigurationValidator actionConfigurationValidator;
-    private final LoadActionGroupValidator loadActionGroupValidator;
     private final IngressFlowValidator ingressFlowValidator;
     private final EgressFlowValidator egressFlowValidator;
 
-    public DeltafiRuntimeConfigurationValidator(ActionConfigurationValidator actionConfigurationValidator, LoadActionGroupValidator loadActionGroupValidator,
+    public DeltafiRuntimeConfigurationValidator(ActionConfigurationValidator actionConfigurationValidator,
                                                 IngressFlowValidator ingressFlowValidator, EgressFlowValidator egressFlowValidator) {
         this.actionConfigurationValidator = actionConfigurationValidator;
-        this.loadActionGroupValidator = loadActionGroupValidator;
         this.ingressFlowValidator = ingressFlowValidator;
         this.egressFlowValidator = egressFlowValidator;
     }
 
     public List<String> validate(DeltafiRuntimeConfiguration runtimeConfiguration) {
         List<String> errors = validateActionConfigurations(runtimeConfiguration);
-        errors.addAll(validateLoadGroupConfigurations(runtimeConfiguration));
 
         // Action errors need to be fixed before we can verify flows
         if (errors.isEmpty()) {
@@ -56,10 +53,6 @@ public class DeltafiRuntimeConfigurationValidator {
         });
 
         return errors;
-    }
-
-    List<String> validateLoadGroupConfigurations(DeltafiRuntimeConfiguration runtimeConfiguration) {
-        return validateDeltafiConfigs(runtimeConfiguration, runtimeConfiguration.getLoadGroups(), loadActionGroupValidator);
     }
 
     List<String> validateIngressFlows(DeltafiRuntimeConfiguration runtimeConfiguration) {

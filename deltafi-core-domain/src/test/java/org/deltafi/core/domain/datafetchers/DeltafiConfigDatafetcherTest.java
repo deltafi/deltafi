@@ -46,25 +46,6 @@ class DeltafiConfigDatafetcherTest {
     }
 
     @Test
-    void addLoadActionGroupConfigTest() {
-        LoadActionGroupConfigurationInput input = LoadActionGroupConfigurationInput.newBuilder()
-                .name(NAME)
-                .loadActions(singletonList("loader")).build();
-
-        DeltaFiConfigsProjectionRoot projection = rootProject().onLoadActionGroupConfiguration()
-                .loadActions()
-                .parent();
-
-        AddLoadActionGroupGraphQLQuery addLoadActionGroup = AddLoadActionGroupGraphQLQuery.newRequest().loadActionGroupConfiguration(input).build();
-        LoadActionGroupConfiguration config = executeRequest(addLoadActionGroup, projection, LoadActionGroupConfiguration.class);
-
-        assertEquals(NAME, config.getName());
-        assertNotNull(config.getCreated());
-        assertNotNull(config.getModified());
-        assertEquals("loader", config.getLoadActions().get(0));
-    }
-
-    @Test
     void addIngressFlowConfigTest() {
         IngressFlowConfigurationInput input = IngressFlowConfigurationInput.newBuilder()
                 .name(NAME)

@@ -9,7 +9,6 @@
       validateActions: []
   transformActions: {}
   loadActions: {}
-  loadGroups: {}
   enrichActions: {}
   formatActions:
     ErrorFormatAction:

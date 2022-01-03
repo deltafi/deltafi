@@ -34,7 +34,6 @@
       requiresMetadata: {}
       requiresMetadataKeyValues: []
       type: org.deltafi.passthrough.action.RoteLoadAction
-  loadGroups: {}
   enrichActions: {}
   formatActions:
     SmokeFormatAction:

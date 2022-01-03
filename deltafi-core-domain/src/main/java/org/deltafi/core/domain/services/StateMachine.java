@@ -106,17 +106,9 @@ public class StateMachine {
     private String getLoadAction(DeltaFile deltaFile) {
         ProtocolLayer lastProtocolLayer = Iterables.getLast(deltaFile.getProtocolStack());
         Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(lastProtocolLayer.getMetadata());
-        for (String loadActionOrGroup : flowConfiguration(deltaFile).getLoadActions()) {
-            if (loadActionOrGroup.endsWith("Group")) {
-                for (String loadAction : configService.getLoadGroupActions(loadActionOrGroup)) {
-                    if (loadMetadataMatches(loadAction, metadataMap)) {
-                        return loadAction;
-                    }
-                }
-            } else {
-                if (loadMetadataMatches(loadActionOrGroup, metadataMap)) {
-                    return loadActionOrGroup;
-                }
+        for (String loadAction : flowConfiguration(deltaFile).getLoadActions()) {
+            if (loadMetadataMatches(loadAction, metadataMap)) {
+                return loadAction;
             }
         }
 

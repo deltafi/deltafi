@@ -5,7 +5,8 @@ ingressFlows:
     transformActions:
       - SampleTransformAction
     loadActions:
-      - SampleLoadGroup
+      - SampleLoadAction
+      - Sample2LoadAction
 egressFlows:
   sample:
     name: sample
@@ -48,12 +49,6 @@ egressActions:
     parameters:
       url: "http://localhost:8085/echo"
       metadataKey: "deltafiMetadata"
-loadGroups:
-  SampleLoadGroup:
-    name: SampleLoadGroup
-    loadActions:
-      - SampleLoadAction
-      - Sample2LoadAction
 deleteActions:
   DeleteAction:
     name: DeleteAction

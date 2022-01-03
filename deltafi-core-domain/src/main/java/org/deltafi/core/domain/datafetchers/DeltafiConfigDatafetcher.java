@@ -12,7 +12,6 @@ import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.generated.types.EgressFlowConfiguration;
 import org.deltafi.core.domain.generated.types.IngressFlowConfiguration;
-import org.deltafi.core.domain.generated.types.LoadActionGroupConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
 import org.deltafi.core.domain.services.DeltaFiConfigService;
 
@@ -55,11 +54,6 @@ public class DeltafiConfigDatafetcher {
     @DgsMutation
     public EgressActionConfiguration registerEgressAction(EgressActionConfigurationInput egressActionConfiguration) {
         return deltaFiConfigService.saveEgressAction(egressActionConfiguration);
-    }
-
-    @DgsMutation
-    public LoadActionGroupConfiguration addLoadActionGroup(LoadActionGroupConfigurationInput loadActionGroupConfiguration) {
-        return deltaFiConfigService.saveLoadActionGroup(loadActionGroupConfiguration);
     }
 
     @DgsMutation

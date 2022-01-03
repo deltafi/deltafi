@@ -11,6 +11,6 @@ import org.springframework.context.annotation.Configuration;
 public class ConfigCache {
     @Bean
     public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("ingressFlow", "egressFlows", "optionalEgressFlow", "egressFlow", "egressFlowNames", "domainEndpoints", "loadGroups", "config", "loadAction", "enrichAction", "formatAction", "actionConfig", "actionConfigs", "actionNames");
+        return new ConcurrentMapCacheManager("ingressFlow", "egressFlows", "optionalEgressFlow", "egressFlow", "egressFlowNames", "domainEndpoints", "config", "loadAction", "enrichAction", "formatAction", "actionConfig", "actionConfigs", "actionNames");
     }
 }

@@ -175,28 +175,4 @@ class IngressFlowValidatorTest {
         assertThat(found).isEmpty();
         assertThat(errors).hasSize(1).contains("The referenced Load Action named: loader was not found");
     }
-
-    @Test
-    void getLoadConfigsInGroup() {
-        List<String> errors = new ArrayList<>();
-
-        DeltafiRuntimeConfiguration runtimeConfiguration = new DeltafiRuntimeConfiguration();
-        LoadActionGroupConfiguration lg = new LoadActionGroupConfiguration();
-        lg.setLoadActions(of("a1"));
-
-        runtimeConfiguration.getLoadGroups().put("lg", lg);
-        List<String> actionNames = ingressFlowValidator.getLoadConfigsInGroup(runtimeConfiguration, "lg", errors);
-
-        assertThat(actionNames).hasSize(1).contains("a1");
-        assertThat(errors).isEmpty();
-    }
-
-    @Test
-    void getLoadConfigsInGroup_missing() {
-        List<String> errors = new ArrayList<>();
-        List<String> actionNames = ingressFlowValidator.getLoadConfigsInGroup(new DeltafiRuntimeConfiguration(), "lg", errors);
-
-        assertThat(actionNames).isEmpty();
-        assertThat(errors).hasSize(1).contains("The referenced Load Action Group named: lg was not found");
-    }
 }

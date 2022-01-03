@@ -1,5 +1,4 @@
 enum ConfigType {
-    LOAD_ACTION_GROUP
     INGRESS_FLOW
     EGRESS_FLOW
     TRANSFORM_ACTION
@@ -62,18 +61,4 @@ input EgressFlowConfigurationInput {
     validateActions: [String]
     includeIngressFlows: [String]
     excludeIngressFlows: [String]
-}
-
-type LoadActionGroupConfiguration implements DeltaFiConfiguration {
-    name: String!
-    created: DateTime!
-    modified: DateTime!
-    apiVersion: String
-    loadActions: [String]!
-}
-
-input LoadActionGroupConfigurationInput {
-    name: String!
-    apiVersion: String
-    loadActions: [String!]!
 }

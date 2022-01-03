@@ -251,7 +251,6 @@ type Mutation {
   registerEnrichSchema(actionSchema: EnrichActionSchemaInput!): ActionSchema!
   registerFormatSchema(actionSchema: FormatActionSchemaInput!): ActionSchema!
 
-  addLoadActionGroup(loadActionGroupConfiguration: LoadActionGroupConfigurationInput!): LoadActionGroupConfiguration!
   addIngressFlow(ingressFlowConfiguration: IngressFlowConfigurationInput!): IngressFlowConfiguration!
   addEgressFlow(egressFlowConfiguration: EgressFlowConfigurationInput!): EgressFlowConfiguration!
 

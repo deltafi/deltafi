@@ -2,7 +2,6 @@
   egressFlows: {}
   transformActions: {}
   loadActions: {}
-  loadGroups: {}
   enrichActions: {}
   formatActions: {}
   validateActions: {}

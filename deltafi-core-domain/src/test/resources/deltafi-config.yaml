@@ -6,7 +6,8 @@ ingressFlows:
       - Utf8TransformAction
       - SampleTransformAction
     loadActions:
-      - SampleLoadGroup
+      - SampleLoadAction
+      - Sample2LoadAction
   theFlow:
     name: theFlow
     type: theType
@@ -85,9 +86,3 @@ deleteActions:
   DeleteAction:
     name: DeleteAction
     type: org.deltafi.core.delete.DeleteAction
-loadGroups:
-  SampleLoadGroup:
-    name: SampleLoadGroup
-    loadActions:
-      - SampleLoadAction
-      - Sample2LoadAction

@@ -11,7 +11,6 @@ import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
-import org.deltafi.core.domain.configuration.LoadActionGroupConfiguration;
 import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
 import org.deltafi.core.domain.configuration.*;
@@ -130,7 +129,6 @@ public class DeltaFiConfigService {
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getEgressActions);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getIngressFlows);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getEgressFlows);
-        mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getLoadGroups);
         mergeMap(incoming, existing, DeltafiRuntimeConfiguration::getDeleteActions);
 
         saveConfig(existing);
@@ -167,11 +165,6 @@ public class DeltaFiConfigService {
 
     List<String> doGetEgressFlowsWithFormatAction(String formatAction) {
         return config.getEgressFlows().values().stream().filter(egressFlowConfiguration -> formatAction.equals(egressFlowConfiguration.getFormatAction())).map(EgressFlowConfiguration::getEgressAction).collect(Collectors.toList());
-    }
-
-    public List<String> getLoadGroupActions(String loadGroupName) {
-        LoadActionGroupConfiguration loadActionGroupConfiguration = getConfigFromMap(DeltafiRuntimeConfiguration::getLoadGroups, loadGroupName);
-        return Objects.nonNull(loadActionGroupConfiguration) ? loadActionGroupConfiguration.getLoadActions() : Collections.emptyList();
     }
 
     public ActionConfiguration getConfigForAction(String actionName) throws ActionConfigException {
@@ -249,10 +242,6 @@ public class DeltaFiConfigService {
     public EgressFlowConfiguration saveEgressFlow(EgressFlowConfigurationInput egressFlowConfigurationInput) {
         Consumer<EgressFlowConfiguration> setEgressAction = egressFlowConfiguration -> egressFlowConfiguration.setEgressAction(EgressConfiguration.egressActionName(egressFlowConfiguration.getName()));
         return updateConfig(egressFlowConfigurationInput, DeltafiRuntimeConfiguration::getEgressFlows, egressFlowConfigurationInput.getName(), setEgressAction, EgressFlowConfiguration.class);
-    }
-
-    public LoadActionGroupConfiguration saveLoadActionGroup(LoadActionGroupConfigurationInput loadActionGroup) {
-        return updateConfig(loadActionGroup, DeltafiRuntimeConfiguration::getLoadGroups, loadActionGroup.getName(), LoadActionGroupConfiguration.class);
     }
 
     public long removeDeltafiConfigs(ConfigQueryInput configQuery) {

@@ -122,26 +122,14 @@ public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowC
             return emptyList();
         }
         List<LoadActionConfiguration> loadActionConfigurations = new ArrayList<>();
-        for (String loadActionOrGroup : ingressFlowConfiguration.getLoadActions()) {
-            List<String> actionNames = loadActionOrGroup.endsWith("Group") ? getLoadConfigsInGroup(deltafiRuntimeConfiguration, loadActionOrGroup, errors) : List.of(loadActionOrGroup);
-            for (String name : actionNames) {
-                LoadActionConfiguration loadActionConfiguration = deltafiRuntimeConfiguration.getLoadActions().get(name);
-                if (isNull(loadActionConfiguration)) {
-                    errors.add(RuntimeConfigValidator.referenceError("Load Action", name));
-                } else {
-                    loadActionConfigurations.add(loadActionConfiguration);
-                }
+        for (String loadAction : ingressFlowConfiguration.getLoadActions()) {
+            LoadActionConfiguration loadActionConfiguration = deltafiRuntimeConfiguration.getLoadActions().get(loadAction);
+            if (isNull(loadActionConfiguration)) {
+                errors.add(RuntimeConfigValidator.referenceError("Load Action", loadAction));
+            } else {
+                loadActionConfigurations.add(loadActionConfiguration);
             }
         }
         return loadActionConfigurations;
-    }
-
-    List<String> getLoadConfigsInGroup(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, String loadGroupName, List<String> errors) {
-        LoadActionGroupConfiguration groupConfig = deltafiRuntimeConfiguration.getLoadGroups().get(loadGroupName);
-        if (isNull(groupConfig)) {
-            errors.add(RuntimeConfigValidator.referenceError("Load Action Group", loadGroupName));
-        }
-
-        return isNull(groupConfig) ? emptyList() : groupConfig.getLoadActions();
     }
 }

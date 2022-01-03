@@ -21,8 +21,6 @@ class DeltafiRuntimeConfigurationValidatorTest {
     @Mock
     ActionConfigurationValidator actionConfigurationValidator;
     @Mock
-    LoadActionGroupValidator loadActionGroupValidator;
-    @Mock
     IngressFlowValidator ingressFlowValidator;
     @Mock
     EgressFlowValidator egressFlowValidator;
@@ -34,9 +32,6 @@ class DeltafiRuntimeConfigurationValidatorTest {
         LoadActionConfiguration loadAction = new LoadActionConfiguration();
         loadAction.setName("l");
 
-        LoadActionGroupConfiguration loadGroup = new LoadActionGroupConfiguration();
-        loadGroup.setName("lg");
-
         IngressFlowConfiguration ingress = new IngressFlowConfiguration();
         ingress.setName("i");
 
@@ -44,14 +39,12 @@ class DeltafiRuntimeConfigurationValidatorTest {
         egress.setName("e");
 
         runtimeConfiguration.getLoadActions().put("l", loadAction);
-        runtimeConfiguration.getLoadGroups().put("lg", loadGroup);
         runtimeConfiguration.getIngressFlows().put("i", ingress);
         runtimeConfiguration.getEgressFlows().put("e", egress);
 
         validator.validate(runtimeConfiguration);
 
         Mockito.verify(actionConfigurationValidator, Mockito.times(1)).validateActionConfiguration(Mockito.any());
-        Mockito.verify(loadActionGroupValidator, Mockito.times(1)).validate(Mockito.eq(runtimeConfiguration), Mockito.any());
         Mockito.verify(ingressFlowValidator, Mockito.times(1)).validate(Mockito.eq(runtimeConfiguration), Mockito.any());
         Mockito.verify(egressFlowValidator, Mockito.times(1)).validate(Mockito.eq(runtimeConfiguration), Mockito.any());
     }
