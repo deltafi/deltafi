@@ -47,7 +47,7 @@ trigger_deltafi_stix:
     branch: $CI_COMMIT_REF_NAME
 
 .gradle:
-  image: gradle:6.8.3-jdk11
+  image: gradle:7.3.3-jdk11
   variables:
     GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
 
@@ -84,7 +84,7 @@ trigger_deltafi_stix:
     - docker images
 
 .coverage_report:
-  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.7
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.8
   before_script:
     - test -n "$PROJECT_NAME"
     - cd $PROJECT_NAME
