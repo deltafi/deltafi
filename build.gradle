@@ -1,14 +1,10 @@
 plugins {
-  id 'org.ajoberstar.reckon' version '0.13.0'
   id 'test-summary' // Local plugin
-}
-
-reckon {
-    scopeFromProp()
-    snapshotFromProp()
+  id 'version-reckoning' // Local plugin
 }
 
 allprojects { project ->
+
     task version {
         doLast {
             println "Version is reckoned to " + "$version"

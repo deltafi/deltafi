@@ -1,0 +1,38 @@
+class Versioner {
+
+    static String reckonedVersion
+
+    static String gitVersion() {
+        def sout = new StringBuilder()
+        def serr = new StringBuilder()
+        def proc = 'git describe --tags'.execute()
+
+        proc.consumeProcessOutput(sout, serr)
+        proc.waitForOrKill(10000)
+
+        String result = sout
+        if (!result?.trim()) throw new Exception("Unable to determine git version ($serr)")
+        return sout
+    }
+
+    static String reckon() {
+        reckonedVersion = gitVersion()
+
+        def snapshotMatcher = reckonedVersion =~ /(\d+)\.(\d+)\.\d+-.*/
+        if (snapshotMatcher.size() > 0) {
+            def major = snapshotMatcher[0][1]
+            def minor = snapshotMatcher[0][2] as Integer
+            minor++
+            reckonedVersion = major + "." + minor + ".0-SNAPSHOT"
+        }
+
+        return reckonedVersion
+    }
+
+}
+
+Versioner.reckon()
+
+allprojects { project ->
+    version Versioner.reckonedVersion
+}
