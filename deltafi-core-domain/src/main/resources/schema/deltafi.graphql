@@ -252,11 +252,13 @@ type Mutation {
   registerValidateAction(validateActionConfiguration: ValidateActionConfigurationInput!): ValidateActionConfiguration!
   registerEgressAction(egressActionConfiguration: EgressActionConfigurationInput!): EgressActionConfiguration!
 
-  registerGenericSchema(actionSchema: GenericActionSchemaInput!): ActionSchema!
-  registerTransformSchema(actionSchema: TransformActionSchemaInput!): ActionSchema!
-  registerLoadSchema(actionSchema: LoadActionSchemaInput!): ActionSchema!
+  registerDeleteSchema(actionSchema: DeleteActionSchemaInput!): ActionSchema!
+  registerEgressSchema(actionSchema: EgressActionSchemaInput!): ActionSchema!
   registerEnrichSchema(actionSchema: EnrichActionSchemaInput!): ActionSchema!
   registerFormatSchema(actionSchema: FormatActionSchemaInput!): ActionSchema!
+  registerLoadSchema(actionSchema: LoadActionSchemaInput!): ActionSchema!
+  registerTransformSchema(actionSchema: TransformActionSchemaInput!): ActionSchema!
+  registerValidateSchema(actionSchema: ValidateActionSchemaInput!): ActionSchema!
 
   addIngressFlow(ingressFlowConfiguration: IngressFlowConfigurationInput!): IngressFlowConfiguration!
   addEgressFlow(egressFlowConfiguration: EgressFlowConfigurationInput!): EgressFlowConfiguration!

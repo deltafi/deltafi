@@ -6,40 +6,34 @@ interface ActionSchema {
     lastHeard: DateTime!
 }
 
-type TransformActionSchema implements ActionSchema {
+type DeleteActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
     actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
-    consumes: String!
-    produces: String!
 }
 
-input TransformActionSchemaInput {
+input DeleteActionSchemaInput {
     id: String!
     paramClass: String!
     actionKitVersion: String!
     schema: JSON
-    consumes: String!
-    produces: String!
 }
 
-type LoadActionSchema implements ActionSchema {
+type EgressActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
     actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
-    consumes: String!
 }
 
-input LoadActionSchemaInput {
+input EgressActionSchemaInput {
     id: String!
     paramClass: String!
     actionKitVersion: String!
     schema: JSON
-    consumes: String!
 }
 
 type EnrichActionSchema implements ActionSchema {
@@ -80,7 +74,43 @@ input FormatActionSchemaInput {
     requiresEnrichment: [String]
 }
 
-type GenericActionSchema implements ActionSchema {
+type LoadActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+    consumes: String!
+}
+
+input LoadActionSchemaInput {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    consumes: String!
+}
+
+type TransformActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    lastHeard: DateTime!
+    consumes: String!
+    produces: String!
+}
+
+input TransformActionSchemaInput {
+    id: String!
+    paramClass: String!
+    actionKitVersion: String!
+    schema: JSON
+    consumes: String!
+    produces: String!
+}
+
+type ValidateActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
     actionKitVersion: String!
@@ -88,10 +118,9 @@ type GenericActionSchema implements ActionSchema {
     lastHeard: DateTime!
 }
 
-input GenericActionSchemaInput {
+input ValidateActionSchemaInput {
     id: String!
     paramClass: String!
     actionKitVersion: String!
     schema: JSON
 }
-

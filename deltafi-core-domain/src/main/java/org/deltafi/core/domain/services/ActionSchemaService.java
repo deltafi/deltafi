@@ -2,28 +2,14 @@ package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.generated.types.EnrichActionSchema;
-import org.deltafi.core.domain.generated.types.EnrichActionSchemaInput;
-import org.deltafi.core.domain.generated.types.FormatActionSchema;
-import org.deltafi.core.domain.generated.types.FormatActionSchemaInput;
-import org.deltafi.core.domain.generated.types.GenericActionSchema;
-import org.deltafi.core.domain.generated.types.GenericActionSchemaInput;
-import org.deltafi.core.domain.generated.types.LoadActionSchema;
-import org.deltafi.core.domain.generated.types.LoadActionSchemaInput;
-import org.deltafi.core.domain.generated.types.TransformActionSchema;
-import org.deltafi.core.domain.generated.types.TransformActionSchemaInput;
-import org.deltafi.core.domain.api.types.EnrichActionSchemaImpl;
-import org.deltafi.core.domain.api.types.FormatActionSchemaImpl;
-import org.deltafi.core.domain.api.types.GenericActionSchemaImpl;
-import org.deltafi.core.domain.api.types.LoadActionSchemaImpl;
-import org.deltafi.core.domain.api.types.TransformActionSchemaImpl;
+import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.ActionSchemaRepo;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ActionSchemaService {
@@ -35,6 +21,26 @@ public class ActionSchemaService {
         this.actionSchemaRepo = actionSchemaRepo;
     }
 
+    public List<ActionSchema> getAll() {
+        return actionSchemaRepo.findAll();
+    }
+
+    public Optional<ActionSchema> getByActionClass(String id) {
+        return actionSchemaRepo.findById(id);
+    }
+
+    public DeleteActionSchema save(DeleteActionSchemaInput actionSchemaInput) {
+        DeleteActionSchemaImpl actionParamDefinition = objectMapper.convertValue(actionSchemaInput, DeleteActionSchemaImpl.class);
+        actionParamDefinition.setLastHeard(OffsetDateTime.now());
+        return actionSchemaRepo.save(actionParamDefinition);
+    }
+
+    public EgressActionSchema save(EgressActionSchemaInput actionSchemaInput) {
+        EgressActionSchemaImpl actionParamDefinition = objectMapper.convertValue(actionSchemaInput, EgressActionSchemaImpl.class);
+        actionParamDefinition.setLastHeard(OffsetDateTime.now());
+        return actionSchemaRepo.save(actionParamDefinition);
+    }
+
     public EnrichActionSchema save(EnrichActionSchemaInput actionSchemaInput) {
         EnrichActionSchemaImpl actionParamDefinition = objectMapper.convertValue(actionSchemaInput, EnrichActionSchemaImpl.class);
         actionParamDefinition.setLastHeard(OffsetDateTime.now());
@@ -43,12 +49,6 @@ public class ActionSchemaService {
 
     public FormatActionSchema save(FormatActionSchemaInput actionSchemaInput) {
         FormatActionSchemaImpl actionParamDefinition = objectMapper.convertValue(actionSchemaInput, FormatActionSchemaImpl.class);
-        actionParamDefinition.setLastHeard(OffsetDateTime.now());
-        return actionSchemaRepo.save(actionParamDefinition);
-    }
-
-    public GenericActionSchema save(GenericActionSchemaInput actionSchemaInput) {
-        GenericActionSchemaImpl actionParamDefinition = objectMapper.convertValue(actionSchemaInput, GenericActionSchemaImpl.class);
         actionParamDefinition.setLastHeard(OffsetDateTime.now());
         return actionSchemaRepo.save(actionParamDefinition);
     }
@@ -65,11 +65,9 @@ public class ActionSchemaService {
         return actionSchemaRepo.save(actionParamDefinition);
     }
 
-    public List<ActionSchema> getAll() {
-        return actionSchemaRepo.findAll();
-    }
-
-    public Optional<ActionSchema> getByActionClass(String id) {
-        return actionSchemaRepo.findById(id);
+    public ValidateActionSchema save(ValidateActionSchemaInput actionSchemaInput) {
+        ValidateActionSchemaImpl actionParamDefinition = objectMapper.convertValue(actionSchemaInput, ValidateActionSchemaImpl.class);
+        actionParamDefinition.setLastHeard(OffsetDateTime.now());
+        return actionSchemaRepo.save(actionParamDefinition);
     }
 }

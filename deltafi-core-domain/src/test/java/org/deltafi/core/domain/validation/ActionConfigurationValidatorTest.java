@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.api.types.GenericActionSchemaImpl;
+import org.deltafi.core.domain.api.types.EgressActionSchemaImpl;
 import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
@@ -159,7 +159,7 @@ class ActionConfigurationValidatorTest {
 
     ActionSchema actionSchema() {
         try {
-            GenericActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
+            EgressActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
             actionSchema.setLastHeard(OffsetDateTime.now());
             return actionSchema;
         } catch (IOException e) {
@@ -170,7 +170,7 @@ class ActionConfigurationValidatorTest {
 
     ActionSchema actionSchemaMinus1Day() {
         try {
-            GenericActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
+            EgressActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
             actionSchema.setLastHeard(OffsetDateTime.now().minusDays(1));
             return actionSchema;
         } catch (IOException e) {

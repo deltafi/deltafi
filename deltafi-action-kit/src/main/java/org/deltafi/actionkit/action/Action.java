@@ -27,9 +27,6 @@ import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.*;
-import org.deltafi.core.domain.generated.client.RegisterGenericSchemaGraphQLQuery;
-import org.deltafi.core.domain.generated.client.RegisterGenericSchemaProjectionRoot;
-import org.deltafi.core.domain.generated.types.GenericActionSchemaInput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
@@ -178,23 +175,14 @@ public abstract class Action<P extends ActionParameters> {
         return definition;
     }
 
-    public GraphQLQuery getRegistrationQuery() {
-        GenericActionSchemaInput paramInput = GenericActionSchemaInput.newBuilder()
-            .id(getClassCanonicalName())
-            .paramClass(getParamClass())
-            .actionKitVersion(getVersion())
-            .schema(getDefinition())
-            .build();
-        return RegisterGenericSchemaGraphQLQuery.newRequest().actionSchema(paramInput).build();
-    }
+    public abstract GraphQLQuery getRegistrationQuery();
 
     void doRegisterParamSchema() {
-        domainGatewayService.submit(new GraphQLQueryRequest(getRegistrationQuery(), getRegistrationProjection()));
+        domainGatewayService.submit(new GraphQLQueryRequest(
+                getRegistrationQuery(), getRegistrationProjection()));
     }
 
-    protected BaseProjectionNode getRegistrationProjection() {
-        return new RegisterGenericSchemaProjectionRoot(). id();
-    }
+    protected abstract BaseProjectionNode getRegistrationProjection();
 
     protected String getClassCanonicalName() {
         return this instanceof Subclass ? this.getClass().getSuperclass().getCanonicalName() : this.getClass().getCanonicalName();
