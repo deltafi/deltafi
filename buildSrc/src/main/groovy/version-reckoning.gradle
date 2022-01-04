@@ -12,7 +12,7 @@ class Versioner {
 
         String result = sout
         if (!result?.trim()) throw new Exception("Unable to determine git version ($serr)")
-        return sout
+        return result.trim()
     }
 
     static String reckon() {
