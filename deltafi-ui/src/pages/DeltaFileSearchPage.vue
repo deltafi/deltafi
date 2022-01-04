@@ -125,22 +125,22 @@
         striped-rows
         class="p-datatable p-datatable-sm p-datatable-gridlines"
         :loading="loading"
-        :paginator="true"
+        :paginator="totalRecords > 0"
         :rows="10"
         :lazy="true"
         :rows-per-page-options="[10,20,50,100]"
         :total-records="totalRecords"
-        :always-show-paginator="false"
+        :always-show-paginator="true"
         paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
         current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
         @page="onPage($event)"
         @sort="onSort($event)"
       >
         <template #empty>
-          No DeltaFi data in the selected time range
+          No DeltaFiles in the selected time range.
         </template>
         <template #loading>
-          Loading DeltaFi data. Please wait.
+          Loading DeltaFiles. Please wait.
         </template>
         <Column field="did" header="DID (UUID)">
           <template #body="tData">

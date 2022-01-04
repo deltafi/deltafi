@@ -1,4 +1,21 @@
-.time-range .form-control:disabled,
-.time-range .form-control[readonly] {
-  background-color: #ffffff;
+.errors {
+  .time-range .form-control:disabled,
+  .time-range .form-control[readonly] {
+    background-color: #ffffff;
+  }
+  .p-panel {
+    .p-panel-header {
+      padding: 0.5rem 1.25rem;
+    }
+    .p-panel-content {
+      padding: 0;
+      border: none;
+    }
+  }
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
+    color: #ffffff;
+    a, button {
+      color: #eeeeee;
+    }
+  }
 }

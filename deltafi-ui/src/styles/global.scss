@@ -56,6 +56,12 @@ a {
   min-width: 16em;
 }
 
+.p-toast {
+  width: unset !important;
+  max-width: 50rem;
+  min-width: 25rem;
+}
+
 .noselect {
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */
@@ -63,4 +69,11 @@ a {
   -moz-user-select: none; /* Old versions of Firefox */
   -ms-user-select: none; /* Internet Explorer/Edge */
   user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
+.p-datatable-sm {
+  .expander-column {
+    width: 1%;
+    padding: 0.25rem !important;
+  }
 }

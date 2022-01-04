@@ -273,12 +273,12 @@ export default class GraphQLService {
     return this.convertJsonToGraphQLQuery(searchParams);
   }
 
-  postErrorRetry(did: string) {
+  postErrorRetry(dids: Array<object>) {
     const postString = {
       mutation: {
         retry: {
           __args: {
-            dids: [did]
+            dids: dids
           },
           did: true,
           success: true,
