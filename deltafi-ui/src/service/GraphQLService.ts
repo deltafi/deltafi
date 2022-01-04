@@ -185,14 +185,15 @@ export default class GraphQLService {
               state: true,
             },
             protocolStack: {
+              action: true,
               type: true,
               metadata: {
                 key: true,
                 value: true,
               },
-              objectReference: {
-                name: true,
-                bucket: true,
+              contentReference: {
+                did: true,
+                uuid: true,
                 offset: true,
                 size: true,
               },
@@ -216,10 +217,10 @@ export default class GraphQLService {
             formattedData: {
               filename: true,
               formatAction: true,
-              objectReference: {
-                bucket: true,
+              contentReference: {
+                did: true,
+                uuid: true,
                 offset: true,
-                name: true,
                 size: true,
               },
             }
@@ -332,21 +333,22 @@ export default class GraphQLService {
             },
             formatAction: true,
             egressActions: true,
-            objectReference: {
-              bucket: true,
-              name: true,
+            contentReference: {
+              did: true,
+              uuid: true,
               offset: true,
               size: true,
             },
           },
           protocolStack: {
+            action: true,
             metadata: {
               key: true,
               value: true,
             },
-            objectReference: {
-              bucket: true,
-              name: true,
+            contentReference: {
+              did: true,
+              uuid: true,
               offset: true,
               size: true,
             },
