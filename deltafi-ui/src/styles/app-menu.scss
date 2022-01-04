@@ -6,53 +6,36 @@
   padding: 42px 0 0; /* Height of navbar */
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
   width: 300px;
-}
-
-.menu .nav-link {
-  font-weight: 500;
-  color: #333;
-}
-
-.menu .nav-link.folder {
-  font-weight: 300;
-  color: #999;
-  cursor: pointer;
-}
-
-.menu .nav-link.indent {
-  padding-left: 40px;
-}
-
-.menu .nav-link .fa-fw {
-  margin-right: 0.25rem;
-  color: #999;
-}
-
-.menu .nav-link i.fa-external-link-alt {
-  font-size: 0.8rem !important;
-}
-
-.menu .nav-link.active {
-  font-weight: 600;
-  background-color: #e6e6e6;
-}
-
-.menu .submenu {
-  transition: all 0.2s ease;
-  max-height: 4rem;
-}
-
-.menu .submenu.hidden {
-  max-height: 0px;
-  opacity: 0;
-  overflow: hidden;
-}
-
-.noselect {
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Old versions of Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+  .nav-link {
+    font-weight: 500;
+    color: #333;
+  }
+  .nav-link.folder {
+    font-weight: 300;
+    color: #999;
+    cursor: pointer;
+  }
+  .nav-link.indent {
+    padding-left: 40px;
+  }
+  .nav-link .fa-fw {
+    margin-right: 0.25rem;
+    color: #999;
+  }
+  .nav-link i.fa-external-link-alt {
+    font-size: 0.8rem !important;
+  }
+  .nav-link.active {
+    font-weight: 600;
+    background-color: #e6e6e6;
+  }
+  .submenu {
+    transition: all 0.2s ease;
+    max-height: 4rem;
+  }
+  .submenu.hidden {
+    max-height: 0px;
+    opacity: 0;
+    overflow: hidden;
+  }
 }

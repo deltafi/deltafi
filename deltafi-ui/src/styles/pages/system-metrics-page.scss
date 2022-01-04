@@ -1,16 +1,25 @@
-.p-progressbar {
-  background: #dadada;
-}
+.system-metrics {
+  .p-progressbar {
+    background: #dadada;
+    .p-progressbar-label {
+      font-weight: inherit;
+    }
+  }
 
-.p-progressbar .p-progressbar-value {
-  background: #60a0ff;
-}
+  .p-progressbar .p-progressbar-value {
+    background: #60a0ff;
+  }
 
-.resource-column {
-  width: 20%;
-}
+  .resource-column {
+    width: 20%;
+  }
 
-.expander-column,
-.pods-column {
-  width: 1%;
+  .expander-column {
+    width: 1%;
+    padding: 0.25rem !important;
+  }
+
+  .pods-column {
+    width: 1%;
+  }
 }

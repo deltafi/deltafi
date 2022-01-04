@@ -11,7 +11,7 @@
           <div class="list-group list-group-flush">
             <a v-for="link in externalLinks" :key="link" :href="link.url" target="_blank" class="list-group-item list-group-item-action">
               <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-0">{{ link.name }}</h5>
+                <strong class="mb-0">{{ link.name }}</strong>
                 <i class="fas fa-external-link-alt" />
               </div>
               <small class="mb-1 text-muted">{{ link.description }}</small>

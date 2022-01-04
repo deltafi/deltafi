@@ -1,6 +1,6 @@
 <template>
   <div>
-    <CollapsiblePanel :header="title" class="metrics-panel">
+    <CollapsiblePanel :header="title" class="metrics-panel table-panel">
       <DataTable :value="tableData" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading" sort-field="action_name" :sort-order="1">
         <template #empty>
           No {{ title }} available.

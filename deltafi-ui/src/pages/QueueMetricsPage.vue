@@ -10,17 +10,19 @@
         <ProgressBar mode="indeterminate" style="height: .5em" />
       </div>
       <div v-else class="col-12">
-        <DataTable :value="queueMetrics" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="loadingQueueMetrics">
-          <template #empty>
-            No action queue metrics available.
-          </template>
-          <template #loading>
-            Loading action queue metrics data. Please wait.
-          </template>
-          <Column header="Queue Name" field="name" :sortable="true" />
-          <Column header="Queue Size" field="size" :sortable="true" class="metric-column" />
-          <Column header="Timestamp" field="timestamp" :sortable="true" class="metric-column" />
-        </DataTable>
+        <CollapsiblePanel header="Queues" class="table-panel">
+          <DataTable :value="queueMetrics" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="loadingQueueMetrics">
+            <template #empty>
+              No action queue metrics available.
+            </template>
+            <template #loading>
+              Loading action queue metrics data. Please wait.
+            </template>
+            <Column header="Queue Name" field="name" :sortable="true" />
+            <Column header="Queue Size" field="size" :sortable="true" class="metric-column" />
+            <Column header="Timestamp" field="timestamp" :sortable="true" class="metric-column" />
+          </DataTable>
+        </CollapsiblePanel>
       </div>
     </div>
   </div>
@@ -31,6 +33,7 @@ import ApiService from "@/service/ApiService";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import ProgressBar from "primevue/progressbar";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 
 const refreshInterval = 5000; // 5 seconds
 
@@ -40,6 +43,7 @@ export default {
     Column,
     DataTable,
     ProgressBar,
+    CollapsiblePanel
   },
   data() {
     return {

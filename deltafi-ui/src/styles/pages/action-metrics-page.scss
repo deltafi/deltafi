@@ -1,6 +1,7 @@
 .action-metrics {
   .p-panel-content {
     padding: 0;
+    border: none;
   }
   .p-tabview .p-tabview-panels {
     padding: 1rem 0 0 0;
@@ -12,9 +13,6 @@
   .p-tabview-nav-link:hover {
     text-decoration: none;
   }
-}
-
-.action-metrics  {
   .col-6 .metric-column {
     text-align: right !important;
     width: 20%;

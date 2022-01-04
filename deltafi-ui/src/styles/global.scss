@@ -2,6 +2,10 @@ html {
   font-size: 14px;
 }
 
+body {
+  line-height: 1.4;
+}
+
 pre.dark {
   background-color: #333333;
   color: #dddddd;
@@ -25,13 +29,38 @@ a {
   }
 }
 
-.deltafi-input-field {
-  min-width: 16em;
-  height: 32px;
+.table-panel {
+  .p-panel-content {
+    padding: 0;
+    border: none;
+    div.p-datatable-sm:not(.p-datatable-gridlines) {
+      .p-datatable-wrapper, .p-paginator-bottom {
+        border-left: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+        border-bottom: 1px solid #dee2e6;
+        border-top: none;
+      }
+    }
+  }
 }
 
-.deltafi-input-field .p-dropdown-label {
-  padding-top: 5px;
-  padding-bottom: 5px;
-  padding-left: 10px;
+.deltafi-input-field {
+  height: 32px;
+  .p-dropdown-label {
+    padding-top: 6px;
+    padding-left: 10px;
+  }
+}
+
+.deltafi-input-field.min-width {
+  min-width: 16em;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }

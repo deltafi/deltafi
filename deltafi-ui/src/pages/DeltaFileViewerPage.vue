@@ -44,8 +44,8 @@
       </div>
       <div class="row mb-3">
         <div class="col-12">
-          <CollapsiblePanel header="Actions" class="actions-panel">
-            <DataTable :value="actions" responsive-layout="scroll" striped-rows class="p-datatable-sm" :row-class="actionRowClass" @row-click="actionRowClick">
+          <CollapsiblePanel header="Actions" class="actions-panel table-panel">
+            <DataTable :value="actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column field="name" header="Action" :sortable="true" />
               <Column field="state" header="State" :sortable="true">
                 <template #body="action">

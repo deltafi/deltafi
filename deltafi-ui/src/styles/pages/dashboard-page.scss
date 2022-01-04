@@ -1,13 +1,15 @@
 .dashboard .row {
   padding-left: 0.6rem !important;
   padding-right: 0.6rem !important;
-
   .links-panel {
     .p-panel-content {
-      padding: 0 !important;
-    }
-    .list-group-flush {
-      border-radius: 4px;
+      padding: 0;
+      strong {
+        font-weight: 600;
+      }
+      .list-group-flush {
+        border-radius: 4px;
+      }
     }
   }
 }

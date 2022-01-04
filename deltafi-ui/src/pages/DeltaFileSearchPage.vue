@@ -53,7 +53,7 @@
                 option-label="name"
                 :filter="true"
                 :show-clear="true"
-                class="deltafi-input-field"
+                class="deltafi-input-field min-width"
               />
             </div>
           </div>
@@ -69,7 +69,7 @@
                 :options="flowOptions"
                 show-clear
                 :editable="false"
-                class="deltafi-input-field"
+                class="deltafi-input-field min-width"
               />
             </div>
           </div>
@@ -86,7 +86,7 @@
                 option-label="name"
                 show-clear
                 :editable="false"
-                class="deltafi-input-field"
+                class="deltafi-input-field min-width"
               />
             </div>
           </div>
@@ -103,7 +103,7 @@
                 option-label="name"
                 :filter="true"
                 :show-clear="true"
-                class="deltafi-input-field"
+                class="deltafi-input-field min-width"
               />
             </div>
           </div>
@@ -119,46 +119,48 @@
         </CollapsiblePanel>
       </div>
     </div>
-    <DataTable
-      :value="results"
-      striped-rows
-      class="p-datatable-gridlines p-datatable-sm"
-      :loading="loading"
-      :paginator="true"
-      :rows="10"
-      :lazy="true"
-      :rows-per-page-options="[10,20,50,100]"
-      :total-records="totalRecords"
-      :always-show-paginator="false"
-      paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-      current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
-      @page="onPage($event)"
-      @sort="onSort($event)"
-    >
-      <template #empty>
-        No DeltaFi data in the selected time range
-      </template>
-      <template #loading>
-        Loading DeltaFi data. Please wait.
-      </template>
-      <Column field="did" header="DID (UUID)">
-        <template #body="tData">
-          <router-link class="monospace" :to="{path: 'viewer/' + tData.data.did}">
-            {{ tData.data.did }}
-          </router-link>
+    <CollapsiblePanel header="DeltaFiles" class="table-panel">
+      <DataTable
+        :value="results"
+        striped-rows
+        class="p-datatable p-datatable-sm p-datatable-gridlines"
+        :loading="loading"
+        :paginator="true"
+        :rows="10"
+        :lazy="true"
+        :rows-per-page-options="[10,20,50,100]"
+        :total-records="totalRecords"
+        :always-show-paginator="false"
+        paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
+        @page="onPage($event)"
+        @sort="onSort($event)"
+      >
+        <template #empty>
+          No DeltaFi data in the selected time range
         </template>
-      </Column>
-      <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
-      <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
-      <Column field="stage" header="Stage" :sortable="true" />
-      <Column field="created" header="Created" :sortable="true" />
-      <Column field="modified" header="Modified" :sortable="true" />
-      <Column field="elapsed" header="Elapsed" :sortable="false">
-        <template #body="row">
-          {{ row.data.elapsed }}
+        <template #loading>
+          Loading DeltaFi data. Please wait.
         </template>
-      </Column>
-    </DataTable>
+        <Column field="did" header="DID (UUID)">
+          <template #body="tData">
+            <router-link class="monospace" :to="{path: 'viewer/' + tData.data.did}">
+              {{ tData.data.did }}
+            </router-link>
+          </template>
+        </Column>
+        <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
+        <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
+        <Column field="stage" header="Stage" :sortable="true" />
+        <Column field="created" header="Created" :sortable="true" />
+        <Column field="modified" header="Modified" :sortable="true" />
+        <Column field="elapsed" header="Elapsed" :sortable="false">
+          <template #body="row">
+            {{ row.data.elapsed }}
+          </template>
+        </Column>
+      </DataTable>
+    </CollapsiblePanel>
   </div>
 </template>
 

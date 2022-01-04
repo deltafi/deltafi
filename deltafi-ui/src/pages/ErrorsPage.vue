@@ -24,7 +24,7 @@
           hour-format="12"
           input-class="deltafi-input-field ml-3"
         />
-        <span class="mt-1 ml-3">&mdash;</span>
+        <span class="mt-2 ml-3">&mdash;</span>
         <Calendar
           id="endDateTime"
           v-model="endTimeDate"

@@ -5,12 +5,14 @@
         Versions
       </h1>
     </div>
-    <DataTable :value="versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading">
-      <Column field="app" header="App" :sortable="true" />
-      <Column field="container" header="Container" :sortable="true" />
-      <Column field="image.name" header="Image" :sortable="true" />
-      <Column field="image.tag" header="Tag" :sortable="true" />
-    </DataTable>
+    <CollapsiblePanel header="Image Versions" class="table-panel">
+      <DataTable :value="versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading">
+        <Column field="app" header="App" :sortable="true" />
+        <Column field="container" header="Container" :sortable="true" />
+        <Column field="image.name" header="Image" :sortable="true" />
+        <Column field="image.tag" header="Tag" :sortable="true" />
+      </DataTable>
+    </CollapsiblePanel>
   </div>
 </template>
 
@@ -18,12 +20,14 @@
 import ApiService from "@/service/ApiService";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
 export default {
   name: "VersionsPage",
   components: {
     DataTable,
-    Column
+    Column,
+    CollapsiblePanel
   },
   data() {
     return {
