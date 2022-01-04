@@ -47,7 +47,7 @@ trigger_deltafi_stix:
     branch: $CI_COMMIT_REF_NAME
 
 .gradle:
-  image: gradle:7.3.3-jdk11
+  image: gradle:6.8.3-jdk11
   variables:
     GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
 
