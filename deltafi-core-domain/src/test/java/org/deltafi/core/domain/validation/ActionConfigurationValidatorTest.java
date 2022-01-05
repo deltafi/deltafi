@@ -2,6 +2,7 @@ package org.deltafi.core.domain.validation;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.api.types.GenericActionSchemaImpl;
 import org.deltafi.core.domain.api.types.JsonMap;
@@ -30,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 class ActionConfigurationValidatorTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String EGRESS_ACTION = "org.deltafi.core.action.RestPostEgressAction";
 
     @InjectMocks

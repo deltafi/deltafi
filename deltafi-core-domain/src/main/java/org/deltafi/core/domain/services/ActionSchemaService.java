@@ -1,6 +1,7 @@
 package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.generated.types.EnrichActionSchema;
 import org.deltafi.core.domain.generated.types.EnrichActionSchemaInput;
@@ -27,7 +28,7 @@ import java.util.List;
 @Service
 public class ActionSchemaService {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final ActionSchemaRepo actionSchemaRepo;
 
     public ActionSchemaService(ActionSchemaRepo actionSchemaRepo) {
