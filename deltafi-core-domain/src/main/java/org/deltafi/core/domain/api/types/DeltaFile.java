@@ -74,19 +74,19 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
     public void completeAction(String name) {
         getActions().stream()
-                .filter(action -> action.getName().equals(name))
+                .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
                 .forEach(action -> setActionState(action, ActionState.COMPLETE));
     }
 
     public void filterAction(String name, String filterMessage) {
         getActions().stream()
-                .filter(action -> action.getName().equals(name))
+                .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
                 .forEach(action -> setActionState(action, ActionState.FILTERED, filterMessage, null));
     }
 
     public void errorAction(String name, String errorCause, String errorContext) {
         getActions().stream()
-                .filter(action -> action.getName().equals(name))
+                .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
                 .forEach(action -> setActionState(action, ActionState.ERROR, errorCause, errorContext));
     }
 
