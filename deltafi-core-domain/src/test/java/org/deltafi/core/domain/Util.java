@@ -3,11 +3,16 @@ package org.deltafi.core.domain;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.Action;
+import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 
 public class Util {
     public static DeltaFile buildDeltaFile(String did) {
@@ -21,13 +26,20 @@ public class Util {
 
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified) {
+        Action ingressAction = Action.newBuilder()
+                .name(INGRESS_ACTION)
+                .state(ActionState.COMPLETE)
+                .created(created)
+                .modified(modified)
+                .build();
+
         return DeltaFile.newBuilder()
                 .did(did)
                 .sourceInfo(new SourceInfo(null, flow, List.of()))
                 .stage(stage)
                 .created(created)
                 .modified(modified)
-                .actions(new ArrayList<>())
+                .actions(Stream.of(ingressAction).collect(Collectors.toCollection(ArrayList::new)))
                 .protocolStack(new ArrayList<>())
                 .domains(new ArrayList<>())
                 .enrichment(new ArrayList<>())

@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.InputStream;
 import java.util.List;
 
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,7 +59,7 @@ class DeltaFileServiceTest {
 
         Mockito.verify(contentStorageService).save(eq(did), (InputStream) isNull());
         Mockito.verify(graphQLClientService).executeGraphQLQuery(any());
-        Mockito.verify(zipkinService).createChildSpan(eq(did), eq("IngressAction"), eq(OBJECT_NAME), eq(FLOW), any());
+        Mockito.verify(zipkinService).createChildSpan(eq(did), eq(INGRESS_ACTION), eq(OBJECT_NAME), eq(FLOW), any());
         Mockito.verify(zipkinService).markSpanComplete(any());
         Assertions.assertNotNull(did);
     }

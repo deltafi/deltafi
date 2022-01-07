@@ -50,7 +50,7 @@ class DeltaFilesServiceTest {
         ContentReference contentReference = new ContentReference();
         IngressInput ingressInput = new IngressInput(did, sourceInfo, contentReference, OffsetDateTime.now());
 
-        DeltaFile deltaFile = deltaFilesService.addDeltaFile(ingressInput);
+        DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
 
         assertNotNull(deltaFile);
         assertEquals(flow, deltaFile.getSourceInfo().getFlow());
@@ -64,7 +64,7 @@ class DeltaFilesServiceTest {
         ContentReference contentReference = new ContentReference();
         IngressInput ingressInput = new IngressInput("did", sourceInfo, contentReference, OffsetDateTime.now());
 
-        assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.addDeltaFile(ingressInput));
+        assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.ingress(ingressInput));
     }
 
     @Test

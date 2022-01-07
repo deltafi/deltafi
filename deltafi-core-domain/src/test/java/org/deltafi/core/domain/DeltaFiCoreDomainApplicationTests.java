@@ -27,6 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -41,6 +42,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest
+@TestPropertySource(properties = {"enableScheduling=false"})
 class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
@@ -160,7 +162,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test03TransformUtf8() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postIngressDeltaFile(did));
+		deltaFileRepo.save(postIngressDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("03.transformUtf8"), did),
@@ -188,7 +190,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test05Transform() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postTransformUtf8DeltaFile(did));
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("05.transform"), did),
@@ -218,7 +220,7 @@ class DeltaFiCoreDomainApplicationTests {
 	void test08Load() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postTransform = postTransformDeltaFile(did);
-		deltaFilesService.addDeltaFile(postTransform);
+		deltaFileRepo.save(postTransform);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("08.load"), did),
@@ -246,7 +248,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test11Enrich() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postLoadDeltaFile(did));
+		deltaFileRepo.save(postLoadDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("11.enrich"), did),
@@ -280,7 +282,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test13Format() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postEnrichDeltaFile(did));
+		deltaFileRepo.save(postEnrichDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("13.format"), did),
@@ -306,7 +308,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test15Validate() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postFormatDeltaFile(did));
+		deltaFileRepo.save(postFormatDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("15.validate"), did),
@@ -330,7 +332,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test17Error() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
+		deltaFileRepo.save(postValidateDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("17.error"), did),
@@ -357,7 +359,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test18Retry() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postErrorDeltaFile(did));
+		deltaFileRepo.save(postErrorDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("18.retry"), did),
@@ -384,7 +386,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test20ValidateAuthority() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateDeltaFile(did));
+		deltaFileRepo.save(postValidateDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("20.validateAuthority"), did),
@@ -410,7 +412,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test22Egress() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
+		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("22.egress"), did),
@@ -426,7 +428,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void testFilterEgress() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
+		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("filter"), did, "SampleEgressAction"),
@@ -447,7 +449,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFiProperties.getDelete().setOnCompletion(true);
 
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postValidateAuthorityDeltaFile(did));
+		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("22.egress"), did),
@@ -460,7 +462,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void test25ActionConfigError() throws IOException, ActionConfigException {
 		String did = UUID.randomUUID().toString();
-		deltaFilesService.addDeltaFile(postIngressDeltaFile(did));
+		deltaFileRepo.save(postIngressDeltaFile(did));
 
 		Mockito.doThrow(new ActionConfigException("SampleTransformAction", "action not found")).when(redisService).enqueue(eq(Collections.singletonList("SampleTransformAction")), argThat((d) -> did.equals(d.getDid())));
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -473,16 +475,5 @@ class DeltaFiCoreDomainApplicationTests {
 
 		Action errored = deltaFile.actionNamed("SampleTransformAction").orElseThrow();
 		assertThat(errored.getErrorCause()).isEqualTo("action not found");
-	}
-
-	@Test
-	void deleteActionAddedToRedisQueueAfterCompletion() throws Exception {
-		deltaFileRepo.save(DeltaFile.newBuilder().did("a").stage(DeltaFileStage.COMPLETE)
-				.modified(OffsetDateTime.now()).actions(Collections.emptyList()).build());
-		Thread.sleep(1000);
-		Mockito.verify(redisService, never()).enqueue(any(), any());
-
-		Thread.sleep(2000);
-		Mockito.verify(redisService).enqueue(Mockito.eq(Collections.singletonList("DeleteAction")), Mockito.any());
 	}
 }

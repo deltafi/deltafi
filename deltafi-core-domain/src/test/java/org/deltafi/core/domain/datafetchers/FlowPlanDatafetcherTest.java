@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-@TestPropertySource(properties = "enableScheduling=false")
+@TestPropertySource(properties = {"enableScheduling=false"})
 class FlowPlanDatafetcherTest {
 
     private static final String DESCRIPTION = "description";

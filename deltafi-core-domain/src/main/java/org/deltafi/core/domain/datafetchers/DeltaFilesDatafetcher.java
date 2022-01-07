@@ -67,7 +67,7 @@ public class DeltaFilesDatafetcher {
   @DgsMutation
   @SuppressWarnings("unused")
   public DeltaFile ingress(IngressInput input) {
-    return deltaFilesService.handleIngress(input);
+    return deltaFilesService.ingress(input);
   }
 
   @DgsMutation

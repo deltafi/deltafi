@@ -26,7 +26,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
-@TestPropertySource(properties = "enableScheduling=false")
+@TestPropertySource(properties = {"enableScheduling=false"})
 class DeltafiConfigDatafetcherTest {
 
     public static final String NAME = "myAction";

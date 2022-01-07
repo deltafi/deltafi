@@ -31,6 +31,9 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 
 @Service
 @RequiredArgsConstructor
@@ -47,11 +50,6 @@ public class DeltaFilesService {
     final RedisService redisService;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(16);
-
-    // TODO: Remove, only used for tests!!!
-    public void addDeltaFile(DeltaFile deltaFile) {
-        deltaFileRepo.save(deltaFile);
-    }
 
     public DeltaFile getDeltaFile(String did) {
         return deltaFileRepo.findById(did).orElse(null);
@@ -83,8 +81,33 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile handleIngress(IngressInput input) {
-        return addDeltaFile(input);
+    public DeltaFile ingress(IngressInput input) {
+        String flow = input.getSourceInfo().getFlow();
+        IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        Action ingressAction = Action.newBuilder()
+                .name(INGRESS_ACTION)
+                .state(ActionState.COMPLETE)
+                .created(input.getCreated())
+                .modified(now)
+                .build();
+
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .did(input.getDid())
+                .stage(DeltaFileStage.INGRESS)
+                .actions(Stream.of(ingressAction).collect(Collectors.toCollection(ArrayList::new)))
+                .sourceInfo(input.getSourceInfo())
+                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), "ingress", input.getContentReference(), null)))
+                .domains(Collections.emptyList())
+                .enrichment(Collections.emptyList())
+                .formattedData(Collections.emptyList())
+                .created(input.getCreated())
+                .modified(now)
+                .build();
+
+        return advanceAndSave(deltaFile);
     }
 
     @MongoRetryable
@@ -122,26 +145,6 @@ public class DeltaFilesService {
         }
 
         throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
-    }
-
-    public DeltaFile addDeltaFile(IngressInput input) {
-        String flow = input.getSourceInfo().getFlow();
-        IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
-
-        DeltaFile deltaFile = DeltaFile.newBuilder()
-                .did(input.getDid())
-                .stage(DeltaFileStage.INGRESS)
-                .actions(new ArrayList<>())
-                .sourceInfo(input.getSourceInfo())
-                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), "ingress", input.getContentReference(), null)))
-                .domains(Collections.emptyList())
-                .enrichment(Collections.emptyList())
-                .formattedData(Collections.emptyList())
-                .created(input.getCreated())
-                .modified(OffsetDateTime.now())
-                .build();
-
-        return advanceAndSave(deltaFile);
     }
 
     public DeltaFile transform(DeltaFile deltaFile, ActionEventInput event) {

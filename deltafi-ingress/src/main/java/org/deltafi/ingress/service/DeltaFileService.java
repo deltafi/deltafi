@@ -29,6 +29,8 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+
 @ApplicationScoped
 @RequiredArgsConstructor
 @Slf4j
@@ -113,11 +115,11 @@ public class DeltaFileService {
     }
 
     private void logMetric(String did, String fileName, String flow, String metric, long value) {
-        Map<String, String> tags = Map.of("filename", fileName, "action", "IngressAction");
+        Map<String, String> tags = Map.of("filename", fileName, "action", INGRESS_ACTION);
         MetricLogger.logMetric("ingress", did, flow, metric, value, tags);
     }
 
     private void sendTrace(String did, String fileName, String flow, OffsetDateTime created) {
-        zipkinService.markSpanComplete(zipkinService.createChildSpan(did, "IngressAction", fileName, flow, created));
+        zipkinService.markSpanComplete(zipkinService.createChildSpan(did, INGRESS_ACTION, fileName, flow, created));
     }
 }

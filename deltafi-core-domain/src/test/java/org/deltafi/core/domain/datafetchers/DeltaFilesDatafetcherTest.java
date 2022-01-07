@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @SpringBootTest
-@TestPropertySource(properties = "enableScheduling=false")
+@TestPropertySource(properties = {"enableScheduling=false"})
 class DeltaFilesDatafetcherTest {
 
     @Autowired
@@ -237,7 +237,7 @@ class DeltaFilesDatafetcherTest {
 
     @Test
     void deltaFile() {
-        DeltaFile expected = deltaFilesService.addDeltaFile(ingressInput);
+        DeltaFile expected = deltaFilesService.ingress(ingressInput);
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
                 new DeltaFileGraphQLQuery.Builder().did(expected.getDid()).build(),
@@ -259,7 +259,7 @@ class DeltaFilesDatafetcherTest {
                 .offset(0)
                 .count(1)
                 .totalCount(1)
-                .deltaFiles(List.of(deltaFilesService.addDeltaFile(ingressInput)))
+                .deltaFiles(List.of(deltaFilesService.ingress(ingressInput)))
                 .build();
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
@@ -286,7 +286,7 @@ class DeltaFilesDatafetcherTest {
 
     @Test
     void retry() throws ActionConfigException {
-        DeltaFile input = deltaFilesService.addDeltaFile(ingressInput);
+        DeltaFile input = deltaFilesService.ingress(ingressInput);
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
                 new RetryGraphQLQuery.Builder()
                         .dids(List.of(input.getDid(), "badDid"))

@@ -11,7 +11,7 @@ import org.springframework.test.context.TestPropertySource;
 import java.time.Duration;
 
 @SpringBootTest
-@TestPropertySource(properties = {"deltafi.deltaFileTtl=3d"})
+@TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "enableScheduling=false"})
 class DeltaFileIndexServiceTest {
 
     @Autowired
