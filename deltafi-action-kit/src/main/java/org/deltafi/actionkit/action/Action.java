@@ -35,6 +35,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.annotation.PostConstruct;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -203,7 +204,17 @@ public abstract class Action<P extends ActionParameters> {
         return OBJECT_MAPPER.convertValue(params, paramType);
     }
 
-    protected InputStream loadContent(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
+    protected byte[] loadContent(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
+        byte[] content = null;
+        try (InputStream contentInputStream = loadContentAsInputStream(deltaFile, protocolLayerType)) {
+            content = contentInputStream.readAllBytes();
+        } catch (IOException e) {
+            log.warn("Unable to close content input stream", e);
+        }
+        return content;
+    }
+
+    protected InputStream loadContentAsInputStream(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
         return contentStorageService.load(getContentReference(deltaFile, protocolLayerType));
     }
 
