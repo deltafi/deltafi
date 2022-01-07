@@ -232,6 +232,8 @@ type Query {
   deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
   actionSchemas: [ActionSchema!]!
   exportConfigAsYaml: String!
+
+  plugins:  [Plugin!]!
 }
 
 type Mutation {
@@ -263,4 +265,6 @@ type Mutation {
   mergeConfig(configYaml: String!): String
 
   removeDeltaFiConfigs(configQuery: ConfigQueryInput): Int!
+
+  registerPlugin(pluginInput: PluginInput!): Plugin!
 }

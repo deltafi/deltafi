@@ -1,0 +1,41 @@
+enum PropertySource {
+    EXTERNAL
+    MONGO
+    DEFAULT
+}
+
+type Property {
+    key: String!                    # property key
+    description: String!            # describe what this property does
+    defaultValue: String            # value used if no value is set in git or mongo
+    refreshable: Boolean!           # will apps automatically pick up changes to this property
+    editable: Boolean!              # should this be editable from the GUI
+    hidden: Boolean!                # should the GUI display this property
+    value: String                   # value as set in git/file-system or mongo
+    propertySource: PropertySource! # where the property was set (external for git/filesystem or mongo)
+}
+
+input PropertyInput {
+    key: String!                    # property key
+    description: String!            # describe what this property does
+    defaultValue: String            # value used if no value is set in git or mongo
+    refreshable: Boolean!           # will apps automatically pick up changes to this property
+    editable: Boolean!              # should this be editable from the GUI
+    hidden: Boolean!                # should the GUI display this property
+    value: String                   # value as set in git/file-system or mongo
+    propertySource: PropertySource  # not needed here but allows the Property class to be reused for input
+}
+
+type PropertySet {
+    id: String!
+    displayName: String!
+    description: String!
+    properties: [Property]!
+}
+
+input PropertySetInput {
+    id: String!
+    displayName: String!
+    description: String!
+    properties: [PropertyInput]!
+}

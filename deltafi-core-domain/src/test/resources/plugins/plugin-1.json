@@ -1,0 +1,107 @@
+{
+  "pluginCoordinates": {
+    "groupId": "org.deltafi",
+    "artifactId": "plugin-1",
+    "version": "1.0.0"
+  },
+  "description": "This is a test plugin",
+  "packages": [
+    {
+      "packageCoordinates": {
+        "groupId": "org.deltafi",
+        "artifactId": "package-1",
+        "version": "1.0.0",
+        "type": "helm"
+      },
+      "contentType": "both",
+      "location": "location of package-1"
+    },{
+      "packageCoordinates": {
+        "groupId": "org.deltafi",
+        "artifactId": "package-2",
+        "version": "1.0.0",
+        "type": "docker"
+      },
+      "contentType": "actions",
+      "location": "location of package-2"
+    },{
+      "packageCoordinates": {
+        "groupId": "org.deltafi",
+        "artifactId": "package-3",
+        "version": "1.0.0",
+        "type": "docker"
+      },
+      "contentType": "domains",
+      "location": "location of package-3"
+    }
+  ],
+  "dependencies": [
+    {
+      "groupId": "org.deltafi",
+      "artifactId": "dependency-1",
+      "version": "1.0.0"
+    },{
+      "groupId": "org.deltafi",
+      "artifactId": "dependency-2",
+      "version": "1.0.0"
+    }
+  ],
+  "propertySets": [
+    {
+      "id": "propertySet1",
+      "displayName": "Property Set 1",
+      "description": "A description of property set 1",
+      "properties": [
+        {
+          "key": "property1",
+          "description": "A description of property 1",
+          "defaultValue": "property1Default",
+          "refreshable": true,
+          "editable": true,
+          "hidden": false,
+          "value": "property1Value"
+        },{
+          "key": "property2",
+          "description": "A description of property 2",
+          "defaultValue": "property2Default",
+          "refreshable": false,
+          "editable": false,
+          "hidden": true,
+          "value": "property2Value"
+        }
+      ]
+    },{
+      "id": "propertySet2",
+      "displayName": "Property Set 2",
+      "description": "A description of property set 2",
+      "properties": [
+        {
+          "key": "property3",
+          "description": "A description of property 3",
+          "defaultValue": "property3Default",
+          "refreshable": true,
+          "editable": true,
+          "hidden": false,
+          "value": "property3Value"
+        },{
+          "key": "property4",
+          "description": "A description of property 4",
+          "defaultValue": "property4Default",
+          "refreshable": false,
+          "editable": false,
+          "hidden": true,
+          "value": "property4Value"
+        }
+      ]
+    }
+  ],
+  "actions" : [ {
+    "name" : "org.deltafi.test.actions.TestAction1"
+  }, {
+    "name" : "org.deltafi.test.actions.TestAction2",
+    "consumes" : "dataFormat1",
+    "produces" : "dataFormat2",
+    "requiresDomains" : [ "test" ]
+  } ],
+  "domains" : [ "test" ]
+}
