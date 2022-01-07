@@ -6,10 +6,32 @@ cli_help_command() {
   echo "
 Command: install
 
-Usage: 
-  install [helm flags]"
+Usage:
+  install [OPTIONS] [helm flags]
+
+Options:
+  -l, --load-flows Load core flows
+  -h, --help       Show help"
   exit 1
 }
+
+LOAD_FLOWS=false
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -l|--load-flows)
+      LOAD_FLOWS=true
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- "${POSITIONAL[@]}"
 
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
@@ -26,5 +48,18 @@ helm upgrade --install --wait \
   --values $DELTAFICLI_CHART_PATH/values.yaml \
   --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
   --create-namespace --timeout 10m ${ARGS[@]:1}
+
+HELM_RETURN_CODE=$?
+[[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
+
+if [[ "$LOAD_FLOWS" == true ]]; then
+  FLOWS_DIRECTORY="${DELTAFI_DIR}/flows"
+  if [ ! -d "$FLOWS_DIRECTORY" ]; then
+    cli_log "${yellow}Deltafi directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
+  else
+    cli_log "Loading core flows"
+    find $FLOWS_DIRECTORY -name *.y*ml -exec deltafi load-config {} \;
+  fi
+fi
 
 cli_log "DeltaFi install complete"

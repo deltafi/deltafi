@@ -90,6 +90,8 @@ _readlink() {
 }
 
 export DELTAFICLI_WORKDIR=$(cd $(dirname $(_readlink -f $0)) && pwd)
+export DELTAFI_DIR=$(dirname "$DELTAFICLI_WORKDIR")
+
 # shellcheck source=common
 . "$DELTAFICLI_WORKDIR/common"
 
