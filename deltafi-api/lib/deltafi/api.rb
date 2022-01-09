@@ -53,7 +53,7 @@ module Deltafi
 
       response.parsed_response['propertySources'].reverse_each do |property_source|
         property_source['source'].each do |name, value|
-          properties[name] = value
+          properties[name] = value.to_s.start_with?('$') ? ENV[value.gsub(/[${}]/, '')] : value
         end
       end
 

@@ -3,10 +3,14 @@
 source 'https://rubygems.org'
 
 gem 'awesome_print'
+gem 'aws-sdk-s3'
+gem 'filesize'
 gem 'httparty'
 gem 'k8s-ruby'
+gem 'puma'
 gem 'redis'
 gem 'sinatra'
+gem 'sinatra-contrib'
 
 group :test, :development do
   gem 'pry'

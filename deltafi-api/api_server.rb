@@ -4,12 +4,15 @@ $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
 
 require 'deltafi/api'
 require 'sinatra/base'
+require 'Sinatra/streaming'
 
-STATUS_INTERVAL = 5 # seconds
+STATUS_INTERVAL = (ENV['STATUS_INTERVAL'] || 5).to_i # seconds
 
 $status_service = Deltafi::API::Status::Service.new(STATUS_INTERVAL)
 
 class ApiServer < Sinatra::Base
+  helpers Sinatra::Streaming
+
   configure :production, :development, :test do
     enable :logging
   end
@@ -23,13 +26,6 @@ class ApiServer < Sinatra::Base
   get '/api/v1/config' do
     config = { ui: Deltafi::API::Config::UI.config }
     build_response({ config: config })
-  end
-
-  post '/api/v1/errors/retry' do
-    raise 'did required' unless params[:did]
-    raise 'Provided did is not a valid UUID' unless valid_uuid?(params[:did])
-
-    build_response({ retry: Deltafi::API::Errors.retry(params[:did]) })
   end
 
   get '/api/v1/metrics/system/nodes' do
@@ -53,6 +49,17 @@ class ApiServer < Sinatra::Base
     build_response({ versions: Deltafi::API::Versions.apps })
   end
 
+  get '/api/v1/content' do
+    stream_content(params)
+  end
+
+  post '/api/v1/content' do
+    content_reference = JSON.parse(request.body.read, symbolize_names: true)
+    stream_content(content_reference)
+  rescue JSON::ParserError => e
+    raise JSON::ParserError, "Failed to parse content reference: #{e.message}"
+  end
+
   error StandardError do
     build_response({ error: env['sinatra.error'].message })
   end
@@ -61,14 +68,30 @@ class ApiServer < Sinatra::Base
     build_response({ error: 'API endpoint not found.' })
   end
 
+  def stream_content(content_reference)
+    %i[did uuid size offset].each do |key|
+      raise "Invalid content reference: #{key} required" unless content_reference[key]
+    end
+
+    head = Deltafi::API::Content.head(content_reference)
+
+    filename = content_reference[:filename] || content_reference[:uuid]
+    headers['Content-Disposition'] = "attachment; filename=#{filename};"
+    headers['Content-Transfer-Encoding'] = 'binary'
+    headers['Cache-Control'] = 'no-cache'
+    headers['Content-Type'] = head.content_type
+    headers['Content-Length'] = head.content_length
+
+    stream do |out|
+      Deltafi::API::Content.get(params) do |chunk|
+        out.write(chunk)
+      end
+    end
+  end
+
   def build_response(object)
     object[:timestamp] = Time.now
     object.to_json
-  end
-
-  def valid_uuid?(uuid)
-    uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-    uuid_regex.match?(uuid.to_s.downcase)
   end
 
   run! if __FILE__ == $PROGRAM_NAME
