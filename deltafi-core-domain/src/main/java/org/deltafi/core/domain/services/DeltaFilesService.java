@@ -99,7 +99,7 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(Stream.of(ingressAction).collect(Collectors.toCollection(ArrayList::new)))
                 .sourceInfo(input.getSourceInfo())
-                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), "ingress", input.getContentReference(), null)))
+                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, input.getContentReference(), null)))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())

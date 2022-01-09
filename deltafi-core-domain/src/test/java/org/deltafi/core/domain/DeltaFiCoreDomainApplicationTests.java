@@ -36,6 +36,7 @@ import java.util.*;
 import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.*;
@@ -127,7 +128,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
 		deltaFile.queueAction("Utf8TransformAction");
 		deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", List.of(new KeyValue("AuthorizedBy", "XYZ"))));
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json", "ingress", new ContentReference("objectName", 0, 500, did), null));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION, new ContentReference("objectName", 0, 500, did), null));
 		return deltaFile;
 	}
 
