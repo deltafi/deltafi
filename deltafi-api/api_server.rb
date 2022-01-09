@@ -4,7 +4,7 @@ $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
 
 require 'deltafi/api'
 require 'sinatra/base'
-require 'Sinatra/streaming'
+require 'sinatra/streaming'
 
 STATUS_INTERVAL = (ENV['STATUS_INTERVAL'] || 5).to_i # seconds
 
