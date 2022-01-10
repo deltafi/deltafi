@@ -238,7 +238,7 @@ export default {
               "N/A"
           let originalFileSize = this.deltaFileData.protocolStack.length > 0 ?
               filesize(this.deltaFileData.protocolStack.find(p => {
-                return p.action === 'ingress';
+                return p.action === 'IngressAction';
               }).contentReference.size, {base:10}) :
               "N/A";
           this.pageHeader = `DeltaFile Viewer: ${this.deltaFileData.sourceInfo.filename}`;
