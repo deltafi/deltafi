@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.api.types.EgressActionSchemaImpl;
+import org.deltafi.core.domain.api.types.EgressActionSchema;
 import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
@@ -31,9 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 class ActionConfigurationValidatorTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String EGRESS_ACTION = "org.deltafi.core.action.RestPostEgressAction";
-
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     @InjectMocks
     ActionConfigurationValidator actionConfigurationValidator;
 
@@ -159,7 +158,8 @@ class ActionConfigurationValidatorTest {
 
     ActionSchema actionSchema() {
         try {
-            EgressActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
+            EgressActionSchema actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {
+            });
             actionSchema.setLastHeard(OffsetDateTime.now());
             return actionSchema;
         } catch (IOException e) {
@@ -170,7 +170,8 @@ class ActionConfigurationValidatorTest {
 
     ActionSchema actionSchemaMinus1Day() {
         try {
-            EgressActionSchemaImpl actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {});
+            EgressActionSchema actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {
+            });
             actionSchema.setLastHeard(OffsetDateTime.now().minusDays(1));
             return actionSchema;
         } catch (IOException e) {
