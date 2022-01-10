@@ -12,4 +12,4 @@ COPY --from=build /app /app
 COPY . /app
 RUN bundle config set path 'vendor/bundle'
 EXPOSE 9292
-CMD bundle exec rackup --host 0.0.0.0
+CMD bundle exec puma

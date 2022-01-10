@@ -80,7 +80,7 @@ class ApiServer < Sinatra::Base
     headers['Content-Transfer-Encoding'] = 'binary'
     headers['Cache-Control'] = 'no-cache'
     headers['Content-Type'] = head.content_type
-    headers['Content-Length'] = head.content_length
+    headers['Content-Length'] = head.content_length.to_s
 
     stream do |out|
       Deltafi::API::Content.get(params) do |chunk|
