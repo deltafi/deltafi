@@ -16,6 +16,7 @@ ingressFlows:
 egressFlows:
   sample:
     name: sample
+    egressAction: SampleEgressAction
     formatAction: SampleFormatAction
     enrichActions:
       - SampleEnrichAction
@@ -24,6 +25,7 @@ egressFlows:
       - SampleValidateAction
   error:
     name: error
+    egressAction: ErrorEgressAction
     formatAction: ErrorFormatAction
 transformActions:
   Utf8TransformAction:

@@ -103,7 +103,6 @@ public class DeltaFiConfigService {
     public String replaceConfig(String configInput) {
         DeltafiRuntimeConfiguration incoming = yaml.load(configInput);
         incoming.allConfigs().forEach(this::setTimes);
-        incoming.getEgressFlows().values().forEach(this::setEgressActionName);
         ensureNamesSet(incoming);
         saveConfig(incoming);
         return exportConfigAsYaml();
@@ -117,7 +116,6 @@ public class DeltaFiConfigService {
 
     public String mergeConfig(String configInput) {
         DeltafiRuntimeConfiguration incoming = yaml.load(configInput);
-        incoming.getEgressFlows().values().forEach(this::setEgressActionName);
         ensureNamesSet(incoming);
         DeltafiRuntimeConfiguration existing = getCurrentConfig();
 
@@ -133,12 +131,6 @@ public class DeltaFiConfigService {
 
         saveConfig(existing);
         return exportConfigAsYaml();
-    }
-
-    public void setEgressActionName(EgressFlowConfiguration egressFlowConfiguration) {
-        if (isNull(egressFlowConfiguration.getEgressAction()) || egressFlowConfiguration.getEgressAction().isBlank()) {
-            egressFlowConfiguration.setEgressAction(EgressConfiguration.egressActionName(egressFlowConfiguration.getName()));
-        }
     }
 
     public Optional<IngressFlowConfiguration> getIngressFlow(String flow) {
@@ -240,8 +232,7 @@ public class DeltaFiConfigService {
     }
 
     public EgressFlowConfiguration saveEgressFlow(EgressFlowConfigurationInput egressFlowConfigurationInput) {
-        Consumer<EgressFlowConfiguration> setEgressAction = egressFlowConfiguration -> egressFlowConfiguration.setEgressAction(EgressConfiguration.egressActionName(egressFlowConfiguration.getName()));
-        return updateConfig(egressFlowConfigurationInput, DeltafiRuntimeConfiguration::getEgressFlows, egressFlowConfigurationInput.getName(), setEgressAction, EgressFlowConfiguration.class);
+        return updateConfig(egressFlowConfigurationInput, DeltafiRuntimeConfiguration::getEgressFlows, egressFlowConfigurationInput.getName(), EgressFlowConfiguration.class);
     }
 
     public long removeDeltafiConfigs(ConfigQueryInput configQuery) {

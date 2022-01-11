@@ -19,7 +19,7 @@ class EgressFlowValidatorTest {
         assertThat(error)
                 .isPresent()
                 .contains("Egress Flow Configuration: EgressFlowConfiguration{name='null',created='null',modified='null',apiVersion='null',egressAction='null',formatAction='null',enrichActions='[]',validateActions='[]',includeIngressFlows='[]',excludeIngressFlows='[]'} has the following errors: \n" +
-                        "Required property formatAction is not set; Required property name is not set; Required property egressAction is not set");
+                        "Required property egressAction is not set; Required property formatAction is not set; Required property name is not set");
     }
 
     @Test
@@ -56,6 +56,21 @@ class EgressFlowValidatorTest {
 
         config.setIncludeIngressFlows(null);
         assertThat(egressFlowValidator.excludedAndIncluded(config)).isEmpty();
+    }
+
+    @Test
+    void getEgressActionErrors() {
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setEgressAction("Egressor");
+
+        DeltafiRuntimeConfiguration deltafiRuntimeConfiguration = new DeltafiRuntimeConfiguration();
+
+        Optional<String> error = egressFlowValidator.getEgressActionErrors(deltafiRuntimeConfiguration, config);
+
+        assertThat(error).isPresent().contains("The referenced Egress Action named: Egressor was not found");
+
+        deltafiRuntimeConfiguration.getEgressActions().put("Egressor", new EgressActionConfiguration());
+        assertThat(egressFlowValidator.getEgressActionErrors(deltafiRuntimeConfiguration, config)).isEmpty();
     }
 
     @Test

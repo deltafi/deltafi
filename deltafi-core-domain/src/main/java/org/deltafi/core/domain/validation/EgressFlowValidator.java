@@ -35,16 +35,13 @@ public class EgressFlowValidator implements RuntimeConfigValidator<EgressFlowCon
     List<String> runValidateEgressFlow(DeltafiRuntimeConfiguration config, EgressFlowConfiguration egressFlowConfiguration) {
         List<String> errors = new ArrayList<>();
 
+        getEgressActionErrors(config, egressFlowConfiguration).ifPresent(errors::add);
         getFormatActionErrors(config, egressFlowConfiguration).ifPresent(errors::add);
         errors.addAll(getEnrichActionErrors(config, egressFlowConfiguration));
         errors.addAll(getValidateActionErrors(config, egressFlowConfiguration));
 
         if (isBlank(egressFlowConfiguration.getName())) {
             errors.add("Required property name is not set");
-        }
-
-        if (isBlank(egressFlowConfiguration.getEgressAction())) {
-            errors.add("Required property egressAction is not set");
         }
 
         errors.addAll(missingIngressCheck(config, egressFlowConfiguration.getExcludeIngressFlows()));
@@ -76,6 +73,17 @@ public class EgressFlowValidator implements RuntimeConfigValidator<EgressFlowCon
         return emptyList();
     }
 
+    Optional<String> getEgressActionErrors(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, EgressFlowConfiguration egressFlowConfiguration) {
+        String egressAction = egressFlowConfiguration.getEgressAction();
+
+        if (isBlank(egressAction)) {
+            return Optional.of("Required property egressAction is not set");
+        } else if (!deltafiRuntimeConfiguration.getEgressActions().containsKey(egressAction)) {
+            return Optional.of(RuntimeConfigValidator.referenceError("Egress Action", egressAction));
+        }
+
+        return Optional.empty();
+    }
 
     Optional<String> getFormatActionErrors(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, EgressFlowConfiguration egressFlowConfiguration) {
         String formatAction = egressFlowConfiguration.getFormatAction();

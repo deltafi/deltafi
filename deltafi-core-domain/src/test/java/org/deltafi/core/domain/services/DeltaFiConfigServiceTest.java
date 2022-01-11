@@ -79,6 +79,7 @@ class DeltaFiConfigServiceTest {
         Mockito.when(deltaFiConfigRepo.save(Mockito.any())).thenReturn(updatedConfig);
 
         EgressFlowConfigurationInput egressFlow = new EgressFlowConfigurationInput();
+        egressFlow.setEgressAction("egressAction");
         egressFlow.setFormatAction("formatAction");
         egressFlow.setName("myFlow");
         egressFlow.setApiVersion("v1");
@@ -89,7 +90,7 @@ class DeltaFiConfigServiceTest {
         Mockito.verify(deltaFiConfigRepo).save(Mockito.argThat(config -> config.getEgressFlows().size() == 2));
 
         Assertions.assertThat(saved.getName()).isEqualTo("myFlow");
-        Assertions.assertThat(saved.getEgressAction()).isEqualTo("MyFlowEgressAction");
+        Assertions.assertThat(saved.getEgressAction()).isEqualTo("egressAction");
         Assertions.assertThat(saved.getApiVersion()).isEqualTo("v1");
         Assertions.assertThat(saved.getCreated()).isNotNull();
         Assertions.assertThat(saved.getModified()).isNotNull();

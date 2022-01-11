@@ -77,6 +77,7 @@ class DeltafiConfigDatafetcherTest {
                 .name(NAME)
                 .includeIngressFlows(singletonList("flow"))
                 .excludeIngressFlows(singletonList("x-flow"))
+                .egressAction("egressor")
                 .formatAction("formatter")
                 .validateActions(singletonList("validator")).build();
 
@@ -95,7 +96,7 @@ class DeltafiConfigDatafetcherTest {
         assertEquals(NAME, config.getName());
         assertNotNull(config.getCreated());
         assertNotNull(config.getModified());
-        assertEquals("MyActionEgressAction", config.getEgressAction());
+        assertEquals("egressor", config.getEgressAction());
         assertEquals("formatter", config.getFormatAction());
         assertEquals("validator", config.getValidateActions().get(0));
         assertEquals("flow", config.getIncludeIngressFlows().get(0));
