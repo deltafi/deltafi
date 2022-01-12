@@ -26,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Security
 
-## [0.16.1] 2022-01-04
+## [0.16.1] - 2022-01-04
 
 No changes.  UI update only
 
@@ -74,3 +74,8 @@ No changes.  UI update only
 
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
+
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.1...main
+[0.16.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.0...0.16.1
+[0.16.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.15.0...0.16.0
+[0.15.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.14.1...0.15.0
