@@ -199,11 +199,11 @@ export default {
           .catch((error) => {
             this.deltaFiles[file.index].loading = false;
             this.deltaFiles[file.index].error = true;
-            console.error(error);
+            console.error(error.response.data);
             this.$toast.add({
               severity: "error",
               summary: `Failed to ingress ${file.name}`,
-              detail: error,
+              detail: error.response.data,
               life: 5000,
             });
           });
