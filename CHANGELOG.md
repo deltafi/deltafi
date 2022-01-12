@@ -75,7 +75,7 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.1...main
-[0.16.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.0...0.16.1
-[0.16.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.15.0...0.16.0
-[0.15.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.14.1...0.15.0
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.16.1...main
+[0.16.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.16.0...0.16.1
+[0.16.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.15.0...0.16.0
+[0.15.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.14.1...0.15.0
