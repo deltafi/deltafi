@@ -7,8 +7,7 @@ class Versioner {
         def serr = new StringBuilder()
         def proc = 'git describe --tags'.execute()
 
-        proc.consumeProcessOutput(sout, serr)
-        proc.waitForOrKill(10000)
+        proc.waitForProcessOutput(sout, serr)
 
         String result = sout
         if (!result?.trim()) throw new Exception("Unable to determine git version ($serr)")
