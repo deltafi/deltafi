@@ -119,14 +119,6 @@ minio:
   makeBucketJob:
     annotations:
       "helm.sh/hook-weight": "1"
-  environment:
-    MINIO_NOTIFY_WEBHOOK_ENABLE_primary: "on"
-    MINIO_NOTIFY_WEBHOOK_ENDPOINT_primary: "http://deltafi-ingress-service/deltafile"
-    # queueing causes up to 3 seconds of latency
-    # Issue entered here: https://github.com/minio/minio/issues/12677
-    # TODO: uncomment these when the issue is resolved
-    # MINIO_NOTIFY_WEBHOOK_QUEUE_LIMIT_primary: 100000
-    # MINIO_NOTIFY_WEBHOOK_QUEUE_DIR_primary: "/export/"
 # Values for the MongoDB dependency
 mongodb:
   architecture: standalone
