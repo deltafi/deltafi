@@ -1,84 +1,41 @@
-import { createStore } from 'vuex'
-import ApiService from "@/service/ApiService";
-import GraphQLService from "@/service/GraphQLService";
+import { createStore, createLogger } from 'vuex';
+import createPersistedState from 'vuex-persistedstate';
 
-export interface State {
-  uiConfig: {
-    title: String,
-    domain: String,
-    dashboard: {
-      links: Array<{
-        name: String,
-        url: String,
-        description: String
-      }>
-    }
+import { store as sidebarToggle, SidebarToggleStore, State as SidebarToggleState } from '@/store/modules/sidebarToggle';
+import { store as propertySets, PropertySetsStore, State as PropertySetsState } from '@/store/modules/propertySets';
+import { store as uiConfig, UIConfigStore, State as UIConfigState } from '@/store/modules/uiConfig';
+import { store as searchOptions, SearchOptionsStore, State as SearchOptionsState } from '@/store/modules/searchOptions';
+
+export type RootState = {
+  sidebarToggle: SidebarToggleState;
+  propertySets: PropertySetsState;
+  uiConfig: UIConfigState;
+  searchOptions: SearchOptionsState;
+};
+
+export type Store = SidebarToggleStore<Pick<RootState, 'sidebarToggle'>>
+& PropertySetsStore<Pick<RootState, 'propertySets'>>
+& UIConfigStore<Pick<RootState, 'uiConfig'>>
+& SearchOptionsStore<Pick<RootState, 'searchOptions'>>;
+
+// Plug in logger when in development environment
+console.log(process.env.NODE_ENV);
+const debug = process.env.NODE_ENV !== 'production';
+const plugins = debug ? [createLogger({})] : [];
+
+// Plug in session storage based persistence
+plugins.push(createPersistedState({ storage: window.sessionStorage }));
+
+export const store = createStore({
+  plugins,
+  modules: {
+    sidebarToggle,
+    propertySets,
+    uiConfig,
+    searchOptions
   },
-  sidebarHidden: boolean,
-  propertySets: Array<Object>,
-  loadingPropertySets: boolean
+});
+
+export function useStore(): Store {
+  return store as Store;
 }
-
-export default createStore<State>({
-  state: {
-    uiConfig: {
-      title: 'DeltaFi',
-      domain: 'example.deltafi.org',
-      dashboard: {
-        links: []
-      }
-    },
-    sidebarHidden: false,
-    propertySets: [],
-    loadingPropertySets: false
-  },
-  mutations: {
-    SET_UI_CONFIG(state: State, payload: Object) {
-      Object.assign(state.uiConfig, payload)
-      state.uiConfig.dashboard.links.sort((a, b) => (a.name > b.name) ? 1 : -1)
-    },
-    TOGGLE_SIDEBAR(state: State) {
-      state.sidebarHidden = !state.sidebarHidden
-    },
-    SET_PROP_SETS(state: State, propertySets: Array<Object>) {
-      state.propertySets = propertySets
-    },
-    SET_LOADING_PROP_SETS(state: State, loading: boolean) {
-      state.loadingPropertySets = loading;
-    },
-  },
-  actions: {
-    fetchUIConfig(context) {
-      const apiService = new ApiService()
-      apiService.getConfig().then(response => {
-        context.commit('SET_UI_CONFIG', response.config.ui)
-      })
-    },
-    fetchPropertySets(context) {
-      const graphQLService = new GraphQLService();
-      context.commit('SET_LOADING_PROP_SETS', true)
-      graphQLService.getPropertySets().then(response => {
-        context.commit('SET_PROP_SETS', response.data.getPropertySets)
-        context.commit('SET_LOADING_PROP_SETS', false)
-      })
-    },
-    toggleSidebar(context) {
-      context.commit('TOGGLE_SIDEBAR')
-    }
-  },
-  getters: {
-    uiConfig: state => {
-      return state.uiConfig;
-    },
-    propertySets: state => {
-      return state.propertySets;
-    },
-    loadingPropertySets: state => {
-      return (state.loadingPropertySets && state.propertySets.length === 0);
-    },
-    externalLinks: state => {
-      return state.uiConfig.dashboard.links;
-    },
-  },
-  modules: {}
-})

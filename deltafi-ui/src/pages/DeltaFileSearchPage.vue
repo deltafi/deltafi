@@ -33,7 +33,7 @@
     </div>
     <div class="row mb-3">
       <div class="col-12">
-        <CollapsiblePanel header="Search Options" :collapsed="true">
+        <CollapsiblePanel header="Search Options" :collapsed="collapsedSearchOption">
           <template #icons>
             <Button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
               <span class="fas fa-cog" />
@@ -111,7 +111,7 @@
             <div class="col-1" />
             <div class="col-1">
               <span class="float-left">
-                <i v-badge="recordCount" class="pi align-top p-text-secondary float-right icon-index" style="font-size: 2rem" />
+                <i v-if="recordCount" v-badge="recordCount" class="pi align-top p-text-secondary float-right icon-index" style="font-size: 2rem" />
                 <Button type="button" label="Search" class="p-button-sm p-button-secondary p-button-outlined float-right" @click="fetchDeltaFilesData()" />
               </span>
             </div>
@@ -174,6 +174,9 @@ import GraphQLService from "@/service/GraphQLService";
 import Menu from "primevue/menu";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import { UtilFunctions } from "@/utils/UtilFunctions";
+import { mapState } from "vuex";
+import { useStore } from '@/store';
+import { SearchOptionsActionTypes } from '@/store/modules/searchOptions/action-types';
 
 var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
@@ -204,6 +207,7 @@ export default {
             this.fileNameOptionSelected = null;
             this.flowOptionSelected = null;
             this.stageOptionSelected = null;
+            this.fetchDeltaFilesData();
           }
         }]
       }],
@@ -231,6 +235,7 @@ export default {
       perPage: 10,
       sortField: "modified",
       sortDirection: "DESC",
+      collapsedSearchOption: true
     };
   },
   computed: {
@@ -242,15 +247,19 @@ export default {
           elapsed: this.utilFunctions.duration(timeElapsed)
         }
       });
-    }
+    },
+    ...mapState({
+       searchOptionsState: state => state.searchOptions.searchOptionsState,
+    })
   },
+
   watch: {
     startTimeDate() {
-      this.fetchAdvancedOptions();
+      this.fetchFileNames();
       this.fetchRecordCount();
     },
     endTimeDate() {
-      this.fetchAdvancedOptions();
+      this.fetchFileNames();
       this.fetchRecordCount();
     },
     fileNameOptionSelected() {
@@ -266,22 +275,23 @@ export default {
       this.fetchRecordCount();
     }
   },
-  created() {
+  mounted() {
     this.utilFunctions = new UtilFunctions();
     this.graphQLService = new GraphQLService();
-    this.fetchDeltaFilesData();
-    this.fetchAdvancedOptions();
+    this.getPersistedParams();
+    this.fetchFileNames();
     this.fetchConfigTypes();
     this.fetchStages();
+    this.fetchDeltaFilesData();
   },
   methods: {
     toggle(event) {
       this.$refs.menu.toggle(event);
     },
-    async fetchAdvancedOptions() {
+    async fetchFileNames() {
       this.fileNameDataArray = [];
-      let fetchAdvancedOptions = await this.graphQLService.getDeltaFiFileNames(this.startTimeDate, this.endTimeDate, this.fileName, this.stageName, this.actionName, this.flowName);
-      let deltaFilesObjectsArray = fetchAdvancedOptions.data.deltaFiles.deltaFiles;
+      let fetchFileNames = await this.graphQLService.getDeltaFiFileNames(this.startTimeDate, this.endTimeDate, this.fileName, this.stageName, this.actionName, this.flowName);
+      let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
       for (const deltaFiObject of deltaFilesObjectsArray) {
           this.fileNameDataArray.push({"name" : deltaFiObject.sourceInfo.filename});
       }
@@ -320,7 +330,6 @@ export default {
         let flowData = await this.graphQLService.getConfigByType(flowType);
         let flowDataValues = flowData.data.deltaFiConfigs;
         this.flowOptions = this.flowOptions.concat(flowDataValues.map(a => a.name));
-        //this.flowNames = this.flowNames.concat(flowDataValues);
         this.flowOptions = [...new Set(this.flowOptions)];
       }
     },
@@ -330,6 +339,7 @@ export default {
     },
     async fetchDeltaFilesData() {
       this.setQueryParams();
+      this.setPersistedParams();
 
       this.loading = true;
       this.fetchRecordCount();
@@ -369,6 +379,35 @@ export default {
       this.perPage = event.rows;
       this.fetchDeltaFilesData();
     },
+    getPersistedParams() {
+      this.startTimeDate = new Date(this.searchOptionsState.startTimeDateState ? this.searchOptionsState.startTimeDateState : this.startTimeDate);
+      this.endTimeDate = new Date(this.searchOptionsState.endTimeDateState ? this.searchOptionsState.endTimeDateState : this.endTimeDate);
+      this.fileNameOptionSelected = this.searchOptionsState.fileNameOptionState ? { name: this.searchOptionsState.fileNameOptionState} : null;
+      this.stageOptionSelected = this.searchOptionsState.stageOptionState ? { name: this.searchOptionsState.stageOptionState} : null;
+      this.actionTypeOptionSelected = this.searchOptionsState.actionTypeOptionState ? { name: this.searchOptionsState.actionTypeOptionState} : null;
+      this.flowOptionSelected = this.searchOptionsState.flowOptionState ? this.searchOptionsState.flowOptionState : null;
+
+      // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
+      // what search options are being used.
+      if ( this.fileNameOptionSelected || this.stageOptionSelected || this.actionTypeOptionSelected || this.flowOptionSelected) {
+        this.collapsedSearchOption=false;
+      } else {
+        this.collapsedSearchOption=true;
+      }
+    },
+    setPersistedParams(){
+      var newSearchOptionsState = {
+        startTimeDateState: this.startTimeDate ? this.startTimeDate: null,
+        endTimeDateState: this.endTimeDate ? this.endTimeDate: null,
+        fileNameOptionState: this.fileNameOptionSelected ? this.fileNameOptionSelected.name : null,
+        stageOptionState: this.stageOptionSelected ? this.stageOptionSelected.name: null,
+        actionTypeOptionState: this.actionTypeOptionSelected ? this.actionTypeOptionSelected.name : null,
+        flowOptionState: this.flowOptionSelected ? this.flowOptionSelected : null,
+      }
+
+      const store = useStore();
+      store.dispatch(SearchOptionsActionTypes.UPDATE_SEARCH_OPTIONS, newSearchOptionsState);
+    }
   },
 };
 </script>

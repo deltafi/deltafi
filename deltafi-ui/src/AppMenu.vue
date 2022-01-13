@@ -126,18 +126,27 @@ export default {
     menuItems() {
       let items = this.staticMenuItems
       if (this.externalLinks.length > 0) {
-        items.splice(4, 0,{
+        const externalLinksObject = {
           name: "External Links",
           expand: true,
           children: this.externalLinks.map(link => {
             link.icon = "fas fa-external-link-alt fa-fw";
             return link;
           })
-        });
+        }
+
+        const objIndex = items.findIndex((obj => obj.name == "External Links"));
+        if (objIndex != -1) {
+          items[objIndex] = externalLinksObject;
+        } else {
+          items.splice(4, 0, externalLinksObject);
+        }
       }
       return items;
     },
-    ...mapGetters(["externalLinks"]),
+    ...mapGetters({
+      externalLinks: 'externalLinks'
+    })
   },
   watch: {
     $route(to) {

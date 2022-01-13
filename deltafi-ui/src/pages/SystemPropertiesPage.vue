@@ -14,6 +14,8 @@
 import PropertySet from "@/components/PropertySet";
 import ProgressBar from "primevue/progressbar"
 import { mapGetters } from "vuex";
+import { useStore } from '@/store';
+import { PropertySetsActionTypes } from '@/store/modules/propertySets/action-types';
 
 export default {
   name: "SystemPropertiesPage",
@@ -25,7 +27,8 @@ export default {
     ...mapGetters(["propertySets", "loadingPropertySets"]),
   },
   mounted() {
-    this.$store.dispatch("fetchPropertySets");
+    const store = useStore();
+    store.dispatch(PropertySetsActionTypes.FETCH_PROPERTY_SETS);
   },
 };
 </script>

@@ -33,7 +33,7 @@ export default {
     CollapsiblePanel
   },
   computed: {
-    ...mapGetters(["externalLinks"]),
+    ...mapGetters(['externalLinks']),
   }
 };
 </script>

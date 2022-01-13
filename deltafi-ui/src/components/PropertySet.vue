@@ -44,6 +44,8 @@ import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import InputText from "primevue/inputtext";
 import Toast from 'primevue/toast';
+import { useStore } from '@/store';
+import { PropertySetsActionTypes } from '@/store/modules/propertySets/action-types';
 
 export default {
   name: "PropertySet",
@@ -77,7 +79,8 @@ export default {
           value: value,
         },
       ]).then((response) => {
-        this.$store.dispatch("fetchPropertySets");
+        const store = useStore();
+        store.dispatch(PropertySetsActionTypes.FETCH_PROPERTY_SETS);
         if (response.data.updateProperties > 0) {
           if (refreshable) {
             this.$toast.add({

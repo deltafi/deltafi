@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Errors page now supports multi-select for Retry
 - CSS standardization
+- Persisted search options to DeltaFile Search and updated Vuex to use modules.
 
 ## [0.16.0] - 2022-01-04
 ### Added

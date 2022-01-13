@@ -19,6 +19,8 @@
 <script>
 import StatusBadge from "@/components/StatusBadge";
 import { mapState } from "vuex";
+import { useStore } from '@/store';
+import { SidebarToggleActionTypes } from '@/store/modules/sidebarToggle/action-types';
 
 export default {
   components: { StatusBadge },
@@ -28,11 +30,15 @@ export default {
         ? "pi pi-angle-double-right"
         : "pi pi-angle-double-left";
     },
-    ...mapState(["uiConfig", "sidebarHidden"]),
+    ...mapState({
+      uiConfig: state => state.uiConfig.uiConfig,
+      sidebarHidden: state => state.sidebarToggle.sidebarHidden
+    })
   },
   methods: {
     toggleSidebar() {
-      this.$store.dispatch("toggleSidebar");
+      const store = useStore();
+      store.dispatch(SidebarToggleActionTypes.TOGGLE_SIDEBAR);
     },
   },
 };

@@ -19,6 +19,9 @@ import AppTopBar from "@/AppTopBar";
 import AppMenu from "@/AppMenu";
 import { mapState } from "vuex";
 
+import { useStore } from '@/store';
+import { UIConfigActionTypes } from '@/store/modules/uiConfig/action-types';
+
 export default {
   name: "App",
   components: {
@@ -29,7 +32,10 @@ export default {
     sidebarClasses() {
       return this.sidebarHidden ? "col sidebar hidden" : "col sidebar";
     },
-    ...mapState(["uiConfig", "sidebarHidden"]),
+    ...mapState({
+      uiConfig: state => state.uiConfig.uiConfig,
+      sidebarHidden: state => state.sidebarToggle.sidebarHidden
+    })
   },
   watch: {
     $route: {
@@ -45,8 +51,9 @@ export default {
       },
     },
   },
-  beforeCreate() {
-    this.$store.dispatch("fetchUIConfig");
+  beforeCreate() {    
+    const store = useStore();
+    store.dispatch(UIConfigActionTypes.FETCH_UI_CONFIG);
   },
   methods: {
     setPageTitle(prefix) {

@@ -235,7 +235,7 @@ export default {
           this.deltaFileData = res.data.deltaFile;
           let domain = this.deltaFileData.domains.length > 0 ?
               this.deltaFileData.domains[0].key :
-              "N/A"
+              "N/A";
           let originalFileSize = this.deltaFileData.protocolStack.length > 0 ?
               filesize(this.deltaFileData.protocolStack.find(p => {
                 return p.action === 'IngressAction';
