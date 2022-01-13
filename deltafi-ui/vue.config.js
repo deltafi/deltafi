@@ -17,5 +17,21 @@ module.exports = {
     manifestOptions: {
       icons: []
     }
+  },
+  configureWebpack: (config) => {
+    config.module.rules = [
+      {
+        test: /\.worker\.(j|t)s$/i,
+        use: [
+          {
+            loader: 'comlink-loader',
+            options: {
+              singleton: true
+            }
+          }
+        ]
+      },
+      ...config.module.rules
+    ]
   }
 }

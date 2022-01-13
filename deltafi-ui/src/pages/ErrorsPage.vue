@@ -127,7 +127,7 @@
       </DataTable>
     </Panel>
     <Dialog v-model:visible="showContextDialog" header="Error Context" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-      <pre class="dark">{{ contextDialogData }}</pre>
+      <HighlightedCode :highlight="false" :code="contextDialogData" />
     </Dialog>
     <Toast position="bottom-right" />
   </div>
@@ -147,6 +147,7 @@ import Panel from "primevue/panel";
 import Menu from "primevue/menu";
 import ConfirmDialog from "primevue/confirmdialog";
 import ContextMenu from "primevue/contextmenu";
+import HighlightedCode from "@/components/HighlightedCode.vue";
 
 const maxRetrySuccessDisplay = 10;
 
@@ -170,6 +171,7 @@ export default {
     Menu,
     ConfirmDialog,
     ContextMenu,
+    HighlightedCode
   },
   data() {
     return {

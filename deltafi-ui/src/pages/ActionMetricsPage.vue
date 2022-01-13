@@ -140,7 +140,8 @@ export default {
         "/metrics/action",
         new URLSearchParams({ last: this.time_range.code })
       );
-      this.actionMetrics = response.actions;
+      let json = await response.json();
+      this.actionMetrics = json.actions;
       this.loadingActionMetrics = false;
     },
     hasActions(family) {

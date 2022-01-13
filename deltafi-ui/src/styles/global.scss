@@ -6,12 +6,6 @@ body {
   line-height: 1.4;
 }
 
-pre.dark {
-  background-color: #333333;
-  color: #dddddd;
-  padding: 1em;
-}
-
 a {
   color: #0057b3;
 }
@@ -76,4 +70,9 @@ a {
     width: 1%;
     padding: 0.25rem !important;
   }
+}
+
+.p-tabview-nav-link:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }

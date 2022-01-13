@@ -1,11 +1,11 @@
 <template>
-  <div class="DeltaFileView">
+  <div class="deltafile-viewer">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
       <h1 class="h2">
         {{ pageHeader }}
       </h1>
       <div class="btn-toolbar">
-        <Menu id="config_menu" ref="menu" :model="items" :popup="true" />
+        <Menu id="config_menu" ref="menu" :model="menuItems" :popup="true" />
         <Button v-if="!showForm" class="p-button-secondary p-button-outlined" @click="toggle">
           <span class="fas fa-bars" />
         </Button>
@@ -47,16 +47,21 @@
           <CollapsiblePanel header="Actions" class="actions-panel table-panel">
             <DataTable :value="actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column field="name" header="Action" :sortable="true" />
-              <Column field="state" header="State" :sortable="true">
-                <template #body="action">
-                  {{ action.data.state }}<span v-if="action.data.state === 'ERROR'">: {{ action.data.errorCause }}</span>
-                </template>
-              </Column>
-              <Column field="created" header="Created" :sortable="true" />
-              <Column field="modified" header="Modified" :sortable="true" />
-              <Column field="elapsed" header="Elapsed" :sortable="true">
+              <Column field="state" header="State" class="state-column" :sortable="true" />
+              <Column field="created" header="Created" class="timestamp-column" :sortable="true" />
+              <Column field="modified" header="Modified" class="timestamp-column" :sortable="true" />
+              <Column field="elapsed" header="Elapsed" class="elapsed-column" :sortable="true">
                 <template #body="action">
                   {{ action.data.elapsed }}
+                </template>
+              </Column>
+              <Column header="Content" class="content-column">
+                <template #body="action">
+                  <span v-if="contentReferences.hasOwnProperty(action.data.name)">
+                    <ContentViewer :content-reference="contentReferences[action.data.name]">
+                      <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
+                    </ContentViewer>
+                  </span>
                 </template>
               </Column>
             </DataTable>
@@ -64,15 +69,14 @@
         </div>
       </div>
     </div>
-    <Toast position="bottom-right" />
-    <Dialog v-model:visible="showJSONDialog" header="DeltaFile JSON" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-      <HighlightedCode language="json" :code="formattedDeltaFileData" />
+    <Dialog v-model:visible="objectDialog.visible" :header="objectDialog.header" :style="{width: '75vw'}" :maximizable="true" :modal="true">
+      <HighlightedCode :code="objectDialog.body" />
     </Dialog>
     <Dialog v-model:visible="errorDialog.visible" :header="errorDialog.action" :style="{width: '75vw'}" :maximizable="true" :modal="true">
       <strong>Error Cause</strong>
-      <pre class="dark">{{ errorDialog.cause }}</pre>
+      <HighlightedCode :highlight="false" :code="errorDialog.cause" />
       <strong>Error Context</strong>
-      <pre class="dark">{{ errorDialog.context }}</pre>
+      <HighlightedCode :highlight="false" :code="errorDialog.context" />
     </Dialog>
     <ConfirmDialog />
   </div>
@@ -81,12 +85,12 @@
 <script>
 import InputText from "primevue/inputtext";
 import GraphQLService from "@/service/GraphQLService";
+import ApiService from "@/service/ApiService";
 import { UtilFunctions } from "@/utils/UtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Toast from "primevue/toast";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import ConfirmDialog from 'primevue/confirmdialog';
@@ -94,6 +98,7 @@ import * as filesize from "filesize";
 import Menu from "primevue/menu";
 import { mapState } from "vuex";
 import ProgressBar from 'primevue/progressbar';
+import ContentViewer from '@/components/ContentViewer.vue';
 
 const uuidRegex = new RegExp(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -105,13 +110,13 @@ export default {
     CollapsiblePanel,
     Column,
     DataTable,
-    Toast,
     Button,
     Dialog,
     ConfirmDialog,
     Menu,
     ProgressBar,
     HighlightedCode,
+    ContentViewer
   },
   data() {
     return {
@@ -121,14 +126,18 @@ export default {
       did: null,
       deltaFileData: {},
       metadata: [],
-      showJSONDialog: false,
+      objectDialog: {
+        visible: false,
+        header: null,
+        body: null,
+      },
       errorDialog: {
         visible: false,
         action: null,
         cause: null,
         context: null,
       },
-      items: [
+      menuItems: [
         {
           label: 'Retry',
           icon: 'fas fa-redo fa-fw',
@@ -155,6 +164,25 @@ export default {
     };
   },
   computed: {
+    contentReferences() {
+      let layers = this.deltaFileData.protocolStack.concat(this.deltaFileData.formattedData);
+      return layers.reduce((content, layer) => {
+        let actions = [layer.action, layer.formatAction, layer.egressActions]
+          .flat()
+          .filter((n) => n);
+        for (const action of actions) {
+          let filename =
+            action === "IngressAction"
+              ? this.deltaFileData.sourceInfo.filename
+              : layer.filename || `${this.deltaFileData.did}-${layer.action}`;
+          content[action] = {
+            ...layer.contentReference,
+            filename: filename
+          }
+        }
+        return content;
+      }, {});
+    },
     metadataFields() {
       return this.metadata.map((field) => {
         return { key: field[0], value: field[1] };
@@ -195,6 +223,7 @@ export default {
   created() {
     this.graphQLService = new GraphQLService();
     this.utilFunctions = new UtilFunctions();
+    this.apiService = new ApiService();
   },
   mounted() {
     if (this.$route.params.did) {
@@ -206,6 +235,9 @@ export default {
   methods: {
     toggle(event) {
       this.$refs.menu.toggle(event);
+    },
+    formattedBytes(bytes) {
+      return filesize(bytes, {base:10})
     },
     openZipkinURL() {
       const zipkinURL = `https://zipkin.${this.uiConfig.domain}/zipkin/traces/${this.did.replaceAll("-", "")}`;
@@ -270,7 +302,14 @@ export default {
       });
     },
     viewDeltaFileJSON() {
-      this.showJSONDialog = true;
+      this.showObjectDialog("DeltaFile JSON", JSON.stringify(this.deltaFileData, null, 2));
+    },
+    showObjectDialog(header, body) {
+      if (header !== undefined && body !== undefined) {
+        this.objectDialog.header = header
+        this.objectDialog.body = (typeof body === 'string') ? body : JSON.stringify(body, null, 2)
+        this.objectDialog.visible = true;
+      }
     },
     actionRowClick(event) {
       let action = event.data;
@@ -316,7 +355,8 @@ export default {
     },
   },
   graphQLService: null,
-  utilFunctions: null,
+  ApiService: null,
+  utilFunctions: null
 };
 </script>
 

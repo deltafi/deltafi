@@ -1,3 +1,32 @@
-tr.action-error {
-  cursor: pointer !important;
+.deltafile-viewer {
+  tr.action-error {
+    cursor: pointer !important;
+  }
+  .content-column {
+    width: 1%;
+    padding: 0 0.5rem !important;
+    .content-button {
+      cursor: pointer !important;
+      padding: 0.1rem 0.4rem;
+      margin: 0;
+      color: #333333;
+    }
+    .content-button:hover {
+      color: #666666 !important;
+      .p-button-label {
+        text-decoration: none !important;
+      }
+    }
+    .content-button:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  }
+  .state-column,
+  .elapsed-column {
+    width: 8rem;
+  }
+  .timestamp-column {
+    width: 16rem;
+  }
 }

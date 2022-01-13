@@ -11,6 +11,7 @@
         </div>
       </div>
     </div>
+    <Toast position="bottom-right" />
   </div>
 </template>
 
@@ -18,6 +19,7 @@
 import AppTopBar from "@/AppTopBar";
 import AppMenu from "@/AppMenu";
 import { mapState } from "vuex";
+import Toast from "primevue/toast";
 
 import { useStore } from '@/store';
 import { UIConfigActionTypes } from '@/store/modules/uiConfig/action-types';
@@ -25,8 +27,9 @@ import { UIConfigActionTypes } from '@/store/modules/uiConfig/action-types';
 export default {
   name: "App",
   components: {
-    AppTopBar: AppTopBar,
-    AppMenu: AppMenu,
+    AppTopBar,
+    AppMenu,
+    Toast
   },
   computed: {
     sidebarClasses() {

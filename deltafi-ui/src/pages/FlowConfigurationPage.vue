@@ -5,22 +5,25 @@
         Flow Configuration
       </h1>
     </div>
-    <HighlightedCode language="yaml" :code="flowConfigData" />
+    <HighlightedCode v-if="flowConfigData" language="yaml" :code="flowConfigData" />
+    <ProgressBar v-else mode="indeterminate" style="height: .5em" />
   </div>
 </template>
 
 <script>
 import GraphQLService from "@/service/GraphQLService";
 import HighlightedCode from "@/components/HighlightedCode.vue";
+import ProgressBar from "primevue/progressbar";
 
 export default {
   name: "FlowConfigurationPage",
   components: {
     HighlightedCode,
+    ProgressBar
   },
   data() {
     return {
-      flowConfigData: "",
+      flowConfigData: null,
     };
   },
   created() {
