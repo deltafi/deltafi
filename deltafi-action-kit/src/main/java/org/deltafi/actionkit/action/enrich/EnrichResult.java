@@ -1,6 +1,7 @@
 package org.deltafi.actionkit.action.enrich;
 
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.KeyValue;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 @EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result {
     private final List<KeyValue> enrichments = new ArrayList<>();

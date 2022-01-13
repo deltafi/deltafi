@@ -1,5 +1,8 @@
 package org.deltafi.actionkit.action;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
@@ -11,6 +14,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+@Getter
+@EqualsAndHashCode
 public abstract class Result {
     private static final String FILES_IN = "files_in";
     private static final String FILES_COMPLETED = "files_completed";

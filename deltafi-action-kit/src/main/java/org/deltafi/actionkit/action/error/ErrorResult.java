@@ -1,6 +1,7 @@
 package org.deltafi.actionkit.action.error;
 
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@Getter
 @EqualsAndHashCode(callSuper = true)
 public class ErrorResult extends Result {
     private final String errorCause;

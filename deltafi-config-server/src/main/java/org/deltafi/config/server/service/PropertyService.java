@@ -1,6 +1,5 @@
 package org.deltafi.config.server.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.config.server.api.domain.Property;
 import org.deltafi.config.server.api.domain.PropertySet;
@@ -26,7 +25,6 @@ import static org.deltafi.config.server.api.domain.PropertySource.*;
 @Service
 public class PropertyService {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Environment EMPTY_ENV = new Environment("empty");
 
     private final PropertyRepository repo;
