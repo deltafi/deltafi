@@ -6,10 +6,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.DeltaFiles;
-import org.deltafi.core.domain.api.types.KeyValue;
-import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.converters.ErrorConverter;
@@ -245,6 +243,7 @@ public class DeltaFilesService {
 
         ErrorDomain errorDomain = ErrorConverter.convert(event, deltaFile);
         DeltaFile errorDeltaFile = convert(deltaFile, OBJECT_MAPPER.writeValueAsString(errorDomain));
+        errorDeltaFile.getSourceInfo().setFilename(errorDeltaFile.getSourceInfo().getFilename() + ".error");
 
         advanceAndSave(errorDeltaFile);
 
@@ -257,7 +256,9 @@ public class DeltaFilesService {
                 .did(UUID.randomUUID().toString())
                 .stage(DeltaFileStage.EGRESS)
                 .actions(new ArrayList<>())
-                .sourceInfo(originator.getSourceInfo())
+                .sourceInfo(new SourceInfo(originator.getSourceInfo().getFilename(),
+                        originator.getSourceInfo().getFlow(),
+                        originator.getSourceInfo().getMetadata()))
                 .protocolStack(Collections.emptyList())
                 .domains(Collections.singletonList(new KeyValue("error", errorDomain)))
                 .enrichment(new ArrayList<>())
