@@ -45,7 +45,14 @@
       <div class="row mb-3">
         <div class="col-12">
           <CollapsiblePanel header="Actions" class="actions-panel table-panel">
-            <DataTable :value="actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
+            <DataTable
+              responsive-layout="scroll"
+              class="p-datatable-sm p-datatable-gridlines"
+              striped-rows
+              :value="actions"
+              :row-class="actionRowClass"
+              @row-click="actionRowClick"
+            >
               <Column field="name" header="Action" :sortable="true" />
               <Column field="state" header="State" class="state-column" :sortable="true" />
               <Column field="created" header="Created" class="timestamp-column" :sortable="true" />
@@ -72,12 +79,7 @@
     <Dialog v-model:visible="objectDialog.visible" :header="objectDialog.header" :style="{width: '75vw'}" :maximizable="true" :modal="true">
       <HighlightedCode :code="objectDialog.body" />
     </Dialog>
-    <Dialog v-model:visible="errorDialog.visible" :header="errorDialog.action" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-      <strong>Error Cause</strong>
-      <HighlightedCode :highlight="false" :code="errorDialog.cause" />
-      <strong>Error Context</strong>
-      <HighlightedCode :highlight="false" :code="errorDialog.context" />
-    </Dialog>
+    <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <ConfirmDialog />
   </div>
 </template>
@@ -99,6 +101,7 @@ import Menu from "primevue/menu";
 import { mapState } from "vuex";
 import ProgressBar from 'primevue/progressbar';
 import ContentViewer from '@/components/ContentViewer.vue';
+import ErrorViewer from "@/components/ErrorViewer.vue";
 
 const uuidRegex = new RegExp(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -116,7 +119,8 @@ export default {
     Menu,
     ProgressBar,
     HighlightedCode,
-    ContentViewer
+    ContentViewer,
+    ErrorViewer
   },
   data() {
     return {
@@ -131,11 +135,9 @@ export default {
         header: null,
         body: null,
       },
-      errorDialog: {
+      errorViewer: {
         visible: false,
-        action: null,
-        cause: null,
-        context: null,
+        action: {},
       },
       menuItems: [
         {
@@ -315,17 +317,16 @@ export default {
     },
     actionRowClick(event) {
       let action = event.data;
-      if (action.state !== "ERROR") return;
+      if (!['ERROR', 'RETRIED'].includes(action.state)) return
 
-      this.errorDialog = {
+      this.errorViewer = {
         visible: true,
-        action: action.name,
-        cause: action.errorCause,
-        context: this.utilFunctions.formatContextData(action.errorContext),
+        action: action,
       }
     },
-    actionRowClass(data) {
-      return data.state === 'ERROR' ? 'table-danger action-error': null;
+    actionRowClass(action) {
+      if (action.state === 'ERROR') return 'table-danger action-error';
+      if (action.state === 'RETRIED') return 'table-warning action-error';
     },
     retryConfirm() {
       this.$confirm.require({

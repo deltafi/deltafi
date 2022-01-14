@@ -55,15 +55,15 @@
         v-model:selection="selectedErrors"
         selection-mode="multiple"
         data-key="did"
+        paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
+        class="p-datatable-gridlines p-datatable-sm"
+        striped-rows
         :meta-key-selection="false"
         :value="errors"
-        striped-rows
-        class="p-datatable-gridlines p-datatable-sm"
         :loading="loading"
         :paginator="totalErrors > 0"
         :rows="20"
-        paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-        current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
         :rows-per-page-options="[10,20,50,100]"
         :lazy="true"
         :total-records="totalErrors"
@@ -100,25 +100,17 @@
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable :value="error.data.actions" :row-hover="false">
+            <DataTable :value="error.data.actions" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column field="name" header="Action" />
               <Column field="state" header="State" />
               <Column field="created" header="Created" />
               <Column field="modified" header="Modified" />
-              <Column field="errorCause" header="Cause">
+              <Column field="errorCause" header="Error Cause">
                 <template #body="action">
-                  <span v-if="(action.data.state === 'ERROR') && (action.data.errorCause !== null)">{{ action.data.errorCause }}</span>
+                  <span v-if="(['ERROR', 'RETRIED'].includes(action.data.state)) && (action.data.errorCause !== null)">
+                    {{ action.data.errorCause }}
+                  </span>
                   <span v-else>N/A</span>
-                </template>
-              </Column>
-              <Column field="errorContext" header="Context">
-                <template #body="action">
-                  <div v-if="action.data.errorContext">
-                    <Button label="Show Context" icon="pi pi-external-link" class="p-button-sm p-button-raised p-button-secondary" @click="openContextDialog(action.data.errorContext)" />
-                  </div>
-                  <div v-else>
-                    <span>No context provided</span>
-                  </div>
                 </template>
               </Column>
             </DataTable>
@@ -126,9 +118,7 @@
         </template>
       </DataTable>
     </Panel>
-    <Dialog v-model:visible="showContextDialog" header="Error Context" :style="{width: '75vw'}" :maximizable="true" :modal="true">
-      <HighlightedCode :highlight="false" :code="contextDialogData" />
-    </Dialog>
+    <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <Toast position="bottom-right" />
   </div>
 </template>
@@ -139,7 +129,6 @@ import { UtilFunctions } from "@/utils/UtilFunctions";
 import Toast from "primevue/toast";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Dialog from "primevue/dialog";
 import Calendar from "primevue/calendar";
 import Dropdown from "primevue/dropdown";
 import Button from "primevue/button";
@@ -147,7 +136,7 @@ import Panel from "primevue/panel";
 import Menu from "primevue/menu";
 import ConfirmDialog from "primevue/confirmdialog";
 import ContextMenu from "primevue/contextmenu";
-import HighlightedCode from "@/components/HighlightedCode.vue";
+import ErrorViewer from "@/components/ErrorViewer.vue";
 
 const maxRetrySuccessDisplay = 10;
 
@@ -163,7 +152,6 @@ export default {
     Toast,
     Column,
     DataTable,
-    Dialog,
     Calendar,
     Dropdown,
     Button,
@@ -171,7 +159,7 @@ export default {
     Menu,
     ConfirmDialog,
     ContextMenu,
-    HighlightedCode
+    ErrorViewer
   },
   data() {
     return {
@@ -190,6 +178,10 @@ export default {
       sortField: "modified",
       sortDirection: "DESC",
       selectedErrors: [],
+      errorViewer: {
+        visible: false,
+        action: {}
+      },
       items: [
         {
           label: "Clear Selected",
@@ -367,6 +359,17 @@ export default {
     },
     countErrors(actions) {
       return this.filterErrors(actions).length;
+    },
+    actionRowClass(action) {
+      if (action.state === 'ERROR') return 'table-danger action-error';
+      if (action.state === 'RETRIED') return 'table-warning action-error';
+    },
+    actionRowClick(event) {
+      let action = event.data;
+      if (['ERROR', 'RETRIED'].includes(action.state)) {
+        this.errorViewer.action = action;
+        this.errorViewer.visible = true;
+      }
     },
     onPage(event) {
       this.offset = event.first;

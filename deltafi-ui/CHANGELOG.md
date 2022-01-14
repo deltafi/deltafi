@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Persisted Search Options on DeltaFile Search page
 - Ability to view content produced by Actions on DeltaFile Viewer page
 
+### Changed
+- Changed the way errored actions are displayed on the Errors page
+
 ## [0.16.2] - 2022-01-13
 ### Fixed
 - Bug on Upload page causing errors to be swallowed

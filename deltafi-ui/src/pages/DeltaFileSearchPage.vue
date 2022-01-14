@@ -121,9 +121,11 @@
     </div>
     <CollapsiblePanel header="DeltaFiles" class="table-panel">
       <DataTable
-        :value="results"
-        striped-rows
+        paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
         class="p-datatable p-datatable-sm p-datatable-gridlines"
+        striped-rows
+        :value="results"
         :loading="loading"
         :paginator="totalRecords > 0"
         :rows="10"
@@ -131,8 +133,7 @@
         :rows-per-page-options="[10,20,50,100]"
         :total-records="totalRecords"
         :always-show-paginator="true"
-        paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-        current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
+        :row-class="actionRowClass"
         @page="onPage($event)"
         @sort="onSort($event)"
       >
@@ -373,6 +374,9 @@ export default {
       this.sortField = event.sortField;
       this.sortDirection = event.sortOrder > 0 ? "DESC" : "ASC";
       this.fetchDeltaFilesData();
+    },
+    actionRowClass(data) {
+      return data.stage === 'ERROR' ? 'table-danger action-error': null;
     },
     onPage(event) {
       this.offset = event.first;
