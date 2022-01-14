@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -73,6 +74,8 @@ public abstract class Action<P extends ActionParameters> {
     ActionVersionProperty actionVersionProperty;
 
     private final Class<P> paramType;
+    private GraphQLQuery registrationQuery = null;
+    private BaseProjectionNode registrationProjection = null;
 
     @SuppressWarnings("unused")
     public void start(@Observes StartupEvent start) {
@@ -175,11 +178,27 @@ public abstract class Action<P extends ActionParameters> {
         return definition;
     }
 
+    private GraphQLQuery doGetRegistrationQuery() {
+        if (Objects.isNull(registrationQuery)) {
+            registrationQuery = getRegistrationQuery();
+        }
+
+        return registrationQuery;
+    }
+
     public abstract GraphQLQuery getRegistrationQuery();
 
     void doRegisterParamSchema() {
         domainGatewayService.submit(new GraphQLQueryRequest(
-                getRegistrationQuery(), getRegistrationProjection()));
+                doGetRegistrationQuery(), doGetRegistrationProjection()));
+    }
+
+    private BaseProjectionNode doGetRegistrationProjection() {
+        if (Objects.isNull(registrationProjection)) {
+            registrationProjection = getRegistrationProjection();
+        }
+
+        return registrationProjection;
     }
 
     protected abstract BaseProjectionNode getRegistrationProjection();
