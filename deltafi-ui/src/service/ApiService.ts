@@ -13,7 +13,7 @@ export default class ApiService {
     return url;
   }
 
-  get(path: String, params: URLSearchParams = new URLSearchParams(), json: Boolean = true) {
+  get(path: String, params: URLSearchParams = new URLSearchParams()) {
     const url = this.buildURL(path, params);
     const req = new Request(url, { referrer: "" });
     return fetch(req);
@@ -64,7 +64,7 @@ export default class ApiService {
 
   getContent(contentReference: any) {
     const params = new URLSearchParams(contentReference);
-    return this.get('/content', params, false);
+    return this.get('/content', params);
   }
 
   contentUrl(contentReference: any) {

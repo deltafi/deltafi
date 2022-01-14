@@ -80,7 +80,8 @@ export default {
   methods: {
     async fetchQueueMetrics() {
       let response = await this.apiService.get("/metrics/queues");
-      this.queueMetrics = response.queues;
+      let body = await response.json();
+      this.queueMetrics = body.queues;
       this.loadingQueueMetrics = false;
     },
   },
