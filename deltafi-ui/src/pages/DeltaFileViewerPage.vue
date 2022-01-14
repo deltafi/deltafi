@@ -206,7 +206,9 @@ export default {
     formattedDeltaFileData() {
       return JSON.stringify(this.deltaFileData, null, 2);
     },
-    ...mapState(["uiConfig"]),
+    ...mapState({
+      uiConfig: state => state.uiConfig.uiConfig,
+    })
   },
   watch: {
     $route(to) {
