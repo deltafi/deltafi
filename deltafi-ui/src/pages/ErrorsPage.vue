@@ -137,6 +137,7 @@ import Menu from "primevue/menu";
 import ConfirmDialog from "primevue/confirmdialog";
 import ContextMenu from "primevue/contextmenu";
 import ErrorViewer from "@/components/ErrorViewer.vue";
+import _ from 'lodash';
 
 const maxRetrySuccessDisplay = 10;
 
@@ -308,7 +309,7 @@ export default {
       const ingressFlowData = await this.graphQLService.getConfigByType(
         "INGRESS_FLOW"
       );
-      this.ingressFlowNames = ingressFlowData.data.deltaFiConfigs;
+      this.ingressFlowNames = _.sortBy(ingressFlowData.data.deltaFiConfigs, ['name']);
     },
     async fetchErrors(
       startD,

@@ -85,6 +85,7 @@ import Panel from "primevue/panel";
 import axios from "axios";
 import InlineMessage from "primevue/inlinemessage";
 import GraphQLService from "@/service/GraphQLService";
+import _ from 'lodash';
 
 export default {
   name: "DeltaFileUploadPage",
@@ -135,7 +136,7 @@ export default {
       const ingressFlowData = await this.graphQLService.getConfigByType(
         "INGRESS_FLOW"
       );
-      this.flows = ingressFlowData.data.deltaFiConfigs;
+      this.flows = _.sortBy(ingressFlowData.data.deltaFiConfigs, ['name']);
     },
     addMetadataField() {
       this.metadata.push({ key: "", value: "" });
