@@ -33,8 +33,7 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static graphql.Assert.assertFalse;
-import static graphql.Assert.assertTrue;
+import static graphql.Assert.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -362,10 +361,15 @@ class DeltaFiCoreDomainApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postErrorDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("18.retry"), did),
 				"data." + DgsConstants.MUTATION.Retry,
 				new TypeRef<>() {});
+
+		assertEquals(2, retryResults.size());
+		assertEquals(did, retryResults.get(0).getDid());
+		assertTrue(retryResults.get(0).getSuccess());
+		assertFalse(retryResults.get(1).getSuccess());
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(Util.equalIgnoringDates(postRetryDeltaFile(did), deltaFile));
@@ -374,6 +378,44 @@ class DeltaFiCoreDomainApplicationTests {
 		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("AuthorityValidateAction")), actual.capture());
 		deltaFile = actual.getValue();
 		assertTrue(Util.equalIgnoringDates(postRetryDeltaFile(did), deltaFile));
+	}
+
+	@Test
+	void test19RetryClearsAcknowledged() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile postErrorDeltaFile = postErrorDeltaFile(did);
+		postErrorDeltaFile.setErrorAcknowledged(OffsetDateTime.now());
+		postErrorDeltaFile.setErrorAcknowledgedReason("some reason");
+		deltaFileRepo.save(postErrorDeltaFile);
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("18.retry"), did),
+				"data." + DgsConstants.MUTATION.Retry,
+				new TypeRef<>() {});
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertNull(deltaFile.getErrorAcknowledged());
+		assertNull(deltaFile.getErrorAcknowledgedReason());
+	}
+
+	@Test
+	void test19Acknowledge() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postErrorDeltaFile(did));
+
+		List<AcknowledgeResult> acknowledgeResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("19.acknowledge"), did),
+				"data." + DgsConstants.MUTATION.Acknowledge,
+				new TypeRef<>() {});
+
+		assertEquals(2, acknowledgeResults.size());
+		assertEquals(did, acknowledgeResults.get(0).getDid());
+		assertTrue(acknowledgeResults.get(0).getSuccess());
+		assertFalse(acknowledgeResults.get(1).getSuccess());
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertNotNull(deltaFile.getErrorAcknowledged());
+		assertEquals("apathy", deltaFile.getErrorAcknowledgedReason());
 	}
 
 	DeltaFile postValidateAuthorityDeltaFile(String did) {

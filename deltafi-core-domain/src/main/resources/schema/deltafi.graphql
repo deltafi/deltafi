@@ -147,6 +147,8 @@ type DeltaFile {
   modified: DateTime!
   markedForDelete: DateTime
   markedForDeleteReason: String
+  errorAcknowledged: DateTime
+  errorAcknowledgedReason: String
 }
 
 input IngressInput {
@@ -219,6 +221,12 @@ type RetryResult {
   error: String
 }
 
+type AcknowledgeResult {
+  did: String!
+  success: Boolean!
+  error: String
+}
+
 type Query {
   flowPlans: [FlowPlan]!
 
@@ -244,6 +252,7 @@ type Mutation {
   actionEvent(event: ActionEventInput!): DeltaFile!
 
   retry(dids: [String!]!) : [RetryResult!]!
+  acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
 
   registerTransformAction(transformActionConfiguration: TransformActionConfigurationInput!): TransformActionConfiguration!
   registerLoadAction(loadActionConfiguration: LoadActionConfigurationInput!): LoadActionConfiguration!

@@ -285,10 +285,11 @@ public class DeltaFilesService {
                         } else {
                             List<String> requeueActions = deltaFile.retryErrors();
                             deltaFile.setStage(DeltaFileStage.INGRESS);
+                            deltaFile.setErrorAcknowledged(null);
+                            deltaFile.setErrorAcknowledgedReason(null);
                             advanceAndSave(deltaFile);
                             enqueueActions(requeueActions, deltaFile);
                         }
-
                     } catch (Exception e) {
                         result.setSuccess(false);
                         result.setError(e.getMessage());
@@ -296,6 +297,40 @@ public class DeltaFilesService {
                     return result;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<DeltaFile> changedDeltaFiles = new ArrayList<>();
+
+        List<AcknowledgeResult> results = dids.stream()
+                .map(did -> {
+                    AcknowledgeResult result = AcknowledgeResult.newBuilder()
+                            .did(did)
+                            .success(true)
+                            .build();
+
+                    try {
+                        DeltaFile deltaFile = getDeltaFile(did);
+
+                        if (Objects.isNull(deltaFile)) {
+                            result.setSuccess(false);
+                            result.setError("DeltaFile with did " + did + " not found");
+                        } else {
+                            deltaFile.setErrorAcknowledged(now);
+                            deltaFile.setErrorAcknowledgedReason(reason);
+                            changedDeltaFiles.add(deltaFile);
+                        }
+                    } catch (Exception e) {
+                        result.setSuccess(false);
+                        result.setError(e.getMessage());
+                    }
+                    return result;
+                })
+                .collect(Collectors.toList());
+
+        deltaFileRepo.saveAll(changedDeltaFiles);
+        return results;
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {

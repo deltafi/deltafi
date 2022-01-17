@@ -1,6 +1,7 @@
 mutation {
-    retry(
+    acknowledge(
         dids: ["%1$s", "fakedid"]
+        reason: "apathy"
     ) {
         did
         success

@@ -81,4 +81,10 @@ public class DeltaFilesDatafetcher {
   public List<RetryResult> retry(List<String> dids) {
     return deltaFilesService.retry(dids);
   }
+
+  @DgsMutation
+  @SuppressWarnings("unused")
+  public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {
+    return deltaFilesService.acknowledge(dids, reason);
+  }
 }
