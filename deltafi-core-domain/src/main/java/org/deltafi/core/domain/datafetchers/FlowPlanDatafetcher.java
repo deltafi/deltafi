@@ -1,5 +1,6 @@
 package org.deltafi.core.domain.datafetchers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
@@ -15,6 +16,11 @@ import java.util.Collection;
 public class FlowPlanDatafetcher {
 
     private final FlowPlanService flowPlanService;
+
+    @DgsQuery
+    public String exportFlowPlan(String name) throws JsonProcessingException {
+        return flowPlanService.export(name);
+    }
 
     @DgsQuery
     public Collection<FlowPlan> flowPlans() {

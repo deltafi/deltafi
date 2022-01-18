@@ -106,11 +106,14 @@ Usage: $cli_name [command]
 Commands:
   did               show did for filename
   export-config     export the current running configuration as yaml
+  export-plan       export a single flow plan by name as JSON
   ingress           ingress one or more files to a flow
   install           install/upgrade the DeltaFi core
   install-plugin    install/upgrade a DeltaFi plugin
   list-actions      list the actions registered with deltafi
+  list-plans        list all flow plans within deltafi
   load-config       add to or replace the deltafi config
+  load-plan         load a flow plan to deltafi from a JSON file
   mongo-cli         launch the mongo CLI
   query             send a query to the gateway
   redis-cli         launch the redis CLI
@@ -156,6 +159,9 @@ case "$1" in
   export-config)
     "$DELTAFICLI_WORKDIR/commands/export-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-config.log"
     ;;
+  export-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-plan.log"
+    ;;
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/ingress.log"
     ;;
@@ -168,8 +174,14 @@ case "$1" in
   list-actions)
     "$DELTAFICLI_WORKDIR/commands/list-actions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-actions.log"
     ;;
+  list-plans)
+    "$DELTAFICLI_WORKDIR/commands/list-plans" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-plans.log"
+    ;;
   load-config)
     "$DELTAFICLI_WORKDIR/commands/load-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-config.log"
+    ;;
+  load-plan)
+    "$DELTAFICLI_WORKDIR/commands/load-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-plan.log"
     ;;
   mongo-cli)
     "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@

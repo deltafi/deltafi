@@ -1,0 +1,12 @@
+{
+  "name" : "planA",
+  "description" : "description",
+  "version" : "version",
+  "draft" : false,
+  "ingressFlowConfigurations" : [ {
+    "name" : "name",
+    "type" : "test-type",
+    "transformActions" : [ "transformer" ],
+    "loadActions" : [ "loader" ]
+  } ]
+}

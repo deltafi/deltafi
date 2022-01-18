@@ -229,6 +229,7 @@ type AcknowledgeResult {
 
 type Query {
   flowPlans: [FlowPlan]!
+  exportFlowPlan(name: String!): String!
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile

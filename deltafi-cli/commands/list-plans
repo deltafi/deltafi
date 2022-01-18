@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: list-plans
+
+Usage:
+  list-plans [OPTIONS]
+
+Options:
+  -l, --long  Show a long listing of the flow plan details
+  -h, --help     Show help"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+if [[ " ${ARGS[@]} " =~ " --long " || " ${ARGS[@]} " =~ " -l " ]]; then
+  PROJECTION="name description ingressFlowConfigurations {  name transformActions loadActions } egressFlowConfigurations { name egressAction formatAction validateActions enrichActions }"
+else
+  PROJECTION="name"
+fi
+
+QUERY="query { flowPlans { $PROJECTION }}"
+RESULT=$(deltafi query "$QUERY")
+
+if [[ " ${ARGS[@]} " =~ " --long " || " ${ARGS[@]} " =~ " -l " ]]; then
+  echo "$RESULT"
+else
+  echo "$RESULT" | jq -r '.data.flowPlans[] | .name' | sort
+fi

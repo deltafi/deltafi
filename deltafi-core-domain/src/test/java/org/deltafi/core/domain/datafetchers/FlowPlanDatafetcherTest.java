@@ -1,8 +1,11 @@
 package org.deltafi.core.domain.datafetchers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.common.resource.Resource;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.FlowPlan;
 import org.deltafi.core.domain.generated.types.FlowPlanInput;
@@ -14,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +30,41 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 @TestPropertySource(properties = {"enableScheduling=false"})
 class FlowPlanDatafetcherTest {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final SaveFlowPlanProjectionRoot FLOW_PLAN_PROJECTION_ROOT = new SaveFlowPlanProjectionRoot()
+            .name()
+            .description()
+            .version()
+            .draft()
+            .ingressFlowConfigurations()
+            .name()
+            .parent()
+            .egressFlowConfigurations()
+            .name()
+            .parent()
+            .transformActionConfigurations()
+            .name()
+            .parent()
+            .loadActionConfigurations()
+            .name()
+            .parent()
+            .enrichActionConfigurations()
+            .name()
+            .parent()
+            .formatActionConfigurations()
+            .name()
+            .parent()
+            .validateActionConfigurations()
+            .name()
+            .parent()
+            .egressActionConfigurations()
+            .name()
+            .parent()
+            .pluginCoordinates()
+            .groupId()
+            .artifactId()
+            .version()
+            .parent();
 
     private static final String DESCRIPTION = "description";
     private static final String VERSION = "version";
@@ -50,6 +89,51 @@ class FlowPlanDatafetcherTest {
         assertTrue(removeFlowPlan("planB"));
         assertEquals(1, flowPlanRepo.count());
         assertEquals("planA", getFlowPlans().get(0).getName());
+    }
+
+    @Test
+    void testExportFlowPlan() throws IOException {
+        saveFlowPlan("planA", false);
+        saveFlowPlan("planB", true);
+
+        String exportedJson = exportFlowPlan("planA");
+        String expected = Resource.read("/flowPlans/flow-plan-export-test.json");
+        assertEquals(expected, exportedJson);
+    }
+
+    @Test
+    public void testImportFlowPlan() throws IOException {
+        /*
+         * Another "Save FlowPlan" test with a more complete
+         * FlowPlanInput and verify, using a JSON file in a
+         * similar manner as the CLI.
+         */
+        FlowPlanInput flowPlanInput = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/flow-plan-1.json"), FlowPlanInput.class);
+        SaveFlowPlanGraphQLQuery saveFlowPlanGraphQLQuery = SaveFlowPlanGraphQLQuery.newRequest().flowPlan(flowPlanInput).build();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(saveFlowPlanGraphQLQuery, FLOW_PLAN_PROJECTION_ROOT);
+
+        FlowPlan flowPlan = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+                "data." + saveFlowPlanGraphQLQuery.getOperationName(), FlowPlan.class);
+
+        assertEquals(1, flowPlanRepo.count());
+
+        assertEquals("stix crossbar plan", flowPlan.getName());
+        assertEquals("stix2_1", flowPlan.getIngressFlowConfigurations().get(0).getName());
+        assertEquals("stix1_x", flowPlan.getIngressFlowConfigurations().get(1).getName());
+        assertEquals("Stix2_1", flowPlan.getEgressFlowConfigurations().get(0).getName());
+        assertEquals("Stix1_x", flowPlan.getEgressFlowConfigurations().get(1).getName());
+        assertEquals("Stix1_xTo2_1TransformAction", flowPlan.getTransformActionConfigurations().get(0).getName());
+        assertEquals("Stix2_1LoadAction", flowPlan.getLoadActionConfigurations().get(0).getName());
+        assertEquals("Stix2_1FormatAction", flowPlan.getFormatActionConfigurations().get(0).getName());
+        assertEquals("Stix1_xFormatAction", flowPlan.getFormatActionConfigurations().get(1).getName());
+        assertEquals("Stix2_1ValidateAction", flowPlan.getValidateActionConfigurations().get(0).getName());
+        assertEquals("Stix1_xValidateAction", flowPlan.getValidateActionConfigurations().get(1).getName());
+        assertEquals("Stix2_1EgressAction", flowPlan.getEgressActionConfigurations().get(0).getName());
+        assertEquals("Stix1_xEgressAction", flowPlan.getEgressActionConfigurations().get(1).getName());
+        assertEquals("org.deltafi.stix", flowPlan.getPluginCoordinates().get(0).getGroupId());
+        assertEquals("deltafi-stix", flowPlan.getPluginCoordinates().get(0).getArtifactId());
+        assertEquals("0.17.0", flowPlan.getPluginCoordinates().get(0).getVersion());
     }
 
     @Test
@@ -100,6 +184,19 @@ class FlowPlanDatafetcherTest {
         return flowPlans;
     }
 
+    private String exportFlowPlan(String planName) {
+        ExportFlowPlanGraphQLQuery exportFlowPlan = ExportFlowPlanGraphQLQuery.newRequest().name(planName).build();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(exportFlowPlan, null);
+
+        String exportedJson = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + exportFlowPlan.getOperationName(),
+                String.class);
+
+        return exportedJson;
+    }
+
     private boolean removeFlowPlan(String planName) {
         RemoveFlowPlanGraphQLQuery removeFlowPlan = RemoveFlowPlanGraphQLQuery.newRequest().name(planName).build();
 
@@ -138,23 +235,11 @@ class FlowPlanDatafetcherTest {
                 .ingressFlowConfigurations(singletonList(ingressInput))
                 .build();
 
-        SaveFlowPlanProjectionRoot projection = new SaveFlowPlanProjectionRoot()
-                .name()
-                .description()
-                .version()
-                .draft()
-                .ingressFlowConfigurations()
-                .name()
-                .parent()
-                .egressFlowConfigurations()
-                .name()
-                .parent();
-
         SaveFlowPlanGraphQLQuery saveFlowPlan = SaveFlowPlanGraphQLQuery
                 .newRequest().flowPlan(input).build();
 
         GraphQLQueryRequest graphQLQueryRequest =
-                new GraphQLQueryRequest(saveFlowPlan, projection);
+                new GraphQLQueryRequest(saveFlowPlan, FLOW_PLAN_PROJECTION_ROOT);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),

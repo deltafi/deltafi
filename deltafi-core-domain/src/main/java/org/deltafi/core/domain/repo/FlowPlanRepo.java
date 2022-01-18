@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FlowPlanRepo extends MongoRepository<FlowPlan, String> {
     int deleteByName(String name);
+
+    FlowPlan findByName(String name);
 }

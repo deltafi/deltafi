@@ -1,0 +1,119 @@
+{
+   "name": "stix crossbar plan",
+   "description": "Stix 1.x and 2.1 ingress/egress flows",
+   "version": "0.17.0",
+   "draft" : false,
+   "ingressFlowConfigurations": [
+      {
+         "name": "stix2_1",
+         "loadActions": [
+            "Stix2_1LoadAction"
+         ],
+         "transformActions": [],
+         "type": "stix2_1"
+      },
+      {
+         "name": "stix1_x",
+         "loadActions": [
+            "Stix2_1LoadAction"
+         ],
+         "transformActions": [
+            "Stix1_xTo2_1TransformAction"
+         ],
+         "type": "stix1_x"
+      }
+   ],
+   "egressFlowConfigurations": [
+      {
+         "name": "Stix2_1",
+         "excludeIngressFlows": [],
+         "egressAction": "Stix2_1EgressAction",
+         "formatAction": "Stix2_1FormatAction",
+         "includeIngressFlows": [],
+         "validateActions": [
+            "Stix2_1ValidateAction"
+         ]
+      },
+      {
+         "name": "Stix1_x",
+         "excludeIngressFlows": [],
+         "egressAction": "Stix1_xEgressAction",
+         "formatAction": "Stix1_xFormatAction",
+         "includeIngressFlows": [],
+         "validateActions": [
+            "Stix1_xValidateAction"
+         ]
+      }
+   ],
+   "transformActionConfigurations": [
+      {
+         "name": "Stix1_xTo2_1TransformAction",
+         "consumes": "stix1_x",
+         "produces": "stix2_1",
+         "type": "org.deltafi.stix.actions.StixTransformAction"
+      }
+   ],
+   "loadActionConfigurations": [
+      {
+         "name": "Stix2_1LoadAction",
+         "consumes": "stix2_1",
+         "requiresMetadataKeyValues": [],
+         "type": "org.deltafi.stix.actions.StixLoadAction"
+      }
+   ],
+   "formatActionConfigurations": [
+      {
+         "name": "Stix2_1FormatAction",
+         "requiresDomains": [
+            "stix"
+         ],
+         "requiresEnrichment": [],
+         "type": "org.deltafi.stix.actions.Stix2_1FormatAction"
+      },
+      {
+         "name": "Stix1_xFormatAction",
+         "requiresDomains": [
+            "stix"
+         ],
+         "requiresEnrichment": [],
+         "type": "org.deltafi.stix.actions.Stix1_XFormatAction"
+      }
+   ],
+   "validateActionConfigurations": [
+      {
+         "name": "Stix2_1ValidateAction",
+         "type": "org.deltafi.stix.actions.RubberStampValidateAction"
+      },
+      {
+         "name": "Stix1_xValidateAction",
+         "type": "org.deltafi.stix.actions.RubberStampValidateAction"
+      }
+   ],
+   "egressActionConfigurations": [
+      {
+         "name": "Stix2_1EgressAction",
+         "parameters": {
+            "egressFlow": "stix2_1",
+            "metadataKey": "deltafiMetadata",
+            "url": "http://deltafi-egress-sink-service"
+         },
+         "type": "org.deltafi.core.action.RestPostEgressAction"
+      },
+      {
+         "name": "Stix1_xEgressAction",
+         "parameters": {
+            "egressFlow": "stix1_x",
+            "metadataKey": "deltafiMetadata",
+            "url": "http://deltafi-egress-sink-service"
+         },
+         "type": "org.deltafi.core.action.RestPostEgressAction"
+      }
+   ],
+   "pluginCoordinates": [
+      {
+         "groupId": "org.deltafi.stix",
+         "artifactId": "deltafi-stix",
+         "version": "0.17.0"
+      }
+   ]
+}
