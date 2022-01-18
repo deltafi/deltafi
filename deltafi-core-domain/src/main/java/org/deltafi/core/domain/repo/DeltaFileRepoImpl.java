@@ -40,6 +40,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String MARKED_FOR_DELETE = "markedForDelete";
     public static final String KEY = "key";
     public static final String VALUE = "value";
+    public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
 
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
@@ -291,6 +292,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
             if (nonNull(filter.getFormattedData().getEgressActions()) && !filter.getFormattedData().getEgressActions().isEmpty()) {
                 andCriteria.add(Criteria.where(FORMATTED_DATA_EGRESS_ACTIONS).all(filter.getFormattedData().getEgressActions()));
+            }
+        }
+
+        if (nonNull(filter.getErrorAcknowledged())) {
+            if (filter.getErrorAcknowledged()) {
+                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
+            } else {
+                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).is(null));
             }
         }
 

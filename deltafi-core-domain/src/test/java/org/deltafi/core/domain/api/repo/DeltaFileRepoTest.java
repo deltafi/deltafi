@@ -252,6 +252,7 @@ class DeltaFileRepoTest {
         deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value2"))));
         deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
         deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename1").formatAction("formatAction1").metadata(List.of(new KeyValue("formattedKey1", "formattedValue1"), new KeyValue("formattedKey2", "formattedValue2"))).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
+        deltaFile1.setErrorAcknowledged(MONGO_NOW);
         deltaFileRepo.save(deltaFile1);
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
         deltaFile2.setDomains(List.of(new KeyValue("domain1", null), new KeyValue("domain2", null)));
@@ -294,6 +295,8 @@ class DeltaFileRepoTest {
         testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "3")).build(), deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "2")).build(), deltaFile2, deltaFile1);
         testFilter(DeltaFilesFilter.newBuilder().dids(List.of("3", "4")).build());
+        testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(true).build(), deltaFile1);
+        testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2);
     }
 
     private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {

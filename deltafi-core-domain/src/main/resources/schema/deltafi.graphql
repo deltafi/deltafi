@@ -213,6 +213,7 @@ input DeltaFilesFilter {
   stage: DeltaFileStage
   actions: [String!]
   formattedData: FormattedDataFilter
+  errorAcknowledged: Boolean
 }
 
 type RetryResult {
