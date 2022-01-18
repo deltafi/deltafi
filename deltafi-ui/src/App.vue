@@ -1,23 +1,29 @@
 <template>
   <div>
-    <app-top-bar />
+    <nav class="sticky-top">
+      <HeaderBanner />
+      <AppTopBar />
+    </nav>
     <div class="container-fluid">
       <div class="row">
         <div :class="sidebarClasses">
-          <app-menu />
+          <AppMenu />
         </div>
-        <div role="main" class="col">
+        <div role="main" class="col content">
           <router-view />
         </div>
       </div>
     </div>
+    <FooterBanner />
     <Toast position="bottom-right" />
   </div>
 </template>
 
 <script>
-import AppTopBar from "@/AppTopBar";
-import AppMenu from "@/AppMenu";
+import HeaderBanner from "@/components/header/HeaderBanner";
+import AppTopBar from "@/components/header/AppTopBar";
+import AppMenu from "@/components/sidebar/AppMenu";
+import FooterBanner from "@/components/footer/FooterBanner";
 import { mapState } from "vuex";
 import Toast from "primevue/toast";
 
@@ -27,8 +33,10 @@ import { UIConfigActionTypes } from '@/store/modules/uiConfig/action-types';
 export default {
   name: "App",
   components: {
+    HeaderBanner,
     AppTopBar,
     AppMenu,
+    FooterBanner,
     Toast
   },
   computed: {
@@ -54,7 +62,7 @@ export default {
       },
     },
   },
-  beforeCreate() {    
+  beforeCreate() {
     const store = useStore();
     store.dispatch(UIConfigActionTypes.FETCH_UI_CONFIG);
   },

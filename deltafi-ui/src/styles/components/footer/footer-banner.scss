@@ -1,0 +1,11 @@
+footer.sticky-footer {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  overflow: hidden;
+  display: flex;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 24px;
+}

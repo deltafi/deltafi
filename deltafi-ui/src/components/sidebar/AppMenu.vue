@@ -1,3 +1,4 @@
+
 <template>
   <nav class="bg-light menu">
     <div class="pt-3">
@@ -144,9 +145,7 @@ export default {
       }
       return items;
     },
-    ...mapGetters({
-      externalLinks: 'externalLinks'
-    })
+    ...mapGetters(['externalLinks'])
   },
   watch: {
     $route(to) {
@@ -169,5 +168,5 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  @import "@/styles/app-menu.scss";
+  @import "@/styles/components/sidebar/app-menu.scss";
 </style>

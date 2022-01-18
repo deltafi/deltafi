@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-dark sticky-top bg-dark p-0 shadow">
+  <nav class="navbar navbar-dark bg-dark p-0 shadow">
     <div class="navbar-brand col mr-0 px-3">
       <div class="row">
         <div class="col title">
@@ -12,7 +12,7 @@
         </div>
       </div>
     </div>
-    <status-badge />
+    <StatusBadge />
   </nav>
 </template>
 
@@ -45,5 +45,5 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  @import "@/styles/app-top-bar.scss";
+  @import "@/styles/components/header/app-top-bar.scss";
 </style>

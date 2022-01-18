@@ -7,9 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Persisted Search Options on DeltaFile Search page
 - Ability to view content produced by Actions on DeltaFile Viewer page
+- Configurable Security Banner
 
 ### Changed
 - Changed the way errored actions are displayed on the Errors page
+- Flow dropdown menus are now alphabetical
 
 ## [0.16.2] - 2022-01-13
 ### Fixed
