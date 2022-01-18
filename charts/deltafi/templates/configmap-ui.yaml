@@ -24,4 +24,9 @@ data:
       description: DeltaFile tracing dashboard
 {{ if .Values.deltafi.ui.links -}}
 {{ .Values.deltafi.ui.links | toYaml | indent 4 }}
+{{ end }}
+  securityBanner: |-
+    ---
+{{ if .Values.deltafi.ui.securityBanner -}}
+{{ .Values.deltafi.ui.securityBanner | toYaml | indent 4 }}
 {{ end -}}

@@ -76,6 +76,12 @@ deltafi:
   ui:
     image: deltafi/deltafi-ui:0.16.2
     title: DeltaFi
+    # Set security banner for top and bottom of web UI
+    # securityBanner:
+    #   enabled: true
+    #   backgroundColor: "#007a33"
+    #   textColor: "#ffffff"
+    #   text: "UNCLASSIFIED"
     # Provide extra links for the Dashboard
     # links:
     #   - name: GraphQL Documentation

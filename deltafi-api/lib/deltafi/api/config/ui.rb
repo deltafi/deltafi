@@ -12,10 +12,12 @@ module Deltafi
                                     .resource('configmaps', namespace: NAMESPACE)
                                     .get(UI_CONFIGMAP).data
             links = YAML.safe_load(ui_config.links)
+            security_banner = YAML.safe_load(ui_config.securityBanner) || { enabled: false }
 
             {
               domain: ui_config.domain,
               title: ui_config.title,
+              securityBanner: security_banner,
               dashboard: {
                 links: links
               }
