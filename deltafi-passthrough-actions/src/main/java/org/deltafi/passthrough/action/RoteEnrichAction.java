@@ -2,20 +2,30 @@ package org.deltafi.passthrough.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.enrich.EnrichAction;
 import org.deltafi.actionkit.action.enrich.EnrichResult;
-import org.deltafi.actionkit.action.enrich.SimpleEnrichAction;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.passthrough.param.RoteEnrichParameters;
 
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
-public class RoteEnrichAction extends SimpleEnrichAction {
-    public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
+public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
+
+    public RoteEnrichAction() {
+        super(RoteEnrichParameters.class);
+    }
+
+    public Result execute(DeltaFile deltaFile, ActionContext actionContext, RoteEnrichParameters params) {
         log.trace(actionContext.getName() + " enrich (" + deltaFile.getDid() + ")");
-        return new EnrichResult(actionContext);
+        EnrichResult result = new EnrichResult(actionContext);
+        if (Objects.nonNull(params.getEnrichments())) {
+            params.getEnrichments().forEach((k, v) -> result.addEnrichment(k, v));
+        }
+        return result;
     }
 
     @Override
