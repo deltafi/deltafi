@@ -48,13 +48,9 @@ class DeltaFileTest {
         List<String> retried = deltaFile.retryErrors();
         assertEquals(List.of("action1", "action3"), retried);
 
-        assertEquals(5, deltaFile.getActions().size());
+        assertEquals(3, deltaFile.getActions().size());
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(0).getState());
         assertEquals(ActionState.COMPLETE, deltaFile.getActions().get(1).getState());
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(2).getState());
-        assertEquals(ActionState.QUEUED, deltaFile.getActions().get(3).getState());
-        assertEquals(ActionState.QUEUED, deltaFile.getActions().get(4).getState());
-        assertEquals(deltaFile.getActions().get(0).getName(), deltaFile.getActions().get(3).getName());
-        assertEquals(deltaFile.getActions().get(2).getName(), deltaFile.getActions().get(4).getName());
     }
 }

@@ -1,0 +1,9 @@
+mutation {
+    retry(
+        dids: ["%1$s"]
+    ) {
+        did
+        success
+        error
+    }
+}

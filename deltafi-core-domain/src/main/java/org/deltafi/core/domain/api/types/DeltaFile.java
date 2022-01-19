@@ -58,7 +58,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
     /* Get the most recent action with the given name */
     public Optional<Action> actionNamed(String name) {
         return getActions().stream()
-                .filter(a -> a.getName().equals(name))
+                .filter(a -> a.getName().equals(name) && !retried(a))
                 .reduce((first, second) -> second);
     }
 
@@ -98,7 +98,6 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         // this must be separate from the above stream since it mutates the original list
         actionsToRetry.forEach(action -> {
             action.setState(ActionState.RETRIED);
-            queueNewAction(action.getName());
         });
 
         return actionsToRetry.stream().map(Action::getName).collect(Collectors.toList());
@@ -198,8 +197,12 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return !actionState.equals(ActionState.QUEUED);
     }
 
+    private boolean retried(Action action) {
+        return action.getState().equals(ActionState.RETRIED);
+    }
+
     public boolean hasTerminalAction(String name) {
-        return getActions().stream().anyMatch(action -> action.getName().equals(name) && terminalState(action.getState()));
+        return getActions().stream().anyMatch(action -> action.getName().equals(name) && !retried(action) && terminalState(action.getState()));
     }
 
     public boolean hasCompletedAction(String name) {

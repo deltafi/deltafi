@@ -284,11 +284,15 @@ public class DeltaFilesService {
                             result.setError("DeltaFile with did " + did + " not found");
                         } else {
                             List<String> requeueActions = deltaFile.retryErrors();
-                            deltaFile.setStage(DeltaFileStage.INGRESS);
-                            deltaFile.setErrorAcknowledged(null);
-                            deltaFile.setErrorAcknowledgedReason(null);
-                            advanceAndSave(deltaFile);
-                            enqueueActions(requeueActions, deltaFile);
+                            if (requeueActions.isEmpty()) {
+                                result.setSuccess(false);
+                                result.setError("DeltaFile with did " + did + " had no errors");
+                            } else {
+                                deltaFile.setStage(DeltaFileStage.INGRESS);
+                                deltaFile.setErrorAcknowledged(null);
+                                deltaFile.setErrorAcknowledgedReason(null);
+                                advanceAndSave(deltaFile);
+                            }
                         }
                     } catch (Exception e) {
                         result.setSuccess(false);

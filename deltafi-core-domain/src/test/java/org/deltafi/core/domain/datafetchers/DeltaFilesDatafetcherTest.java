@@ -17,7 +17,6 @@ import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFiConfigService;
 import org.deltafi.core.domain.services.DeltaFilesService;
-import org.deltafi.core.domain.services.RedisService;
 import org.deltafi.core.domain.services.StateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,19 +50,20 @@ class DeltaFilesDatafetcherTest {
     @MockBean
     DeltaFiConfigService deltaFiConfigService;
 
-    @MockBean
-    RedisService redisService;
-
     final String fileType = "theType";
     final String filename = "theFilename";
     final String flow = "theFlow";
     final Long size = 500L;
     final String objectUuid = "theUuid";
+    final String objectUuid2 = "theUuid2";
     final String did = UUID.randomUUID().toString();
+    final String did2 = UUID.randomUUID().toString();
     final List<KeyValue> metadata = Arrays.asList(new KeyValue("k1", "v1"), new KeyValue("k2", "v2"));
     final ContentReference contentReference = new ContentReference(objectUuid, 0, size, did);
+    final ContentReference contentReference2 = new ContentReference(objectUuid2, 0, size, did);
     final SourceInfo sourceInfo = new SourceInfo(filename, flow, metadata);
     final IngressInput ingressInput = new IngressInput(did, sourceInfo, contentReference, OffsetDateTime.now());
+    final IngressInput ingressInput2 = new IngressInput(did2, sourceInfo, contentReference2, OffsetDateTime.now());
 
     final DeltaFilesProjectionRoot deltaFilesProjectionRoot = new DeltaFilesProjectionRoot()
             .deltaFiles()
@@ -287,9 +287,19 @@ class DeltaFilesDatafetcherTest {
     @Test
     void retry() throws ActionConfigException {
         DeltaFile input = deltaFilesService.ingress(ingressInput);
+        DeltaFile second = deltaFilesService.ingress(ingressInput2);
+
+        DeltaFile deltaFile = deltaFilesService.getDeltaFile(input.getDid());
+        deltaFile.queueNewAction("ActionName");
+        deltaFile.errorAction("ActionName", "blah", "blah");
+        deltaFilesService.advanceAndSave(deltaFile);
+
+        DeltaFile erroredFile = deltaFilesService.getDeltaFile(input.getDid());
+        assertEquals(2, erroredFile.getActions().size());
+
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
                 new RetryGraphQLQuery.Builder()
-                        .dids(List.of(input.getDid(), "badDid"))
+                        .dids(List.of(input.getDid(), second.getDid(), "badDid"))
                         .build(),
                 new RetryProjectionRoot().did().success().error()
         );
@@ -300,16 +310,25 @@ class DeltaFilesDatafetcherTest {
                 new TypeRef<>() {}
         );
 
-        assertEquals(2, results.size());
+        assertEquals(3, results.size());
 
         assertEquals(input.getDid(), results.get(0).getDid());
         assertTrue(results.get(0).getSuccess());
         assertNull(results.get(0).getError());
 
-        assertEquals("badDid", results.get(1).getDid());
+        assertEquals(second.getDid(), results.get(1).getDid());
         assertFalse(results.get(1).getSuccess());
-        assertEquals("DeltaFile with did badDid not found", results.get(1).getError());
+        assertEquals("DeltaFile with did " + second.getDid() + " had no errors", results.get(1).getError());
 
-        Mockito.verify(redisService).enqueue(any(), any());
+        assertEquals("badDid", results.get(2).getDid());
+        assertFalse(results.get(2).getSuccess());
+        assertEquals("DeltaFile with did badDid not found", results.get(2).getError());
+
+        DeltaFile afterRetryFile = deltaFilesService.getDeltaFile(input.getDid());
+        assertEquals(2, afterRetryFile.getActions().size());
+        assertEquals(ActionState.COMPLETE, afterRetryFile.getActions().get(0).getState());
+        assertEquals(ActionState.RETRIED, afterRetryFile.getActions().get(1).getState());
+        // StateMachine won't find any pending (no real flow config), nor any errored actions
+        assertEquals(DeltaFileStage.COMPLETE, afterRetryFile.getStage());
     }
 }

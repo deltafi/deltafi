@@ -206,6 +206,50 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(Util.equalIgnoringDates(postTransformDeltaFile(did), deltaFile));
 	}
 
+	DeltaFile postTransformHadErrorDeltaFile(String did) {
+		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
+		deltaFile.setStage(DeltaFileStage.ERROR);
+		deltaFile.errorAction("SampleTransformAction", "transform failed", "message");
+		/*
+		 * Even though this action is being used as an ERROR, fake its
+		 * protocol layer results so that we can verify the State Machine
+		 * will still recognize that Transform actions are incomplete,
+		 * and not attempt to queue the Load action, too.
+		 */
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", new ContentReference("objectName", 0, 500, did), transformSampleMetadata));
+		return deltaFile;
+	}
+
+	DeltaFile postRetryTransformDeltaFile(String did) {
+		DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
+		deltaFile.retryErrors();
+		deltaFile.setStage(DeltaFileStage.INGRESS);
+		return deltaFile;
+	}
+
+	@Test
+	void test06Retry() throws IOException, ActionConfigException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postTransformHadErrorDeltaFile(did));
+
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("06.retry"), did),
+				"data." + DgsConstants.MUTATION.Retry,
+				new TypeRef<>() {});
+
+		assertEquals(1, retryResults.size());
+		assertEquals(did, retryResults.get(0).getDid());
+		assertTrue(retryResults.get(0).getSuccess());
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(Util.equalIgnoringDates(postRetryTransformDeltaFile(did), deltaFile));
+
+		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
+		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleTransformAction")), actual.capture());
+		deltaFile = actual.getValue();
+		assertTrue(Util.equalIgnoringDates(postRetryTransformDeltaFile(did), deltaFile));
+	}
+
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
