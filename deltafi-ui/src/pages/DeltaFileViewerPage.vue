@@ -199,6 +199,8 @@ export default {
     actions() {
       return this.deltaFileData.actions.map(action => {
         const timeElapsed = (new Date(action.modified) - new Date(action.created));
+        action.created = new Date(action.created).toISOString();
+        action.modified = new Date(action.modified).toISOString();
         return {
           ...action,
           elapsed: this.utilFunctions.duration(timeElapsed)
