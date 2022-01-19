@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+
+## [0.16.3] - 2022-01-19
 ### Added
 - Persisted Search Options on DeltaFile Search page
 - Ability to view content produced by Actions on DeltaFile Viewer page
@@ -11,7 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - Changed the way errored actions are displayed on the Errors page
-- Flow dropdown menus are now alphabetical
+- Dropdown menus on all pages are now sorted alphabetically
+
+### Fixed
+- Action sorting bug on DeltaFile Viewer page
 
 ## [0.16.2] - 2022-01-13
 ### Fixed
@@ -74,7 +79,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.2...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.3...main
+[0.16.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.2...0.16.3
 [0.16.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.1...0.16.2
 [0.16.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.0...0.16.1
 [0.16.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.15.0...0.16.0

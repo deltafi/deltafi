@@ -67,6 +67,7 @@
                 v-model="flowOptionSelected"
                 placeholder="Select a Flow"
                 :options="flowOptions"
+                option-label="name"
                 show-clear
                 :editable="false"
                 class="deltafi-input-field min-width"
@@ -178,6 +179,7 @@ import { UtilFunctions } from "@/utils/UtilFunctions";
 import { mapState } from "vuex";
 import { useStore } from '@/store';
 import { SearchOptionsActionTypes } from '@/store/modules/searchOptions/action-types';
+import _ from 'lodash';
 
 var currentDateObj = new Date();
 var numberOfMlSeconds = currentDateObj.getTime();
@@ -297,7 +299,7 @@ export default {
           this.fileNameDataArray.push({"name" : deltaFiObject.sourceInfo.filename});
       }
 
-      this.fileNameOptions = this.dedupArrayOfObjects(this.fileNameDataArray);
+      this.fileNameOptions = _.uniqBy(this.fileNameDataArray, 'name');
     },
     async fetchConfigTypes() {
       var flowTypes = [];
@@ -322,16 +324,17 @@ export default {
       for (const actionType of actionTypes) {
         let actionData = await this.graphQLService.getConfigByType(actionType);
         let actionDataValues = actionData.data.deltaFiConfigs;
-        this.actionTypeOptions = this.actionTypeOptions.concat(actionDataValues);
-        this.actionTypeOptions = [...new Set(this.actionTypeOptions)];
+        this.actionTypeOptions = _.concat(this.actionTypeOptions, actionDataValues);
+        this.actionTypeOptions = _.sortBy(this.actionTypeOptions, ['name']);
       }
     },
     async fetchFlows(flowTypes) {
       for (const flowType of flowTypes) {
         let flowData = await this.graphQLService.getConfigByType(flowType);
         let flowDataValues = flowData.data.deltaFiConfigs;
-        this.flowOptions = this.flowOptions.concat(flowDataValues.map(a => a.name));
-        this.flowOptions = [...new Set(this.flowOptions)];
+        this.flowOptions = _.concat( this.flowOptions, flowDataValues);
+        this.flowOptions = _.uniqBy(this.flowOptions, 'name');
+        this.flowOptions = _.sortBy(this.flowOptions, ['name']);
       }
     },
     async fetchStages() {
@@ -359,14 +362,7 @@ export default {
       this.fileName = this.fileNameOptionSelected ? this.fileNameOptionSelected.name : null;
       this.stageName = this.stageOptionSelected ? this.stageOptionSelected.name : null;
       this.actionName = this.actionTypeOptionSelected ? this.actionTypeOptionSelected.name : null;
-      this.flowName = this.flowOptionSelected ? this.flowOptionSelected : null;
-    },
-    dedupArrayOfObjects(values) {
-     return values.filter((value, index, self) =>
-        index === self.findIndex((t) => (
-          t.name === value.name
-        ))
-      )
+      this.flowName = this.flowOptionSelected ? this.flowOptionSelected.name : null;
     },
     onSort(event) {
       this.offset = event.first;
@@ -386,10 +382,10 @@ export default {
     getPersistedParams() {
       this.startTimeDate = new Date(this.searchOptionsState.startTimeDateState ? this.searchOptionsState.startTimeDateState : this.startTimeDate);
       this.endTimeDate = new Date(this.searchOptionsState.endTimeDateState ? this.searchOptionsState.endTimeDateState : this.endTimeDate);
-      this.fileNameOptionSelected = this.searchOptionsState.fileNameOptionState ? { name: this.searchOptionsState.fileNameOptionState} : null;
-      this.stageOptionSelected = this.searchOptionsState.stageOptionState ? { name: this.searchOptionsState.stageOptionState} : null;
-      this.actionTypeOptionSelected = this.searchOptionsState.actionTypeOptionState ? { name: this.searchOptionsState.actionTypeOptionState} : null;
-      this.flowOptionSelected = this.searchOptionsState.flowOptionState ? this.searchOptionsState.flowOptionState : null;
+      this.fileNameOptionSelected = this.searchOptionsState.fileNameOptionState ? { name: this.searchOptionsState.fileNameOptionState } : null;
+      this.stageOptionSelected = this.searchOptionsState.stageOptionState ? { name: this.searchOptionsState.stageOptionState } : null;
+      this.actionTypeOptionSelected = this.searchOptionsState.actionTypeOptionState ? { name: this.searchOptionsState.actionTypeOptionState } : null;
+      this.flowOptionSelected = this.searchOptionsState.flowOptionState ? { name: this.searchOptionsState.flowOptionState } : null;
 
       // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
       // what search options are being used.
@@ -406,7 +402,7 @@ export default {
         fileNameOptionState: this.fileNameOptionSelected ? this.fileNameOptionSelected.name : null,
         stageOptionState: this.stageOptionSelected ? this.stageOptionSelected.name: null,
         actionTypeOptionState: this.actionTypeOptionSelected ? this.actionTypeOptionSelected.name : null,
-        flowOptionState: this.flowOptionSelected ? this.flowOptionSelected : null,
+        flowOptionState: this.flowOptionSelected ? this.flowOptionSelected.name : null,
       }
 
       const store = useStore();
