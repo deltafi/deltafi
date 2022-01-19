@@ -119,14 +119,12 @@
       </DataTable>
     </Panel>
     <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
-    <Toast position="bottom-right" />
   </div>
 </template>
 
 <script>
 import GraphQLService from "@/service/GraphQLService";
 import { UtilFunctions } from "@/utils/UtilFunctions";
-import Toast from "primevue/toast";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Calendar from "primevue/calendar";
@@ -150,7 +148,6 @@ currentDateObj = new Date(numberOfMlSeconds + addMlSeconds);
 export default {
   name: "ErrorsPage",
   components: {
-    Toast,
     Column,
     DataTable,
     Calendar,

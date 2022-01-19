@@ -68,7 +68,6 @@
         </CollapsiblePanel>
       </div>
     </div>
-    <Toast position="bottom-right" />
   </div>
 </template>
 
@@ -78,7 +77,6 @@ import FileUpload from "primevue/fileupload";
 import Dropdown from "primevue/dropdown";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Toast from "primevue/toast";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import Panel from "primevue/panel";
@@ -95,7 +93,6 @@ export default {
     Dropdown,
     DataTable,
     Column,
-    Toast,
     InputText,
     Button,
     Panel,

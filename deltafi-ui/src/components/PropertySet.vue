@@ -33,7 +33,6 @@
         </Column>
       </DataTable>
     </CollapsiblePanel>
-    <Toast position="bottom-right" />
   </div>
 </template>
 
@@ -43,7 +42,6 @@ import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import InputText from "primevue/inputtext";
-import Toast from 'primevue/toast';
 import { useStore } from '@/store';
 import { PropertySetsActionTypes } from '@/store/modules/propertySets/action-types';
 
@@ -54,7 +52,6 @@ export default {
     Column,
     CollapsiblePanel,
     InputText,
-    Toast,
   },
   props: {
     propSet: {
