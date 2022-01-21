@@ -53,7 +53,7 @@ spec:
           periodSeconds: 30
           timeoutSeconds: 10
           successThreshold: 1
-          failureThreshold: 2
+          failureThreshold: 3
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-core-domain

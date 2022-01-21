@@ -47,7 +47,7 @@ spec:
         startupProbe:
           httpGet:
             port: 9292
-            path: /api/v1/config
+            path: /healthz
           periodSeconds: 1
           timeoutSeconds: 5
           successThreshold: 1
@@ -55,11 +55,11 @@ spec:
         livenessProbe:
           httpGet:
             port: 9292
-            path: /api/v1/config
+            path: /healthz
           periodSeconds: 30
           timeoutSeconds: 10
           successThreshold: 1
-          failureThreshold: 2
+          failureThreshold: 3
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api

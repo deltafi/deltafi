@@ -46,6 +46,6 @@ spec:
           periodSeconds: 30
           timeoutSeconds: 20
           successThreshold: 1
-          failureThreshold: 2
+          failureThreshold: 3
       imagePullSecrets:
       - name: docker-secret

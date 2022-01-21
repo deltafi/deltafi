@@ -13,6 +13,8 @@ class Auth < Sinatra::Base
     enable :logging
   end
 
+  get('/healthz') {}
+
   get '/auth' do
     logger.debug request.env
 

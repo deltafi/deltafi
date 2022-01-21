@@ -23,6 +23,8 @@ class ApiServer < Sinatra::Base
     content_type 'application/json'
   end
 
+  get('/healthz') {}
+
   get '/api/v1/config' do
     config = { ui: Deltafi::API::Config::UI.config }
     build_response({ config: config })

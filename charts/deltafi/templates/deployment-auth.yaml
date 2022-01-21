@@ -29,7 +29,7 @@ spec:
         startupProbe:
           httpGet:
             port: 9292
-            path: /
+            path: /healthz
           periodSeconds: 1
           timeoutSeconds: 5
           successThreshold: 1
