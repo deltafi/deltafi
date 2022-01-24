@@ -32,17 +32,22 @@ spec:
         ports:
         - containerPort: 4000
         startupProbe:
-          httpGet:
-            port: 4000
-            path: /
+          exec:
+            command: ["/probe.sh"]
           periodSeconds: 1
           timeoutSeconds: 5
           successThreshold: 1
           failureThreshold: 45
+        readinessProbe:
+          exec:
+            command: ["/probe.sh"]
+          periodSeconds: 1
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
         livenessProbe:
-          httpGet:
-            port: 4000
-            path: /
+          exec:
+            command: ["/probe.sh"]
           periodSeconds: 30
           timeoutSeconds: 20
           successThreshold: 1
