@@ -3,7 +3,7 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" position="" :header="contentReference.filename" :style="{width: '75vw'}" :maximizable="true" :modal="true" :dismissable-mask="true">
+    <Dialog v-model:visible="dialogVisible" position="top" :header="contentReference.filename" :style="{width: '75vw'}" :maximizable="true" :modal="true" :dismissable-mask="true">
       <div class="content-viewer">
         <Message v-if="partialContent" severity="warn">
           Content size is over the preview limit. Only showing the first {{ formattedBytes(maxPreviewSize) }}.

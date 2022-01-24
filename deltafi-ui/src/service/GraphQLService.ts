@@ -148,7 +148,25 @@ export default class GraphQLService {
     return this.convertJsonToGraphQLQuery(searchRecordCountParams);
   }
 
-  getErrors(startD: Date, endD: Date, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string) {
+  getErrorCount(since: Date = new Date(0)) {
+    const searchParams = {
+      query: {
+        deltaFiles: {
+          __args: {
+            filter: {
+              stage: new EnumType('ERROR'),
+              errorAcknowledged: false,
+              modifiedAfter: since.toISOString()
+            },
+          },
+          totalCount: true,
+        }
+      }
+    };
+    return this.convertJsonToGraphQLQuery(searchParams);
+  }
+
+  getErrors(showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string) {
     const searchParams = {
       query: {
         deltaFiles: {
@@ -160,8 +178,7 @@ export default class GraphQLService {
                 flow: flowName
               },
               stage: new EnumType('ERROR'),
-              modifiedBefore: endD.toISOString(),
-              modifiedAfter: startD.toISOString()
+              errorAcknowledged: showAcknowledged
             },
             orderBy: {
               direction: new EnumType(sortDirection),
@@ -184,46 +201,12 @@ export default class GraphQLService {
               errorContext: true,
               state: true,
             },
-            protocolStack: {
-              action: true,
-              type: true,
-              metadata: {
-                key: true,
-                value: true,
-              },
-              contentReference: {
-                did: true,
-                uuid: true,
-                offset: true,
-                size: true,
-              },
-            },
             sourceInfo: {
               filename: true,
               flow: true,
-              metadata: {
-                key: true,
-                value: true,
-              },
             },
-            enrichment: {
-              key: true,
-              value: true,
-            },
-            domains: {
-              key: true,
-              value: true,
-            },
-            formattedData: {
-              filename: true,
-              formatAction: true,
-              contentReference: {
-                did: true,
-                uuid: true,
-                offset: true,
-                size: true,
-              },
-            }
+            errorAcknowledged: true,
+            errorAcknowledgedReason: true
           }
         }
       }
@@ -273,7 +256,7 @@ export default class GraphQLService {
     return this.convertJsonToGraphQLQuery(searchParams);
   }
 
-  postErrorRetry(dids: Array<object>) {
+  postErrorRetry(dids: Array<string>) {
     const postString = {
       mutation: {
         retry: {
@@ -285,7 +268,23 @@ export default class GraphQLService {
           error: true
         },
       }
+    };
+    return this.convertJsonToGraphQLQuery(postString);
+  }
 
+  acknowledgeErrors(dids: Array<string>, reason: string) {
+    const postString = {
+      mutation: {
+        acknowledge: {
+          __args: {
+            dids: dids,
+            reason: reason
+          },
+          did: true,
+          success: true,
+          error: true
+        },
+      }
     };
     return this.convertJsonToGraphQLQuery(postString);
   }
@@ -355,6 +354,8 @@ export default class GraphQLService {
           },
           markedForDelete: true,
           markedForDeleteReason: true,
+          errorAcknowledged: true,
+          errorAcknowledgedReason: true,
         },
       }
     };
@@ -368,8 +369,5 @@ export default class GraphQLService {
       },
     }
     return this.convertJsonToGraphQLQuery(data)
-    // return this.query(data).then(res => {
-    //   return res.data.exportConfigAsYaml;
-    // });
   }
 }

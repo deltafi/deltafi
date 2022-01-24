@@ -35,6 +35,13 @@
                   <dt>{{ field.key }}</dt>
                   <dd :class="{monospace: field.key === 'DID'}">
                     {{ field.value }}
+                    <span v-if="field.key === 'Stage'">
+                      <ErrorAcknowledgedBadge
+                        v-if="deltaFileData.errorAcknowledged"
+                        :reason="deltaFileData.errorAcknowledgedReason"
+                        :timestamp="deltaFileData.errorAcknowledged"
+                      />
+                    </span>
                   </dd>
                 </dl>
               </div>
@@ -76,11 +83,12 @@
         </div>
       </div>
     </div>
-    <Dialog v-model:visible="objectDialog.visible" :header="objectDialog.header" :style="{width: '75vw'}" :maximizable="true" :modal="true">
+    <Dialog v-model:visible="objectDialog.visible" :header="objectDialog.header" :style="{width: '75vw'}" :maximizable="true" :modal="true" :dismissable-mask="true">
       <HighlightedCode :code="objectDialog.body" />
     </Dialog>
     <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <ConfirmDialog />
+    <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
   </div>
 </template>
 
@@ -102,6 +110,9 @@ import { mapState } from "vuex";
 import ProgressBar from 'primevue/progressbar';
 import ContentViewer from '@/components/ContentViewer.vue';
 import ErrorViewer from "@/components/ErrorViewer.vue";
+import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
+import { ErrorsActionTypes } from '@/store/modules/errors/action-types';
+import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
 
 const uuidRegex = new RegExp(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -120,7 +131,9 @@ export default {
     ProgressBar,
     HighlightedCode,
     ContentViewer,
-    ErrorViewer
+    ErrorViewer,
+    AcknowledgeErrorsDialog,
+    ErrorAcknowledgedBadge
   },
   data() {
     return {
@@ -130,6 +143,9 @@ export default {
       did: null,
       deltaFileData: {},
       metadata: [],
+      ackErrorsDialog: {
+        visible: false
+      },
       objectDialog: {
         visible: false,
         header: null,
@@ -140,6 +156,14 @@ export default {
         action: {},
       },
       menuItems: [
+        {
+          label: 'Acknowledge',
+          icon: 'fas fa-check-circle fa-fw',
+          visible: () => this.isError(),
+          command: () => {
+            this.ackErrorsDialog.visible = true;
+          }
+        },
         {
           label: 'Retry',
           icon: 'fas fa-redo fa-fw',
@@ -166,6 +190,9 @@ export default {
     };
   },
   computed: {
+    acknowledgedTooltip() {
+      return `${this.deltaFileData.errorAcknowledgedReason}\n\nAcknowledged: ${this.deltaFileData.errorAcknowledged}`
+    },
     contentReferences() {
       let layers = this.deltaFileData.protocolStack.concat(this.deltaFileData.formattedData);
       return layers.reduce((content, layer) => {
@@ -239,6 +266,17 @@ export default {
     }
   },
   methods: {
+    onAcknowledged(_, reason) {
+      this.ackErrorsDialog.visible = false
+      this.$toast.add({
+        severity: "success",
+        summary: "Successfully Acknowledged Error",
+        detail: reason,
+        life: 5000,
+      });
+      this.$store.dispatch(ErrorsActionTypes.FETCH_ERROR_COUNT);
+      this.loadDeltaFileData();
+    },
     toggle(event) {
       this.$refs.menu.toggle(event);
     },

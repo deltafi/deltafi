@@ -5,6 +5,7 @@ import { store as sidebarToggle, SidebarToggleStore, State as SidebarToggleState
 import { store as propertySets, PropertySetsStore, State as PropertySetsState } from '@/store/modules/propertySets';
 import { store as uiConfig, UIConfigStore, State as UIConfigState } from '@/store/modules/uiConfig';
 import { store as searchOptions, SearchOptionsStore, State as SearchOptionsState } from '@/store/modules/searchOptions';
+import { store as Errors, ErrorsStore, State as ErrorsState } from '@/store/modules/errors';
 
 export type RootState = {
   sidebarToggle: SidebarToggleState;
@@ -32,7 +33,8 @@ export const store = createStore({
     sidebarToggle,
     propertySets,
     uiConfig,
-    searchOptions
+    searchOptions,
+    Errors
   },
 });
 

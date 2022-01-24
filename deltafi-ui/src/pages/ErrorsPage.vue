@@ -12,42 +12,32 @@
           option-label="name"
           show-clear
           :editable="false"
-          class="deltafi-input-field"
+          class="deltafi-input-field ml-3"
+          @change="fetchErrors()"
         />
-        <Calendar
-          id="startDateTime"
-          v-model="startTimeDate"
-          selection-mode="single"
-          :inline="false"
-          :show-time="true"
-          :manual-input="false"
-          hour-format="12"
-          input-class="deltafi-input-field ml-3"
+        <Button
+          v-model="showAcknowledged"
+          :icon="showAcknowledged ? 'fas fa-eye-slash' : 'fas fa-eye'"
+          :label="showAcknowledged ? 'Hide Acknowledged' : 'Show Acknowledged'"
+          class="p-button p-button-secondary p-button-outlined deltafi-input-field show-acknowledged-toggle ml-3"
+          @click="toggleShowAcknowledged()"
         />
-        <span class="mt-2 ml-3">&mdash;</span>
-        <Calendar
-          id="endDateTime"
-          v-model="endTimeDate"
-          selection-mode="single"
-          :inline="false"
-          :show-time="true"
-          :manual-input="false"
-          hour-format="12"
-          input-class="deltafi-input-field ml-3"
+        <Button
+          :icon="refreshButtonIcon"
+          label="Refresh"
+          class="p-button p-button-secondary p-button-outlined deltafi-input-field ml-3"
+          @click="fetchErrors()"
         />
-        <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchErrors(startTimeDate, endTimeDate, offset, perPage, sortField, sortDirection, ingressFlowNameSelected)">
-          Search
-        </Button>
       </div>
     </div>
     <ConfirmDialog />
     <Panel header="DeltaFiles with Errors" @contextmenu="onPanelRightClick">
-      <ContextMenu ref="menu" :model="items" />
+      <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
+        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
           <span class="fas fa-bars" />
         </Button>
-        <Menu ref="menu" :model="items" :popup="true" />
+        <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
       <DataTable
         id="errorsTable"
@@ -63,7 +53,7 @@
         :value="errors"
         :loading="loading"
         :paginator="totalErrors > 0"
-        :rows="20"
+        :rows="10"
         :rows-per-page-options="[10,20,50,100]"
         :lazy="true"
         :total-records="totalErrors"
@@ -73,7 +63,7 @@
         @sort="onSort($event)"
       >
         <template #empty>
-          No DeltaFiles with Errors in the selected time range.
+          No DeltaFiles with Errors to display.
         </template>
         <template #loading>
           Loading DeltaFiles with Errors. Please wait.
@@ -82,6 +72,12 @@
         <Column field="did" header="DID">
           <template #body="error">
             <a class="monospace" :href="`/deltafile/viewer/${error.data.did}`">{{ error.data.did }}</a>
+            <ErrorAcknowledgedBadge
+              v-if="error.data.errorAcknowledged"
+              :reason="error.data.errorAcknowledgedReason"
+              :timestamp="error.data.errorAcknowledged"
+              class="ml-2"
+            />
           </template>
         </Column>
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
@@ -119,6 +115,7 @@
       </DataTable>
     </Panel>
     <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
+    <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
   </div>
 </template>
 
@@ -127,7 +124,6 @@ import GraphQLService from "@/service/GraphQLService";
 import { UtilFunctions } from "@/utils/UtilFunctions";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Calendar from "primevue/calendar";
 import Dropdown from "primevue/dropdown";
 import Button from "primevue/button";
 import Panel from "primevue/panel";
@@ -135,52 +131,55 @@ import Menu from "primevue/menu";
 import ConfirmDialog from "primevue/confirmdialog";
 import ContextMenu from "primevue/contextmenu";
 import ErrorViewer from "@/components/ErrorViewer.vue";
+import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
+import { ErrorsActionTypes } from '@/store/modules/errors/action-types';
+import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
 import _ from 'lodash';
 
 const maxRetrySuccessDisplay = 10;
-
-var currentDateObj = new Date();
-var numberOfMlSeconds = currentDateObj.getTime();
-var addMlSeconds = 60 * 60 * 1000;
-var newDateObj = new Date(numberOfMlSeconds - addMlSeconds);
-currentDateObj = new Date(numberOfMlSeconds + addMlSeconds);
+const refreshInterval = 5000; // 5 seconds
 
 export default {
   name: "ErrorsPage",
   components: {
     Column,
     DataTable,
-    Calendar,
     Dropdown,
     Button,
     Panel,
     Menu,
     ConfirmDialog,
     ContextMenu,
-    ErrorViewer
+    ErrorViewer,
+    AcknowledgeErrorsDialog,
+    ErrorAcknowledgedBadge,
   },
   data() {
     return {
       errors: [],
+      lastServerContact: null,
+      showAcknowledged: false,
       ingressFlowNameSelected: null,
       ingressFlowNames: [],
       expandedRows: [],
-      startTimeDate: newDateObj,
-      endTimeDate: currentDateObj,
       showContextDialog: false,
       loading: true,
       contextDialogData: "",
       totalErrors: 0,
       offset: 0,
-      perPage: 20,
+      perPage: 10,
       sortField: "modified",
       sortDirection: "DESC",
       selectedErrors: [],
+      ackErrorsDialog: {
+        dids: [],
+        visible: false
+      },
       errorViewer: {
         visible: false,
         action: {}
       },
-      items: [
+      menuItems: [
         {
           label: "Clear Selected",
           icon: "fas fa-times fa-fw",
@@ -196,49 +195,93 @@ export default {
           },
         },
         {
+          separator:true
+        },
+        {
+          label: "Acknowledge Selected",
+          icon: "fas fa-check-circle fa-fw",
+          command: () => {
+            this.acknowledgeClickConfirm();
+          },
+          disabled: () => {
+            return this.selectedErrors.length == 0;
+          }
+        },
+        {
           label: "Retry Selected",
           icon: "fas fa-redo fa-fw",
           command: () => {
             this.RetryClickConfirm();
           },
+          disabled: () => {
+            return this.selectedErrors.length == 0;
+          }
         },
       ],
     };
+  },
+  computed: {
+    refreshButtonIcon() {
+      let classes = ["fa", "fa-sync-alt"];
+      if (this.loading) classes.push("fa-spin");
+      return classes.join(' ');
+    }
+  },
+  watch: {
+    $route() {
+      // Clear the auto refresh when the route changes.
+      clearInterval(this.autoRefresh);
+    },
   },
   created() {
     this.graphQLService = new GraphQLService();
     this.utilFunctions = new UtilFunctions();
     this.fetchIngressFlows();
-    this.fetchErrors(
-      this.startTimeDate,
-      this.endTimeDate,
-      this.offset,
-      this.perPage,
-      this.sortField,
-      this.sortDirection,
-      this.ingressFlowNameSelected
+    this.fetchErrors();
+  },
+  mounted() {
+    this.autoRefresh = setInterval(
+      function () {
+        this.pollNewErrors();
+      }.bind(this),
+      refreshInterval
     );
   },
   methods: {
-    toggle(event) {
+    toggleMenu(event) {
       this.$refs.menu.toggle(event);
+    },
+    toggleShowAcknowledged() {
+      this.showAcknowledged = !this.showAcknowledged
+      this.selectedErrors = [];
+      this.fetchErrors();
     },
     onPanelRightClick(event) {
       this.$refs.menu.show(event);
     },
+    acknowledgeClickConfirm() {
+      this.ackErrorsDialog.dids = this.selectedErrors.map(selectedError => { return selectedError.did });
+      this.ackErrorsDialog.visible = true
+    },
+    onAcknowledged(dids, reason) {
+      this.selectedErrors = []
+      this.ackErrorsDialog.dids = [];
+      this.ackErrorsDialog.visible = false
+      let pluralized = this.utilFunctions.pluralize(dids.length, "Error")
+      this.$toast.add({
+        severity: "success",
+        summary: `Successfully acknowledged ${pluralized}`,
+        detail: reason,
+        life: 5000,
+      });
+      this.$store.dispatch(ErrorsActionTypes.FETCH_ERROR_COUNT);
+      this.fetchErrors();
+    },
     RetryClickConfirm() {
-      if (this.selectedErrors.length == 0) {
-        this.$toast.add({
-          severity: "warn",
-          summary: `No DeltaFiles selected`,
-          life: 3000,
-        });
-        return;
-      }
       let dids = this.selectedErrors.map(selectedError => { return selectedError.did });
-      let noun = this.plurality("DeltaFile", dids)
+      let pluralized = this.utilFunctions.pluralize(dids.length, "DeltaFile")
       this.$confirm.require({
-        message: `Are you sure you want to retry ${dids.length} selected ${noun}?`,
+        message: `Are you sure you want to retry ${pluralized}?`,
         accept: () => {
           this.RetryClickAction(dids);
         },
@@ -269,31 +312,23 @@ export default {
                 successfulDids = successfulDids.slice(0, maxRetrySuccessDisplay)
                 successfulDids.push("...")
               }
-              let noun = this.plurality("DeltaFile", successRetry)
+              let pluralized = this.utilFunctions.pluralize(successRetry.length, "DeltaFile")
               this.$toast.add({
                 severity: "success",
-                summary: `Retry request sent successfully for ${successRetry.length} ${noun}`,
+                summary: `Retry request sent successfully for ${pluralized}`,
                 detail: successfulDids.join(", "),
                 life: 5000,
               });
             }
-            this.fetchErrors(
-              this.startTimeDate,
-              this.endTimeDate,
-              this.offset,
-              this.perPage,
-              this.sortField,
-              this.sortDirection,
-              this.ingressFlowNameSelected
-            );
+            this.removeSelected();
             this.selectedErrors = [];
+            this.$store.dispatch(ErrorsActionTypes.FETCH_ERROR_COUNT);
           } else {
             throw res.errors[0];
           }
         })
         .catch(error => {
           this.loading = false;
-          console.error(error);
           this.$toast.add({
             severity: "error",
             summary: "Retry request failed",
@@ -308,42 +343,28 @@ export default {
       );
       this.ingressFlowNames = _.sortBy(ingressFlowData.data.deltaFiConfigs, ['name']);
     },
-    async fetchErrors(
-      startD,
-      endD,
-      offset,
-      perPage,
-      sortField,
-      sortDirection,
-      ingressFlowName
-    ) {
-      if (ingressFlowName != null) {
-        ingressFlowName = ingressFlowName.name;
-      }
+    async fetchErrors() {
+      let ingressFlowName = (this.ingressFlowNameSelected != null) ? this.ingressFlowNameSelected.name : null;
+      let showAcknowledged = this.showAcknowledged ? null : false;
       this.loading = true;
-      const data = await this.graphQLService.getErrors(
-        startD,
-        endD,
-        offset,
-        perPage,
-        sortField,
-        sortDirection,
+      this.lastServerContact = new Date();
+      this.$toast.removeAllGroups();
+      const response = await this.graphQLService.getErrors(
+        showAcknowledged,
+        this.offset,
+        this.perPage,
+        this.sortField,
+        this.sortDirection,
         ingressFlowName
       );
-      this.errors = data.data.deltaFiles.deltaFiles;
-      this.totalErrors = data.data.deltaFiles.totalCount;
+      this.errors = response.data.deltaFiles.deltaFiles;
+      this.totalErrors = response.data.deltaFiles.totalCount;
       this.loading = false;
     },
-    UpdateErrors(startD, endD) {
-      alert(startD + endD);
-    },
-    openContextDialog(contextData) {
-      this.contextDialogData = this.utilFunctions.formatContextData(contextData);
-      this.showContextDialog = true;
-    },
-    closeContextDialog() {
-      this.showContextDialog = false;
-      this.contextDialogData = "";
+    removeSelected() {
+      this.errors = this.errors.filter(error => {
+        return !this.selectedErrors.includes(error);
+      })
     },
     filterErrors(actions) {
       return actions.filter((action) => {
@@ -372,34 +393,27 @@ export default {
     onPage(event) {
       this.offset = event.first;
       this.perPage = event.rows;
-      this.fetchErrors(
-        this.startTimeDate,
-        this.endTimeDate,
-        this.offset,
-        this.perPage,
-        this.sortField,
-        this.sortDirection,
-        this.ingressFlowNameSelected
-      );
+      this.fetchErrors();
     },
     onSort(event) {
       this.offset = event.first;
       this.perPage = event.rows;
       this.sortField = event.sortField;
       this.sortDirection = event.sortOrder > 0 ? "DESC" : "ASC";
-      this.fetchErrors(
-        this.startTimeDate,
-        this.endTimeDate,
-        this.offset,
-        this.perPage,
-        this.sortField,
-        this.sortDirection,
-        this.ingressFlowNameSelected
-      );
+      this.fetchErrors();
     },
-    plurality(word, array) {
-      let s = array.length > 1 ? "s" : "";
-      return `${word}${s}`;
+    async pollNewErrors() {
+      let response = await this.graphQLService.getErrorCount(this.lastServerContact)
+      let count = response.data.deltaFiles.totalCount || 0
+      if (count > 0) {
+        this.lastServerContact = new Date();
+        let pluralized = this.utilFunctions.pluralize(count, "new error")
+        this.$toast.add({
+          severity: "info",
+          summary: `Viewing Stale Data`,
+          detail: `${pluralized} occurred since last refresh.`,
+        });
+      }
     }
   },
   graphQLService: null,

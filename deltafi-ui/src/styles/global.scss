@@ -76,3 +76,8 @@ a {
   outline: none !important;
   box-shadow: none !important;
 }
+
+.p-contextmenu {
+  width: unset;
+  max-width: 15rem;
+}

@@ -22,8 +22,13 @@
             <div v-for="child in item.children" :key="child" :class="{hidden: !item.expand, submenu: true}">
               <li v-if="!child.hidden" v-tooltip.right="child.description" class="nav-item">
                 <router-link v-if="child.path" :to="child.path" :class="menuItemClass(child, true)">
-                  <i :class="child.icon" />
-                  {{ child.name }}
+                  <span class="d-flex justify-content-between">
+                    <span>
+                      <i :class="child.icon" />
+                      {{ child.name }}
+                    </span>
+                    <span v-if="child.badge && child.badge().visible" :class="child.badge().class">{{ child.badge().value }}</span>
+                  </span>
                 </router-link>
                 <a v-else-if="child.url" :href="child.url" target="_blank" :class="menuItemClass(child, true)">
                   <i :class="child.icon" />
@@ -40,6 +45,11 @@
 
 <script>
 import { mapGetters } from "vuex";
+import { mapState } from "vuex";
+import { useStore } from '@/store';
+import { ErrorsActionTypes } from '@/store/modules/errors/action-types';
+
+const refreshInterval = 5000; // 5 seconds
 
 export default {
   name: "AppMenu",
@@ -106,6 +116,9 @@ export default {
               name: "Errors",
               icon: "fas fa-exclamation-circle fa-fw",
               path: "/errors",
+              badge: () => {
+                return this.errorsBadge;
+              }
             },
             {
               name: "Viewer",
@@ -145,6 +158,16 @@ export default {
       }
       return items;
     },
+    errorsBadge() {
+      return {
+        visible: (this.errorCount > 0),
+        class: 'badge badge-danger badge-pill',
+        value: this.errorCount
+      }
+    },
+    ...mapState({
+      errorCount: state => state.Errors.count,
+    }),
     ...mapGetters(['externalLinks'])
   },
   watch: {
@@ -152,18 +175,29 @@ export default {
       this.activePage = to.path;
     },
   },
+  beforeCreate() {
+    this.store = useStore();
+    this.store.dispatch(ErrorsActionTypes.FETCH_ERROR_COUNT);
+    this.autoRefresh = setInterval(
+      function () {
+        this.store.dispatch(ErrorsActionTypes.FETCH_ERROR_COUNT);
+      }.bind(this),
+      refreshInterval
+    );
+  },
   methods: {
     folderIcon(item) {
       return item.expand ? "fas fa-angle-down fa-fw" : "fas fa-angle-right fa-fw";
     },
     menuItemClass(item, isChild = false) {
-      let classes = ["nav-link noselect"];
+      let classes = ["nav-link", "noselect"];
       if (isChild) classes.push("indent");
       if (item.path === this.activePage) classes.push("active");
       if (item.children) classes.push("folder");
       return classes.join(" ");
     },
   },
+  store: null
 };
 </script>
 
