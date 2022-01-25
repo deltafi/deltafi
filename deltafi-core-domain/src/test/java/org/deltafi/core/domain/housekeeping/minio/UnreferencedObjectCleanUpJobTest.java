@@ -13,14 +13,8 @@ import static org.mockito.Mockito.*;
 public class UnreferencedObjectCleanUpJobTest {
     @Test
     public void unreferencedObjectCleanupCalledPeriodically() {
-        DeltaFiProperties deltaFiProperties = DeltaFiProperties.builder()
-                .housekeeping(HousekeepingConfiguration.builder()
-                        .minio(MinioHousekeepingConfiguration.builder()
-                                .initialDelaySeconds(0)
-                                .delaySeconds(1)
-                                .build())
-                        .build())
-                .build();
+        DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+        deltaFiProperties.setHousekeeping(new HousekeepingConfiguration(new MinioHousekeepingConfiguration(0, 1, 10)));
 
         UnreferencedObjectCleanUp unreferencedObjectCleanUp = Mockito.mock(UnreferencedObjectCleanUp.class);
 

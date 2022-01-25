@@ -1,7 +1,6 @@
 package org.deltafi.core.domain.configuration;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.core.domain.housekeeping.HousekeepingConfiguration;
@@ -15,7 +14,6 @@ import java.time.Duration;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class DeltaFiProperties {
     private int requeueSeconds = 30;
     private Duration deltaFileTtl= Duration.ofDays(14);

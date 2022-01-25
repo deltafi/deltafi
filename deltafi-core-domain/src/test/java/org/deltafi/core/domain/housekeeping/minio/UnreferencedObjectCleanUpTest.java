@@ -30,13 +30,8 @@ public class UnreferencedObjectCleanUpTest {
         contentStorageService = Mockito.mock(ContentStorageService.class);
         deltaFileRepo = Mockito.mock(DeltaFileRepo.class);
 
-        DeltaFiProperties deltaFiProperties = DeltaFiProperties.builder()
-                .housekeeping(HousekeepingConfiguration.builder()
-                        .minio(MinioHousekeepingConfiguration.builder()
-                                .objectMinimumAgeForRemovalSeconds(MIN_AGE)
-                                .build())
-                        .build())
-                .build();
+        DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+        deltaFiProperties.setHousekeeping(new HousekeepingConfiguration(new MinioHousekeepingConfiguration(2, 10, MIN_AGE)));
 
         unreferencedObjectCleanUp = new UnreferencedObjectCleanUp(contentStorageService, deltaFileRepo, clock, deltaFiProperties);
     }
