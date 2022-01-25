@@ -49,7 +49,7 @@ class DeltaFileServiceTest {
 
     @Test
     void ingressData() throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
-        ContentReference contentReference = new ContentReference("fileName", "did");
+        ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull())).thenReturn(contentReference);
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": []}");
@@ -66,7 +66,7 @@ class DeltaFileServiceTest {
 
     @Test
     void ingressData_graphqlErrors() throws ObjectStorageException {
-        ContentReference contentReference = new ContentReference("fileName", "did");
+        ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull())).thenReturn(contentReference);
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": [{\"message\": \"Bad graphql mutation\"}]}");
@@ -79,7 +79,7 @@ class DeltaFileServiceTest {
 
     @Test
     void ingressData_dgsFail() throws ObjectStorageException {
-        ContentReference contentReference = new ContentReference("fileName", "did");
+        ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull())).thenReturn(contentReference);
 
         Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenThrow(new DeltafiGraphQLException("failed to send to dgs"));
@@ -91,7 +91,7 @@ class DeltaFileServiceTest {
 
     @Test
     void ingressData_unexpectedException() throws ObjectStorageException {
-        ContentReference contentReference = new ContentReference("fileName", "did");
+        ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull())).thenReturn(contentReference);
 
         Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenThrow(new RuntimeException("failed to send to dgs"));

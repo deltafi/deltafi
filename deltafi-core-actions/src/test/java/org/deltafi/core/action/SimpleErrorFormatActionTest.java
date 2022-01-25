@@ -10,8 +10,8 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.generated.types.Domain;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +39,7 @@ public class SimpleErrorFormatActionTest {
     private static final String ORIGINATOR_DID = UUID.randomUUID().toString();
     private static final String FILENAME = "origFilename";
     private static final String FLOW = "theFlow";
+    private static final String CONTENT_TYPE = "text/plain";
 
     @Mock
     private ContentStorageService contentStorageService;
@@ -47,7 +49,7 @@ public class SimpleErrorFormatActionTest {
 
     @Test
     void execute() throws IOException, ObjectStorageException {
-        ContentReference contentReference = new ContentReference(FILENAME, DID);
+        ContentReference contentReference = new ContentReference(FILENAME, DID, CONTENT_TYPE);
         Mockito.when(contentStorageService.save(Mockito.eq(DID), (byte[]) Mockito.any())).thenReturn(contentReference);
 
         ErrorDomain errorDomain = ErrorDomain.newBuilder()
@@ -60,7 +62,7 @@ public class SimpleErrorFormatActionTest {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .did(DID)
                 .sourceInfo(new SourceInfo(FILENAME, FLOW, List.of()))
-                .domains(List.of(new KeyValue("error", OBJECT_MAPPER.writeValueAsString(errorDomain))))
+                .domains(List.of(new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), "application/json")))
                 .build();
         ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
         FormatResult formatResult = (FormatResult) simpleErrorFormatAction.execute(deltaFile, actionContext, new ActionParameters());

@@ -138,8 +138,8 @@ class StateMachineTest {
     @Test
     void testGetEnrichActionsMatchesDomainAndEnrichment() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value");
-        deltaFile.addEnrichment("enrich", "value");
+        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addEnrichment("enrich", "value", null);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -159,8 +159,8 @@ class StateMachineTest {
     @Test
     void testGetEnrichActionsDomainDoesNotMatch() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value");
-        deltaFile.addEnrichment("enrich", "value");
+        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addEnrichment("enrich", "value", null);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -180,8 +180,8 @@ class StateMachineTest {
     @Test
     void testGetEnrichActionsEnrichmentDoesNotMatch() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value");
-        deltaFile.addEnrichment("enrich", "value");
+        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addEnrichment("enrich", "value", null);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -279,8 +279,8 @@ class StateMachineTest {
     @Test
     void testGetFormatActionsMatchesDomainAndEnrichment() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value");
-        deltaFile.addEnrichment("enrich", "value");
+        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addEnrichment("enrich", "value", null);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");
@@ -301,8 +301,8 @@ class StateMachineTest {
     @Test
     void testGetFormatActionsDomainDiffers() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value");
-        deltaFile.addEnrichment("enrich", "value");
+        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addEnrichment("enrich", "value", null);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");
@@ -323,8 +323,8 @@ class StateMachineTest {
     @Test
     void testGetFormatActionsEnrichDiffers() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value");
-        deltaFile.addEnrichment("enrich", "value");
+        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addEnrichment("enrich", "value", null);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");

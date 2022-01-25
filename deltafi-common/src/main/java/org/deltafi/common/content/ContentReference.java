@@ -13,8 +13,9 @@ public class ContentReference {
     private long offset;
     private long size;
     private String did;
+    private String mediaType;
 
-    public ContentReference(String uuid, String did) {
-        this(uuid, 0, ObjectReference.UNKNOWN_SIZE, did);
+    public ContentReference(String uuid, String did, String mediaType) {
+        this(uuid, 0, ObjectReference.UNKNOWN_SIZE, did, mediaType);
     }
 }

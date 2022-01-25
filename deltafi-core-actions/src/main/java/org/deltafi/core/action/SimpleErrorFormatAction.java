@@ -17,7 +17,8 @@ import org.deltafi.core.domain.generated.types.ErrorDomain;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
+
+import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 
 @Slf4j
 public class SimpleErrorFormatAction extends SimpleFormatAction {
@@ -35,13 +36,7 @@ public class SimpleErrorFormatAction extends SimpleFormatAction {
     public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
         log.warn(actionContext.getName() + " formatting (" + deltaFile.getDid() + ")");
 
-        if (Objects.isNull(deltaFile.getDomain("error"))) {
-            log.error("Error domain missing with did: {}", deltaFile.getDid());
-            throw new RuntimeException("Error domain missing: " + deltaFile.getDid());
-        }
-
-        String json = deltaFile.getDomain("error");
-
+        String json = deltaFile.getDomain(ERROR_DOMAIN).getValue();
         String filename;
         try {
             ErrorDomain errorDomain = OBJECT_MAPPER.readValue(json, ErrorDomain.class);

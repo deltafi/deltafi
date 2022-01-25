@@ -246,8 +246,8 @@ class DeltaFileRepoTest {
     @Test
     void testDeltaFiles_filter() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.plusSeconds(2));
-        deltaFile1.setDomains(List.of(new KeyValue("domain1", null)));
-        deltaFile1.setEnrichment(List.of(new KeyValue("enrichment1", null)));
+        deltaFile1.setDomains(List.of(new Domain("domain1", null, null)));
+        deltaFile1.setEnrichment(List.of(new Enrichment("enrichment1", null, null)));
         deltaFile1.setMarkedForDelete(MONGO_NOW);
         deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value2"))));
         deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
@@ -255,8 +255,8 @@ class DeltaFileRepoTest {
         deltaFile1.setErrorAcknowledged(MONGO_NOW);
         deltaFileRepo.save(deltaFile1);
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
-        deltaFile2.setDomains(List.of(new KeyValue("domain1", null), new KeyValue("domain2", null)));
-        deltaFile2.setEnrichment(List.of(new KeyValue("enrichment1", null), new KeyValue("enrichment2", null)));
+        deltaFile2.setDomains(List.of(new Domain("domain1", null, null), new Domain("domain2", null, null)));
+        deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
         deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", List.of()));
         deltaFile2.setActions(List.of(Action.newBuilder().name("action1").build(), Action.newBuilder().name("action2").build()));
         deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename2").formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));

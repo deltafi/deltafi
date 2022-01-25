@@ -54,7 +54,7 @@ type Package {
     "The identifying package coordinates"
     packageCoordinates: PackageCoordinates!
     "The type of items included"
-    contentType: PackageContentType!
+    mediaType: PackagemediaType!
     "The location"
     location: String!
 }
@@ -63,7 +63,7 @@ input PackageInput {
     "The identifying package coordinates"
     packageCoordinates: PackageCoordinatesInput!
     "The type of items included"
-    contentType: PackageContentType!
+    mediaType: PackagemediaType!
     "The location"
     location: String!
 }
@@ -96,7 +96,7 @@ enum PackageType {
 """
 The type of content included in a package
 """
-enum PackageContentType {
+enum PackagemediaType {
     actions
     domains
     both

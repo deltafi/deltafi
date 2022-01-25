@@ -6,7 +6,7 @@ mutation {
             time: "2021-07-11T13:44:22.183Z"
             type: LOAD
             load: {
-                domains: [ { key: "sample", value: "sampleDomain" } ]
+                domains: [ { name: "sample", value: "sampleDomain", mediaType: "application/octet-stream" } ]
                 protocolLayer: {
                     type: "json-utf8-sample-load"
                     action: "SampleLoadAction"
@@ -15,6 +15,7 @@ mutation {
                         offset: 0
                         size: 500
                         did: "%1$s"
+                        mediaType: "application/octet-stream"
                     }
                     metadata: [
                         {

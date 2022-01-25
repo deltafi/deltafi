@@ -81,7 +81,7 @@ class ApiServer < Sinatra::Base
     headers['Content-Disposition'] = "attachment; filename=#{filename};"
     headers['Content-Transfer-Encoding'] = 'binary'
     headers['Cache-Control'] = 'no-cache'
-    headers['Content-Type'] = head.content_type
+    headers['Content-Type'] = content_reference[:mediaType]
     headers['Content-Length'] = head.content_length.to_s
 
     stream do |out|

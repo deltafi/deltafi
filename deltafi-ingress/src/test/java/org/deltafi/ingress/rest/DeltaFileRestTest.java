@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import javax.ws.rs.core.MediaType;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -26,7 +27,7 @@ class DeltaFileRestTest {
     void testIngress() throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         RequestSpecification request = RestAssured.given();
         request.body("incoming data".getBytes(StandardCharsets.UTF_8));
-        request.contentType("application/octet-stream");
+        request.contentType(MediaType.APPLICATION_OCTET_STREAM);
         request.headers(Map.of("Flow", "flow", "Filename", "incoming.txt", "Metadata", "{\"key\": \"value\"}"));
 
         Response response = request.post("/deltafile/ingress");
@@ -40,7 +41,7 @@ class DeltaFileRestTest {
     void testIngress_missingFlow() {
         RequestSpecification request = RestAssured.given();
         request.body("incoming data".getBytes(StandardCharsets.UTF_8));
-        request.contentType("application/octet-stream");
+        request.contentType(MediaType.APPLICATION_OCTET_STREAM);
         request.headers(Map.of("Filename", "incoming.txt"));
 
         Response response = request.post("/deltafile/ingress");
@@ -54,7 +55,7 @@ class DeltaFileRestTest {
     void testIngress_missingFilename() {
         RequestSpecification request = RestAssured.given();
         request.body("incoming data".getBytes(StandardCharsets.UTF_8));
-        request.contentType("application/octet-stream");
+        request.contentType(MediaType.APPLICATION_OCTET_STREAM);
         request.headers(Map.of("Flow", "flow"));
 
         Response response = request.post("/deltafile/ingress");
@@ -68,7 +69,7 @@ class DeltaFileRestTest {
     void testIngress_queryParams() throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         RequestSpecification request = RestAssured.given();
         request.body("incoming data".getBytes(StandardCharsets.UTF_8));
-        request.contentType("application/octet-stream");
+        request.contentType(MediaType.APPLICATION_OCTET_STREAM);
         request.headers(Map.of("Flow", "flowFromHeader", "Filename", "fileFromHeader"));
 
         Response response = request.post("/deltafile/ingress?filename=fileFromParam&flow=flowFromParam");

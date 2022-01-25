@@ -8,6 +8,7 @@ import org.deltafi.actionkit.exception.DgsPostException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -29,7 +30,7 @@ public class DgsPostService implements RequestExecutor {
     public HttpResponse execute(@NotNull String url, @NotNull Map<String, ? extends List<String>> headers, @NotNull String body) throws DgsPostException {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url))
                 .POST(HttpRequest.BodyPublishers.ofString(body))
-                .headers("content-type", "application/json").build();
+                .headers("content-type", MediaType.APPLICATION_JSON).build();
 
         try {
             java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());

@@ -26,7 +26,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Inject
-    private HttpService httpPostService;
+    HttpService httpPostService;
 
     public RestPostEgressAction() {
         super(RestPostEgressParameters.class);
@@ -39,7 +39,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
 
         try (InputStream inputStream = contentStorageService.load(formattedData.getContentReference())) {
             httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
-                    buildHeadersMapString(deltaFile, params)), inputStream);
+                    buildHeadersMapString(deltaFile, params)), inputStream, formattedData.getContentReference().getMediaType());
         } catch (JsonProcessingException e) {
             return new ErrorResult(actionContext, "Unable to build post headers", e).logErrorTo(log);
         } catch (ObjectStorageException e) {

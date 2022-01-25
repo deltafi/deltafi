@@ -20,6 +20,7 @@ import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.retry.MongoRetryable;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.io.PrintWriter;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 
 @Service
 @RequiredArgsConstructor
@@ -162,8 +164,8 @@ public class DeltaFilesService {
                 deltaFile.getProtocolStack().add(event.getLoad().getProtocolLayer());
             }
             if (event.getLoad().getDomains() != null) {
-                for (KeyValue domain : event.getLoad().getDomains()) {
-                    deltaFile.addDomain(domain.getKey(), domain.getValue());
+                for (DomainInput domain : event.getLoad().getDomains()) {
+                    deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
                 }
             }
         }
@@ -175,8 +177,8 @@ public class DeltaFilesService {
         deltaFile.completeAction(event.getAction());
 
         if (event.getEnrich() != null && event.getEnrich().getEnrichments() != null) {
-            for (KeyValue enrichment : event.getEnrich().getEnrichments()) {
-                deltaFile.addEnrichment(enrichment.getKey(), enrichment.getValue());
+            for (EnrichmentInput enrichment : event.getEnrich().getEnrichments()) {
+                deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
             }
         }
 
@@ -260,7 +262,7 @@ public class DeltaFilesService {
                         originator.getSourceInfo().getFlow(),
                         originator.getSourceInfo().getMetadata()))
                 .protocolStack(Collections.emptyList())
-                .domains(Collections.singletonList(new KeyValue("error", errorDomain)))
+                .domains(Collections.singletonList(new Domain(ERROR_DOMAIN, errorDomain, MediaType.APPLICATION_JSON_VALUE)))
                 .enrichment(new ArrayList<>())
                 .formattedData(Collections.emptyList())
                 .created(now)

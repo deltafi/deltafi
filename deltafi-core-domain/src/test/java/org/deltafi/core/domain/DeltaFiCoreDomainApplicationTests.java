@@ -127,7 +127,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
 		deltaFile.queueAction("Utf8TransformAction");
 		deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", List.of(new KeyValue("AuthorizedBy", "XYZ"))));
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION, new ContentReference("objectName", 0, 500, did), null));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION, new ContentReference("objectName", 0, 500, did, "application/octet-stream"), null));
 		return deltaFile;
 	}
 
@@ -155,7 +155,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("Utf8TransformAction");
 		deltaFile.queueAction("SampleTransformAction");
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8", "Utf8TransformAction", new ContentReference("utf8ObjectName", 0, 500, did), null));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8", "Utf8TransformAction", new ContentReference("utf8ObjectName", 0, 500, did, "application/octet-stream"), null));
 		return deltaFile;
 	}
 
@@ -183,7 +183,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("SampleTransformAction");
 		deltaFile.queueAction("SampleLoadAction");
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", new ContentReference("objectName", 0, 500, did), transformSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", new ContentReference("objectName", 0, 500, did, "application/octet-stream"), transformSampleMetadata));
 		return deltaFile;
 	}
 
@@ -216,7 +216,7 @@ class DeltaFiCoreDomainApplicationTests {
 		 * will still recognize that Transform actions are incomplete,
 		 * and not attempt to queue the Load action, too.
 		 */
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", new ContentReference("objectName", 0, 500, did), transformSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", new ContentReference("objectName", 0, 500, did, "application/octet-stream"), transformSampleMetadata));
 		return deltaFile;
 	}
 
@@ -255,8 +255,8 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
-		deltaFile.addDomain("sample", "sampleDomain");
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", new ContentReference("objectName", 0, 500, did), loadSampleMetadata));
+		deltaFile.addDomain("sample", "sampleDomain", null);
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", new ContentReference("objectName", 0, 500, did, "application/octet-stream"), loadSampleMetadata));
 		return deltaFile;
 	}
 
@@ -317,7 +317,7 @@ class DeltaFiCoreDomainApplicationTests {
 				.formatAction("SampleFormatAction")
 				.filename("output.txt")
 				.metadata(Arrays.asList(new KeyValue("key1", "value1"), new KeyValue("key2", "value2")))
-				.contentReference(new ContentReference("formattedObjectName", 0, 1000, did))
+				.contentReference(new ContentReference("formattedObjectName", 0, 1000, did, "application/octet-stream"))
 				.egressActions(Collections.singletonList("SampleEgressAction"))
 				.build());
 		return deltaFile;

@@ -12,6 +12,30 @@ input KeyValueInput {
   value: String
 }
 
+type Domain {
+  name: String!
+  value: String
+  mediaType: String!
+}
+
+input DomainInput {
+  name: String!
+  value: String
+  mediaType: String!
+}
+
+type Enrichment {
+  name: String!
+  value: String
+  mediaType: String!
+}
+
+input EnrichmentInput {
+  name: String!
+  value: String
+  mediaType: String!
+}
+
 type SourceInfo {
   filename: String!
   flow: String!
@@ -38,6 +62,7 @@ type ContentReference {
   offset: Long!
   size: Long!
   did: String!
+  mediaType: String!
 }
 
 input ContentReferenceInput {
@@ -45,6 +70,7 @@ input ContentReferenceInput {
   offset: Long!
   size: Long!
   did: String!
+  mediaType: String!
 }
 
 """
@@ -140,8 +166,8 @@ type DeltaFile {
   actions: [Action!]!
   sourceInfo: SourceInfo!
   protocolStack: [ProtocolLayer]!
-  domains: [KeyValue!]!
-  enrichment: [KeyValue!]!
+  domains: [Domain!]!
+  enrichment: [Enrichment!]!
   formattedData: [FormattedData]!
   created: DateTime!
   modified: DateTime!
@@ -163,12 +189,12 @@ input TransformInput {
 }
 
 input LoadInput {
-  domains: [KeyValueInput!]!
+  domains: [DomainInput!]!
   protocolLayer: ProtocolLayerInput!
 }
 
 input EnrichInput {
-  enrichments: [KeyValueInput!]!
+  enrichments: [EnrichmentInput!]!
 }
 
 input FormatInput {

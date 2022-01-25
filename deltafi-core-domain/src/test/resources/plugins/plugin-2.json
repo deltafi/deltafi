@@ -13,7 +13,7 @@
         "version": "1.0.0",
         "type": "helm"
       },
-      "contentType": "both",
+      "mediaType": "both",
       "location": "location of package-1"
     },{
       "packageCoordinates": {
@@ -22,7 +22,7 @@
         "version": "1.0.0",
         "type": "docker"
       },
-      "contentType": "actions",
+      "mediaType": "actions",
       "location": "location of package-2"
     },{
       "packageCoordinates": {
@@ -31,7 +31,7 @@
         "version": "1.0.0",
         "type": "docker"
       },
-      "contentType": "domains",
+      "mediaType": "domains",
       "location": "location of package-3"
     }
   ],

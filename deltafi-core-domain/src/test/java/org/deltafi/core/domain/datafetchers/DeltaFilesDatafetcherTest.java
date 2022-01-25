@@ -11,7 +11,6 @@ import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
-import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.generated.DgsConstants;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
@@ -32,7 +31,6 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.core.domain.Util.equalIgnoringDates;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 
 @SpringBootTest
 @TestPropertySource(properties = {"enableScheduling=false"})
@@ -59,8 +57,9 @@ class DeltaFilesDatafetcherTest {
     final String did = UUID.randomUUID().toString();
     final String did2 = UUID.randomUUID().toString();
     final List<KeyValue> metadata = Arrays.asList(new KeyValue("k1", "v1"), new KeyValue("k2", "v2"));
-    final ContentReference contentReference = new ContentReference(objectUuid, 0, size, did);
-    final ContentReference contentReference2 = new ContentReference(objectUuid2, 0, size, did);
+    String mediaType = "plain/text";
+    final ContentReference contentReference = new ContentReference(objectUuid, 0, size, did, mediaType);
+    final ContentReference contentReference2 = new ContentReference(objectUuid2, 0, size, did, mediaType);
     final SourceInfo sourceInfo = new SourceInfo(filename, flow, metadata);
     final IngressInput ingressInput = new IngressInput(did, sourceInfo, contentReference, OffsetDateTime.now());
     final IngressInput ingressInput2 = new IngressInput(did2, sourceInfo, contentReference2, OffsetDateTime.now());
@@ -87,6 +86,7 @@ class DeltaFilesDatafetcherTest {
                 .offset()
                 .size()
                 .did()
+                .mediaType()
                 .parent()
                 .metadata()
                 .key()
@@ -102,12 +102,14 @@ class DeltaFilesDatafetcherTest {
                 .parent()
                 .parent()
                 .enrichment()
-                .key()
+                .name()
                 .value()
+                .mediaType()
                 .parent()
                 .domains()
-                .key()
+                .name()
                 .value()
+                .mediaType()
                 .parent()
                 .formattedData()
                 .filename()
@@ -145,6 +147,7 @@ class DeltaFilesDatafetcherTest {
                   .offset()
                   .size()
                   .did()
+                  .mediaType()
                   .parent()
               .metadata()
                 .key()
@@ -160,12 +163,14 @@ class DeltaFilesDatafetcherTest {
                 .parent()
               .parent()
             .enrichment()
-                .key()
+                .name()
                 .value()
+                .mediaType()
                 .parent()
             .domains()
-                .key()
+                .name()
                 .value()
+                .mediaType()
                 .parent()
             .formattedData()
                 .filename()
@@ -285,7 +290,7 @@ class DeltaFilesDatafetcherTest {
     }
 
     @Test
-    void retry() throws ActionConfigException {
+    void retry() {
         DeltaFile input = deltaFilesService.ingress(ingressInput);
         DeltaFile second = deltaFilesService.ingress(ingressInput2);
 

@@ -10,7 +10,7 @@ import org.deltafi.common.resource.Resource;
 import org.deltafi.core.domain.generated.client.PluginsGraphQLQuery;
 import org.deltafi.core.domain.generated.client.PluginsProjectionRoot;
 import org.deltafi.core.domain.generated.client.RegisterPluginGraphQLQuery;
-import org.deltafi.core.domain.generated.types.PackageContentType;
+import org.deltafi.core.domain.generated.types.PackagemediaType;
 import org.deltafi.core.domain.generated.types.PackageType;
 import org.deltafi.core.domain.generated.types.PluginInput;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ public class PluginDataFetcherTest {
             .artifactId()
             .version()
             .type().parent().parent()
-            .contentType().parent()
+            .mediaType().parent()
             .location().parent()
             .dependencies()
             .groupId()
@@ -120,7 +120,7 @@ public class PluginDataFetcherTest {
         assertEquals("package-1", plugin1.getPackages().get(0).getPackageCoordinates().getArtifactId());
         assertEquals("1.0.0", plugin1.getPackages().get(0).getPackageCoordinates().getVersion());
         assertEquals(PackageType.helm, plugin1.getPackages().get(0).getPackageCoordinates().getType());
-        assertEquals(PackageContentType.both, plugin1.getPackages().get(0).getContentType());
+        assertEquals(PackagemediaType.both, plugin1.getPackages().get(0).getMediaType());
         assertEquals("location of package-1", plugin1.getPackages().get(0).getLocation());
         assertEquals("package-2", plugin1.getPackages().get(1).getPackageCoordinates().getArtifactId());
 

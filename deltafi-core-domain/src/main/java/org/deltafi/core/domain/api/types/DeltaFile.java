@@ -1,18 +1,19 @@
 package org.deltafi.core.domain.api.types;
 
 import org.deltafi.core.domain.delete.DeleteConstants;
-import org.deltafi.core.domain.generated.types.Action;
-import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
-import org.deltafi.core.domain.generated.types.FormattedData;
+import org.deltafi.core.domain.generated.types.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.http.MediaType;
 
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 
 @Document
 @CompoundIndex(name = "dispatch_index", def = "{'actions.name': 1, 'actions.state': 1, 'actions.modified': 1}")
@@ -96,9 +97,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
                 .collect(Collectors.toList());
 
         // this must be separate from the above stream since it mutates the original list
-        actionsToRetry.forEach(action -> {
-            action.setState(ActionState.RETRIED);
-        });
+        actionsToRetry.forEach(action -> action.setState(ActionState.RETRIED));
 
         return actionsToRetry.stream().map(Action::getName).collect(Collectors.toList());
     }
@@ -128,57 +127,62 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
             setDomains(new ArrayList<>());
         }
 
-        return getDomains().stream().anyMatch(d -> d.getKey().equals("error"));
+        return getDomains().stream().anyMatch(d -> d.getName().equals(ERROR_DOMAIN));
     }
 
-    public String getDomain(String domain) {
+    public Domain getDomain(String domain) {
         if (Objects.isNull(getDomains())) {
             setDomains(new ArrayList<>());
         }
 
-        return getDomains().stream().filter(d -> d.getKey().equals(domain)).findFirst().map(KeyValue::getValue).orElse(null);
+        return getDomains().stream().filter(d -> d.getName().equals(domain)).findFirst().orElse(null);
     }
 
-    public void addDomain(String domainKey, String domainValue) {
+    public void addDomain(@NotNull String domainKey, String domainValue, String mediaType) {
         if (Objects.isNull(getDomains())) {
             setDomains(new ArrayList<>());
         }
 
-        Optional<KeyValue> kv = getDomains().stream().filter(d -> d.getKey().equals(domainKey)).findFirst();
-        if (kv.isPresent()) {
-            kv.get().setValue(domainValue);
+        Optional<Domain> domain = getDomains().stream().filter(d -> d.getName().equals(domainKey)).findFirst();
+        if (domain.isPresent()) {
+            domain.get().setValue(domainValue);
         } else {
-            getDomains().add(new KeyValue(domainKey, domainValue));
+            getDomains().add(new Domain(domainKey, domainValue, Objects.isNull(mediaType) ? MediaType.APPLICATION_OCTET_STREAM_VALUE : mediaType));
         }
     }
 
     public boolean hasDomains(List<String> domains) {
-        return domains.stream().allMatch(d -> getDomains().stream().anyMatch(kv -> kv.getKey().equals(d)));
+        return domains.stream().allMatch(domain -> getDomains().stream().anyMatch(d -> d.getName().equals(domain)));
     }
 
-    public String getEnrichment(String enrichment) {
+    @SuppressWarnings("unused")
+    public Enrichment getEnrichment(String enrichment) {
         if (Objects.isNull(getEnrichment())) {
             setEnrichment(new ArrayList<>());
         }
 
-        return getEnrichment().stream().filter(e -> e.getKey().equals(enrichment)).findFirst().map(KeyValue::getValue).orElse(null);
+        return getEnrichment().stream().filter(e -> e.getName().equals(enrichment)).findFirst().orElse(null);
     }
 
-    public void addEnrichment(String enrichmentKey, String enrichmentValue) {
+    public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue) {
+        addEnrichment(enrichmentKey, enrichmentValue, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+    }
+
+    public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {
         if (Objects.isNull(getEnrichment())) {
             setEnrichment(new ArrayList<>());
         }
 
-        Optional<KeyValue> kv = getEnrichment().stream().filter(d -> d.getKey().equals(enrichmentKey)).findFirst();
-        if (kv.isPresent()) {
-            kv.get().setValue(enrichmentValue);
+        Optional<Enrichment> enrichment = getEnrichment().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
+        if (enrichment.isPresent()) {
+            enrichment.get().setValue(enrichmentValue);
         } else {
-            getEnrichment().add(new KeyValue(enrichmentKey, enrichmentValue));
+            getEnrichment().add(new Enrichment(enrichmentKey, enrichmentValue, mediaType));
         }
     }
 
     public boolean hasEnrichments(List<String> enrichments) {
-        return enrichments.stream().allMatch(e -> getEnrichment().stream().anyMatch(kv -> kv.getKey().equals(e)));
+        return enrichments.stream().allMatch(enrichment -> getEnrichment().stream().anyMatch(e -> e.getName().equals(enrichment)));
     }
 
     public boolean hasErroredAction() {
@@ -270,8 +274,8 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         private List<Action> actions;
         private SourceInfo sourceInfo;
         private List<ProtocolLayer> protocolStack;
-        private List<KeyValue> domains;
-        private List<KeyValue> enrichment;
+        private List<Domain> domains;
+        private List<Enrichment> enrichment;
         private List<FormattedData> formattedData;
         private OffsetDateTime created;
         private OffsetDateTime modified;
@@ -316,12 +320,12 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
             return this;
         }
 
-        public Builder domains(List<KeyValue> domains) {
+        public Builder domains(List<Domain> domains) {
             this.domains = domains;
             return this;
         }
 
-        public Builder enrichment(List<KeyValue> enrichment) {
+        public Builder enrichment(List<Enrichment> enrichment) {
             this.enrichment = enrichment;
             return this;
         }

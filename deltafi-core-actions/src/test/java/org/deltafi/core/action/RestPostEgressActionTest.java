@@ -51,8 +51,9 @@ class RestPostEgressActionTest {
 
     private static final String CONTENT_NAME = "contentName";
     private static final byte[] DATA = "data to be egressed".getBytes();
+    private static final String CONTENT_TYPE = "application/json";
 
-    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_NAME, 0, DATA.length, DID);
+    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_NAME, 0, DATA.length, DID, CONTENT_TYPE);
 
     private static final DeltaFile DELTA_FILE = DeltaFile.newBuilder()
             .did(DID)
@@ -89,7 +90,8 @@ class RestPostEgressActionTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
         ArgumentCaptor<InputStream> bodyCaptor = ArgumentCaptor.forClass(InputStream.class);
-        verify(httpService).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture());
+        ArgumentCaptor<String> mediaTypeCaptor = ArgumentCaptor.forClass(String.class);
+        verify(httpService).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture(), mediaTypeCaptor.capture());
 
         Map<String, String> actual = headersCaptor.getValue();
         assertNotNull(actual.get(METADATA_KEY));
@@ -101,6 +103,7 @@ class RestPostEgressActionTest {
         assertEquals(ORIG_FILENAME, metadata.get("originalFilename"));
 
         assertArrayEquals(DATA, bodyCaptor.getValue().readAllBytes());
+        assertEquals(CONTENT_TYPE, mediaTypeCaptor.getValue());
 
         assertTrue(result instanceof EgressResult);
         assertEquals(DID, result.toEvent().getDid());
@@ -114,7 +117,7 @@ class RestPostEgressActionTest {
         ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
         Result result = action.execute(DELTA_FILE, actionContext, PARAMS);
 
-        verify(httpService, never()).post(any(), any(), any());
+        verify(httpService, never()).post(any(), any(), any(), any());
 
         assertTrue(result instanceof ErrorResult);
         assertEquals(DID, result.toEvent().getDid());

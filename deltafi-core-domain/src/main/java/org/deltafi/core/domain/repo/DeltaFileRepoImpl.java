@@ -35,8 +35,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
     public static final String STATE = "state";
-    public static final String DOMAINS_KEY = "domains.key";
-    public static final String ENRICHMENT_KEY = "enrichment.key";
+    public static final String DOMAINS_NAME = "domains.name";
+    public static final String ENRICHMENT_NAME = "enrichment.name";
     public static final String MARKED_FOR_DELETE = "markedForDelete";
     public static final String KEY = "key";
     public static final String VALUE = "value";
@@ -232,11 +232,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getDomains()) && !filter.getDomains().isEmpty()) {
-            andCriteria.add(Criteria.where(DOMAINS_KEY).all(filter.getDomains()));
+            andCriteria.add(Criteria.where(DOMAINS_NAME).all(filter.getDomains()));
         }
 
         if (nonNull(filter.getEnrichment()) && !filter.getEnrichment().isEmpty()) {
-            andCriteria.add(Criteria.where(ENRICHMENT_KEY).all(filter.getEnrichment()));
+            andCriteria.add(Criteria.where(ENRICHMENT_NAME).all(filter.getEnrichment()));
         }
 
         if (nonNull(filter.getIsMarkedForDelete())) {

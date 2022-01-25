@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -29,11 +28,11 @@ public class HttpService {
 
     @SuppressWarnings("UnusedReturnValue")
     @NotNull
-    public java.net.http.HttpResponse<InputStream> post(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body) {
+    public java.net.http.HttpResponse<InputStream> post(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) {
         Supplier<InputStream> is = () -> body;
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .setHeader("content-type", MediaType.APPLICATION_OCTET_STREAM)
+                .setHeader("content-type", mediaType)
                 .POST(HttpRequest.BodyPublishers.ofInputStream(is));
         addHeaders(requestBuilder, headers);
 
