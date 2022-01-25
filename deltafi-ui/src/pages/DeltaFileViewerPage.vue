@@ -333,13 +333,16 @@ export default {
           this.showForm = false;
           this.showProgressBar = false;
         } else {
-          console.debug(res.errors);
-          this.$toast.add({
-            severity: "error",
-            summary: "DeltaFile Not Found",
-            detail: "Please check the DID and try again",
-            life: 5000,
-          });
+          for (const error of res.errors) {
+            console.debug(error.message);
+            if (error.extensions.errorType === 'NOT_FOUND') error.message = "DeltaFile not found"
+            this.$toast.add({
+              severity: "error",
+              summary: "Error Loading DeltaFile",
+              detail: error.message,
+              life: 5000,
+            });
+          }
           this.showProgressBar = false;
           this.showForm = true;
         }

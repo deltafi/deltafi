@@ -266,7 +266,7 @@ export default class GraphQLService {
           did: true,
           success: true,
           error: true
-        },
+        }
       }
     };
     return this.convertJsonToGraphQLQuery(postString);
@@ -317,12 +317,14 @@ export default class GraphQLService {
             errorContext: true,
           },
           domains: {
+            name: true,
             value: true,
-            key: true,
+            mediaType: true,
           },
           enrichment: {
-            key: true,
+            name: true,
             value: true,
+            mediaType: true,
           },
           formattedData: {
             filename: true,
@@ -337,6 +339,7 @@ export default class GraphQLService {
               uuid: true,
               offset: true,
               size: true,
+              mediaType: true,
             },
           },
           protocolStack: {
@@ -350,6 +353,7 @@ export default class GraphQLService {
               uuid: true,
               offset: true,
               size: true,
+              mediaType: true,
             },
           },
           markedForDelete: true,
@@ -368,6 +372,6 @@ export default class GraphQLService {
         exportConfigAsYaml: true
       },
     }
-    return this.convertJsonToGraphQLQuery(data)
+    return this.convertJsonToGraphQLQuery(data);
   }
 }
