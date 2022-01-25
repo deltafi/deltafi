@@ -15,5 +15,7 @@ public class ActionContext {
     private String name;
     private String ingressFlow;
     private String egressFlow;
+    private String hostname;
+    private String actionVersion;
 
 }

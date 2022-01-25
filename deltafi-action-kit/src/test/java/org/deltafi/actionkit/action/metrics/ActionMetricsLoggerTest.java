@@ -21,13 +21,13 @@ public class ActionMetricsLoggerTest {
     private static final MockedStatic<MetricLogger> MOCKED_METRIC_LOGGER = Mockito.mockStatic(MetricLogger.class);
 
     private static final Result EGRESS_RESULT = new EgressResult(
-            new ActionContext("did", "egressaction", "flow", "flow"), "destination", 123L);
+            new ActionContext("did", "egressaction", "flow", "flow", "host", "1.0.0"), "destination", 123L);
     private static final Result ERROR_RESULT = new ErrorResult(
-            new ActionContext("did", "erroraction", "flow", "flow"), "error mesg", new Throwable("exception"));
+            new ActionContext("did", "erroraction", "flow", "flow", "host", "1.0.0"), "error mesg", new Throwable("exception"));
     private static final Result FILTER_RESULT = new FilterResult(
-            new ActionContext("did", "filteraction", "flow", "flow"), "message");
+            new ActionContext("did", "filteraction", "flow", "flow", "host", "1.0.0"), "message");
     private static final Result FORMAT_RESULT = new FormatResult(
-            new ActionContext("did", "formataction", "flow", "flow"), "filename");
+            new ActionContext("did", "formataction", "flow", "flow", "host", "1.0.0"), "filename");
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})

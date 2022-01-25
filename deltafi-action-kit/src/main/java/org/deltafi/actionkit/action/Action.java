@@ -102,6 +102,8 @@ public abstract class Action<P extends ActionParameters> {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionInput actionInput = actionEventService.getAction(getFeedString());
                 ActionContext actionContext = actionInput.getActionContext();
+                actionContext.setActionVersion(getVersion());
+                actionContext.setHostname(getHostname());
 
                 log.trace("Running action with input {}", actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();
@@ -156,7 +158,11 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     public final String getVersion() {
-        return actionVersionProperty.getVersion();
+        if (Objects.nonNull(actionVersionProperty)) {
+            return actionVersionProperty.getVersion();
+        }
+
+        return "UNKNOWN";
     }
 
     public final String getHostname() {
