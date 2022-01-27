@@ -1,5 +1,5 @@
 <template>
-  <nav v-if="bannerEnabled" :style="{ backgroundColor: backgroundColor, color: textColor }" class="navbar p-0">
+  <nav v-if="bannerEnabled" :style="{ backgroundColor: backgroundColor, color: textColor }" class="navbar p-0 banner-height">
     <div class="container navbar-content-center">
       <div class="text-center">
         <span>{{ bannerMessage }}</span>
