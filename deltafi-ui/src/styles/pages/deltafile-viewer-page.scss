@@ -29,4 +29,27 @@
   .timestamp-column {
     width: 16rem;
   }
+  .row {
+    padding-left: 0.6rem !important;
+    padding-right: 0.6rem !important;
+    .links-panel {
+      .p-panel-content {
+        padding: 0;
+        strong {
+          font-weight: 600;
+        }
+        .list-group-flush {
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+  .button:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  .no-data-panel-content {
+    padding: 0.50rem 1.25rem;
+  }
+  
 }

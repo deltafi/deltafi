@@ -82,6 +82,48 @@
           </CollapsiblePanel>
         </div>
       </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <CollapsiblePanel header="Domains" class="links-panel pl-0">
+            <div v-if="!deltaFileData.domains.length" class="d-flex w-100 justify-content-between no-data-panel-content">
+              <strong class="p-2">No Domain Data Available</strong>
+            </div>
+            <div v-else class="list-group list-group-flush">
+              <button v-for="field in deltaFileData.domains" :key="field" class="list-group-item list-group-item-action">
+                <DataViewer ref="domainDataView" :viewer-data-reference="field.value" :data-viewer-meta-data="dataViewerMetaData('Domain', field)">
+                  <div>
+                    <div class="d-flex w-100 justify-content-between">
+                      <strong class="mb-0">{{ field.name }}</strong>
+                      <i class="far fa-window-maximize" />
+                    </div>
+                    <small class="mb-1 text-muted">{{ field.mediaType }}</small>
+                  </div>
+                </DataViewer>
+              </button>
+            </div>
+          </CollapsiblePanel>
+        </div>
+        <div class="col-6">
+          <CollapsiblePanel header="Enrichment" class="links-panel pl-0">
+            <div v-if="!deltaFileData.enrichment.length" class="d-flex w-100 justify-content-between no-data-panel-content">
+              <strong class="p-2">No Enrichment Data Available</strong>
+            </div>
+            <div v-else class="list-group list-group-flush">
+              <button v-for="field in deltaFileData.enrichment" :key="field" class="list-group-item list-group-item-action">
+                <DataViewer ref="enrichmentDataView" :viewer-data-reference="field.value" :data-viewer-meta-data="dataViewerMetaData('Enrichment', field)" viewer-type="Enrichment">
+                  <div>
+                    <div class="d-flex w-100 justify-content-between">
+                      <strong class="mb-0">{{ field.name }}</strong>
+                      <i class="far fa-window-maximize" />
+                    </div>
+                    <small class="mb-1 text-muted">{{ field.mediaType }}</small>
+                  </div>
+                </DataViewer>
+              </button>
+            </div>
+          </CollapsiblePanel>
+        </div>
+      </div>
     </div>
     <Dialog v-model:visible="objectDialog.visible" :header="objectDialog.header" :style="{width: '75vw'}" :maximizable="true" :modal="true" :dismissable-mask="true">
       <HighlightedCode :code="objectDialog.body" />
@@ -109,6 +151,7 @@ import Menu from "primevue/menu";
 import { mapState } from "vuex";
 import ProgressBar from 'primevue/progressbar';
 import ContentViewer from '@/components/ContentViewer.vue';
+import DataViewer from '@/components/DataViewer.vue';
 import ErrorViewer from "@/components/ErrorViewer.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import { ErrorsActionTypes } from '@/store/modules/errors/action-types';
@@ -133,7 +176,8 @@ export default {
     ContentViewer,
     ErrorViewer,
     AcknowledgeErrorsDialog,
-    ErrorAcknowledgedBadge
+    ErrorAcknowledgedBadge,
+    DataViewer
   },
   data() {
     return {
@@ -309,9 +353,6 @@ export default {
       this.graphQLService.getDeltaFile(this.did).then((res) => {
         if (res.data.deltaFile) {
           this.deltaFileData = res.data.deltaFile;
-          let domain = this.deltaFileData.domains.length > 0 ?
-              this.deltaFileData.domains[0].key :
-              "N/A";
           let originalFileSize = this.deltaFileData.protocolStack.length > 0 ?
               filesize(this.deltaFileData.protocolStack.find(p => {
                 return p.action === 'IngressAction';
@@ -326,7 +367,6 @@ export default {
           ]);
           this.metadata.push(["Original File Size", originalFileSize]);
           this.metadata.push(["Flow", this.deltaFileData.sourceInfo.flow]);
-          this.metadata.push(["Domain", domain]);
           this.metadata.push(["Stage", this.deltaFileData.stage]);
           this.metadata.push(["Created", this.deltaFileData.created]);
           this.metadata.push(["Modified", this.deltaFileData.modified]);
@@ -398,6 +438,16 @@ export default {
           });
         }
       });
+    },
+    dataViewerMetaData(viewerType, field) {
+      var dataViewerMetaData = {
+        did: this.deltaFileData.did,
+        filename: this.deltaFileData.sourceInfo.filename,
+        name: field.name,
+        mediaType: field.mediaType,
+        viewerType: viewerType
+      }
+      return dataViewerMetaData;
     },
   },
   graphQLService: null,

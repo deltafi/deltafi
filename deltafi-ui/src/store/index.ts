@@ -21,7 +21,8 @@ export type Store = SidebarToggleStore<Pick<RootState, 'sidebarToggle'>>
 
 // Plug in logger when in development environment
 console.log(process.env.NODE_ENV);
-const debug = process.env.NODE_ENV !== 'production';
+const logVuex = false;
+const debug = process.env.NODE_ENV !== 'production' && logVuex;
 const plugins = debug ? [createLogger({})] : [];
 
 // Plug in session storage based persistence
