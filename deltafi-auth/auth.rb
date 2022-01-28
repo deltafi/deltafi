@@ -3,6 +3,7 @@
 require "sinatra/base"
 require 'yaml'
 require 'k8s-ruby'
+require 'sinatra/quiet_logger'
 
 class Auth < Sinatra::Base
   NAMESPACE = ENV['NAMESPACE']
@@ -11,9 +12,12 @@ class Auth < Sinatra::Base
 
   configure :production, :development, :test do
     enable :logging
+    set :quiet_logger_prefixes, %w(probe)
   end
 
-  get('/healthz') {}
+  register Sinatra::QuietLogger
+
+  get('/probe') {}
 
   get '/auth' do
     logger.debug request.env

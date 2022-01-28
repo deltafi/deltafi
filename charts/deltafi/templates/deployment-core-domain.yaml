@@ -4,15 +4,18 @@ metadata:
   name: deltafi-core-domain
   labels:
     app: deltafi-core-domain
+    group: deltafi-core
 spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: deltafi-core-domain
+      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-core-domain
+        group: deltafi-core
     spec:
       initContainers:
       - name: wait-for-config-server
@@ -38,22 +41,9 @@ spec:
           {{- end }}
         ports:
         - containerPort: 8080
-        startupProbe:
-          httpGet:
-            port: 8080
-            path: /graphiql
-          periodSeconds: 1
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 30
-        livenessProbe:
-          httpGet:
-            port: 8080
-            path: /graphiql
-          periodSeconds: 30
-          timeoutSeconds: 10
-          successThreshold: 1
-          failureThreshold: 3
+        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-core-domain

@@ -23,3 +23,30 @@ nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cl
 nginx.ingress.kubernetes.io/auth-cache-key: $remote_user$http_authorization
 nginx.ingress.kubernetes.io/auth-cache-duration: 200 1m, 401 1m
 {{- end -}}
+
+{{- define "defaultStartupProbe" -}}
+startupProbe:
+  exec:
+    command: ["/probe.sh"]
+  periodSeconds: 1
+  timeoutSeconds: 5
+  failureThreshold: 30
+{{- end -}}
+
+{{- define "defaultReadinessProbe" -}}
+readinessProbe:
+  exec:
+    command: ["/probe.sh"]
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 2
+{{- end -}}
+
+{{- define "defaultLivenessProbe" -}}
+livenessProbe:
+  exec:
+    command: ["/probe.sh"]
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 2
+{{- end -}}

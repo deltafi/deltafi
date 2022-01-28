@@ -65,9 +65,19 @@ dependencies {
     testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.2.0"
 }
 
-docker {
+task copyProbe(type: Copy) {
+    from ('.')
+    include "probe.sh"
+    destinationDir file('build/docker')
+}
+
+dockerPrepare {
     dependsOn compileJava
-    dependsOn build
+    dependsOn assemble
+    finalizedBy copyProbe
+}
+
+docker {
     name "${project.name}:${project.version}"
     copySpec.from("build/libs/").into("build/libs/")
 }

@@ -4,15 +4,18 @@ metadata:
   name: deltafi-gateway
   labels:
     app: deltafi-gateway
+    group: deltafi-core
 spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: deltafi-gateway
+      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-gateway
+        group: deltafi-core
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/deployment-core-domain.yaml") . | sha256sum }}
     spec:
@@ -31,27 +34,9 @@ spec:
         image: {{ .Values.deltafi.gateway.image }}
         ports:
         - containerPort: 4000
-        startupProbe:
-          exec:
-            command: ["/probe.sh"]
-          periodSeconds: 1
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 45
-        readinessProbe:
-          exec:
-            command: ["/probe.sh"]
-          periodSeconds: 1
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 3
-        livenessProbe:
-          exec:
-            command: ["/probe.sh"]
-          periodSeconds: 30
-          timeoutSeconds: 20
-          successThreshold: 1
-          failureThreshold: 3
+        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-gateway

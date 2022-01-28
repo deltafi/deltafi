@@ -5,6 +5,7 @@ $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
 require 'deltafi/api'
 require 'sinatra/base'
 require 'sinatra/streaming'
+require 'sinatra/quiet_logger'
 
 STATUS_INTERVAL = (ENV['STATUS_INTERVAL'] || 5).to_i # seconds
 
@@ -15,7 +16,10 @@ class ApiServer < Sinatra::Base
 
   configure :production, :development, :test do
     enable :logging
+    set :quiet_logger_prefixes, %w(probe)
   end
+
+  register Sinatra::QuietLogger
 
   set :show_exceptions, :after_handler
 
@@ -23,7 +27,7 @@ class ApiServer < Sinatra::Base
     content_type 'application/json'
   end
 
-  get('/healthz') {}
+  get('/probe') {}
 
   get '/api/v1/config' do
     config = { ui: Deltafi::API::Config::UI.config }

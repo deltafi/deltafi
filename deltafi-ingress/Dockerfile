@@ -32,6 +32,7 @@ COPY --chown=1001 build/quarkus-app/lib/ /deployments/lib/
 COPY --chown=1001 build/quarkus-app/*.jar /deployments/
 COPY --chown=1001 build/quarkus-app/app/ /deployments/app/
 COPY --chown=1001 build/quarkus-app/quarkus/ /deployments/quarkus/
+COPY probe.sh /
 
 EXPOSE 8080
 USER 1001

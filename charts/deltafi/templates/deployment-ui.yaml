@@ -4,15 +4,18 @@ metadata:
   name: deltafi-ui
   labels:
     app: deltafi-ui
+    group: deltafi-core
 spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: deltafi-ui
+      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-ui
+        group: deltafi-core
     spec:
       containers:
       - name: deltafi-ui
@@ -23,22 +26,9 @@ spec:
         env:
         - name: RUNNING_IN_CLUSTER
           value: "true"
-        startupProbe:
-          httpGet:
-            port: 80
-            path: /
-          periodSeconds: 1
-          timeoutSeconds: 2
-          successThreshold: 1
-          failureThreshold: 45
-        livenessProbe:
-          httpGet:
-            port: 80
-            path: /
-          periodSeconds: 30
-          timeoutSeconds: 20
-          successThreshold: 1
-          failureThreshold: 2
+        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api

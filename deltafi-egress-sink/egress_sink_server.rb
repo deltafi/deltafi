@@ -5,6 +5,7 @@ $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
 require 'fileutils'
 require 'json'
 require 'sinatra/base'
+require 'sinatra/quiet_logger'
 
 require 'deltafi/logger'
 require 'deltafi/smoke/service'
@@ -20,7 +21,12 @@ class EgressSinkServer < Sinatra::Base
     set :logger, Deltafi::Logger.new(STDOUT)
     enable :logging, :dump_errors
     set :raise_errors, true
+    set :quiet_logger_prefixes, %w(probe)
   end
+
+  register Sinatra::QuietLogger
+
+  get('/probe') {}
 
   post '/' do
     json = request.env.find { |k, _| k.upcase == METADATA_KEY }&.last

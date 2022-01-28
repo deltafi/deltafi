@@ -4,15 +4,18 @@ metadata:
   name: deltafi-egress-sink
   labels:
     app: deltafi-egress-sink
+    group: deltafi-core
 spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: deltafi-egress-sink
+      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-egress-sink
+        group: deltafi-core
     spec:
       volumes:
         - name: deltafi-egress-sink
@@ -24,6 +27,9 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292
+        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
         volumeMounts:
           - name: deltafi-egress-sink
             mountPath: /data/deltafi/egress-sink

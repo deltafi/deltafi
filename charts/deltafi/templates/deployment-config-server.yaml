@@ -4,15 +4,18 @@ metadata:
   name: deltafi-config-server
   labels:
     app: deltafi-config-server
+    group: deltafi-core
 spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: deltafi-config-server
+      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-config-server
+        group: deltafi-core
     spec:
       initContainers:
       - name: wait-for-mongo
@@ -28,21 +31,13 @@ spec:
       - name: deltafi-config-server
         image: "{{ .Values.deltafi.config_server.image }}"
         startupProbe:
-          httpGet:
-            port: 8888
-            path: /deltafi/prod
+          exec:
+            command: ["/probe.sh"]
           periodSeconds: 1
-          timeoutSeconds: 10
-          successThreshold: 1
+          timeoutSeconds: 5
           failureThreshold: 45
-        livenessProbe:
-          httpGet:
-            port: 8888
-            path: /deltafi/prod
-          periodSeconds: 10
-          timeoutSeconds: 10
-          successThreshold: 1
-          failureThreshold: 3
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
         {{- with .Values.deltafi.config_server.envVars }}
         env:
         {{- toYaml . | nindent 12 }}

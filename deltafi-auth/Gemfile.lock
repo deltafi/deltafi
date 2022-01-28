@@ -77,6 +77,12 @@ GEM
       rack (~> 2.2)
       rack-protection (= 2.1.0)
       tilt (~> 2.0)
+    sinatra-contrib (2.1.0)
+      multi_json
+      mustermann (~> 1.0)
+      rack-protection (= 2.1.0)
+      sinatra (= 2.1.0)
+      tilt (~> 2.0)
     tilt (2.0.10)
     to_regexp (0.2.1)
     yajl-ruby (1.4.1)
@@ -91,6 +97,7 @@ DEPENDENCIES
   rack-test
   rspec (~> 3.0)
   sinatra
+  sinatra-contrib
 
 BUNDLED WITH
    2.1.4

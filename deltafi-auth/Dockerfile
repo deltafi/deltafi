@@ -10,6 +10,8 @@ FROM ruby:2.7-alpine3.13
 WORKDIR /app
 COPY --from=build /app /app
 COPY . /app
-RUN bundle config set path 'vendor/bundle'
+COPY probe.sh /
+RUN apk add --no-cache curl && \
+    bundle config set path 'vendor/bundle'
 EXPOSE 9292
 CMD bundle exec rackup --host 0.0.0.0

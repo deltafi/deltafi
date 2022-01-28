@@ -4,15 +4,18 @@ metadata:
   name: deltafi-passthrough-actions
   labels:
     app: deltafi-passthrough-actions
+    group: deltafi-core
 spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: deltafi-passthrough-actions
+      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-passthrough-actions
+        group: deltafi-core
     spec:
       initContainers:
       - name: wait-for-config-server
@@ -31,21 +34,8 @@ spec:
         env:
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        startupProbe:
-          httpGet:
-            port: 8080
-            path: /
-          periodSeconds: 1
-          timeoutSeconds: 2
-          successThreshold: 1
-          failureThreshold: 45
-        livenessProbe:
-          httpGet:
-            port: 8080
-            path: /
-          periodSeconds: 30
-          timeoutSeconds: 20
-          successThreshold: 1
-          failureThreshold: 3
+        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
       imagePullSecrets:
       - name: docker-secret

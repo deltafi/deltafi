@@ -7,7 +7,10 @@ RUN apk add --no-cache make yajl-dev gcc musl-dev && \
     bundle install
 
 FROM ruby:2.7-alpine3.13
-RUN mkdir -p /data/deltafi/out && adduser -u 1000 -D egressinator
+COPY probe.sh /
+RUN apk add --no-cache curl && \
+    mkdir -p /data/deltafi/out && \
+    adduser -u 1000 -D egressinator
 USER 1000
 WORKDIR /app
 COPY --from=build /app /app
