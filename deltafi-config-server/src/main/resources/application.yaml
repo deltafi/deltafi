@@ -4,9 +4,9 @@ spring:
   cloud:
     config:
       server:
-        # add native profile to use local directory instead of a git repo
         native:
           search-locations: ${NATIVE_SEARCH_LOCATIONS:file:./config/}
+        # add git Spring profile to use a git repo instead of a local directory
         git:
           uri: ${GIT_CONFIG_REPO:https://gitlab.com/systolic/deltafi/deltafi-config.git}
           username: ${USERNAME:config-server}
@@ -25,3 +25,5 @@ spring:
       password: ${MONGO_PASSWORD}
       authentication-database: ${MONGO_AUTH_DB:deltafi}
       auto-index-creation: true
+  jmx:
+    enabled: false

@@ -1,5 +1,6 @@
 package org.deltafi.config.server.repo;
 
+import org.deltafi.config.server.api.domain.PropertyId;
 import org.deltafi.config.server.api.domain.PropertyUpdate;
 
 import java.util.List;
@@ -10,7 +11,7 @@ public interface PropertyCustomRepository {
     /**
      * Get a set of all id's in the collection.
      *
-     * @return
+     * @return - all PropertySet ids
      */
     Set<String> getIds();
 
@@ -20,5 +21,12 @@ public interface PropertyCustomRepository {
      * @return - number of property sets that were updated
      */
     int updateProperties(List<PropertyUpdate> updates);
+
+    /**
+     * Unset the value field for each property in the list
+     * @param propertyIds - list of properties that need to be unset
+     * @return - number of property sets that were updated
+     */
+    int unsetProperties(List<PropertyId> propertyIds);
 
 }

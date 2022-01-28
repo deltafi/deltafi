@@ -78,6 +78,28 @@ class PropertyServiceTest {
         Set<Property> plugin = propertySets.stream().filter(ps -> PLUGIN_APP.equals(ps.getId()))
                 .findFirst().map(PropertySet::getProperties).orElse(Collections.emptySet());
         assertThat(plugin).hasSize(1);
+
+        propertySets.forEach(this::verifyPropertySources);
+    }
+
+    @Test
+    void testPropertySourceSet_noExternal() {
+        Environment empty = new Environment("git", "default");
+        Set<String> ids = Set.of(DELTAFI_PROPERTY_SET, PLUGIN_APP);
+        Mockito.when(propertyRepository.getIds()).thenReturn(ids);
+        Mockito.when(propertyRepository.findAll()).thenReturn(mongoEnv());
+        Mockito.when(gitRepo.findOne(ids)).thenReturn(empty);
+        List<PropertySet> propertySets = propertyService.getAllProperties();
+
+        propertySets.stream().forEach(this::verifyPropertySources);
+    }
+
+    void verifyPropertySources(PropertySet propertySet) {
+        propertySet.getProperties().forEach(this::verifyPropertySource);
+    }
+
+    void verifyPropertySource(Property property) {
+        assertThat(property.getPropertySource()).overridingErrorMessage("PropertySource is not set - " + property).isNotNull();
     }
 
     String getValue(Set<Property> props, String key) {

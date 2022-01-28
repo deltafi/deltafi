@@ -9,6 +9,7 @@ import org.springframework.cloud.config.server.environment.NativeEnvironmentProp
 import org.springframework.cloud.config.server.environment.NativeEnvironmentRepository;
 import org.springframework.cloud.config.server.environment.PassthruEnvironmentRepository;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
@@ -69,6 +70,11 @@ public class DeltaFiNativeEnvironmentRepository extends NativeEnvironmentReposit
         map.put("spring.config.on-not-found", "IGNORE");
         environment.getPropertySources().addFirst(new MapPropertySource("config-data-setup", map));
         return environment;
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE - 10;
     }
 
 }

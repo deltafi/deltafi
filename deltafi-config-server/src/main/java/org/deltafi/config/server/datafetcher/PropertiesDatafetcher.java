@@ -4,6 +4,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
+import org.deltafi.config.server.api.domain.PropertyId;
 import org.deltafi.config.server.constants.PropertyConstants;
 import org.deltafi.config.server.api.domain.PropertySet;
 import org.deltafi.config.server.api.domain.PropertyUpdate;
@@ -28,6 +29,11 @@ public class PropertiesDatafetcher {
     @DgsMutation
     public int updateProperties(@InputArgument(collectionType = PropertyUpdate.class) List<PropertyUpdate> updates) {
         return propertiesService.updateProperties(updates);
+    }
+
+    @DgsMutation
+    public int removePropertyOverrides(@InputArgument(collectionType = PropertyId.class) List<PropertyId> propertyIds) {
+        return propertiesService.unsetProperties(propertyIds);
     }
 
     @DgsMutation

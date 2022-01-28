@@ -71,10 +71,10 @@ public class DeltaFiEnvironmentRepositoryConfiguration {
 }
 
 @Configuration(proxyBeanMethods = false)
-@Profile("!native")
+@Profile("git")
 class GitRepositoryConfiguration {
     @Bean
-    public GitEnvironmentRepository defaultEnvironmentRepository(
+    public GitEnvironmentRepository gitEnvironmentRepository(
             GitEnvironmentRepositoryFactory gitEnvironmentRepositoryFactory,
             MultipleJGitEnvironmentProperties environmentProperties, ConfigServerProperties props) throws Exception {
         environmentProperties.setDefaultLabel(props.getDefaultLabel());
@@ -83,7 +83,7 @@ class GitRepositoryConfiguration {
 }
 
 @Configuration(proxyBeanMethods = false)
-@Profile("native")
+@Profile("!git")
 class DeltaFiNativeRepositoryConfiguration {
     @Bean
     public DeltaFiNativeEnvironmentRepository nativeEnvironmentRepository(DeltaFiNativeEnvironmentRepositoryFactory factory,

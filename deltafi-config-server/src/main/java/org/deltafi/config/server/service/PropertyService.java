@@ -2,6 +2,7 @@ package org.deltafi.config.server.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.config.server.api.domain.Property;
+import org.deltafi.config.server.api.domain.PropertyId;
 import org.deltafi.config.server.api.domain.PropertySet;
 import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.deltafi.config.server.environment.DeltaFiNativeEnvironmentRepository;
@@ -11,10 +12,7 @@ import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
@@ -32,6 +30,8 @@ public class PropertyService {
     private final Optional<GitEnvironmentRepository> gitEnvironmentRepository;
     private final Optional<DeltaFiNativeEnvironmentRepository> nativeEnvironmentRepository;
 
+    private final PropertySource EMPTY_SOURCE = new PropertySource("empty", new HashMap<>());
+
     public PropertyService(PropertyRepository repo, StateHolderService stateHolderService, Optional<GitEnvironmentRepository> gitEnvironmentRepository,
                            Optional<DeltaFiNativeEnvironmentRepository> nativeEnvironmentRepository) {
         this.repo = repo;
@@ -45,13 +45,13 @@ public class PropertyService {
     }
 
     public List<PropertySet> getAllProperties() {
-        Environment gitEnvironment = getExternalEnvironment();
+        Environment externalEnvironment = getExternalEnvironment();
 
         // get all properties set via mongo
         List<PropertySet> propertySets = repo.findAll();
 
         List<PropertySet> mergedPropertySets = propertySets.stream()
-                .map(fromMongo -> mergeWithGitProps(fromMongo, gitEnvironment.getPropertySources()))
+                .map(fromMongo -> mergeWithExternalProps(fromMongo, externalEnvironment.getPropertySources()))
                 .collect(Collectors.toList());
 
         mergedPropertySets.forEach(this::setDefaultValues);
@@ -70,12 +70,13 @@ public class PropertyService {
         }
     }
 
-    private PropertySet mergeWithGitProps(PropertySet propertySet, List<PropertySource> gitPropertySources) {
-        return gitPropertySources.stream()
+    private PropertySet mergeWithExternalProps(PropertySet propertySet, List<PropertySource> externalPropertySources) {
+        PropertySource externalPropertySource = externalPropertySources.stream()
                 .filter(propertySource -> propertySource.getName().contains(propertySet.getId()))
-                .findFirst()
-                .map(fromGit -> merge(propertySet, fromGit))
-                .orElse(propertySet);
+                .findFirst().orElse(EMPTY_SOURCE);
+
+        // Always run the merge to ensure the propertySource is properly set when the value comes from only mongo
+        return merge(propertySet, externalPropertySource);
     }
 
     private PropertySet merge(PropertySet mongoProps, PropertySource gitProps) {
@@ -105,6 +106,14 @@ public class PropertyService {
 
     public int updateProperties(List<PropertyUpdate> propertyUpdates) {
         int propertySetUpdated = repo.updateProperties(propertyUpdates);
+        if (propertySetUpdated > 0) {
+            stateHolderService.updateConfigStateId();
+        }
+        return propertySetUpdated;
+    }
+
+    public int unsetProperties(List<PropertyId> propertyIds) {
+        int propertySetUpdated = repo.unsetProperties(propertyIds);
         if (propertySetUpdated > 0) {
             stateHolderService.updateConfigStateId();
         }

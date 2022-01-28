@@ -34,6 +34,7 @@ generateJava {
     generateDataTypes = false
     typeMapping = [
             "Property": "org.deltafi.config.server.api.domain.Property",
+            "PropertyId": "org.deltafi.config.server.api.domain.PropertyId",
             "PropertySource": "org.deltafi.config.server.api.domain.PropertySource",
             "PropertyUpdate": "org.deltafi.config.server.api.domain.PropertyUpdate",
             "PropertyInput": "org.deltafi.config.server.api.domain.Property",

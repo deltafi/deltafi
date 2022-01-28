@@ -1,6 +1,7 @@
 package org.deltafi.config.server.repo;
 
 import com.mongodb.bulk.BulkWriteResult;
+import org.deltafi.config.server.api.domain.PropertyId;
 import org.deltafi.config.server.api.domain.PropertySet;
 import org.deltafi.config.server.api.domain.PropertyUpdate;
 import org.springframework.data.mongodb.core.BulkOperations;
@@ -38,11 +39,30 @@ public class PropertyRepositoryImpl implements PropertyCustomRepository {
         return writeResult.getModifiedCount();
     }
 
+    @Override
+    public int unsetProperties(List<PropertyId> propertyIds) {
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, PropertySet.class);
+        bulkOps.updateOne(propertyIds.stream().map(this::toMongoUnset).collect(Collectors.toList()));
+        BulkWriteResult writeResult = bulkOps.execute();
+        return writeResult.getModifiedCount();
+    }
+
+    private Pair<Query, Update> toMongoUnset(PropertyId propertyId) {
+        Query query = propertyQuery(propertyId.getPropertySetId(), propertyId.getKey());
+        Update mongoUpdate = new Update();
+        mongoUpdate.unset("properties.$.value");
+        return Pair.of(query, mongoUpdate);
+    }
+
     private Pair<Query, Update> toMongoUpdate(PropertyUpdate update) {
-        Query query = Query.query(Criteria.where(ID).is(update.getPropertySetId())
-                .and("properties")
-                .elemMatch(Criteria.where("key").is(update.getKey()).and("editable").is(true)));
+        Query query = propertyQuery(update.getPropertySetId(), update.getKey());
         Update mongoUpdate = Update.update("properties.$.value", update.getValue());
         return Pair.of(query, mongoUpdate);
+    }
+
+    private Query propertyQuery(String propertySetId, String propertyKey) {
+        return Query.query(Criteria.where(ID).is(propertySetId)
+                .and("properties")
+                .elemMatch(Criteria.where("key").is(propertyKey).and("editable").is(true)));
     }
 }

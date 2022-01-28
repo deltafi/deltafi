@@ -7,42 +7,42 @@
       {
         "key": "spring.data.mongodb.host",
         "description": "Mongo server host. Cannot be set with URI.",
-        "defaultValue": null
+        "defaultValue": "deltafi-mongodb"
       },
       {
         "key": "spring.data.mongodb.port",
         "description": "Mongo server port. Cannot be set with URI.",
-        "defaultValue": null
+        "defaultValue": "27017"
       },
       {
         "key": "spring.data.mongodb.database",
         "description": "Database name.",
-        "defaultValue": null
+        "defaultValue": "deltafi"
       },
       {
         "key": "spring.data.mongodb.username",
         "description": "Login user of the mongo server. Cannot be set with URI.",
-        "defaultValue": null
+        "defaultValue": "mongouser"
       },
       {
         "key": "spring.data.mongodb.password",
         "description": "Login password of the mongo server. Cannot be set with URI.",
-        "defaultValue": null
+        "defaultValue": "${MONGO_PASSWORD}"
       },
       {
         "key": "spring.data.mongodb.authentication-database",
         "description": "Authentication database name.",
-        "defaultValue": null
+        "defaultValue": "deltafi"
       },
       {
         "key": "spring.data.mongodb.auto-index-creation",
         "description": "Whether to enable auto-index creation.",
-        "defaultValue": null
+        "defaultValue": "true"
       },
       {
         "key": "spring.task.scheduling.pool.size",
         "description": "Maximum allowed number of threads.",
-        "defaultValue": "1"
+        "defaultValue": "32"
       },
       {
         "key": "quarkus.http.port",

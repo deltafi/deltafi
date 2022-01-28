@@ -3,8 +3,10 @@ package org.deltafi.config.server.service;
 import org.assertj.core.api.Assertions;
 import org.deltafi.config.server.api.domain.Property;
 import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.environment.DefaultPropertyEnvironmentRepository;
 import org.deltafi.config.server.testUtil.DataProviderUtil;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +21,7 @@ class PropertyMetadataLoaderTest {
     private static final String keep = "keep";
     private static final String removedKey = "removed";
 
-    PropertyMetadataLoader propertyMetadataLoader = new PropertyMetadataLoader(null);
+    PropertyMetadataLoader propertyMetadataLoader = new PropertyMetadataLoader(null, Mockito.mock(DefaultPropertyEnvironmentRepository.class));
 
     @Test
     void keepOverriddenValues() {

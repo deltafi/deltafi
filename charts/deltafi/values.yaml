@@ -29,14 +29,6 @@ deltafi:
   config_server:
     image: deltafi/deltafi-config-server:0.16.3
     envVars:
-      - name: GIT_CONFIG_REPO
-        value: https://gitlab.com/systolic/deltafi/deltafi-config.git
-      - name: USERNAME
-        value: config-server
-      - name: DEFAULT_LABEL
-        value: main
-      - name: CLONE_ON_START
-        value: "true"
       - name: MONGO_HOST
         value: deltafi-mongodb
       - name: MONGO_AUTH_DB

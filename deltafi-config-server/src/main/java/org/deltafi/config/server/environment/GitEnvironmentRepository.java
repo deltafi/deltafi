@@ -9,6 +9,7 @@ import org.springframework.cloud.config.server.environment.EnvironmentCleaner;
 import org.springframework.cloud.config.server.environment.JGitEnvironmentProperties;
 import org.springframework.cloud.config.server.environment.JGitEnvironmentRepository;
 import org.springframework.cloud.config.server.environment.NativeEnvironmentProperties;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.util.Objects;
@@ -32,7 +33,7 @@ public class GitEnvironmentRepository extends JGitEnvironmentRepository {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public synchronized void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
         cachedVersion = getLocations(PropertyConstants.DELTAFI_PROPERTY_SET, getDefaultLabel(), label).getVersion();
     }
@@ -61,5 +62,10 @@ public class GitEnvironmentRepository extends JGitEnvironmentRepository {
 
         result.setState(stateHolderService.getConfigStateIdString());
         return this.cleaner.clean(result, getWorkingDirectory().toURI().toString(), getUri());
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE - 10;
     }
 }

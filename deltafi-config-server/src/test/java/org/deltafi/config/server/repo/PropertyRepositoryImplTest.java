@@ -1,10 +1,11 @@
 package org.deltafi.config.server.repo;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.config.server.constants.PropertyConstants;
 import org.deltafi.config.server.api.domain.Property;
+import org.deltafi.config.server.api.domain.PropertyId;
 import org.deltafi.config.server.api.domain.PropertySet;
 import org.deltafi.config.server.api.domain.PropertyUpdate;
+import org.deltafi.config.server.constants.PropertyConstants;
 import org.deltafi.config.server.testUtil.DataProviderUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,31 @@ class PropertyRepositoryImplTest {
     }
 
     @Test
+    void unsetProperties() {
+        PropertyId commonUpdate = PropertyId.builder()
+                .propertySetId(DELTAFI_PROPERTY_SET).key(EDITABLE).build();
+        PropertyId pluginUpdate = PropertyId.builder()
+                .propertySetId(TEST_PLUGIN).key(EDITABLE).build();
+
+        int propertySetsUpdated = propertyRepository.unsetProperties(List.of(commonUpdate, pluginUpdate));
+        assertThat(propertySetsUpdated).isEqualTo(2);
+
+        Assertions.assertThat(getValue(DELTAFI_PROPERTY_SET)).isNull();
+        Assertions.assertThat(getValue(TEST_PLUGIN)).isNull();
+    }
+
+    @Test
+    void unsetProperties_notEditable() {
+        PropertyId notEditable = PropertyId.builder()
+                .propertySetId(DELTAFI_PROPERTY_SET).key(NOT_EDITABLE).build();
+
+        int propertySetsUpdated = propertyRepository.unsetProperties(List.of(notEditable));
+        assertThat(propertySetsUpdated).isZero();
+
+        Assertions.assertThat(getValue(DELTAFI_PROPERTY_SET, NOT_EDITABLE)).isEqualTo(ORIGINAL_VALUE);
+    }
+
+    @Test
     void updateProperties_notEditable() {
         PropertyUpdate notEditable = PropertyUpdate.builder()
                 .propertySetId(DELTAFI_PROPERTY_SET).key(NOT_EDITABLE).value("new value").build();
@@ -68,7 +94,6 @@ class PropertyRepositoryImplTest {
         assertThat(propertySetsUpdated).isZero();
 
         Assertions.assertThat(getValue(DELTAFI_PROPERTY_SET, NOT_EDITABLE)).isEqualTo(ORIGINAL_VALUE);
-
     }
 
     @Test

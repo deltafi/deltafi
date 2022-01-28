@@ -46,12 +46,18 @@ input PropertyUpdate {
     value: String!
 }
 
+input PropertyId {
+    propertySetId: String!
+    key: String!
+}
+
 type Query {
     getPropertySets: [PropertySet]!
 }
 
 type Mutation {
     updateProperties(updates: [PropertyUpdate]!): Int!
+    removePropertyOverrides(propertyIds: [PropertyId]!): Int!
 
     # use when adding or removing a plugin
     addPluginPropertySet(propertySet: PropertySetInput!) : Boolean!

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.config.server.api.domain.Property;
 import org.deltafi.config.server.api.domain.PropertySet;
+import org.deltafi.config.server.environment.DefaultPropertyEnvironmentRepository;
 import org.deltafi.config.server.repo.PropertyRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -30,12 +31,14 @@ public class PropertyMetadataLoader {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final PropertyRepository repo;
+    private final DefaultPropertyEnvironmentRepository defaultPropertyEnvironmentRepository;
 
     @Value("classpath:property-metadata.json")
     private Resource propertyMetadata;
 
-    public PropertyMetadataLoader(PropertyRepository repo) {
+    public PropertyMetadataLoader(PropertyRepository repo, DefaultPropertyEnvironmentRepository defaultPropertyEnvironmentRepository) {
         this.repo = repo;
+        this.defaultPropertyEnvironmentRepository = defaultPropertyEnvironmentRepository;
     }
 
     @PostConstruct
@@ -46,6 +49,7 @@ public class PropertyMetadataLoader {
                 List<PropertySet> currentPropertyMetadata = repo.findAll();
 
                 keepOverriddenValues(updatedPropertyMetadata, currentPropertyMetadata);
+                defaultPropertyEnvironmentRepository.loadFromPropertyMetadata(updatedPropertyMetadata);
                 repo.saveAll(updatedPropertyMetadata);
                 log.debug("Loaded propertyMetadata");
             } catch (IOException e) {
@@ -96,7 +100,7 @@ public class PropertyMetadataLoader {
 
     /**
      * Check that the propertyMetadata exists and can be read
-     * @return
+     * @return - true if the propertyMetadata file can be read
      */
     private boolean isPropertyMetadataReadable() {
         return Objects.nonNull(propertyMetadata) && propertyMetadata.exists() && propertyMetadata.isReadable();
