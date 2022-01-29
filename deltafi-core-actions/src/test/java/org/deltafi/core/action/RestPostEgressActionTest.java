@@ -22,13 +22,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,18 +83,62 @@ class RestPostEgressActionTest {
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
-        runTestExpectedToSucceed();
+        Result result = runTest(200, "good job");
+
+        assertTrue(result instanceof EgressResult);
+        assertEquals(DID, result.toEvent().getDid());
+        assertEquals(ACTION, result.toEvent().getAction());
     }
 
-    private void runTestExpectedToSucceed() throws IOException {
+    private Result runTest(int statusCode, String responseBody) throws IOException {
         ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
+        when(httpService.post(any(), any(), any(), any())).thenReturn(new HttpResponse<>() {
+            @Override
+            public int statusCode() {
+                return statusCode;
+            }
+
+            @Override
+            public HttpRequest request() {
+                return null;
+            }
+
+            @Override
+            public Optional<HttpResponse<InputStream>> previousResponse() {
+                return Optional.empty();
+            }
+
+            @Override
+            public HttpHeaders headers() {
+                return null;
+            }
+
+            @Override
+            public InputStream body() {
+                return new ByteArrayInputStream(responseBody.getBytes());
+            }
+
+            @Override
+            public Optional<SSLSession> sslSession() {
+                return Optional.empty();
+            }
+
+            @Override
+            public URI uri() {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Version version() {
+                return null;
+            }
+        });
         Result result = action.execute(DELTA_FILE, actionContext, PARAMS);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
         ArgumentCaptor<InputStream> bodyCaptor = ArgumentCaptor.forClass(InputStream.class);
-        ArgumentCaptor<String> mediaTypeCaptor = ArgumentCaptor.forClass(String.class);
-        verify(httpService).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture(), mediaTypeCaptor.capture());
+        verify(httpService).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture(), eq(CONTENT_TYPE));
 
         Map<String, String> actual = headersCaptor.getValue();
         assertNotNull(actual.get(METADATA_KEY));
@@ -103,11 +150,8 @@ class RestPostEgressActionTest {
         assertEquals(ORIG_FILENAME, metadata.get("originalFilename"));
 
         assertArrayEquals(DATA, bodyCaptor.getValue().readAllBytes());
-        assertEquals(CONTENT_TYPE, mediaTypeCaptor.getValue());
 
-        assertTrue(result instanceof EgressResult);
-        assertEquals(DID, result.toEvent().getDid());
-        assertEquals(ACTION, result.toEvent().getAction());
+        return result;
     }
 
     @Test
@@ -138,6 +182,17 @@ class RestPostEgressActionTest {
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new TestInputStream(DATA));
-        runTestExpectedToSucceed();
+        Result result = runTest(200, "good job");
+        assertTrue(result instanceof EgressResult);
+    }
+
+    @Test
+    public void badResponse() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
+        Result result = runTest(500, "uh oh");
+
+        assertTrue(result instanceof ErrorResult);
+        assertTrue(((ErrorResult) result).getErrorCause().contains("500"));
+        assertTrue(((ErrorResult) result).getErrorCause().contains("uh oh"));
     }
 }

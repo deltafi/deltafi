@@ -16,8 +16,10 @@ import org.deltafi.core.domain.generated.types.FormattedData;
 import org.deltafi.core.parameters.RestPostEgressParameters;
 
 import javax.inject.Inject;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,8 +40,12 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
         FormattedData formattedData = getFormattedData(deltaFile);
 
         try (InputStream inputStream = contentStorageService.load(formattedData.getContentReference())) {
-            httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
+            HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
                     buildHeadersMapString(deltaFile, params)), inputStream, formattedData.getContentReference().getMediaType());
+            if (Response.Status.fromStatusCode(response.statusCode()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+                return new ErrorResult(actionContext, "Unsuccessful POST: " + response.statusCode() + " " + new String(response.body().readAllBytes())).logErrorTo(log);
+            }
+
         } catch (JsonProcessingException e) {
             return new ErrorResult(actionContext, "Unable to build post headers", e).logErrorTo(log);
         } catch (ObjectStorageException e) {
