@@ -5,7 +5,6 @@ import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.generated.types.ConfigQueryInput;
 import org.deltafi.core.domain.generated.types.ConfigType;
-import org.deltafi.core.domain.generated.types.EgressFlowConfigurationInput;
 import org.deltafi.core.domain.repo.DeltaFiRuntimeConfigRepo;
 import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,47 +72,14 @@ class DeltaFiConfigServiceTest {
     }
 
     @Test
-    void testUpdateConfig() {
-        Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
-        DeltafiRuntimeConfiguration updatedConfig = new DeltafiRuntimeConfiguration();
-        EgressFlowConfiguration mocked = new EgressFlowConfiguration();
-        mocked.setName("myFlow");
-        updatedConfig.getEgressFlows().put("myFlow", mocked);
-        Mockito.when(deltaFiConfigRepo.save(Mockito.any())).thenReturn(updatedConfig);
-
-        EgressFlowConfigurationInput egressFlow = new EgressFlowConfigurationInput();
-        egressFlow.setEgressAction("egressAction");
-        egressFlow.setFormatAction("formatAction");
-        egressFlow.setName("myFlow");
-        egressFlow.setApiVersion("v1");
-
-        EgressFlowConfiguration saved = configService.saveEgressFlow(egressFlow);
-
-        Mockito.verify(deltaFiConfigRepo).findById(DeltafiRuntimeConfiguration.ID_CONSTANT);
-        Mockito.verify(deltaFiConfigRepo).save(Mockito.argThat(config -> config.getEgressFlows().size() == 2));
-
-        Assertions.assertThat(saved.getName()).isEqualTo("myFlow");
-        Assertions.assertThat(saved.getEgressAction()).isEqualTo("egressAction");
-        Assertions.assertThat(saved.getApiVersion()).isEqualTo("v1");
-        Assertions.assertThat(saved.getCreated()).isNotNull();
-        Assertions.assertThat(saved.getModified()).isNotNull();
-
-        Assertions.assertThat(configService.getEgressFlow("myFlow")).contains(mocked);
-    }
-
-    @Test
     void testUpdateConfig_invalidChange() {
-        EgressFlowConfigurationInput egressFlow = new EgressFlowConfigurationInput();
-        egressFlow.setFormatAction("formatAction");
-        egressFlow.setName("myFlow");
-        egressFlow.setApiVersion("v1");
-
         Mockito.when(deltaFiConfigRepo.findById(DeltafiRuntimeConfiguration.ID_CONSTANT)).thenReturn(Optional.of(config));
+        ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).name(ACTION_TO_FIND).build();
         Mockito.when(configValidator.validate(Mockito.any())).thenReturn(List.of("Failed validation"));
 
-        Assertions.assertThatThrownBy(()-> {
-            configService.saveEgressFlow(egressFlow);
-        }).isInstanceOf(DeltafiConfigurationException.class)
+        Assertions.assertThatThrownBy(() -> {
+                    long removed = configService.removeDeltafiConfigs(input);
+                }).isInstanceOf(DeltafiConfigurationException.class)
                 .hasMessage("Failed validation");
 
         Mockito.verify(deltaFiConfigRepo, Mockito.times(0)).save(Mockito.any());

@@ -3,16 +3,8 @@ package org.deltafi.core.domain.datafetchers;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
-import org.deltafi.core.domain.configuration.EgressActionConfiguration;
-import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
-import org.deltafi.core.domain.configuration.FormatActionConfiguration;
-import org.deltafi.core.domain.configuration.LoadActionConfiguration;
-import org.deltafi.core.domain.configuration.TransformActionConfiguration;
-import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
-import org.deltafi.core.domain.generated.types.*;
-import org.deltafi.core.domain.generated.types.EgressFlowConfiguration;
-import org.deltafi.core.domain.generated.types.IngressFlowConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
+import org.deltafi.core.domain.generated.types.ConfigQueryInput;
 import org.deltafi.core.domain.services.DeltaFiConfigService;
 
 import java.util.List;
@@ -24,46 +16,6 @@ public class DeltafiConfigDatafetcher {
 
     public DeltafiConfigDatafetcher(DeltaFiConfigService deltaFiConfigService) {
         this.deltaFiConfigService = deltaFiConfigService;
-    }
-
-    @DgsMutation
-    public TransformActionConfiguration registerTransformAction(TransformActionConfigurationInput transformActionConfiguration) {
-        return deltaFiConfigService.saveTransformAction(transformActionConfiguration);
-    }
-
-    @DgsMutation
-    public LoadActionConfiguration registerLoadAction(LoadActionConfigurationInput loadActionConfiguration) {
-        return deltaFiConfigService.saveLoadAction(loadActionConfiguration);
-    }
-
-    @DgsMutation
-    public EnrichActionConfiguration registerEnrichAction(EnrichActionConfigurationInput enrichActionConfiguration) {
-        return deltaFiConfigService.saveEnrichAction(enrichActionConfiguration);
-    }
-
-    @DgsMutation
-    public FormatActionConfiguration registerFormatAction(FormatActionConfigurationInput formatActionConfiguration) {
-        return deltaFiConfigService.saveFormatAction(formatActionConfiguration);
-    }
-
-    @DgsMutation
-    public ValidateActionConfiguration registerValidateAction(ValidateActionConfigurationInput validateActionConfiguration) {
-        return deltaFiConfigService.saveValidateAction(validateActionConfiguration);
-    }
-
-    @DgsMutation
-    public EgressActionConfiguration registerEgressAction(EgressActionConfigurationInput egressActionConfiguration) {
-        return deltaFiConfigService.saveEgressAction(egressActionConfiguration);
-    }
-
-    @DgsMutation
-    public IngressFlowConfiguration addIngressFlow(IngressFlowConfigurationInput ingressFlowConfiguration) {
-        return deltaFiConfigService.saveIngressFlow(ingressFlowConfiguration);
-    }
-
-    @DgsMutation
-    public EgressFlowConfiguration addEgressFlow(EgressFlowConfigurationInput egressFlowConfiguration) {
-        return deltaFiConfigService.saveEgressFlow(egressFlowConfiguration);
     }
 
     @DgsMutation

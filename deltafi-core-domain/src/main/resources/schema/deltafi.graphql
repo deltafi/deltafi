@@ -282,13 +282,6 @@ type Mutation {
   retry(dids: [String!]!) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
 
-  registerTransformAction(transformActionConfiguration: TransformActionConfigurationInput!): TransformActionConfiguration!
-  registerLoadAction(loadActionConfiguration: LoadActionConfigurationInput!): LoadActionConfiguration!
-  registerEnrichAction(enrichActionConfiguration: EnrichActionConfigurationInput!): EnrichActionConfiguration!
-  registerFormatAction(formatActionConfiguration: FormatActionConfigurationInput!): FormatActionConfiguration!
-  registerValidateAction(validateActionConfiguration: ValidateActionConfigurationInput!): ValidateActionConfiguration!
-  registerEgressAction(egressActionConfiguration: EgressActionConfigurationInput!): EgressActionConfiguration!
-
   registerDeleteSchema(actionSchema: DeleteActionSchemaInput!): ActionSchema!
   registerEgressSchema(actionSchema: EgressActionSchemaInput!): ActionSchema!
   registerEnrichSchema(actionSchema: EnrichActionSchemaInput!): ActionSchema!
@@ -296,9 +289,6 @@ type Mutation {
   registerLoadSchema(actionSchema: LoadActionSchemaInput!): ActionSchema!
   registerTransformSchema(actionSchema: TransformActionSchemaInput!): ActionSchema!
   registerValidateSchema(actionSchema: ValidateActionSchemaInput!): ActionSchema!
-
-  addIngressFlow(ingressFlowConfiguration: IngressFlowConfigurationInput!): IngressFlowConfiguration!
-  addEgressFlow(egressFlowConfiguration: EgressFlowConfigurationInput!): EgressFlowConfiguration!
 
   replaceConfig(configYaml: String!): String
   mergeConfig(configYaml: String!): String
