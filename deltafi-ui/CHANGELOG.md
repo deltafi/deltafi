@@ -9,7 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Errors can now be acknowledged
 - Added Show/Hide Acknowledged button to Errors page
 - Date range selected has been removed from Errors page
-- DeltaFile viewer displays domains and enrichment data
+- DeltaFile Viewer now displays Domain and Enrichment data
+- DeltaFile Viewer now displays metadata for all Actions that include metadata
 
 ## [0.16.3] - 2022-01-19
 ### Added

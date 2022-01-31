@@ -78,6 +78,15 @@
                   </span>
                 </template>
               </Column>
+              <Column header="Metadata" class="metadata-column">
+                <template #body="action">
+                  <span v-if="metadataReferences.hasOwnProperty(action.data.name)">
+                    <MetadataViewer :metadata-references="actionMetadata(action.data.name)">
+                      <Button icon="fas fa-table" label="View" class="content-button p-button-link" />
+                    </MetadataViewer>
+                  </span>
+                </template>
+              </Column>
             </DataTable>
           </CollapsiblePanel>
         </div>
@@ -131,6 +140,7 @@
     <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
+    <MetadataViewer ref="allMetadataViewer" :metadata-references="metadataReferences" />
   </div>
 </template>
 
@@ -151,6 +161,7 @@ import Menu from "primevue/menu";
 import { mapState } from "vuex";
 import ProgressBar from 'primevue/progressbar';
 import ContentViewer from '@/components/ContentViewer.vue';
+import MetadataViewer from '@/components/MetadataViewer.vue';
 import DataViewer from '@/components/DataViewer.vue';
 import ErrorViewer from "@/components/ErrorViewer.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
@@ -174,6 +185,7 @@ export default {
     ProgressBar,
     HighlightedCode,
     ContentViewer,
+    MetadataViewer,
     ErrorViewer,
     AcknowledgeErrorsDialog,
     ErrorAcknowledgedBadge,
@@ -227,7 +239,15 @@ export default {
           label: 'Zipkin Trace',
           icon: 'fas fa-external-link-alt fa-fw',
           command: () => {
-            this.openZipkinURL()
+            this.openZipkinURL();
+          }
+        },
+        {
+          label: 'View All Metadata',
+          icon: 'fas fa-database fa-fw',
+          visible: () => this.hasMetadata(),
+          command: () => {
+            this.showMetadataDialog();
           }
         }
       ],
@@ -238,6 +258,8 @@ export default {
       return `${this.deltaFileData.errorAcknowledgedReason}\n\nAcknowledged: ${this.deltaFileData.errorAcknowledged}`
     },
     contentReferences() {
+      if (Object.keys(this.deltaFileData).length === 0) return {};
+
       let layers = this.deltaFileData.protocolStack.concat(this.deltaFileData.formattedData);
       return layers.reduce((content, layer) => {
         let actions = [layer.action, layer.formatAction, layer.egressActions]
@@ -252,6 +274,26 @@ export default {
             ...layer.contentReference,
             filename: filename
           }
+        }
+        return content;
+      }, {});
+    },
+    metadataReferences() {
+      if (Object.keys(this.deltaFileData).length === 0) return {};
+
+      let layers = this.deltaFileData.protocolStack.concat(this.deltaFileData.formattedData);
+      return layers.reduce((content, layer) => {
+        let actions = [layer.action, layer.formatAction]
+          .flat()
+          .filter((n) => n);
+        for (const action of actions) {
+          let metadata =
+            action === "IngressAction"
+              ? this.deltaFileData.sourceInfo.metadata
+              : layer.metadata || `${this.deltaFileData.did}-${layer.action}`;
+            if( metadata.length > 0 ) {
+              content[action] = metadata;
+            }
         }
         return content;
       }, {});
@@ -310,6 +352,9 @@ export default {
     }
   },
   methods: {
+    actionMetadata(actionName) {
+      return Object.fromEntries(Object.entries(this.metadataReferences).filter(([key]) => key.includes(actionName)));
+    },
     onAcknowledged(_, reason) {
       this.ackErrorsDialog.visible = false
       this.$toast.add({
@@ -331,8 +376,14 @@ export default {
       const zipkinURL = `https://zipkin.${this.uiConfig.domain}/zipkin/traces/${this.did.replaceAll("-", "")}`;
       window.open(zipkinURL, '_blank');
     },
+    showMetadataDialog() {
+      this.$refs.allMetadataViewer.showDialog();
+    },
     isError() {
       return (this.deltaFileData.stage === 'ERROR' ? true : false);
+    },
+    hasMetadata() {
+      return Object.keys(this.metadataReferences).length > 0;
     },
     clearData() {
       this.did = "";

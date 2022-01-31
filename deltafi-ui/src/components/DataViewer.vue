@@ -3,7 +3,7 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" position="" :header="header()" :style="{width: '75vw'}" :maximizable="true" :modal="true" :dismissable-mask="true">
+    <Dialog v-model:visible="dialogVisible" position="top" :header="header()" :style="{width: '75vw'}" :maximizable="true" :modal="true" :dismissable-mask="true">
       <div class="content-viewer">
         <div>
           <TabView v-if="viewerDataLoaded">
