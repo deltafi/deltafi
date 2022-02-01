@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 public class RestPostEgressAction extends EgressAction<RestPostEgressParameters> {
@@ -42,7 +43,8 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
         try (InputStream inputStream = contentStorageService.load(formattedData.getContentReference())) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
                     buildHeadersMapString(deltaFile, params)), inputStream, formattedData.getContentReference().getMediaType());
-            if (Response.Status.fromStatusCode(response.statusCode()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+            Response.Status status = Response.Status.fromStatusCode(response.statusCode());
+            if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
                 return new ErrorResult(actionContext, "Unsuccessful POST: " + response.statusCode() + " " + new String(response.body().readAllBytes())).logErrorTo(log);
             }
 
