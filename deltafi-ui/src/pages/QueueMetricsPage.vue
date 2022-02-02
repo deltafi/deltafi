@@ -11,7 +11,7 @@
       </div>
       <div v-else class="col-12">
         <CollapsiblePanel header="Queues" class="table-panel">
-          <DataTable :value="queueMetrics" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="loadingQueueMetrics">
+          <DataTable responsive-layout="scroll" :value="queueMetrics" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="loadingQueueMetrics">
             <template #empty>
               No action queue metrics available.
             </template>

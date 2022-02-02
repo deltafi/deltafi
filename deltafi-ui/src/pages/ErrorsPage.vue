@@ -43,6 +43,7 @@
         id="errorsTable"
         v-model:expandedRows="expandedRows"
         v-model:selection="selectedErrors"
+        responsive-layout="scroll"
         selection-mode="multiple"
         data-key="did"
         paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
@@ -96,7 +97,7 @@
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable :value="error.data.actions" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
+            <DataTable responsive-layout="scroll" :value="error.data.actions" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column field="name" header="Action" />
               <Column field="state" header="State" />
               <Column field="created" header="Created" />

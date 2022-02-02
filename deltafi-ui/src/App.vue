@@ -4,14 +4,12 @@
       <HeaderBanner />
       <AppTopBar />
     </nav>
-    <div class="container-fluid">
-      <div class="row">
-        <div :class="sidebarClasses">
-          <AppMenu />
-        </div>
-        <div role="main" class="col content">
-          <router-view />
-        </div>
+    <div class="wrapper">
+      <div :class="sidebarClasses">
+        <AppMenu />
+      </div>
+      <div role="main" class="content-wrapper">
+        <router-view />
       </div>
     </div>
     <FooterBanner />
@@ -29,6 +27,7 @@ import Toast from "primevue/toast";
 
 import { useStore } from '@/store';
 import { UIConfigActionTypes } from '@/store/modules/uiConfig/action-types';
+import { SidebarToggleActionTypes } from '@/store/modules/sidebarToggle/action-types';
 
 export default {
   name: "App",
@@ -62,9 +61,17 @@ export default {
       },
     },
   },
+  mounted() {
+    this.$nextTick(() => {
+      window.addEventListener('resize', this.onResize);
+    })
+  },
   beforeCreate() {
     const store = useStore();
     store.dispatch(UIConfigActionTypes.FETCH_UI_CONFIG);
+  },
+  beforeUnmount() { 
+    window.removeEventListener('resize', this.onResize); 
   },
   methods: {
     setPageTitle(prefix) {
@@ -73,6 +80,14 @@ export default {
         .join(" - ");
       document.title = pageTitle;
     },
+    onResize() {
+      var windowWidth = window.innerWidth
+
+      if (!this.sidebarHidden && windowWidth < 768) {
+        const store = useStore();
+        store.dispatch(SidebarToggleActionTypes.TOGGLE_SIDEBAR);
+      }
+    }
   },
 };
 </script>

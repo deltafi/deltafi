@@ -7,7 +7,7 @@
           <i v-if="propSet.description" v-tooltip.right="propSet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
-      <DataTable sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" @cell-edit-complete="onCellEditComplete">
+      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" @cell-edit-complete="onCellEditComplete">
         <template #empty>
           No properties in this property set.
         </template>

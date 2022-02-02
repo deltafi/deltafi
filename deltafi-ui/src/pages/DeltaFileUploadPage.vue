@@ -52,7 +52,7 @@
     <div class="mb-3 row">
       <div class="col-12">
         <CollapsiblePanel v-if="deltaFiles.length" header="DeltaFiles" class="table-panel">
-          <DataTable :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="uploadsRowClass">
+          <DataTable responsive-layout="scroll" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="uploadsRowClass">
             <Column field="did" header="DID">
               <template #body="file">
                 <span v-if="file.data.loading"><i class="fas fa-spin fa-circle-notch" /> Loading...</span>

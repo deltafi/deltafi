@@ -13,6 +13,24 @@
   margin-left: -300px;
 }
 
-.content {
-  margin-bottom: 2em;
+.wrapper {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.wrapper .content-wrapper {
+  overflow-x: hidden;
+  width: 100%;
+  padding: .25rem 1rem 80px 1rem;
+}
+
+@media (max-width: 768px){
+  .sidebar {
+    -ms-flex: 0 0 150px !important;
+    flex: 0 0 150px !important;
+  }
+  .sidebar.hidden {
+    margin-left: -150px !important;
+  }
 }

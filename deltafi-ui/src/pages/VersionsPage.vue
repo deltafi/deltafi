@@ -6,7 +6,7 @@
       </h1>
     </div>
     <CollapsiblePanel header="Image Versions" class="table-panel">
-      <DataTable :value="versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading">
+      <DataTable responsive-layout="scroll" :value="versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading">
         <Column field="app" header="App" :sortable="true" />
         <Column field="container" header="Container" :sortable="true" />
         <Column field="image.name" header="Image" :sortable="true" />

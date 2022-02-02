@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Date range selected has been removed from Errors page
 - DeltaFile Viewer now displays Domain and Enrichment data
 - DeltaFile Viewer now displays metadata for all Actions that include metadata
+- DeltaFile now allows for support of smaller screen sizes
 
 ## [0.16.3] - 2022-01-19
 ### Added
