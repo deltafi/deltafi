@@ -182,12 +182,6 @@ import { useStore } from '@/store';
 import { SearchOptionsActionTypes } from '@/store/modules/searchOptions/action-types';
 import _ from 'lodash';
 
-var currentDateObj = new Date();
-var numberOfMlSeconds = currentDateObj.getTime();
-var addMlSeconds = 60 * 60 * 1000;
-var newDateObj = new Date(numberOfMlSeconds - addMlSeconds);
-currentDateObj = new Date(numberOfMlSeconds + addMlSeconds);
-
 export default {
   name: "SearchPage",
   components: {
@@ -218,8 +212,8 @@ export default {
       loading: true,
       tableData: [],
       expandedRows: [],
-      startTimeDate: newDateObj,
-      endTimeDate: currentDateObj,
+      startTimeDate: new Date(),
+      endTimeDate: new Date(),
       configTypeNames: [],
       actionName: null,
       actionTypeOptions: [],
@@ -278,6 +272,10 @@ export default {
     stageOptionSelected() {
       this.fetchRecordCount();
     }
+  },
+  created() {
+    this.startTimeDate.setHours(0,0,0,0);
+    this.endTimeDate.setHours(23,59,59,999);
   },
   mounted() {
     this.utilFunctions = new UtilFunctions();
