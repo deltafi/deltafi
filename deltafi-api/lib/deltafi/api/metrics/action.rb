@@ -140,7 +140,7 @@ module Deltafi
 
           def action_names_by_family
             config_yaml = Deltafi::API.graphql('query { exportConfigAsYaml }').parsed_response['data']['exportConfigAsYaml']
-            config = YAML.safe_load(config_yaml)
+            config = YAML.safe_load(config_yaml, aliases: true)
 
             output = Hash.new { |h, k| h[k] = h.dup.clear }
             output['ingress']['IngressAction'] = {}
