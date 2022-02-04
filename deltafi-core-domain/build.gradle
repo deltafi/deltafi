@@ -1,8 +1,7 @@
 plugins {
 	id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
-	id 'com.github.ben-manes.versions' version '0.38.0'
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
-	id 'org.springframework.boot' version '2.4.5'
+	id 'org.springframework.boot' version "${springBootVersion}"
 	id "com.palantir.docker" version "${palantirDockerVersion}"
 }
 
@@ -35,7 +34,7 @@ generateJava {
     packageName = 'org.deltafi.core.domain.generated'
     generateClient = true
     typeMapping = [
-	  "JSON": "org.deltafi.core.domain.api.types.JsonMap",
+	  "JSON": "java.util.Map<String, Object>",
 	  "Long": "java.lang.Long",
 	  "ActionSchema": "org.deltafi.core.domain.api.types.ActionSchema",
 	  "ContentReference": "org.deltafi.common.content.ContentReference",
@@ -52,11 +51,19 @@ generateJava {
 
 dependencyManagement {
 	imports {
-		mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2020.0.3'
+		mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2021.0.0'
 	}
 }
 
 dependencies {
+	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
+		because 'DGS BOM to automatically define versions of other packages below'
+	}
+
+	implementation(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")) {
+		because 'Override DGS BOM to use latest spring boot'
+	}
+
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
 	implementation project(":deltafi-common")
@@ -72,25 +79,20 @@ dependencies {
 
 	implementation "io.minio:minio:${minioVersion}"
 
-	// Use DGS BOM to automatically define versions of other packages below
-	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
-		because 'DGS BOM to automatically define versions of other packages below'
-	}
-
-	implementation "com.networknt:json-schema-validator:1.0.58"
+	implementation "com.networknt:json-schema-validator:1.0.65"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
-	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter"
+	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter:${dgsVersion}"
 	implementation "org.springframework.boot:spring-boot-starter-web"
 
-	implementation "net.logstash.logback:logstash-logback-encoder:6.6"
+	implementation "net.logstash.logback:logstash-logback-encoder:7.0.1"
 	implementation "ch.qos.logback:logback-classic"
 
 	testImplementation "org.springframework.boot:spring-boot-starter-test"
-	testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.2.0"
+	testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:3.3.0"
 
 	testImplementation project(":deltafi-common-test")
-	testImplementation 'org.awaitility:awaitility:4.1.0'
-	testImplementation "org.testcontainers:testcontainers:1.16.0"
+	testImplementation 'org.awaitility:awaitility:4.1.1'
+	testImplementation "org.testcontainers:testcontainers:1.16.3"
 }
 
 task copyProbe(type: Copy) {

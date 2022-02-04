@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.api.types.EgressActionSchema;
-import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.services.ActionSchemaService;
@@ -23,7 +22,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,7 +50,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void runValidateActionConfiguration() {
-        JsonMap params = getRequiredParams();
+        Map<String, Object> params = getRequiredParams();
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
         Optional<String> errors = actionConfigurationValidator.validateActionConfiguration(egressConfig(params));
@@ -59,7 +60,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void runValidateActionConfiguration_message() {
-        JsonMap params = getRequiredParams();
+        Map<String, Object> params = getRequiredParams();
         params.remove("url");
         params.put("url2", "https://egress");
 
@@ -112,7 +113,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void validateParameters_missingRequiredField() {
-        JsonMap params = getRequiredParams();
+        Map<String, Object> params = getRequiredParams();
         params.remove("url");
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
@@ -123,7 +124,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void validateParameters_wrongType() {
-        JsonMap params = getRequiredParams();
+        Map<String, Object> params = getRequiredParams();
         params.put("url", true);
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
@@ -133,7 +134,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void validateParameters_unexpectedParam() {
-        JsonMap params = getRequiredParams();
+        Map<String, Object> params = getRequiredParams();
         params.put("unknownField", "not needed");
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(actionSchemaOptional());
@@ -143,7 +144,7 @@ class ActionConfigurationValidatorTest {
 
     @Test
     void validateParameters_multipleErrors() {
-        JsonMap params = getRequiredParams();
+        Map<String, Object> params = getRequiredParams();
         params.remove("url");
         params.put("urlTypo", "http://egress");
 
@@ -180,7 +181,7 @@ class ActionConfigurationValidatorTest {
         return null;
     }
 
-    private EgressActionConfiguration egressConfig(JsonMap params) {
+    private EgressActionConfiguration egressConfig(Map<String, Object> params) {
         EgressActionConfiguration restEgressConfig = new EgressActionConfiguration();
         restEgressConfig.setName("RestEgress");
         restEgressConfig.setApiVersion("0.7.0");
@@ -190,8 +191,8 @@ class ActionConfigurationValidatorTest {
     }
 
     @NotNull
-    private JsonMap getRequiredParams() {
-        JsonMap params = new JsonMap();
+    private Map<String, Object> getRequiredParams() {
+        Map<String, Object> params = new HashMap<>();
         params.put("url", "https://egress");
         params.put("name", "RestEgress");
         params.put("egressFlow", "out");

@@ -5,7 +5,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
@@ -20,9 +19,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -70,11 +67,11 @@ class RedisServiceTest {
     }
 
     private boolean isEgressAction(final String name) {
-        return (name.toUpperCase().indexOf("EGRESS") != -1);
+        return (name.toUpperCase().contains("EGRESS"));
     }
 
-    private JsonMap getRequiredParams(final String name) {
-        JsonMap params = new JsonMap();
+    private Map<String, Object> getRequiredParams(final String name) {
+        Map<String, Object> params = new HashMap<>();
         params.put("name", name);
         if (isEgressAction(name)) {
             params.put("url", "https://egress");
@@ -100,7 +97,7 @@ class RedisServiceTest {
     }
 
     private ActionConfiguration makeConfig(final String name) {
-        JsonMap params = getRequiredParams(name);
+        Map<String, Object> params = getRequiredParams(name);
         ActionConfiguration actionConfig;
         if (isEgressAction(name)) {
             actionConfig = makeEgressConfig(name);

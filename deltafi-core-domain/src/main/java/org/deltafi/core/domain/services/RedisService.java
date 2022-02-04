@@ -8,15 +8,12 @@ import org.deltafi.core.domain.api.Constants;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +50,7 @@ public class RedisService {
         actionInput.setActionContext(actionContext);
 
         if (Objects.isNull(params.getParameters())) {
-            params.setParameters(new JsonMap());
+            params.setParameters(Collections.emptyMap());
         }
 
         actionInput.setActionParams(params.getParameters());

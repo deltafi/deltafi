@@ -1,7 +1,7 @@
 plugins {
     id "com.netflix.dgs.codegen" version "${dgsCodegenVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
-    id 'org.springframework.boot' version '2.4.5'
+    id 'org.springframework.boot' version "${springBootVersion}"
     id "com.palantir.docker" version "${palantirDockerVersion}"
 }
 
@@ -45,14 +45,17 @@ generateJava {
 
 dependencyManagement {
     imports {
-        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2020.0.3'
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2021.0.0'
     }
 }
 
 dependencies {
-    // Use DGS BOM to automatically define versions of other packages below
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
         because 'DGS BOM to automatically define versions of other packages below'
+    }
+
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")) {
+        because 'Override DGS BOM to use latest spring boot'
     }
 
     implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
@@ -63,7 +66,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
-    testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.2.0"
+    testImplementation "de.flapdoodle.embed:de.flapdoodle.embed.mongo:3.3.0"
 }
 
 task copyProbe(type: Copy) {

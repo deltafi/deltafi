@@ -6,6 +6,7 @@ import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /*
  * This is the codegen generated class, except the Spring-Mongo @Document annotation is added.
@@ -33,7 +34,7 @@ public interface ActionSchema {
 
     String getActionKitVersion();
 
-    JsonMap getSchema();
+    Map<String, Object> getSchema();
 
     OffsetDateTime getLastHeard();
 }

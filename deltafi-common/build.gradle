@@ -10,15 +10,15 @@ dependencies {
 
     implementation "io.minio:minio:${minioVersion}"
 
-    implementation "org.slf4j:slf4j-api:1.7.30"
-    implementation 'org.springframework.boot:spring-boot:2.4.5'
+    implementation "org.slf4j:slf4j-api:1.7.33"
+    implementation "org.springframework.boot:spring-boot:${springBootVersion}"
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
-    testImplementation 'org.mockito:mockito-junit-jupiter:3.9.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.2.0'
     testImplementation 'org.hamcrest:hamcrest:2.2'
 
     testImplementation project(':deltafi-common-test')
-    testImplementation 'org.testcontainers:testcontainers:1.16.0'
+    testImplementation 'org.testcontainers:testcontainers:1.16.3'
 }

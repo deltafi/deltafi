@@ -6,7 +6,6 @@ plugins {
 dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
 
-    // Use DGS BOM to automatically define versions of other packages below
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
         because 'DGS BOM to automatically define versions of other packages below'
     }

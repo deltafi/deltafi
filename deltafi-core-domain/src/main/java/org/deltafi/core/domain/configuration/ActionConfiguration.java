@@ -1,15 +1,14 @@
 package org.deltafi.core.domain.configuration;
 
-import org.deltafi.core.domain.api.types.JsonMap;
-
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public interface ActionConfiguration extends DeltaFiConfiguration {
     String getType();
-    JsonMap getParameters();
-    void setParameters(JsonMap jsonMap);
+    Map<String, Object> getParameters();
+    void setParameters(Map<String, Object> parameters);
     /**
      * Validates this action configuration.
      *

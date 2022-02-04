@@ -1,6 +1,7 @@
 package org.deltafi.actionkit.action;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -169,6 +170,7 @@ public abstract class Action<P extends ActionParameters> {
         return hostnameService.getHostname();
     }
 
+    @SuppressWarnings("unused")
     public final String getSystemName() {
         return deltaFiSystemProperties.getSystemName();
     }
@@ -177,9 +179,9 @@ public abstract class Action<P extends ActionParameters> {
         return paramType.getCanonicalName();
     }
 
-    protected JsonMap getDefinition() {
+    protected Map<String, Object> getDefinition() {
         JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
-        JsonMap definition = OBJECT_MAPPER.convertValue(schemaJson, JsonMap.class);
+        Map<String, Object> definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>(){});
         log.trace("Registering schema: {}", schemaJson.toPrettyString());
         return definition;
     }
@@ -217,6 +219,7 @@ public abstract class Action<P extends ActionParameters> {
         return OBJECT_MAPPER.convertValue(params, paramType);
     }
 
+    @SuppressWarnings("unused")
     protected byte[] loadContent(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
         byte[] content = null;
         try (InputStream contentInputStream = loadContentAsInputStream(deltaFile, protocolLayerType)) {

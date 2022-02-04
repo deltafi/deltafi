@@ -7,7 +7,6 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.api.types.JsonMap;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.services.ActionSchemaService;
@@ -84,7 +83,7 @@ public class ActionConfigurationValidator {
     String validateParameters(ActionConfiguration actionConfig, ActionSchema actionSchema) {
         JsonNode schemaNode = OBJECT_MAPPER.convertValue(actionSchema.getSchema(), JsonNode.class);
 
-        JsonMap paramMap = Objects.nonNull(actionConfig.getParameters()) ? actionConfig.getParameters() : new JsonMap();
+        Map<String, Object> paramMap = Objects.nonNull(actionConfig.getParameters()) ? actionConfig.getParameters() : new HashMap<>();
         JsonNode params = OBJECT_MAPPER.convertValue(paramMap, JsonNode.class);
 
         final JsonSchema schema = factory.getSchema(schemaNode);
