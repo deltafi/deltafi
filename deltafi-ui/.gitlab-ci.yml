@@ -25,7 +25,7 @@ docker:
   image: docker:latest
   needs: []
   services:
-    - name: docker:dind
+    - name: docker:18.09.7-dind
       entrypoint: ["dockerd-entrypoint.sh"]
       command: ["--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"]
       alias: docker
