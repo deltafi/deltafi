@@ -40,6 +40,8 @@ public class DeltaFileService {
     private final ZipkinService zipkinService;
     private final ObjectMapper objectMapper;
 
+    private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
+
     public String ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString)
             throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         String did = UUID.randomUUID().toString();
@@ -110,8 +112,7 @@ public class DeltaFileService {
 
     private GraphQLQueryRequest toGraphQlRequest(IngressInput ingressInput) {
         IngressGraphQLQuery ingressGraphQLQuery = IngressGraphQLQuery.newRequest().input(ingressInput).build();
-        IngressProjectionRoot projectionRoot = new IngressProjectionRoot().did();
-        return new GraphQLQueryRequest(ingressGraphQLQuery, projectionRoot);
+        return new GraphQLQueryRequest(ingressGraphQLQuery, PROJECTION_ROOT);
     }
 
     private void logMetric(String did, String fileName, String flow, String metric, long value) {
@@ -120,6 +121,8 @@ public class DeltaFileService {
     }
 
     private void sendTrace(String did, String fileName, String flow, OffsetDateTime created) {
-        zipkinService.markSpanComplete(zipkinService.createChildSpan(did, INGRESS_ACTION, fileName, flow, created));
+        if (zipkinService.isEnabled()) {
+            zipkinService.markSpanComplete(zipkinService.createChildSpan(did, INGRESS_ACTION, fileName, flow, created));
+        }
     }
 }

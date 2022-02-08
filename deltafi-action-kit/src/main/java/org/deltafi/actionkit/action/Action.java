@@ -18,7 +18,6 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.actionkit.config.ActionKitConfig;
 import org.deltafi.actionkit.config.ActionVersionProperty;
-import org.deltafi.actionkit.exception.DgsPostException;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
 import org.deltafi.actionkit.service.HostnameService;
@@ -35,8 +34,6 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -69,9 +66,11 @@ public abstract class Action<P extends ActionParameters> {
     protected HostnameService hostnameService;
 
     @Inject
+    @SuppressWarnings("CdiInjectionPointsInspection")
     protected DeltaFiSystemProperties deltaFiSystemProperties;
 
     @Inject
+    @SuppressWarnings("CdiInjectionPointsInspection")
     ActionVersionProperty actionVersionProperty;
 
     private final Class<P> paramType;
@@ -111,30 +110,28 @@ public abstract class Action<P extends ActionParameters> {
                 P params = convertToParams(actionInput.getActionParams());
 
                 SourceInfo sourceInfo = deltaFile.getSourceInfo();
-                DeltafiSpan span = zipkinService.createChildSpan(deltaFile.getDid(), actionContext.getName(), sourceInfo.getFilename(), sourceInfo.getFlow());
 
-                executeAction(deltaFile, actionContext, params, span);
+                DeltafiSpan span = zipkinService.isEnabled() ? zipkinService.createChildSpan(deltaFile.getDid(), actionContext.getName(), sourceInfo.getFilename(), sourceInfo.getFlow()) : null;
+
+                executeAction(deltaFile, actionContext, params);
+
+                if (Objects.nonNull(span)) { zipkinService.markSpanComplete(span); }
             }
         } catch (Throwable e) {
             log.error("Tell Jeremy he really, really needs to fix this exception: " + e.getMessage());
         }
     }
 
-    private void executeAction(DeltaFile deltaFile, ActionContext actionContext, P params, DeltafiSpan span) throws JsonProcessingException {
+    private void executeAction(DeltaFile deltaFile, ActionContext actionContext, P params) throws JsonProcessingException {
         try {
             Result result = execute(deltaFile, actionContext, params);
-            if (result != null) {
-                actionEventService.submitResult(result);
-                ActionMetricsLogger.logMetrics(result);
+            if (Objects.isNull(result)) {
+                throw new RuntimeException("Action " + actionContext.getName() + " returned null Result for did " + actionContext.getDid());
             }
-            zipkinService.markSpanComplete(span);
-        } catch (DgsPostException ignored) {
-            // do nothing -- the error has already been logged
+
+            actionEventService.submitResult(result);
+            ActionMetricsLogger.logMetrics(result);
         } catch (Throwable e) {
-            StringWriter stackWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackWriter));
-            String reason = "Action execution exception: " + "\n" + e.getMessage() + "\n" + stackWriter;
-            log.error(actionContext.getName() + " submitting error result for " + deltaFile.getDid() + ": " + reason);
             ErrorResult errorResult = new ErrorResult(actionContext, "Action execution exception", e).logErrorTo(log);
             actionEventService.submitResult(errorResult);
 

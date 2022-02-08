@@ -112,10 +112,12 @@ public class ZipkinService {
      * @param span - span to finish and send
      */
     public void markSpanComplete(DeltafiSpan span) {
-        span.endSpan();
-        SPANS_QUEUE.add(span);
-        if (zipkinProperties.isEnabled() && SPANS_QUEUE.size() >= zipkinProperties.getMaxBatchSize()) {
-            sendQueuedSpans();
+        if (zipkinProperties.isEnabled()) {
+            span.endSpan();
+            SPANS_QUEUE.add(span);
+            if (SPANS_QUEUE.size() >= zipkinProperties.getMaxBatchSize()) {
+                sendQueuedSpans();
+            }
         }
     }
 
@@ -129,7 +131,6 @@ public class ZipkinService {
             zipkinRestClient.sendSpan(spansAsJson);
         }
     }
-
 
     String spansToJson() {
         List<DeltafiSpan> toSend = new ArrayList<>();
@@ -162,5 +163,9 @@ public class ZipkinService {
 
     private long uniqueId() {
         return ThreadLocalRandom.current().nextLong();
+    }
+
+    public boolean isEnabled() {
+        return zipkinProperties.isEnabled();
     }
 }

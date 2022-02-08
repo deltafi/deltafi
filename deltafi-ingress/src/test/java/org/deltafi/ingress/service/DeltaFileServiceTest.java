@@ -54,6 +54,7 @@ class DeltaFileServiceTest {
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": []}");
         Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenReturn(dgsResponse);
+        Mockito.when(zipkinService.isEnabled()).thenReturn(true);
 
         String did = deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null);
 
