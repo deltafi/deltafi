@@ -11,8 +11,6 @@ enum ConfigType {
 
 interface DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
 }
 
@@ -24,8 +22,6 @@ input ConfigQueryInput {
 
 type IngressFlowConfiguration implements DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     type: String!
     transformActions: [String]!
@@ -42,8 +38,6 @@ input IngressFlowConfigurationInput {
 
 type EgressFlowConfiguration implements DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     egressAction: String!
     formatAction: String!

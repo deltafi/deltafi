@@ -91,8 +91,6 @@ class DeltafiConfigDatafetcherTest {
     DeltaFiConfigsProjectionRoot rootProject() {
         return new DeltaFiConfigsProjectionRoot()
                 .name()
-                .created()
-                .modified()
                 .apiVersion();
     }
 }

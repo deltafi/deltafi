@@ -7,9 +7,7 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.core.domain.generated.client.*;
-import org.deltafi.core.domain.generated.types.FlowPlan;
-import org.deltafi.core.domain.generated.types.FlowPlanInput;
-import org.deltafi.core.domain.generated.types.IngressFlowConfigurationInput;
+import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.FlowPlanRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,10 +58,18 @@ class FlowPlanDatafetcherTest {
             .egressActionConfigurations()
             .name()
             .parent()
-            .pluginCoordinates()
+            .sourcePlugin()
             .groupId()
             .artifactId()
             .version()
+            .parent()
+            .variables()
+            .name()
+            .dataType()
+            .parent()
+            .description()
+            .defaultValue()
+            .required()
             .parent();
 
     private static final String DESCRIPTION = "description";
@@ -131,9 +137,18 @@ class FlowPlanDatafetcherTest {
         assertEquals("Stix1_xValidateAction", flowPlan.getValidateActionConfigurations().get(1).getName());
         assertEquals("Stix2_1EgressAction", flowPlan.getEgressActionConfigurations().get(0).getName());
         assertEquals("Stix1_xEgressAction", flowPlan.getEgressActionConfigurations().get(1).getName());
-        assertEquals("org.deltafi.stix", flowPlan.getPluginCoordinates().get(0).getGroupId());
-        assertEquals("deltafi-stix", flowPlan.getPluginCoordinates().get(0).getArtifactId());
-        assertEquals("0.17.0", flowPlan.getPluginCoordinates().get(0).getVersion());
+        assertEquals("org.deltafi.stix", flowPlan.getSourcePlugin().getGroupId());
+        assertEquals("deltafi-stix", flowPlan.getSourcePlugin().getArtifactId());
+        assertEquals("0.17.0", flowPlan.getSourcePlugin().getVersion());
+
+        Variable variable = Variable.newBuilder()
+                .dataType(DATA_TYPE.STRING)
+                .defaultValue("http://deltafi-egress-sink-service")
+                .description("The URL to post the DeltaFile to")
+                .name("egressUrl")
+                .required(true).build();
+
+        assertEquals(variable, flowPlan.getVariables().get(0));
     }
 
     @Test
@@ -227,12 +242,23 @@ class FlowPlanDatafetcherTest {
                 .type("test-type")
                 .build();
 
+        PluginCoordinatesInput plugin = PluginCoordinatesInput.newBuilder()
+                .artifactId("plugin-a").groupId("dev.plugin").version("1.0").build();
+
+        VariableInput variable = VariableInput.newBuilder()
+                .dataType(DATA_TYPE.STRING).name("egressUrl")
+                .description("The URL to post the DeltaFile to")
+                .defaultValue("http://deltafi-egress-sink-service")
+                .required(true).build();
+
         FlowPlanInput input = FlowPlanInput.newBuilder()
                 .name(planName)
                 .description(DESCRIPTION)
                 .version(VERSION)
                 .draft(draft)
                 .ingressFlowConfigurations(singletonList(ingressInput))
+                .sourcePlugin(plugin)
+                .variables(List.of(variable))
                 .build();
 
         SaveFlowPlanGraphQLQuery saveFlowPlan = SaveFlowPlanGraphQLQuery

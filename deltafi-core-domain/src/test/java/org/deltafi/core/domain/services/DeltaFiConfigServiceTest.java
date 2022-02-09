@@ -16,7 +16,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -175,8 +174,6 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(formatActionConfiguration.getRequiresDomains()).contains("sample");
         Assertions.assertThat(formatActionConfiguration.getRequiresEnrichment()).hasSize(1);
         Assertions.assertThat(formatActionConfiguration.getRequiresEnrichment()).contains("sampleEnrichment");
-        Assertions.assertThat(formatActionConfiguration.getCreated()).isNotNull();
-        Assertions.assertThat(formatActionConfiguration.getModified()).isNotNull();
 
         ValidateActionConfiguration validateActionConfiguration = commonChecks(config.getValidateActions(), "SampleValidateAction");
         Assertions.assertThat(validateActionConfiguration.getName()).isEqualTo("SampleValidateAction");
@@ -196,8 +193,6 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(configs).containsKey(name);
         C entry = configs.get(name);
         Assertions.assertThat(entry.getName()).isEqualTo(name);
-        Assertions.assertThat(entry.getCreated()).isNotNull();
-        Assertions.assertThat(entry.getModified()).isNotNull();
         return entry;
     }
 
@@ -217,8 +212,6 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(configService.getConfig().allConfigs()).hasSize(18);
         LoadActionConfiguration afterUpdate = configService.getConfig().getLoadActions().get(ACTION_TO_FIND);
         Assertions.assertThat(afterUpdate.getConsumes()).isEqualTo("json-utf8-sample");
-        Assertions.assertThat(afterUpdate.getCreated()).isEqualTo(preUpdate.getCreated());
-        Assertions.assertThat(afterUpdate.getModified()).isAfter(preUpdate.getModified());
         Assertions.assertThat(configService.getConfig().getDeleteActions()).containsKey("DeleteAction");
     }
 
@@ -226,8 +219,6 @@ class DeltaFiConfigServiceTest {
         DeltafiRuntimeConfiguration newConfig = new DeltafiRuntimeConfiguration();
 
         action.setName(ACTION_TO_FIND);
-        action.setCreated(OffsetDateTime.now().minusHours(1));
-        action.setModified(OffsetDateTime.now().minusHours(1));
         newConfig.getLoadActions().put(ACTION_TO_FIND, action);
         createAndAdd(TransformActionConfiguration::new, "load", newConfig.getTransformActions());
         createAndAdd(TransformActionConfiguration::new, "transform", newConfig.getTransformActions());

@@ -18,7 +18,7 @@ class EgressFlowValidatorTest {
         Optional<String> error = egressFlowValidator.validate(new DeltafiRuntimeConfiguration(), new EgressFlowConfiguration());
         assertThat(error)
                 .isPresent()
-                .contains("Egress Flow Configuration: EgressFlowConfiguration{name='null',created='null',modified='null',apiVersion='null',egressAction='null',formatAction='null',enrichActions='[]',validateActions='[]',includeIngressFlows='[]',excludeIngressFlows='[]'} has the following errors: \n" +
+                .contains("Egress Flow Configuration: EgressFlowConfiguration{name='null',apiVersion='null',egressAction='null',formatAction='null',enrichActions='[]',validateActions='[]',includeIngressFlows='[]',excludeIngressFlows='[]'} has the following errors: \n" +
                         "Required property egressAction is not set; Required property formatAction is not set; Required property name is not set");
     }
 

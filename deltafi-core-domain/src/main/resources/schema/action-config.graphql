@@ -2,15 +2,11 @@ interface ActionConfiguration {
     name: String!
     type: String!
     parameters: JSON
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
 }
 
 type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     consumes: String!
     produces: String!
@@ -29,8 +25,6 @@ input TransformActionConfigurationInput {
 
 type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     consumes: String!
     requiresMetadataKeyValues: [KeyValue]
@@ -49,8 +43,6 @@ input LoadActionConfigurationInput {
 
 type EnrichActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     requiresDomains: [String]!
     requiresEnrichment: [String]
@@ -69,8 +61,6 @@ input EnrichActionConfigurationInput {
 
 type FormatActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     requiresDomains: [String]!
     requiresEnrichment: [String]
@@ -89,8 +79,6 @@ input FormatActionConfigurationInput {
 
 type ValidateActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     type: String!
     parameters: JSON
@@ -105,8 +93,6 @@ input ValidateActionConfigurationInput {
 
 type EgressActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     type: String!
     parameters: JSON
@@ -121,8 +107,6 @@ input EgressActionConfigurationInput {
 
 type DeleteActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
-    created: DateTime!
-    modified: DateTime!
     apiVersion: String
     type: String!
     parameters: JSON

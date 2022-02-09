@@ -22,7 +22,7 @@ class IngressFlowValidatorTest {
         Optional<String> error = ingressFlowValidator.validate(new DeltafiRuntimeConfiguration(), new IngressFlowConfiguration());
         assertThat(error)
                 .isPresent()
-                .contains("Ingress Flow Configuration: IngressFlowConfiguration{name='null',created='null',modified='null',apiVersion='null',type='null',transformActions='[]',loadActions='[]'} has the following errors: \n" +
+                .contains("Ingress Flow Configuration: IngressFlowConfiguration{name='null',apiVersion='null',type='null',transformActions='[]',loadActions='[]'} has the following errors: \n" +
                         "Required property type is not set; Required property name is not set; Required property loadActions must be set to a non-empty list");
     }
 

@@ -95,7 +95,7 @@
          "parameters": {
             "egressFlow": "stix2_1",
             "metadataKey": "deltafiMetadata",
-            "url": "http://deltafi-egress-sink-service"
+            "url": "${egressUrl}"
          },
          "type": "org.deltafi.core.action.RestPostEgressAction"
       },
@@ -104,16 +104,23 @@
          "parameters": {
             "egressFlow": "stix1_x",
             "metadataKey": "deltafiMetadata",
-            "url": "http://deltafi-egress-sink-service"
+            "url": "${egressUrl}"
          },
          "type": "org.deltafi.core.action.RestPostEgressAction"
       }
    ],
-   "pluginCoordinates": [
+   "sourcePlugin": {
+      "groupId": "org.deltafi.stix",
+      "artifactId": "deltafi-stix",
+      "version": "0.17.0"
+   },
+   "variables": [
       {
-         "groupId": "org.deltafi.stix",
-         "artifactId": "deltafi-stix",
-         "version": "0.17.0"
+         "name": "egressUrl",
+         "description": "The URL to post the DeltaFile to",
+         "dataType": "STRING",
+         "required": true,
+         "defaultValue": "http://deltafi-egress-sink-service"
       }
    ]
 }

@@ -8,5 +8,17 @@
     "type" : "test-type",
     "transformActions" : [ "transformer" ],
     "loadActions" : [ "loader" ]
+  } ],
+  "sourcePlugin" : {
+    "groupId" : "dev.plugin",
+    "artifactId" : "plugin-a",
+    "version" : "1.0"
+  },
+  "variables" : [ {
+    "name" : "egressUrl",
+    "description" : "The URL to post the DeltaFile to",
+    "dataType" : "STRING",
+    "required" : true,
+    "defaultValue" : "http://deltafi-egress-sink-service"
   } ]
 }

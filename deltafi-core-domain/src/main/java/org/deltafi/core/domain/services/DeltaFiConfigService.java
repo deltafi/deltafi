@@ -86,16 +86,9 @@ public class DeltaFiConfigService {
 
     public String replaceConfig(String configInput) {
         DeltafiRuntimeConfiguration incoming = yaml.load(configInput);
-        incoming.allConfigs().forEach(this::setTimes);
         ensureNamesSet(incoming);
         saveConfig(incoming);
         return exportConfigAsYaml();
-    }
-
-    void setTimes(DeltaFiConfiguration config) {
-        OffsetDateTime now = OffsetDateTime.now();
-        config.setModified(now);
-        config.setCreated(now);
     }
 
     public String mergeConfig(String configInput) {
@@ -254,15 +247,7 @@ public class DeltaFiConfigService {
         Map<String, C> existingMap = mapFunction.apply(existing);
 
         for (Map.Entry<String, C> entry : incomingMap.entrySet()) {
-            String key = entry.getKey();
-            C configEntry = entry.getValue();
-
-            OffsetDateTime now = OffsetDateTime.now();
-            OffsetDateTime created = existingMap.containsKey(key) ? existingMap.get(key).getCreated() : now;
-            configEntry.setModified(now);
-            configEntry.setCreated(created);
-
-            existingMap.put(key, configEntry);
+            existingMap.put(entry.getKey(), entry.getValue());
         }
     }
 
