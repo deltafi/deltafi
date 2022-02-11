@@ -1,35 +1,14 @@
 package org.deltafi.core.domain.plugin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.TypeRef;
-import com.netflix.graphql.dgs.DgsQueryExecutor;
-import com.netflix.graphql.dgs.autoconfig.DgsAutoConfiguration;
-import com.netflix.graphql.dgs.autoconfig.DgsExtendedScalarsAutoConfiguration;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import org.deltafi.common.resource.Resource;
-import org.deltafi.core.domain.generated.client.PluginsGraphQLQuery;
 import org.deltafi.core.domain.generated.client.PluginsProjectionRoot;
-import org.deltafi.core.domain.generated.client.RegisterPluginGraphQLQuery;
 import org.deltafi.core.domain.generated.types.PackagemediaType;
 import org.deltafi.core.domain.generated.types.PackageType;
-import org.deltafi.core.domain.generated.types.PluginInput;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-
-import java.io.IOException;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(classes = { DgsAutoConfiguration.class, DgsExtendedScalarsAutoConfiguration.class, PluginDataFetcher.class })
-public class PluginDataFetcherTest {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+public class PluginDataFetcherTestHelper {
 
-    private static final PluginsProjectionRoot PLUGINS_PROJECTION_ROOT = new PluginsProjectionRoot()
+    public static final PluginsProjectionRoot PLUGINS_PROJECTION_ROOT = new PluginsProjectionRoot()
             .pluginCoordinates()
             .groupId()
             .artifactId()
@@ -66,49 +45,7 @@ public class PluginDataFetcherTest {
             .requiresDomains().parent()
             .domains();
 
-    @Autowired
-    DgsQueryExecutor dgsQueryExecutor;
-
-    @MockBean
-    PluginRegistryService pluginRegistryService;
-
-    @Test
-    public void getsPlugins() throws IOException {
-        Plugin plugin1 = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class);
-        Plugin plugin2 = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class);
-        Mockito.when(pluginRegistryService.getPlugins()).thenReturn(List.of(plugin1, plugin2));
-
-        PluginsGraphQLQuery pluginsGraphQLQuery = PluginsGraphQLQuery.newRequest().build();
-
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(pluginsGraphQLQuery, PLUGINS_PROJECTION_ROOT);
-
-        List<org.deltafi.core.domain.generated.types.Plugin> plugins =
-                dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
-                "data.plugins[*]", new TypeRef<>() {});
-
-        assertEquals(2, plugins.size());
-
-        validatePlugin1(plugins.get(0));
-    }
-
-    @Test
-    public void registersPlugin() throws IOException {
-        PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginInput.class);
-        RegisterPluginGraphQLQuery registerPluginGraphQLQuery = RegisterPluginGraphQLQuery.newRequest().pluginInput(pluginInput).build();
-
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(registerPluginGraphQLQuery, PLUGINS_PROJECTION_ROOT);
-
-        Plugin plugin = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
-                "data." + registerPluginGraphQLQuery.getOperationName(), Plugin.class);
-
-        validatePlugin1(plugin);
-
-        ArgumentCaptor<Plugin> pluginArgumentCaptor = ArgumentCaptor.forClass(Plugin.class);
-        Mockito.verify(pluginRegistryService).addPlugin(pluginArgumentCaptor.capture());
-        validatePlugin1(pluginArgumentCaptor.getValue());
-    }
-
-    private void validatePlugin1(org.deltafi.core.domain.generated.types.Plugin plugin1) {
+    public static void validatePlugin1(org.deltafi.core.domain.generated.types.Plugin plugin1) {
         assertEquals("org.deltafi", plugin1.getPluginCoordinates().getGroupId());
         assertEquals("plugin-1", plugin1.getPluginCoordinates().getArtifactId());
         assertEquals("1.0.0", plugin1.getPluginCoordinates().getVersion());

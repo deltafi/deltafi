@@ -50,8 +50,9 @@ dependencies {
     testImplementation 'org.mockito:mockito-inline'
 }
 
+compileTestJava.dependsOn jandex
+
 test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
-    dependsOn jandex
 }

@@ -16,7 +16,7 @@ public class HostnameService {
     private static final String HOSTNAME_ENV_VAR = "HOSTNAME";
     private static final String COMPUTERNAME_ENV_VAR = "COMPUTERNAME";
 
-    private String hostname;
+    private final String hostname;
 
     public HostnameService(ActionKitConfig actionKitConfig) {
         if (actionKitConfig.hostname().isPresent()) {

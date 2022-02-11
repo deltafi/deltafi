@@ -2,7 +2,6 @@ package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;

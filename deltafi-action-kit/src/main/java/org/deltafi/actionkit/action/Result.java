@@ -1,6 +1,5 @@
 package org.deltafi.actionkit.action;
 
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.common.metric.Metric;
@@ -22,7 +21,7 @@ public abstract class Result {
     private static final String FILES_ERRORED = "files_errored";
     private static final String FILES_FILTERED = "files_filtered";
 
-    protected ActionContext actionContext;
+    protected final ActionContext actionContext;
 
     public Result(ActionContext actionContext) {
         this.actionContext = actionContext;

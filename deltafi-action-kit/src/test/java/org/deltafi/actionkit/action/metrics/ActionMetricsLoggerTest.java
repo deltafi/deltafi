@@ -30,7 +30,7 @@ public class ActionMetricsLoggerTest {
             new ActionContext("did", "formataction", "flow", "flow", "host", "1.0.0"), "filename");
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"rawtypes"})
     public void logsDefaultMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
         ActionMetricsLogger.logMetrics(FORMAT_RESULT);
@@ -62,7 +62,7 @@ public class ActionMetricsLoggerTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"rawtypes"})
     public void logsErrorMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
         ActionMetricsLogger.logMetrics(ERROR_RESULT);
@@ -71,7 +71,7 @@ public class ActionMetricsLoggerTest {
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"rawtypes"})
     public void logsFilterMetrics() {
         MOCKED_METRIC_LOGGER.clearInvocations();
         ActionMetricsLogger.logMetrics(FILTER_RESULT);
@@ -79,6 +79,7 @@ public class ActionMetricsLoggerTest {
         verifyCoreMetrics(mapArgumentCaptor, "filter", "files_filtered");
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void verifyCoreMetrics(ArgumentCaptor<Map> mapArgumentCaptor, String actionType, String metric) {
         String actionName = actionType + "action";
         MOCKED_METRIC_LOGGER.verify(() -> MetricLogger.logMetric(eq(actionType),

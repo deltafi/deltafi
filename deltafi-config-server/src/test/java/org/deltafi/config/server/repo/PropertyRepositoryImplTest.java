@@ -11,16 +11,31 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.config.server.constants.PropertyConstants.DELTAFI_PROPERTY_SET;
 
 @DataMongoTest
+@Testcontainers
 class PropertyRepositoryImplTest {
+
+    @Container
+    public static MongoDBContainer mongoDBContainer = new MongoDBContainer(MONGODB_CONTAINER);
+
+    @DynamicPropertySource
+    static void setProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
+    }
 
     private static final String TEST_PLUGIN = "test-plugin";
     private static final String EDITABLE = "editable";

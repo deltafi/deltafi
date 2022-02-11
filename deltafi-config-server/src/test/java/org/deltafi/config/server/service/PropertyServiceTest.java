@@ -91,7 +91,7 @@ class PropertyServiceTest {
         Mockito.when(gitRepo.findOne(ids)).thenReturn(empty);
         List<PropertySet> propertySets = propertyService.getAllProperties();
 
-        propertySets.stream().forEach(this::verifyPropertySources);
+        propertySets.forEach(this::verifyPropertySources);
     }
 
     void verifyPropertySources(PropertySet propertySet) {

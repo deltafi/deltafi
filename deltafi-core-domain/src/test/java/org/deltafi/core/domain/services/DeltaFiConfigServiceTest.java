@@ -76,9 +76,7 @@ class DeltaFiConfigServiceTest {
         ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).name(ACTION_TO_FIND).build();
         Mockito.when(configValidator.validate(Mockito.any())).thenReturn(List.of("Failed validation"));
 
-        Assertions.assertThatThrownBy(() -> {
-                    long removed = configService.removeDeltafiConfigs(input);
-                }).isInstanceOf(DeltafiConfigurationException.class)
+        Assertions.assertThatThrownBy(() -> configService.removeDeltafiConfigs(input)).isInstanceOf(DeltafiConfigurationException.class)
                 .hasMessage("Failed validation");
 
         Mockito.verify(deltaFiConfigRepo, Mockito.times(0)).save(Mockito.any());

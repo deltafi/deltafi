@@ -15,17 +15,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 import java.util.Map;
 
+import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.config.server.testUtil.DataProviderUtil.getPropertySetWithProperty;
 
 @SpringBootTest
-@TestPropertySource(properties = {"enableScheduling=false"})
+@Testcontainers
 @ActiveProfiles("native")
 class PropertiesDatafetcherTest {
+
+    @Container
+    public static MongoDBContainer mongoDBContainer = new MongoDBContainer(MONGODB_CONTAINER);
+
+    @DynamicPropertySource
+    static void setProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
+    }
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String REMOVE_TEMPLATE = "mutation {removePluginPropertySet(propertySetId: \"%s\")}";
@@ -54,9 +67,8 @@ class PropertiesDatafetcherTest {
     void updateProperties() {
         PropertyUpdate update = PropertyUpdate.builder()
                 .key("key").value("value").propertySetId(PropertyConstants.ACTION_KIT_PROPERTY_SET).build();
-        List<Map<String, Object>> updates = List.of(OBJECT_MAPPER.convertValue(update, Map.class));
 
-        Map<String, Object> updatesMap = Map.of("updates", updates);
+        Map<String, Object> updatesMap = Map.of("updates", List.of(Map.of("key", "key", "value", "value", "propertySetId", PropertyConstants.ACTION_KIT_PROPERTY_SET)));
 
         ExecutionResult result = dgsQueryExecutor.execute(UPDATE_PROPERTIES, updatesMap);
         Mockito.verify(propertyService).updateProperties(List.of(update));

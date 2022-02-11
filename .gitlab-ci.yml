@@ -18,7 +18,7 @@ default:
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  GRADLE: "gradle -s --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
+  GRADLE: "gradle -s --parallel --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
   DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
   DOCKER_HOST: "tcp://docker:2375"
   DOCKER_TLS_CERTDIR: ""

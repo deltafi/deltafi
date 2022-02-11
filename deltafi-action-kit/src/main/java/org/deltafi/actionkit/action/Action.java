@@ -77,7 +77,7 @@ public abstract class Action<P extends ActionParameters> {
     private GraphQLQuery registrationQuery = null;
     private BaseProjectionNode registrationProjection = null;
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "EmptyMethod"})
     public void start(@Observes StartupEvent start) {
         // quarkus will prune the actions if this is not included
     }

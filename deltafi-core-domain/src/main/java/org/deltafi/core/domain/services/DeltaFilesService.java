@@ -49,7 +49,9 @@ public class DeltaFilesService {
     final DeltaFileRepo deltaFileRepo;
     final RedisService redisService;
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(16);
+    public static final int EXECUTOR_THREADS = 16;
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(EXECUTOR_THREADS);
 
     public DeltaFile getDeltaFile(String did) {
         return deltaFileRepo.findById(did).orElse(null);

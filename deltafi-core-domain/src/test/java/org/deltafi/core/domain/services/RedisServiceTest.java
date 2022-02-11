@@ -13,10 +13,7 @@ import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
@@ -41,6 +38,9 @@ class RedisServiceTest {
     @Mock
     DeltaFiConfigService configService;
 
+    @Captor
+    ArgumentCaptor<List<Pair<String, Object>>> listArgCaptor;
+
     @Test
     void testEnqueue() throws ActionConfigException, JsonProcessingException {
         List<String> actionNames = new ArrayList<>(Arrays.asList(PASSTHROUGH_FORMAT, SMOKE_FORMAT, PASSTHROUGH_EGRESS));
@@ -57,11 +57,9 @@ class RedisServiceTest {
         Mockito.when(configService.getConfigForAction(PASSTHROUGH_FORMAT)).thenReturn(passthroughFormatConfig);
         Mockito.when(configService.getConfigForAction(PASSTHROUGH_EGRESS)).thenReturn(passthroughEgressConfig);
 
-        ArgumentCaptor<List> listArgCaptor = ArgumentCaptor.forClass(List.class);
-
         redisService.enqueue(actionNames, deltaFile);
         Mockito.verify(jedisKeyedBlockingQueue).put(listArgCaptor.capture());
-        List<Pair<String, Object>> capturedList = (List<Pair<String, Object>>) listArgCaptor.getValue();
+        List<Pair<String, Object>> capturedList = listArgCaptor.getValue();
         assertEquals(3, capturedList.size());
 
     }

@@ -36,3 +36,11 @@ minio:
 redis:
   url: http://localhost
   password: redis
+
+dgs:
+  graphql:
+    graphiql:
+      enabled: false
+
+zipkin:
+  enabled: false

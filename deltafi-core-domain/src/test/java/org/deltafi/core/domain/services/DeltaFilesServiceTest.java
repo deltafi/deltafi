@@ -2,19 +2,19 @@ package org.deltafi.core.domain.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
+import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
-import org.deltafi.core.domain.generated.types.IngressInput;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.TestPropertySource;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -26,19 +26,30 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@TestPropertySource(properties = {"enableScheduling=false"})
+@ExtendWith(MockitoExtension.class)
 class DeltaFilesServiceTest {
-    @MockBean
+    @Mock
     DeltaFiConfigService deltaFiConfigService;
 
-    @MockBean
+    @Mock
     DeltaFileRepo deltaFileRepo;
 
-    @MockBean
+    @Mock
     RedisService redisService;
 
-    @Autowired
+    @SuppressWarnings("unused")
+    @Spy
+    DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+
+    @SuppressWarnings("unused")
+    @Mock
+    ZipkinService zipkinService;
+
+    @SuppressWarnings("unused")
+    @InjectMocks
+    StateMachine stateMachine = Mockito.spy(new StateMachine());
+
+    @InjectMocks
     DeltaFilesService deltaFilesService;
 
     @Test

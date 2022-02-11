@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,7 +140,7 @@ class StateMachineTest {
     void testGetEnrichActionsMatchesDomainAndEnrichment() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
         deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", null);
+        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -160,7 +161,7 @@ class StateMachineTest {
     void testGetEnrichActionsDomainDoesNotMatch() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
         deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", null);
+        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -181,7 +182,7 @@ class StateMachineTest {
     void testGetEnrichActionsEnrichmentDoesNotMatch() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
         deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", null);
+        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -280,7 +281,7 @@ class StateMachineTest {
     void testGetFormatActionsMatchesDomainAndEnrichment() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
         deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", null);
+        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");
@@ -302,7 +303,7 @@ class StateMachineTest {
     void testGetFormatActionsDomainDiffers() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
         deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", null);
+        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");
@@ -324,7 +325,7 @@ class StateMachineTest {
     void testGetFormatActionsEnrichDiffers() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
         deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", null);
+        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setFormatAction("FormatAction");

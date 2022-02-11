@@ -23,7 +23,6 @@ public class RedisService {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .registerModule(new JavaTimeModule());
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
     public RedisService(String redisUrl, String redisPassword) throws URISyntaxException {
         URI uri = new URI(redisUrl);
         GenericObjectPoolConfig<Jedis> pool = new GenericObjectPoolConfig<>();

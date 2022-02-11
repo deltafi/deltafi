@@ -8,23 +8,11 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
-import org.deltafi.core.domain.repo.ActionSchemaRepo;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 
 import java.util.Collections;
 import java.util.List;
 
-import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@SpringBootTest
-@TestPropertySource(properties = "enableScheduling=false")
-class ActionSchemaDatafetcherTest {
+public class ActionSchemaDatafetcherTestHelper {
 
     public static final String DELETE_ACTION = "org.deltafi.DeleteAction";
     public static final String EGRESS_ACTION = "org.deltafi.EgressAction";
@@ -39,115 +27,7 @@ class ActionSchemaDatafetcherTest {
     public static final String DOMAIN = "domain";
     public static final String VERSION = "1.2.3";
 
-    @Autowired
-    DgsQueryExecutor dgsQueryExecutor;
-
-    @Autowired
-    ActionSchemaRepo actionSchemaRepo;
-
-    @BeforeEach
-    public void setup() {
-        actionSchemaRepo.deleteAll();
-    }
-
-    @Test
-    void testRegisterDelete() {
-        DeleteActionSchema schema = saveDelete();
-        assertEquals(DELETE_ACTION, schema.getId());
-        assertEquals(PARAM_CLASS, schema.getParamClass());
-        assertNotNull(schema.getLastHeard());
-    }
-
-    @Test
-    void testRegisterEgress() {
-        EgressActionSchema schema = saveEgress();
-        assertEquals(EGRESS_ACTION, schema.getId());
-        assertEquals(PARAM_CLASS, schema.getParamClass());
-        assertNotNull(schema.getLastHeard());
-    }
-
-    @Test
-    void testRegisterEnrich() {
-        EnrichActionSchema schema = saveEnrich();
-        assertEquals(ENRICH_ACTION, schema.getId());
-        assertEquals(PARAM_CLASS, schema.getParamClass());
-        assertNotNull(schema.getLastHeard());
-        assertEquals(DOMAIN, schema.getRequiresDomains().get(0));
-    }
-
-    @Test
-    void testRegisterFormat() {
-        FormatActionSchema schema = saveFormat();
-        assertEquals(FORMAT_ACTION, schema.getId());
-        assertEquals(PARAM_CLASS, schema.getParamClass());
-        assertNotNull(schema.getLastHeard());
-        assertEquals(DOMAIN, schema.getRequiresDomains().get(0));
-    }
-
-    @Test
-    void testRegisterLoad() {
-        LoadActionSchema schema = saveLoad();
-        assertEquals(LOAD_ACTION, schema.getId());
-        assertEquals(PARAM_CLASS, schema.getParamClass());
-        assertNotNull(schema.getLastHeard());
-        assertEquals(CONSUMES, schema.getConsumes());
-    }
-
-    @Test
-    void testRegisterTransform() {
-        TransformActionSchema schema = saveTransform();
-        assertEquals(TRANSFORM_ACTION, schema.getId());
-        assertEquals(PARAM_CLASS, schema.getParamClass());
-        assertNotNull(schema.getLastHeard());
-        assertEquals(CONSUMES, schema.getConsumes());
-        assertEquals(PRODUCES, schema.getProduces());
-    }
-
-    @Test
-    void testRegisterValidate() {
-        ValidateActionSchema schema = saveValidate();
-        assertEquals(VALIDATE_ACTION, schema.getId());
-        assertEquals(PARAM_CLASS, schema.getParamClass());
-        assertNotNull(schema.getLastHeard());
-    }
-
-    @Test
-    void testGetAll() {
-        saveEgress();
-        saveFormat();
-        saveLoad();
-        assertEquals(3, actionSchemaRepo.count());
-
-        List<ActionSchema> schemas = getSchemas();
-        assertEquals(3, schemas.size());
-
-        boolean foundEgress = false;
-        boolean foundFormat = false;
-        boolean foundLoad = false;
-
-        for (ActionSchema schema : schemas) {
-            if (schema instanceof EgressActionSchema) {
-                foundEgress = true;
-                EgressActionSchema e = (EgressActionSchema) schema;
-                assertEquals(EGRESS_ACTION, e.getId());
-            } else if (schema instanceof FormatActionSchema) {
-                foundFormat = true;
-                FormatActionSchema f = (FormatActionSchema) schema;
-                assertEquals(FORMAT_ACTION, f.getId());
-                assertEquals(DOMAIN, f.getRequiresDomains().get(0));
-            } else if (schema instanceof LoadActionSchema) {
-                foundLoad = true;
-                LoadActionSchema l = (LoadActionSchema) schema;
-                assertEquals(LOAD_ACTION, l.getId());
-                assertEquals(CONSUMES, l.getConsumes());
-            }
-        }
-        assertTrue(foundEgress);
-        assertTrue(foundFormat);
-        assertTrue(foundLoad);
-    }
-
-    <C extends ActionSchema> C executeRequest(GraphQLQuery query, BaseProjectionNode projection, Class<C> clazz) {
+    static public <C extends ActionSchema> C executeRequest(GraphQLQuery query, BaseProjectionNode projection, Class<C> clazz, DgsQueryExecutor dgsQueryExecutor) {
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -155,7 +35,7 @@ class ActionSchemaDatafetcherTest {
                 clazz);
     }
 
-    List<ActionSchema> getSchemas() {
+    static public List<ActionSchema> getSchemas(DgsQueryExecutor dgsQueryExecutor) {
         ActionSchemasProjectionRoot projection = new ActionSchemasProjectionRoot()
                 .onEgressActionSchema()
                 .id()
@@ -184,15 +64,14 @@ class ActionSchemaDatafetcherTest {
 
         TypeRef<List<ActionSchema>> listOfActionSchemas = new TypeRef<>() {
         };
-        List<ActionSchema> actionSchemas = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + actionSchemasQuery.getOperationName(),
                 listOfActionSchemas);
-
-        return actionSchemas;
     }
 
-    DeleteActionSchema saveDelete() {
+    static public DeleteActionSchema saveDelete(DgsQueryExecutor dgsQueryExecutor) {
         DeleteActionSchemaInput input = DeleteActionSchemaInput.newBuilder()
                 .id(DELETE_ACTION)
                 .paramClass(PARAM_CLASS)
@@ -209,13 +88,11 @@ class ActionSchemaDatafetcherTest {
         RegisterDeleteSchemaGraphQLQuery registerQuery = RegisterDeleteSchemaGraphQLQuery
                 .newRequest().actionSchema(input).build();
 
-        DeleteActionSchema schema = executeRequest(registerQuery,
-                projection, DeleteActionSchema.class);
-
-        return schema;
+        return executeRequest(registerQuery,
+                projection, DeleteActionSchema.class, dgsQueryExecutor);
     }
 
-    EgressActionSchema saveEgress() {
+    static public EgressActionSchema saveEgress(DgsQueryExecutor dgsQueryExecutor) {
         EgressActionSchemaInput input = EgressActionSchemaInput.newBuilder()
                 .id(EGRESS_ACTION)
                 .paramClass(PARAM_CLASS)
@@ -232,13 +109,11 @@ class ActionSchemaDatafetcherTest {
         RegisterEgressSchemaGraphQLQuery registerQuery = RegisterEgressSchemaGraphQLQuery
                 .newRequest().actionSchema(input).build();
 
-        EgressActionSchema schema = executeRequest(registerQuery,
-                projection, EgressActionSchema.class);
-
-        return schema;
+        return executeRequest(registerQuery,
+                projection, EgressActionSchema.class, dgsQueryExecutor);
     }
 
-    EnrichActionSchema saveEnrich() {
+    static public EnrichActionSchema saveEnrich(DgsQueryExecutor dgsQueryExecutor) {
         EnrichActionSchemaInput input = EnrichActionSchemaInput.newBuilder()
                 .id(ENRICH_ACTION)
                 .paramClass(PARAM_CLASS)
@@ -257,13 +132,11 @@ class ActionSchemaDatafetcherTest {
         RegisterEnrichSchemaGraphQLQuery registerQuery = RegisterEnrichSchemaGraphQLQuery
                 .newRequest().actionSchema(input).build();
 
-        EnrichActionSchema schema = executeRequest(registerQuery,
-                projection, EnrichActionSchema.class);
-
-        return schema;
+        return executeRequest(registerQuery,
+                projection, EnrichActionSchema.class, dgsQueryExecutor);
     }
 
-    FormatActionSchema saveFormat() {
+    static public FormatActionSchema saveFormat(DgsQueryExecutor dgsQueryExecutor) {
         FormatActionSchemaInput input = FormatActionSchemaInput.newBuilder()
                 .id(FORMAT_ACTION)
                 .paramClass(PARAM_CLASS)
@@ -282,13 +155,11 @@ class ActionSchemaDatafetcherTest {
         RegisterFormatSchemaGraphQLQuery registerQuery = RegisterFormatSchemaGraphQLQuery
                 .newRequest().actionSchema(input).build();
 
-        FormatActionSchema schema = executeRequest(registerQuery,
-                projection, FormatActionSchema.class);
-
-        return schema;
+        return executeRequest(registerQuery,
+                projection, FormatActionSchema.class, dgsQueryExecutor);
     }
 
-    LoadActionSchema saveLoad() {
+    static public LoadActionSchema saveLoad(DgsQueryExecutor dgsQueryExecutor) {
         LoadActionSchemaInput input = LoadActionSchemaInput.newBuilder()
                 .id(LOAD_ACTION)
                 .paramClass(PARAM_CLASS)
@@ -307,13 +178,11 @@ class ActionSchemaDatafetcherTest {
         RegisterLoadSchemaGraphQLQuery registerQuery = RegisterLoadSchemaGraphQLQuery
                 .newRequest().actionSchema(input).build();
 
-        LoadActionSchema schema = executeRequest(registerQuery,
-                projection, LoadActionSchema.class);
-
-        return schema;
+        return executeRequest(registerQuery,
+                projection, LoadActionSchema.class, dgsQueryExecutor);
     }
 
-    TransformActionSchema saveTransform() {
+    static public TransformActionSchema saveTransform(DgsQueryExecutor dgsQueryExecutor) {
         TransformActionSchemaInput input = TransformActionSchemaInput.newBuilder()
                 .id(TRANSFORM_ACTION)
                 .paramClass(PARAM_CLASS)
@@ -334,13 +203,11 @@ class ActionSchemaDatafetcherTest {
         RegisterTransformSchemaGraphQLQuery registerQuery = RegisterTransformSchemaGraphQLQuery
                 .newRequest().actionSchema(input).build();
 
-        TransformActionSchema schema = executeRequest(registerQuery,
-                projection, TransformActionSchema.class);
-
-        return schema;
+        return executeRequest(registerQuery,
+                projection, TransformActionSchema.class, dgsQueryExecutor);
     }
 
-    ValidateActionSchema saveValidate() {
+    static public ValidateActionSchema saveValidate(DgsQueryExecutor dgsQueryExecutor) {
         ValidateActionSchemaInput input = ValidateActionSchemaInput.newBuilder()
                 .id(VALIDATE_ACTION)
                 .paramClass(PARAM_CLASS)
@@ -357,9 +224,7 @@ class ActionSchemaDatafetcherTest {
         RegisterValidateSchemaGraphQLQuery registerQuery = RegisterValidateSchemaGraphQLQuery
                 .newRequest().actionSchema(input).build();
 
-        ValidateActionSchema schema = executeRequest(registerQuery,
-                projection, ValidateActionSchema.class);
-
-        return schema;
+        return executeRequest(registerQuery,
+                projection, ValidateActionSchema.class, dgsQueryExecutor);
     }
 }

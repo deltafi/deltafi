@@ -8,3 +8,8 @@ spring:
       features:
       - SYNC_DELAY
       - NO_HTTP_INTERFACE_ARG
+
+dgs:
+  graphql:
+    graphiql:
+      enabled: false

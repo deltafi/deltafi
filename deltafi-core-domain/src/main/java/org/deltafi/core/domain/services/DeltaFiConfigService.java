@@ -51,7 +51,6 @@ public class DeltaFiConfigService {
     Yaml yaml = new Yaml(new Constructor(DeltafiRuntimeConfiguration.class), representer);
     private DeltafiRuntimeConfiguration config;
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
     public DeltaFiConfigService(DeltaFiRuntimeConfigRepo configRepo, DeltafiRuntimeConfigurationValidator configurationValidator) {
         this.configRepo = configRepo;
         this.configurationValidator = configurationValidator;
@@ -118,6 +117,7 @@ public class DeltaFiConfigService {
         return config.getEgressFlows().values();
     }
 
+    @SuppressWarnings("unused")
     public Optional<EgressFlowConfiguration> getEgressFlow(String flow) {
         return Optional.ofNullable(getConfigFromMap(DeltafiRuntimeConfiguration::getEgressFlows, flow));
     }

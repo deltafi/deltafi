@@ -11,6 +11,7 @@ import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.converters.KeyValueConverter;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,14 +23,11 @@ import java.util.stream.Collectors;
 @Service
 public class StateMachine {
 
-    private final DeltaFiConfigService configService;
-    private final ZipkinService zipkinService;
+    @Autowired
+    DeltaFiConfigService configService;
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    public StateMachine(DeltaFiConfigService configService, ZipkinService zipkinService) {
-        this.configService = configService;
-        this.zipkinService = zipkinService;
-    }
+    @Autowired
+    ZipkinService zipkinService;
 
     /**
      * Advance the state of the given DeltaFile
