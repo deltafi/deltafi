@@ -24,7 +24,16 @@ export default function useApi(version: Number = 1) {
     errors.value = [];
     try {
       const res = await fetch(req);
-      if (!res.ok) throw Error(res.statusText);
+      if (!res.ok) {
+        if ([500, 404].includes(res.status)) {
+          const body = await res.json();
+          notify.error("Error Received from API", body.error);
+          errors.value.push(body.error)
+        } else {
+          throw Error(res.statusText);
+        }
+        return Promise.reject(res);
+      }
       response.value = (parseJSON) ? await res.json() : await res.blob()
       loaded.value = true;
       return Promise.resolve(res);
