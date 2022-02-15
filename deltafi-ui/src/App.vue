@@ -27,6 +27,7 @@ import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
 import useSidebarToggle from "@/composables/useSidebarToggle";
 import { computed, onBeforeMount, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { useTitle } from "@vueuse/core";
 
 export default {
   name: "App",
@@ -39,6 +40,7 @@ export default {
   },
   setup() {
     const route = useRoute();
+    const title = useTitle("DeltaFi");
     const { uiConfig, fetchUiConfig } = useUiConfig();
     const { sidebarHidden, toggleSidebarHidden } = useSidebarToggle();
 
@@ -68,8 +70,7 @@ export default {
     };
 
     const setPageTitle = () => {
-      const pageTitle = [route.name, uiConfig.value.title].filter((n) => n).join(" - ");
-      document.title = pageTitle;
+      title.value = [route.name, uiConfig.value.title].filter((n) => n).join(" - ");
     };
 
     watch(
