@@ -1,18 +1,10 @@
 <template>
   <div class="system-metrics">
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">
-        System Metrics
-      </h1>
-    </div>
+    <PageHeader heading="System Metrics" />
     <CollapsiblePanel header="Nodes" class="table-panel">
-      <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="loading">
-        <template #empty>
-          No System Metrics available
-        </template>
-        <template #loading>
-          Loading System Metrics Data. Please wait.
-        </template>
+      <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="!loaded">
+        <template #empty> No System Metrics available </template>
+        <template #loading> Loading System Metrics Data. Please wait. </template>
         <Column class="expander-column" :expander="true" />
         <Column header="Node Name" field="name" :sortable="true" />
         <Column header="Pods" class="pods-column">
@@ -27,16 +19,12 @@
         </Column>
         <Column header="Memory" field="resources.memory.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)">
-              {{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%)
-            </ProgressBar>
+            <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)"> {{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%) </ProgressBar>
           </template>
         </Column>
         <Column header="Disk" field="resources.disk.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">
-              {{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)
-            </ProgressBar>
+            <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)"> {{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%) </ProgressBar>
           </template>
         </Column>
         <template #expansion="node">
@@ -46,14 +34,12 @@
               <Column header="Namespace" field="namespace" :sortable="true" />
               <Column header="Pod CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
                 <template #body="pod">
-                  <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'cpu', formattedCPU)" :value="calculatePercent(pod.data.resources.cpu.usage, (pod.data.resources.cpu.limit||node.data.resources.cpu.limit))" />
+                  <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'cpu', formattedCPU)" :value="calculatePercent(pod.data.resources.cpu.usage, pod.data.resources.cpu.limit || node.data.resources.cpu.limit)" />
                 </template>
               </Column>
               <Column header="Pod Memory" field="resources.memory.usage" :sortable="true" class="resource-column">
                 <template #body="pod">
-                  <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'memory', formattedBytes)" :value="calculatePercent(pod.data.resources.memory.usage, (pod.data.resources.memory.limit||node.data.resources.memory.limit))">
-                    {{ formattedBytes(pod.data.resources.memory.usage) }} ({{ calculatePercent(pod.data.resources.memory.usage, (pod.data.resources.memory.limit||node.data.resources.memory.limit)) }}%)
-                  </ProgressBar>
+                  <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'memory', formattedBytes)" :value="calculatePercent(pod.data.resources.memory.usage, pod.data.resources.memory.limit || node.data.resources.memory.limit)"> {{ formattedBytes(pod.data.resources.memory.usage) }} ({{ calculatePercent(pod.data.resources.memory.usage, pod.data.resources.memory.limit || node.data.resources.memory.limit) }}%) </ProgressBar>
                 </template>
               </Column>
               <Column class="resource-column disabled-column" />
@@ -66,14 +52,13 @@
 </template>
 
 <script>
-import ApiService from "@/service/ApiService";
-import * as filesize from "filesize";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import ProgressBar from "primevue/progressbar";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
-
-const refreshInterval = 5000; // 5 seconds
+import useSystemMetrics from "@/composables/useSystemMetrics";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import { ref, onMounted, onUnmounted } from "vue";
 
 export default {
   name: "SystemMetricsPage",
@@ -83,65 +68,50 @@ export default {
     ProgressBar,
     CollapsiblePanel,
   },
-  data() {
+  setup() {
+    const { formattedBytes } = useUtilFunctions();
+    const refreshInterval = 5000; // 5 seconds
+    const expandedRows = ref([]);
+    const { data: nodes, loaded, fetch: fetchSystemMetrics } = useSystemMetrics();
+
+    let autoRefresh = null;
+
+    onMounted(() => {
+      fetchSystemMetrics();
+      autoRefresh = setInterval(fetchSystemMetrics, refreshInterval);
+    });
+
+    onUnmounted(() => {
+      clearInterval(autoRefresh);
+    });
+
+    const calculatePercent = (numerator, denominator) => {
+      return Math.round((numerator / denominator) * 100);
+    };
+
+    const formattedCPU = (cpu) => {
+      return `${cpu}m`;
+    };
+
+    const buildPodResourceTooltip = (pod, node, resource, formatFuntion) => {
+      let limitType = pod.data.resources[resource].limit !== 0 ? "Pod" : "Node";
+      let limit = pod.data.resources[resource].limit || node.data.resources[resource].limit;
+      return [formatFuntion(pod.data.resources[resource].usage), "/", formatFuntion(limit), "\n", `(${limitType} Limit)`].join(" ");
+    };
+
     return {
-      nodes: [],
-      expandedRows: [],
-      autoRefresh: null,
-      loading: true,
+      nodes,
+      loaded,
+      expandedRows,
+      calculatePercent,
+      formattedBytes,
+      formattedCPU,
+      buildPodResourceTooltip,
     };
   },
-  watch: {
-    $route() {
-      // Clear the auto refresh when the route changes.
-      clearInterval(this.autoRefresh);
-    },
-  },
-  created() {
-    this.apiService = new ApiService();
-  },
-  mounted() {
-    this.fetchNodes();
-    this.autoRefresh = setInterval(
-      function () {
-        this.fetchNodes();
-      }.bind(this),
-      refreshInterval
-    );
-  },
-  methods: {
-    async fetchNodes() {
-      let response = await this.apiService.getNodes();
-      this.nodes = response.nodes;
-      this.loading = false;
-    },
-    formattedBytes(memory) {
-      return filesize(memory || 0, { base: 10 });
-    },
-    formattedCPU(cpu) {
-      return `${cpu}m`;
-    },
-    buildPodResourceTooltip(pod, node, resource, formatFuntion) {
-      let limitType = pod.data.resources[resource].limit !== 0 ? "Pod" : "Node";
-      let limit =
-        pod.data.resources[resource].limit ||
-        node.data.resources[resource].limit;
-      return [
-        formatFuntion(pod.data.resources[resource].usage),
-        "/",
-        formatFuntion(limit),
-        "\n",
-        `(${limitType} Limit)`,
-      ].join(" ");
-    },
-    calculatePercent(numerator, denominator) {
-      return Math.round((numerator / denominator) * 100);
-    },
-  },
-  apiService: null,
 };
 </script>
 
 <style lang="scss">
-  @import "@/styles/pages/system-metrics-page.scss";
+@import "@/styles/pages/system-metrics-page.scss";
 </style>

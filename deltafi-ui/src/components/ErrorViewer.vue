@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-bind="$attrs" :header="header" :style="{width: '75vw'}" :maximizable="true" :modal="true" :dismissable-mask="true">
+  <Dialog v-bind="$attrs" :header="header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true">
     <div class="error-viewer">
       <div class="error-row">
         <div class="error-col">
@@ -34,29 +34,30 @@
 <script>
 import Dialog from "primevue/dialog";
 import HighlightedCode from "@/components/HighlightedCode.vue";
+import { computed } from "vue";
 
 export default {
   name: "CollapsiblePanel",
   components: {
     Dialog,
-    HighlightedCode
+    HighlightedCode,
   },
   props: {
     action: {
       type: Object,
-      required: true
-    }
+      required: true,
+    },
   },
-  computed: {
-    header() {
-      return `${this.action.name} Error`;
-    }
-  },
-  methods: {
+  setup(props) {
+    const header = computed(() => {
+      return `${props.action.name} Error`;
+    });
+
+    return { header };
   },
 };
 </script>
 
 <style lang="scss">
-  @import "@/styles/components/error-viewer.scss";
+@import "@/styles/components/error-viewer.scss";
 </style>

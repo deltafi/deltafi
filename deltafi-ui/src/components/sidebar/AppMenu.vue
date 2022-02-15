@@ -3,7 +3,7 @@
   <nav class="bg-light menu">
     <div class="pt-3">
       <ul class="nav flex-column">
-        <div v-for="(item,i) in menuItems" :key="i">
+        <div v-for="item in menuItems" :key="item">
           <div v-if="!item.hidden">
             <li v-tooltip.right="item.description" class="nav-item">
               <span v-if="item.children" :class="menuItemClass(item)" @click.prevent="item.expand = !item.expand">
@@ -19,7 +19,7 @@
                 {{ item.name }}
               </a>
             </li>
-            <div v-for="child in item.children" :key="child" :class="{hidden: !item.expand, submenu: true}">
+            <div v-for="child in item.children" :key="child" :class="{ hidden: !item.expand, submenu: true }">
               <li v-if="!child.hidden" v-tooltip.right="child.description" class="nav-item">
                 <router-link v-if="child.path" :to="child.path" :class="menuItemClass(child, true)">
                   <span class="d-flex justify-content-between">
@@ -44,112 +44,114 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
-import { mapState } from "vuex";
-import { useStore } from '@/store';
-import { ErrorsActionTypes } from '@/store/modules/errors/action-types';
-
-const refreshInterval = 5000; // 5 seconds
+import useUiConfig from "@/composables/useUiConfig";
+import useErrorCount from "@/composables/useErrorCount";
+import { computed, ref, watch, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
 export default {
   name: "AppMenu",
-  data() {
-    return {
-      routes: [],
-      activePage: null,
-      staticMenuItems: [
-        { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/" },
-        {
-          name: "Metrics",
-          expand: true,
-          children: [
-            {
-              name: "System Metrics",
-              icon: "far fa-chart-bar fa-fw",
-              path: "/metrics/system",
+  setup() {
+    const refreshInterval = 5000; // 5 seconds
+    const route = useRoute();
+    const { uiConfig } = useUiConfig();
+    const { errorCount, fetchErrorCount } = useErrorCount();
+
+    const externalLinks = computed(() => {
+      return uiConfig.value.dashboard.links.map((link) => {
+        link.icon = "fas fa-external-link-alt fa-fw";
+        return link;
+      });
+    });
+
+    const staticMenuItems = ref([
+      { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/" },
+      {
+        name: "Metrics",
+        expand: true,
+        children: [
+          {
+            name: "System Metrics",
+            icon: "far fa-chart-bar fa-fw",
+            path: "/metrics/system",
+          },
+          {
+            name: "Action Metrics",
+            icon: "fas fa-chart-line fa-fw",
+            path: "/metrics/action",
+          },
+          {
+            name: "Queue Metrics",
+            icon: "fas fa-list-alt fa-fw",
+            path: "/metrics/queue",
+          },
+        ],
+      },
+      {
+        name: "Configuration",
+        expand: true,
+        children: [
+          {
+            name: "System Properties",
+            icon: "fas fa-cogs fa-fw",
+            path: "/config/system",
+          },
+          {
+            name: "Flow Configuration",
+            icon: "fas fa-random fa-fw",
+            path: "/config/flow",
+            hidden: false,
+          },
+          {
+            name: "Plugins",
+            icon: "fas fa-plus fa-fw",
+            path: "/config/plugin",
+            hidden: true,
+          },
+        ],
+      },
+      {
+        name: "DeltaFiles",
+        expand: true,
+        children: [
+          {
+            name: "Search",
+            icon: "fas fa-search fa-fw",
+            path: "/deltafile/search",
+          },
+          {
+            name: "Errors",
+            icon: "fas fa-exclamation-circle fa-fw",
+            path: "/errors",
+            badge: () => {
+              return errorsBadge.value;
             },
-            {
-              name: "Action Metrics",
-              icon: "fas fa-chart-line fa-fw",
-              path: "/metrics/action",
-            },
-            {
-              name: "Queue Metrics",
-              icon: "fas fa-list-alt fa-fw",
-              path: "/metrics/queue",
-            },
-          ],
-        },
-        {
-          name: "Configuration",
-          expand: true,
-          children: [
-            {
-              name: "System Properties",
-              icon: "fas fa-cogs fa-fw",
-              path: "/config/system",
-            },
-            {
-              name: "Flow Configuration",
-              icon: "fas fa-random fa-fw",
-              path: "/config/flow",
-              hidden: false,
-            },
-            {
-              name: "Plugins",
-              icon: "fas fa-plus fa-fw",
-              path: "/config/plugin",
-              hidden: true,
-            },
-          ],
-        },
-        {
-          name: "DeltaFiles",
-          expand: true,
-          children: [
-            {
-              name: "Search",
-              icon: "fas fa-search fa-fw",
-              path: "/deltafile/search",
-            },
-            {
-              name: "Errors",
-              icon: "fas fa-exclamation-circle fa-fw",
-              path: "/errors",
-              badge: () => {
-                return this.errorsBadge;
-              }
-            },
-            {
-              name: "Viewer",
-              icon: "far fa-file fa-fw",
-              path: "/deltafile/viewer/",
-            },
-            {
-              name: "Upload",
-              icon: "fas fa-upload fa-fw",
-              path: "/deltafile/upload/",
-            },
-          ],
-        },
-        { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions" },
-      ],
-    };
-  },
-  computed: {
-    menuItems() {
-      let items = this.staticMenuItems
-      if (this.externalLinks.length > 0) {
+          },
+          {
+            name: "Viewer",
+            icon: "far fa-file fa-fw",
+            path: "/deltafile/viewer/",
+          },
+          {
+            name: "Upload",
+            icon: "fas fa-upload fa-fw",
+            path: "/deltafile/upload/",
+          },
+        ],
+      },
+      { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions" },
+    ]);
+
+    const menuItems = computed(() => {
+      let items = staticMenuItems.value;
+      if (externalLinks.value.length > 0) {
         const externalLinksObject = {
           name: "External Links",
           expand: true,
-          children: this.externalLinks.map(link => {
-            link.icon = "fas fa-external-link-alt fa-fw";
-            return link;
-          })
-        }
+          children: externalLinks.value,
+        };
 
-        const objIndex = items.findIndex((obj => obj.name == "External Links"));
+        const objIndex = items.findIndex((obj) => obj.name == "External Links");
         if (objIndex != -1) {
           items[objIndex] = externalLinksObject;
         } else {
@@ -157,50 +159,55 @@ export default {
         }
       }
       return items;
-    },
-    errorsBadge() {
+    });
+
+    const errorsBadge = computed(() => {
       return {
-        visible: (this.errorCount > 0),
-        class: 'badge badge-danger badge-pill',
-        value: this.errorCount
-      }
-    },
-    ...mapState({
-      errorCount: state => state.Errors.count,
-    }),
-    ...mapGetters(['externalLinks'])
-  },
-  watch: {
-    $route(to) {
-      this.activePage = to.path;
-    },
-  },
-  beforeCreate() {
-    this.store = useStore();
-    this.store.dispatch(ErrorsActionTypes.FETCH_ERROR_COUNT);
-    this.autoRefresh = setInterval(
-      function () {
-        this.store.dispatch(ErrorsActionTypes.FETCH_ERROR_COUNT);
-      }.bind(this),
-      refreshInterval
-    );
-  },
-  methods: {
-    folderIcon(item) {
+        visible: errorCount.value > 0,
+        class: "badge badge-danger badge-pill",
+        value: errorCount.value,
+      };
+    });
+
+    const folderIcon = (item) => {
       return item.expand ? "fas fa-angle-down fa-fw" : "fas fa-angle-right fa-fw";
-    },
-    menuItemClass(item, isChild = false) {
+    };
+
+    const menuItemClass = (item, isChild = false) => {
       let classes = ["nav-link", "noselect"];
       if (isChild) classes.push("indent");
-      if (item.path === this.activePage) classes.push("active");
+      if (item.path === activePage.value) classes.push("active");
       if (item.children) classes.push("folder");
       return classes.join(" ");
-    },
+    };
+
+    const activePage = ref(route.path);
+
+    watch(
+      () => route.path,
+      (path) => {
+        activePage.value = path;
+      }
+    );
+
+    onMounted(async () => {
+      fetchErrorCount();
+      setInterval(fetchErrorCount, refreshInterval);
+    });
+
+    return {
+      externalLinks,
+      errorCount,
+      fetchErrorCount,
+      menuItems,
+      errorsBadge,
+      folderIcon,
+      menuItemClass,
+    };
   },
-  store: null
 };
 </script>
 
 <style scoped lang="scss">
-  @import "@/styles/components/sidebar/app-menu.scss";
+@import "@/styles/components/sidebar/app-menu.scss";
 </style>

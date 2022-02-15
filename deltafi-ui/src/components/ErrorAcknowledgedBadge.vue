@@ -3,6 +3,7 @@
 </template>
 
 <script>
+import { computed } from "vue";
 export default {
   name: "ErrorAcknowledgedBadge",
   components: {},
@@ -18,22 +19,25 @@ export default {
     icon: {
       type: String,
       required: false,
-      default: "far fa-check-circle"
-    }
-  },
-  computed: {
-    classes() {
-      return `ack-icon ${this.icon}`;
+      default: "far fa-check-circle",
     },
-    tooltip() {
-      return `Error Acknowledged: ${this.timestamp}\n\n${this.reason}`;
-    }
-  }
+  },
+  setup(props) {
+    const classes = computed(() => {
+      return `ack-icon ${props.icon}`;
+    });
+
+    const tooltip = computed(() => {
+      return `Error Acknowledged: ${props.timestamp}\n\n${props.reason}`;
+    });
+
+    return { classes, tooltip };
+  },
 };
 </script>
 
 <style scoped>
-  .ack-icon {
-    color: #dc3545;
-  }
+.ack-icon {
+  color: var(--red);
+}
 </style>

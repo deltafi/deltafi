@@ -9,19 +9,27 @@
 
 <script>
 import Panel from "primevue/panel";
+import { ref } from "vue";
 
 export default {
   name: "CollapsiblePanel",
   components: {
     Panel,
   },
-  methods: {
-    panelHeaderToggle(event) {
+  setup() {
+    const panelRef = ref(null);
+
+    const panelHeaderToggle = (event) => {
       let panelHeader = event.target.getAttribute("class");
       if (panelHeader == "p-panel-header") {
-        this.$refs.panelRef.toggle(event);
+        panelRef.value.toggle(event);
       }
-    },
+    };
+
+    return {
+      panelRef,
+      panelHeaderToggle,
+    };
   },
 };
 </script>

@@ -18,32 +18,29 @@
 
 <script>
 import StatusBadge from "@/components/StatusBadge";
-import { mapState } from "vuex";
-import { useStore } from '@/store';
-import { SidebarToggleActionTypes } from '@/store/modules/sidebarToggle/action-types';
+import useUiConfig from "@/composables/useUiConfig";
+import useSidebarToggle from "@/composables/useSidebarToggle";
+import { computed } from "vue";
 
 export default {
   components: { StatusBadge },
-  computed: {
-    toggleSidebarIcon() {
-      return this.sidebarHidden
-        ? "pi pi-angle-double-right"
-        : "pi pi-angle-double-left";
-    },
-    ...mapState({
-      uiConfig: state => state.uiConfig.uiConfig,
-      sidebarHidden: state => state.sidebarToggle.sidebarHidden
-    })
-  },
-  methods: {
-    toggleSidebar() {
-      const store = useStore();
-      store.dispatch(SidebarToggleActionTypes.TOGGLE_SIDEBAR);
-    },
+  setup() {
+    const { uiConfig } = useUiConfig();
+    const { sidebarHidden, toggleSidebarHidden: toggleSidebar } = useSidebarToggle();
+
+    const toggleSidebarIcon = computed(() => {
+      return sidebarHidden.value ? "pi pi-angle-double-right" : "pi pi-angle-double-left";
+    });
+
+    return {
+      uiConfig,
+      toggleSidebarIcon,
+      toggleSidebar,
+    };
   },
 };
 </script>
 
 <style scoped lang="scss">
-  @import "@/styles/components/header/app-top-bar.scss";
+@import "@/styles/components/header/app-top-bar.scss";
 </style>

@@ -2,18 +2,17 @@ import hljs from "highlight.js/lib/common";
 
 export const highlightCode = async (code: string, language: string) => {
   const workerStart = Date.now();
-  let result;
-  if (hljs.getLanguage(language)) {
-    result = hljs.highlight(code, {
-      language: language,
-      ignoreIllegals: true,
-    });
-  } else {
-    result = hljs.highlightAuto(code);
-  }
-  console.debug("Worker completed in", Date.now() - workerStart, "milliseconds")
+  console.debug("Highlight worker started");
+
+  const options = { language: language, ignoreIllegals: true };
+  const result = (language && hljs.getLanguage(language))
+    ? hljs.highlight(code, options)
+    : hljs.highlightAuto(code);
+
+  console.debug("Highlight worker completed in", Date.now() - workerStart, "milliseconds");
+
   return {
     code: result.value,
     language: result.language
-  }
-}
+  };
+};

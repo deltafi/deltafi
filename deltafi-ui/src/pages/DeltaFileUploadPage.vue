@@ -1,10 +1,6 @@
 <template>
-  <div class="upload">
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">
-        Upload Files
-      </h1>
-    </div>
+  <div class="upload-page">
+    <PageHeader heading="Upload Files" />
 
     <div class="mb-3 row">
       <div class="col-12">
@@ -18,10 +14,8 @@
               <InputText type="text" value="Flow" disabled />
             </div>
             <div class="col-5">
-              <Dropdown v-model="selectedFlow" :options="flows" option-label="name" placeholder="Select an Ingress Flow" :class="{'p-invalid': flowSelectInvalid}" />
-              <InlineMessage v-if="flowSelectInvalid" class="ml-3">
-                Flow is required
-              </InlineMessage>
+              <Dropdown v-model="selectedFlow" :options="ingressFlows" option-label="name" placeholder="Select an Ingress Flow" :class="{ 'p-invalid': flowSelectInvalid }" />
+              <InlineMessage v-if="flowSelectInvalid" class="ml-3"> Flow is required </InlineMessage>
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -41,7 +35,7 @@
 
     <div class="mb-3 row">
       <div class="col-12">
-        <FileUpload ref="fileUpload" :multiple="true" choose-label="Add Files" cancel-label="Clear" :custom-upload="true" @uploader="onUpload" @select="onSelect">
+        <FileUpload ref="fileUploader" :multiple="true" choose-label="Add Files" cancel-label="Clear" :custom-upload="true" @uploader="onUpload">
           <template #empty>
             <i class="ml-3">Drag and drop files to here to upload.</i>
           </template>
@@ -52,18 +46,20 @@
     <div class="mb-3 row">
       <div class="col-12">
         <CollapsiblePanel v-if="deltaFiles.length" header="DeltaFiles" class="table-panel">
-          <DataTable responsive-layout="scroll" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="uploadsRowClass">
-            <Column field="did" header="DID">
+          <DataTable responsive-layout="scroll" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass">
+            <Column field="did" header="DID" class="did-column">
               <template #body="file">
-                <span v-if="file.data.loading"><i class="fas fa-spin fa-circle-notch" /> Loading...</span>
+                <span v-if="file.data.loading">
+                  <ProgressBar :value="file.data.percentComplete" />
+                </span>
                 <span v-else-if="file.data.error"><i class="fas fa-times" /> Error</span>
-                <router-link v-else class="monospace" :to="{path: '/deltafile/viewer/' + file.data.did}">
+                <router-link v-else class="monospace" :to="{ path: '/deltafile/viewer/' + file.data.did }">
                   {{ file.data.did }}
                 </router-link>
               </template>
             </Column>
-            <Column field="filename" header="Filename" />
-            <Column field="flow" header="Flow" />
+            <Column field="filename" header="Filename" class="filename-column" />
+            <Column field="flow" header="Flow" class="flow-column" />
           </DataTable>
         </CollapsiblePanel>
       </div>
@@ -80,10 +76,11 @@ import DataTable from "primevue/datatable";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import Panel from "primevue/panel";
-import axios from "axios";
+import ProgressBar from "primevue/progressbar";
 import InlineMessage from "primevue/inlinemessage";
-import GraphQLService from "@/service/GraphQLService";
-import _ from 'lodash';
+import useIngress from "@/composables/useIngress";
+import useFlows from "@/composables/useFlows";
+import { ref, reactive, computed } from "vue";
 
 export default {
   name: "DeltaFileUploadPage",
@@ -97,136 +94,91 @@ export default {
     Button,
     Panel,
     InlineMessage,
+    ProgressBar,
   },
-  data() {
-    return {
-      flows: [],
-      selectedFlow: null,
-      flowSelectError: false,
-      metadata: [],
-      deltaFiles: [],
-    };
-  },
-  computed: {
-    metadataJson() {
-      let metadata = {};
-      if (this.metadata.length > 0) {
-        for (const field of this.metadata) {
-          if (field.key.length > 0) metadata[field.key] = field.value;
+  setup() {
+    const selectedFlow = ref(null);
+    const flowSelectError = ref(false);
+    const metadata = reactive([]);
+    const fileUploader = ref();
+    const deltaFiles = reactive([]);
+    const { ingressFlows, fetchIngressFlows } = useFlows();
+    const { ingressFile } = useIngress();
+
+    const metadataRecord = computed(() => {
+      let record = {};
+      if (metadata.length > 0) {
+        for (const field of metadata) {
+          if (field.key.length > 0) record[field.key] = field.value;
         }
       }
-      return JSON.stringify(metadata);
-    },
-    flowSelectInvalid() {
-      return this.flowSelectError && this.selectedFlow == null;
-    },
-    metadataClearDisabled() {
-      return this.metadata.length == 0 && this.selectedFlow == null;
-    },
-  },
-  created() {
-    this.graphQLService = new GraphQLService();
-    this.fetchIngressFlows();
-  },
-  methods: {
-    async fetchIngressFlows() {
-      const ingressFlowData = await this.graphQLService.getConfigByType(
-        "INGRESS_FLOW"
-      );
-      this.flows = _.sortBy(ingressFlowData.data.deltaFiConfigs, ['name']);
-    },
-    addMetadataField() {
-      this.metadata.push({ key: "", value: "" });
-    },
-    removeMetadataField(field) {
-      let index = this.metadata.indexOf(field);
-      this.metadata.splice(index, 1);
-    },
-    clearMetadata() {
-      this.flowSelectError = false;
-      this.metadata = [];
-      this.selectedFlow = null;
-    },
-    onUpload(event) {
-      if (this.selectedFlow == null) {
-        this.flowSelectError = true;
-      } else {
-        this.ingressFiles(event);
-      }
-    },
-    ingressFiles(event) {
-      for (let file of event.files) {
-        file.flow = this.selectedFlow.name;
-        file.metadata = this.metadataJson;
-        file.index = this.deltaFiles.length;
-        this.deltaFiles[file.index] = {
-          loading: true,
-          error: false,
-          filename: file.name,
-          flow: file.flow,
-        };
+      return record;
+    });
 
-        axios
-          .request({
-            method: "post",
-            url: "/deltafile/ingress",
-            data: file,
-            headers: {
-              Flow: file.flow,
-              Filename: file.name,
-              Metadata: file.metadata,
-            },
-            onUploadProgress: (progressEvent) => {
-              file.percentCompleted = Math.round(
-                (progressEvent.loaded * 100) / progressEvent.total
-              );
-              this.updateProgress();
-              if (file.percentCompleted == 100) this.removeFile(file);
-            },
-          })
-          .then((res) => {
-            this.deltaFiles[file.index].did = res.data;
-            this.deltaFiles[file.index].loading = false;
-            this.$toast.add({
-              severity: "success",
-              summary: "Ingress successful",
-              detail: file.name,
-              life: 3000,
-            });
-          })
-          .catch((error) => {
-            this.deltaFiles[file.index].loading = false;
-            this.deltaFiles[file.index].error = true;
-            console.error(error.response.data);
-            this.$toast.add({
-              severity: "error",
-              summary: `Failed to ingress ${file.name}`,
-              detail: error.response.data,
-              life: 5000,
-            });
-          });
+    const flowSelectInvalid = computed(() => {
+      return flowSelectError.value && selectedFlow.value == null;
+    });
+
+    const metadataClearDisabled = computed(() => {
+      return metadata.length == 0 && selectedFlow.value == null;
+    });
+
+    const addMetadataField = () => {
+      metadata.push({ key: "", value: "" });
+    };
+
+    const removeMetadataField = (field) => {
+      let index = metadata.indexOf(field);
+      metadata.splice(index, 1);
+    };
+
+    const clearMetadata = () => {
+      flowSelectError.value = false;
+      metadata.length = 0;
+      selectedFlow.value = null;
+    };
+
+    const onUpload = (event) => {
+      if (selectedFlow.value == null) {
+        flowSelectError.value = true;
+      } else {
+        ingressFiles(event);
       }
-    },
-    updateProgress() {
-      let uploader = this.$refs.fileUpload;
-      let total = uploader.files.reduce(
-        (total, file) => total + (file.percentCompleted || 0),
-        0
-      );
-      uploader.progress = total / uploader.files.length;
-    },
-    removeFile(file) {
-      let index = this.$refs.fileUpload.files.indexOf(file);
-      this.$refs.fileUpload.files.splice(index, 1);
-    },
-    uploadsRowClass(data) {
-      return data.error ? 'table-danger': null;
-    },
-    onSelect() {
-      this.$refs.fileUpload.progress = 0;
-    }
+    };
+
+    const ingressFiles = (event) => {
+      for (let file of event.files) {
+        const result = ingressFile(file, selectedFlow.value.name, metadataRecord.value);
+        deltaFiles.push(result);
+      }
+      fileUploader.value.files = [];
+    };
+
+    const uploadsRowClass = (data) => {
+      return data.error ? "table-danger" : null;
+    };
+
+    // Created
+    fetchIngressFlows();
+
+    return {
+      selectedFlow,
+      flowSelectError,
+      metadata,
+      deltaFiles,
+      metadataRecord,
+      flowSelectInvalid,
+      metadataClearDisabled,
+      addMetadataField,
+      removeMetadataField,
+      clearMetadata,
+      onUpload,
+      ingressFiles,
+      uploadsRowClass,
+      ingressFlows,
+      fileUploader,
+    };
   },
-  graphQLService: null,
 };
 </script>
 

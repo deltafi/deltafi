@@ -1,60 +1,30 @@
 <template>
   <div>
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">
-        DeltaFile Search
-      </h1>
+      <h1 class="h2">DeltaFile Search</h1>
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Calendar
-          id="startDateTime"
-          v-model="startTimeDate"
-          selection-mode="single"
-          :inline="false"
-          :show-time="true"
-          :manual-input="false"
-          hour-format="12"
-          input-class="deltafi-input-field ml-3"
-        />
+        <Calendar id="startDateTime" v-model="startTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
         <span class="mt-1 ml-3">&mdash;</span>
-        <Calendar
-          id="endDateTime"
-          v-model="endTimeDate"
-          selection-mode="single"
-          :inline="false"
-          :show-time="true"
-          :manual-input="false"
-          hour-format="12"
-          input-class="deltafi-input-field ml-3"
-        />
-        <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchDeltaFilesData()">
-          Search
-        </Button>
+        <Calendar id="endDateTime" v-model="endTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
+        <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchDeltaFilesData()"> Search </Button>
       </div>
     </div>
     <div class="row mb-3">
       <div class="col-12">
         <CollapsiblePanel header="Search Options" :collapsed="collapsedSearchOption">
           <template #icons>
-            <Button class="p-panel-header-icon p-link p-mr-2" @click="toggle">
+            <Button class="p-panel-header-icon p-link p-mr-2" @click="optionMenuToggle">
               <span class="fas fa-cog" />
             </Button>
-            <Menu id="config_menu" ref="menu" :model="items" :popup="true" />
+            <Menu id="config_menu" ref="optionMenu" :model="items" :popup="true" />
           </template>
           <div class="row align-items-center py-2">
             <div class="col-1 text-right">
               <label for="fileNameId">Filename:</label>
             </div>
             <div class="col-md-auto">
-              <Dropdown
-                id="fileNameId"
-                v-model="fileNameOptionSelected"
-                placeholder="Select a File Name"
-                :options="fileNameOptions"
-                option-label="name"
-                :filter="true"
-                :show-clear="true"
-                class="deltafi-input-field min-width"
-              />
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown id="fileNameId" v-model="fileNameOptionSelected" :placeholder="fileNameOptionSelected ? fileNameOptionSelected.name + ' ' : 'Select a File Name'" :options="fileNameOptions" option-label="name" :filter="true" :show-clear="true" class="deltafi-input-field min-width" />
             </div>
           </div>
           <div class="row align-items-center py-2">
@@ -62,16 +32,8 @@
               <label for="flowId">Flow:</label>
             </div>
             <div class="col-md-auto">
-              <Dropdown
-                id="flowId"
-                v-model="flowOptionSelected"
-                placeholder="Select a Flow"
-                :options="flowOptions"
-                option-label="name"
-                show-clear
-                :editable="false"
-                class="deltafi-input-field min-width"
-              />
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select a Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
             </div>
           </div>
           <div class="row align-items-center py-2">
@@ -79,16 +41,8 @@
               <label for="stageId">Stage:</label>
             </div>
             <div class="col-md-auto">
-              <Dropdown
-                id="stageId"
-                v-model="stageOptionSelected"
-                placeholder="Select a Stage"
-                :options="stageOptions"
-                option-label="name"
-                show-clear
-                :editable="false"
-                class="deltafi-input-field min-width"
-              />
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown id="stageId" v-model="stageOptionSelected" :placeholder="stageOptionSelected ? stageOptionSelected.name + ' ' : 'Select a Stage'" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
             </div>
           </div>
           <div class="row align-items-center py-2">
@@ -96,16 +50,8 @@
               <label for="actionTypeId">Action Type:</label>
             </div>
             <div class="col-md-auto">
-              <Dropdown
-                id="actionTypeId"
-                v-model="actionTypeOptionSelected"
-                placeholder="Select an Action Type"
-                :options="actionTypeOptions"
-                option-label="name"
-                :filter="true"
-                :show-clear="true"
-                class="deltafi-input-field min-width"
-              />
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown id="actionTypeId" v-model="actionTypeOptionSelected" :placeholder="actionTypeOptionSelected ? actionTypeOptionSelected.name + ' ' : 'Select an Action Type'" :options="actionTypeOptions" option-label="name" :filter="true" :show-clear="true" class="deltafi-input-field min-width" />
             </div>
           </div>
           <div class="row align-items-center py-2">
@@ -121,33 +67,12 @@
       </div>
     </div>
     <CollapsiblePanel header="DeltaFiles" class="table-panel">
-      <DataTable
-        responsive-layout="scroll"
-        paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-        current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles"
-        class="p-datatable p-datatable-sm p-datatable-gridlines"
-        striped-rows
-        :value="results"
-        :loading="loading"
-        :paginator="totalRecords > 0"
-        :rows="10"
-        :lazy="true"
-        :rows-per-page-options="[10,20,50,100]"
-        :total-records="totalRecords"
-        :always-show-paginator="true"
-        :row-class="actionRowClass"
-        @page="onPage($event)"
-        @sort="onSort($event)"
-      >
-        <template #empty>
-          No DeltaFiles in the selected time range.
-        </template>
-        <template #loading>
-          Loading DeltaFiles. Please wait.
-        </template>
+      <DataTable responsive-layout="scroll" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :paginator="totalRecords > 0" :rows="10" :lazy="true" :rows-per-page-options="[10, 20, 50, 100]" :total-records="totalRecords" :always-show-paginator="true" :row-class="actionRowClass" @page="onPage($event)" @sort="onSort($event)">
+        <template #empty> No DeltaFiles in the selected time range. </template>
+        <template #loading> Loading DeltaFiles. Please wait. </template>
         <Column field="did" header="DID (UUID)">
           <template #body="tData">
-            <router-link class="monospace" :to="{path: 'viewer/' + tData.data.did}">
+            <router-link class="monospace" :to="{ path: 'viewer/' + tData.data.did }">
               {{ tData.data.did }}
             </router-link>
           </template>
@@ -168,19 +93,18 @@
 </template>
 
 <script>
-import Button from 'primevue/button';
-import Calendar from 'primevue/calendar';
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
-import Dropdown from 'primevue/dropdown';
-import GraphQLService from "@/service/GraphQLService";
+import Button from "primevue/button";
+import Calendar from "primevue/calendar";
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import Dropdown from "primevue/dropdown";
 import Menu from "primevue/menu";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import { UtilFunctions } from "@/utils/UtilFunctions";
-import { mapState } from "vuex";
-import { useStore } from '@/store';
-import { SearchOptionsActionTypes } from '@/store/modules/searchOptions/action-types';
-import _ from 'lodash';
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
+import { ref, computed, watch, onMounted } from "vue";
+import { useStorage, StorageSerializers } from "@vueuse/core";
+import _ from "lodash";
 
 export default {
   name: "SearchPage",
@@ -193,224 +117,262 @@ export default {
     Menu,
     CollapsiblePanel,
   },
-  data() {
-    return {
-      items: [{
-        label: 'Options',
-        items: [{
-          label: 'Clear Options',
-          icon: 'fas fa-times',
-          command: () => {
-            this.actionTypeOptionSelected = null;
-            this.fileNameOptionSelected = null;
-            this.flowOptionSelected = null;
-            this.stageOptionSelected = null;
-            this.fetchDeltaFilesData();
-          }
-        }]
-      }],
-      loading: true,
-      tableData: [],
-      expandedRows: [],
-      startTimeDate: new Date(),
-      endTimeDate: new Date(),
-      configTypeNames: [],
-      actionName: null,
-      actionTypeOptions: [],
-      actionTypeOptionSelected: null,
-      fileName: null,
-      fileNameOptions: [],
-      fileNameOptionSelected: null,
-      flowName: null,
-      flowOptions: [],
-      flowOptionSelected: null,
-      stageName: null,
-      stageOptions: [],
-      stageOptionSelected: null,
-      recordCount:"",
-      totalRecords: 0,
-      offset: 0,
-      perPage: 10,
-      sortField: "modified",
-      sortDirection: "DESC",
-      collapsedSearchOption: true
-    };
-  },
-  computed: {
-    results() {
-      return this.tableData.map(row => {
-        const timeElapsed = (new Date(row.modified) - new Date(row.created));
-        return {
-          ...row,
-          elapsed: this.utilFunctions.duration(timeElapsed)
-        }
-      });
-    },
-    ...mapState({
-       searchOptionsState: state => state.searchOptions.searchOptionsState,
-    })
-  },
+  setup() {
+    const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
+    const { duration } = useUtilFunctions();
+    const optionMenu = ref();
 
-  watch: {
-    startTimeDate() {
-      this.fetchFileNames();
-      this.fetchRecordCount();
-    },
-    endTimeDate() {
-      this.fetchFileNames();
-      this.fetchRecordCount();
-    },
-    fileNameOptionSelected() {
-      this.fetchRecordCount();
-    },
-    actionTypeOptionSelected() {
-      this.fetchRecordCount();
-    },
-    flowOptionSelected() {
-      this.fetchRecordCount();
-    },
-    stageOptionSelected() {
-      this.fetchRecordCount();
-    }
-  },
-  created() {
-    this.startTimeDate.setHours(0,0,0,0);
-    this.endTimeDate.setHours(23,59,59,999);
-  },
-  mounted() {
-    this.utilFunctions = new UtilFunctions();
-    this.graphQLService = new GraphQLService();
-    this.getPersistedParams();
-    this.fetchFileNames();
-    this.fetchConfigTypes();
-    this.fetchStages();
-    this.fetchDeltaFilesData();
-  },
-  methods: {
-    toggle(event) {
-      this.$refs.menu.toggle(event);
-    },
-    async fetchFileNames() {
-      this.fileNameDataArray = [];
-      let fetchFileNames = await this.graphQLService.getDeltaFiFileNames(this.startTimeDate, this.endTimeDate, this.fileName, this.stageName, this.actionName, this.flowName);
+    const startTimeDate = ref(new Date());
+    const endTimeDate = ref(new Date());
+    startTimeDate.value.setHours(0, 0, 0, 0);
+    endTimeDate.value.setHours(23, 59, 59, 999);
+
+    const fileNameOptions = ref([]);
+    const fileNameOptionSelected = ref(null);
+    const actionTypeOptions = ref([]);
+    const actionTypeOptionSelected = ref(null);
+    const flowOptions = ref([]);
+    const flowOptionSelected = ref(null);
+    const stageOptions = ref([]);
+    const stageOptionSelected = ref(null);
+    const loading = ref(true);
+    const totalRecords = ref(0);
+    const recordCount = ref("");
+    const collapsedSearchOption = ref(true);
+    const tableData = ref([]);
+    const fileName = ref(null);
+    const stageName = ref(null);
+    const actionName = ref(null);
+    const flowName = ref(null);
+    const offset = ref(0);
+    const perPage = ref(10);
+    const sortField = ref("modified");
+    const sortDirection = ref("DESC");
+
+    const items = ref([
+      {
+        label: "Options",
+        items: [
+          {
+            label: "Clear Options",
+            icon: "fas fa-times",
+            command: () => {
+              actionTypeOptionSelected.value = null;
+              fileNameOptionSelected.value = null;
+              flowOptionSelected.value = null;
+              stageOptionSelected.value = null;
+              fetchDeltaFilesData();
+            },
+          },
+        ],
+      },
+    ]);
+
+    const fetchFileNames = async () => {
+      let fileNameDataArray = [];
+      let fetchFileNames = await getDeltaFiFileNames(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
       let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
       for (const deltaFiObject of deltaFilesObjectsArray) {
-          this.fileNameDataArray.push({"name" : deltaFiObject.sourceInfo.filename});
+        fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });
       }
 
-      this.fileNameOptions = _.uniqBy(this.fileNameDataArray, 'name');
-    },
-    async fetchConfigTypes() {
-      var flowTypes = [];
-      var actionTypes = [];
-      let enumsConfigTypes = await this.graphQLService.getEnumValuesByEnumType("ConfigType");
-      this.configTypeNames = enumsConfigTypes.data.__type.enumValues;
+      fileNameOptions.value = _.uniqBy(fileNameDataArray, "name");
+    };
+
+    watch(startTimeDate, () => {
+      fetchFileNames();
+      fetchRecordCount();
+    });
+    watch(endTimeDate, () => {
+      fetchFileNames();
+      fetchRecordCount();
+    });
+    watch(fileNameOptionSelected, () => {
+      fetchRecordCount();
+    });
+    watch(actionTypeOptionSelected, () => {
+      fetchRecordCount();
+    });
+    watch(flowOptionSelected, () => {
+      fetchRecordCount();
+    });
+    watch(stageOptionSelected, () => {
+      fetchRecordCount();
+    });
+
+    onMounted(() => {
+      getPersistedParams();
+      fetchFileNames();
+      fetchConfigTypes();
+      fetchStages();
+      fetchDeltaFilesData();
+    });
+
+    const optionMenuToggle = (event) => {
+      optionMenu.value.toggle(event);
+    };
+
+    const fetchConfigTypes = async () => {
+      let configTypeNames = [];
+      let flowTypes = [];
+      let actionTypes = [];
+      let enumsConfigTypes = await getEnumValuesByEnumType("ConfigType");
+      configTypeNames = enumsConfigTypes.data.__type.enumValues;
 
       // Convert array of ConfigType objects with
-      let result = this.configTypeNames.map(a => a.name);
+      let result = configTypeNames.map((a) => a.name);
       for (const element of result) {
-        if(element.includes("FLOW")) {
+        if (element.includes("FLOW")) {
           flowTypes.push(element);
         } else {
           actionTypes.push(element);
         }
       }
 
-      this.fetchActions(actionTypes);
-      this.fetchFlows(flowTypes);
-    },
-    async fetchActions(actionTypes) {
+      fetchActions(actionTypes);
+      fetchFlows(flowTypes);
+    };
+
+    const fetchActions = async (actionTypes) => {
       for (const actionType of actionTypes) {
-        let actionData = await this.graphQLService.getConfigByType(actionType);
+        let actionData = await getConfigByType(actionType);
         let actionDataValues = actionData.data.deltaFiConfigs;
-        this.actionTypeOptions = _.concat(this.actionTypeOptions, actionDataValues);
-        this.actionTypeOptions = _.sortBy(this.actionTypeOptions, ['name']);
+        actionTypeOptions.value = _.concat(actionTypeOptions.value, actionDataValues);
+        actionTypeOptions.value = _.sortBy(actionTypeOptions.value, ["name"]);
       }
-    },
-    async fetchFlows(flowTypes) {
+    };
+
+    const fetchFlows = async (flowTypes) => {
       for (const flowType of flowTypes) {
-        let flowData = await this.graphQLService.getConfigByType(flowType);
+        let flowData = await getConfigByType(flowType);
         let flowDataValues = flowData.data.deltaFiConfigs;
-        this.flowOptions = _.concat( this.flowOptions, flowDataValues);
-        this.flowOptions = _.uniqBy(this.flowOptions, 'name');
-        this.flowOptions = _.sortBy(this.flowOptions, ['name']);
+        flowOptions.value = _.concat(flowOptions.value, flowDataValues);
+        flowOptions.value = _.uniqBy(flowOptions.value, "name");
+        flowOptions.value = _.sortBy(flowOptions.value, ["name"]);
       }
-    },
-    async fetchStages() {
-    let enumsStageTypes = await this.graphQLService.getEnumValuesByEnumType("DeltaFileStage");
-      this.stageOptions = enumsStageTypes.data.__type.enumValues;
-    },
-    async fetchDeltaFilesData() {
-      this.setQueryParams();
-      this.setPersistedParams();
+    };
 
-      this.loading = true;
-      this.fetchRecordCount();
-      let data = await this.graphQLService.getDeltaFileSearchData(this.startTimeDate, this.endTimeDate, this.offset, this.perPage, this.sortField, this.sortDirection, this.fileName, this.stageName, this.actionName, this.flowName);
-      this.tableData = data.data.deltaFiles.deltaFiles;
-      this.loading = false;
-      this.totalRecords = data.data.deltaFiles.totalCount;
-    },
-    async fetchRecordCount() {
-      this.setQueryParams();
+    const fetchStages = async () => {
+      let enumsStageTypes = await getEnumValuesByEnumType("DeltaFileStage");
+      stageOptions.value = enumsStageTypes.data.__type.enumValues;
+    };
 
-      let fetchRecordCount = await this.graphQLService.getRecordCount(this.startTimeDate, this.endTimeDate, this.fileName, this.stageName, this.actionName, this.flowName);
-      this.recordCount = fetchRecordCount.data.deltaFiles.totalCount.toString();
-    },
-    setQueryParams() {
-      this.fileName = this.fileNameOptionSelected ? this.fileNameOptionSelected.name : null;
-      this.stageName = this.stageOptionSelected ? this.stageOptionSelected.name : null;
-      this.actionName = this.actionTypeOptionSelected ? this.actionTypeOptionSelected.name : null;
-      this.flowName = this.flowOptionSelected ? this.flowOptionSelected.name : null;
-    },
-    onSort(event) {
-      this.offset = event.first;
-      this.perPage = event.rows;
-      this.sortField = event.sortField;
-      this.sortDirection = event.sortOrder > 0 ? "DESC" : "ASC";
-      this.fetchDeltaFilesData();
-    },
-    actionRowClass(data) {
-      return data.stage === 'ERROR' ? 'table-danger action-error': null;
-    },
-    onPage(event) {
-      this.offset = event.first;
-      this.perPage = event.rows;
-      this.fetchDeltaFilesData();
-    },
-    getPersistedParams() {
-      this.startTimeDate = new Date(this.searchOptionsState.startTimeDateState ? this.searchOptionsState.startTimeDateState : this.startTimeDate);
-      this.endTimeDate = new Date(this.searchOptionsState.endTimeDateState ? this.searchOptionsState.endTimeDateState : this.endTimeDate);
-      this.fileNameOptionSelected = this.searchOptionsState.fileNameOptionState ? { name: this.searchOptionsState.fileNameOptionState } : null;
-      this.stageOptionSelected = this.searchOptionsState.stageOptionState ? { name: this.searchOptionsState.stageOptionState } : null;
-      this.actionTypeOptionSelected = this.searchOptionsState.actionTypeOptionState ? { name: this.searchOptionsState.actionTypeOptionState } : null;
-      this.flowOptionSelected = this.searchOptionsState.flowOptionState ? { name: this.searchOptionsState.flowOptionState } : null;
+    const fetchDeltaFilesData = async () => {
+      setQueryParams();
+      setPersistedParams();
+
+      loading.value = true;
+      fetchRecordCount();
+      let data = await getDeltaFileSearchData(startTimeDate.value, endTimeDate.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value);
+      tableData.value = data.data.deltaFiles.deltaFiles;
+      loading.value = false;
+      totalRecords.value = data.data.deltaFiles.totalCount;
+    };
+
+    const fetchRecordCount = async () => {
+      setQueryParams();
+
+      let fetchRecordCount = await getRecordCount(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
+      recordCount.value = fetchRecordCount.data.deltaFiles.totalCount.toString();
+    };
+
+    const results = computed(() => {
+      return tableData.value.map((row) => {
+        const timeElapsed = new Date(row.modified) - new Date(row.created);
+        return {
+          ...row,
+          elapsed: duration(timeElapsed),
+        };
+      });
+    });
+
+    const setQueryParams = () => {
+      fileName.value = fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null;
+      stageName.value = stageOptionSelected.value ? stageOptionSelected.value.name : null;
+      actionName.value = actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null;
+      flowName.value = flowOptionSelected.value ? flowOptionSelected.value.name : null;
+    };
+
+    const onSort = (event) => {
+      offset.value = event.first;
+      perPage.value = event.rows;
+      sortField.value = event.sortField;
+      sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
+      fetchDeltaFilesData();
+    };
+
+    const actionRowClass = (data) => {
+      return data.stage === "ERROR" ? "table-danger action-error" : null;
+    };
+
+    const onPage = (event) => {
+      offset.value = event.first;
+      perPage.value = event.rows;
+      fetchDeltaFilesData();
+    };
+
+    const getPersistedParams = () => {
+      startTimeDate.value = new Date(state.value.startTimeDateState ? state.value.startTimeDateState : startTimeDate.value);
+      endTimeDate.value = new Date(state.value.endTimeDateState ? state.value.endTimeDateState : endTimeDate.value);
+      fileNameOptionSelected.value = state.value.fileNameOptionState ? { name: state.value.fileNameOptionState } : null;
+      stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
+      actionTypeOptionSelected.value = state.value.actionTypeOptionState ? { name: state.value.actionTypeOptionState } : null;
+      flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
 
       // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
       // what search options are being used.
-      if ( this.fileNameOptionSelected || this.stageOptionSelected || this.actionTypeOptionSelected || this.flowOptionSelected) {
-        this.collapsedSearchOption=false;
+      if (fileNameOptionSelected.value || stageOptionSelected.value || actionTypeOptionSelected.value || flowOptionSelected.value) {
+        collapsedSearchOption.value = false;
       } else {
-        this.collapsedSearchOption=true;
+        collapsedSearchOption.value = true;
       }
-    },
-    setPersistedParams(){
-      var newSearchOptionsState = {
-        startTimeDateState: this.startTimeDate ? this.startTimeDate: null,
-        endTimeDateState: this.endTimeDate ? this.endTimeDate: null,
-        fileNameOptionState: this.fileNameOptionSelected ? this.fileNameOptionSelected.name : null,
-        stageOptionState: this.stageOptionSelected ? this.stageOptionSelected.name: null,
-        actionTypeOptionState: this.actionTypeOptionSelected ? this.actionTypeOptionSelected.name : null,
-        flowOptionState: this.flowOptionSelected ? this.flowOptionSelected.name : null,
-      }
+    };
+    const state = useStorage("advanced-search-options-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 
-      const store = useStore();
-      store.dispatch(SearchOptionsActionTypes.UPDATE_SEARCH_OPTIONS, newSearchOptionsState);
-    }
+    const setPersistedParams = () => {
+      state.value = {
+        startTimeDateState: startTimeDate.value ? startTimeDate.value : null,
+        endTimeDateState: endTimeDate.value ? endTimeDate.value : null,
+        fileNameOptionState: fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null,
+        stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
+        actionTypeOptionState: actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null,
+        flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
+      };
+    };
+
+    return {
+      optionMenuToggle,
+      actionRowClass,
+      onSort,
+      onPage,
+      fetchDeltaFilesData,
+      results,
+      collapsedSearchOption,
+      optionMenu,
+      loading,
+      startTimeDate,
+      endTimeDate,
+      actionName,
+      actionTypeOptions,
+      actionTypeOptionSelected,
+      fileName,
+      fileNameOptions,
+      fileNameOptionSelected,
+      flowName,
+      flowOptions,
+      flowOptionSelected,
+      items,
+      stageName,
+      stageOptions,
+      stageOptionSelected,
+      recordCount,
+      totalRecords,
+      tableData,
+    };
   },
 };
 </script>
 
 <style lang="scss">
-  @import "@/styles/pages/deltafile-search-page.scss";
+@import "@/styles/pages/deltafile-search-page.scss";
 </style>

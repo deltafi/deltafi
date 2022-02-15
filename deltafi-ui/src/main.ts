@@ -3,13 +3,13 @@
 import { createApp } from 'vue';
 import App from '@/App.vue';
 import router from '@/router';
-import { store } from "@/store";
 
 import PrimeVue from 'primevue/config';
 import ConfirmationService from 'primevue/confirmationservice';
 import Tooltip from 'primevue/tooltip';
 import ToastService from 'primevue/toastservice';
 import BadgeDirective from 'primevue/badgedirective';
+import PageHeader from "@/components/PageHeader.vue";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -21,12 +21,10 @@ import "@/styles/global.scss";
 
 const app = createApp(App)
 app.use(router)
-app.use(store)
 app.use(PrimeVue)
 app.use(ConfirmationService)
 app.use(ToastService)
 app.directive('badge', BadgeDirective);
-
 app.directive('tooltip', Tooltip);
-
+app.component('PageHeader', PageHeader)
 app.mount('#app')

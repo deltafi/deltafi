@@ -1,10 +1,6 @@
 <template>
   <div class="dashboard">
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">
-        Dashboard
-      </h1>
-    </div>
+    <PageHeader heading="Dashboard" />
     <div class="row pl-2 pr-2">
       <div class="col-md-12 col-lg-6 col-xl-4 pl-2 pr-2">
         <CollapsiblePanel header="External Links" class="links-panel pl-0">
@@ -24,20 +20,26 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import useUiConfig from "@/composables/useUiConfig";
+import { computed } from "vue";
 
 export default {
-  name: "DashboardPage",
-  components: {
-    CollapsiblePanel
+  components: { CollapsiblePanel },
+  setup() {
+    const { uiConfig } = useUiConfig();
+
+    const externalLinks = computed(() => {
+      return uiConfig.value.dashboard.links;
+    });
+
+    return {
+      externalLinks,
+    };
   },
-  computed: {
-    ...mapGetters(['externalLinks']),
-  }
 };
 </script>
 
 <style lang="scss">
-  @import "@/styles/pages/dashboard-page.scss";
+@import "@/styles/pages/dashboard-page.scss";
 </style>

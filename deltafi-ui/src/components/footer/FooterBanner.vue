@@ -9,26 +9,37 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+import useUiConfig from "@/composables/useUiConfig";
+import { computed } from "vue";
 
 export default {
   name: "AppFooter",
-  computed: {
-    textColor() {
-      return this.uiConfig.securityBanner.textColor;
-    },
-    backgroundColor() {
-      return this.uiConfig.securityBanner.backgroundColor;
-    },
-    bannerMessage() {
-      return this.uiConfig.securityBanner.text;
-    },
-    bannerEnabled() {
-      return this.uiConfig.securityBanner.enabled;
-    },
-    ...mapState({
-      uiConfig: (state) => state.uiConfig.uiConfig,
-    }),
+  setup() {
+    const { uiConfig } = useUiConfig();
+
+    const textColor = computed(() => {
+      return uiConfig.value.securityBanner.textColor;
+    });
+
+    const backgroundColor = computed(() => {
+      return uiConfig.value.securityBanner.backgroundColor;
+    });
+
+    const bannerMessage = computed(() => {
+      return uiConfig.value.securityBanner.text;
+    });
+
+    const bannerEnabled = computed(() => {
+      return uiConfig.value.securityBanner.enabled;
+    });
+
+    return {
+      uiConfig,
+      textColor,
+      backgroundColor,
+      bannerMessage,
+      bannerEnabled,
+    };
   },
 };
 </script>

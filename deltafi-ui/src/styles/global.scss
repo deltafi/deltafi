@@ -77,7 +77,12 @@ a {
   box-shadow: none !important;
 }
 
-.p-contextmenu {
+.p-contextmenu, .p-menu {
   width: unset;
   max-width: 15rem;
+}
+
+p-button:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }

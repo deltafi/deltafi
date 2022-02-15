@@ -1,12 +1,10 @@
 <template>
   <div>
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">
-        Versions
-      </h1>
-    </div>
+    <PageHeader heading="Versions" />
     <CollapsiblePanel header="Image Versions" class="table-panel">
-      <DataTable responsive-layout="scroll" :value="versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading">
+      <DataTable responsive-layout="scroll" :value="versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="showLoading">
+        <template #empty> No version information available. </template>
+        <template #loading> Loading version information. Please wait. </template>
         <Column field="app" header="App" :sortable="true" />
         <Column field="container" header="Container" :sortable="true" />
         <Column field="image.name" header="Image" :sortable="true" />
@@ -17,37 +15,37 @@
 </template>
 
 <script>
-import ApiService from "@/service/ApiService";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import useVersions from "@/composables/useVersions";
+import { onMounted, computed, onUnmounted } from "vue";
 
 export default {
   name: "VersionsPage",
   components: {
     DataTable,
     Column,
-    CollapsiblePanel
+    CollapsiblePanel,
   },
-  data() {
-    return {
-      loading: true,
-      versions: []
-    };
+  setup() {
+    const refreshInterval = 5000; // 5 seconds
+    const { data: versions, loaded, loading, fetch: fetchVersions } = useVersions();
+
+    let autoRefresh;
+
+    const showLoading = computed(() => !loaded.value && loading.value);
+
+    onMounted(() => {
+      fetchVersions();
+      autoRefresh = setInterval(fetchVersions, refreshInterval);
+    });
+
+    onUnmounted(() => {
+      clearInterval(autoRefresh);
+    });
+
+    return { versions, showLoading };
   },
-  created() {
-    this.apiService = new ApiService();
-  },
-  mounted() {
-    this.fetchVersions();
-  },
-  methods: {
-    async fetchVersions() {
-      let response = await this.apiService.getVersions();
-      this.versions = response.versions;
-      this.loading = false;
-    }
-  },
-  apiService: null
 };
 </script>

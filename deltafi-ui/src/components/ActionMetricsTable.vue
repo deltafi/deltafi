@@ -1,13 +1,9 @@
 <template>
   <div>
     <CollapsiblePanel :header="title" class="metrics-panel table-panel">
-      <DataTable :value="tableData" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading" sort-field="action_name" :sort-order="1">
-        <template #empty>
-          No {{ title }} available.
-        </template>
-        <template #loading>
-          Loading {{ title }} data. Please wait.
-        </template>
+      <DataTable :value="tableData.value" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading" sort-field="action_name" :sort-order="1">
+        <template #empty> No {{ title }} available. </template>
+        <template #loading> Loading {{ title }} data. Please wait. </template>
         <Column header="Action Name" field="action_name" :sortable="true" />
         <Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header" :sortable="true" class="metric-column">
           <template #body="row">
@@ -23,14 +19,15 @@
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
-import * as filesize from "filesize";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import { computed } from "vue";
 
 export default {
   name: "ActionMetricsTable",
   components: {
     DataTable,
     Column,
-    CollapsiblePanel
+    CollapsiblePanel,
   },
   props: {
     family: {
@@ -47,30 +44,29 @@ export default {
       required: true,
     },
   },
-  computed: {
-    title() {
+  setup(props) {
+    const { formattedBytes } = useUtilFunctions();
+    const title = computed(() => {
       let title = "Action Metrics";
-      if (this.family) {
-        const family =
-          this.family.charAt(0).toUpperCase() +
-          this.family.slice(1).toLowerCase();
+      if (props.family) {
+        const family = props.family.charAt(0).toUpperCase() + props.family.slice(1).toLowerCase();
         title = `${family} ${title}`;
       }
       return title;
-    },
-    rows() {
-      if (this.actions.length === 0) return [];
-      const actions = this.actions;
-      return Object.keys(actions).map(function (action_name) {
+    });
+    const rows = computed(() => {
+      if (props.actions.length === 0) return [];
+      const actions = props.actions;
+      return Object.keys(actions).map((action_name) => {
         let metrics = actions[action_name];
         metrics["action_name"] = action_name;
         return metrics;
       });
-    },
-    columns() {
-      if (this.actions.length === 0) return [];
+    });
+    const columns = computed(() => {
+      if (props.actions.length === 0) return [];
       let metricNames = new Set();
-      this.rows.forEach((row) => {
+      rows.value.forEach((row) => {
         Object.keys(row).forEach((key) => {
           if (key !== "action_name") metricNames.add(key);
         });
@@ -80,37 +76,33 @@ export default {
         .map((metricName) => {
           return {
             field: metricName,
-            header: this.metricHeader(metricName),
+            header: metricHeader(metricName),
           };
         });
-    },
-    tableData() {
-      return this.rows.length > 0 && this.columns.length > 0 ? this.rows : [];
-    },
-  },
-  created() {},
-  methods: {
-    metricHeader(metricName) {
+    });
+    const tableData = computed(() => {
+      return rows.value.length > 0 && columns.value.length > 0 ? rows : [];
+    });
+    const metricHeader = (metricName) => {
       // Metrics names should always be snake case
       const words = metricName.split("_").map((word) => {
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       });
       return words.join(" ");
-    },
-    formatMatricValue(row) {
+    };
+    const formatMatricValue = (row) => {
       const field = row.column.key;
       const value = row.data[field] || 0;
       if (value === undefined || value === null) {
         return null;
       } else if (field.includes("bytes")) {
-        return this.formattedBytes(value);
+        return formattedBytes(value);
       } else {
         return value;
       }
-    },
-    formattedBytes(bytes) {
-      return filesize(bytes || 0, { base: 10 });
-    },
+    };
+
+    return { title, rows, columns, tableData, formatMatricValue };
   },
 };
 </script>

@@ -1,8 +1,8 @@
 <template>
-  <Dialog :header="acknowledgeButtonLabel" :maximizable="false" :modal="true" :style="{width: '25vw'}" @update:visible="close">
+  <Dialog :header="acknowledgeButtonLabel" :maximizable="false" :modal="true" :style="{ width: '25vw' }" @update:visible="close">
     <div class="p-fluid">
       <span class="p-float-label mt-3">
-        <InputText id="reason" v-model="reason" type="text" :class="{'p-invalid': reasonInvalid}" autofocus />
+        <InputText id="reason" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" autofocus />
         <label for="reason">Reason</label>
       </span>
     </div>
@@ -14,11 +14,12 @@
 </template>
 
 <script>
-import GraphQLService from "@/service/GraphQLService";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Dialog from "primevue/dialog";
-import { UtilFunctions } from "@/utils/UtilFunctions";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import { computed, ref } from "vue";
+import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
 
 export default {
   name: "AckErrorsDialog",
@@ -33,44 +34,53 @@ export default {
       required: true,
     },
   },
-  emits: [
-    'acknowledged',
-    'update:visible'
-  ],
-  data() {
+  emits: ["acknowledged", "update:visible"],
+  setup(props, context) {
+    const { pluralize } = useUtilFunctions();
+    const reason = ref("");
+    const show = ref(true);
+    const reasonInvalid = ref(false);
+
+    const { data: AcknowledgeErrorsData, post: PostAcknowledgeErrors, errors } = useAcknowledgeErrors();
+
+    const acknowledgeButtonLabel = computed(() => {
+      if (props.dids.length === 1) return "Acknowledge Error";
+      let pluralized = pluralize(props.dids.length, "Error");
+      return `Acknowledge ${pluralized}`;
+    });
+
+    const acknowledge = async () => {
+      if (reason.value) {
+        try {
+          await PostAcknowledgeErrors(props.dids, reason.value);
+          context.emit("acknowledged", props.dids, reason.value);
+          context.emit("update:visible", false);
+          reason.value = "";
+        } catch {
+          // Do Nothing
+        }
+      } else {
+        reasonInvalid.value = true;
+      }
+    };
+
+    const close = () => {
+      context.emit("update:visible", false);
+    };
+
     return {
-      reason: '',
-      show: true,
-      reasonInvalid: false
+      reason,
+      show,
+      reasonInvalid,
+      close,
+      acknowledge,
+      acknowledgeButtonLabel,
+      AcknowledgeErrorsData,
+      PostAcknowledgeErrors,
+      errors,
+      props,
     };
   },
-  computed: {
-    acknowledgeButtonLabel() {
-      if (this.dids.length === 1) return "Acknowledge Error";
-      let pluralized = this.utilFunctions.pluralize(this.dids.length, "Error")
-      return `Acknowledge ${pluralized}`;
-    }
-  },
-  created() {
-    this.graphQLService = new GraphQLService();
-    this.utilFunctions = new UtilFunctions();
-  },
-  methods: {
-    async acknowledge() {
-      if (this.reason) {
-        await this.graphQLService.acknowledgeErrors(this.dids, this.reason);
-        this.$emit('acknowledged', this.dids, this.reason);
-        this.$emit('update:visible', false);
-        this.reason = '';
-      } else {
-        this.reasonInvalid = true;
-      }
-    },
-    close() {
-      this.$emit('update:visible', false);
-    }
-  },
-  graphQLService: null
 };
 </script>
 

@@ -22,12 +22,11 @@ import HeaderBanner from "@/components/header/HeaderBanner";
 import AppTopBar from "@/components/header/AppTopBar";
 import AppMenu from "@/components/sidebar/AppMenu";
 import FooterBanner from "@/components/footer/FooterBanner";
-import { mapState } from "vuex";
 import Toast from "primevue/toast";
-
-import { useStore } from '@/store';
-import { UIConfigActionTypes } from '@/store/modules/uiConfig/action-types';
-import { SidebarToggleActionTypes } from '@/store/modules/sidebarToggle/action-types';
+import { useRoute } from "vue-router";
+import useUiConfig from "@/composables/useUiConfig";
+import useSidebarToggle from "@/composables/useSidebarToggle";
+import { computed, onBeforeMount, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 
 export default {
   name: "App",
@@ -36,62 +35,66 @@ export default {
     AppTopBar,
     AppMenu,
     FooterBanner,
-    Toast
+    Toast,
   },
-  computed: {
-    sidebarClasses() {
-      return this.sidebarHidden ? "col sidebar hidden" : "col sidebar";
-    },
-    ...mapState({
-      uiConfig: state => state.uiConfig.uiConfig,
-      sidebarHidden: state => state.sidebarToggle.sidebarHidden
-    })
-  },
-  watch: {
-    $route: {
-      immediate: true,
-      handler(to) {
-        this.setPageTitle(to.name);
-      },
-    },
-    uiConfig: {
-      deep: true,
-      handler() {
-        this.setPageTitle(this.$route.name);
-      },
-    },
-  },
-  mounted() {
-    this.$nextTick(() => {
-      window.addEventListener('resize', this.onResize);
-    })
-  },
-  beforeCreate() {
-    const store = useStore();
-    store.dispatch(UIConfigActionTypes.FETCH_UI_CONFIG);
-  },
-  beforeUnmount() { 
-    window.removeEventListener('resize', this.onResize); 
-  },
-  methods: {
-    setPageTitle(prefix) {
-      const pageTitle = [prefix, this.uiConfig.title]
-        .filter((n) => n)
-        .join(" - ");
-      document.title = pageTitle;
-    },
-    onResize() {
-      var windowWidth = window.innerWidth
+  setup() {
+    const route = useRoute();
+    const { uiConfig, fetchUiConfig } = useUiConfig();
+    const { sidebarHidden, toggleSidebarHidden } = useSidebarToggle();
 
-      if (!this.sidebarHidden && windowWidth < 768) {
-        const store = useStore();
-        store.dispatch(SidebarToggleActionTypes.TOGGLE_SIDEBAR);
+    const sidebarClasses = computed(() => {
+      return sidebarHidden.value ? "col sidebar hidden" : "col sidebar";
+    });
+
+    onBeforeMount(() => {
+      fetchUiConfig();
+    });
+
+    onMounted(async () => {
+      await nextTick();
+      window.addEventListener("resize", onResize);
+    });
+
+    onBeforeUnmount(() => {
+      window.removeEventListener("resize", onResize);
+    });
+
+    const onResize = () => {
+      var windowWidth = window.innerWidth;
+
+      if (!sidebarHidden.value && windowWidth < 768) {
+        toggleSidebarHidden();
       }
-    }
+    };
+
+    const setPageTitle = () => {
+      const pageTitle = [route.name, uiConfig.value.title].filter((n) => n).join(" - ");
+      document.title = pageTitle;
+    };
+
+    watch(
+      () => route.name,
+      () => {
+        setPageTitle();
+      }
+    );
+    watch(
+      () => uiConfig.value.title,
+      () => {
+        setPageTitle();
+      }
+    );
+
+    return {
+      uiConfig,
+      sidebarHidden,
+      toggleSidebarHidden,
+      sidebarClasses,
+    };
   },
 };
 </script>
 
 <style scoped lang="scss">
-  @import "@/styles/app.scss";
+@import "@/styles/app.scss";
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <Tag v-tooltip.left="'Click for more info'" class="p-mr-3 mr-3 status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" @click="openStatusDialog()" />
-    <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{width: '50vw'}" :maximizable="false" :modal="true" position="center">
+    <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{ width: '50vw' }" :maximizable="true" :modal="true" position="" :dismissable-mask="true">
       <span v-for="check in status.checks" :key="check.description">
         <Message :severity="messageSeverity(check.code)" :closable="false">
           {{ check.description }}
@@ -10,19 +10,20 @@
           <div class="message" v-html="markdown(check.message)" />
         </div>
       </span>
-      <template v-if="timestamp" #footer>
-        <small class="text-muted">Last Updated: {{ timestamp }}</small>
+      <template #footer>
+        <small v-if="status.timestamp" class="text-muted">Last Updated: {{ status.timestamp }}</small>
       </template>
     </Dialog>
   </div>
 </template>
 
 <script>
-import ApiService from "@/service/ApiService";
+import useStatus from "@/composables/useStatus";
 import MarkdownIt from "markdown-it";
-import Dialog from 'primevue/dialog';
-import Tag from 'primevue/tag';
-import Message from 'primevue/message';
+import Dialog from "primevue/dialog";
+import Tag from "primevue/tag";
+import Message from "primevue/message";
+import { ref, onMounted } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
 
@@ -32,64 +33,61 @@ export default {
     Tag,
     Message,
   },
-  data() {
-    return {
-      status: {
-        code: -1,
-        state: "Unknown",
-        checks: []
-      },
+  setup() {
+    const status = ref({
+      code: -1,
+      state: "Unknown",
+      checks: [],
       timestamp: null,
-      autoRefresh: null,
-      showStatusDialog: false,
+    });
+    const showStatusDialog = ref(false);
+    const { data: response, fetch: getStatus } = useStatus();
+
+    const fetchStatus = async () => {
+      await getStatus();
+      status.value = response.value;
     };
-  },
-  created() {
-    this.apiService = new ApiService();
-    this.markdownIt = new MarkdownIt();
-  },
-  mounted() {
-    this.fetchStatus();
-    this.autoRefresh = setInterval(
-      function () {
-        this.fetchStatus();
-      }.bind(this),
-      refreshInterval
-    );
-  },
-  methods: {
-    async fetchStatus() {
-      let response = await this.apiService.getStatus();
-      this.status.code = response.status.code;
-      this.status.state = response.status.state;
-      this.status.checks = response.status.checks;
-      this.timestamp = response.timestamp;
-    },
-    openStatusDialog() {
-      this.showStatusDialog = true;
-    },
-    tagSeverity(code) {
+
+    onMounted(() => {
+      fetchStatus();
+      setInterval(fetchStatus, refreshInterval);
+    });
+
+    const openStatusDialog = () => {
+      showStatusDialog.value = true;
+    };
+    const tagSeverity = (code) => {
       let severities = ["success", "warning", "danger"];
       return severities[code] || "info";
-    },
-    messageSeverity(code) {
+    };
+    const messageSeverity = (code) => {
       let severities = ["success", "warn", "error"];
       return severities[code] || "info";
-    },
-    icon(code) {
+    };
+    const icon = (code) => {
       let icons = ["check", "exclamation-triangle", "times"];
       let icon = icons[code] || "question-circle";
       return `pi pi-${icon}`;
-    },
-    markdown(source) {
-      return this.markdownIt.render(source);
-    }
+    };
+
+    const markdownIt = new MarkdownIt();
+    const markdown = (source) => {
+      return markdownIt.render(source);
+    };
+
+    return {
+      status,
+      showStatusDialog,
+      openStatusDialog,
+      tagSeverity,
+      messageSeverity,
+      icon,
+      markdown,
+    };
   },
-  apiService: null,
-  markdownIt: null,
 };
 </script>
 
 <style scoped lang="scss">
-  @import "@/styles/components/status-badge.scss";
+@import "@/styles/components/status-badge.scss";
 </style>

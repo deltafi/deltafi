@@ -2,7 +2,8 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:vue/vue3-recommended',
-    '@vue/typescript'
+    '@vue/typescript',
+    'prettier'
   ],
   rules: {
     "vue/max-attributes-per-line": "off",
