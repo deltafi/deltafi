@@ -28,7 +28,8 @@ a {
     padding: 0;
     border: none;
     div.p-datatable-sm:not(.p-datatable-gridlines) {
-      .p-datatable-wrapper, .p-paginator-bottom {
+      .p-datatable-wrapper,
+      .p-paginator-bottom {
         border-left: 1px solid #dee2e6;
         border-right: 1px solid #dee2e6;
         border-bottom: 1px solid #dee2e6;
@@ -72,17 +73,14 @@ a {
   }
 }
 
-.p-tabview-nav-link:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.p-contextmenu, .p-menu {
+.p-contextmenu,
+.p-menu {
   width: unset;
   max-width: 15rem;
 }
 
-p-button:focus {
+.p-link:focus,
+.p-tabview-nav-link:focus {
   outline: none !important;
   box-shadow: none !important;
 }

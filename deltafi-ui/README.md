@@ -22,6 +22,7 @@ This section describes how to set up a deltafi-ui development environment.
 - Node.js >= 16.x
 - [Visual Studio Code](https://code.visualstudio.com/)
   - [Vetur](https://marketplace.visualstudio.com/items?itemName=octref.vetur)
+  - [SCSS Formatter](https://marketplace.visualstudio.com/items?itemName=sibiraj-s.vscode-scss-formatter)
 
 #### Install Dependencies
 
@@ -29,8 +30,8 @@ This section describes how to set up a deltafi-ui development environment.
 
 #### Visual Studio Code
 
-- Start __Visual Studio Code__.
-- Select __File__ > __Open Workspace from File...__
+- Start **Visual Studio Code**.
+- Select **File** > **Open Workspace from File...**
 - Select the file named `deltafi-ui.code-workspace` at the root of this repo.
 
 #### Run Dev Server

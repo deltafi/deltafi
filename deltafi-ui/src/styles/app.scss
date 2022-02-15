@@ -22,10 +22,10 @@
 .wrapper .content-wrapper {
   overflow-x: hidden;
   width: 100%;
-  padding: .25rem 1rem 80px 1rem;
+  padding: 0.25rem 1rem 80px 1rem;
 }
 
-@media (max-width: 768px){
+@media (max-width: 768px) {
   .sidebar {
     -ms-flex: 0 0 150px !important;
     flex: 0 0 150px !important;
