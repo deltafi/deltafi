@@ -1,6 +1,9 @@
 package org.deltafi.core.domain.validation;
 
-import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
+import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
+import org.deltafi.core.domain.configuration.LoadActionConfiguration;
+import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -22,8 +25,8 @@ class IngressFlowValidatorTest {
         Optional<String> error = ingressFlowValidator.validate(new DeltafiRuntimeConfiguration(), new IngressFlowConfiguration());
         assertThat(error)
                 .isPresent()
-                .contains("Ingress Flow Configuration: IngressFlowConfiguration{name='null',apiVersion='null',type='null',transformActions='[]',loadActions='[]'} has the following errors: \n" +
-                        "Required property type is not set; Required property name is not set; Required property loadActions must be set to a non-empty list");
+                .contains("Ingress Flow Configuration: IngressFlowConfiguration{name='null',apiVersion='null',type='null',transformActions='[]',loadAction='null'} has the following errors: \n" +
+                        "Required property type is not set; Required property name is not set; Required property loadAction must be set");
     }
 
     @Test
@@ -33,7 +36,7 @@ class IngressFlowValidatorTest {
                 .hasSize(3)
                 .contains("Required property type is not set")
                 .contains("Required property name is not set")
-                .contains("Required property loadActions must be set to a non-empty list");
+                .contains("Required property loadAction must be set");
     }
 
     @Test
@@ -41,7 +44,7 @@ class IngressFlowValidatorTest {
         IngressFlowConfiguration ingressConfig = new IngressFlowConfiguration();
         ingressConfig.setName("ingress");
         ingressConfig.setType("json");
-        ingressConfig.setLoadActions(List.of("l1"));
+        ingressConfig.setLoadAction("l1");
 
         DeltafiRuntimeConfiguration runtimeConfig = new DeltafiRuntimeConfiguration();
 
@@ -100,21 +103,21 @@ class IngressFlowValidatorTest {
     }
 
     @Test
-    void validateLoadActionsAreReachable_valid() {
+    void validateLoadActionIsReachable_valid() {
         LoadActionConfiguration config = new LoadActionConfiguration();
         config.setConsumes("flowType");
 
-        List<String> errors = ingressFlowValidator.validateLoadActionsAreReachable(of(config), emptySet(), "flowType");
+        List<String> errors = ingressFlowValidator.validateLoadActionIsReachable(config, emptySet(), "flowType");
         assertThat(errors).isEmpty();
     }
 
     @Test
-    void validateLoadActionsAreReachable_flowTypeNotConsumed() {
+    void validateLoadActionIsReachable_flowTypeNotConsumed() {
         LoadActionConfiguration config = new LoadActionConfiguration();
         config.setConsumes("other");
         config.setName("loader");
 
-        List<String> errors = ingressFlowValidator.validateLoadActionsAreReachable(of(config), emptySet(), "flowType");
+        List<String> errors = ingressFlowValidator.validateLoadActionIsReachable(config, emptySet(), "flowType");
         assertThat(errors).hasSize(2)
                 .contains("Load Action named: loader consumes: other which isn't produced in this flow")
                 .contains("None of the configured Load Actions in this flow consume the ingress flow type: flowType");
@@ -149,30 +152,30 @@ class IngressFlowValidatorTest {
     }
 
     @Test
-    void getLoadConfigs_valid() {
+    void getLoadConfig_valid() {
         List<String> errors = new ArrayList<>();
 
         IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.getLoadActions().add("loader");
+        ingressFlowConfiguration.setLoadAction("loader");
 
         DeltafiRuntimeConfiguration runtimeConfiguration = new DeltafiRuntimeConfiguration();
         runtimeConfiguration.getLoadActions().put("loader", new LoadActionConfiguration());
 
-        List<LoadActionConfiguration> found = ingressFlowValidator.getLoadConfigs(runtimeConfiguration, ingressFlowConfiguration, errors);
-        assertThat(found).hasSize(1);
+        LoadActionConfiguration found = ingressFlowValidator.getLoadConfig(runtimeConfiguration, ingressFlowConfiguration, errors);
+        assertThat(found).isNotNull();
 
         assertThat(errors).isEmpty();
     }
 
     @Test
-    void getLoadConfigs_missing() {
+    void getLoadConfig_missing() {
         List<String> errors = new ArrayList<>();
 
         IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.getLoadActions().add("loader");
+        ingressFlowConfiguration.setLoadAction("loader");
 
-        List<LoadActionConfiguration> found = ingressFlowValidator.getLoadConfigs(new DeltafiRuntimeConfiguration(), ingressFlowConfiguration, errors);
-        assertThat(found).isEmpty();
+        LoadActionConfiguration found = ingressFlowValidator.getLoadConfig(new DeltafiRuntimeConfiguration(), ingressFlowConfiguration, errors);
+        assertThat(found).isNull();
         assertThat(errors).hasSize(1).contains("The referenced Load Action named: loader was not found");
     }
 }

@@ -1,8 +1,12 @@
 package org.deltafi.core.domain.services;
 
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.ProtocolLayer;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
@@ -22,10 +26,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class StateMachineTest {
+
+    private static final String SOURCE_KEY = "sourceKey";
+    private static final String PROTOCOL_LAYER_KEY = "protocolLayerKey";
+    private static final String DOMAIN = "domain";
+    private static final String ENRICH = "enrich";
 
     @InjectMocks
     StateMachine stateMachine;
@@ -138,9 +148,7 @@ class StateMachineTest {
 
     @Test
     void testGetEnrichActionsMatchesDomainAndEnrichment() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
+        DeltaFile deltaFile = makeDomainAndEnrichFile();
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -150,8 +158,8 @@ class StateMachineTest {
 
         EnrichActionConfiguration enrich = new EnrichActionConfiguration();
         enrich.setName("EnrichAction");
-        enrich.setRequiresDomains(Collections.singletonList("domain"));
-        enrich.setRequiresEnrichment(Collections.singletonList("enrich"));
+        enrich.setRequiresDomains(Collections.singletonList(DOMAIN));
+        enrich.setRequiresEnrichment(Collections.singletonList(ENRICH));
         Mockito.when(deltaFiConfigService.getEnrichAction("EnrichAction")).thenReturn(enrich);
 
         assertEquals(Collections.singletonList("EnrichAction"), stateMachine.getEnrichActions(deltaFile));
@@ -159,9 +167,7 @@ class StateMachineTest {
 
     @Test
     void testGetEnrichActionsDomainDoesNotMatch() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
+        DeltaFile deltaFile = makeDomainAndEnrichFile();
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -172,7 +178,7 @@ class StateMachineTest {
         EnrichActionConfiguration enrich = new EnrichActionConfiguration();
         enrich.setName("EnrichAction");
         enrich.setRequiresDomains(Collections.singletonList("otherDomain"));
-        enrich.setRequiresEnrichment(Collections.singletonList("enrich"));
+        enrich.setRequiresEnrichment(Collections.singletonList(ENRICH));
         Mockito.when(deltaFiConfigService.getEnrichAction("EnrichAction")).thenReturn(enrich);
 
         assertEquals(Collections.emptyList(), stateMachine.getEnrichActions(deltaFile));
@@ -180,9 +186,7 @@ class StateMachineTest {
 
     @Test
     void testGetEnrichActionsEnrichmentDoesNotMatch() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value", null);
-        deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
+        DeltaFile deltaFile = makeDomainAndEnrichFile();
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
         config.setEnrichActions(Collections.singletonList("EnrichAction"));
@@ -192,11 +196,91 @@ class StateMachineTest {
 
         EnrichActionConfiguration enrich = new EnrichActionConfiguration();
         enrich.setName("EnrichAction");
-        enrich.setRequiresDomains(Collections.singletonList("domain"));
+        enrich.setRequiresDomains(Collections.singletonList(DOMAIN));
         enrich.setRequiresEnrichment(Collections.singletonList("otherEnrich"));
         Mockito.when(deltaFiConfigService.getEnrichAction("EnrichAction")).thenReturn(enrich);
 
         assertEquals(Collections.emptyList(), stateMachine.getEnrichActions(deltaFile));
+    }
+
+    @Test
+    void testGetEnrichActionsDoesNotMatchMetadata() {
+        DeltaFile deltaFile = makeDeltaFile();
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setEnrichActions(Collections.singletonList("EnrichAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        EnrichActionConfiguration enrich = new EnrichActionConfiguration();
+        enrich.setName("EnrichAction");
+        enrich.setRequiresDomains(Collections.singletonList(DOMAIN));
+        enrich.setRequiresEnrichment(Collections.singletonList(ENRICH));
+        enrich.setRequiresMetadataKeyValues(Collections.singletonList(new KeyValue("wrongKey", "value")));
+        Mockito.when(deltaFiConfigService.getEnrichAction("EnrichAction")).thenReturn(enrich);
+
+        assertEquals(Collections.emptyList(), stateMachine.getEnrichActions(deltaFile));
+    }
+
+    @Test
+    void testGetEnrichActionsNoMetadataAvailable() {
+        DeltaFile deltaFile = makeDomainAndEnrichFile();
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setEnrichActions(Collections.singletonList("EnrichAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        EnrichActionConfiguration enrich = new EnrichActionConfiguration();
+        enrich.setName("EnrichAction");
+        enrich.setRequiresDomains(Collections.singletonList(DOMAIN));
+        enrich.setRequiresEnrichment(Collections.singletonList(ENRICH));
+        enrich.setRequiresMetadataKeyValues(Collections.singletonList(new KeyValue(SOURCE_KEY, "value")));
+        Mockito.when(deltaFiConfigService.getEnrichAction("EnrichAction")).thenReturn(enrich);
+
+        assertEquals(Collections.emptyList(), stateMachine.getEnrichActions(deltaFile));
+    }
+
+    @Test
+    void testGetEnrichActionsMatchesSourceInfoMetadata() {
+        DeltaFile deltaFile = makeDeltaFile();
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setEnrichActions(Collections.singletonList("EnrichAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        EnrichActionConfiguration enrich = new EnrichActionConfiguration();
+        enrich.setName("EnrichAction");
+        enrich.setRequiresDomains(Collections.singletonList(DOMAIN));
+        enrich.setRequiresEnrichment(Collections.singletonList(ENRICH));
+        enrich.setRequiresMetadataKeyValues(Collections.singletonList(new KeyValue(SOURCE_KEY, "value")));
+        Mockito.when(deltaFiConfigService.getEnrichAction("EnrichAction")).thenReturn(enrich);
+
+        assertEquals(Collections.singletonList("EnrichAction"), stateMachine.getEnrichActions(deltaFile));
+    }
+
+    @Test
+    void testGetEnrichActionsMatchesProtocolLayerMetadata() {
+        DeltaFile deltaFile = makeDeltaFile();
+
+        EgressFlowConfiguration config = new EgressFlowConfiguration();
+        config.setEnrichActions(Collections.singletonList("EnrichAction"));
+        config.setEgressAction("TheEgressAction");
+
+        Mockito.when(deltaFiConfigService.getEgressFlows()).thenReturn(List.of(config));
+
+        EnrichActionConfiguration enrich = new EnrichActionConfiguration();
+        enrich.setName("EnrichAction");
+        enrich.setRequiresDomains(Collections.singletonList(DOMAIN));
+        enrich.setRequiresEnrichment(Collections.singletonList(ENRICH));
+        enrich.setRequiresMetadataKeyValues(Collections.singletonList(new KeyValue(PROTOCOL_LAYER_KEY, "value")));
+        Mockito.when(deltaFiConfigService.getEnrichAction("EnrichAction")).thenReturn(enrich);
+
+        assertEquals(Collections.singletonList("EnrichAction"), stateMachine.getEnrichActions(deltaFile));
     }
 
     @Test
@@ -577,5 +661,33 @@ class StateMachineTest {
         assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("FlowEgressAction").orElseThrow().getState());
         assertEquals(ActionState.COMPLETE, deltaFile.actionNamed("Flow2EgressAction").orElseThrow().getState());
+    }
+
+    private DeltaFile makeDomainAndEnrichFile() {
+        return makeCustomFile(false, true, true, false);
+    }
+
+    private DeltaFile makeDeltaFile() {
+        return makeCustomFile(true, true, true, true);
+    }
+
+    private DeltaFile makeCustomFile(boolean withSourceInfo,
+                                     boolean withDomain, boolean withEnrichment, boolean withProtocolStack) {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
+        if (withSourceInfo) {
+            deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", List.of(new KeyValue(SOURCE_KEY, "value"))));
+        }
+        if (withDomain) {
+            deltaFile.addDomain(DOMAIN, "value", null);
+        }
+        if (withEnrichment) {
+            deltaFile.addEnrichment(ENRICH, "value", MediaType.ALL_VALUE);
+        }
+        if (withProtocolStack) {
+            deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION,
+                    new ContentReference("objectName", 0, 500, "did", "" + "application/octet-stream"),
+                    Collections.singletonList(new KeyValue(PROTOCOL_LAYER_KEY, "value"))));
+        }
+        return deltaFile;
     }
 }

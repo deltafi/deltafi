@@ -1,6 +1,9 @@
 package org.deltafi.core.domain.validation;
 
-import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
+import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
+import org.deltafi.core.domain.configuration.LoadActionConfiguration;
+import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -41,7 +44,7 @@ public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowC
         }
 
         List<TransformActionConfiguration> transformActionConfigurations = getTransformConfigs(config, ingressFlowConfiguration, errors);
-        List<LoadActionConfiguration> loadActionConfigurations = getLoadConfigs(config, ingressFlowConfiguration, errors);
+        LoadActionConfiguration loadActionConfiguration = getLoadConfig(config, ingressFlowConfiguration, errors);
 
         // if a referenced action could not be found we cannot do further validation of the flow
         if (!errors.isEmpty()) {
@@ -51,7 +54,7 @@ public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowC
         Set<String> producedTypes = transformActionConfigurations.stream().map(org.deltafi.core.domain.generated.types.TransformActionConfiguration::getProduces).collect(Collectors.toSet());
 
         errors.addAll(validateTransformsAreReachable(transformActionConfigurations, producedTypes, flowType));
-        errors.addAll(validateLoadActionsAreReachable(loadActionConfigurations, producedTypes, flowType));
+        errors.addAll(validateLoadActionIsReachable(loadActionConfiguration, producedTypes, flowType));
 
         return errors;
     }
@@ -64,7 +67,7 @@ public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowC
         List<String> errors = new ArrayList<>();
 
         boolean handlesIngressType = false;
-        for (TransformActionConfiguration transformActionConfiguration: transformActionConfigurations) {
+        for (TransformActionConfiguration transformActionConfiguration : transformActionConfigurations) {
             Set<String> othersProduce = new HashSet<>(producedTypes);
             othersProduce.remove(transformActionConfiguration.getProduces());
             String consumes = transformActionConfiguration.getConsumes();
@@ -82,18 +85,16 @@ public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowC
         return errors;
     }
 
-    List<String> validateLoadActionsAreReachable(List<LoadActionConfiguration> loadActionConfigurations, Set<String> producedTypes, String flowType) {
+    List<String> validateLoadActionIsReachable(LoadActionConfiguration loadActionConfiguration, Set<String> producedTypes, String flowType) {
         List<String> errors = new ArrayList<>();
 
         // If produceTypes is populated then assume a TransformAction handles the ingress flow type. Otherwise, a LoadAction needs to consume the flowType
         boolean isIngressTypeHandled = !producedTypes.isEmpty();
-        for (LoadActionConfiguration loadActionConfiguration: loadActionConfigurations) {
-            String consumes = loadActionConfiguration.getConsumes();
-            if (flowType.equals(consumes)) {
-                isIngressTypeHandled = true;
-            } else if (!producedTypes.contains(loadActionConfiguration.getConsumes())) {
-                errors.add("Load Action named: " + loadActionConfiguration.getName() + " consumes: " + loadActionConfiguration.getConsumes() + " which isn't produced in this flow");
-            }
+        String consumes = loadActionConfiguration.getConsumes();
+        if (flowType.equals(consumes)) {
+            isIngressTypeHandled = true;
+        } else if (!producedTypes.contains(loadActionConfiguration.getConsumes())) {
+            errors.add("Load Action named: " + loadActionConfiguration.getName() + " consumes: " + loadActionConfiguration.getConsumes() + " which isn't produced in this flow");
         }
 
         if (!isIngressTypeHandled) {
@@ -116,20 +117,17 @@ public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowC
         return transformActionConfigurations;
     }
 
-    List<LoadActionConfiguration> getLoadConfigs(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, IngressFlowConfiguration ingressFlowConfiguration, List<String> errors) {
-        if (isNull(ingressFlowConfiguration.getLoadActions()) || ingressFlowConfiguration.getLoadActions().isEmpty()) {
-            errors.add("Required property loadActions must be set to a non-empty list");
-            return emptyList();
+    LoadActionConfiguration getLoadConfig(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, IngressFlowConfiguration ingressFlowConfiguration, List<String> errors) {
+        String loadAction = ingressFlowConfiguration.getLoadAction();
+        if (isBlank(loadAction)) {
+            errors.add("Required property loadAction must be set");
+            return null;
         }
-        List<LoadActionConfiguration> loadActionConfigurations = new ArrayList<>();
-        for (String loadAction : ingressFlowConfiguration.getLoadActions()) {
-            LoadActionConfiguration loadActionConfiguration = deltafiRuntimeConfiguration.getLoadActions().get(loadAction);
-            if (isNull(loadActionConfiguration)) {
-                errors.add(RuntimeConfigValidator.referenceError("Load Action", loadAction));
-            } else {
-                loadActionConfigurations.add(loadActionConfiguration);
-            }
+
+        LoadActionConfiguration loadActionConfiguration = deltafiRuntimeConfiguration.getLoadActions().get(loadAction);
+        if (isNull(loadActionConfiguration)) {
+            errors.add(RuntimeConfigValidator.referenceError("Load Action", loadAction));
         }
-        return loadActionConfigurations;
+        return loadActionConfiguration;
     }
 }

@@ -149,6 +149,9 @@ class DeltaFiCoreDomainApplicationTests {
 	final static List <KeyValue> loadSampleMetadata = Arrays.asList(
 			new KeyValue("loadSampleType", "load-sample-type"),
 			new KeyValue("loadSampleVersion", "2.2"));
+	final static List <KeyValue> loadWrongMetadata = Arrays.asList(
+			new KeyValue("loadSampleType", "wrong-sample-type"),
+			new KeyValue("loadSampleVersion", "2.2"));
 	final static List <KeyValue> transformSampleMetadata = Arrays.asList(
 			new KeyValue("sampleType", "sample-type"),
 			new KeyValue("sampleVersion", "2.1"));
@@ -341,6 +344,32 @@ class DeltaFiCoreDomainApplicationTests {
 		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleEnrichAction")), actual.capture());
 		deltaFile = actual.getValue();
 		assertTrue(Util.equalIgnoringDates(postLoadDeltaFile(did), deltaFile));
+	}
+
+	DeltaFile post09LoadDeltaFile(String did) {
+		DeltaFile deltaFile = postTransformDeltaFile(did);
+		deltaFile.setStage(DeltaFileStage.COMPLETE);
+		deltaFile.completeAction("SampleLoadAction");
+		deltaFile.addDomain("sample", "sampleDomain", null);
+		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", new ContentReference("objectName", 0, 500, did, "application/octet-stream"), loadWrongMetadata));
+		return deltaFile;
+	}
+
+	@Test
+	void test09LoadWrongMetadata() throws IOException, ActionConfigException {
+		// Test is similar to 08.load, but has the wrong metadata value, which
+		// results in the enrich action not being run, and cascades through.
+		String did = UUID.randomUUID().toString();
+		DeltaFile postTransform = postTransformDeltaFile(did);
+		deltaFileRepo.save(postTransform);
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("09.load"), did),
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class);
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertTrue(Util.equalIgnoringDates(post09LoadDeltaFile(did), deltaFile));
 	}
 
 	DeltaFile postEnrichDeltaFile(String did) {
@@ -768,7 +797,7 @@ class DeltaFiCoreDomainApplicationTests {
 				graphQLQueryRequest.serialize(),
 				"data." + remove.getOperationName(),
 				Integer.class);
-		assertEquals(16, removed.intValue());
+		assertEquals(15, removed.intValue());
 	}
 
 	@Test

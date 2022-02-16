@@ -2,7 +2,10 @@ package org.deltafi.core.domain.converters;
 
 import org.deltafi.core.domain.api.types.KeyValue;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class KeyValueConverter {
@@ -11,12 +14,7 @@ public class KeyValueConverter {
         if (Objects.isNull(keyValues)) {
             return Collections.emptyMap();
         }
-        Map<String, String> keyValueMap = new HashMap<>();
-        for (KeyValue keyValue : keyValues) {
-            keyValueMap.put(keyValue.getKey(), keyValue.getValue());
-        }
-
-        return keyValueMap;
+        return keyValues.stream().collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue));
     }
 
     public static List<KeyValue> fromMap(Map<String, String> map) {

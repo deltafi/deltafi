@@ -4,9 +4,7 @@ ingressFlows:
     type: json
     transformActions:
       - SampleTransformAction
-    loadActions:
-      - SampleLoadAction
-      - Sample2LoadAction
+    loadAction: SampleLoadAction
 egressFlows:
   sample:
     name: sample
@@ -25,13 +23,14 @@ loadActions:
   SampleLoadAction:
     name: SampleLoadAction
     consumes: json-utf8-sample
-    requiresMetadata:
-      sampleType: sample-type
 enrichActions:
   SampleEnrichAction:
     name: SampleEnrichAction
     requiresDomains:
       - sample
+    requiresMetadataKeyValues:
+    - key: loadSampleType
+      value: load-sample-type
 formatActions:
   SampleFormatAction:
     name: SampleFormatAction

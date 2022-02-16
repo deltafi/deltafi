@@ -2,6 +2,7 @@ package org.deltafi.core.domain.services;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.converters.KeyValueConverter;
 import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.generated.types.ConfigQueryInput;
 import org.deltafi.core.domain.generated.types.ConfigType;
@@ -145,9 +146,7 @@ class DeltaFiConfigServiceTest {
         Assertions.assertThat(ingressFlow.getType()).isEqualTo("json");
         Assertions.assertThat(ingressFlow.getTransformActions()).hasSize(1);
         Assertions.assertThat(ingressFlow.getTransformActions()).contains("SampleTransformAction");
-        Assertions.assertThat(ingressFlow.getLoadActions()).hasSize(2);
-        Assertions.assertThat(ingressFlow.getLoadActions()).contains("SampleLoadAction");
-        Assertions.assertThat(ingressFlow.getLoadActions()).contains("Sample2LoadAction");
+        Assertions.assertThat(ingressFlow.getLoadAction()).isEqualTo("SampleLoadAction");
 
         EgressFlowConfiguration egressFlowConfiguration = commonChecks(config.getEgressFlows(), "sample");
         Assertions.assertThat(egressFlowConfiguration.getEgressAction()).contains("SampleEgressAction");
@@ -164,8 +163,12 @@ class DeltaFiConfigServiceTest {
 
         LoadActionConfiguration loadActionConfiguration = commonChecks(config.getLoadActions(), "SampleLoadAction");
         Assertions.assertThat(loadActionConfiguration.getConsumes()).isEqualTo("json-utf8-sample");
-        Assertions.assertThat(loadActionConfiguration.getRequiresMetadata()).hasSize(1);
-        Assertions.assertThat(loadActionConfiguration.getRequiresMetadata()).containsEntry("sampleType", "sample-type");
+
+        EnrichActionConfiguration enrichActionConfiguration = commonChecks(config.getEnrichActions(), "SampleEnrichAction");
+        Map<String, String> requiresMetadata = KeyValueConverter.convertKeyValues(enrichActionConfiguration.getRequiresMetadataKeyValues());
+
+        Assertions.assertThat(requiresMetadata).hasSize(1);
+        Assertions.assertThat(requiresMetadata).containsEntry("loadSampleType", "load-sample-type");
 
         FormatActionConfiguration formatActionConfiguration = commonChecks(config.getFormatActions(), "SampleFormatAction");
         Assertions.assertThat(formatActionConfiguration.getRequiresDomains()).hasSize(1);

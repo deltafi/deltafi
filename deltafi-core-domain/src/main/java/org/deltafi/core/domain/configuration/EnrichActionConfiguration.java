@@ -14,6 +14,7 @@ public class EnrichActionConfiguration extends org.deltafi.core.domain.generated
     public EnrichActionConfiguration() {
         setRequiresDomains(new ArrayList<>());
         setRequiresEnrichment(new ArrayList<>());
+        setRequiresMetadataKeyValues(new ArrayList<>());
     }
 
     @Override

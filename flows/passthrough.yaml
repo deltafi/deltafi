@@ -1,7 +1,6 @@
   ingressFlows:
     passthrough:
-      loadActions:
-      - PassthroughLoadAction
+      loadAction: PassthroughLoadAction
       name: passthrough
       transformActions:
       - PassthroughTransformAction
@@ -30,8 +29,6 @@
       parameters:
         domains:
         - binary
-      requiresMetadata: {}
-      requiresMetadataKeyValues: []
       type: org.deltafi.passthrough.action.RoteLoadAction
   enrichActions: {}
   formatActions:

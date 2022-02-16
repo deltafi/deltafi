@@ -109,7 +109,7 @@ public class FlowPlanDatafetcherTestHelper {
     public static FlowPlan saveFlowPlan(String planName, boolean draft, DgsQueryExecutor dgsQueryExecutor) {
         IngressFlowConfigurationInput ingressInput = IngressFlowConfigurationInput.newBuilder()
                 .name("name")
-                .loadActions(singletonList("loader"))
+                .loadAction("loader")
                 .transformActions(singletonList("transformer"))
                 .type("test-type")
                 .build();

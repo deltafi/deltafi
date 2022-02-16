@@ -27,7 +27,6 @@ type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfigurati
     name: String!
     apiVersion: String
     consumes: String!
-    requiresMetadataKeyValues: [KeyValue]
     type: String!
     parameters: JSON
 }
@@ -36,7 +35,6 @@ input LoadActionConfigurationInput {
     name: String!
     apiVersion: String
     consumes: String!
-    requiresMetadataKeyValues: [KeyValueInput]
     type: String!
     parameters: JSON
 }
@@ -46,6 +44,7 @@ type EnrichActionConfiguration implements ActionConfiguration & DeltaFiConfigura
     apiVersion: String
     requiresDomains: [String]!
     requiresEnrichment: [String]
+    requiresMetadataKeyValues: [KeyValue]
     type: String!
     parameters: JSON
 }
@@ -55,6 +54,7 @@ input EnrichActionConfigurationInput {
     apiVersion: String
     requiresDomains: [String]!
     requiresEnrichment: [String]
+    requiresMetadataKeyValues: [KeyValueInput]
     type: String!
     parameters: JSON
 }

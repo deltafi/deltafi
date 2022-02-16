@@ -6,17 +6,13 @@
    "ingressFlowConfigurations": [
       {
          "name": "stix2_1",
-         "loadActions": [
-            "Stix2_1LoadAction"
-         ],
+         "loadAction": "Stix2_1LoadAction",
          "transformActions": [],
          "type": "stix2_1"
       },
       {
          "name": "stix1_x",
-         "loadActions": [
-            "Stix2_1LoadAction"
-         ],
+         "loadAction": "Stix2_1LoadAction",
          "transformActions": [
             "Stix1_xTo2_1TransformAction"
          ],
@@ -57,7 +53,6 @@
       {
          "name": "Stix2_1LoadAction",
          "consumes": "stix2_1",
-         "requiresMetadataKeyValues": [],
          "type": "org.deltafi.stix.actions.StixLoadAction"
       }
    ],

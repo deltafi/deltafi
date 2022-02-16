@@ -4,7 +4,6 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.com.google.common.collect.Iterables;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
@@ -102,20 +101,7 @@ public class StateMachine {
     }
 
     private String getLoadAction(DeltaFile deltaFile) {
-        ProtocolLayer lastProtocolLayer = Iterables.getLast(deltaFile.getProtocolStack());
-        Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(lastProtocolLayer.getMetadata());
-        for (String loadAction : flowConfiguration(deltaFile).getLoadActions()) {
-            if (loadMetadataMatches(loadAction, metadataMap)) {
-                return loadAction;
-            }
-        }
-
-        return null;
-    }
-
-    private boolean loadMetadataMatches(String loadAction, Map<String, String> metadata) {
-        Map<String, String> requiresMetadata = configService.getLoadAction(loadAction).getRequiresMetadata();
-        return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadata.get(k)));
+        return flowConfiguration(deltaFile).getLoadAction();
     }
 
     List<String> getEnrichActions(DeltaFile deltaFile) {
@@ -131,7 +117,32 @@ public class StateMachine {
         EnrichActionConfiguration config = configService.getEnrichAction(enrichActionName);
         return !deltaFile.hasTerminalAction(enrichActionName) &&
                 deltaFile.hasDomains(config.getRequiresDomains()) &&
-                deltaFile.hasEnrichments(config.getRequiresEnrichment());
+                deltaFile.hasEnrichments(config.getRequiresEnrichment()) &&
+                hasMetadataMatches(deltaFile, config);
+    }
+
+    private boolean hasMetadataMatches(DeltaFile deltaFile, EnrichActionConfiguration config) {
+        Map<String, String> requiresMetadata = KeyValueConverter.convertKeyValues(config.getRequiresMetadataKeyValues());
+        if (requiresMetadata.isEmpty()) {
+            return true;
+        } else {
+            if ((deltaFile.getProtocolStack() != null) && !deltaFile.getProtocolStack().isEmpty()) {
+                Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(Iterables.getLast(deltaFile.getProtocolStack()).getMetadata());
+                if (matchesAllMetadata(requiresMetadata, metadataMap)) {
+                    return true;
+                }
+            }
+
+            if (deltaFile.getSourceInfo() != null) {
+                Map<String, String> sourceInfoMetadataMap = KeyValueConverter.convertKeyValues(deltaFile.getSourceInfo().getMetadata());
+                return matchesAllMetadata(requiresMetadata, sourceInfoMetadataMap);
+            }
+        }
+        return false;
+    }
+
+    private boolean matchesAllMetadata(Map<String, String> requiresMetadata, Map<String, String> metadataMap) {
+        return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadataMap.get(k)));
     }
 
     List<String> getFormatActions(DeltaFile deltaFile) {

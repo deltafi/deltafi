@@ -1,7 +1,6 @@
   ingressFlows:
     smoke:
-      loadActions:
-      - SmokeLoadAction
+      loadAction: SmokeLoadAction
       name: smoke
       transformActions:
       - SmokeTransformAction
@@ -32,14 +31,13 @@
       parameters:
         domains:
         - binary
-      requiresMetadata: {}
-      requiresMetadataKeyValues: []
       type: org.deltafi.passthrough.action.RoteLoadAction
   enrichActions:
     SmokeEnrichAction:
       type: org.deltafi.passthrough.action.RoteEnrichAction
       requiresDomains:
         - binary
+      requiresMetadataKeyValues: []
       parameters:
         enrichments:
           smokeEnrichment: smoke enrichment value

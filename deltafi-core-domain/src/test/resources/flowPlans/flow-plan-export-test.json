@@ -7,7 +7,7 @@
     "name" : "name",
     "type" : "test-type",
     "transformActions" : [ "transformer" ],
-    "loadActions" : [ "loader" ]
+    "loadAction" : "loader"
   } ],
   "sourcePlugin" : {
     "groupId" : "dev.plugin",
