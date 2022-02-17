@@ -193,7 +193,8 @@ public class DeltaFilesService {
                 .filename(event.getFormat().getFilename())
                 .metadata(event.getFormat().getMetadata())
                 .contentReference(event.getFormat().getContentReference())
-                .egressActions(configService.getEgressFlowsWithFormatAction(event.getAction()))
+                .egressActions(configService.getEgressActionsWithFormatAction(event.getAction()))
+                .validateActions(configService.getValidateActionsWithFormatAction(event.getAction()))
                 .build();
         deltaFile.getFormattedData().add(formattedData);
         deltaFile.completeAction(event.getAction());

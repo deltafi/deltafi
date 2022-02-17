@@ -101,6 +101,7 @@ type FormattedData {
   contentReference: ContentReference!
   metadata: [KeyValue!]
   egressActions: [String!]!
+  validateActions: [String!]!
 }
 
 input FormattedDataFilter {

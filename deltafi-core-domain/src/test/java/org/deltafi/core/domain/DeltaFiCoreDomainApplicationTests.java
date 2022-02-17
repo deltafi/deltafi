@@ -411,6 +411,7 @@ class DeltaFiCoreDomainApplicationTests {
 				.metadata(Arrays.asList(new KeyValue("key1", "value1"), new KeyValue("key2", "value2")))
 				.contentReference(new ContentReference("formattedObjectName", 0, 1000, did, "application/octet-stream"))
 				.egressActions(Collections.singletonList("SampleEgressAction"))
+				.validateActions(List.of("AuthorityValidateAction", "SampleValidateAction"))
 				.build());
 		return deltaFile;
 	}

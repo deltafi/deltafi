@@ -122,7 +122,7 @@ public class DeltaFiConfigService {
         return Optional.ofNullable(getConfigFromMap(DeltafiRuntimeConfiguration::getEgressFlows, flow));
     }
 
-    public List<String> getEgressFlowsWithFormatAction(String formatAction) {
+    public List<String> getEgressActionsWithFormatAction(String formatAction) {
         List<String> egressFlows = doGetEgressFlowsWithFormatAction(formatAction);
 
         if (egressFlows.isEmpty()) {
@@ -134,6 +134,10 @@ public class DeltaFiConfigService {
 
     List<String> doGetEgressFlowsWithFormatAction(String formatAction) {
         return config.getEgressFlows().values().stream().filter(egressFlowConfiguration -> formatAction.equals(egressFlowConfiguration.getFormatAction())).map(EgressFlowConfiguration::getEgressAction).collect(Collectors.toList());
+    }
+
+    public List<String> getValidateActionsWithFormatAction(String formatAction) {
+        return config.getEgressFlows().values().stream().filter(egressFlowConfiguration -> formatAction.equals(egressFlowConfiguration.getFormatAction())).map(EgressFlowConfiguration::getValidateActions).flatMap(List::stream).collect(Collectors.toList());
     }
 
     public ActionConfiguration getConfigForAction(String actionName) throws ActionConfigException {
@@ -246,9 +250,7 @@ public class DeltaFiConfigService {
         Map<String, C> incomingMap = mapFunction.apply(incoming);
         Map<String, C> existingMap = mapFunction.apply(existing);
 
-        for (Map.Entry<String, C> entry : incomingMap.entrySet()) {
-            existingMap.put(entry.getKey(), entry.getValue());
-        }
+        existingMap.putAll(incomingMap);
     }
 
     private void ensureNamesSet(DeltafiRuntimeConfiguration incomingConfig) {
