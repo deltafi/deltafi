@@ -15,6 +15,7 @@ import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 
+import javax.ws.rs.core.MediaType;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class SimpleErrorFormatAction extends SimpleFormatAction {
         try {
             FormatResult result = new FormatResult(actionContext, filename);
 
-            result.setContentReference(saveContent(deltaFile.getDid(), json.getBytes(StandardCharsets.UTF_8)));
+            result.setContentReference(saveContent(deltaFile.getDid(), json.getBytes(StandardCharsets.UTF_8), MediaType.APPLICATION_JSON));
 
             addSourceInputMetadata(result, deltaFile);
             addProtocolStackMetadata(result, deltaFile);

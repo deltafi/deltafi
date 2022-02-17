@@ -321,7 +321,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction");
-		deltaFile.addDomain("sample", "sampleDomain", null);
+		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", new ContentReference("objectName", 0, 500, did, "application/octet-stream"), loadSampleMetadata));
 		return deltaFile;
 	}
@@ -350,13 +350,13 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.COMPLETE);
 		deltaFile.completeAction("SampleLoadAction");
-		deltaFile.addDomain("sample", "sampleDomain", null);
+		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", new ContentReference("objectName", 0, 500, did, "application/octet-stream"), loadWrongMetadata));
 		return deltaFile;
 	}
 
 	@Test
-	void test09LoadWrongMetadata() throws IOException, ActionConfigException {
+	void test09LoadWrongMetadata() throws IOException {
 		// Test is similar to 08.load, but has the wrong metadata value, which
 		// results in the enrich action not being run, and cascades through.
 		String did = UUID.randomUUID().toString();

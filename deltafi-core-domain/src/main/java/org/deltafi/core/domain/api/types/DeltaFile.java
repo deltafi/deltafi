@@ -138,7 +138,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return getDomains().stream().filter(d -> d.getName().equals(domain)).findFirst().orElse(null);
     }
 
-    public void addDomain(@NotNull String domainKey, String domainValue, String mediaType) {
+    public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {
         if (Objects.isNull(getDomains())) {
             setDomains(new ArrayList<>());
         }
@@ -147,7 +147,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         if (domain.isPresent()) {
             domain.get().setValue(domainValue);
         } else {
-            getDomains().add(new Domain(domainKey, domainValue, Objects.isNull(mediaType) ? MediaType.APPLICATION_OCTET_STREAM_VALUE : mediaType));
+            getDomains().add(new Domain(domainKey, domainValue, mediaType));
         }
     }
 

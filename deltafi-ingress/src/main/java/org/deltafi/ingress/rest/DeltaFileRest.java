@@ -32,7 +32,7 @@ public class DeltaFileRest {
         try {
             String flow = getParam(flowFromQueryParam, flowFromHeader, "Flow");
             String filename = getParam(filenameFromQueryParam, filenameFromHeader, "Filename");
-            String did = deltaFileService.ingressData(dataStream, filename, flow, metadata);
+            String did = deltaFileService.ingressData(dataStream, filename, flow, metadata, headers.getMediaType().getType() + "/" + headers.getMediaType().getSubtype());
             return Response.ok(did).build();
         } catch (ObjectStorageException | DeltafiGraphQLException | DeltafiException exception) {
             return Response.status(500).entity(exception.getMessage()).build();

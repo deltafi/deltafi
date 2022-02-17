@@ -9,12 +9,15 @@ import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.passthrough.param.RoteEnrichParameters;
 
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Objects;
 
 @Slf4j
+@SuppressWarnings("unused")
 public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
 
+    @SuppressWarnings("unused")
     public RoteEnrichAction() {
         super(RoteEnrichParameters.class);
     }
@@ -23,7 +26,7 @@ public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
         log.trace(actionContext.getName() + " enrich (" + deltaFile.getDid() + ")");
         EnrichResult result = new EnrichResult(actionContext);
         if (Objects.nonNull(params.getEnrichments())) {
-            params.getEnrichments().forEach((k, v) -> result.addEnrichment(k, v));
+            params.getEnrichments().forEach((k, v) -> result.addEnrichment(k, v, MediaType.TEXT_PLAIN));
         }
         return result;
     }

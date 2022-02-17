@@ -42,12 +42,12 @@ public class DeltaFileService {
 
     private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
 
-    public String ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString)
+    public String ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString, String mediaType)
             throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
         String did = UUID.randomUUID().toString();
         OffsetDateTime created = OffsetDateTime.now();
 
-        ContentReference contentReference = contentStorageService.save(did, inputStream);
+        ContentReference contentReference = contentStorageService.save(did, inputStream, mediaType);
 
         try {
             sendToIngressGraphQl(did, sourceFileName, flow, metadataString, contentReference, created);

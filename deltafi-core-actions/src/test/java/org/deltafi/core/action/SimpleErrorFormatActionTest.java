@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -50,7 +51,7 @@ public class SimpleErrorFormatActionTest {
     @Test
     void execute() throws IOException, ObjectStorageException {
         ContentReference contentReference = new ContentReference(FILENAME, DID, CONTENT_TYPE);
-        Mockito.when(contentStorageService.save(Mockito.eq(DID), (byte[]) Mockito.any())).thenReturn(contentReference);
+        Mockito.when(contentStorageService.save(Mockito.eq(DID), (byte[]) Mockito.any(), Mockito.eq(APPLICATION_JSON))).thenReturn(contentReference);
 
         ErrorDomain errorDomain = ErrorDomain.newBuilder()
                 .fromAction("errored action")
@@ -72,7 +73,7 @@ public class SimpleErrorFormatActionTest {
         assertEquals(ORIGINATOR_DID + "." + FILENAME + ".error", formatResult.toEvent().getFormat().getFilename());
 
         ArgumentCaptor<byte[]> fileContentArgumentCaptor = ArgumentCaptor.forClass(byte[].class);
-        Mockito.verify(contentStorageService).save(Mockito.eq(DID), fileContentArgumentCaptor.capture());
+        Mockito.verify(contentStorageService).save(Mockito.eq(DID), fileContentArgumentCaptor.capture(), Mockito.eq(APPLICATION_JSON));
         ErrorDomain actual = OBJECT_MAPPER.readValue(fileContentArgumentCaptor.getValue(), ErrorDomain.class);
         assertEquals(ORIGINATOR_DID, actual.getOriginatorDid());
     }

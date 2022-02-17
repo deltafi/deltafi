@@ -231,8 +231,8 @@ public abstract class Action<P extends ActionParameters> {
         return contentStorageService.load(getContentReference(deltaFile, protocolLayerType));
     }
 
-    protected ContentReference saveContent(String did, byte[] content) throws ObjectStorageException {
-        return contentStorageService.save(did, content);
+    protected ContentReference saveContent(String did, byte[] content, String mediaType) throws ObjectStorageException {
+        return contentStorageService.save(did, content, mediaType);
     }
 
     private ContentReference getContentReference(DeltaFile deltaFile, String protocolLayerType) {

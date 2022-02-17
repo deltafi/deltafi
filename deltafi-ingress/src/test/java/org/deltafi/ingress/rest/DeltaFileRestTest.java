@@ -34,7 +34,7 @@ class DeltaFileRestTest {
 
         Assertions.assertEquals(200, response.getStatusCode());
 
-        Mockito.verify(deltaFileService).ingressData(Mockito.any(), Mockito.eq("incoming.txt"), Mockito.eq("flow"), Mockito.eq("{\"key\": \"value\"}"));
+        Mockito.verify(deltaFileService).ingressData(Mockito.any(), Mockito.eq("incoming.txt"), Mockito.eq("flow"), Mockito.eq("{\"key\": \"value\"}"), Mockito.eq(MediaType.APPLICATION_OCTET_STREAM));
     }
 
     @Test
@@ -76,7 +76,7 @@ class DeltaFileRestTest {
 
         Assertions.assertEquals(200, response.getStatusCode());
 
-        Mockito.verify(deltaFileService).ingressData(Mockito.any(), Mockito.eq("fileFromParam"), Mockito.eq("flowFromParam"), Mockito.isNull());
+        Mockito.verify(deltaFileService).ingressData(Mockito.any(), Mockito.eq("fileFromParam"), Mockito.eq("flowFromParam"), Mockito.isNull(), Mockito.eq(MediaType.APPLICATION_OCTET_STREAM));
     }
 
 }

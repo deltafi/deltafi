@@ -8,6 +8,9 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.passthrough.param.RoteLoadParameters;
+
+import javax.ws.rs.core.MediaType;
+
 @Slf4j
 public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
     public RoteLoadAction() {
@@ -18,7 +21,7 @@ public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
         log.trace(actionContext.getName() + " loading (" + deltaFile.getDid() + ")");
 
         LoadResult result = new LoadResult(actionContext, deltaFile);
-        params.getDomains().forEach(d -> result.addDomain(d, null));
+        params.getDomains().forEach(d -> result.addDomain(d, null, MediaType.TEXT_PLAIN));
         return result;
     }
     @Override

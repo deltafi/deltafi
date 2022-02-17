@@ -22,16 +22,8 @@ public class ContentStorageService {
         return objectStorageService.getObject(buildObjectReference(contentReference));
     }
 
-    public ContentReference save(String did, byte[] content) throws ObjectStorageException {
-        return save(did, new ByteArrayInputStream(content));
-    }
-
     public ContentReference save(String did, byte[] content, String mediaType) throws ObjectStorageException {
         return save(did, new ByteArrayInputStream(content), mediaType);
-    }
-
-    public ContentReference save(String did, InputStream inputStream) throws ObjectStorageException {
-        return save(did, inputStream, "application/octet-stream");
     }
 
     public ContentReference save(String did, InputStream inputStream, String mediaType) throws ObjectStorageException {

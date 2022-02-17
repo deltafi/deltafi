@@ -9,32 +9,21 @@ import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class LoadResult extends DataAmendedResult {
     private final List<DomainInput> domains = new ArrayList<>();
 
-    @SuppressWarnings("CdiInjectionPointsInspection")
     public LoadResult(ActionContext actionContext, DeltaFile deltaFile) {
         super(actionContext);
         setContentReference(deltaFile.getProtocolStack().get(deltaFile.getProtocolStack().size() - 1).getContentReference());
     }
 
-    public void addDomain(@NotNull String domainName) {
-        addDomain(domainName, null, null);
-    }
-
-    public void addDomain(@NotNull String domainName, String value) {
-        addDomain(domainName, value, null);
-    }
-
     public void addDomain(@NotNull String domainName, String value, String mediaType) {
-        domains.add(new DomainInput(domainName, value, Objects.isNull(mediaType) ? MediaType.APPLICATION_OCTET_STREAM : mediaType));
+        domains.add(new DomainInput(domainName, value, mediaType));
     }
 
     @Override
