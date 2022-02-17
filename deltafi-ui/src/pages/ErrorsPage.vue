@@ -17,14 +17,12 @@
         <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
       <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="did" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :paginator="totalErrors > 0" :rows="10" :rows-per-page-options="[10, 20, 50, 100]" :lazy="true" :total-records="totalErrors" :always-show-paginator="true" :row-hover="true" @page="onPage($event)" @sort="onSort($event)">
-        <template #empty> No DeltaFiles with Errors to display. </template>
-        <template #loading> Loading DeltaFiles with Errors. Please wait. </template>
+        <template #empty>No DeltaFiles with Errors to display.</template>
+        <template #loading>Loading DeltaFiles with Errors. Please wait.</template>
         <Column class="expander-column" :expander="true" />
         <Column field="did" header="DID">
           <template #body="error">
-            <router-link class="monospace" :to="{ path: '/deltafile/viewer/' + error.data.did }">
-              {{ error.data.did }}
-            </router-link>
+            <router-link class="monospace" :to="{ path: '/deltafile/viewer/' + error.data.did }">{{ error.data.did }}</router-link>
             <ErrorAcknowledgedBadge v-if="error.data.errorAcknowledged" :reason="error.data.errorAcknowledgedReason" :timestamp="error.data.errorAcknowledged" class="ml-2" />
           </template>
         </Column>
@@ -33,14 +31,10 @@
         <Column field="created" header="Created" :sortable="true" />
         <Column field="modified" header="Modified" :sortable="true" />
         <Column field="last_error_cause" header="Last Error">
-          <template #body="error">
-            {{ latestError(error.data.actions).errorCause }}
-          </template>
+          <template #body="error">{{ latestError(error.data.actions).errorCause }}</template>
         </Column>
         <Column field="actions.length" header="Errors">
-          <template #body="error">
-            {{ countErrors(error.data.actions) }}
-          </template>
+          <template #body="error">{{ countErrors(error.data.actions) }}</template>
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
@@ -51,9 +45,7 @@
               <Column field="modified" header="Modified" />
               <Column field="errorCause" header="Error Cause">
                 <template #body="action">
-                  <span v-if="['ERROR', 'RETRIED'].includes(action.data.state) && action.data.errorCause !== null">
-                    {{ action.data.errorCause }}
-                  </span>
+                  <span v-if="['ERROR', 'RETRIED'].includes(action.data.state) && action.data.errorCause !== null">{{ action.data.errorCause }}</span>
                   <span v-else>N/A</span>
                 </template>
               </Column>
@@ -67,8 +59,7 @@
   </div>
 </template>
 
-<script>
-import { ref, computed, onUnmounted, onMounted } from "vue";
+<script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
@@ -81,311 +72,256 @@ import { useConfirm } from "primevue/useconfirm";
 import ErrorViewer from "@/components/ErrorViewer.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import useErrors from "@/composables/useErrors";
-import useUtilFunctions from "@/composables/useUtilFunctions";
 import useErrorCount from "@/composables/useErrorCount";
 import useErrorRetry from "@/composables/useErrorRetry";
 import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import { ref, computed, onUnmounted, onMounted } from "vue";
 
 const maxRetrySuccessDisplay = 10;
 const refreshInterval = 5000; // 5 seconds
 
-export default {
-  name: "ErrorsPage",
-  components: {
-    Column,
-    DataTable,
-    Dropdown,
-    Button,
-    Panel,
-    Menu,
-    ConfirmDialog,
-    ContextMenu,
-    ErrorViewer,
-    AcknowledgeErrorsDialog,
-    ErrorAcknowledgedBadge,
-  },
-  setup() {
-    const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
-    const { pluralize } = useUtilFunctions();
-    const { fetchErrorCount, fetchErrorCountSince } = useErrorCount();
-    const { retry } = useErrorRetry();
-    const confirm = useConfirm();
-    const notify = useNotifications();
-    const loading = ref(true);
-    const menu = ref();
-    const errors = ref([]);
-    const lastServerContact = ref(new Date());
-    const showAcknowledged = ref(false);
-    const ingressFlowNameSelected = ref(null);
-    const expandedRows = ref([]);
-    const showContextDialog = ref(false);
-    const contextDialogData = ref("");
-    const totalErrors = ref(0);
-    const offset = ref(0);
-    const perPage = ref(10);
-    const sortField = ref("modified");
-    const sortDirection = ref("DESC");
-    const selectedErrors = ref([]);
-    const ackErrorsDialog = ref({
-      dids: [],
-      visible: false,
-    });
-    const errorViewer = ref({
-      visible: false,
-      action: {},
-    });
-    const menuItems = ref([
-      {
-        label: "Clear Selected",
-        icon: "fas fa-times fa-fw",
-        command: () => {
-          selectedErrors.value = [];
-        },
-      },
-      {
-        label: "Select All Visible",
-        icon: "fas fa-check-double fa-fw",
-        command: () => {
-          selectedErrors.value = errors.value;
-        },
-      },
-      {
-        separator: true,
-      },
-      {
-        label: "Acknowledge Selected",
-        icon: "fas fa-check-circle fa-fw",
-        command: () => {
-          acknowledgeClickConfirm();
-        },
-        disabled: () => {
-          return selectedErrors.value.length == 0;
-        },
-      },
-      {
-        label: "Retry Selected",
-        icon: "fas fa-redo fa-fw",
-        command: () => {
-          RetryClickConfirm();
-        },
-        disabled: () => {
-          return selectedErrors.value.length == 0;
-        },
-      },
-    ]);
-
-    const { data: response, fetch: getErrors, errors: graphErrors } = useErrors();
-
-    const refreshButtonIcon = computed(() => {
-      let classes = ["fa", "fa-sync-alt"];
-      if (loading.value) classes.push("fa-spin");
-      return classes.join(" ");
-    });
-
-    const fetchErrors = async () => {
-      let ingressFlowName = ingressFlowNameSelected.value != null ? ingressFlowNameSelected.value.name : null;
-      let showAcknowled = showAcknowledged.value ? null : false;
-      loading.value = true;
-      lastServerContact.value = new Date();
-      await getErrors(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
-      errors.value = response.value.deltaFiles.deltaFiles;
-      totalErrors.value = response.value.deltaFiles.totalCount;
-      loading.value = false;
-    };
-
-    fetchIngressFlows();
-
-    const toggleMenu = (event) => {
-      menu.value.toggle(event);
-    };
-    const toggleShowAcknowledged = () => {
-      showAcknowledged.value = !showAcknowledged.value;
+const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
+const { pluralize } = useUtilFunctions();
+const { fetchErrorCount, fetchErrorCountSince } = useErrorCount();
+const { retry } = useErrorRetry();
+const confirm = useConfirm();
+const notify = useNotifications();
+const loading = ref(true);
+const menu = ref();
+const errors = ref([]);
+const lastServerContact = ref(new Date());
+const showAcknowledged = ref(false);
+const ingressFlowNameSelected = ref(null);
+const expandedRows = ref([]);
+const totalErrors = ref(0);
+const offset = ref(0);
+const perPage = ref(10);
+const sortField = ref("modified");
+const sortDirection = ref("DESC");
+const selectedErrors = ref([]);
+const ackErrorsDialog = ref({
+  dids: [],
+  visible: false,
+});
+const errorViewer = ref({
+  visible: false,
+  action: {},
+});
+const menuItems = ref([
+  {
+    label: "Clear Selected",
+    icon: "fas fa-times fa-fw",
+    command: () => {
       selectedErrors.value = [];
-      fetchErrors();
-    };
-    const onPanelRightClick = (event) => {
-      menu.value.show(event);
-    };
-
-    const acknowledgeClickConfirm = () => {
-      ackErrorsDialog.value.dids = selectedErrors.value.map((selectedError) => {
-        return selectedError.did;
-      });
-      ackErrorsDialog.value.visible = true;
-    };
-    const onAcknowledged = (dids, reason) => {
-      selectedErrors.value = [];
-      ackErrorsDialog.value.dids = [];
-      ackErrorsDialog.value.visible = false;
-      let pluralized = pluralize(dids.length, "Error");
-      notify.success(`Successfully acknowledged ${pluralized}`, reason);
-      fetchErrorCount();
-      fetchErrors();
-    };
-    const RetryClickConfirm = () => {
-      let dids = selectedErrors.value.map((selectedError) => {
-        return selectedError.did;
-      });
-      let pluralized = pluralize(dids.length, "DeltaFile");
-      let pluralizedErrors = pluralize(dids.length, "Error");
-      confirm.require({
-        header: `Retry ${pluralizedErrors}`,
-        message: `Are you sure you want to retry ${pluralized}?`,
-        accept: () => {
-          RetryClickAction(dids);
-        },
-      });
-    };
-    const RetryClickAction = async (dids) => {
-      loading.value = true;
-      try {
-        const response = await retry(dids);
-        const result = response.value.data.retry.find((r) => {
-          return r.did == dids.value;
-        });
-        if (response.value.data !== undefined && response.value.data !== null) {
-          let successRetry = new Array();
-          for (const retryStatus of response.value.data.retry) {
-            if (retryStatus.success) {
-              successRetry.push(retryStatus);
-            } else {
-              notify.error(`Retry request failed for ${retryStatus.did}`, retryStatus.error);
-            }
-          }
-          if (successRetry.length > 0) {
-            let successfulDids = successRetry.map((retryStatus) => {
-              return retryStatus.did;
-            });
-            if (successfulDids.length > maxRetrySuccessDisplay) {
-              successfulDids = successfulDids.slice(0, maxRetrySuccessDisplay);
-              successfulDids.push("...");
-            }
-            let pluralized = pluralize(dids.length, "DeltaFile");
-            notify.success(`Retry request sent successfully for ${pluralized}`, successfulDids.join(", "));
-          }
-          removeSelected();
-          selectedErrors.value = [];
-          fetchErrorCount();
-          loading.value = false;
-        } else {
-          throw Error(result.error);
-        }
-      } catch (error) {
-        notify.error("Retry request failed", error);
-      }
-    };
-
-    const removeSelected = () => {
-      errors.value = errors.value.filter((error) => {
-        return !selectedErrors.value.includes(error);
-      });
-    };
-
-    const filterErrors = (actions) => {
-      return actions.filter((action) => {
-        return action.state === "ERROR";
-      });
-    };
-
-    const latestError = (actions) => {
-      return filterErrors(actions).sort((a, b) => (a.modified < b.modified ? 1 : -1))[0];
-    };
-
-    const countErrors = (actions) => {
-      return filterErrors(actions).length;
-    };
-
-    const actionRowClass = (action) => {
-      if (action.state === "ERROR") return "table-danger action-error";
-      if (action.state === "RETRIED") return "table-warning action-error";
-    };
-
-    const actionRowClick = (event) => {
-      let action = event.data;
-      if (["ERROR", "RETRIED"].includes(action.state)) {
-        errorViewer.value.action = action;
-        errorViewer.value.visible = true;
-      }
-    };
-
-    const onPage = (event) => {
-      offset.value = event.first;
-      perPage.value = event.rows;
-      fetchErrors();
-    };
-
-    const onSort = (event) => {
-      offset.value = event.first;
-      perPage.value = event.rows;
-      sortField.value = event.sortField;
-      sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
-      fetchErrors();
-    };
-
-    const onRefresh = () => {
-      fetchErrors();
-      notify.clear();
-    };
-
-    const pollNewErrors = async () => {
-      let count = await fetchErrorCountSince(lastServerContact.value);
-      if (count > 0) {
-        lastServerContact.value = new Date();
-        let pluralized = pluralize(count, "new error");
-        notify.info(`Viewing Stale Data`, `${pluralized} occurred since last refresh.`, 0);
-      }
-    };
-
-    let autoRefresh = null;
-    onUnmounted(() => {
-      clearInterval(autoRefresh);
-    });
-    onMounted(() => {
-      pollNewErrors();
-      fetchErrors();
-      autoRefresh = setInterval(pollNewErrors, refreshInterval);
-    });
-
-    return {
-      fetchErrors,
-      loading,
-      onSort,
-      onPage,
-      actionRowClick,
-      latestError,
-      actionRowClass,
-      onAcknowledged,
-      onPanelRightClick,
-      toggleShowAcknowledged,
-      errors,
-      toggleMenu,
-      fetchErrorCount,
-      showAcknowledged,
-      ingressFlowNameSelected,
-      ingressFlowNames,
-      expandedRows,
-      showContextDialog,
-      contextDialogData,
-      totalErrors,
-      countErrors,
-      offset,
-      perPage,
-      sortField,
-      sortDirection,
-      selectedErrors,
-      ackErrorsDialog,
-      errorViewer,
-      menuItems,
-      menu,
-      notify,
-      refreshButtonIcon,
-      graphErrors,
-      onRefresh,
-    };
+    },
   },
+  {
+    label: "Select All Visible",
+    icon: "fas fa-check-double fa-fw",
+    command: () => {
+      selectedErrors.value = errors.value;
+    },
+  },
+  {
+    separator: true,
+  },
+  {
+    label: "Acknowledge Selected",
+    icon: "fas fa-check-circle fa-fw",
+    command: () => {
+      acknowledgeClickConfirm();
+    },
+    disabled: () => {
+      return selectedErrors.value.length == 0;
+    },
+  },
+  {
+    label: "Retry Selected",
+    icon: "fas fa-redo fa-fw",
+    command: () => {
+      RetryClickConfirm();
+    },
+    disabled: () => {
+      return selectedErrors.value.length == 0;
+    },
+  },
+]);
+
+const { data: response, fetch: getErrors } = useErrors();
+
+const refreshButtonIcon = computed(() => {
+  let classes = ["fa", "fa-sync-alt"];
+  if (loading.value) classes.push("fa-spin");
+  return classes.join(" ");
+});
+
+const fetchErrors = async () => {
+  let ingressFlowName = ingressFlowNameSelected.value != null ? ingressFlowNameSelected.value.name : null;
+  let showAcknowled = showAcknowledged.value ? null : false;
+  loading.value = true;
+  lastServerContact.value = new Date();
+  await getErrors(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  errors.value = response.value.deltaFiles.deltaFiles;
+  totalErrors.value = response.value.deltaFiles.totalCount;
+  loading.value = false;
 };
+
+fetchIngressFlows();
+
+const toggleMenu = (event) => {
+  menu.value.toggle(event);
+};
+const toggleShowAcknowledged = () => {
+  showAcknowledged.value = !showAcknowledged.value;
+  selectedErrors.value = [];
+  fetchErrors();
+};
+const onPanelRightClick = (event) => {
+  menu.value.show(event);
+};
+
+const acknowledgeClickConfirm = () => {
+  ackErrorsDialog.value.dids = selectedErrors.value.map((selectedError) => {
+    return selectedError.did;
+  });
+  ackErrorsDialog.value.visible = true;
+};
+const onAcknowledged = (dids, reason) => {
+  selectedErrors.value = [];
+  ackErrorsDialog.value.dids = [];
+  ackErrorsDialog.value.visible = false;
+  let pluralized = pluralize(dids.length, "Error");
+  notify.success(`Successfully acknowledged ${pluralized}`, reason);
+  fetchErrorCount();
+  fetchErrors();
+};
+const RetryClickConfirm = () => {
+  let dids = selectedErrors.value.map((selectedError) => {
+    return selectedError.did;
+  });
+  let pluralized = pluralize(dids.length, "DeltaFile");
+  let pluralizedErrors = pluralize(dids.length, "Error");
+  confirm.require({
+    header: `Retry ${pluralizedErrors}`,
+    message: `Are you sure you want to retry ${pluralized}?`,
+    accept: () => {
+      RetryClickAction(dids);
+    },
+  });
+};
+const RetryClickAction = async (dids) => {
+  loading.value = true;
+  try {
+    const response = await retry(dids);
+    const result = response.value.data.retry.find((r) => {
+      return r.did == dids.value;
+    });
+    if (response.value.data !== undefined && response.value.data !== null) {
+      let successRetry = new Array();
+      for (const retryStatus of response.value.data.retry) {
+        if (retryStatus.success) {
+          successRetry.push(retryStatus);
+        } else {
+          notify.error(`Retry request failed for ${retryStatus.did}`, retryStatus.error);
+        }
+      }
+      if (successRetry.length > 0) {
+        let successfulDids = successRetry.map((retryStatus) => {
+          return retryStatus.did;
+        });
+        if (successfulDids.length > maxRetrySuccessDisplay) {
+          successfulDids = successfulDids.slice(0, maxRetrySuccessDisplay);
+          successfulDids.push("...");
+        }
+        let pluralized = pluralize(dids.length, "DeltaFile");
+        notify.success(`Retry request sent successfully for ${pluralized}`, successfulDids.join(", "));
+      }
+      removeSelected();
+      selectedErrors.value = [];
+      fetchErrorCount();
+      loading.value = false;
+    } else {
+      throw Error(result.error);
+    }
+  } catch (error) {
+    notify.error("Retry request failed", error);
+  }
+};
+
+const removeSelected = () => {
+  errors.value = errors.value.filter((error) => {
+    return !selectedErrors.value.includes(error);
+  });
+};
+
+const filterErrors = (actions) => {
+  return actions.filter((action) => {
+    return action.state === "ERROR";
+  });
+};
+
+const latestError = (actions) => {
+  return filterErrors(actions).sort((a, b) => (a.modified < b.modified ? 1 : -1))[0];
+};
+
+const countErrors = (actions) => {
+  return filterErrors(actions).length;
+};
+
+const actionRowClass = (action) => {
+  if (action.state === "ERROR") return "table-danger action-error";
+  if (action.state === "RETRIED") return "table-warning action-error";
+};
+
+const actionRowClick = (event) => {
+  let action = event.data;
+  if (["ERROR", "RETRIED"].includes(action.state)) {
+    errorViewer.value.action = action;
+    errorViewer.value.visible = true;
+  }
+};
+
+const onPage = (event) => {
+  offset.value = event.first;
+  perPage.value = event.rows;
+  fetchErrors();
+};
+
+const onSort = (event) => {
+  offset.value = event.first;
+  perPage.value = event.rows;
+  sortField.value = event.sortField;
+  sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
+  fetchErrors();
+};
+
+const onRefresh = () => {
+  fetchErrors();
+  notify.clear();
+};
+
+const pollNewErrors = async () => {
+  let count = await fetchErrorCountSince(lastServerContact.value);
+  if (count > 0) {
+    lastServerContact.value = new Date();
+    let pluralized = pluralize(count, "new error");
+    notify.info(`Viewing Stale Data`, `${pluralized} occurred since last refresh.`, 0);
+  }
+};
+
+let autoRefresh = null;
+onUnmounted(() => {
+  clearInterval(autoRefresh);
+});
+onMounted(() => {
+  pollNewErrors();
+  fetchErrors();
+  autoRefresh = setInterval(pollNewErrors, refreshInterval);
+});
 </script>
 
 <style lang="scss">

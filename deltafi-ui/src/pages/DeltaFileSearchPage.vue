@@ -1,13 +1,14 @@
 <template>
   <div>
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-      <h1 class="h2">DeltaFile Search</h1>
-      <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Calendar id="startDateTime" v-model="startTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
-        <span class="mt-1 ml-3">&mdash;</span>
-        <Calendar id="endDateTime" v-model="endTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
-        <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchDeltaFilesData()"> Search </Button>
-      </div>
+    <div>
+      <PageHeader heading="DeltaFile Search">
+        <div class="time-range btn-toolbar mb-2 mb-md-0">
+          <Calendar id="startDateTime" v-model="startTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
+          <span class="mt-1 ml-3">&mdash;</span>
+          <Calendar id="endDateTime" v-model="endTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
+          <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchDeltaFilesData()">Search</Button>
+        </div>
+      </PageHeader>
     </div>
     <div class="row mb-3">
       <div class="col-12">
@@ -68,13 +69,11 @@
     </div>
     <CollapsiblePanel header="DeltaFiles" class="table-panel">
       <DataTable responsive-layout="scroll" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :paginator="totalRecords > 0" :rows="10" :lazy="true" :rows-per-page-options="[10, 20, 50, 100]" :total-records="totalRecords" :always-show-paginator="true" :row-class="actionRowClass" @page="onPage($event)" @sort="onSort($event)">
-        <template #empty> No DeltaFiles in the selected time range. </template>
-        <template #loading> Loading DeltaFiles. Please wait. </template>
+        <template #empty>No DeltaFiles in the selected time range.</template>
+        <template #loading>Loading DeltaFiles. Please wait.</template>
         <Column field="did" header="DID (UUID)">
           <template #body="tData">
-            <router-link class="monospace" :to="{ path: 'viewer/' + tData.data.did }">
-              {{ tData.data.did }}
-            </router-link>
+            <router-link class="monospace" :to="{ path: 'viewer/' + tData.data.did }">{{ tData.data.did }}</router-link>
           </template>
         </Column>
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
@@ -83,16 +82,14 @@
         <Column field="created" header="Created" :sortable="true" />
         <Column field="modified" header="Modified" :sortable="true" />
         <Column field="elapsed" header="Elapsed" :sortable="false">
-          <template #body="row">
-            {{ row.data.elapsed }}
-          </template>
+          <template #body="row">{{ row.data.elapsed }}</template>
         </Column>
       </DataTable>
     </CollapsiblePanel>
   </div>
 </template>
 
-<script>
+<script setup>
 import Button from "primevue/button";
 import Calendar from "primevue/calendar";
 import Column from "primevue/column";
@@ -100,276 +97,233 @@ import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
 import Menu from "primevue/menu";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import useUtilFunctions from "@/composables/useUtilFunctions";
+import PageHeader from "@/components/PageHeader.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
+import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref, computed, watch, onMounted } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
 
-export default {
-  name: "SearchPage",
-  components: {
-    Button,
-    Calendar,
-    Column,
-    DataTable,
-    Dropdown,
-    Menu,
-    CollapsiblePanel,
-  },
-  setup() {
-    const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
-    const { duration } = useUtilFunctions();
-    const optionMenu = ref();
+const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
+const { duration } = useUtilFunctions();
+const optionMenu = ref();
 
-    const startTimeDate = ref(new Date());
-    const endTimeDate = ref(new Date());
-    startTimeDate.value.setHours(0, 0, 0, 0);
-    endTimeDate.value.setHours(23, 59, 59, 999);
+const startTimeDate = ref(new Date());
+const endTimeDate = ref(new Date());
+startTimeDate.value.setHours(0, 0, 0, 0);
+endTimeDate.value.setHours(23, 59, 59, 999);
 
-    const fileNameOptions = ref([]);
-    const fileNameOptionSelected = ref(null);
-    const actionTypeOptions = ref([]);
-    const actionTypeOptionSelected = ref(null);
-    const flowOptions = ref([]);
-    const flowOptionSelected = ref(null);
-    const stageOptions = ref([]);
-    const stageOptionSelected = ref(null);
-    const loading = ref(true);
-    const totalRecords = ref(0);
-    const recordCount = ref("");
-    const collapsedSearchOption = ref(true);
-    const tableData = ref([]);
-    const fileName = ref(null);
-    const stageName = ref(null);
-    const actionName = ref(null);
-    const flowName = ref(null);
-    const offset = ref(0);
-    const perPage = ref(10);
-    const sortField = ref("modified");
-    const sortDirection = ref("DESC");
+const fileNameOptions = ref([]);
+const fileNameOptionSelected = ref(null);
+const actionTypeOptions = ref([]);
+const actionTypeOptionSelected = ref(null);
+const flowOptions = ref([]);
+const flowOptionSelected = ref(null);
+const stageOptions = ref([]);
+const stageOptionSelected = ref(null);
+const loading = ref(true);
+const totalRecords = ref(0);
+const recordCount = ref("");
+const collapsedSearchOption = ref(true);
+const tableData = ref([]);
+const fileName = ref(null);
+const stageName = ref(null);
+const actionName = ref(null);
+const flowName = ref(null);
+const offset = ref(0);
+const perPage = ref(10);
+const sortField = ref("modified");
+const sortDirection = ref("DESC");
 
-    const items = ref([
+const items = ref([
+  {
+    label: "Options",
+    items: [
       {
-        label: "Options",
-        items: [
-          {
-            label: "Clear Options",
-            icon: "fas fa-times",
-            command: () => {
-              actionTypeOptionSelected.value = null;
-              fileNameOptionSelected.value = null;
-              flowOptionSelected.value = null;
-              stageOptionSelected.value = null;
-              fetchDeltaFilesData();
-            },
-          },
-        ],
+        label: "Clear Options",
+        icon: "fas fa-times",
+        command: () => {
+          actionTypeOptionSelected.value = null;
+          fileNameOptionSelected.value = null;
+          flowOptionSelected.value = null;
+          stageOptionSelected.value = null;
+          fetchDeltaFilesData();
+        },
       },
-    ]);
-
-    const fetchFileNames = async () => {
-      let fileNameDataArray = [];
-      let fetchFileNames = await getDeltaFiFileNames(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
-      let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
-      for (const deltaFiObject of deltaFilesObjectsArray) {
-        fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });
-      }
-
-      fileNameOptions.value = _.uniqBy(fileNameDataArray, "name");
-    };
-
-    watch(startTimeDate, () => {
-      fetchFileNames();
-      fetchRecordCount();
-    });
-    watch(endTimeDate, () => {
-      fetchFileNames();
-      fetchRecordCount();
-    });
-    watch(fileNameOptionSelected, () => {
-      fetchRecordCount();
-    });
-    watch(actionTypeOptionSelected, () => {
-      fetchRecordCount();
-    });
-    watch(flowOptionSelected, () => {
-      fetchRecordCount();
-    });
-    watch(stageOptionSelected, () => {
-      fetchRecordCount();
-    });
-
-    onMounted(() => {
-      getPersistedParams();
-      fetchFileNames();
-      fetchConfigTypes();
-      fetchStages();
-      fetchDeltaFilesData();
-    });
-
-    const optionMenuToggle = (event) => {
-      optionMenu.value.toggle(event);
-    };
-
-    const fetchConfigTypes = async () => {
-      let configTypeNames = [];
-      let flowTypes = [];
-      let actionTypes = [];
-      let enumsConfigTypes = await getEnumValuesByEnumType("ConfigType");
-      configTypeNames = enumsConfigTypes.data.__type.enumValues;
-
-      // Convert array of ConfigType objects with
-      let result = configTypeNames.map((a) => a.name);
-      for (const element of result) {
-        if (element.includes("FLOW")) {
-          flowTypes.push(element);
-        } else {
-          actionTypes.push(element);
-        }
-      }
-
-      fetchActions(actionTypes);
-      fetchFlows(flowTypes);
-    };
-
-    const fetchActions = async (actionTypes) => {
-      for (const actionType of actionTypes) {
-        let actionData = await getConfigByType(actionType);
-        let actionDataValues = actionData.data.deltaFiConfigs;
-        actionTypeOptions.value = _.concat(actionTypeOptions.value, actionDataValues);
-        actionTypeOptions.value = _.sortBy(actionTypeOptions.value, ["name"]);
-      }
-    };
-
-    const fetchFlows = async (flowTypes) => {
-      for (const flowType of flowTypes) {
-        let flowData = await getConfigByType(flowType);
-        let flowDataValues = flowData.data.deltaFiConfigs;
-        flowOptions.value = _.concat(flowOptions.value, flowDataValues);
-        flowOptions.value = _.uniqBy(flowOptions.value, "name");
-        flowOptions.value = _.sortBy(flowOptions.value, ["name"]);
-      }
-    };
-
-    const fetchStages = async () => {
-      let enumsStageTypes = await getEnumValuesByEnumType("DeltaFileStage");
-      stageOptions.value = enumsStageTypes.data.__type.enumValues;
-    };
-
-    const fetchDeltaFilesData = async () => {
-      setQueryParams();
-      setPersistedParams();
-
-      loading.value = true;
-      fetchRecordCount();
-      let data = await getDeltaFileSearchData(startTimeDate.value, endTimeDate.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value);
-      tableData.value = data.data.deltaFiles.deltaFiles;
-      loading.value = false;
-      totalRecords.value = data.data.deltaFiles.totalCount;
-    };
-
-    const fetchRecordCount = async () => {
-      setQueryParams();
-
-      let fetchRecordCount = await getRecordCount(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
-      recordCount.value = fetchRecordCount.data.deltaFiles.totalCount.toString();
-    };
-
-    const results = computed(() => {
-      return tableData.value.map((row) => {
-        const timeElapsed = new Date(row.modified) - new Date(row.created);
-        return {
-          ...row,
-          elapsed: duration(timeElapsed),
-        };
-      });
-    });
-
-    const setQueryParams = () => {
-      fileName.value = fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null;
-      stageName.value = stageOptionSelected.value ? stageOptionSelected.value.name : null;
-      actionName.value = actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null;
-      flowName.value = flowOptionSelected.value ? flowOptionSelected.value.name : null;
-    };
-
-    const onSort = (event) => {
-      offset.value = event.first;
-      perPage.value = event.rows;
-      sortField.value = event.sortField;
-      sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
-      fetchDeltaFilesData();
-    };
-
-    const actionRowClass = (data) => {
-      return data.stage === "ERROR" ? "table-danger action-error" : null;
-    };
-
-    const onPage = (event) => {
-      offset.value = event.first;
-      perPage.value = event.rows;
-      fetchDeltaFilesData();
-    };
-
-    const getPersistedParams = () => {
-      startTimeDate.value = new Date(state.value.startTimeDateState ? state.value.startTimeDateState : startTimeDate.value);
-      endTimeDate.value = new Date(state.value.endTimeDateState ? state.value.endTimeDateState : endTimeDate.value);
-      fileNameOptionSelected.value = state.value.fileNameOptionState ? { name: state.value.fileNameOptionState } : null;
-      stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
-      actionTypeOptionSelected.value = state.value.actionTypeOptionState ? { name: state.value.actionTypeOptionState } : null;
-      flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
-
-      // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
-      // what search options are being used.
-      if (fileNameOptionSelected.value || stageOptionSelected.value || actionTypeOptionSelected.value || flowOptionSelected.value) {
-        collapsedSearchOption.value = false;
-      } else {
-        collapsedSearchOption.value = true;
-      }
-    };
-    const state = useStorage("advanced-search-options-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
-
-    const setPersistedParams = () => {
-      state.value = {
-        startTimeDateState: startTimeDate.value ? startTimeDate.value : null,
-        endTimeDateState: endTimeDate.value ? endTimeDate.value : null,
-        fileNameOptionState: fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null,
-        stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
-        actionTypeOptionState: actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null,
-        flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
-      };
-    };
-
-    return {
-      optionMenuToggle,
-      actionRowClass,
-      onSort,
-      onPage,
-      fetchDeltaFilesData,
-      results,
-      collapsedSearchOption,
-      optionMenu,
-      loading,
-      startTimeDate,
-      endTimeDate,
-      actionName,
-      actionTypeOptions,
-      actionTypeOptionSelected,
-      fileName,
-      fileNameOptions,
-      fileNameOptionSelected,
-      flowName,
-      flowOptions,
-      flowOptionSelected,
-      items,
-      stageName,
-      stageOptions,
-      stageOptionSelected,
-      recordCount,
-      totalRecords,
-      tableData,
-    };
+    ],
   },
+]);
+
+const fetchFileNames = async () => {
+  let fileNameDataArray = [];
+  let fetchFileNames = await getDeltaFiFileNames(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
+  for (const deltaFiObject of deltaFilesObjectsArray) {
+    fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });
+  }
+
+  fileNameOptions.value = _.uniqBy(fileNameDataArray, "name");
+};
+
+watch(startTimeDate, () => {
+  fetchFileNames();
+  fetchRecordCount();
+});
+watch(endTimeDate, () => {
+  fetchFileNames();
+  fetchRecordCount();
+});
+watch(fileNameOptionSelected, () => {
+  fetchRecordCount();
+});
+watch(actionTypeOptionSelected, () => {
+  fetchRecordCount();
+});
+watch(flowOptionSelected, () => {
+  fetchRecordCount();
+});
+watch(stageOptionSelected, () => {
+  fetchRecordCount();
+});
+
+onMounted(() => {
+  getPersistedParams();
+  fetchFileNames();
+  fetchConfigTypes();
+  fetchStages();
+  fetchDeltaFilesData();
+});
+
+const optionMenuToggle = (event) => {
+  optionMenu.value.toggle(event);
+};
+
+const fetchConfigTypes = async () => {
+  let configTypeNames = [];
+  let flowTypes = [];
+  let actionTypes = [];
+  let enumsConfigTypes = await getEnumValuesByEnumType("ConfigType");
+  configTypeNames = enumsConfigTypes.data.__type.enumValues;
+
+  // Convert array of ConfigType objects with
+  let result = configTypeNames.map((a) => a.name);
+  for (const element of result) {
+    if (element.includes("FLOW")) {
+      flowTypes.push(element);
+    } else {
+      actionTypes.push(element);
+    }
+  }
+
+  fetchActions(actionTypes);
+  fetchFlows(flowTypes);
+};
+
+const fetchActions = async (actionTypes) => {
+  for (const actionType of actionTypes) {
+    let actionData = await getConfigByType(actionType);
+    let actionDataValues = actionData.data.deltaFiConfigs;
+    actionTypeOptions.value = _.concat(actionTypeOptions.value, actionDataValues);
+    actionTypeOptions.value = _.sortBy(actionTypeOptions.value, ["name"]);
+  }
+};
+
+const fetchFlows = async (flowTypes) => {
+  for (const flowType of flowTypes) {
+    let flowData = await getConfigByType(flowType);
+    let flowDataValues = flowData.data.deltaFiConfigs;
+    flowOptions.value = _.concat(flowOptions.value, flowDataValues);
+    flowOptions.value = _.uniqBy(flowOptions.value, "name");
+    flowOptions.value = _.sortBy(flowOptions.value, ["name"]);
+  }
+};
+
+const fetchStages = async () => {
+  let enumsStageTypes = await getEnumValuesByEnumType("DeltaFileStage");
+  stageOptions.value = enumsStageTypes.data.__type.enumValues;
+};
+
+const fetchDeltaFilesData = async () => {
+  setQueryParams();
+  setPersistedParams();
+
+  loading.value = true;
+  fetchRecordCount();
+  let data = await getDeltaFileSearchData(startTimeDate.value, endTimeDate.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  tableData.value = data.data.deltaFiles.deltaFiles;
+  loading.value = false;
+  totalRecords.value = data.data.deltaFiles.totalCount;
+};
+
+const fetchRecordCount = async () => {
+  setQueryParams();
+
+  let fetchRecordCount = await getRecordCount(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  recordCount.value = fetchRecordCount.data.deltaFiles.totalCount.toString();
+};
+
+const results = computed(() => {
+  return tableData.value.map((row) => {
+    const timeElapsed = new Date(row.modified) - new Date(row.created);
+    return {
+      ...row,
+      elapsed: duration(timeElapsed),
+    };
+  });
+});
+
+const setQueryParams = () => {
+  fileName.value = fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null;
+  stageName.value = stageOptionSelected.value ? stageOptionSelected.value.name : null;
+  actionName.value = actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null;
+  flowName.value = flowOptionSelected.value ? flowOptionSelected.value.name : null;
+};
+
+const onSort = (event) => {
+  offset.value = event.first;
+  perPage.value = event.rows;
+  sortField.value = event.sortField;
+  sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
+  fetchDeltaFilesData();
+};
+
+const actionRowClass = (data) => {
+  return data.stage === "ERROR" ? "table-danger action-error" : null;
+};
+
+const onPage = (event) => {
+  offset.value = event.first;
+  perPage.value = event.rows;
+  fetchDeltaFilesData();
+};
+
+const getPersistedParams = () => {
+  startTimeDate.value = new Date(state.value.startTimeDateState ? state.value.startTimeDateState : startTimeDate.value);
+  endTimeDate.value = new Date(state.value.endTimeDateState ? state.value.endTimeDateState : endTimeDate.value);
+  fileNameOptionSelected.value = state.value.fileNameOptionState ? { name: state.value.fileNameOptionState } : null;
+  stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
+  actionTypeOptionSelected.value = state.value.actionTypeOptionState ? { name: state.value.actionTypeOptionState } : null;
+  flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
+
+  // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
+  // what search options are being used.
+  if (fileNameOptionSelected.value || stageOptionSelected.value || actionTypeOptionSelected.value || flowOptionSelected.value) {
+    collapsedSearchOption.value = false;
+  } else {
+    collapsedSearchOption.value = true;
+  }
+};
+const state = useStorage("advanced-search-options-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+
+const setPersistedParams = () => {
+  state.value = {
+    startTimeDateState: startTimeDate.value ? startTimeDate.value : null,
+    endTimeDateState: endTimeDate.value ? endTimeDate.value : null,
+    fileNameOptionState: fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null,
+    stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
+    actionTypeOptionState: actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null,
+    flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
+  };
 };
 </script>
 

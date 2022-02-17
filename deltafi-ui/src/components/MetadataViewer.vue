@@ -5,7 +5,7 @@
     </span>
     <Dialog v-model:visible="dialogVisible" position="top" header="Metadata" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true">
       <div class="metadata-viewer">
-        <div v-for="(metadataArray, actionName) in metadataReferences" :key="actionName">
+        <div v-for="(metadataArray, actionName) in props.metadataReferences" :key="actionName">
           <CollapsiblePanel :header="actionName" class="table-panel mb-3">
             <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows class="p-datatable-sm">
               <Column field="key" header="Key" :style="{ width: '25%' }" />
@@ -18,36 +18,24 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import Dialog from "primevue/dialog";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import { ref, reactive } from "vue";
 
-export default {
-  name: "MetadataViewer",
-  components: {
-    Dialog,
-    DataTable,
-    Column,
-    CollapsiblePanel,
-  },
-  props: {
-    metadataReferences: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup(props) {
-    const dialogVisible = ref(false);
-    const metadataReference = reactive(props.metadataReferences);
+import { ref, defineProps } from "vue";
 
-    const showDialog = () => {
-      dialogVisible.value = true;
-    };
-
-    return { showDialog, metadataReference, dialogVisible };
+const props = defineProps({
+  metadataReferences: {
+    type: Object,
+    required: true,
   },
+});
+
+const dialogVisible = ref(false);
+
+const showDialog = () => {
+  dialogVisible.value = true;
 };
 </script>

@@ -24,44 +24,34 @@
   </div>
 </template>
 
-<script>
-import { computed, reactive } from "vue";
+<script setup>
+import { computed, reactive, defineProps } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ContentViewer from "@/components/ContentViewer.vue";
 
-export default {
-  name: "DeltaFileDomainsPanel",
-  components: {
-    CollapsiblePanel,
-    ContentViewer,
+const props = defineProps({
+  deltaFileData: {
+    type: Object,
+    required: true,
   },
-  props: {
-    deltaFileData: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup(props) {
-    const { formattedBytes } = useUtilFunctions();
-    const deltaFile = reactive(props.deltaFileData);
+});
 
-    const domainContentReferences = computed(() => {
-      return deltaFile.domains.map((domain) => {
-        const content = domain.value || "";
-        return {
-          ...domain,
-          did: deltaFile.did,
-          content: content,
-          filename: `${deltaFile.did}-domain-${domain.name}`,
-          size: content.length,
-        };
-      });
-    });
+const { formattedBytes } = useUtilFunctions();
+const deltaFile = reactive(props.deltaFileData);
 
-    return { deltaFile, domainContentReferences, formattedBytes };
-  },
-};
+const domainContentReferences = computed(() => {
+  return deltaFile.domains.map((domain) => {
+    const content = domain.value || "";
+    return {
+      ...domain,
+      did: deltaFile.did,
+      content: content,
+      filename: `${deltaFile.did}-domain-${domain.name}`,
+      size: content.length,
+    };
+  });
+});
 </script>
 
 <style lang="scss">

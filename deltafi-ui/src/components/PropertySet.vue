@@ -8,7 +8,7 @@
         </span>
       </template>
       <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" @cell-edit-complete="onCellEditComplete">
-        <template #empty> No properties in this property set. </template>
+        <template #empty>No properties in this property set.</template>
         <Column header="Key" field="key" :sortable="true">
           <template #body="property">
             <span :class="{ 'text-muted': !property.data.editable }">{{ property.data.key }}</span>
@@ -34,76 +34,60 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import CollapsiblePanel from "@/components/CollapsiblePanel";
 import InputText from "primevue/inputtext";
-import usePropertySets from "@/composables/usePropertySets";
-import { computed } from "vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
 import useNotifications from "@/composables/useNotifications";
+import usePropertySets from "@/composables/usePropertySets";
+import { computed, defineProps, defineEmits } from "vue";
 
-export default {
-  name: "PropertySet",
-  components: {
-    DataTable,
-    Column,
-    CollapsiblePanel,
-    InputText,
+const propertySet = defineProps({
+  propSet: {
+    type: Object,
+    required: true,
   },
-  props: {
-    propSet: {
-      type: Object,
-      required: true,
+});
+
+const emit = defineEmits(["updated"]);
+
+const notify = useNotifications();
+const { data: propertySetData, update } = usePropertySets();
+const visibleProperties = computed(() => propertySet.propSet.properties.filter((p) => !p.hidden));
+
+const tooltipText = (property) => {
+  let parts = [];
+  if (property.description) parts.push(property.description);
+  if (!property.editable) parts.push("(Read-only)");
+  return parts.join(" ");
+};
+
+const updateProperty = async (setId, key, value, refreshable) => {
+  await update([
+    {
+      propertySetId: setId,
+      key: key,
+      value: value,
     },
-  },
-  emits: ["updated"],
-  setup(props, context) {
-    const notify = useNotifications();
-    const { data, update } = usePropertySets();
-    const visibleProperties = computed(() => props.propSet.properties.filter((p) => !p.hidden));
+  ]);
+  if (propertySetData.value.updateProperties > 0) {
+    emit("updated");
+    if (refreshable) {
+      notify.success("Property update successful", key);
+    } else {
+      notify.warn("Property update successful", "System restart required for change to take effect!");
+    }
+  } else {
+    notify.error("Property update failed");
+  }
+};
 
-    const tooltipText = (property) => {
-      let parts = [];
-      if (property.description) parts.push(property.description);
-      if (!property.editable) parts.push("(Read-only)");
-      return parts.join(" ");
-    };
-
-    const updateProperty = async (setId, key, value, refreshable) => {
-      await update([
-        {
-          propertySetId: setId,
-          key: key,
-          value: value,
-        },
-      ]);
-      if (data.value.updateProperties > 0) {
-        context.emit("updated");
-        if (refreshable) {
-          notify.success("Property update successful", key);
-        } else {
-          notify.warn("Property update successful", "System restart required for change to take effect!");
-        }
-      } else {
-        notify.error("Property update failed");
-      }
-    };
-
-    const onCellEditComplete = (event) => {
-      let { data, newValue, value } = event;
-      if (value !== newValue) {
-        updateProperty(props.propSet.id, data.key, newValue, data.refreshable);
-        data.value = newValue;
-      }
-    };
-
-    return {
-      propertySet: props.propSet,
-      visibleProperties,
-      tooltipText,
-      onCellEditComplete,
-    };
-  },
+const onCellEditComplete = (event) => {
+  let { data, newValue, value } = event;
+  if (value !== newValue) {
+    updateProperty(propertySet.propSet.id, data.key, newValue, data.refreshable);
+    data.value = newValue;
+  }
 };
 </script>

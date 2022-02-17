@@ -7,9 +7,7 @@
         <Column field="created" header="Created" class="timestamp-column" :sortable="true" />
         <Column field="modified" header="Modified" class="timestamp-column" :sortable="true" />
         <Column field="elapsed" header="Elapsed" class="elapsed-column" :sortable="true">
-          <template #body="action">
-            {{ action.data.elapsed }}
-          </template>
+          <template #body="action">{{ action.data.elapsed }}</template>
         </Column>
         <Column header="Content" class="content-column">
           <template #body="action">
@@ -35,8 +33,8 @@
   </div>
 </template>
 
-<script>
-import { computed, reactive } from "vue";
+<script setup>
+import { computed, reactive, defineProps } from "vue";
 
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -49,102 +47,78 @@ import ErrorViewer from "@/components/ErrorViewer.vue";
 
 import useUtilFunctions from "@/composables/useUtilFunctions";
 
-export default {
-  name: "DeltaFileActionsPanel",
-  components: {
-    CollapsiblePanel,
-    Column,
-    DataTable,
-    Button,
-    ContentViewer,
-    ErrorViewer,
-    MetadataViewer,
+const props = defineProps({
+  deltaFileData: {
+    type: Object,
+    required: true,
   },
-  props: {
-    deltaFileData: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup(props) {
-    const { duration } = useUtilFunctions();
-    const deltaFile = reactive(props.deltaFileData);
-    const errorViewer = reactive({
-      visible: false,
-      action: {},
-    });
+});
 
-    const actions = computed(() => {
-      return deltaFile.actions.map((action) => {
-        const timeElapsed = new Date(action.modified) - new Date(action.created);
-        action.created = new Date(action.created).toISOString();
-        action.modified = new Date(action.modified).toISOString();
-        return {
-          ...action,
-          elapsed: duration(timeElapsed),
-        };
-      });
-    });
+const { duration } = useUtilFunctions();
+const deltaFile = reactive(props.deltaFileData);
+const errorViewer = reactive({
+  visible: false,
+  action: {},
+});
 
-    const contentReferences = computed(() => {
-      if (Object.keys(deltaFile).length === 0) return {};
-      let layers = deltaFile.protocolStack.concat(deltaFile.formattedData);
-      return layers.reduce((content, layer) => {
-        let actions = [layer.action, layer.formatAction, layer.egressActions].flat().filter((n) => n);
-        for (const action of actions) {
-          let filename = action === "IngressAction" ? deltaFile.sourceInfo.filename : layer.filename || `${deltaFile.did}-${layer.action}`;
-          content[action] = {
-            ...layer.contentReference,
-            filename: filename,
-          };
-        }
-        return content;
-      }, {});
-    });
-
-    const metadataReferences = computed(() => {
-      if (Object.keys(deltaFile).length === 0) return {};
-      let layers = deltaFile.protocolStack.concat(deltaFile.formattedData);
-      return layers.reduce((content, layer) => {
-        let actions = [layer.action, layer.formatAction].flat().filter((n) => n);
-        for (const action of actions) {
-          let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
-          if (metadata.length > 0) {
-            content[action] = metadata;
-          }
-        }
-        return content;
-      }, {});
-    });
-
-    const rowClass = (action) => {
-      if (action.state === "ERROR") return "table-danger action-error";
-      if (action.state === "RETRIED") return "table-warning action-error";
-    };
-
-    const rowClick = (event) => {
-      let action = event.data;
-      if (!["ERROR", "RETRIED"].includes(action.state)) return;
-
-      errorViewer.visible = true;
-      errorViewer.action = action;
-    };
-
-    const actionMetadata = (actionName) => {
-      return Object.fromEntries(Object.entries(metadataReferences.value).filter(([key]) => key.includes(actionName)));
-    };
-
+const actions = computed(() => {
+  return deltaFile.actions.map((action) => {
+    const timeElapsed = new Date(action.modified) - new Date(action.created);
+    action.created = new Date(action.created).toISOString();
+    action.modified = new Date(action.modified).toISOString();
     return {
-      deltaFile,
-      actions,
-      contentReferences,
-      metadataReferences,
-      actionMetadata,
-      rowClass,
-      rowClick,
-      errorViewer,
+      ...action,
+      elapsed: duration(timeElapsed),
     };
-  },
+  });
+});
+
+const contentReferences = computed(() => {
+  if (Object.keys(deltaFile).length === 0) return {};
+  let layers = deltaFile.protocolStack.concat(deltaFile.formattedData);
+  return layers.reduce((content, layer) => {
+    let actions = [layer.action, layer.formatAction, layer.egressActions].flat().filter((n) => n);
+    for (const action of actions) {
+      let filename = action === "IngressAction" ? deltaFile.sourceInfo.filename : layer.filename || `${deltaFile.did}-${layer.action}`;
+      content[action] = {
+        ...layer.contentReference,
+        filename: filename,
+      };
+    }
+    return content;
+  }, {});
+});
+
+const metadataReferences = computed(() => {
+  if (Object.keys(deltaFile).length === 0) return {};
+  let layers = deltaFile.protocolStack.concat(deltaFile.formattedData);
+  return layers.reduce((content, layer) => {
+    let actions = [layer.action, layer.formatAction].flat().filter((n) => n);
+    for (const action of actions) {
+      let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
+      if (metadata.length > 0) {
+        content[action] = metadata;
+      }
+    }
+    return content;
+  }, {});
+});
+
+const rowClass = (action) => {
+  if (action.state === "ERROR") return "table-danger action-error";
+  if (action.state === "RETRIED") return "table-warning action-error";
+};
+
+const rowClick = (event) => {
+  let action = event.data;
+  if (!["ERROR", "RETRIED"].includes(action.state)) return;
+
+  errorViewer.visible = true;
+  errorViewer.action = action;
+};
+
+const actionMetadata = (actionName) => {
+  return Object.fromEntries(Object.entries(metadataReferences.value).filter(([key]) => key.includes(actionName)));
 };
 </script>
 

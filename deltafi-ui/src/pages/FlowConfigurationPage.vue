@@ -9,32 +9,21 @@
   </div>
 </template>
 
-<script>
-import HighlightedCode from "@/components/HighlightedCode.vue";
+<script setup>
 import ProgressBar from "primevue/progressbar";
 import Message from "primevue/message";
+import PageHeader from "@/components/PageHeader.vue";
+import HighlightedCode from "@/components/HighlightedCode.vue";
 import useFlowConfiguration from "@/composables/useFlowConfiguration";
 import { onMounted, computed } from "vue";
 
-export default {
-  name: "FlowConfigurationPage",
-  components: {
-    HighlightedCode,
-    ProgressBar,
-    Message,
-  },
-  setup() {
-    const { data: flowConfigData, fetch: fetchFlowConfiguration, errors } = useFlowConfiguration();
+const { data: flowConfigData, fetch: fetchFlowConfiguration, errors } = useFlowConfiguration();
 
-    const hasErrors = computed(() => {
-      return errors.value.length > 0;
-    });
+const hasErrors = computed(() => {
+  return errors.value.length > 0;
+});
 
-    onMounted(() => {
-      fetchFlowConfiguration();
-    });
-
-    return { flowConfigData, hasErrors, errors };
-  },
-};
+onMounted(() => {
+  fetchFlowConfiguration();
+});
 </script>

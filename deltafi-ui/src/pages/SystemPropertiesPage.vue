@@ -8,35 +8,20 @@
       </span>
     </span>
   </div>
-</template>
-
-<script>
-import PropertySet from "@/components/PropertySet.vue";
+</template> 
+ 
+<script setup>
 import ProgressBar from "primevue/progressbar";
+import PageHeader from "@/components/PageHeader.vue";
+import PropertySet from "@/components/PropertySet.vue";
 import usePropertySets from "@/composables/usePropertySets";
 import { onBeforeMount } from "vue";
 
-export default {
-  name: "SystemPropertiesPage",
-  components: {
-    PropertySet,
-    ProgressBar,
-  },
-  setup() {
-    const { loading, loaded, data: propertySets, fetch: fetchPropertySets } = usePropertySets();
+const { loaded, data: propertySets, fetch: fetchPropertySets } = usePropertySets();
 
-    onBeforeMount(() => {
-      fetchPropertySets();
-    });
-
-    return {
-      loaded,
-      loading,
-      propertySets,
-      fetchPropertySets,
-    };
-  },
-};
+onBeforeMount(() => {
+  fetchPropertySets();
+});
 </script>
 
 <style lang="scss">

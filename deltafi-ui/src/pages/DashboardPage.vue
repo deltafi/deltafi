@@ -19,25 +19,17 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import PageHeader from "@/components/PageHeader.vue";
 import useUiConfig from "@/composables/useUiConfig";
 import { computed } from "vue";
 
-export default {
-  components: { CollapsiblePanel },
-  setup() {
-    const { uiConfig } = useUiConfig();
+const { uiConfig } = useUiConfig();
 
-    const externalLinks = computed(() => {
-      return uiConfig.value.dashboard.links;
-    });
-
-    return {
-      externalLinks,
-    };
-  },
-};
+const externalLinks = computed(() => {
+  return uiConfig.value.dashboard.links;
+});
 </script>
 
 <style lang="scss">

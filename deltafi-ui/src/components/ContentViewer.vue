@@ -5,11 +5,9 @@
     </span>
     <Dialog v-model:visible="dialogVisible" position="top" :header="dialogHeader" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true">
       <div class="content-viewer">
-        <Message v-if="partialContent" severity="warn"> Content size is over the preview limit. Only showing the first {{ formattedMaxPreviewSize }}. </Message>
+        <Message v-if="partialContent" severity="warn">Content size is over the preview limit. Only showing the first {{ formattedMaxPreviewSize }}.</Message>
         <div v-if="errors.length > 0">
-          <Message v-for="error in errors" :key="error" severity="error" :closable="false">
-            {{ error }}
-          </Message>
+          <Message v-for="error in errors" :key="error" severity="error" :closable="false">{{ error }}</Message>
         </div>
         <div v-else>
           <ProgressBar v-if="loadingContent" mode="indeterminate" style="height: 0.5em" />
@@ -38,11 +36,11 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import useContent from "@/composables/useContent";
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import { computed, ref, toRefs } from "vue";
+import { computed, ref, toRefs, defineProps } from "vue";
 
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
@@ -54,144 +52,113 @@ import ToggleButton from "primevue/togglebutton";
 
 import hexy from "hexy";
 
-export default {
-  name: "ContentViewer",
-  components: {
-    Button,
-    Dialog,
-    HighlightedCode,
-    Message,
-    TabPanel,
-    TabView,
-    ProgressBar,
-    ToggleButton,
+const props = defineProps({
+  contentReference: {
+    type: Object,
+    required: true,
   },
-  props: {
-    contentReference: {
-      type: Object,
-      required: true,
-    },
-    header: {
-      type: String,
-      required: false,
-      default: null,
-    },
+  header: {
+    type: String,
+    required: false,
+    default: null,
   },
-  setup(props) {
-    const { formattedBytes } = useUtilFunctions();
-    const { contentReference, header } = toRefs(props);
-    const maxPreviewSize = 100000; // 100kB
-    const contentLoaded = ref(false);
-    const dialogVisible = ref(false);
-    const highlightCode = ref(true);
-    const content = ref(new ArrayBuffer());
-    const decoder = new TextDecoder("utf-8");
-    const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data } = useContent();
+});
 
-    const dialogHeader = computed(() => {
-      return header.value || contentReference.value.filename;
-    });
+const { formattedBytes } = useUtilFunctions();
+const { contentReference, header } = toRefs(props);
+const maxPreviewSize = 100000; // 100kB
+const contentLoaded = ref(false);
+const dialogVisible = ref(false);
+const highlightCode = ref(true);
+const content = ref(new ArrayBuffer());
+const decoder = new TextDecoder("utf-8");
+const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data } = useContent();
 
-    const partialContent = computed(() => {
-      return contentReference.value.size > maxPreviewSize;
-    });
+const dialogHeader = computed(() => {
+  return header.value || contentReference.value.filename;
+});
 
-    const contentAsString = computed(() => {
-      return decoder.decode(new Uint8Array(content.value));
-    });
+const partialContent = computed(() => {
+  return contentReference.value.size > maxPreviewSize;
+});
 
-    const contentAsHexdump = computed(() => {
-      let buffer = Buffer.from(content.value);
-      return hexy.hexy(buffer, {
-        format: "twos",
-      });
-    });
+const contentAsString = computed(() => {
+  return decoder.decode(new Uint8Array(content.value));
+});
 
-    const embededContent = computed(() => {
-      return "content" in contentReference.value;
-    });
+const contentAsHexdump = computed(() => {
+  let buffer = Buffer.from(content.value);
+  return hexy.hexy(buffer, {
+    format: "twos",
+  });
+});
 
-    const contentSize = computed(() => {
-      return formattedBytes(contentReference.value.size);
-    });
+const embededContent = computed(() => {
+  return "content" in contentReference.value;
+});
 
-    const formattedMaxPreviewSize = computed(() => {
-      return formattedBytes(maxPreviewSize);
-    });
+const contentSize = computed(() => {
+  return formattedBytes(contentReference.value.size);
+});
 
-    const showDialog = () => {
-      if (!contentLoaded.value) loadContent();
-      dialogVisible.value = true;
-    };
+const formattedMaxPreviewSize = computed(() => {
+  return formattedBytes(maxPreviewSize);
+});
 
-    const download = () => {
-      if (embededContent.value) {
-        downloadEmbededContent();
-      } else {
-        let url = downloadURL(contentReference.value);
-        window.open(url);
-      }
-    };
+const showDialog = () => {
+  if (!contentLoaded.value) loadContent();
+  dialogVisible.value = true;
+};
 
-    const loadContent = async () => {
-      if (embededContent.value) {
-        loadEmbededContent();
-        return;
-      }
-      let request = {
-        ...contentReference.value,
-        size: partialContent.value ? maxPreviewSize : contentReference.value.size,
-      };
-      try {
-        await fetchContent(request);
-      } catch {
-        return;
-      }
-      content.value = await data.value.arrayBuffer();
-      contentLoaded.value = true;
-    };
+const download = () => {
+  if (embededContent.value) {
+    downloadEmbededContent();
+  } else {
+    let url = downloadURL(contentReference.value);
+    window.open(url);
+  }
+};
 
-    const loadEmbededContent = () => {
-      const str = contentReference.value.content;
-      content.value = new ArrayBuffer(str.length * 2);
-      const bufView = new Uint16Array(content.value);
-      for (var i = 0, strLen = str.length; i < strLen; i++) {
-        bufView[i] = str.charCodeAt(i);
-      }
-      contentReference.value.size = str.length;
-      contentLoaded.value = true;
-    };
+const loadContent = async () => {
+  if (embededContent.value) {
+    loadEmbededContent();
+    return;
+  }
+  let request = {
+    ...contentReference.value,
+    size: partialContent.value ? maxPreviewSize : contentReference.value.size,
+  };
+  try {
+    await fetchContent(request);
+  } catch {
+    return;
+  }
+  content.value = await data.value.arrayBuffer();
+  contentLoaded.value = true;
+};
 
-    const downloadEmbededContent = () => {
-      let link = document.createElement("a");
-      let downloadFileName = contentReference.value.filename;
-      link.download = downloadFileName.toLowerCase();
-      let blob = new Blob([contentReference.value.content], {
-        type: contentReference.value.mediaType,
-      });
-      link.href = URL.createObjectURL(blob);
-      link.click();
-      URL.revokeObjectURL(link.href);
-      link.remove();
-    };
+const loadEmbededContent = () => {
+  const str = contentReference.value.content;
+  content.value = new ArrayBuffer(str.length * 2);
+  const bufView = new Uint16Array(content.value);
+  for (var i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  contentReference.value.size = str.length;
+  contentLoaded.value = true;
+};
 
-    return {
-      contentAsString,
-      contentAsHexdump,
-      showDialog,
-      download,
-      highlightCode,
-      dialogVisible,
-      contentSize,
-      contentLoaded,
-      loadingContent,
-      errors,
-      partialContent,
-      formattedMaxPreviewSize,
-      embededContent,
-      dialogHeader,
-    };
-  },
+const downloadEmbededContent = () => {
+  let link = document.createElement("a");
+  let downloadFileName = contentReference.value.filename;
+  link.download = downloadFileName.toLowerCase();
+  let blob = new Blob([contentReference.value.content], {
+    type: contentReference.value.mediaType,
+  });
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+  link.remove();
 };
 </script>
 

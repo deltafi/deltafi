@@ -13,74 +13,51 @@
   </Dialog>
 </template>
 
-<script>
+<script setup>
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Dialog from "primevue/dialog";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, ref } from "vue";
+import { computed, ref, defineProps, defineEmits } from "vue";
 import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
 
-export default {
-  name: "AckErrorsDialog",
-  components: {
-    Button,
-    Dialog,
-    InputText,
+const props = defineProps({
+  dids: {
+    type: Array,
+    required: true,
   },
-  props: {
-    dids: {
-      type: Array,
-      required: true,
-    },
-  },
-  emits: ["acknowledged", "update:visible"],
-  setup(props, context) {
-    const { pluralize } = useUtilFunctions();
-    const reason = ref("");
-    const show = ref(true);
-    const reasonInvalid = ref(false);
+});
 
-    const { data: AcknowledgeErrorsData, post: PostAcknowledgeErrors, errors } = useAcknowledgeErrors();
+const emit = defineEmits(["acknowledged", "update:visible"]);
+const { pluralize } = useUtilFunctions();
+const reason = ref("");
+const reasonInvalid = ref(false);
 
-    const acknowledgeButtonLabel = computed(() => {
-      if (props.dids.length === 1) return "Acknowledge Error";
-      let pluralized = pluralize(props.dids.length, "Error");
-      return `Acknowledge ${pluralized}`;
-    });
+const { post: PostAcknowledgeErrors } = useAcknowledgeErrors();
 
-    const acknowledge = async () => {
-      if (reason.value) {
-        try {
-          await PostAcknowledgeErrors(props.dids, reason.value);
-          context.emit("acknowledged", props.dids, reason.value);
-          context.emit("update:visible", false);
-          reason.value = "";
-        } catch {
-          // Do Nothing
-        }
-      } else {
-        reasonInvalid.value = true;
-      }
-    };
+const acknowledgeButtonLabel = computed(() => {
+  if (props.dids.length === 1) return "Acknowledge Error";
+  let pluralized = pluralize(props.dids.length, "Error");
+  return `Acknowledge ${pluralized}`;
+});
 
-    const close = () => {
-      context.emit("update:visible", false);
-    };
+const acknowledge = async () => {
+  if (reason.value) {
+    try {
+      await PostAcknowledgeErrors(props.dids, reason.value);
+      emit("acknowledged", props.dids, reason.value);
+      emit("update:visible", false);
+      reason.value = "";
+    } catch {
+      // Do Nothing
+    }
+  } else {
+    reasonInvalid.value = true;
+  }
+};
 
-    return {
-      reason,
-      show,
-      reasonInvalid,
-      close,
-      acknowledge,
-      acknowledgeButtonLabel,
-      AcknowledgeErrorsData,
-      PostAcknowledgeErrors,
-      errors,
-      props,
-    };
-  },
+const close = () => {
+  emit("update:visible", false);
 };
 </script>
 

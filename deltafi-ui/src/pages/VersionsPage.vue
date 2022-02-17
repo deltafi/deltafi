@@ -3,8 +3,8 @@
     <PageHeader heading="Versions" />
     <CollapsiblePanel header="Image Versions" class="table-panel">
       <DataTable responsive-layout="scroll" :value="versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="showLoading">
-        <template #empty> No version information available. </template>
-        <template #loading> Loading version information. Please wait. </template>
+        <template #empty>No version information available.</template>
+        <template #loading>Loading version information. Please wait.</template>
         <Column field="app" header="App" :sortable="true" />
         <Column field="container" header="Container" :sortable="true" />
         <Column field="image.name" header="Image" :sortable="true" />
@@ -14,38 +14,27 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import useVersions from "@/composables/useVersions";
-import { onMounted, computed, onUnmounted } from "vue";
+import { onMounted, computed, onUnmounted} from "vue";
 
-export default {
-  name: "VersionsPage",
-  components: {
-    DataTable,
-    Column,
-    CollapsiblePanel,
-  },
-  setup() {
-    const refreshInterval = 5000; // 5 seconds
-    const { data: versions, loaded, loading, fetch: fetchVersions } = useVersions();
+const refreshInterval = 5000; // 5 seconds
+const { data: versions, loaded, loading, fetch: fetchVersions } = useVersions();
 
-    let autoRefresh;
+let autoRefresh;
 
-    const showLoading = computed(() => !loaded.value && loading.value);
+const showLoading = computed(() => !loaded.value && loading.value);
 
-    onMounted(() => {
-      fetchVersions();
-      autoRefresh = setInterval(fetchVersions, refreshInterval);
-    });
+onMounted(() => {
+  fetchVersions();
+  autoRefresh = setInterval(fetchVersions, refreshInterval);
+});
 
-    onUnmounted(() => {
-      clearInterval(autoRefresh);
-    });
-
-    return { versions, showLoading };
-  },
-};
+onUnmounted(() => {
+  clearInterval(autoRefresh);
+});
 </script>

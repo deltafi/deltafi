@@ -8,40 +8,27 @@
   </nav>
 </template>
 
-<script>
+<script setup>
 import useUiConfig from "@/composables/useUiConfig";
 import { computed } from "vue";
 
-export default {
-  name: "HeaderBanner",
-  setup() {
-    const { uiConfig } = useUiConfig();
+const { uiConfig } = useUiConfig();
 
-    const textColor = computed(() => {
-      return uiConfig.value.securityBanner.textColor;
-    });
+const textColor = computed(() => {
+  return uiConfig.value.securityBanner.textColor;
+});
 
-    const backgroundColor = computed(() => {
-      return uiConfig.value.securityBanner.backgroundColor;
-    });
+const backgroundColor = computed(() => {
+  return uiConfig.value.securityBanner.backgroundColor;
+});
 
-    const bannerMessage = computed(() => {
-      return uiConfig.value.securityBanner.text;
-    });
+const bannerMessage = computed(() => {
+  return uiConfig.value.securityBanner.text;
+});
 
-    const bannerEnabled = computed(() => {
-      return uiConfig.value.securityBanner.enabled;
-    });
-
-    return {
-      uiConfig,
-      textColor,
-      backgroundColor,
-      bannerMessage,
-      bannerEnabled,
-    };
-  },
-};
+const bannerEnabled = computed(() => {
+  return uiConfig.value.securityBanner.enabled;
+});
 </script>
 
 <style scoped lang="scss">

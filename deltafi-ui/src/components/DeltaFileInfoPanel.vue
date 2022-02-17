@@ -18,51 +18,41 @@
   </div>
 </template>
 
-<script>
-import { computed, reactive } from "vue";
+<script setup>
+import { computed, reactive, defineProps } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
 
-export default {
-  name: "DeltaFileInfoPanel",
-  components: {
-    CollapsiblePanel,
-    ErrorAcknowledgedBadge,
+const props = defineProps({
+  deltaFileData: {
+    type: Object,
+    required: true,
   },
-  props: {
-    deltaFileData: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup(props) {
-    const deltaFile = reactive(props.deltaFileData);
-    const { formattedBytes } = useUtilFunctions();
+});
 
-    const originalFileSize = computed(() => {
-      const ingressAction = deltaFile.protocolStack.find((p) => {
-        return p.action === "IngressAction";
-      });
-      if (!ingressAction) return "N/A";
-      return formattedBytes(ingressAction.contentReference.size);
-    });
+const deltaFile = reactive(props.deltaFileData);
+const { formattedBytes } = useUtilFunctions();
 
-    const infoFields = computed(() => {
-      let fields = {};
-      fields["DID"] = deltaFile.did;
-      fields["Original Filename"] = deltaFile.sourceInfo.filename;
-      fields["Original File Size"] = originalFileSize.value;
-      fields["Ingress Flow"] = deltaFile.sourceInfo.flow;
-      fields["Stage"] = deltaFile.stage;
-      fields["Created"] = deltaFile.created;
-      fields["Modified"] = deltaFile.modified;
-      return fields;
-    });
+const originalFileSize = computed(() => {
+  const ingressAction = deltaFile.protocolStack.find((p) => {
+    return p.action === "IngressAction";
+  });
+  if (!ingressAction) return "N/A";
+  return formattedBytes(ingressAction.contentReference.size);
+});
 
-    return { deltaFile, infoFields };
-  },
-};
+const infoFields = computed(() => {
+  let fields = {};
+  fields["DID"] = deltaFile.did;
+  fields["Original Filename"] = deltaFile.sourceInfo.filename;
+  fields["Original File Size"] = originalFileSize.value;
+  fields["Ingress Flow"] = deltaFile.sourceInfo.flow;
+  fields["Stage"] = deltaFile.stage;
+  fields["Created"] = deltaFile.created;
+  fields["Modified"] = deltaFile.modified;
+  return fields;
+});
 </script>
 
 <style lang="scss">

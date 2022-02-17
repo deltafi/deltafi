@@ -24,44 +24,34 @@
   </div>
 </template>
 
-<script>
-import { computed, reactive } from "vue";
+<script setup>
+import { computed, reactive, defineProps } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ContentViewer from "@/components/ContentViewer.vue";
 
-export default {
-  name: "DeltaFileEnrichmentPanel",
-  components: {
-    CollapsiblePanel,
-    ContentViewer,
+const props = defineProps({
+  deltaFileData: {
+    type: Object,
+    required: true,
   },
-  props: {
-    deltaFileData: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup(props) {
-    const { formattedBytes } = useUtilFunctions();
-    const deltaFile = reactive(props.deltaFileData);
+});
 
-    const enrichmentContentReferences = computed(() => {
-      return deltaFile.enrichment.map((enrichment) => {
-        const content = enrichment.value || "";
-        return {
-          ...enrichment,
-          did: deltaFile.did,
-          content: content,
-          filename: `${deltaFile.did}-enrichment-${enrichment.name}`,
-          size: content.length,
-        };
-      });
-    });
+const { formattedBytes } = useUtilFunctions();
+const deltaFile = reactive(props.deltaFileData);
 
-    return { deltaFile, enrichmentContentReferences, formattedBytes };
-  },
-};
+const enrichmentContentReferences = computed(() => {
+  return deltaFile.enrichment.map((enrichment) => {
+    const content = enrichment.value || "";
+    return {
+      ...enrichment,
+      did: deltaFile.did,
+      content: content,
+      filename: `${deltaFile.did}-enrichment-${enrichment.name}`,
+      size: content.length,
+    };
+  });
+});
 </script>
 
 <style lang="scss">

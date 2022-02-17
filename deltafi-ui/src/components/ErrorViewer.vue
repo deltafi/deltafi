@@ -31,31 +31,21 @@
   </Dialog>
 </template>
 
-<script>
+<script setup>
 import Dialog from "primevue/dialog";
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import { computed } from "vue";
+import { computed, defineProps } from "vue";
 
-export default {
-  name: "CollapsiblePanel",
-  components: {
-    Dialog,
-    HighlightedCode,
+const props = defineProps({
+  action: {
+    type: Object,
+    required: true,
   },
-  props: {
-    action: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup(props) {
-    const header = computed(() => {
-      return `${props.action.name} Error`;
-    });
+});
 
-    return { header };
-  },
-};
+const header = computed(() => {
+  return `${props.action.name} Error`;
+});
 </script>
 
 <style lang="scss">

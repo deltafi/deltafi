@@ -16,29 +16,18 @@
   </nav>
 </template>
 
-<script>
+<script setup>
 import StatusBadge from "@/components/StatusBadge";
 import useUiConfig from "@/composables/useUiConfig";
 import useSidebarToggle from "@/composables/useSidebarToggle";
 import { computed } from "vue";
 
-export default {
-  components: { StatusBadge },
-  setup() {
-    const { uiConfig } = useUiConfig();
-    const { sidebarHidden, toggleSidebarHidden: toggleSidebar } = useSidebarToggle();
+const { uiConfig } = useUiConfig();
+const { sidebarHidden, toggleSidebarHidden: toggleSidebar } = useSidebarToggle();
 
-    const toggleSidebarIcon = computed(() => {
-      return sidebarHidden.value ? "pi pi-angle-double-right" : "pi pi-angle-double-left";
-    });
-
-    return {
-      uiConfig,
-      toggleSidebarIcon,
-      toggleSidebar,
-    };
-  },
-};
+const toggleSidebarIcon = computed(() => {
+  return sidebarHidden.value ? "pi pi-angle-double-right" : "pi pi-angle-double-left";
+});
 </script>
 
 <style scoped lang="scss">
