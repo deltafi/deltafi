@@ -258,7 +258,8 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
                 .domains(getDomains())
                 .enrichment(getEnrichment())
                 .formattedData(getFormattedData().stream()
-                        .filter(f -> f.getEgressActions().contains(actionName) || f.getValidateActions().contains(actionName))
+                        .filter(f -> f.getEgressActions().contains(actionName) ||
+                                (Objects.nonNull(f.getValidateActions()) && f.getValidateActions().contains(actionName)))
                         .collect(Collectors.toList()));
 
         if (!getProtocolStack().isEmpty()) {
