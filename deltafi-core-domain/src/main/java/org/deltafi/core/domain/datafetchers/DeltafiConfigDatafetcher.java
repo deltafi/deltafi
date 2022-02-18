@@ -3,6 +3,7 @@ package org.deltafi.core.domain.datafetchers;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
+import com.netflix.graphql.dgs.InputArgument;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
 import org.deltafi.core.domain.generated.types.ConfigQueryInput;
 import org.deltafi.core.domain.services.DeltaFiConfigService;
@@ -19,22 +20,22 @@ public class DeltafiConfigDatafetcher {
     }
 
     @DgsMutation
-    public long removeDeltaFiConfigs(ConfigQueryInput configQuery) {
+    public long removeDeltaFiConfigs(@InputArgument ConfigQueryInput configQuery) {
         return deltaFiConfigService.removeDeltafiConfigs(configQuery);
     }
 
     @DgsQuery
-    public List<DeltaFiConfiguration> deltaFiConfigs(ConfigQueryInput configQuery) {
+    public List<DeltaFiConfiguration> deltaFiConfigs(@InputArgument ConfigQueryInput configQuery) {
         return deltaFiConfigService.getConfigs(configQuery);
     }
 
     @DgsMutation
-    public String replaceConfig(String configYaml) {
+    public String replaceConfig(@InputArgument String configYaml) {
         return deltaFiConfigService.replaceConfig(configYaml);
     }
 
     @DgsMutation
-    public String mergeConfig(String configYaml) {
+    public String mergeConfig(@InputArgument String configYaml) {
         return deltaFiConfigService.mergeConfig(configYaml);
     }
 

@@ -967,7 +967,6 @@ class DeltaFiCoreDomainApplicationTests {
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new DeltaFilesGraphQLQuery.Builder()
-						.offset(0)
 						.limit(5)
 						.filter(DeltaFilesFilter.newBuilder().createdBefore(OffsetDateTime.now()).build())
 						.orderBy(DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.DESC).build())
