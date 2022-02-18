@@ -7,20 +7,28 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(MockitoExtension.class)
 public class DeleteActionTest {
     private static final ActionContext actionContext = ActionContext.builder().did("did-1").name("name").build();
 
+    @Mock
+    ContentStorageService contentStorageService;
+
+    @InjectMocks
+    DeleteAction deleteAction;
+
     @Test
     void testExecute() {
-        ContentStorageService contentStorageService = Mockito.mock(ContentStorageService.class);
         Mockito.when(contentStorageService.deleteAll(Mockito.eq("did-1"))).thenReturn(true);
-
-        DeleteAction deleteAction = new DeleteAction(contentStorageService);
 
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters();
@@ -34,10 +42,7 @@ public class DeleteActionTest {
 
     @Test
     void testExecuteError() {
-        ContentStorageService contentStorageService = Mockito.mock(ContentStorageService.class);
         Mockito.when(contentStorageService.deleteAll(Mockito.eq("did-1"))).thenReturn(false);
-
-        DeleteAction deleteAction = new DeleteAction(contentStorageService);
 
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters();
@@ -47,6 +52,6 @@ public class DeleteActionTest {
         assertTrue(result instanceof ErrorResult);
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());
         assertEquals("name", result.toEvent().getAction());
-        assertEquals("Unable to remove all objects for delta file.", result.toEvent().getError().getCause());
+        assertEquals("Unable to delete all objects for delta file.", result.toEvent().getError().getCause());
     }
 }

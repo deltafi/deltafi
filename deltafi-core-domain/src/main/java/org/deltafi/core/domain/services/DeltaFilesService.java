@@ -30,7 +30,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
@@ -99,7 +98,7 @@ public class DeltaFilesService {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .did(input.getDid())
                 .stage(DeltaFileStage.INGRESS)
-                .actions(Stream.of(ingressAction).collect(Collectors.toCollection(ArrayList::new)))
+                .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(input.getSourceInfo())
                 .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, input.getContentReference(), null)))
                 .domains(Collections.emptyList())
@@ -422,9 +421,5 @@ public class DeltaFilesService {
                 log.error("Failed to create error for " + deltaFile.getDid() + " with event " + event + ": " + e.getMessage());
             }
         }
-    }
-
-    public void deleteAllDeltaFiles() {
-        deltaFileRepo.deleteAll();
     }
 }

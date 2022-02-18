@@ -66,7 +66,7 @@ class DeltaFilesServiceTest {
         assertNotNull(deltaFile);
         assertEquals(flow, deltaFile.getSourceInfo().getFlow());
         assertEquals(did, deltaFile.getDid());
-        assertNotNull(deltaFile.getProtocolStack().get(0));
+        assertNotNull(deltaFile.getFirstProtocolLayer());
     }
 
     @Test

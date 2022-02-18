@@ -21,22 +21,25 @@ import org.deltafi.actionkit.config.ActionVersionProperty;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.DomainGatewayService;
 import org.deltafi.actionkit.service.HostnameService;
+import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.properties.DeltaFiSystemProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
-import org.deltafi.common.content.ContentReference;
-import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.api.types.ActionInput;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.SourceInfo;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +80,9 @@ public abstract class Action<P extends ActionParameters> {
     private GraphQLQuery registrationQuery = null;
     private BaseProjectionNode registrationProjection = null;
 
+    private final ScheduledExecutorService startListeningExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService registerParamSchemaExecutor = Executors.newSingleThreadScheduledExecutor();
+
     @SuppressWarnings({"unused", "EmptyMethod"})
     public void start(@Observes StartupEvent start) {
         // quarkus will prune the actions if this is not included
@@ -87,14 +93,17 @@ public abstract class Action<P extends ActionParameters> {
     @PostConstruct
     public void startAction() {
         log.info("Starting action: {}", getFeedString());
+        startListeningExecutor.scheduleWithFixedDelay(this::startListening,
+                config.actionPollingInitialDelayMs(), config.actionPollingPeriodMs(), TimeUnit.MILLISECONDS);
+        registerParamSchemaExecutor.scheduleWithFixedDelay(this::registerParamSchema,
+                config.actionRegistrationInitialDelayMs(), config.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
+    }
 
-        final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleWithFixedDelay(this::startListening, config.actionPollingInitialDelayMs(),
-                config.actionPollingPeriodMs(), TimeUnit.MILLISECONDS);
-
-        final ScheduledExecutorService registerScheduler = Executors.newScheduledThreadPool(1);
-        registerScheduler.scheduleWithFixedDelay(this::registerParamSchema, config.actionRegistrationInitialDelayMs(),
-                config.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
+    @PreDestroy
+    public void stopAction() {
+        log.info("Stopping action: {}", getFeedString());
+        startListeningExecutor.shutdown();
+        registerParamSchemaExecutor.shutdown();
     }
 
     private void startListening() {
@@ -147,9 +156,10 @@ public abstract class Action<P extends ActionParameters> {
         return this.getClass().getCanonicalName();
     }
 
-    void registerParamSchema() {
+    private void registerParamSchema() {
         try {
-            doRegisterParamSchema();
+            domainGatewayService.submit(
+                    new GraphQLQueryRequest(doGetRegistrationQuery(), doGetRegistrationProjection()));
         } catch (Exception exception) {
             log.error("Could not send action parameter schema", exception);
         }
@@ -193,11 +203,6 @@ public abstract class Action<P extends ActionParameters> {
 
     public abstract GraphQLQuery getRegistrationQuery();
 
-    void doRegisterParamSchema() {
-        domainGatewayService.submit(new GraphQLQueryRequest(
-                doGetRegistrationQuery(), doGetRegistrationProjection()));
-    }
-
     private BaseProjectionNode doGetRegistrationProjection() {
         if (Objects.isNull(registrationProjection)) {
             registrationProjection = getRegistrationProjection();
@@ -217,9 +222,18 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     @SuppressWarnings("unused")
+    protected byte[] loadFirstContent(DeltaFile deltaFile) throws ObjectStorageException {
+        return loadContent(deltaFile.getFirstContentReference());
+    }
+
+    @SuppressWarnings("unused")
     protected byte[] loadContent(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
+        return loadContent(deltaFile.getContentReference(protocolLayerType).orElseThrow());
+    }
+
+    protected byte[] loadContent(ContentReference contentReference) throws ObjectStorageException {
         byte[] content = null;
-        try (InputStream contentInputStream = loadContentAsInputStream(deltaFile, protocolLayerType)) {
+        try (InputStream contentInputStream = loadContentAsInputStream(contentReference)) {
             content = contentInputStream.readAllBytes();
         } catch (IOException e) {
             log.warn("Unable to close content input stream", e);
@@ -227,19 +241,20 @@ public abstract class Action<P extends ActionParameters> {
         return content;
     }
 
+    @SuppressWarnings("unused")
     protected InputStream loadContentAsInputStream(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
-        return contentStorageService.load(getContentReference(deltaFile, protocolLayerType));
+        return loadContentAsInputStream(deltaFile.getContentReference(protocolLayerType).orElseThrow());
+    }
+
+    protected InputStream loadContentAsInputStream(ContentReference contentReference) throws ObjectStorageException {
+        return contentStorageService.load(contentReference);
     }
 
     protected ContentReference saveContent(String did, byte[] content, String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
     }
 
-    private ContentReference getContentReference(DeltaFile deltaFile, String protocolLayerType) {
-        Optional<ProtocolLayer> protocolLayerOptional = deltaFile.getProtocolLayer(protocolLayerType);
-        if (protocolLayerOptional.isEmpty()) {
-            throw new RuntimeException("Missing protocol layer for " + protocolLayerType);
-        }
-        return protocolLayerOptional.get().getContentReference();
+    protected boolean deleteContent(String did) {
+        return contentStorageService.deleteAll(did);
     }
 }

@@ -40,7 +40,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
 
         FormattedData formattedData = getFormattedData(deltaFile);
 
-        try (InputStream inputStream = contentStorageService.load(formattedData.getContentReference())) {
+        try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
                     buildHeadersMapString(deltaFile, params)), inputStream, formattedData.getContentReference().getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());

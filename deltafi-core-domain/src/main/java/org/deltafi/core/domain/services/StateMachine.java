@@ -1,7 +1,6 @@
 package org.deltafi.core.domain.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
-import graphql.com.google.common.collect.Iterables;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
@@ -127,7 +126,7 @@ public class StateMachine {
             return true;
         } else {
             if ((deltaFile.getProtocolStack() != null) && !deltaFile.getProtocolStack().isEmpty()) {
-                Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(Iterables.getLast(deltaFile.getProtocolStack()).getMetadata());
+                Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(deltaFile.getLastProtocolLayer().getMetadata());
                 if (matchesAllMetadata(requiresMetadata, metadataMap)) {
                     return true;
                 }

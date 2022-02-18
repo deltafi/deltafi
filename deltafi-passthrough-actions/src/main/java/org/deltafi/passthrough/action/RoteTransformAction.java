@@ -19,7 +19,7 @@ public class RoteTransformAction extends TransformAction<RoteTransformParameters
         log.trace(actionContext.getName() + " transforming (" + deltaFile.getDid() + ")");
 
         TransformResult result = new TransformResult(actionContext, params.getResultType());
-        result.setContentReference(deltaFile.getProtocolStack().get(0).getContentReference());
+        result.setContentReference(deltaFile.getFirstContentReference());
         return result;
     }
 

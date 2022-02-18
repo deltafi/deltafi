@@ -24,8 +24,8 @@ public class RedisService {
     public void enqueue(List<String> actionNames, DeltaFile deltaFile) throws ActionConfigException {
         List<Pair<String, Object>> actions = new ArrayList<>();
         for (String actionName : actionNames) {
-            ActionConfiguration params = configService.getConfigForAction(actionName);
-            actions.add(Pair.of(params.getType(), toActionInput(actionName, params, deltaFile)));
+            ActionConfiguration actionConfiguration = configService.getConfigForAction(actionName);
+            actions.add(Pair.of(actionConfiguration.getType(), toActionInput(actionName, actionConfiguration, deltaFile)));
         }
         try {
             jedisKeyedBlockingQueue.put(actions);
@@ -38,7 +38,7 @@ public class RedisService {
         return jedisKeyedBlockingQueue.take(Constants.DGS_QUEUE, ActionEventInput.class);
     }
 
-    private ActionInput toActionInput(String actionName, ActionConfiguration params, DeltaFile deltaFile) {
+    private ActionInput toActionInput(String actionName, ActionConfiguration actionConfiguration, DeltaFile deltaFile) {
         ActionInput actionInput = new ActionInput();
         actionInput.setDeltaFile(deltaFile.forQueue(actionName));
 
@@ -49,11 +49,11 @@ public class RedisService {
 
         actionInput.setActionContext(actionContext);
 
-        if (Objects.isNull(params.getParameters())) {
-            params.setParameters(Collections.emptyMap());
+        if (Objects.isNull(actionConfiguration.getParameters())) {
+            actionConfiguration.setParameters(Collections.emptyMap());
         }
 
-        actionInput.setActionParams(params.getParameters());
+        actionInput.setActionParams(actionConfiguration.getParameters());
         return actionInput;
     }
 }

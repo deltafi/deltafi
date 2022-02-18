@@ -1,5 +1,7 @@
 package org.deltafi.core.domain.api.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -241,10 +243,38 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return getSourceInfo().getMetadata().stream().filter(k-> k.getKey().equals(key)).findFirst().map(KeyValue::getValue).orElse(defaultValue);
     }
 
-    public Optional<ProtocolLayer> getProtocolLayer(String type) {
+    @JsonIgnore
+    public ProtocolLayer getFirstProtocolLayer() {
+        return getProtocolStack().get(0);
+    }
+
+    @JsonIgnore
+    public ProtocolLayer getLastProtocolLayer() {
+        return getProtocolStack().get(getProtocolStack().size() - 1);
+    }
+
+    public Optional<ProtocolLayer> getProtocolLayer(String protocolLayerType) {
         return getProtocolStack().stream()
-                .filter(protocolLayer -> protocolLayer.getType().equals(type))
+                .filter(protocolLayer -> protocolLayer.getType().equals(protocolLayerType))
                 .findFirst();
+    }
+
+    @JsonIgnore
+    public ContentReference getFirstContentReference() {
+        return getFirstProtocolLayer().getContentReference();
+    }
+
+    @JsonIgnore
+    public ContentReference getLastContentReference() {
+        return getLastProtocolLayer().getContentReference();
+    }
+
+    public Optional<ContentReference> getContentReference(String protocolLayerType) {
+        Optional<ProtocolLayer> protocolLayerOptional = getProtocolLayer(protocolLayerType);
+        if (protocolLayerOptional.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(protocolLayerOptional.get().getContentReference());
     }
 
     public static Builder newBuilder() {
@@ -263,7 +293,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
                         .collect(Collectors.toList()));
 
         if (!getProtocolStack().isEmpty()) {
-            builder.protocolStack(Collections.singletonList(getProtocolStack().get(getProtocolStack().size() - 1)));
+            builder.protocolStack(Collections.singletonList(getLastProtocolLayer()));
         }
 
         return builder.build();

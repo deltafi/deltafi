@@ -814,7 +814,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void testExportFlowPlan() throws IOException {
+	void testExportFlowPlan() {
 		saveFlowPlan("planA", false, dgsQueryExecutor);
 		saveFlowPlan("planB", true, dgsQueryExecutor);
 
@@ -911,8 +911,8 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deltaFile.getSourceInfo().getFilename()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFilename());
 		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
 		assertThat(deltaFile.getSourceInfo().getMetadata()).isEqualTo(new ObjectMapper().convertValue(INGRESS_INPUT.getSourceInfo().getMetadata(), new TypeReference<List<KeyValue>>(){}));
-		assertThat(deltaFile.getProtocolStack().get(0).getType()).isEqualTo("theType");
-		assertThat(deltaFile.getProtocolStack().get(0).getContentReference()).isEqualTo(INGRESS_INPUT.getContentReference());
+		assertThat(deltaFile.getFirstProtocolLayer().getType()).isEqualTo("theType");
+		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContentReference());
 		assertTrue(deltaFile.getEnrichment().isEmpty());
 		assertTrue(deltaFile.getDomains().isEmpty());
 		assertTrue(deltaFile.getFormattedData().isEmpty());
@@ -931,8 +931,8 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deltaFile.getDid()).isEqualTo(UUID.fromString(deltaFile.getDid()).toString());
 		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
 		assertTrue(deltaFile.getSourceInfo().getMetadata().isEmpty());
-		assertThat(deltaFile.getProtocolStack().get(0).getType()).isEqualTo("theType");
-		assertThat(deltaFile.getProtocolStack().get(0).getContentReference()).isEqualTo(INGRESS_INPUT.getContentReference());
+		assertThat(deltaFile.getFirstProtocolLayer().getType()).isEqualTo("theType");
+		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContentReference());
 		assertTrue(deltaFile.getEnrichment().isEmpty());
 		assertTrue(deltaFile.getDomains().isEmpty());
 		assertTrue(deltaFile.getFormattedData().isEmpty());

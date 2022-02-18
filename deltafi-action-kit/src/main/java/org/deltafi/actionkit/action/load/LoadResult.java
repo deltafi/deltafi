@@ -19,7 +19,7 @@ public class LoadResult extends DataAmendedResult {
 
     public LoadResult(ActionContext actionContext, DeltaFile deltaFile) {
         super(actionContext);
-        setContentReference(deltaFile.getProtocolStack().get(deltaFile.getProtocolStack().size() - 1).getContentReference());
+        setContentReference(deltaFile.getLastContentReference());
     }
 
     public void addDomain(@NotNull String domainName, String value, String mediaType) {

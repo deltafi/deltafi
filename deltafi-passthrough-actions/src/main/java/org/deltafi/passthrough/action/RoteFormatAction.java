@@ -17,7 +17,7 @@ public class RoteFormatAction extends SimpleFormatAction {
         log.trace(actionContext.getName() + " formatting (" + deltaFile.getDid() + ")");
 
         FormatResult result = new FormatResult(actionContext, deltaFile.getSourceInfo().getFilename());
-        result.setContentReference(deltaFile.getProtocolStack().get(0).getContentReference());
+        result.setContentReference(deltaFile.getFirstContentReference());
         addSourceInputMetadata(result, deltaFile);
         addProtocolStackMetadata(result, deltaFile);
         return result;
