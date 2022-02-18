@@ -41,9 +41,9 @@ import InputText from "primevue/inputtext";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import useNotifications from "@/composables/useNotifications";
 import usePropertySets from "@/composables/usePropertySets";
-import { computed, defineProps, defineEmits } from "vue";
+import { computed, defineProps, defineEmits, reactive } from "vue";
 
-const propertySet = defineProps({
+const props = defineProps({
   propSet: {
     type: Object,
     required: true,
@@ -52,9 +52,10 @@ const propertySet = defineProps({
 
 const emit = defineEmits(["updated"]);
 
+const propertySet = reactive(props.propSet);
 const notify = useNotifications();
 const { data: propertySetData, update } = usePropertySets();
-const visibleProperties = computed(() => propertySet.propSet.properties.filter((p) => !p.hidden));
+const visibleProperties = computed(() => propertySet.properties.filter((p) => !p.hidden));
 
 const tooltipText = (property) => {
   let parts = [];
@@ -86,7 +87,7 @@ const updateProperty = async (setId, key, value, refreshable) => {
 const onCellEditComplete = (event) => {
   let { data, newValue, value } = event;
   if (value !== newValue) {
-    updateProperty(propertySet.propSet.id, data.key, newValue, data.refreshable);
+    updateProperty(propertySet.id, data.key, newValue, data.refreshable);
     data.value = newValue;
   }
 };
