@@ -9,14 +9,16 @@ require 'sinatra/quiet_logger'
 
 STATUS_INTERVAL = (ENV['STATUS_INTERVAL'] || 5).to_i # seconds
 
+$sse_service = Deltafi::API::ServerSentEvents::Service.new
 $status_service = Deltafi::API::Status::Service.new(STATUS_INTERVAL)
+$errors_service = Deltafi::API::Errors::Service.new($sse_service)
 
 class ApiServer < Sinatra::Base
   helpers Sinatra::Streaming
 
   configure :production, :development, :test do
     enable :logging
-    set :quiet_logger_prefixes, %w(probe)
+    set :quiet_logger_prefixes, %w[probe]
   end
 
   register Sinatra::QuietLogger
@@ -64,6 +66,16 @@ class ApiServer < Sinatra::Base
     stream_content(content_reference)
   rescue JSON::ParserError => e
     raise JSON::ParserError, "Failed to parse content reference: #{e.message}"
+  end
+
+  get '/api/v1/events' do
+    content_type 'text/event-stream'
+    headers 'Access-Control-Allow-Origin' => '*'
+    stream(:keep_open) do |conn|
+      $sse_service.subscribers << conn
+      conn.callback { $sse_service.subscribers.delete(conn) }
+      $status_service.publish_status
+    end
   end
 
   error StandardError do

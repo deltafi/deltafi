@@ -7,6 +7,7 @@ require 'redis'
 module Deltafi
   module API
     NAMESPACE = 'deltafi'
+    REDIS_RECONNECT_ATTEMPTS = 1_000_000_000
 
     def self.k8s_client
       ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
@@ -39,8 +40,13 @@ module Deltafi
       redis_url = ENV['REDIS_URL'] ||
                   properties['redis.url']&.gsub(/^http/, 'redis') ||
                   'http://deltafi-redis-master:6379'
-
-      Redis.new(url: redis_url, password: redis_password)
+      Redis.new(
+        url: redis_url,
+        password: redis_password,
+        reconnect_attempts: REDIS_RECONNECT_ATTEMPTS,
+        reconnect_delay: 1,
+        reconnect_delay_max: 5
+      )
     end
 
     def self.system_properties

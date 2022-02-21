@@ -14,17 +14,23 @@ module Deltafi
 
         COLORS = %w[green yellow red].freeze
         STATES = %w[Healthy Degraded Unhealthy].freeze
+        REDIS_CHANNEL = 'sse.status'
 
         def initialize(interval = 5)
           self.status = {
             code: -1,
             state: 'Unknown',
             color: 'Unknown',
-            checks: []
+            checks: [],
+            timestamp: Time.now
           }
           self.interval = interval
           self.checks = Status::Checks.constants.map { |c| Status::Checks.const_get(c) }
           spawn_worker unless ENV['NO_CHECKS']
+        end
+
+        def publish_status
+          Deltafi::API.redis_client.publish(REDIS_CHANNEL, status.to_json)
         end
 
         private
@@ -32,7 +38,10 @@ module Deltafi
         def spawn_worker
           Thread.new do
             loop do
-              time_spent = Benchmark.measure { run_checks }.real
+              time_spent = Benchmark.measure do
+                run_checks
+                publish_status
+              end.real
               sleep [(interval - time_spent), 1].max
             rescue StandardError => e
               puts 'Error occurred while running checks!'
@@ -66,7 +75,8 @@ module Deltafi
             code: overall_code,
             color: COLORS[overall_code],
             state: STATES[overall_code],
-            checks: results.sort_by { |r| [-r.code, r.name] }.map(&:to_hash)
+            checks: results.sort_by { |r| [-r.code, r.name] }.map(&:to_hash),
+            timestamp: Time.now
           }
         end
       end

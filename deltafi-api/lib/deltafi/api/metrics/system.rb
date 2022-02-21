@@ -13,7 +13,7 @@ module Deltafi
             pvs = pvs_by_node
 
             nodes.map do |node|
-              node_pods = pods[node.metadata.name]
+              node_pods = pods[node.metadata.name] || []
               {
                 name: node.metadata.name,
                 resources: {
@@ -28,8 +28,8 @@ module Deltafi
                     usage: normalize_bytes(node_usage.find { |n| n.metadata.name == node.metadata.name }.usage.memory)
                   },
                   disk: {
-                    limit: pvs[node.metadata.name].reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) },
-                    request: pvs[node.metadata.name].reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) },
+                    limit: pvs[node.metadata.name]&.reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) } || 0,
+                    request: pvs[node.metadata.name]&.reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) } || 0,
                     usage: 0 # TODO
                   }
                 },
