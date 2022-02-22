@@ -21,7 +21,7 @@ This section describes how to set up a deltafi-ui development environment.
 
 - Node.js >= 16.x
 - [Visual Studio Code](https://code.visualstudio.com/)
-  - [Vetur](https://marketplace.visualstudio.com/items?itemName=octref.vetur)
+  - [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar)
   - [SCSS Formatter](https://marketplace.visualstudio.com/items?itemName=sibiraj-s.vscode-scss-formatter)
 
 #### Install Dependencies
@@ -38,7 +38,7 @@ This section describes how to set up a deltafi-ui development environment.
 
 To start the dev server, run:
 
-    npm run development
+    npm run dev
 
 The app should then be available at http://localhost:8080/.
 
@@ -46,16 +46,18 @@ The app should then be available at http://localhost:8080/.
 
 By default, the internal Dev Server is configured to proxy `/api` and `/graphql` requests to dev.deltafi.org. This can be overridden using the environment variables described in the table below.
 
-| Path       | Default Proxy Destination       | Override Environment Variable |
-| ---------- | ------------------------------- | ----------------------------- |
-| `/api`     | https://dev.deltafi.org         | `DELTAFI_API_URL`             |
-| `/graphql` | https://gateway.dev.deltafi.org | `DELTAFI_GATEWAY_URL`         |
+| Path                 | Default Proxy Destination       | Override Environment Variable |
+| -------------------- | ------------------------------- | ----------------------------- |
+| `/api`               | https://dev.deltafi.org         | `DELTAFI_API_URL`             |
+| `/graphql`           | https://gateway.dev.deltafi.org | `DELTAFI_GATEWAY_URL`         |
+| `/deltafile/ingress` | https://ingress.dev.deltafi.org | `DELTAFI_INGRESS_URL`         |
 
 For example, to run the app and point the proxy at your local DeltaFi instance, you could run:
 
     export DELTAFI_API_URL="http://$(deltafi serviceip deltafi-api)"
     export DELTAFI_GATEWAY_URL="http://$(deltafi serviceip deltafi-gateway)"
-    npm run development
+    export DELTAFI_INGRESS_URL="http://$(deltafi serviceip deltafi-ingress)"
+    npm run dev
 
 #### ESLint
 
