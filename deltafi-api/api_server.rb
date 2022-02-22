@@ -75,6 +75,7 @@ class ApiServer < Sinatra::Base
       $sse_service.subscribers << conn
       conn.callback { $sse_service.subscribers.delete(conn) }
       $status_service.publish_status
+      $errors_service.publish_error_count
     end
   end
 
