@@ -46,13 +46,12 @@
 <script setup>
 import useUiConfig from "@/composables/useUiConfig";
 import useErrorCount from "@/composables/useErrorCount";
-import { computed, ref, watch, onMounted } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
-const refreshInterval = 5000; // 5 seconds
 const route = useRoute();
 const { uiConfig } = useUiConfig();
-const { errorCount, fetchErrorCount } = useErrorCount();
+const { errorCount } = useErrorCount();
 
 const externalLinks = computed(() => {
   return uiConfig.value.dashboard.links.map((link) => {
@@ -186,11 +185,6 @@ watch(
     activePage.value = path;
   }
 );
-
-onMounted(async () => {
-  fetchErrorCount();
-  setInterval(fetchErrorCount, refreshInterval);
-});
 </script>
 
 <style scoped lang="scss">

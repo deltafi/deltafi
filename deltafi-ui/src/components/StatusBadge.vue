@@ -1,7 +1,7 @@
 <template>
   <div>
     <Tag v-tooltip.left="'Click for more info'" class="p-mr-3 mr-3 status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" @click="openStatusDialog()" />
-    <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{ width: '50vw' }" :maximizable="true" :modal="true" position :dismissable-mask="true">
+    <Dialog v-model:visible="showStatusDialog" icon header="System Status" :style="{ width: '50vw' }" :maximizable="true" :modal="true" position :dismissable-mask="true">
       <span v-for="check in status.checks" :key="check.description">
         <Message :severity="messageSeverity(check.code)" :closable="false">{{ check.description }}</Message>
         <div v-if="check.message">
@@ -16,32 +16,40 @@
 </template>
 
 <script setup>
-import useStatus from "@/composables/useStatus";
+import useServerSentEvents from "@/composables/useServerSentEvents";
 import MarkdownIt from "markdown-it";
 import Dialog from "primevue/dialog";
 import Tag from "primevue/tag";
 import Message from "primevue/message";
-import { ref, onMounted } from "vue";
-
-const refreshInterval = 5000; // 5 seconds
+import { ref, watch } from "vue";
 
 const status = ref({
-  code: -1,
-  state: "Unknown",
-  checks: [],
-  timestamp: null,
-});
+  state: "Connecting",
+  code: 3,
+  checks: [{
+    description: "API Connection",
+    message: "Establishing connection to API..."
+  }]
+})
 const showStatusDialog = ref(false);
-const { data: response, fetch: getStatus } = useStatus();
+const { serverSentEvents, connectionStatus } = useServerSentEvents();
 
-const fetchStatus = async () => {
-  await getStatus();
-  status.value = response.value;
-};
+watch(connectionStatus, (value) => {
+  if (value === 'DISCONNECTED') {
+    status.value = {
+      code: 3,
+      state: "Reconnecting",
+      checks: [{
+        description: "API Connection",
+        code: 3,
+        message: "Connection to API has been lost. Reconnecting..."
+      }]
+    };
+  }
+});
 
-onMounted(() => {
-  fetchStatus();
-  setInterval(fetchStatus, refreshInterval);
+serverSentEvents.addEventListener('status', (event) => {
+  status.value = JSON.parse(event.data);
 });
 
 const openStatusDialog = () => {
@@ -56,7 +64,7 @@ const messageSeverity = (code) => {
   return severities[code] || "info";
 };
 const icon = (code) => {
-  let icons = ["check", "exclamation-triangle", "times"];
+  let icons = ["check", "exclamation-triangle", "times", "spin pi-spinner"];
   let icon = icons[code] || "question-circle";
   return `pi pi-${icon}`;
 };

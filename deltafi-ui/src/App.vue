@@ -25,12 +25,16 @@ import FooterBanner from "@/components/footer/FooterBanner";
 import Toast from "primevue/toast";
 import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
+import useServerSentEvents from "@/composables/useServerSentEvents";
+import useNotifications from "@/composables/useNotifications";
 import useSidebarToggle from "@/composables/useSidebarToggle";
 import { computed, onBeforeMount, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { useTitle } from "@vueuse/core";
 
 const route = useRoute();
 const title = useTitle("DeltaFi");
+const notify = useNotifications();
+const { serverSentEvents } = useServerSentEvents();
 const { uiConfig, fetchUiConfig } = useUiConfig();
 const { sidebarHidden, toggleSidebarHidden } = useSidebarToggle();
 
@@ -75,6 +79,11 @@ watch(
     setPageTitle();
   }
 );
+
+serverSentEvents.addEventListener('announcement', (event) => {
+  notify.info("System Announcement", event.data, 0);
+});
+
 </script>
 
 <style scoped lang="scss">

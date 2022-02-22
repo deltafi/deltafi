@@ -1,8 +1,14 @@
 import { ref, readonly, Ref } from 'vue';
 import { EnumType } from 'json-to-graphql-query';
 import useGraphQL from './useGraphQL'
+import useServerSentEvents from "@/composables/useServerSentEvents";
 
 const errorCount = ref(0)
+
+const { serverSentEvents } = useServerSentEvents();
+serverSentEvents.addEventListener('errorCount', (event: any) => {
+  errorCount.value = parseInt(event.data);
+});
 
 export default function useErrorCount(): {
   errorCount: Ref<number>
@@ -15,7 +21,7 @@ export default function useErrorCount(): {
     return (errorCount.value = $errorCount);
   };
 
-  const buildQuery= async (since: Date = new Date(0)) => {
+  const buildQuery = async (since: Date = new Date(0)) => {
     const query = {
       query: {
         deltaFiles: {

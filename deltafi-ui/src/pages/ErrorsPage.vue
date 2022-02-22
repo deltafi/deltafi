@@ -317,9 +317,9 @@ let autoRefresh = null;
 onUnmounted(() => {
   clearInterval(autoRefresh);
 });
-onMounted(() => {
+onMounted(async () => {
+  await fetchErrors();
   pollNewErrors();
-  fetchErrors();
   autoRefresh = setInterval(pollNewErrors, refreshInterval);
 });
 </script>
