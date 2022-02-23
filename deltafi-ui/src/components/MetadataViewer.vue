@@ -24,7 +24,7 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
-import { ref, defineProps } from "vue";
+import { ref, defineProps, defineExpose } from "vue";
 
 const props = defineProps({
   metadataReferences: {
@@ -38,4 +38,8 @@ const dialogVisible = ref(false);
 const showDialog = () => {
   dialogVisible.value = true;
 };
+
+defineExpose({
+  showDialog
+});
 </script>
