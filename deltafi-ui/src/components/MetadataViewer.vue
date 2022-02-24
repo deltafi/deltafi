@@ -7,9 +7,9 @@
       <div class="metadata-viewer">
         <div v-for="(metadataArray, actionName) in props.metadataReferences" :key="actionName">
           <CollapsiblePanel :header="actionName" class="table-panel mb-3">
-            <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows class="p-datatable-sm">
-              <Column field="key" header="Key" :style="{ width: '25%' }" />
-              <Column field="value" header="Value" :style="{ width: '75%' }" />
+            <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows sortField="key" :sortOrder="1" class="p-datatable-sm">
+              <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
+              <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
             </DataTable>
           </CollapsiblePanel>
         </div>
