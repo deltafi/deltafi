@@ -17,13 +17,13 @@
       </div>
       <div v-if="action.errorCause" class="error-row">
         <div class="error-col">
-          <strong>Error Cause</strong>
+          <strong>Cause</strong>
           <HighlightedCode :highlight="false" :code="action.errorCause" />
         </div>
       </div>
       <div v-if="action.errorContext" class="error-row">
         <div class="error-col">
-          <strong>Error Context</strong>
+          <strong>Context</strong>
           <HighlightedCode :highlight="false" :code="action.errorContext" />
         </div>
       </div>
