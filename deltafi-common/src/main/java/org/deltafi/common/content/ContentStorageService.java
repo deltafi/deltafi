@@ -19,7 +19,8 @@ public class ContentStorageService {
     private final ObjectStorageService objectStorageService;
 
     public InputStream load(ContentReference contentReference) throws ObjectStorageException {
-        return objectStorageService.getObject(buildObjectReference(contentReference));
+        return contentReference.getSize() > 0 ? objectStorageService.getObject(buildObjectReference(contentReference)) :
+                InputStream.nullInputStream();
     }
 
     public ContentReference save(String did, byte[] content, String mediaType) throws ObjectStorageException {
