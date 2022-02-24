@@ -15,13 +15,13 @@
           <p>{{ action.state }}</p>
         </div>
       </div>
-      <div class="error-row">
+      <div v-if="action.errorCause" class="error-row">
         <div class="error-col">
           <strong>Error Cause</strong>
           <HighlightedCode :highlight="false" :code="action.errorCause" />
         </div>
       </div>
-      <div class="error-row">
+      <div v-if="action.errorContext" class="error-row">
         <div class="error-col">
           <strong>Error Context</strong>
           <HighlightedCode :highlight="false" :code="action.errorContext" />
@@ -44,7 +44,7 @@ const props = defineProps({
 });
 
 const header = computed(() => {
-  return `${props.action.name} Error`;
+  return props.action.name;
 });
 </script>
 

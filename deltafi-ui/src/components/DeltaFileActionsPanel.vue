@@ -107,11 +107,12 @@ const metadataReferences = computed(() => {
 const rowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";
   if (action.state === "RETRIED") return "table-warning action-error";
+  if (action.state === "FILTERED") return "table-warning action-error";
 };
 
 const rowClick = (event) => {
   let action = event.data;
-  if (!["ERROR", "RETRIED"].includes(action.state)) return;
+  if (!["ERROR", "RETRIED", "FILTERED"].includes(action.state)) return;
 
   errorViewer.visible = true;
   errorViewer.action = action;

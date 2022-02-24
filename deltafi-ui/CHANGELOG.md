@@ -7,9 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - Metadata viewer table is now sortable
+- Allow `FILTERED` actions to be inspected in DeltaFile Viewer
 
 ### Fixed
 - Bug on System Properties page causing name and description of PropertySets not to be displayed
+- Bug preventing viewing all metadata in DeltaFile Viewer
 
 ## [0.18.0]
 
