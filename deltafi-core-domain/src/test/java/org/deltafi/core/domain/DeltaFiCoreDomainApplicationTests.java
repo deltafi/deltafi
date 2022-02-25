@@ -814,7 +814,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void testExportFlowPlan() {
+	void testExportFlowPlan() throws IOException {
 		saveFlowPlan("planA", false, dgsQueryExecutor);
 		saveFlowPlan("planB", true, dgsQueryExecutor);
 

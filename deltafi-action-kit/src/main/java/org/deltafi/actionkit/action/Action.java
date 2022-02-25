@@ -33,7 +33,6 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.IOException;
@@ -97,13 +96,6 @@ public abstract class Action<P extends ActionParameters> {
                 config.actionPollingInitialDelayMs(), config.actionPollingPeriodMs(), TimeUnit.MILLISECONDS);
         registerParamSchemaExecutor.scheduleWithFixedDelay(this::registerParamSchema,
                 config.actionRegistrationInitialDelayMs(), config.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
-    }
-
-    @PreDestroy
-    public void stopAction() {
-        log.info("Stopping action: {}", getFeedString());
-        startListeningExecutor.shutdown();
-        registerParamSchemaExecutor.shutdown();
     }
 
     private void startListening() {
