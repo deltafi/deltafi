@@ -240,7 +240,7 @@ const RetryClickAction = async (dids) => {
         let pluralized = pluralize(dids.length, "DeltaFile");
         notify.success(`Retry request sent successfully for ${pluralized}`, successfulDids.join(", "));
       }
-      removeSelected();
+      fetchErrors();
       selectedErrors.value = [];
       fetchErrorCount();
       loading.value = false;
@@ -250,12 +250,6 @@ const RetryClickAction = async (dids) => {
   } catch (error) {
     notify.error("Retry request failed", error);
   }
-};
-
-const removeSelected = () => {
-  errors.value = errors.value.filter((error) => {
-    return !selectedErrors.value.includes(error);
-  });
 };
 
 const filterErrors = (actions) => {
