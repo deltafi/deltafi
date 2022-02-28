@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="search-page">
     <div>
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
@@ -76,7 +76,7 @@
             <router-link class="monospace" :to="{ path: 'viewer/' + tData.data.did }">{{ tData.data.did }}</router-link>
           </template>
         </Column>
-        <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
+        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
         <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
         <Column field="stage" header="Stage" :sortable="true" />
         <Column field="created" header="Created" :sortable="true" />

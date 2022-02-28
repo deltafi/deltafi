@@ -6,3 +6,9 @@
 .icon-index {
   z-index: 1;
 }
+
+.search-page {
+  td.filename-column {
+    overflow-wrap: anywhere;
+  }
+}

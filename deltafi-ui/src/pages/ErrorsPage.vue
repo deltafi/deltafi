@@ -26,7 +26,7 @@
             <ErrorAcknowledgedBadge v-if="error.data.errorAcknowledged" :reason="error.data.errorAcknowledgedReason" :timestamp="error.data.errorAcknowledged" class="ml-2" />
           </template>
         </Column>
-        <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
+        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
         <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
         <Column field="created" header="Created" :sortable="true" />
         <Column field="modified" header="Modified" :sortable="true" />
