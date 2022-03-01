@@ -11,16 +11,13 @@ module Deltafi
             ui_config = Deltafi::API.k8s_client.api('v1')
                                     .resource('configmaps', namespace: NAMESPACE)
                                     .get(UI_CONFIGMAP).data
-            links = YAML.safe_load(ui_config.links)
-            security_banner = YAML.safe_load(ui_config.securityBanner) || { enabled: false }
 
-            {
+            return {
               domain: ui_config.domain,
               title: ui_config.title,
-              securityBanner: security_banner,
-              dashboard: {
-                links: links
-              }
+              securityBanner: YAML.safe_load(ui_config.securityBanner) || { enabled: false },
+              externalLinks: YAML.safe_load(ui_config.externalLinks) || [],
+              deltaFileLinks: YAML.safe_load(ui_config.deltaFileLinks) || []
             }
           end
         end

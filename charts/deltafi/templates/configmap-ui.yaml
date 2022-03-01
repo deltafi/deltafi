@@ -5,7 +5,12 @@ metadata:
 data:
   domain: {{ .Values.ingress.domain }}
   title: {{ default "DeltaFi" .Values.deltafi.ui.title }}
-  links: |-
+  deltaFileLinks: |-
+    ---
+{{ if .Values.deltafi.ui.deltaFileLinks -}}
+{{ .Values.deltafi.ui.deltaFileLinks | toYaml | indent 4 }}
+{{ end }}
+  externalLinks: |-
     ---
     - url: https://gateway.{{ .Values.ingress.domain }}/
       name: GraphQL Gateway
@@ -22,8 +27,8 @@ data:
     - url: https://zipkin.{{ .Values.ingress.domain }}/zipkin/
       name: Zipkin
       description: DeltaFile tracing dashboard
-{{ if .Values.deltafi.ui.links -}}
-{{ .Values.deltafi.ui.links | toYaml | indent 4 }}
+{{ if .Values.deltafi.ui.externalLinks -}}
+{{ .Values.deltafi.ui.externalLinks | toYaml | indent 4 }}
 {{ end }}
   securityBanner: |-
     ---

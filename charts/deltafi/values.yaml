@@ -67,18 +67,20 @@ deltafi:
     image: deltafi/deltafi-api:0.18.2
   ui:
     image: deltafi/deltafi-ui:0.18.1
-    title: DeltaFi
+    # title: DeltaFi
     # Set security banner for top and bottom of web UI
     # securityBanner:
     #   enabled: true
     #   backgroundColor: "#007a33"
     #   textColor: "#ffffff"
     #   text: "UNCLASSIFIED"
-    # Provide extra links for the Dashboard
-    # links:
+    # externalLinks:
     #   - name: GraphQL Documentation
     #     url: https://graphql.org/learn/
     #     description: Introduction to GraphQL
+    # deltaFileLinks:
+    #   - name: "View in HTTPBin"
+    #     url: "https://httpbin.org/anything/${DID}"
   egress_sink:
     image: deltafi/deltafi-egress-sink:0.18.2
 
