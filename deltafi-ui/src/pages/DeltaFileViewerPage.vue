@@ -3,9 +3,7 @@
     <PageHeader :heading="pageHeader">
       <div class="btn-toolbar">
         <Menu id="config_menu" ref="menu" :model="menuItems" :popup="true" />
-        <Button v-if="!showForm" class="p-button-secondary p-button-outlined" @click="toggleMenu">
-          <span class="fas fa-bars" />
-        </Button>
+        <Button v-if="!showForm" label="Menu" icon="fas fa-ellipsis-v" class="p-button p-button-outlined" @click="toggleMenu" />
       </div>
     </PageHeader>
     <ProgressBar v-if="showProgressBar" mode="indeterminate" style="height: 0.5em" />

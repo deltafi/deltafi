@@ -165,7 +165,7 @@ const refreshButtonClass = computed(() => {
   if (newErrorsCount.value > 0) {
     classes.push('p-button-warning')
   } else {
-    classes.push('p-button-secondary p-button-outlined')
+    classes.push('p-button-outlined')
   }
   return classes.join(' ')
 })

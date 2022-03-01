@@ -6,7 +6,7 @@
           <Calendar id="startDateTime" v-model="startTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
           <span class="mt-1 ml-3">&mdash;</span>
           <Calendar id="endDateTime" v-model="endTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
-          <Button class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="fetchDeltaFilesData()">Search</Button>
+          <Button class="p-button-sm p-button p-button-outlined ml-3" @click="fetchDeltaFilesData()">Search</Button>
         </div>
       </PageHeader>
     </div>
@@ -60,7 +60,7 @@
             <div class="col-1">
               <span class="float-left">
                 <i v-if="recordCount" v-badge="recordCount" class="pi align-top p-text-secondary float-right icon-index" style="font-size: 2rem" />
-                <Button type="button" label="Search" class="p-button-sm p-button-secondary p-button-outlined float-right" @click="fetchDeltaFilesData()" />
+                <Button type="button" label="Search" class="p-button-sm p-button p-button-outlined float-right" @click="fetchDeltaFilesData()" />
               </span>
             </div>
           </div>
