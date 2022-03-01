@@ -54,7 +54,7 @@ const { uiConfig } = useUiConfig();
 const { errorCount } = useErrorCount();
 
 const externalLinks = computed(() => {
-  return uiConfig.value.dashboard.links.map((link) => {
+  return uiConfig.value.externalLinks.map((link) => {
     link.icon = "fas fa-external-link-alt fa-fw";
     return link;
   });

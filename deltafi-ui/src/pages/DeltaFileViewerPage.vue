@@ -94,7 +94,7 @@ const rawJSONDialog = reactive({
 });
 const metadataViewer = ref();
 const menu = ref();
-const menuItems = reactive([
+const staticMenuItems = reactive([
   {
     label: "View Raw DeltaFile",
     icon: "fas fa-file-code fa-fw",
@@ -108,13 +108,6 @@ const menuItems = reactive([
     visible: () => hasMetadata.value,
     command: () => {
       metadataViewer.value.showDialog();
-    },
-  },
-  {
-    label: "View Zipkin Trace",
-    icon: "fas fa-external-link-alt fa-fw",
-    command: () => {
-      openZipkinURL();
     },
   },
   {
@@ -137,7 +130,33 @@ const menuItems = reactive([
       retryConfirm();
     },
   },
+  {
+    separator: true,
+  },
+  {
+    label: "View Zipkin Trace",
+    icon: "fas fa-external-link-alt fa-fw",
+    command: () => {
+      openZipkinURL();
+    },
+  }
 ]);
+
+const menuItems = computed(() => {
+  let items = staticMenuItems;
+  const customLinks = uiConfig.value.deltaFileLinks.map((link) => {
+    return {
+      label: link.name,
+      icon: "fas fa-external-link-alt fa-fw",
+      command: () => {
+        const url = link.url.replace("${DID}", did.value)
+        window.open(url, "_blank");
+      }
+    }
+  });
+  return items.concat(customLinks)
+});
+
 
 const allMetadata = computed(() => {
   if (!loaded.value) return {};

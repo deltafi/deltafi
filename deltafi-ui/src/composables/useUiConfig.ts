@@ -7,17 +7,19 @@ export type State = {
     domain: String,
     securityBanner: {
       enabled: Boolean,
-      backgroundColor: String,
-      textColor: String
-      text: String
+      backgroundColor?: String,
+      textColor?: String
+      text?: String
     }
-    dashboard: {
-      links: Array<{
-        name: String,
-        url: String,
-        description: String
-      }>
-    }
+    externalLinks: Array<{
+      name: String,
+      url: String,
+      description: String
+    }>
+    deltaFileLinks: Array<{
+      name: String,
+      url: String
+    }>
   }
 }
 
@@ -27,13 +29,9 @@ const state: State = reactive({
     domain: 'example.deltafi.org',
     securityBanner: {
       enabled: false,
-      backgroundColor: "#FFFFFFF",
-      textColor: "#000000",
-      text: 'DeltaFi',
     },
-    dashboard: {
-      links: []
-    }
+    externalLinks: [],
+    deltaFileLinks: []
   }
 })
 
@@ -43,7 +41,7 @@ export default function useUiConfig(): {
 } {
   const setUiConfig = ($uiConfig: Object) => {
     Object.assign(state.uiConfig, $uiConfig);
-    state.uiConfig.dashboard.links.sort((a, b) => (a.name > b.name) ? 1 : -1);
+    state.uiConfig.externalLinks.sort((a, b) => (a.name > b.name) ? 1 : -1);
     return (state.uiConfig);
   };
   const fetchUiConfig = async () => {

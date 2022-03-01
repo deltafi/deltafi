@@ -28,7 +28,7 @@ import { computed } from "vue";
 const { uiConfig } = useUiConfig();
 
 const externalLinks = computed(() => {
-  return uiConfig.value.dashboard.links;
+  return uiConfig.value.externalLinks;
 });
 </script>
 
