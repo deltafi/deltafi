@@ -4,7 +4,7 @@
       <div class="time-range btn-toolbar mb-2 mb-md-0">
         <Dropdown v-model="ingressFlowNameSelected" placeholder="Select a Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3" @change="fetchErrors()" />
         <Button v-model="showAcknowledged" :icon="showAcknowledged ? 'fas fa-eye-slash' : 'fas fa-eye'" :label="showAcknowledged ? 'Hide Acknowledged' : 'Show Acknowledged'" class="p-button p-button-secondary p-button-outlined deltafi-input-field show-acknowledged-toggle ml-3" @click="toggleShowAcknowledged()" />
-        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button p-button-secondary p-button-outlined deltafi-input-field ml-3" @click="onRefresh" />
+        <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
     </PageHeader>
     <ConfirmDialog />
@@ -93,6 +93,7 @@ const notify = useNotifications();
 const loading = ref(true);
 const menu = ref();
 const errors = ref([]);
+const newErrorsCount = ref(0);
 const lastServerContact = ref(new Date());
 const showAcknowledged = ref(false);
 const ingressFlowNameSelected = ref(null);
@@ -159,11 +160,34 @@ const refreshButtonIcon = computed(() => {
   return classes.join(" ");
 });
 
+const refreshButtonClass = computed(() => {
+  let classes = ['p-button', 'deltafi-input-field', 'ml-3']
+  if (newErrorsCount.value > 0) {
+    classes.push('p-button-warning')
+  } else {
+    classes.push('p-button-secondary p-button-outlined')
+  }
+  return classes.join(' ')
+})
+
+const refreshButtonTooltip = computed(() => {
+  let pluralized = pluralize(newErrorsCount.value, "error");
+  return {
+    value: `${pluralized} occurred since last refresh.`,
+    disabled: newErrorsCount.value === 0
+  }
+})
+
+const refreshButtonBadge = computed(() => {
+  return (newErrorsCount.value > 0) ? newErrorsCount.value.toString() : null
+})
+
 const fetchErrors = async () => {
+  lastServerContact.value = new Date();
+  newErrorsCount.value = 0;
   let ingressFlowName = ingressFlowNameSelected.value != null ? ingressFlowNameSelected.value.name : null;
   let showAcknowled = showAcknowledged.value ? null : false;
   loading.value = true;
-  lastServerContact.value = new Date();
   await getErrors(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
@@ -295,15 +319,13 @@ const onSort = (event) => {
 
 const onRefresh = () => {
   fetchErrors();
-  notify.clear();
 };
 
 const pollNewErrors = async () => {
   let count = await fetchErrorCountSince(lastServerContact.value);
   if (count > 0) {
     lastServerContact.value = new Date();
-    let pluralized = pluralize(count, "new error");
-    notify.info(`Viewing Stale Data`, `${pluralized} occurred since last refresh.`, 0);
+    newErrorsCount.value += count;
   }
 };
 
@@ -311,6 +333,7 @@ let autoRefresh = null;
 onUnmounted(() => {
   clearInterval(autoRefresh);
 });
+
 onMounted(async () => {
   await fetchErrors();
   pollNewErrors();

@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Changed
-- Better handling of long filenames throughout the UI
+- Better handling of long filenames throughout the UI. (#109)
+- When viewing stale data on the Errors page, the refresh button now changes color. (#105)
+  - Stale data Toast message also removed
+- When retrying errors on the Errors page, the table is now refreshed. (#108)
 
 ## [0.18.1]
 
