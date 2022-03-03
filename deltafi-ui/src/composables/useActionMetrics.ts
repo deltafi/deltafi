@@ -2,7 +2,7 @@ import { ref, Ref } from 'vue'
 import useApi from './useApi'
 
 export default function useActionMetrics() {
-  const { response, get, loading, loaded } = useApi();
+  const { response, get, loading, loaded, errors } = useApi();
   const endpoint: string = 'metrics/action';
   const data: Ref<object> = ref([]);
 
@@ -16,5 +16,5 @@ export default function useActionMetrics() {
     }
   }
 
-  return { data, loaded, loading, fetch };
+  return { data, loaded, loading, fetch, errors };
 }

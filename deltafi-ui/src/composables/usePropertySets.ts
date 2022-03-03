@@ -6,27 +6,25 @@ export default function usePropertySets() {
   const data = ref(null);
 
   const fetchQuery = {
-    query: {
-      getPropertySets: {
-        id: true,
-        displayName: true,
+    getPropertySets: {
+      id: true,
+      displayName: true,
+      description: true,
+      properties: {
+        key: true,
+        value: true,
+        hidden: true,
+        editable: true,
+        refreshable: true,
         description: true,
-        properties: {
-          key: true,
-          value: true,
-          hidden: true,
-          editable: true,
-          refreshable: true,
-          description: true,
-          propertySource: true
-        }
+        propertySource: true
       }
     }
   }
 
   const fetch = async () => {
     try {
-      await queryGraphQL(fetchQuery);
+      await queryGraphQL(fetchQuery, "getPropertySets");
       data.value = response.value.data.getPropertySets;
     } catch {
       // Continue regardless of error
@@ -34,13 +32,15 @@ export default function usePropertySets() {
   }
 
   const update = async (updates: Array<Object>) => {
-    const query = 'mutation($updates: [PropertyUpdate]!) { updateProperties(updates: $updates) }'
-    const variables = {
-      updates: updates
-    }
-    const body = JSON.stringify({ query: query, variables: variables })
+    const query = {
+      updateProperties: {
+        __args: {
+          updates: updates,
+        },
+      },
+    };
     try {
-      await queryGraphQL(body);
+      await queryGraphQL(query, "updatePropertySets", "mutation");
       data.value = response.value.data;
     } catch {
       // Continue regardless of error

@@ -7,19 +7,17 @@ export default function useAcknowledgeErrors() {
 
   const post = async (dids: Array<string>, reason: string) => {
     const query = {
-      mutation: {
-        acknowledge: {
-          __args: {
-            dids: dids,
-            reason: reason
-          },
-          did: true,
-          success: true,
-          error: true
+      acknowledge: {
+        __args: {
+          dids: dids,
+          reason: reason
         },
-      }
+        did: true,
+        success: true,
+        error: true
+      },
     };
-    await queryGraphQL(query);
+    await queryGraphQL(query, "getAcknowledgeErrors", "mutation");
     data.value = response.value.data;
   };
 

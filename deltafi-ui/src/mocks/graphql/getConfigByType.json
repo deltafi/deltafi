@@ -1,0 +1,13 @@
+{
+  "deltaFiConfigs": [
+    {
+      "name": "Stix2_1LoadAction"
+    },
+    {
+      "name": "SmokeLoadAction"
+    },
+    {
+      "name": "PassthroughLoadAction"
+    }
+  ]
+}

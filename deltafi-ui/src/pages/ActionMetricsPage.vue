@@ -6,36 +6,43 @@
         <Dropdown v-model="timeRange" :options="timeRanges" option-label="name" placeholder="Time Range" class="deltafi-input-field ml-3" @change="timeRangeChange" />
       </div>
     </PageHeader>
-    <div v-show="layout.grouped" class="row pr-2 pl-2">
-      <div v-if="!loaded" class="col-12">
-        <ProgressBar mode="indeterminate" style="height: 0.5em" />
+    <span v-if="hasErrors">
+      <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
+    </span>
+    <div v-else-if="actionMetrics">
+      <div v-show="layout.grouped" class="row pr-2 pl-2">
+        <div v-if="!loaded" class="col-12">
+          <ProgressBar mode="indeterminate" style="height: 0.5em" />
+        </div>
+        <!-- Left Column -->
+        <div :class="layout.class">
+          <span v-for="family in leftColumnActionFamilies" :key="family">
+            <ActionMetricsTable v-if="hasActions(family)" :family="family" :actions="actionMetricsByFamily(family)" :loading="loadingActionMetrics" class="mb-3" />
+          </span>
+        </div>
+        <!-- Right Column -->
+        <div :class="layout.class">
+          <span v-for="family in rightColumnActionFamilies" :key="family">
+            <ActionMetricsTable v-if="hasActions(family)" :family="family" :actions="actionMetricsByFamily(family)" :loading="loadingActionMetrics" class="mb-3" />
+          </span>
+        </div>
       </div>
-      <!-- Left Column -->
-      <div :class="layout.class">
-        <span v-for="family in leftColumnActionFamilies" :key="family">
-          <ActionMetricsTable v-if="hasActions(family)" :family="family" :actions="actionMetricsByFamily(family)" :loading="loadingActionMetrics" class="mb-3" />
-        </span>
-      </div>
-      <!-- Right Column -->
-      <div :class="layout.class">
-        <span v-for="family in rightColumnActionFamilies" :key="family">
-          <ActionMetricsTable v-if="hasActions(family)" :family="family" :actions="actionMetricsByFamily(family)" :loading="loadingActionMetrics" class="mb-3" />
-        </span>
+      <!-- Ungrouped -->
+      <div v-show="!layout.grouped" class="row pr-2 pl-2">
+        <div :class="layout.class">
+          <span>
+            <ActionMetricsTable family="All" :actions="actionMetricsUngrouped" :loading="loadingActionMetrics" class="mb-3" />
+          </span>
+        </div>
       </div>
     </div>
-    <!-- Ungrouped -->
-    <div v-show="!layout.grouped" class="row pr-2 pl-2">
-      <div :class="layout.class">
-        <span>
-          <ActionMetricsTable family="All" :actions="actionMetricsUngrouped" :loading="loadingActionMetrics" class="mb-3" />
-        </span>
-      </div>
-    </div>
+    <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
   </div>
 </template>
 
 <script setup>
 import Dropdown from "primevue/dropdown";
+import Message from "primevue/message";
 import ProgressBar from "primevue/progressbar";
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -43,8 +50,7 @@ import useActionMetrics from "@/composables/useActionMetrics";
 import { ref, computed, onUnmounted, onMounted } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
-
-const { data: actionMetrics, loaded, fetch: getActionMetrics } = useActionMetrics();
+const { data: actionMetrics, loaded, fetch: getActionMetrics, errors } = useActionMetrics();
 const loadingActionMetrics = ref(true);
 const timeRanges = [
   { name: "Last 5 minutes", code: "5m" },
@@ -81,6 +87,9 @@ const actionMetricsUngrouped = computed(() => {
   return Object.keys(actionMetrics.value).reduce((result, family) => {
     return Object.assign(result, actionMetrics.value[family]);
   }, {});
+});
+const hasErrors = computed(() => {
+  return errors.value.length > 0;
 });
 let autoRefresh = null;
 onUnmounted(() => {

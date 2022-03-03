@@ -10,26 +10,24 @@ export default function useFlows() {
 
   const buildQuery = (configType: EnumType) => {
     return {
-      query: {
-        deltaFiConfigs: {
-          __args: {
-            configQuery: {
-              configType: configType
-            }
-          },
-          name: true
-        }
+      deltaFiConfigs: {
+        __args: {
+          configQuery: {
+            configType: configType
+          }
+        },
+        name: true
       }
     };
   };
 
   const fetchIngressFlows = async () => {
-    await queryGraphQL(buildQuery(new EnumType('INGRESS_FLOW')));
+    await queryGraphQL(buildQuery(new EnumType('INGRESS_FLOW')), "getIngressFlows");
     ingressFlows.value = _.sortBy(response.value.data.deltaFiConfigs, ["name"]);
   }
 
   const fetchEgressFlows = async () => {
-    await queryGraphQL(buildQuery(new EnumType('EGRESS_FLOW')));
+    await queryGraphQL(buildQuery(new EnumType('EGRESS_FLOW')), "getEgressFlows");
     egressFlows.value = _.sortBy(response.value.data.deltaFiConfigs, ["name"]);
   }
 

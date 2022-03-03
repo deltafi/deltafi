@@ -12,140 +12,129 @@ export default function useDeltaFilesQueryBuilder(): {
 
   const getDeltaFileSearchData = (startD: Date, endD: Date, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
     const query = {
-      query: {
-        deltaFiles: {
-          __args: {
-            offset: offSet,
-            limit: perPage,
-            filter: {
-              sourceInfo: {
-                flow: flowName,
-                filename: fileName
-              },
-              stage: stageName ? new EnumType(stageName) : null,
-              actions: actionName,
-              modifiedBefore: endD.toISOString(),
-              modifiedAfter: startD.toISOString()
-            },
-            orderBy: {
-              direction: new EnumType(sortDirection),
-              field: sortBy
-            }
-          },
-          offset: true,
-          count: true,
-          totalCount: true,
-          deltaFiles: {
-            did: true,
-            stage: true,
-            modified: true,
-            created: true,
+      deltaFiles: {
+        __args: {
+          offset: offSet,
+          limit: perPage,
+          filter: {
             sourceInfo: {
-              filename: true,
-              flow: true,
+              flow: flowName,
+              filename: fileName
             },
+            stage: stageName ? new EnumType(stageName) : null,
+            actions: actionName,
+            modifiedBefore: endD.toISOString(),
+            modifiedAfter: startD.toISOString()
+          },
+          orderBy: {
+            direction: new EnumType(sortDirection),
+            field: sortBy
           }
+        },
+        offset: true,
+        count: true,
+        totalCount: true,
+        deltaFiles: {
+          did: true,
+          stage: true,
+          modified: true,
+          created: true,
+          sourceInfo: {
+            filename: true,
+            flow: true,
+          },
         }
       }
     };
-    return sendGraphQLQuery(query);
+    return sendGraphQLQuery(query, "getDeltaFileSearchData");
   }
 
   const getRecordCount = (startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
     const query = {
-      query: {
-        deltaFiles: {
-          __args: {
-            offset: 0,
-            limit: 0,
-            filter: {
-              sourceInfo: {
-                flow: flowName,
-                filename: fileName
-              },
-              stage: stageName ? new EnumType(stageName) : null,
-              actions: actionName,
-              modifiedBefore: endD.toISOString(),
-              modifiedAfter: startD.toISOString()
+      deltaFiles: {
+        __args: {
+          offset: 0,
+          limit: 0,
+          filter: {
+            sourceInfo: {
+              flow: flowName,
+              filename: fileName
             },
-            orderBy: {
-              direction: new EnumType('DESC'),
-              field: 'modified'
-            }
+            stage: stageName ? new EnumType(stageName) : null,
+            actions: actionName,
+            modifiedBefore: endD.toISOString(),
+            modifiedAfter: startD.toISOString()
           },
-          totalCount: true,
-        }
+          orderBy: {
+            direction: new EnumType('DESC'),
+            field: 'modified'
+          }
+        },
+        totalCount: true,
       }
     }
-    return sendGraphQLQuery(query);
+    return sendGraphQLQuery(query, "getRecordCount");
   }
 
   const getDeltaFiFileNames = (startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
     const query = {
-      query: {
-        deltaFiles: {
-          __args: {
-            offset: 0,
-            limit: 10000,
-            filter: {
-              sourceInfo: {
-                flow: flowName,
-                filename: fileName
-              },
-              stage: stageName ? new EnumType(stageName) : null,
-              actions: actionName,
-              modifiedBefore: endD.toISOString(),
-              modifiedAfter: startD.toISOString()
-            },
-            orderBy: {
-              direction: new EnumType('DESC'),
-              field: 'modified'
-            }
-          },
-          deltaFiles: {
+      deltaFiles: {
+        __args: {
+          offset: 0,
+          limit: 10000,
+          filter: {
             sourceInfo: {
-              filename: true,
-            }
+              flow: flowName,
+              filename: fileName
+            },
+            stage: stageName ? new EnumType(stageName) : null,
+            actions: actionName,
+            modifiedBefore: endD.toISOString(),
+            modifiedAfter: startD.toISOString()
+          },
+          orderBy: {
+            direction: new EnumType('DESC'),
+            field: 'modified'
+          }
+        },
+        deltaFiles: {
+          sourceInfo: {
+            filename: true,
           }
         }
       }
     };
-    return sendGraphQLQuery(query);
+    return sendGraphQLQuery(query, "getDeltaFiFileNames");
   };
 
   const getEnumValuesByEnumType = (enumType: string) => {
-    const query = JSON.stringify({
-      query: `{
+    const query = `
       __type(name: "${enumType}") {
         enumValues {
           name
         }
-      }
-    }`,
-    });
-    return sendGraphQLQuery(query);
+      }`
+    return sendGraphQLQuery(query, "getEnumValuesByEnumType");
   };
 
   const getConfigByType = (typeParam: string) => {
     const query = {
-      query: {
-        deltaFiConfigs: {
-          __args: {
-            configQuery: {
-              configType: new EnumType(typeParam)
-            }
-          },
-          name: true
-        }
+      deltaFiConfigs: {
+        __args: {
+          configQuery: {
+            configType: new EnumType(typeParam)
+          }
+        },
+        name: true
       }
     }
-    return sendGraphQLQuery(query);
+    return sendGraphQLQuery(query, "getConfigByType");
   }
 
 
-  const sendGraphQLQuery = async (query: any) => {
+  const sendGraphQLQuery = async (query: any, operationName: string) => {
     try {
-      await queryGraphQL(query);
+      await queryGraphQL(query, operationName);
       //console.log(response.value);
       return response.value;
     } catch {

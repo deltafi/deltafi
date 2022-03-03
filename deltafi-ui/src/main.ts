@@ -19,6 +19,14 @@ import 'primeicons/primeicons.css';
 import "@fortawesome/fontawesome-free/css/all.css";
 import "@/styles/global.scss";
 
+if (process.env.NODE_ENV === 'development') {
+  const responseType = process.env.VUE_APP_MOCK_RESPONSES ? process.env.VUE_APP_MOCK_RESPONSES : "";
+  if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
+    const { worker } = require('./mocks/browser.ts')
+    worker.start()
+  };
+}
+
 const app = createApp(App)
 app.use(router)
 app.use(PrimeVue)

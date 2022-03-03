@@ -2,7 +2,7 @@
   <div class="system-metrics">
     <PageHeader heading="System Metrics" />
     <CollapsiblePanel header="Nodes" class="table-panel">
-      <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="!loaded">
+      <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading">
         <template #empty>No System Metrics available</template>
         <template #loading>Loading System Metrics Data. Please wait.</template>
         <Column class="expander-column" :expander="true" />
@@ -57,12 +57,13 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { ref, onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
 const { formattedBytes } = useUtilFunctions();
 const refreshInterval = 5000; // 5 seconds
 const expandedRows = ref([]);
-const { data: nodes, loaded, fetch: fetchSystemMetrics } = useSystemMetrics();
+const { data: nodes, loaded, loading, fetch: fetchSystemMetrics } = useSystemMetrics();
+const showLoading = computed(() => !loaded.value && loading.value);
 
 let autoRefresh = null;
 

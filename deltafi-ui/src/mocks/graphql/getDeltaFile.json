@@ -1,0 +1,167 @@
+{
+  "deltaFile": {
+    "did": "27186720-723a-4f82-a5ab-2fff441b2c9b",
+    "sourceInfo": {
+      "filename": "fakeData.txt",
+      "flow": "smoke.ingressFlow",
+      "metadata": [
+        {
+          "key": "123",
+          "value": "456"
+        },
+        {
+          "key": "foo",
+          "value": "bar"
+        },
+        {
+          "key": "abc",
+          "value": "xyz"
+        }
+      ]
+    },
+    "stage": "ERROR",
+    "created": "2022-03-03T19:23:20.823Z",
+    "modified": "2022-03-03T19:23:20.888Z",
+    "actions": [
+      {
+        "name": "IngressAction",
+        "state": "COMPLETE",
+        "created": "2022-03-03T19:23:20.823Z",
+        "modified": "2022-03-03T19:23:20.835Z",
+        "errorCause": null,
+        "errorContext": null
+      },
+      {
+        "name": "SmokeTransformAction",
+        "state": "COMPLETE",
+        "created": "2022-03-03T19:23:20.835Z",
+        "modified": "2022-03-03T19:23:20.841Z",
+        "errorCause": null,
+        "errorContext": null
+      },
+      {
+        "name": "SmokeLoadAction",
+        "state": "COMPLETE",
+        "created": "2022-03-03T19:23:20.841Z",
+        "modified": "2022-03-03T19:23:20.847Z",
+        "errorCause": null,
+        "errorContext": null
+      },
+      {
+        "name": "SmokeEnrichAction",
+        "state": "COMPLETE",
+        "created": "2022-03-03T19:23:20.847Z",
+        "modified": "2022-03-03T19:23:20.852Z",
+        "errorCause": null,
+        "errorContext": null
+      },
+      {
+        "name": "SmokeFormatAction",
+        "state": "COMPLETE",
+        "created": "2022-03-03T19:23:20.852Z",
+        "modified": "2022-03-03T19:23:20.858Z",
+        "errorCause": null,
+        "errorContext": null
+      },
+      {
+        "name": "SmokeValidateAction",
+        "state": "COMPLETE",
+        "created": "2022-03-03T19:23:20.858Z",
+        "modified": "2022-03-03T19:23:20.865Z",
+        "errorCause": null,
+        "errorContext": null
+      },
+      {
+        "name": "SmokeEgressAction",
+        "state": "ERROR",
+        "created": "2022-03-03T19:23:20.865Z",
+        "modified": "2022-03-03T19:23:20.888Z",
+        "errorCause": "Something went wrong",
+        "errorContext": "More details"
+      }
+    ],
+    "domains": [
+      {
+        "name": "binary",
+        "value": null,
+        "mediaType": "text/plain"
+      }
+    ],
+    "enrichment": [
+      {
+        "name": "smokeEnrichment",
+        "value": "smoke enrichment value",
+        "mediaType": "text/plain"
+      }
+    ],
+    "formattedData": [
+      {
+        "filename": "textdata1.txt",
+        "metadata": [
+          {
+            "key": "sourceInfo.123",
+            "value": "456"
+          },
+          {
+            "key": "sourceInfo.foo",
+            "value": "bar"
+          },
+          {
+            "key": "sourceInfo.abc",
+            "value": "xyz"
+          }
+        ],
+        "formatAction": "SmokeFormatAction",
+        "egressActions": [
+          "SmokeEgressAction"
+        ],
+        "contentReference": {
+          "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+          "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+          "offset": 0,
+          "size": 24,
+          "mediaType": "application/x-www-form-urlencoded"
+        }
+      }
+    ],
+    "protocolStack": [
+      {
+        "action": "IngressAction",
+        "metadata": null,
+        "contentReference": {
+          "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+          "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+          "offset": 0,
+          "size": 24,
+          "mediaType": "application/x-www-form-urlencoded"
+        }
+      },
+      {
+        "action": "SmokeTransformAction",
+        "metadata": [],
+        "contentReference": {
+          "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+          "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+          "offset": 0,
+          "size": 24,
+          "mediaType": "application/x-www-form-urlencoded"
+        }
+      },
+      {
+        "action": "SmokeLoadAction",
+        "metadata": [],
+        "contentReference": {
+          "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+          "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+          "offset": 0,
+          "size": 24,
+          "mediaType": "application/x-www-form-urlencoded"
+        }
+      }
+    ],
+    "markedForDelete": null,
+    "markedForDeleteReason": null,
+    "errorAcknowledged": null,
+    "errorAcknowledgedReason": null
+  }
+}

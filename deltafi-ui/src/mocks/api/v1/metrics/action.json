@@ -1,0 +1,70 @@
+{
+  "actions": {
+    "ingress": {
+      "IngressAction": {
+        "bytes_in": 124812.0,
+        "files_in": 3467.0
+      }
+    },
+    "egress": {
+      "Stix1_xEgressAction": {},
+      "Stix2_1EgressAction": {},
+      "SmokeEgressAction": {
+        "bytes_out": 124884.0,
+        "files_completed": 3469.0,
+        "files_in": 3469.0,
+        "files_out": 3469.0
+      },
+      "PassthroughEgressAction": {},
+      "ErrorEgressAction": {}
+    },
+    "format": {
+      "Stix1_xFormatAction": {},
+      "Stix2_1FormatAction": {},
+      "SmokeFormatAction": {
+        "files_completed": 3464.0,
+        "files_in": 3464.0
+      },
+      "PassthroughFormatAction": {},
+      "ErrorFormatAction": {}
+    },
+    "load": {
+      "Stix2_1LoadAction": {},
+      "SmokeLoadAction": {
+        "files_completed": 3464.0,
+        "files_in": 3464.0
+      },
+      "PassthroughLoadAction": {}
+    },
+    "transform": {
+      "Stix1_xTo2_1TransformAction": {},
+      "SmokeTransformAction": {
+        "files_completed": 3464.0,
+        "files_in": 3464.0
+      },
+      "PassthroughTransformAction": {}
+    },
+    "validate": {
+      "Stix1_xValidateAction": {},
+      "Stix2_1ValidateAction": {},
+      "SmokeValidateAction": {
+        "files_completed": 3464.0,
+        "files_in": 3464.0
+      },
+      "PassthroughValidateAction": {}
+    },
+    "enrich": {
+      "SmokeEnrichAction": {
+        "files_completed": 3464.0,
+        "files_in": 3464.0
+      }
+    },
+    "delete": {
+      "DeleteAction": {
+        "files_completed": 3443.0,
+        "files_in": 3443.0
+      }
+    }
+  },
+  "timestamp": "2022-03-01 21:36:43 +0000"
+}

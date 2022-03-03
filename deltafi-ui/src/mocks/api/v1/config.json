@@ -1,0 +1,47 @@
+{
+  "config": {
+    "ui": {
+      "domain": "dev.deltafi.org",
+      "title": "DeltaFi Local",
+      "securityBanner": {
+        "backgroundColor": "#A020F0",
+        "enabled": true,
+        "text": "Mocked Data",
+        "textColor": "#FFFFFF"
+      },
+      "externalLinks": [
+        {
+          "url": "https://gateway.dev.deltafi.org/",
+          "name": "GraphQL Gateway",
+          "description": "GraphQL query interface"
+        },
+        {
+          "url": "https://kibana.dev.deltafi.org/app/dashboards#/view/cf08cb00-aeac-11eb-ac19-f330c8b60a55",
+          "name": "Kibana Dashboard",
+          "description": "Action logging and metrics visualization"
+        },
+        {
+          "url": "https://k8s.dev.deltafi.org/#/workloads?namespace=deltafi",
+          "name": "Kubernetes Dashboard",
+          "description": "Kubernetes admin interface"
+        },
+        {
+          "url": "https://minio.dev.deltafi.org/",
+          "name": "MinIO",
+          "description": "MinIO storage dashboard"
+        },
+        {
+          "url": "https://zipkin.dev.deltafi.org/zipkin/",
+          "name": "Zipkin",
+          "description": "DeltaFile tracing dashboard"
+        }
+      ],
+      "deltaFileLinks": [
+        {
+          "name": "HTTPBin",
+          "url": "https://httpbin.org/anything/example?did=${DID}"
+        }
+      ]
+    }
+  }
+}

@@ -10,11 +10,11 @@ export default function useGraphQL() {
   const loaded: Ref<Boolean> = ref(false);
   const errors: Ref<Array<string>> = ref([]);
 
-  const queryGraphQL = async (query: string | object) => {
+  const queryGraphQL = async (query: string | object, queryName: string, queryType: string = "query") => {
     if (typeof query === 'object') {
-      const queryString = jsonToGraphQLQuery(query, { pretty: false });
-      query = JSON.stringify({ query: queryString });
+      query = jsonToGraphQLQuery(query, { pretty: false });
     }
+    query = JSON.stringify({ "query": `${queryType} ${queryName} { ${query} }`, "operationName": queryName });
     loading.value = true;
     errors.value = [];
     try {

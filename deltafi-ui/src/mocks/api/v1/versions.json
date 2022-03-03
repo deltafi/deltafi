@@ -1,0 +1,156 @@
+{
+  "versions": [
+    {
+      "app": "deltafi-api",
+      "container": "deltafi-api",
+      "image": {
+        "name": "deltafi/deltafi-api",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-config-server",
+      "container": "deltafi-config-server",
+      "image": {
+        "name": "deltafi/deltafi-config-server",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-core-actions",
+      "container": "deltafi-core-actions",
+      "image": {
+        "name": "deltafi/deltafi-core-actions",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-core-domain",
+      "container": "deltafi-core-domain",
+      "image": {
+        "name": "deltafi/deltafi-core-domain",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-egress-sink",
+      "container": "deltafi-egress-sink",
+      "image": {
+        "name": "deltafi/deltafi-egress-sink",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-gateway",
+      "container": "deltafi-gateway",
+      "image": {
+        "name": "deltafi/deltafi-gateway",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-ingress",
+      "container": "deltafi-ingress",
+      "image": {
+        "name": "deltafi/deltafi-ingress",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-passthrough-actions",
+      "container": "deltafi-passthrough-actions",
+      "image": {
+        "name": "deltafi/deltafi-passthrough-actions",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-stix-actions",
+      "container": "stix-conversion-server",
+      "image": {
+        "name": "deltafi/stix-conversion-server",
+        "tag": "0.0.1"
+      }
+    },
+    {
+      "app": "deltafi-stix-actions",
+      "container": "deltafi-stix-actions",
+      "image": {
+        "name": "deltafi-stix/deltafi-stix-actions",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "deltafi-ui",
+      "container": "deltafi-ui",
+      "image": {
+        "name": "deltafi-ui/deltafi-ui",
+        "tag": "1.0.0"
+      }
+    },
+    {
+      "app": "elasticsearch-master",
+      "container": "elasticsearch",
+      "image": {
+        "name": "docker.elastic.co/elasticsearch/elasticsearch",
+        "tag": "7.16.2"
+      }
+    },
+    {
+      "app": "fluentd",
+      "container": "fluentd",
+      "image": {
+        "name": "fluent/fluentd-kubernetes-daemonset",
+        "tag": "v1.12.0-debian-elasticsearch7-1.0"
+      }
+    },
+    {
+      "app": "kibana",
+      "container": "kibana",
+      "image": {
+        "name": "docker.elastic.co/kibana/kibana",
+        "tag": "7.16.2"
+      }
+    },
+    {
+      "app": "kubernetes-dashboard",
+      "container": "kubernetes-dashboard",
+      "image": {
+        "name": "kubernetesui/dashboard",
+        "tag": "v2.3.0"
+      }
+    },
+    {
+      "app": "minio",
+      "container": "minio",
+      "image": {
+        "name": "minio/minio",
+        "tag": "RELEASE.2021-02-14T04-01-33Z"
+      }
+    },
+    {
+      "app": "mongodb",
+      "container": "mongodb",
+      "image": {
+        "name": "docker.io/bitnami/mongodb",
+        "tag": "4.4.5-debian-10-r0"
+      }
+    },
+    {
+      "app": "redis",
+      "container": "redis",
+      "image": {
+        "name": "docker.io/bitnami/redis",
+        "tag": "6.2.4-debian-10-r13"
+      }
+    },
+    {
+      "app": "zipkin",
+      "container": "zipkin-collector",
+      "image": {
+        "name": "openzipkin/zipkin-slim",
+        "tag": "2.23.15"
+      }
+    }
+  ]
+}

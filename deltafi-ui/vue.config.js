@@ -33,5 +33,11 @@ module.exports = {
       },
       ...config.module.rules
     ]
+  },
+  chainWebpack: (config) => {
+    config.plugin("copy").tap(([options]) => {
+      options[0].ignore.push("mockServiceWorker.js");
+      return [options];
+    });
   }
 }

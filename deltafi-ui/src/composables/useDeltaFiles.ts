@@ -8,82 +8,80 @@ export default function useDeltaFiles() {
 
   const buildGetDeltaFileQuery = (did: string) => {
     return {
-      query: {
-        deltaFile: {
-          __args: {
-            did: did,
+      deltaFile: {
+        __args: {
+          did: did,
+        },
+        did: true,
+        sourceInfo: {
+          filename: true,
+          flow: true,
+          metadata: {
+            key: true,
+            value: true,
           },
-          did: true,
-          sourceInfo: {
-            filename: true,
-            flow: true,
-            metadata: {
-              key: true,
-              value: true,
-            },
-          },
-          stage: true,
+        },
+        stage: true,
+        created: true,
+        modified: true,
+        actions: {
+          name: true,
+          state: true,
           created: true,
           modified: true,
-          actions: {
-            name: true,
-            state: true,
-            created: true,
-            modified: true,
-            errorCause: true,
-            errorContext: true,
-          },
-          domains: {
-            name: true,
+          errorCause: true,
+          errorContext: true,
+        },
+        domains: {
+          name: true,
+          value: true,
+          mediaType: true,
+        },
+        enrichment: {
+          name: true,
+          value: true,
+          mediaType: true,
+        },
+        formattedData: {
+          filename: true,
+          metadata: {
+            key: true,
             value: true,
+          },
+          formatAction: true,
+          egressActions: true,
+          contentReference: {
+            did: true,
+            uuid: true,
+            offset: true,
+            size: true,
             mediaType: true,
           },
-          enrichment: {
-            name: true,
+        },
+        protocolStack: {
+          action: true,
+          metadata: {
+            key: true,
             value: true,
+          },
+          contentReference: {
+            did: true,
+            uuid: true,
+            offset: true,
+            size: true,
             mediaType: true,
           },
-          formattedData: {
-            filename: true,
-            metadata: {
-              key: true,
-              value: true,
-            },
-            formatAction: true,
-            egressActions: true,
-            contentReference: {
-              did: true,
-              uuid: true,
-              offset: true,
-              size: true,
-              mediaType: true,
-            },
-          },
-          protocolStack: {
-            action: true,
-            metadata: {
-              key: true,
-              value: true,
-            },
-            contentReference: {
-              did: true,
-              uuid: true,
-              offset: true,
-              size: true,
-              mediaType: true,
-            },
-          },
-          markedForDelete: true,
-          markedForDeleteReason: true,
-          errorAcknowledged: true,
-          errorAcknowledgedReason: true,
-        }
+        },
+        markedForDelete: true,
+        markedForDeleteReason: true,
+        errorAcknowledged: true,
+        errorAcknowledgedReason: true,
       }
     }
   };
 
   const getDeltaFile = async (did: string) => {
-    await queryGraphQL(buildGetDeltaFileQuery(did));
+    await queryGraphQL(buildGetDeltaFileQuery(did), "getDeltaFile");
     Object.assign(data, response.value.data.deltaFile)
     loaded.value = true;
   }

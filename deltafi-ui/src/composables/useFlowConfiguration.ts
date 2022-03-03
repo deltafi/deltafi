@@ -6,14 +6,12 @@ export default function useFlowConfiguration() {
   const data = ref(null);
 
   const query = {
-    query: {
-      exportConfigAsYaml: true
-    }
+    exportConfigAsYaml: true
   }
 
   const fetch = async () => {
     try {
-      await queryGraphQL(query);
+      await queryGraphQL(query, "exportConfigAsYaml");
       data.value = response.value.data.exportConfigAsYaml;
     } catch {
       // Continue regardless of error

@@ -23,20 +23,18 @@ export default function useErrorCount(): {
 
   const buildQuery = async (since: Date = new Date(0)) => {
     const query = {
-      query: {
-        deltaFiles: {
-          __args: {
-            filter: {
-              stage: new EnumType('ERROR'),
-              errorAcknowledged: false,
-              modifiedAfter: since.toISOString()
-            },
+      deltaFiles: {
+        __args: {
+          filter: {
+            stage: new EnumType('ERROR'),
+            errorAcknowledged: false,
+            modifiedAfter: since.toISOString()
           },
-          totalCount: true,
-        }
+        },
+        totalCount: true,
       }
     };
-    await queryGraphQL(query);
+    await queryGraphQL(query, "getErrorCount");
     return response.value.data.deltaFiles.totalCount;
   }
 
