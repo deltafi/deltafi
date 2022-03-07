@@ -5,6 +5,7 @@ metadata:
 data:
   domain: {{ .Values.ingress.domain }}
   title: {{ default "DeltaFi" .Values.deltafi.ui.title }}
+  useUTC: {{ default "false" .Values.deltafi.ui.useUTC | quote }}
   deltaFileLinks: |-
     ---
 {{ if .Values.deltafi.ui.deltaFileLinks -}}

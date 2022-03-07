@@ -15,6 +15,7 @@ module Deltafi
             return {
               domain: ui_config.domain,
               title: ui_config.title,
+              useUTC: ui_config.useUTC == 'true',
               securityBanner: YAML.safe_load(ui_config.securityBanner) || { enabled: false },
               externalLinks: YAML.safe_load(ui_config.externalLinks) || [],
               deltaFileLinks: YAML.safe_load(ui_config.deltaFileLinks) || []
