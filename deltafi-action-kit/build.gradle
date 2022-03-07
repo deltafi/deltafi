@@ -1,4 +1,5 @@
 plugins {
+    id 'io.quarkus'
     id 'org.kordamp.gradle.jandex' version '0.11.0'
 }
 
@@ -48,6 +49,8 @@ dependencies {
     testImplementation 'io.rest-assured:rest-assured'
     testImplementation 'org.mockito:mockito-junit-jupiter'
     testImplementation 'org.mockito:mockito-inline'
+    implementation 'org.mock-server:mockserver-netty:5.12.0'
+    implementation 'org.mock-server:mockserver-junit-jupiter:5.12.0'
 }
 
 compileTestJava.dependsOn jandex

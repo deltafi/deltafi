@@ -4,7 +4,6 @@ import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.RequestExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import io.quarkus.arc.profile.IfBuildProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.DgsPostException;
 
@@ -14,7 +13,6 @@ import java.util.Collections;
 
 @ApplicationScoped
 @Slf4j
-@IfBuildProfile("prod")
 public class HttpDomainGatewayService implements DomainGatewayService{
 
     @Inject

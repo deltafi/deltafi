@@ -7,6 +7,12 @@
 
     helm uninstall deltafi -n deltafi
 
+### Setup SSL in deltafi-core-actions
+
+1. Create a secret holding the keyStore and trustStore. By default, the deltafi-core-actions will look for a secret named `keystore-secret`, and the action-kit will look for `/etc/pki/keyStore.p12` and `/etc/pki/trustStore.jks`.
+   1. `kubectl create secret generic keystore-secret --from-file=keyStore.p12 --from-file=trustStore.jks`
+1. Create a secret holding the passwords for the keyStore and trustStore. By default, the deltafi-core-actions deployment will look for a secret named `keystore-password-secret`. The key names are used as the environment variable name and must be KEYSTORE_PASSWORD and TRUSTSTORE_PASSWORD.
+   1. `kubectl create secret generic keystore-password-secret --from-literal=KEYSTORE_PASSWORD=somevalue --from-literal=TRUSTSTORE_PASSWORD=somevalue`
 
 ### Add External Properties to the Config Server
 

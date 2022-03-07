@@ -34,8 +34,21 @@ spec:
         env:
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        envFrom:
+        - secretRef:
+            name: {{ .Values.deltafi.core_actions.keyStorePasswordSecret }}
+            optional: true
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
+        volumeMounts:
+          - mountPath: {{ .Values.deltafi.core_actions.keyStoreMountPath }}
+            name: keystore
+            readOnly: true
+      volumes:
+        - name: keystore
+          secret:
+            secretName: {{ .Values.deltafi.core_actions.keyStoreSecret }}
+            optional: true
       imagePullSecrets:
       - name: docker-secret

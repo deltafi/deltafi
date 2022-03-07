@@ -20,4 +20,6 @@ public interface ActionKitConfig {
     long actionRegistrationPeriodMs();
 
     Optional<String> hostname();
+
+    Optional<SslConfig> ssl();
 }

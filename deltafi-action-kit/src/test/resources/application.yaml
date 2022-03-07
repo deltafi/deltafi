@@ -1,0 +1,28 @@
+quarkus:
+  http:
+    test-port: 0
+  spring-cloud-config:
+    enabled: false
+
+actions:
+  ssl:
+    key-store: src/test/resources/mockKeystore.p12
+    key-store-type: PKCS12
+    key-store-password: password
+    trust-store: src/test/resources/mockTrustStore.jks
+    trust-store-password: storePassword
+    trust-store-type: JKS
+    protocol: TLSv1.2
+
+
+# placeholders so @QuarkusTests can run
+minio:
+  url: minio
+  secret-key: empty
+  access-key: empty
+graphql:
+  urls:
+    gateway: gateway
+    core-domain: core-domain
+redis:
+  url: redis
