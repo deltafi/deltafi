@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <span>
     <Tag v-tooltip.left="'Click for more info'" class="p-mr-3 mr-3 status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" @click="openStatusDialog()" />
     <Dialog v-model:visible="showStatusDialog" icon header="System Status" :style="{ width: '50vw' }" :maximizable="true" :modal="true" position :dismissable-mask="true">
       <span v-for="check in status.checks" :key="check.description">
@@ -9,10 +9,13 @@
         </div>
       </span>
       <template #footer>
-        <small v-if="status.timestamp" class="text-muted">Last Updated: {{ status.timestamp }}</small>
+        <small v-if="status.timestamp" class="text-muted">
+          Last Updated:
+          <Timestamp :timestamp="status.timestamp" />
+        </small>
       </template>
     </Dialog>
-  </div>
+  </span>
 </template>
 
 <script setup>
@@ -21,6 +24,7 @@ import MarkdownIt from "markdown-it";
 import Dialog from "primevue/dialog";
 import Tag from "primevue/tag";
 import Message from "primevue/message";
+import Timestamp from "@/components/Timestamp.vue";
 import { ref, watch } from "vue";
 
 const status = ref({

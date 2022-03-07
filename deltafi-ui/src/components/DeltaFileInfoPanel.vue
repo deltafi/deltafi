@@ -6,7 +6,10 @@
           <dl>
             <dt>{{ key }}</dt>
             <dd :class="{ monospace: key === 'DID' }">
-              {{ value }}
+              <span v-if="['Modified', 'Created'].includes(key)">
+                <Timestamp :timestamp="value" />
+              </span>
+              <span v-else>{{ value }}</span>
               <span v-if="key === 'Stage'">
                 <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" />
               </span>
@@ -23,6 +26,7 @@ import { computed, reactive, defineProps } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
+import Timestamp from "@/components/Timestamp.vue";
 
 const props = defineProps({
   deltaFileData: {

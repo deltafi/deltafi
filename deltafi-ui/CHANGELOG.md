@@ -5,12 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Clock to top right (#112)
+- Ability to mock service calls. (#90)
+
 ### Changed
 - Better handling of long filenames throughout the UI. (#109)
 - When viewing stale data on the Errors page, the refresh button now changes color. (#105)
   - Stale data Toast message also removed
 - When retrying errors on the Errors page, the table is now refreshed. (#108)
-- Added ability to mock service calls. (#90)
+- Normalized timestamps through the app. (#112)
+- Search page timestamps now match the selected timezone. (#111)
 
 ## [0.18.1]
 

@@ -4,11 +4,15 @@
       <div class="error-row">
         <div class="error-col">
           <strong>Action Created</strong>
-          <p>{{ action.created }}</p>
+          <p>
+            <Timestamp :timestamp="action.created" />
+          </p>
         </div>
         <div class="error-col">
           <strong>Action Modified</strong>
-          <p>{{ action.modified }}</p>
+          <p>
+            <Timestamp :timestamp="action.modified" />
+          </p>
         </div>
         <div class="error-col">
           <strong>Action State</strong>
@@ -35,6 +39,7 @@
 import Dialog from "primevue/dialog";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import { computed, defineProps } from "vue";
+import Timestamp from "@/components/Timestamp.vue";
 
 const props = defineProps({
   action: {

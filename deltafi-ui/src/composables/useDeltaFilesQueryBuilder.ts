@@ -2,15 +2,16 @@ import { EnumType } from 'json-to-graphql-query';
 import useGraphQL from './useGraphQL'
 
 export default function useDeltaFilesQueryBuilder(): {
-  getDeltaFileSearchData: (startD: Date, endD: Date, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
-  getRecordCount: (startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
-  getDeltaFiFileNames: (startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
+  getDeltaFileSearchData: (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
+  getRecordCount: (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
+  getDeltaFiFileNames: (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
   getEnumValuesByEnumType: (enumType: string) => any;
   getConfigByType: (typeParam: string) => any;
 } {
-  const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
+  const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startD: Date, endD: Date, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
+    console.log(startDateISOString)
     const query = {
       deltaFiles: {
         __args: {
@@ -23,8 +24,8 @@ export default function useDeltaFilesQueryBuilder(): {
             },
             stage: stageName ? new EnumType(stageName) : null,
             actions: actionName,
-            modifiedBefore: endD.toISOString(),
-            modifiedAfter: startD.toISOString()
+            modifiedAfter: startDateISOString,
+            modifiedBefore: endDateISOString
           },
           orderBy: {
             direction: new EnumType(sortDirection),
@@ -49,7 +50,7 @@ export default function useDeltaFilesQueryBuilder(): {
     return sendGraphQLQuery(query, "getDeltaFileSearchData");
   }
 
-  const getRecordCount = (startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
+  const getRecordCount = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -62,8 +63,8 @@ export default function useDeltaFilesQueryBuilder(): {
             },
             stage: stageName ? new EnumType(stageName) : null,
             actions: actionName,
-            modifiedBefore: endD.toISOString(),
-            modifiedAfter: startD.toISOString()
+            modifiedAfter: startDateISOString,
+            modifiedBefore: endDateISOString
           },
           orderBy: {
             direction: new EnumType('DESC'),
@@ -76,7 +77,7 @@ export default function useDeltaFilesQueryBuilder(): {
     return sendGraphQLQuery(query, "getRecordCount");
   }
 
-  const getDeltaFiFileNames = (startD: Date, endD: Date, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
+  const getDeltaFiFileNames = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -89,8 +90,8 @@ export default function useDeltaFilesQueryBuilder(): {
             },
             stage: stageName ? new EnumType(stageName) : null,
             actions: actionName,
-            modifiedBefore: endD.toISOString(),
-            modifiedAfter: startD.toISOString()
+            modifiedAfter: startDateISOString,
+            modifiedBefore: endDateISOString
           },
           orderBy: {
             direction: new EnumType('DESC'),

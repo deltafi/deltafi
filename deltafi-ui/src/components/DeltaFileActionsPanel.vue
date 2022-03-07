@@ -4,8 +4,16 @@
       <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions" :row-class="rowClass" @row-click="rowClick">
         <Column field="name" header="Action" :sortable="true" />
         <Column field="state" header="State" class="state-column" :sortable="true" />
-        <Column field="created" header="Created" class="timestamp-column" :sortable="true" />
-        <Column field="modified" header="Modified" class="timestamp-column" :sortable="true" />
+        <Column field="created" header="Created" class="timestamp-column" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.created" />
+          </template>
+        </Column>
+        <Column field="modified" header="Modified" class="timestamp-column" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.modified" />
+          </template>
+        </Column>
         <Column field="elapsed" header="Elapsed" class="elapsed-column" :sortable="true">
           <template #body="action">{{ action.data.elapsed }}</template>
         </Column>
@@ -44,6 +52,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ContentViewer from "@/components/ContentViewer.vue";
 import MetadataViewer from "@/components/MetadataViewer.vue";
 import ErrorViewer from "@/components/ErrorViewer.vue";
+import Timestamp from "@/components/Timestamp.vue";
 
 import useUtilFunctions from "@/composables/useUtilFunctions";
 

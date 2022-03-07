@@ -2,9 +2,7 @@
   <nav class="navbar navbar-dark bg-dark p-0 shadow">
     <div class="navbar-brand col mr-0 px-3">
       <div class="row">
-        <div class="col title">
-          {{ uiConfig.title }}
-        </div>
+        <div class="col title">{{ uiConfig.title }}</div>
         <div class="col text-right">
           <button v-tooltip.right="'Toggle sidebar menu'" class="navbar-toggler btn btn-sm" @click="toggleSidebar">
             <i :class="toggleSidebarIcon" />
@@ -12,11 +10,15 @@
         </div>
       </div>
     </div>
-    <StatusBadge />
+    <span>
+      <Clock class="mr-3" />
+      <StatusBadge />
+    </span>
   </nav>
 </template>
 
 <script setup>
+import Clock from "@/components/Clock";
 import StatusBadge from "@/components/StatusBadge";
 import useUiConfig from "@/composables/useUiConfig";
 import useSidebarToggle from "@/composables/useSidebarToggle";

@@ -20,6 +20,7 @@ export type State = {
       name: String,
       url: String
     }>
+    useUTC: Boolean
   }
 }
 
@@ -31,15 +32,17 @@ const state: State = reactive({
       enabled: false,
     },
     externalLinks: [],
-    deltaFileLinks: []
+    deltaFileLinks: [],
+    useUTC: false
   }
 })
 
 export default function useUiConfig(): {
-  uiConfig: ComputedRef<Object>
-  fetchUiConfig: () => void;
+  uiConfig: ComputedRef<Record<string, any>>
+  fetchUiConfig: () => void
+  setUiConfig: (uiConfig: Object) => Object;
 } {
-  const setUiConfig = ($uiConfig: Object) => {
+  const setUiConfig = ($uiConfig: Record<string, any>) => {
     Object.assign(state.uiConfig, $uiConfig);
     state.uiConfig.externalLinks.sort((a, b) => (a.name > b.name) ? 1 : -1);
     return (state.uiConfig);
@@ -58,5 +61,6 @@ export default function useUiConfig(): {
   return {
     uiConfig: computed(() => state.uiConfig),
     fetchUiConfig,
+    setUiConfig,
   };
 }

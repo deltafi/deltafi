@@ -30,7 +30,9 @@ import useNotifications from "@/composables/useNotifications";
 import useSidebarToggle from "@/composables/useSidebarToggle";
 import { computed, onBeforeMount, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { useTitle } from "@vueuse/core";
+import { usePrimeVue } from "primevue/config";
 
+const primevue = usePrimeVue();
 const route = useRoute();
 const title = useTitle("DeltaFi");
 const notify = useNotifications();
@@ -47,6 +49,7 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
+  primevue.config.locale.dateFormat = 'yy-mm-dd';
   await nextTick();
   window.addEventListener("resize", onResize);
 });

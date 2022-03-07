@@ -3,9 +3,10 @@
     <div>
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
-          <Calendar id="startDateTime" v-model="startTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
-          <span class="mt-1 ml-3">&mdash;</span>
-          <Calendar id="endDateTime" v-model="endTimeDate" selection-mode="single" :inline="false" :show-time="true" :manual-input="false" hour-format="12" input-class="deltafi-input-field ml-3" />
+          <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
+          <Calendar v-model="startTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field" @input="updateInputStartTime" />
+          <span class="mt-2 ml-2">&mdash;</span>
+          <Calendar v-model="endTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field ml-2" @input="updateInputEndTime" />
           <Button class="p-button-sm p-button p-button-outlined ml-3" @click="fetchDeltaFilesData()">Search</Button>
         </div>
       </PageHeader>
@@ -79,8 +80,16 @@
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
         <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
         <Column field="stage" header="Stage" :sortable="true" />
-        <Column field="created" header="Created" :sortable="true" />
-        <Column field="modified" header="Modified" :sortable="true" />
+        <Column field="created" header="Created" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.created" />
+          </template>
+        </Column>
+        <Column field="modified" header="Modified" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.modified" />
+          </template>
+        </Column>
         <Column field="elapsed" header="Elapsed" :sortable="false">
           <template #body="row">{{ row.data.elapsed }}</template>
         </Column>
@@ -90,6 +99,8 @@
 </template>
 
 <script setup>
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import Button from "primevue/button";
 import Calendar from "primevue/calendar";
 import Column from "primevue/column";
@@ -98,21 +109,28 @@ import Dropdown from "primevue/dropdown";
 import Menu from "primevue/menu";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import Timestamp from "@/components/Timestamp.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { ref, computed, watch, onMounted } from "vue";
+import useUiConfig from "@/composables/useUiConfig";
+import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
 
-const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
-const { duration } = useUtilFunctions();
-const optionMenu = ref();
+dayjs.extend(utc)
 
+const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
+const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
+const { uiConfig } = useUiConfig();
+const { convertLocalDateToUTC } = useUtilFunctions();
+
+const optionMenu = ref();
 const startTimeDate = ref(new Date());
 const endTimeDate = ref(new Date());
 startTimeDate.value.setHours(0, 0, 0, 0);
 endTimeDate.value.setHours(23, 59, 59, 999);
-
+const defaultStartTimeDate = startTimeDate.value;
+const defaultEndTimeDate = endTimeDate.value;
 const fileNameOptions = ref([]);
 const fileNameOptionSelected = ref(null);
 const actionTypeOptions = ref([]);
@@ -134,6 +152,15 @@ const offset = ref(0);
 const perPage = ref(10);
 const sortField = ref("modified");
 const sortDirection = ref("DESC");
+const timestampFormat = "YYYY-MM-DD HH:mm:ss";
+
+const startDateISOString = computed(() => {
+  return uiConfig.value.useUTC ? convertLocalDateToUTC(startTimeDate.value).toISOString() : startTimeDate.value.toISOString();
+})
+
+const endDateISOString = computed(() => {
+  return uiConfig.value.useUTC ? convertLocalDateToUTC(endTimeDate.value).toISOString() : endTimeDate.value.toISOString();
+})
 
 const items = ref([
   {
@@ -156,7 +183,7 @@ const items = ref([
 
 const fetchFileNames = async () => {
   let fileNameDataArray = [];
-  let fetchFileNames = await getDeltaFiFileNames(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  let fetchFileNames = await getDeltaFiFileNames(startDateISOString.value, endDateISOString.value, fileName.value, stageName.value, actionName.value, flowName.value);
   let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
   for (const deltaFiObject of deltaFilesObjectsArray) {
     fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });
@@ -185,6 +212,23 @@ watch(flowOptionSelected, () => {
 watch(stageOptionSelected, () => {
   fetchRecordCount();
 });
+
+const updateInputStartTime = async (e) => {
+  await nextTick();
+  if (dayjs(e.target.value.trim()).isValid()) {
+    startTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
+  } else {
+    startTimeDate.value = defaultStartTimeDate;
+  }
+}
+const updateInputEndTime = async (e) => {
+  await nextTick();
+  if (dayjs(e.target.value.trim()).isValid()) {
+    endTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
+  } else {
+    endTimeDate.value = defaultEndTimeDate;
+  }
+}
 
 onMounted(() => {
   getPersistedParams();
@@ -249,7 +293,7 @@ const fetchDeltaFilesData = async () => {
 
   loading.value = true;
   fetchRecordCount();
-  let data = await getDeltaFileSearchData(startTimeDate.value, endTimeDate.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value);
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
@@ -258,7 +302,7 @@ const fetchDeltaFilesData = async () => {
 const fetchRecordCount = async () => {
   setQueryParams();
 
-  let fetchRecordCount = await getRecordCount(startTimeDate.value, endTimeDate.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  let fetchRecordCount = await getRecordCount(startDateISOString.value, endDateISOString.value, fileName.value, stageName.value, actionName.value, flowName.value);
   recordCount.value = fetchRecordCount.data.deltaFiles.totalCount.toString();
 };
 

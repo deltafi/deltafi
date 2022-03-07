@@ -1,6 +1,15 @@
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import filesize from "filesize";
+import useUiConfig from "./useUiConfig";
+
+const { uiConfig } = useUiConfig();
+dayjs.extend(utc)
 
 export default function useUtilFunctions(): {
+  formatTimestamp: (date: any, format: string) => String | undefined;
+  shortTimezone: () => String | undefined;
+  convertLocalDateToUTC: (date: Date) => Date;
   formatContextData: (contextData: string) => string;
   formattedBytes: (bytes: number) => string;
   duration: (milliseconds: number, precision: number) => string;
@@ -54,7 +63,22 @@ export default function useUtilFunctions(): {
     return filesize(bytes || 0, { base: 10 });
   };
 
+  const convertLocalDateToUTC = (date: Date) => {
+    return new Date(date.getTime() + (-(date.getTimezoneOffset() * 60000)));
+  }
+
+  const shortTimezone = () => {
+    return uiConfig.value.useUTC ? 'UTC' : new Date().toLocaleString('en', { timeZoneName: 'short' }).split(' ').pop();
+  }
+
+  const formatTimestamp = (date: any, format: string) => {
+    return uiConfig.value.useUTC ? dayjs(date).utc().format(format) : dayjs(date).format(format);
+  }
+
   return {
+    formatTimestamp,
+    shortTimezone,
+    convertLocalDateToUTC,
     formatContextData,
     formattedBytes,
     duration,

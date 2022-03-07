@@ -28,8 +28,16 @@
         </Column>
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
         <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
-        <Column field="created" header="Created" :sortable="true" />
-        <Column field="modified" header="Modified" :sortable="true" />
+        <Column field="created" header="Created" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.created" />
+          </template>
+        </Column>
+        <Column field="modified" header="Modified" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.modified" />
+          </template>
+        </Column>
         <Column field="last_error_cause" header="Last Error">
           <template #body="error">{{ latestError(error.data.actions).errorCause }}</template>
         </Column>
@@ -41,8 +49,16 @@
             <DataTable responsive-layout="scroll" :value="error.data.actions" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column field="name" header="Action" />
               <Column field="state" header="State" />
-              <Column field="created" header="Created" />
-              <Column field="modified" header="Modified" />
+              <Column field="created" header="Created">
+                <template #body="row">
+                  <Timestamp :timestamp="row.data.created" />
+                </template>
+              </Column>
+              <Column field="modified" header="Modified">
+                <template #body="row">
+                  <Timestamp :timestamp="row.data.modified" />
+                </template>
+              </Column>
               <Column field="errorCause" header="Error Cause">
                 <template #body="action">
                   <span v-if="['ERROR', 'RETRIED'].includes(action.data.state) && action.data.errorCause !== null">{{ action.data.errorCause }}</span>
@@ -73,6 +89,7 @@ import ErrorViewer from "@/components/ErrorViewer.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import Timestamp from "@/components/Timestamp.vue";
 import useErrors from "@/composables/useErrors";
 import useErrorCount from "@/composables/useErrorCount";
 import useErrorRetry from "@/composables/useErrorRetry";
