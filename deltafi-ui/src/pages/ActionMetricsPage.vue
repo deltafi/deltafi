@@ -58,6 +58,10 @@ const timeRanges = [
   { name: "Last 30 minutes", code: "30m" },
   { name: "Last 1 hour", code: "1h" },
   { name: "Last 24 hours", code: "24h" },
+  { name: "Last 3 days", code: "3d" },
+  { name: "Last 5 days", code: "5d" },
+  { name: "Last 7 days", code: "7d" },
+  { name: "Last 14 days", code: "14d" },
 ];
 const timeRange = ref(timeRanges[0]);
 const layoutOptions = [

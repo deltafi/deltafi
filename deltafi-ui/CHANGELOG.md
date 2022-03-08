@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Clock to top right (#112)
 - Ability to mock service calls. (#90)
+- Expand Action Metrics timeframe dropdown. (#114)
 
 ### Changed
 - Better handling of long filenames throughout the UI. (#109)
