@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import useGraphQL from './useGraphQL'
 
 export default function usePropertySets() {
-  const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
+  const { response, queryGraphQL, loading, loaded, errors } = useGraphQL('config');
   const data = ref(null);
 
   const fetchQuery = {
