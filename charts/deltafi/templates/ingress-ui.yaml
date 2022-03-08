@@ -5,6 +5,7 @@ metadata:
   annotations:
   {{- include "authAnnotations" . | nindent 4 }}
     nginx.ingress.kubernetes.io/proxy-body-size: "{{ default 0 .Values.deltafi.ingress.envVar.HTTP_MAX_BODY_SIZE }}"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   {{- if eq .Values.ingress.tls.enabled true }}
   tls:
@@ -14,28 +15,35 @@ spec:
   - host: {{ .Values.ingress.domain }}
     http:
       paths:
-      - path: /
+      - path: /(.*)
         pathType: Prefix
         backend:
           service:
             name: deltafi-ui-service
             port:
               number: 80
-      - path: /api
+      - path: /(api.*)
         pathType: Prefix
         backend:
           service:
             name: deltafi-api-service
             port:
               number: 80
-      - path: /graphql
+      - path: /(graphql)-config
         pathType: Prefix
         backend:
           service:
-            name: deltafi-gateway-service
+            name: deltafi-config-server
             port:
               number: 80
-      - path: /deltafile/ingress
+      - path: /(graphql)-core-domain
+        pathType: Prefix
+        backend:
+          service:
+            name: deltafi-core-domain-service
+            port:
+              number: 80
+      - path: /(deltafile/ingress)
         pathType: Prefix
         backend:
           service:
