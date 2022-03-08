@@ -3,12 +3,11 @@
 </template>
 
 <script setup>
-import useUiConfig from "@/composables/useUiConfig";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineProps, toRef } from "vue";
+import { computed, defineProps, toRef, inject } from "vue";
 
 const { formatTimestamp } = useUtilFunctions();
-const { uiConfig } = useUiConfig();
+const uiConfig = inject('uiConfig');
 
 const props = defineProps({
   timestamp: {
@@ -26,7 +25,7 @@ const timestamp = toRef(props, 'timestamp');
 const format = toRef(props, 'format');
 
 const output = computed(() => {
-  let adjustFormat = (uiConfig.value.useUTC) ? format.value + '[Z]' : format.value
+  let adjustFormat = (uiConfig.useUTC) ? format.value + '[Z]' : format.value
   return formatTimestamp(timestamp.value, adjustFormat)
 });
 </script>

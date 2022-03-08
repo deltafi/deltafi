@@ -22,13 +22,12 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import PageHeader from "@/components/PageHeader.vue";
-import useUiConfig from "@/composables/useUiConfig";
-import { computed } from "vue";
+import { computed, inject } from "vue";
 
-const { uiConfig } = useUiConfig();
+const uiConfig = inject('uiConfig');
 
 const externalLinks = computed(() => {
-  return uiConfig.value.externalLinks;
+  return uiConfig.externalLinks;
 });
 </script>
 

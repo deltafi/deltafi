@@ -20,16 +20,16 @@
 <script setup>
 import Clock from "@/components/Clock";
 import StatusBadge from "@/components/StatusBadge";
-import useUiConfig from "@/composables/useUiConfig";
-import useSidebarToggle from "@/composables/useSidebarToggle";
-import { computed } from "vue";
+import { computed, inject } from "vue";
 
-const { uiConfig } = useUiConfig();
-const { sidebarHidden, toggleSidebarHidden: toggleSidebar } = useSidebarToggle();
+const uiConfig = inject('uiConfig');
+const sidebarHidden = inject('sidebarHidden');
 
 const toggleSidebarIcon = computed(() => {
   return sidebarHidden.value ? "pi pi-angle-double-right" : "pi pi-angle-double-left";
 });
+
+const toggleSidebar = () => sidebarHidden.value = !sidebarHidden.value
 </script>
 
 <style scoped lang="scss">

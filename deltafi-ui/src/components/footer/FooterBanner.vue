@@ -9,25 +9,24 @@
 </template>
 
 <script setup>
-import useUiConfig from "@/composables/useUiConfig";
-import { computed } from "vue";
+import { computed, inject } from "vue";
 
-const { uiConfig } = useUiConfig();
+const uiConfig = inject('uiConfig');
 
 const textColor = computed(() => {
-  return uiConfig.value.securityBanner.textColor;
+  return uiConfig.securityBanner.textColor;
 });
 
 const backgroundColor = computed(() => {
-  return uiConfig.value.securityBanner.backgroundColor;
+  return uiConfig.securityBanner.backgroundColor;
 });
 
 const bannerMessage = computed(() => {
-  return uiConfig.value.securityBanner.text;
+  return uiConfig.securityBanner.text;
 });
 
 const bannerEnabled = computed(() => {
-  return uiConfig.value.securityBanner.enabled;
+  return uiConfig.securityBanner.enabled;
 });
 </script>
 

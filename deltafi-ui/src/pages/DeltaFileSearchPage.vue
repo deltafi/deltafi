@@ -112,8 +112,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import useUiConfig from "@/composables/useUiConfig";
-import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick, inject } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
 
@@ -121,8 +120,9 @@ dayjs.extend(utc)
 
 const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
 const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
-const { uiConfig } = useUiConfig();
 const { convertLocalDateToUTC } = useUtilFunctions();
+
+const uiConfig = inject('uiConfig');
 
 const optionMenu = ref();
 const startTimeDate = ref(new Date());
@@ -155,11 +155,11 @@ const sortDirection = ref("DESC");
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 
 const startDateISOString = computed(() => {
-  return uiConfig.value.useUTC ? convertLocalDateToUTC(startTimeDate.value).toISOString() : startTimeDate.value.toISOString();
+  return uiConfig.useUTC ? convertLocalDateToUTC(startTimeDate.value).toISOString() : startTimeDate.value.toISOString();
 })
 
 const endDateISOString = computed(() => {
-  return uiConfig.value.useUTC ? convertLocalDateToUTC(endTimeDate.value).toISOString() : endTimeDate.value.toISOString();
+  return uiConfig.useUTC ? convertLocalDateToUTC(endTimeDate.value).toISOString() : endTimeDate.value.toISOString();
 })
 
 const items = ref([

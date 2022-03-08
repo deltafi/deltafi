@@ -36,7 +36,7 @@ const tooltip = computed(() => {
 
 const toggleUTC = () => {
   setUiConfig({
-    useUTC: !uiConfig.value.useUTC
+    useUTC: !uiConfig.useUTC
   })
 };
 

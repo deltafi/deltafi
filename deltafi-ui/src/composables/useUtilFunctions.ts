@@ -68,11 +68,11 @@ export default function useUtilFunctions(): {
   }
 
   const shortTimezone = () => {
-    return uiConfig.value.useUTC ? 'UTC' : new Date().toLocaleString('en', { timeZoneName: 'short' }).split(' ').pop();
+    return uiConfig.useUTC ? 'UTC' : new Date().toLocaleString('en', { timeZoneName: 'short' }).split(' ').pop();
   }
 
   const formatTimestamp = (date: any, format: string) => {
-    return uiConfig.value.useUTC ? dayjs(date).utc().format(format) : dayjs(date).format(format);
+    return uiConfig.useUTC ? dayjs(date).utc().format(format) : dayjs(date).format(format);
   }
 
   return {

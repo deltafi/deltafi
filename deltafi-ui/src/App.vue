@@ -27,8 +27,7 @@ import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
 import useServerSentEvents from "@/composables/useServerSentEvents";
 import useNotifications from "@/composables/useNotifications";
-import useSidebarToggle from "@/composables/useSidebarToggle";
-import { computed, onBeforeMount, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { computed, onBeforeMount, watch, nextTick, onMounted, onBeforeUnmount, provide, ref } from "vue";
 import { useTitle } from "@vueuse/core";
 import { usePrimeVue } from "primevue/config";
 
@@ -38,7 +37,9 @@ const title = useTitle("DeltaFi");
 const notify = useNotifications();
 const { serverSentEvents } = useServerSentEvents();
 const { uiConfig, fetchUiConfig } = useUiConfig();
-const { sidebarHidden, toggleSidebarHidden } = useSidebarToggle();
+
+const sidebarHidden = ref(false);
+provide('sidebarHidden', sidebarHidden);
 
 const sidebarClasses = computed(() => {
   return sidebarHidden.value ? "col sidebar hidden" : "col sidebar";
@@ -46,12 +47,14 @@ const sidebarClasses = computed(() => {
 
 onBeforeMount(() => {
   fetchUiConfig();
+  provide('uiConfig', uiConfig);
 });
 
 onMounted(async () => {
   primevue.config.locale.dateFormat = 'yy-mm-dd';
   await nextTick();
   window.addEventListener("resize", onResize);
+  onResize();
 });
 
 onBeforeUnmount(() => {
@@ -61,13 +64,13 @@ onBeforeUnmount(() => {
 const onResize = () => {
   var windowWidth = window.innerWidth;
 
-  if (!sidebarHidden.value && windowWidth < 768) {
-    toggleSidebarHidden();
+  if (!sidebarHidden.value && windowWidth < 1024) {
+    sidebarHidden.value = true
   }
 };
 
 const setPageTitle = () => {
-  title.value = [route.name, uiConfig.value.title].filter((n) => n).join(" - ");
+  title.value = [route.name, uiConfig.title].filter((n) => n).join(" - ");
 };
 
 watch(
@@ -77,7 +80,7 @@ watch(
   }
 );
 watch(
-  () => uiConfig.value.title,
+  () => uiConfig.title,
   () => {
     setPageTitle();
   }
@@ -86,7 +89,6 @@ watch(
 serverSentEvents.addEventListener('announcement', (event) => {
   notify.info("System Announcement", event.data, 0);
 });
-
 </script>
 
 <style scoped lang="scss">

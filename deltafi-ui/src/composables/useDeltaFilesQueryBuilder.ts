@@ -11,7 +11,6 @@ export default function useDeltaFilesQueryBuilder(): {
   const { response, queryGraphQL } = useGraphQL();
 
   const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
-    console.log(startDateISOString)
     const query = {
       deltaFiles: {
         __args: {
@@ -136,7 +135,6 @@ export default function useDeltaFilesQueryBuilder(): {
   const sendGraphQLQuery = async (query: any, operationName: string) => {
     try {
       await queryGraphQL(query, operationName);
-      //console.log(response.value);
       return response.value;
     } catch {
       // Continue regardless of error

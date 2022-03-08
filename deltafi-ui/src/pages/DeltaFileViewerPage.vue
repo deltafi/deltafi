@@ -62,12 +62,11 @@ import DeltaFileEnrichmentPanel from "@/components/DeltaFileEnrichmentPanel.vue"
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import useUiConfig from "@/composables/useUiConfig";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useErrorCount from "@/composables/useErrorCount";
 import useErrorRetry from "@/composables/useErrorRetry";
 import useNotifications from "@/composables/useNotifications";
-import { reactive, ref, computed, watch, onMounted } from "vue";
+import { reactive, ref, computed, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConfirm } from "primevue/useconfirm";
 
@@ -75,7 +74,7 @@ const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][
 const confirm = useConfirm();
 const route = useRoute();
 const router = useRouter();
-const { uiConfig } = useUiConfig();
+const uiConfig = inject('uiConfig');
 const { data: deltaFile, getDeltaFile, loaded, loading } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
 const { retry } = useErrorRetry();
@@ -142,7 +141,7 @@ const staticMenuItems = reactive([
 
 const menuItems = computed(() => {
   let items = staticMenuItems;
-  const customLinks = uiConfig.value.deltaFileLinks.map((link) => {
+  const customLinks = uiConfig.deltaFileLinks.map((link) => {
     return {
       label: link.name,
       icon: "fas fa-external-link-alt fa-fw",
@@ -260,7 +259,7 @@ const requestRetry = async () => {
 };
 
 const openZipkinURL = () => {
-  const zipkinURL = `https://zipkin.${uiConfig.value.domain}/zipkin/traces/${did.value.replaceAll("-", "")}`;
+  const zipkinURL = `https://zipkin.${uiConfig.domain}/zipkin/traces/${did.value.replaceAll("-", "")}`;
   window.open(zipkinURL, "_blank");
 };
 

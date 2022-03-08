@@ -44,17 +44,16 @@
 </template>
 
 <script setup>
-import useUiConfig from "@/composables/useUiConfig";
 import useErrorCount from "@/composables/useErrorCount";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, inject } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
-const { uiConfig } = useUiConfig();
 const { errorCount } = useErrorCount();
+const uiConfig = inject('uiConfig');
 
 const externalLinks = computed(() => {
-  return uiConfig.value.externalLinks.map((link) => {
+  return JSON.parse(JSON.stringify(uiConfig.externalLinks)).map((link) => {
     link.icon = "fas fa-external-link-alt fa-fw";
     return link;
   });
