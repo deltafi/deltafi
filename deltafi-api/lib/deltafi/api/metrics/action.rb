@@ -63,10 +63,10 @@ module Deltafi
             end
           end
 
-          def metrics_by_action_by_family(last: '5m')
-            results = action_names_by_family
+          def metrics_by_action_by_family(last: '5m', flow:)
+            results = flow.nil? ? action_names_by_family : Hash.new { |h, k| h[k] = {} }
 
-            counter_metrics(last: last).each do |family|
+            counter_metrics(last: last, flow: flow).each do |family|
               family_name = family['key']
               family['actions']['buckets'].map do |action|
                 action_name = action['key']
@@ -77,11 +77,11 @@ module Deltafi
                 end
               end
             end
-
             results
           end
 
-          def counter_metrics(last: '5m')
+          def counter_metrics(last: '5m', flow:)
+            flow_query = "{ \"term\" : { \"metric.tags.flow\": \"#{flow}\" } }," unless flow.nil?
             query = <<-QUERY
             {
               "size": 0,
@@ -92,7 +92,7 @@ module Deltafi
                       "term": {
                         "metric.type.keyword": "COUNTER"
                       }
-                    },
+                    },#{flow_query}
                     {
                       "range": {
                         "time": {

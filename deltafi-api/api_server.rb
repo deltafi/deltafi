@@ -46,7 +46,8 @@ class ApiServer < Sinatra::Base
 
   get '/api/v1/metrics/action' do
     last = params[:last] || '5m'
-    build_response({ actions: Deltafi::API::Metrics::Action.metrics_by_action_by_family(last: last) })
+    flow = params[:flowName]
+    build_response({ actions: Deltafi::API::Metrics::Action.metrics_by_action_by_family(last: last, flow: flow) })
   end
 
   get '/api/v1/status' do
