@@ -25,6 +25,14 @@
         </div>
       </div>
       <div class="row mb-3">
+        <div class="col-6">
+          <DeltaFileDomainsPanel :delta-file-data="deltaFile" />
+        </div>
+        <div class="col-6">
+          <DeltaFileEnrichmentPanel :delta-file-data="deltaFile" />
+        </div>
+      </div>
+      <div class="row mb-3">
         <div class="col-12">
           <DeltaFileActionsPanel :delta-file-data="deltaFile" />
         </div>
@@ -32,14 +40,6 @@
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileTracePanel :delta-file-data="deltaFile" />
-        </div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-6">
-          <DeltaFileDomainsPanel :delta-file-data="deltaFile" />
-        </div>
-        <div class="col-6">
-          <DeltaFileEnrichmentPanel :delta-file-data="deltaFile" />
         </div>
       </div>
     </div>

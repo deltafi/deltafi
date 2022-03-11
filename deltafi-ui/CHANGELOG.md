@@ -8,15 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Clock to top right. (#112)
 - Ability to mock service calls. (#90)
-- Expand Action Metrics timeframe dropdown. (#114)
+- More options to Action Metrics timeframe dropdown. (#114)
+- Flow and word filters to Action Metrics page (#80)
 - Support for multiple GraphQL services. (#115)
-- Action Metrics have flow and word filter. (#80)
-
+- Trace chart to Viewer page. (#45)
 
 ### Changed
 - Better handling of long filenames throughout the UI. (#109)
-- When viewing stale data on the Errors page, the refresh button now changes color. (#105)
-  - Stale data Toast message also removed.
+- The refresh button now changes color when viewing stale data on the Errors page. (#105)
+  - Stale data Toast message was also removed.
 - When retrying errors on the Errors page, the table is now refreshed. (#108)
 - Normalized timestamps throughout the app. (#112)
 - Search page timestamps now match the selected timezone. (#111)
