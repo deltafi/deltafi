@@ -54,7 +54,7 @@ export default function useDeltaFilesQueryBuilder(): {
       deltaFiles: {
         __args: {
           offset: 0,
-          limit: 0,
+          limit: 1,
           filter: {
             sourceInfo: {
               flow: flowName,
