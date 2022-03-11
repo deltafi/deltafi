@@ -95,12 +95,14 @@ public class DeltaFilesService {
                 .modified(now)
                 .build();
 
+        Content content = Content.newBuilder().contentReference(input.getContentReference()).build();
+
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .did(input.getDid())
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(input.getSourceInfo())
-                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, input.getContentReference(), null)))
+                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, List.of(content), null)))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())

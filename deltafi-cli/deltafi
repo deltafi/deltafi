@@ -115,6 +115,7 @@ Commands:
   load-config       add to or replace the deltafi config
   load-plan         load a flow plan to deltafi from a JSON file
   mongo-cli         launch the mongo CLI
+  mongo-migrate     run mongo migrations
   query             send a query to the gateway
   redis-cli         launch the redis CLI
   redis-latency     monitor redis latency
@@ -185,6 +186,9 @@ case "$1" in
     ;;
   mongo-cli)
     "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@
+    ;;
+  mongo-migrate)
+    "$DELTAFICLI_WORKDIR/commands/mongo-migrate" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/mongo-migrate.log"
     ;;
   query)
     "$DELTAFICLI_WORKDIR/commands/query" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/query.log"

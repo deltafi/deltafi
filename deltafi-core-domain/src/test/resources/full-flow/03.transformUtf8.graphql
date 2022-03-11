@@ -9,13 +9,18 @@ mutation {
                 protocolLayer: {
                     type: "json-utf8"
                     action: "Utf8TransformAction"
-                    contentReference: {
-                        uuid: "utf8ObjectName"
-                        offset: 0
-                        size: 500
-                        did: "%1$s"
-                        mediaType: "application/octet-stream"
-                    }
+                    content: [
+                        {
+                            name: "file.json"
+                            contentReference: {
+                                uuid: "utf8ObjectName"
+                                offset: 0
+                                size: 500
+                                did: "%1$s"
+                                mediaType: "application/octet-stream"
+                            }
+                        }
+                    ]
                 }
             }
         }

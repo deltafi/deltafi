@@ -10,6 +10,7 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.passthrough.param.RoteTransformParameters;
 
 @Slf4j
+@SuppressWarnings("unused")
 public class RoteTransformAction extends TransformAction<RoteTransformParameters> {
     public RoteTransformAction() {
         super(RoteTransformParameters.class);
@@ -19,7 +20,7 @@ public class RoteTransformAction extends TransformAction<RoteTransformParameters
         log.trace(actionContext.getName() + " transforming (" + deltaFile.getDid() + ")");
 
         TransformResult result = new TransformResult(actionContext, params.getResultType());
-        result.setContentReference(deltaFile.getFirstContentReference());
+        result.setContent(deltaFile.getLastProtocolLayer().getContent());
         return result;
     }
 

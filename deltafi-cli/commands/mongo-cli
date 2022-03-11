@@ -7,7 +7,7 @@ cli_help_command() {
 Command: mongo-cli
 
 Usage:
-  mongo"
+  mongo-cli"
   exit 1
 }
 

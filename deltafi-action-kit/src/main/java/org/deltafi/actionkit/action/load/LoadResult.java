@@ -19,7 +19,7 @@ public class LoadResult extends DataAmendedResult {
 
     public LoadResult(ActionContext actionContext, DeltaFile deltaFile) {
         super(actionContext);
-        setContentReference(deltaFile.getLastContentReference());
+        setContent(deltaFile.getLastProtocolLayer().getContent());
     }
 
     public void addDomain(@NotNull String domainName, String value, String mediaType) {
@@ -36,7 +36,7 @@ public class LoadResult extends DataAmendedResult {
         ActionEventInput event = super.toEvent();
         event.setLoad(LoadInput.newBuilder()
                 .domains(domains)
-                .protocolLayer(new ProtocolLayer(actionContext.getName(), actionContext.getName(), contentReference, metadata))
+                .protocolLayer(new ProtocolLayer(actionContext.getName(), actionContext.getName(), content, metadata))
                 .build());
 
         return event;

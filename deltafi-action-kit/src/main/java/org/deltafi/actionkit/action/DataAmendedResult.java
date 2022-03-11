@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.generated.types.Content;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import java.util.Map;
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public abstract class DataAmendedResult extends Result {
-    protected ContentReference contentReference;
+    protected List<Content> content = new ArrayList<>();
     protected List<KeyValue> metadata = new ArrayList<>();
 
     public DataAmendedResult(ActionContext actionContext) {
@@ -30,5 +31,15 @@ public abstract class DataAmendedResult extends Result {
     @SuppressWarnings("unused")
     public void addMetadata(@NotNull Map<String, String> map) {
         map.forEach(this::addMetadata);
+    }
+
+    @SuppressWarnings("unused")
+    public void addContent(@NotNull Content contentItem) {
+        content.add(contentItem);
+    }
+
+    @SuppressWarnings("unused")
+    public void addContentReference(@NotNull ContentReference contentReference) {
+        addContent(Content.newBuilder().contentReference(contentReference).build());
     }
 }

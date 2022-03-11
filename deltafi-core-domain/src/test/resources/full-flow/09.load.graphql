@@ -10,13 +10,17 @@ mutation {
                 protocolLayer: {
                     type: "json-utf8-sample-load"
                     action: "SampleLoadAction"
-                    contentReference: {
-                        uuid: "objectName"
-                        offset: 0
-                        size: 500
-                        did: "%1$s"
-                        mediaType: "application/octet-stream"
-                    }
+                    content: [
+                        {
+                            contentReference: {
+                                uuid: "objectName"
+                                offset: 0
+                                size: 500
+                                did: "%1$s"
+                                mediaType: "application/octet-stream"
+                            }
+                        }
+                    ]
                     metadata: [
                         {
                             key: "loadSampleType",

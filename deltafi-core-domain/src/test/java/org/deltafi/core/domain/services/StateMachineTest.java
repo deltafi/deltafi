@@ -12,6 +12,7 @@ import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
+import org.deltafi.core.domain.generated.types.Content;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -364,7 +365,7 @@ class StateMachineTest {
     @Test
     void testGetFormatActionsMatchesDomainAndEnrichment() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addDomain("domain", "value", MediaType.ALL_VALUE);
         deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
@@ -386,7 +387,7 @@ class StateMachineTest {
     @Test
     void testGetFormatActionsDomainDiffers() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addDomain("domain", "value", MediaType.ALL_VALUE);
         deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
@@ -408,7 +409,7 @@ class StateMachineTest {
     @Test
     void testGetFormatActionsEnrichDiffers() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "theFlow");
-        deltaFile.addDomain("domain", "value", null);
+        deltaFile.addDomain("domain", "value", MediaType.ALL_VALUE);
         deltaFile.addEnrichment("enrich", "value", MediaType.ALL_VALUE);
 
         EgressFlowConfiguration config = new EgressFlowConfiguration();
@@ -678,14 +679,15 @@ class StateMachineTest {
             deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", List.of(new KeyValue(SOURCE_KEY, "value"))));
         }
         if (withDomain) {
-            deltaFile.addDomain(DOMAIN, "value", null);
+            deltaFile.addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
         }
         if (withEnrichment) {
             deltaFile.addEnrichment(ENRICH, "value", MediaType.ALL_VALUE);
         }
         if (withProtocolStack) {
+            Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, "did", "" + "application/octet-stream")).build();
             deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION,
-                    new ContentReference("objectName", 0, 500, "did", "" + "application/octet-stream"),
+                    List.of(content),
                     Collections.singletonList(new KeyValue(PROTOCOL_LAYER_KEY, "value"))));
         }
         return deltaFile;
