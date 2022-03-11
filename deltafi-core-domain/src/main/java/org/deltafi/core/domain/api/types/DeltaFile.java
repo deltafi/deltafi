@@ -275,6 +275,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return getLastProtocolLayer().getContentReference();
     }
 
+    @JsonIgnore
     public Optional<ContentReference> getContentReference(String protocolLayerType) {
         Optional<ProtocolLayer> protocolLayerOptional = getProtocolLayer(protocolLayerType);
         if (protocolLayerOptional.isEmpty()) {

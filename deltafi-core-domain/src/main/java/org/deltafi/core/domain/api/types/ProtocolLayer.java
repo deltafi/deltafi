@@ -1,5 +1,6 @@
 package org.deltafi.core.domain.api.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,6 +20,7 @@ public class ProtocolLayer {
     private List<Content> content;
     private List<KeyValue> metadata;
 
+    @JsonIgnore
     public ContentReference getContentReference() {
         return content.isEmpty() ? null : content.get(0).getContentReference();
     }
