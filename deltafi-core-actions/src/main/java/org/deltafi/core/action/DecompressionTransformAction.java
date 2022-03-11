@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.core.MediaType;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -45,7 +46,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
 
         TransformResult result = new TransformResult(actionContext, PRODUCES);
 
-        try(InputStream content = loadContentAsInputStream(deltaFile.getFirstContentReference())) {
+        try(InputStream content = new ByteArrayInputStream(loadContent(deltaFile.getFirstContentReference()))) {
             try {
                 switch (params.getDecompressionType()) {
                     case TAR_GZIP:
@@ -70,7 +71,6 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         } catch (ObjectStorageException | IOException e) {
             return new ErrorResult(actionContext, "Failed to load compressed binary from storage", e).logErrorTo(log);
         }
-
         result.addMetadata("decompressionType", params.getDecompressionType().getValue());
 
         return result;

@@ -15,7 +15,8 @@ public class ActionParameterSchemaGenerator {
         SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2019_09, OptionPreset.PLAIN_JSON)
                 .without(Option.SCHEMA_VERSION_INDICATOR)
                 .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
-                .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM));
+                .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM, JacksonOption.FLATTENED_ENUMS_FROM_JSONPROPERTY));
+
         configBuilder.forTypesInGeneral()
                 .withAdditionalPropertiesResolver(scope -> {
                     if (scope.getType().isInstanceOf(Map.class)) {

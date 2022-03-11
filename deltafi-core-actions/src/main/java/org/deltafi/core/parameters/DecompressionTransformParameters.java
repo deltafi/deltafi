@@ -10,6 +10,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
+@NoArgsConstructor
 public class DecompressionTransformParameters extends ActionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Decompression type: tar, zip, gzip, tar.gz")
