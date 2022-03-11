@@ -6,9 +6,9 @@ export default function useActionMetrics() {
   const endpoint: string = 'metrics/action';
   const data: Ref<object> = ref([]);
 
-  const fetch = async (timeRange: Record<string, string>) => {
+  const fetch = async (paramsObj: Record<string, string>) => {
     try {
-      const params = new URLSearchParams(timeRange);
+      const params = new URLSearchParams(paramsObj);
       await get(endpoint, params);
       data.value = response.value.actions;
     } catch {

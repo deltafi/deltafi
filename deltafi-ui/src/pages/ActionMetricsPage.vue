@@ -2,7 +2,7 @@
   <div class="action-metrics">
     <PageHeader heading="Action Metrics">
       <div class="btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="layout" :options="layoutOptions" option-label="name" placeholder="Layout" class="deltafi-input-field ml-3" />
+        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select a Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3" @change="flowChange" />
         <Dropdown v-model="timeRange" :options="timeRanges" option-label="name" placeholder="Time Range" class="deltafi-input-field ml-3" @change="timeRangeChange" />
       </div>
     </PageHeader>
@@ -10,28 +10,10 @@
       <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
     </span>
     <div v-else-if="actionMetrics">
-      <div v-show="layout.grouped" class="row pr-2 pl-2">
-        <div v-if="!loaded" class="col-12">
-          <ProgressBar mode="indeterminate" style="height: 0.5em" />
-        </div>
-        <!-- Left Column -->
-        <div :class="layout.class">
-          <span v-for="family in leftColumnActionFamilies" :key="family">
-            <ActionMetricsTable v-if="hasActions(family)" :family="family" :actions="actionMetricsByFamily(family)" :loading="loadingActionMetrics" class="mb-3" />
-          </span>
-        </div>
-        <!-- Right Column -->
-        <div :class="layout.class">
-          <span v-for="family in rightColumnActionFamilies" :key="family">
-            <ActionMetricsTable v-if="hasActions(family)" :family="family" :actions="actionMetricsByFamily(family)" :loading="loadingActionMetrics" class="mb-3" />
-          </span>
-        </div>
-      </div>
-      <!-- Ungrouped -->
-      <div v-show="!layout.grouped" class="row pr-2 pl-2">
-        <div :class="layout.class">
+      <div class="row pr-2 pl-2">
+        <div class="col-12 pl-2 pr-2">
           <span>
-            <ActionMetricsTable family="All" :actions="actionMetricsUngrouped" :loading="loadingActionMetrics" class="mb-3" />
+            <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="loadingActionMetrics" class="mb-3" @pause-timer="onPauseTimer" />
           </span>
         </div>
       </div>
@@ -47,10 +29,17 @@ import ProgressBar from "primevue/progressbar";
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
+import useFlows from "@/composables/useFlows";
+import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref, computed, onUnmounted, onMounted } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
-const { data: actionMetrics, loaded, fetch: getActionMetrics, errors } = useActionMetrics();
+const { data: actionMetrics, fetch: getActionMetrics, errors } = useActionMetrics();
+const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
+const { sentenceCaseString } = useUtilFunctions();
+
+fetchIngressFlows();
+
 const loadingActionMetrics = ref(true);
 const timeRanges = [
   { name: "Last 5 minutes", code: "5m" },
@@ -63,58 +52,59 @@ const timeRanges = [
   { name: "Last 7 days", code: "7d" },
   { name: "Last 14 days", code: "14d" },
 ];
+const ingressFlowNameSelected = ref(null);
 const timeRange = ref(timeRanges[0]);
-const layoutOptions = [
-  {
-    name: "Two Columns - Grouped",
-    class: "col-6 pl-2 pr-2",
-    grouped: true,
-    code: 0,
-  },
-  {
-    name: "One Column - Grouped",
-    class: "col-12 pl-2 pr-2",
-    grouped: true,
-    code: 1,
-  },
-  {
-    name: "One Column - Ungrouped",
-    class: "col-12 pl-2 pr-2",
-    grouped: false,
-    code: 2,
-  },
-];
-const layout = ref(layoutOptions[0]);
-const leftColumnActionFamilies = ["ingress", "transform", "load", "delete"];
-const rightColumnActionFamilies = ["format", "enrich", "validate", "egress"];
+
 const actionMetricsUngrouped = computed(() => {
-  return Object.keys(actionMetrics.value).reduce((result, family) => {
-    return Object.assign(result, actionMetrics.value[family]);
+  const newObject = {};
+  Object.assign(newObject, actionMetrics.value);
+  for (const [familyKey, familyValue] of Object.entries(actionMetrics.value)) {
+    for (const [actionKey] of Object.entries(familyValue)) {
+      newObject[familyKey][actionKey]["family_type"] = sentenceCaseString(familyKey);
+    }
+  }
+  return Object.keys(newObject).reduce((result, family) => {
+    return Object.assign(result, newObject[family]);
   }, {});
 });
+
 const hasErrors = computed(() => {
   return errors.value.length > 0;
 });
+
 let autoRefresh = null;
 onUnmounted(() => {
   clearInterval(autoRefresh);
 });
+
 onMounted(async () => {
   await fetchActionMetrics();
   autoRefresh = setInterval(fetchActionMetrics, refreshInterval);
-});
+})
+
+const onPauseTimer = (value) => {
+  if (value) {
+    clearInterval(autoRefresh);
+  } else {
+    autoRefresh = setInterval(fetchActionMetrics, refreshInterval);
+  }
+}
 
 const fetchActionMetrics = async () => {
-  await getActionMetrics({ last: timeRange.value.code });
+  let actionMetricsParams = { last: timeRange.value.code };
+  if (ingressFlowNameSelected.value) {
+    actionMetricsParams['flowName'] = ingressFlowNameSelected.value.name;
+  }
+  await getActionMetrics(actionMetricsParams);
   loadingActionMetrics.value = false;
 };
-const hasActions = (family) => {
-  return Object.keys(actionMetrics.value[family] || {}).length > 0;
-};
-const actionMetricsByFamily = (family) => {
-  return actionMetrics.value[family] || {};
-};
+
 const timeRangeChange = async () => {
+  loadingActionMetrics.value = true;
+  await fetchActionMetrics();
+};
+
+const flowChange = async () => {
   loadingActionMetrics.value = true;
   await fetchActionMetrics();
 };

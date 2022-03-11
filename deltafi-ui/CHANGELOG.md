@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Ability to mock service calls. (#90)
 - Expand Action Metrics timeframe dropdown. (#114)
 - Support for multiple GraphQL services. (#115)
+- Action Metrics have flow and word filter. (#80)
 
 ### Changed
 - Better handling of long filenames throughout the UI. (#109)

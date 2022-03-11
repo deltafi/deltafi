@@ -41,7 +41,8 @@ a {
 
 .deltafi-input-field {
   height: 32px;
-  .p-dropdown-label {
+  .p-dropdown-label,
+  .p-multiselect-label {
     padding-top: 6px;
     padding-left: 10px;
   }
