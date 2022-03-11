@@ -246,6 +246,10 @@ public abstract class Action<P extends ActionParameters> {
         return contentStorageService.save(did, content, mediaType);
     }
 
+    protected ContentReference saveContent(String did, InputStream content, String mediaType) throws ObjectStorageException {
+        return contentStorageService.save(did, content, mediaType);
+    }
+
     protected boolean deleteContent(String did) {
         return contentStorageService.deleteAll(did);
     }
