@@ -10,6 +10,12 @@ ingressFlows:
     name: theFlow
     type: theType
     transformActions: []
+  childFlow:
+    name: childFlow
+    type: json
+    transformActions:
+      - SampleTransformAction
+    loadAction: SampleLoadAction
 egressFlows:
   sample:
     name: sample

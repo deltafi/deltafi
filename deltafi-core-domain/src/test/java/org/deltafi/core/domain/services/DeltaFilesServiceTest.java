@@ -58,8 +58,8 @@ class DeltaFilesServiceTest {
         when(deltaFiConfigService.getIngressFlow(flow)).thenReturn(Optional.of(new IngressFlowConfiguration()));
         String did = UUID.randomUUID().toString();
         SourceInfo sourceInfo = new SourceInfo(null, flow, List.of());
-        ContentReference contentReference = new ContentReference();
-        IngressInput ingressInput = new IngressInput(did, sourceInfo, contentReference, OffsetDateTime.now());
+        List<ContentInput> content = Collections.singletonList(ContentInput.newBuilder().contentReference(new ContentReference()).build());
+        IngressInput ingressInput = new IngressInput(did, sourceInfo, content, OffsetDateTime.now());
 
         DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
 
@@ -72,8 +72,8 @@ class DeltaFilesServiceTest {
     @Test
     void setThrowsOnMissingFlow() {
         SourceInfo sourceInfo = new SourceInfo(null, "nonsense", List.of());
-        ContentReference contentReference = new ContentReference();
-        IngressInput ingressInput = new IngressInput("did", sourceInfo, contentReference, OffsetDateTime.now());
+        List<ContentInput> content = Collections.singletonList(ContentInput.newBuilder().contentReference(new ContentReference()).build());
+        IngressInput ingressInput = new IngressInput("did", sourceInfo, content, OffsetDateTime.now());
 
         assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.ingress(ingressInput));
     }

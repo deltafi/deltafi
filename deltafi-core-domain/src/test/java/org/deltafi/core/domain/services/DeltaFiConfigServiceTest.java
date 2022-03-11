@@ -2,7 +2,7 @@ package org.deltafi.core.domain.services;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.core.domain.configuration.*;
-import org.deltafi.core.domain.converters.KeyValueConverter;
+import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.generated.types.ConfigQueryInput;
 import org.deltafi.core.domain.generated.types.ConfigType;

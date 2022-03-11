@@ -87,6 +87,12 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
                 .forEach(action -> setActionState(action, ActionState.FILTERED, filterMessage, null));
     }
 
+    public void splitAction(String name) {
+        getActions().stream()
+                .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
+                .forEach(action -> setActionState(action, ActionState.SPLIT, null, null));
+    }
+
     public void errorAction(String name, String errorCause, String errorContext) {
         getActions().stream()
                 .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
@@ -301,6 +307,8 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
     public static class Builder extends org.deltafi.core.domain.generated.types.DeltaFile.Builder {
         private String did;
+        private List<String> parentDids;
+        private List<String> childDids;
         private DeltaFileStage stage;
         private List<Action> actions;
         private SourceInfo sourceInfo;
@@ -314,6 +322,8 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         public DeltaFile build() {
             DeltaFile result = new DeltaFile();
             result.setDid(this.did);
+            result.setParentDids(this.parentDids);
+            result.setChildDids(this.childDids);
             result.setStage(this.stage);
             result.setActions(this.actions);
             result.setSourceInfo(this.sourceInfo);
@@ -328,6 +338,16 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
         public Builder did(String did) {
             this.did = did;
+            return this;
+        }
+
+        public Builder parentDids(List<String> parentDids) {
+            this.parentDids = parentDids;
+            return this;
+        }
+
+        public Builder childDids(List<String> childDids) {
+            this.childDids = childDids;
             return this;
         }
 

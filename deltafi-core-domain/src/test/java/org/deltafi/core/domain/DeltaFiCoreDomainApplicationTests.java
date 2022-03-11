@@ -78,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
+import static org.mockito.Mockito.times;
 
 @SpringBootTest
 @TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "enableScheduling=false"})
@@ -376,6 +377,40 @@ class DeltaFiCoreDomainApplicationTests {
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(Util.equalIgnoringDates(post09LoadDeltaFile(did), deltaFile));
+	}
+
+	@Test
+	void test10Split() throws IOException, ActionConfigException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile postTransform = postTransformDeltaFile(did);
+		deltaFileRepo.save(postTransform);
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("10.split"), did),
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class);
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
+		assertEquals(2, deltaFile.getChildDids().size());
+		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+
+		List<DeltaFile> children = deltaFilesService.getDeltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
+		assertEquals(2, children.size());
+
+		DeltaFile child1 = children.get(0);
+		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
+		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
+		assertEquals("file1", child1.getSourceInfo().getFilename());
+		assertEquals(0, child1.getFirstProtocolLayer().getContentReference().getOffset());
+
+		DeltaFile child2 = children.get(1);
+		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
+		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
+		assertEquals("file2", child2.getSourceInfo().getFilename());
+		assertEquals(250, child2.getFirstProtocolLayer().getContentReference().getOffset());
+
+		Mockito.verify(redisService, times(2)).enqueue(eq(Collections.singletonList("SampleTransformAction")), any());
 	}
 
 	DeltaFile postEnrichDeltaFile(String did) {
@@ -804,7 +839,7 @@ class DeltaFiCoreDomainApplicationTests {
 				graphQLQueryRequest.serialize(),
 				"data." + remove.getOperationName(),
 				Integer.class);
-		assertEquals(15, removed.intValue());
+		assertEquals(16, removed.intValue());
 	}
 
 	@Test
@@ -918,7 +953,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
 		assertThat(deltaFile.getSourceInfo().getMetadata()).isEqualTo(new ObjectMapper().convertValue(INGRESS_INPUT.getSourceInfo().getMetadata(), new TypeReference<List<KeyValue>>(){}));
 		assertThat(deltaFile.getFirstProtocolLayer().getType()).isEqualTo("theType");
-		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContentReference());
+		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
 		assertTrue(deltaFile.getEnrichment().isEmpty());
 		assertTrue(deltaFile.getDomains().isEmpty());
 		assertTrue(deltaFile.getFormattedData().isEmpty());
@@ -938,7 +973,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
 		assertTrue(deltaFile.getSourceInfo().getMetadata().isEmpty());
 		assertThat(deltaFile.getFirstProtocolLayer().getType()).isEqualTo("theType");
-		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContentReference());
+		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
 		assertTrue(deltaFile.getEnrichment().isEmpty());
 		assertTrue(deltaFile.getDomains().isEmpty());
 		assertTrue(deltaFile.getFormattedData().isEmpty());

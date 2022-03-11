@@ -1,4 +1,4 @@
-package org.deltafi.core.domain.converters;
+package org.deltafi.core.domain.api.converters;
 
 import org.deltafi.core.domain.api.types.KeyValue;
 

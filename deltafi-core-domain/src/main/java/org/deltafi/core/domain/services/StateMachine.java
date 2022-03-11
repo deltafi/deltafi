@@ -7,7 +7,7 @@ import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
-import org.deltafi.core.domain.converters.KeyValueConverter;
+import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

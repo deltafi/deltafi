@@ -137,6 +137,7 @@ enum ActionState {
   ERROR
   RETRIED
   FILTERED
+  SPLIT
 }
 
 type Action {
@@ -158,6 +159,7 @@ enum ActionEventType {
   ERROR
   FILTER
   DELETE
+  SPLIT
 }
 
 input ActionEventInput {
@@ -171,10 +173,13 @@ input ActionEventInput {
   format: FormatInput
   error: ErrorInput
   filter: FilterInput
+  split: [SplitInput]
 }
 
 type DeltaFile {
   did: String!
+  parentDids: [String!]
+  childDids: [String!]
   stage: DeltaFileStage!
   actions: [Action!]!
   sourceInfo: SourceInfo!
@@ -193,7 +198,7 @@ type DeltaFile {
 input IngressInput {
   did: String!
   sourceInfo: SourceInfoInput!
-  contentReference: ContentReferenceInput!
+  content: [ContentInput!]!
   created: DateTime!
 }
 
@@ -218,6 +223,11 @@ input FormatInput {
 
 input FilterInput {
   message: String!
+}
+
+input SplitInput {
+  sourceInfo: SourceInfoInput!
+  content: [ContentInput!]!
 }
 
 type DeltaFiles {

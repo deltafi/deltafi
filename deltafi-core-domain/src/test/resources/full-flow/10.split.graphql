@@ -1,0 +1,57 @@
+mutation {
+    actionEvent(
+        event: {
+            did: "%1$s"
+            action: "SampleLoadAction"
+            time: "2021-07-11T13:44:22.183Z"
+            type: SPLIT
+            split: [
+                {
+                    sourceInfo: {
+                        filename: "file1"
+                        flow: "childFlow"
+                        metadata: []
+                    }
+                    content: [
+                        {
+                            contentReference: {
+                                uuid: "objectName"
+                                offset: 0
+                                size: 250
+                                did: "%1$s"
+                                mediaType: "application/octet-stream"
+                            }
+                        }
+                    ]
+                },
+                {
+                    sourceInfo: {
+                        filename: "file2"
+                        flow: "childFlow"
+                        metadata: []
+                    }
+                    content: [
+                        {
+                            contentReference: {
+                                uuid: "objectName"
+                                offset: 250
+                                size: 250
+                                did: "%1$s"
+                                mediaType: "application/octet-stream"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ) {
+        did
+        stage
+        actions {
+            name
+            state
+            errorCause
+            errorContext
+        }
+    }
+}

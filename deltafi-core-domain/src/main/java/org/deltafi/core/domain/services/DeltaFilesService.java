@@ -1,6 +1,7 @@
 package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
@@ -81,8 +82,12 @@ public class DeltaFilesService {
         return matches.isEmpty() ? null : matches.get(0);
     }
 
-    @MongoRetryable
     public DeltaFile ingress(IngressInput input) {
+        return ingress(input, Collections.emptyList());
+    }
+
+    @MongoRetryable
+    public DeltaFile ingress(IngressInput input, List<String> parentDids) {
         String flow = input.getSourceInfo().getFlow();
         IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
@@ -95,14 +100,16 @@ public class DeltaFilesService {
                 .modified(now)
                 .build();
 
-        Content content = Content.newBuilder().contentReference(input.getContentReference()).build();
+        List<Content> content = OBJECT_MAPPER.convertValue(input.getContent(), new TypeReference<>() {});
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .did(input.getDid())
+                .parentDids(parentDids)
+                .childDids(Collections.emptyList())
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(input.getSourceInfo())
-                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, List.of(content), null)))
+                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, content, null)))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())
@@ -145,6 +152,8 @@ public class DeltaFilesService {
             case DELETE:
                 delete(deltaFile);
                 return deltaFile;
+            case SPLIT:
+                return split(deltaFile, event);
         }
 
         throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
@@ -252,6 +261,43 @@ public class DeltaFilesService {
         errorDeltaFile.getSourceInfo().setFilename(errorDeltaFile.getSourceInfo().getFilename() + ".error");
 
         advanceAndSave(errorDeltaFile);
+
+        return advanceAndSave(deltaFile);
+    }
+
+    @MongoRetryable
+    public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) {
+        if (deltaFile.noPendingAction(event.getAction())) {
+            throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
+        }
+
+        List<SplitInput> splits = event.getSplit();
+
+        if (Objects.isNull(configService.getLoadAction(event.getAction()))) {
+            deltaFile.errorAction(event.getAction(), "Attempted to split from an Action that is not a LoadAction: " + event.getAction(), "");
+        } else if (Objects.isNull(splits) || splits.isEmpty()) {
+            deltaFile.errorAction(event.getAction(), "Attempted to split DeltaFile into 0 children", "");
+        } else {
+            if (Objects.isNull(deltaFile.getChildDids())) {
+                deltaFile.setChildDids(new ArrayList<>());
+            }
+
+            for (SplitInput split : splits) {
+                String childDid = UUID.randomUUID().toString();
+                IngressInput ingressInput = IngressInput.newBuilder()
+                        .did(childDid)
+                        .created(OffsetDateTime.now())
+                        .sourceInfo(split.getSourceInfo())
+                        .content(split.getContent())
+                        .build();
+
+                ingress(ingressInput, Collections.singletonList(deltaFile.getDid()));
+
+                deltaFile.getChildDids().add(childDid);
+            }
+
+            deltaFile.splitAction(event.getAction());
+        }
 
         return advanceAndSave(deltaFile);
     }

@@ -10,13 +10,17 @@ mutation {
                     value: "XYZ"
                 }
             }
-            contentReference: {
-                uuid: "objectName"
-                offset: 0
-                size: 500
-                did: "%1$s"
-                mediaType: "application/octet-stream"
-            }
+            content: [
+                {
+                    contentReference: {
+                        uuid: "objectName"
+                        offset: 0
+                        size: 500
+                        did: "%1$s"
+                        mediaType: "application/octet-stream"
+                    }
+                }
+            ]
             created: "2021-07-11T13:44:22.183Z"
         })
     {

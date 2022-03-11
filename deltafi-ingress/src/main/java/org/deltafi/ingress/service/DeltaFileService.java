@@ -18,6 +18,7 @@ import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.IngressGraphQLQuery;
 import org.deltafi.core.domain.generated.client.IngressProjectionRoot;
+import org.deltafi.core.domain.generated.types.ContentInput;
 import org.deltafi.core.domain.generated.types.IngressInput;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
@@ -48,9 +49,10 @@ public class DeltaFileService {
         OffsetDateTime created = OffsetDateTime.now();
 
         ContentReference contentReference = contentStorageService.save(did, inputStream, mediaType);
+        List<ContentInput> content = Collections.singletonList(ContentInput.newBuilder().contentReference(contentReference).name(sourceFileName).build());
 
         try {
-            sendToIngressGraphQl(did, sourceFileName, flow, metadataString, contentReference, created);
+            sendToIngressGraphQl(did, sourceFileName, flow, metadataString, content, created);
         } catch (Exception e) {
             contentStorageService.delete(contentReference);
             throw e;
@@ -71,11 +73,11 @@ public class DeltaFileService {
     }
 
     private void sendToIngressGraphQl(String did, String sourceFileName, String flow, String metadataString,
-            ContentReference contentReference, OffsetDateTime created) throws DeltafiMetadataException, DeltafiException {
+                                      List<ContentInput> content, OffsetDateTime created) throws DeltafiMetadataException, DeltafiException {
         IngressInput ingressInput = IngressInput.newBuilder()
                 .did(did)
                 .sourceInfo(new SourceInfo(sourceFileName, flow, fromMetadataString(metadataString)))
-                .contentReference(contentReference)
+                .content(content)
                 .created(created)
                 .build();
 
