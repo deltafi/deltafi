@@ -61,6 +61,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
   const svgHeight = lineHeight + 18;
   const maxData = data[0].elapsed;
   // Append the chart and pad it a bit
+  d3.select(attachTo).selectAll('svg').remove();
   let chart = d3.select(attachTo).append("svg").attr("class", "chart").attr("preserveAspectRatio", "none").attr("viewBox", `0 10 ${svgWidth} ${svgHeight - rowWidth}`);
 
   // create tooltip element
