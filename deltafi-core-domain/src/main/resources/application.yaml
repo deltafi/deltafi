@@ -5,3 +5,7 @@ spring:
     config:
       watch:
         enabled: true
+dgs:
+  graphql:
+    graphiql:
+      enabled: false

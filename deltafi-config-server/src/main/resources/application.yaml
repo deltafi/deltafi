@@ -27,3 +27,7 @@ spring:
       auto-index-creation: true
   jmx:
     enabled: false
+dgs:
+  graphql:
+    graphiql:
+      enabled: false
