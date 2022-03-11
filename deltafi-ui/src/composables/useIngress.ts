@@ -5,7 +5,7 @@ import axios from "axios";
 export default function useIngress() {
   const notify = useNotifications();
 
-  const ingressFile = (file: File, flow: string, metadata: Record<string, string>) => {
+  const ingressFile = async (file: File, flow: string, metadata: Record<string, string>) => {
     const result = reactive({
       did: "",
       loading: true,
@@ -14,7 +14,7 @@ export default function useIngress() {
       flow: flow,
       percentComplete: 0
     });
-    axios
+    await axios
       .request({
         method: "post",
         url: "/deltafile/ingress",

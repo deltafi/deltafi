@@ -45,18 +45,31 @@
     <div class="mb-3 row">
       <div class="col-12">
         <CollapsiblePanel v-if="deltaFiles.length" header="DeltaFiles" class="table-panel">
+          <template #icons>
+            <Button class="p-panel-header-icon p-link p-mr-2" @click="deltaFilesMenuToggle">
+              <span class="fas fa-cog" />
+            </Button>
+            <Menu id="config_menu" ref="deltaFilesMenu" :model="deltaFilesMenuItems" :popup="true" />
+          </template>
           <DataTable responsive-layout="scroll" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass">
             <Column field="did" header="DID" class="did-column">
               <template #body="file">
                 <span v-if="file.data.loading">
                   <ProgressBar :value="file.data.percentComplete" />
                 </span>
-                <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
+                <span v-else-if="file.data.error">
+                  <i class="fas fa-times" /> Error
+                </span>
                 <router-link v-else class="monospace" :to="{ path: '/deltafile/viewer/' + file.data.did }">{{ file.data.did }}</router-link>
               </template>
             </Column>
             <Column field="filename" header="Filename" class="filename-column" />
             <Column field="flow" header="Flow" class="flow-column" />
+            <Column field="uploadedTimestamp" header="Uploaded At" class="updated-timestamp-column">
+              <template #body="row">
+                <Timestamp :timestamp="row.data.uploadedTimestamp" />
+              </template>
+            </Column>
           </DataTable>
         </CollapsiblePanel>
       </div>
@@ -65,33 +78,61 @@
 </template>
 
 <script setup>
-import FileUpload from "primevue/fileupload";
-import Dropdown from "primevue/dropdown";
+import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
+import Dropdown from "primevue/dropdown";
+import FileUpload from "primevue/fileupload"
+import InlineMessage from "primevue/inlinemessage";
 import InputText from "primevue/inputtext";
-import Button from "primevue/button";
+import Menu from "primevue/menu";
 import Panel from "primevue/panel";
 import ProgressBar from "primevue/progressbar";
-import InlineMessage from "primevue/inlinemessage";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import Timestamp from "@/components/Timestamp.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import useIngress from "@/composables/useIngress";
 import useFlows from "@/composables/useFlows";
-import { ref, reactive, computed } from "vue";
+import useIngress from "@/composables/useIngress";
+import { useStorage, StorageSerializers } from "@vueuse/core";
+import { ref, computed, nextTick, onMounted } from "vue";
+import _ from "lodash";
 
+const uploadedTimestamp = ref(new Date());
+const deltaFilesMenu = ref();
 const selectedFlow = ref(null);
 const flowSelectError = ref(false);
-const metadata = reactive([]);
+const metadata = ref([]);
 const fileUploader = ref();
-const deltaFiles = reactive([]);
+const deltaFiles = ref([]);
 const { ingressFlows, fetchIngressFlows } = useFlows();
 const { ingressFile } = useIngress();
 
+const deltaFilesMenuItems = ref([
+  {
+    label: "Options",
+    items: [
+      {
+        label: "Clear DeltaFiles",
+        icon: "fas fa-times",
+        command: () => {
+          clearDeltaFilesSession();
+        },
+      },
+    ],
+  },
+]);
+
+onMounted(() => {
+  getDeltaFileUploadSession();
+});
+const deltaFilesMenuToggle = (event) => {
+  deltaFilesMenu.value.toggle(event);
+};
+
 const metadataRecord = computed(() => {
   let record = {};
-  if (metadata.length > 0) {
-    for (const field of metadata) {
+  if (metadata.value.length > 0) {
+    for (const field of metadata.value) {
       if (field.key.length > 0) record[field.key] = field.value;
     }
   }
@@ -103,22 +144,23 @@ const flowSelectInvalid = computed(() => {
 });
 
 const metadataClearDisabled = computed(() => {
-  return metadata.length == 0 && selectedFlow.value == null;
+  return metadata.value.length == 0 && selectedFlow.value == null;
 });
 
 const addMetadataField = () => {
-  metadata.push({ key: "", value: "" });
+  metadata.value.push({ key: "", value: "" });
 };
 
 const removeMetadataField = (field) => {
-  let index = metadata.indexOf(field);
-  metadata.splice(index, 1);
+  let index = metadata.value.indexOf(field);
+  metadata.value.splice(index, 1);
 };
 
 const clearMetadata = () => {
   flowSelectError.value = false;
-  metadata.length = 0;
+  metadata.value.length = 0;
   selectedFlow.value = null;
+  metadataStorage.value = "";
 };
 
 const onUpload = (event) => {
@@ -129,13 +171,51 @@ const onUpload = (event) => {
   }
 };
 
-const ingressFiles = (event) => {
+const ingressFiles = async (event) => {
+  uploadedTimestamp.value = new Date();
   for (let file of event.files) {
-    const result = ingressFile(file, selectedFlow.value.name, metadataRecord.value);
-    deltaFiles.push(result);
+    const result = await ingressFile(file, selectedFlow.value.name, metadataRecord.value);
+    result["uploadedTimestamp"] = uploadedTimestamp.value;
+    deltaFiles.value.push(result);
   }
+  await nextTick();
+  storeDeltaFileUploadSession();
   fileUploader.value.files = [];
 };
+
+const deltaFilesStorage = useStorage("deltafiles-upload-session-storage", {}, sessionStorage, { serializer: StorageSerializers.string });
+const metadataStorage = useStorage("metadataStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.string });
+
+const getDeltaFileUploadSession = () => {
+  if (!_.isEmpty(deltaFilesStorage.value)) {
+    deltaFiles.value = _.concat(deltaFiles.value, JSON.parse(deltaFilesStorage.value))
+  }
+
+  if (!_.isEmpty(metadataStorage.value)) {
+    metadata.value = _.concat(metadata.value, JSON.parse(metadataStorage.value))
+  }
+};
+
+const storeDeltaFileUploadSession = () => {
+  if (_.isEmpty(deltaFilesStorage.value)) {
+    deltaFilesStorage.value = JSON.stringify(deltaFiles.value);
+  }
+  else {
+    deltaFilesStorage.value = JSON.stringify(_.uniqBy(_.concat(JSON.parse(deltaFilesStorage.value), deltaFiles.value), "did"));
+  }
+
+  if (_.isEmpty(metadataStorage.value)) {
+    metadataStorage.value = JSON.stringify(metadata.value);
+  }
+  else {
+    metadataStorage.value = JSON.stringify(_.uniqBy(_.concat(JSON.parse(metadataStorage.value), metadata.value), "key"));
+  }
+}
+
+const clearDeltaFilesSession = () => {
+  deltaFilesStorage.value = "";
+  deltaFiles.value = [];
+}
 
 const uploadsRowClass = (data) => {
   return data.error ? "table-danger" : null;

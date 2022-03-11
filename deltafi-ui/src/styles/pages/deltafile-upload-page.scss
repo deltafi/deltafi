@@ -27,14 +27,17 @@
   }
   .deltafiles {
     .did-column {
-      width: 45%;
+      width: 35%;
     }
     .filename-column {
-      width: 45%;
+      width: 35%;
       overflow-wrap: anywhere;
     }
     .flow-column {
-      width: 10%;
+      width: 15%;
+    }
+    .updated-timestamp-column {
+      width: 20%;
     }
   }
 }
