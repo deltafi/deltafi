@@ -30,6 +30,11 @@
         </div>
       </div>
       <div class="row mb-3">
+        <div class="col-12">
+          <DeltaFileTracePanel :delta-file-data="deltaFile" />
+        </div>
+      </div>
+      <div class="row mb-3">
         <div class="col-6">
           <DeltaFileDomainsPanel :delta-file-data="deltaFile" />
         </div>
@@ -66,6 +71,7 @@ import useDeltaFiles from "@/composables/useDeltaFiles";
 import useErrorCount from "@/composables/useErrorCount";
 import useErrorRetry from "@/composables/useErrorRetry";
 import useNotifications from "@/composables/useNotifications";
+import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import { reactive, ref, computed, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConfirm } from "primevue/useconfirm";
@@ -136,7 +142,7 @@ const staticMenuItems = reactive([
     command: () => {
       openZipkinURL();
     },
-  }
+  },
 ]);
 
 const menuItems = computed(() => {
@@ -146,14 +152,13 @@ const menuItems = computed(() => {
       label: link.name,
       icon: "fas fa-external-link-alt fa-fw",
       command: () => {
-        const url = link.url.replace("${DID}", did.value)
+        const url = link.url.replace("${DID}", did.value);
         window.open(url, "_blank");
-      }
-    }
+      },
+    };
   });
-  return items.concat(customLinks)
+  return items.concat(customLinks);
 });
-
 
 const allMetadata = computed(() => {
   if (!loaded.value) return {};

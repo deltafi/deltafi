@@ -1,0 +1,32 @@
+.trace-panel {
+  .domain {
+    display: none !important;
+  }
+  .chart {
+    font: 4px sans-serif;
+  }
+
+  .chart rect {
+    fill: steelblue;
+  }
+
+  .chart text.bar {
+    fill: white;
+  }
+
+  .d3-tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 8px;
+    margin-top: -20px;
+    font: 10px sans-serif;
+    background: steelblue;
+    pointer-events: none;
+    color: white;
+    border-radius: 5px;
+  }
+  .gMainGraphArea {
+    margin: 0;
+    padding: 0;
+  }
+}
