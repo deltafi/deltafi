@@ -43,7 +43,7 @@ const originalFileSize = computed(() => {
     return p.action === "IngressAction";
   });
   if (!ingressAction) return "N/A";
-  return formattedBytes(ingressAction.contentReference.size);
+  return formattedBytes(ingressAction.content[0].contentReference.size);
 });
 
 const infoFields = computed(() => {

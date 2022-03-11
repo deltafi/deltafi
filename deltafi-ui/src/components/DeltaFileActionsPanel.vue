@@ -89,10 +89,17 @@ const contentReferences = computed(() => {
     let actions = [layer.action, layer.formatAction, layer.egressActions].flat().filter((n) => n);
     for (const action of actions) {
       let filename = action === "IngressAction" ? deltaFile.sourceInfo.filename : layer.filename || `${deltaFile.did}-${layer.action}`;
-      content[action] = {
-        ...layer.contentReference,
-        filename: filename,
-      };
+      if (layer.content) {
+        content[action] = {
+          ...layer.content[0].contentReference,
+          filename: filename,
+        };
+      } else {
+        content[action] = {
+          ...layer.contentReference,
+          filename: filename,
+        };
+      }
     }
     return content;
   }, {});

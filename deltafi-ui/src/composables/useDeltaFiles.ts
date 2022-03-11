@@ -64,12 +64,19 @@ export default function useDeltaFiles() {
             key: true,
             value: true,
           },
-          contentReference: {
-            did: true,
-            uuid: true,
-            offset: true,
-            size: true,
-            mediaType: true,
+          content: {
+            name: true,
+            metadata: {
+              key: true,
+              value: true
+            },
+            contentReference: {
+              did: true,
+              uuid: true,
+              offset: true,
+              size: true,
+              mediaType: true
+            }
           },
         },
         markedForDelete: true,

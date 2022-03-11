@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.19.0]
 
 ### Added
 - Clock to top right. (#112)
@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Expand Action Metrics timeframe dropdown. (#114)
 - Support for multiple GraphQL services. (#115)
 - Action Metrics have flow and word filter. (#80)
-- Preserve upload results between router page loads (#117)
+
 
 ### Changed
 - Better handling of long filenames throughout the UI. (#109)
@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - When retrying errors on the Errors page, the table is now refreshed. (#108)
 - Normalized timestamps throughout the app. (#112)
 - Search page timestamps now match the selected timezone. (#111)
+- Upload results and metadata are now preserved between router page loads (#117)
 
 ## [0.18.1]
 
@@ -124,7 +125,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.18.1...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.0...main
+[0.19.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.18.1...0.19.0
 [0.18.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.18.0...0.18.1
 [0.18.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.17.0...0.18.0
 [0.17.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.16.3...0.17.0
