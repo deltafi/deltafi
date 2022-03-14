@@ -13,7 +13,8 @@
               <InputText type="text" value="Flow" disabled />
             </div>
             <div class="col-5">
-              <Dropdown v-model="selectedFlow" :options="ingressFlows" option-label="name" placeholder="Select an Ingress Flow" :class="{ 'p-invalid': flowSelectInvalid }" />
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown v-model="selectedFlow" :options="ingressFlows" option-label="name" :placeholder="selectedFlow ? selectedFlow.name + ' ' : 'Select an Ingress Flow'" :class="{ 'p-invalid': flowSelectInvalid }" />
               <InlineMessage v-if="flowSelectInvalid" class="ml-3">Flow is required</InlineMessage>
             </div>
           </div>
@@ -44,7 +45,7 @@
 
     <div class="mb-3 row">
       <div class="col-12">
-        <CollapsiblePanel v-if="deltaFiles.length" header="DeltaFiles" class="table-panel">
+        <CollapsiblePanel v-if="deltaFiles.length" header="Uploaded DeltaFiles" class="table-panel">
           <template #icons>
             <Button class="p-panel-header-icon p-link p-mr-2" @click="deltaFilesMenuToggle">
               <span class="fas fa-cog" />
@@ -57,17 +58,25 @@
                 <span v-if="file.data.loading">
                   <ProgressBar :value="file.data.percentComplete" />
                 </span>
-                <span v-else-if="file.data.error">
-                  <i class="fas fa-times" /> Error
-                </span>
+                <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
                 <router-link v-else class="monospace" :to="{ path: '/deltafile/viewer/' + file.data.did }">{{ file.data.did }}</router-link>
               </template>
             </Column>
             <Column field="filename" header="Filename" class="filename-column" />
             <Column field="flow" header="Flow" class="flow-column" />
             <Column field="uploadedTimestamp" header="Uploaded At" class="updated-timestamp-column">
-              <template #body="row">
-                <Timestamp :timestamp="row.data.uploadedTimestamp" />
+              <template #body="file">
+                <Timestamp :timestamp="file.data.uploadedTimestamp" />
+              </template>
+            </Column>
+            <Column field="uploadedMetadata" header="Metadata" class="metadata-column">
+              <template #body="file">
+                <span v-if="!_.isEmpty(file.data.uploadedMetadata)">
+                  <MetadataViewer id="viewMetadata" :metadata-references="formatMetadataforViewer(file.data.filename, file.data.uploadedMetadata)">
+                    <Button v-tooltip.top.hover="'View Metadata'" icon="fas fa-table" class="content-button p-button-link p-0" />
+                  </MetadataViewer>
+                  <Button id="replayMetadata" v-tooltip.top.hover="'Reuse Metadata'" icon="fas fa-redo" class="content-button p-button-link button2 p-0" @click="replayMetadata(file.data)" />
+                </span>
               </template>
             </Column>
           </DataTable>
@@ -82,19 +91,20 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
-import FileUpload from "primevue/fileupload"
+import FileUpload from "primevue/fileupload";
 import InlineMessage from "primevue/inlinemessage";
 import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Panel from "primevue/panel";
 import ProgressBar from "primevue/progressbar";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
-import Timestamp from "@/components/Timestamp.vue";
+import MetadataViewer from "@/components/MetadataViewer.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import Timestamp from "@/components/Timestamp.vue";
 import useFlows from "@/composables/useFlows";
 import useIngress from "@/composables/useIngress";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import { ref, computed, nextTick, onMounted } from "vue";
+import { ref, computed, onBeforeMount } from "vue";
 import _ from "lodash";
 
 const uploadedTimestamp = ref(new Date());
@@ -122,9 +132,12 @@ const deltaFilesMenuItems = ref([
   },
 ]);
 
-onMounted(() => {
-  getDeltaFileUploadSession();
+onBeforeMount(() => {
+  getSelectedFlowSession();
+  getMetadataSession();
+  getDeltaFileSession();
 });
+
 const deltaFilesMenuToggle = (event) => {
   deltaFilesMenu.value.toggle(event);
 };
@@ -158,8 +171,9 @@ const removeMetadataField = (field) => {
 
 const clearMetadata = () => {
   flowSelectError.value = false;
-  metadata.value.length = 0;
   selectedFlow.value = null;
+  selectedFlowStorage.value = "";
+  metadata.value = [];
   metadataStorage.value = "";
 };
 
@@ -172,50 +186,71 @@ const onUpload = (event) => {
 };
 
 const ingressFiles = async (event) => {
+  let results = new Array();
   uploadedTimestamp.value = new Date();
   for (let file of event.files) {
     const result = await ingressFile(file, selectedFlow.value.name, metadataRecord.value);
     result["uploadedTimestamp"] = uploadedTimestamp.value;
-    deltaFiles.value.push(result);
+    result["uploadedMetadata"] = metadata.value;
+    results.push(result);
   }
-  await nextTick();
-  storeDeltaFileUploadSession();
+  storeDeltaFileUploadSession(results);
   fileUploader.value.files = [];
 };
 
-const deltaFilesStorage = useStorage("deltafiles-upload-session-storage", {}, sessionStorage, { serializer: StorageSerializers.string });
+// Store for the sessions user selected Flow.
+const selectedFlowStorage = useStorage("selectedFlowStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+// Store for the sessions user inputed metadata.
 const metadataStorage = useStorage("metadataStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.string });
+// Store for the sessions user uploaded deltaFiles.
+const deltaFilesStorage = useStorage("deltafiles-upload-session-storage", {}, sessionStorage, { serializer: StorageSerializers.string });
 
-const getDeltaFileUploadSession = () => {
-  if (!_.isEmpty(deltaFilesStorage.value)) {
-    deltaFiles.value = _.concat(deltaFiles.value, JSON.parse(deltaFilesStorage.value))
+const storeDeltaFileUploadSession = async (results) => {
+  // If there is no data in the deltaFiles storage then just save it off. If data is in there we want to persist it so concat the older data with
+  // the new data and save it off.
+  if (_.isEmpty(deltaFilesStorage.value)) {
+    deltaFilesStorage.value = JSON.stringify(results);
+  } else {
+    deltaFilesStorage.value = JSON.stringify(_.uniqBy(_.concat(JSON.parse(deltaFilesStorage.value), results), "did"));
   }
 
-  if (!_.isEmpty(metadataStorage.value)) {
-    metadata.value = _.concat(metadata.value, JSON.parse(metadataStorage.value))
+  // Save off inputed metadata into store.
+  metadataStorage.value = JSON.stringify(metadata.value);
+
+  // Save off selected flow into store.
+  selectedFlowStorage.value = selectedFlow.value;
+
+  getDeltaFileSession();
+};
+
+const getDeltaFileSession = () => {
+  if (!_.isEmpty(deltaFilesStorage.value)) {
+    deltaFiles.value = JSON.parse(deltaFilesStorage.value);
   }
 };
 
-const storeDeltaFileUploadSession = () => {
-  if (_.isEmpty(deltaFilesStorage.value)) {
-    deltaFilesStorage.value = JSON.stringify(deltaFiles.value);
+const getMetadataSession = () => {
+  if (!_.isEmpty(metadataStorage.value)) {
+    metadata.value = JSON.parse(metadataStorage.value);
   }
-  else {
-    deltaFilesStorage.value = JSON.stringify(_.uniqBy(_.concat(JSON.parse(deltaFilesStorage.value), deltaFiles.value), "did"));
-  }
+};
 
-  if (_.isEmpty(metadataStorage.value)) {
-    metadataStorage.value = JSON.stringify(metadata.value);
+const getSelectedFlowSession = () => {
+  if (!_.isEmpty(selectedFlowStorage.value)) {
+    selectedFlow.value = selectedFlowStorage.value;
   }
-  else {
-    metadataStorage.value = JSON.stringify(_.uniqBy(_.concat(JSON.parse(metadataStorage.value), metadata.value), "key"));
-  }
-}
+};
+
+const replayMetadata = (value) => {
+  metadata.value = JSON.parse(JSON.stringify(value.uploadedMetadata));
+  let flowSelected = `{"name" : "${value.flow}"}`;
+  selectedFlow.value = JSON.parse(flowSelected);
+};
 
 const clearDeltaFilesSession = () => {
   deltaFilesStorage.value = "";
   deltaFiles.value = [];
-}
+};
 
 const uploadsRowClass = (data) => {
   return data.error ? "table-danger" : null;
@@ -223,6 +258,11 @@ const uploadsRowClass = (data) => {
 
 // Created
 fetchIngressFlows();
+
+const formatMetadataforViewer = (filename, uploadedMetadata) => {
+  let metaDataObject = `{"${filename}" : ${JSON.stringify(uploadedMetadata)}}`;
+  return JSON.parse(metaDataObject);
+};
 </script>
 
 <style lang="scss">

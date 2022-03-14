@@ -27,7 +27,7 @@
   }
   .deltafiles {
     .did-column {
-      width: 35%;
+      width: 27%;
     }
     .filename-column {
       width: 35%;
@@ -37,7 +37,32 @@
       width: 15%;
     }
     .updated-timestamp-column {
-      width: 20%;
+      width: 15%;
+    }
+    .metadata-column {
+      width: 12%;
+      .content-button {
+        cursor: pointer !important;
+        padding: 0.1rem 0.4rem;
+        margin: 0;
+        color: #333333;
+      }
+      .content-button:hover {
+        color: #666666 !important;
+        .p-button-label {
+          text-decoration: none !important;
+        }
+      }
+      .content-button:focus {
+        outline: none !important;
+        box-shadow: none !important;
+      }
     }
   }
+}
+
+#viewMetadata,
+#replayMetadata {
+  display: inline-block;
+  /* additional code */
 }
