@@ -403,12 +403,14 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("file1", child1.getSourceInfo().getFilename());
 		assertEquals(0, child1.getFirstProtocolLayer().getContentReference().getOffset());
+		assertEquals(2, child1.getFirstProtocolLayer().getContent().size());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("file2", child2.getSourceInfo().getFilename());
 		assertEquals(250, child2.getFirstProtocolLayer().getContentReference().getOffset());
+		assertEquals(1, child2.getFirstProtocolLayer().getContent().size());
 
 		Mockito.verify(redisService, times(2)).enqueue(eq(Collections.singletonList("SampleTransformAction")), any());
 	}
