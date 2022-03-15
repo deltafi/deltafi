@@ -58,7 +58,9 @@
                 <span v-if="file.data.loading">
                   <ProgressBar :value="file.data.percentComplete" />
                 </span>
-                <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
+                <span v-else-if="file.data.error">
+                  <i class="fas fa-times" /> Error
+                </span>
                 <router-link v-else class="monospace" :to="{ path: '/deltafile/viewer/' + file.data.did }">{{ file.data.did }}</router-link>
               </template>
             </Column>
@@ -191,7 +193,7 @@ const ingressFiles = async (event) => {
   for (let file of event.files) {
     const result = await ingressFile(file, selectedFlow.value.name, metadataRecord.value);
     result["uploadedTimestamp"] = uploadedTimestamp.value;
-    result["uploadedMetadata"] = metadata.value;
+    result["uploadedMetadata"] = JSON.parse(JSON.stringify(metadata.value));
     results.push(result);
   }
   storeDeltaFileUploadSession(results);
@@ -201,21 +203,21 @@ const ingressFiles = async (event) => {
 // Store for the sessions user selected Flow.
 const selectedFlowStorage = useStorage("selectedFlowStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 // Store for the sessions user inputed metadata.
-const metadataStorage = useStorage("metadataStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.string });
+const metadataStorage = useStorage("metadataStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 // Store for the sessions user uploaded deltaFiles.
-const deltaFilesStorage = useStorage("deltafiles-upload-session-storage", {}, sessionStorage, { serializer: StorageSerializers.string });
+const deltaFilesStorage = useStorage("deltafiles-upload-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const storeDeltaFileUploadSession = async (results) => {
   // If there is no data in the deltaFiles storage then just save it off. If data is in there we want to persist it so concat the older data with
   // the new data and save it off.
   if (_.isEmpty(deltaFilesStorage.value)) {
-    deltaFilesStorage.value = JSON.stringify(results);
+    deltaFilesStorage.value = results;
   } else {
-    deltaFilesStorage.value = JSON.stringify(_.uniqBy(_.concat(JSON.parse(deltaFilesStorage.value), results), "did"));
+    deltaFilesStorage.value = _.uniqBy(_.concat(deltaFilesStorage.value, results), "did");
   }
 
   // Save off inputed metadata into store.
-  metadataStorage.value = JSON.stringify(metadata.value);
+  metadataStorage.value = metadata.value;
 
   // Save off selected flow into store.
   selectedFlowStorage.value = selectedFlow.value;
@@ -225,13 +227,13 @@ const storeDeltaFileUploadSession = async (results) => {
 
 const getDeltaFileSession = () => {
   if (!_.isEmpty(deltaFilesStorage.value)) {
-    deltaFiles.value = JSON.parse(deltaFilesStorage.value);
+    Object.assign(deltaFiles.value, deltaFilesStorage.value);
   }
 };
 
 const getMetadataSession = () => {
   if (!_.isEmpty(metadataStorage.value)) {
-    metadata.value = JSON.parse(metadataStorage.value);
+    metadata.value = metadataStorage.value;
   }
 };
 
@@ -260,8 +262,9 @@ const uploadsRowClass = (data) => {
 fetchIngressFlows();
 
 const formatMetadataforViewer = (filename, uploadedMetadata) => {
-  let metaDataObject = `{"${filename}" : ${JSON.stringify(uploadedMetadata)}}`;
-  return JSON.parse(metaDataObject);
+  let metaDataObject = {};
+  metaDataObject[filename] = uploadedMetadata;
+  return JSON.parse(JSON.stringify(metaDataObject));
 };
 </script>
 
