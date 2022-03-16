@@ -3,7 +3,7 @@
     "did": "27186720-723a-4f82-a5ab-2fff441b2c9b",
     "sourceInfo": {
       "filename": "fakeData.txt",
-      "flow": "smoke.ingressFlow",
+      "flow": "mock.ingressFlow",
       "metadata": [
         {
           "key": "123",
@@ -32,7 +32,7 @@
         "errorContext": null
       },
       {
-        "name": "SmokeTransformAction",
+        "name": "MockTransformAction",
         "state": "COMPLETE",
         "created": "2022-03-03T19:23:20.835Z",
         "modified": "2022-03-03T19:23:20.841Z",
@@ -40,7 +40,7 @@
         "errorContext": null
       },
       {
-        "name": "SmokeLoadAction",
+        "name": "MockLoadAction",
         "state": "COMPLETE",
         "created": "2022-03-03T19:23:20.841Z",
         "modified": "2022-03-03T19:23:20.847Z",
@@ -48,7 +48,7 @@
         "errorContext": null
       },
       {
-        "name": "SmokeEnrichAction",
+        "name": "MockEnrichAction",
         "state": "COMPLETE",
         "created": "2022-03-03T19:23:20.847Z",
         "modified": "2022-03-03T19:23:20.852Z",
@@ -56,7 +56,7 @@
         "errorContext": null
       },
       {
-        "name": "SmokeFormatAction",
+        "name": "MockFormatAction",
         "state": "COMPLETE",
         "created": "2022-03-03T19:23:20.852Z",
         "modified": "2022-03-03T19:23:20.858Z",
@@ -64,19 +64,19 @@
         "errorContext": null
       },
       {
-        "name": "SmokeValidateAction",
-        "state": "COMPLETE",
+        "name": "MockValidateAction",
+        "state": "ERROR",
         "created": "2022-03-03T19:23:20.858Z",
         "modified": "2022-03-03T19:23:20.865Z",
-        "errorCause": null,
-        "errorContext": null
+        "errorCause": "Something went wrong",
+        "errorContext": "More details"
       },
       {
-        "name": "SmokeEgressAction",
-        "state": "ERROR",
+        "name": "MockEgressAction",
+        "state": "FILTERED",
         "created": "2022-03-03T19:23:20.865Z",
         "modified": "2022-03-03T19:23:20.888Z",
-        "errorCause": "Something went wrong",
+        "errorCause": "File was filtered",
         "errorContext": "More details"
       }
     ],
@@ -89,8 +89,8 @@
     ],
     "enrichment": [
       {
-        "name": "smokeEnrichment",
-        "value": "smoke enrichment value",
+        "name": "mockEnrichment",
+        "value": "mock enrichment value",
         "mediaType": "text/plain"
       }
     ],
@@ -111,9 +111,9 @@
             "value": "xyz"
           }
         ],
-        "formatAction": "SmokeFormatAction",
+        "formatAction": "MockFormatAction",
         "egressActions": [
-          "SmokeEgressAction"
+          "MockEgressAction"
         ],
         "contentReference": {
           "did": "1480cb50-027b-4185-8a93-e5530ee38705",
@@ -128,35 +128,66 @@
       {
         "action": "IngressAction",
         "metadata": null,
-        "contentReference": {
-          "did": "1480cb50-027b-4185-8a93-e5530ee38705",
-          "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-          "offset": 0,
-          "size": 24,
-          "mediaType": "application/x-www-form-urlencoded"
-        }
+        "content": [
+          {
+            "name": "testfile.zip",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 24,
+              "mediaType": "application/octet-stream"
+            }
+          }
+        ]
       },
       {
-        "action": "SmokeTransformAction",
+        "action": "MockTransformAction",
         "metadata": [],
-        "contentReference": {
-          "did": "1480cb50-027b-4185-8a93-e5530ee38705",
-          "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-          "offset": 0,
-          "size": 24,
-          "mediaType": "application/x-www-form-urlencoded"
-        }
+        "content": [
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          }
+        ]
       },
       {
-        "action": "SmokeLoadAction",
+        "action": "MockLoadAction",
         "metadata": [],
-        "contentReference": {
-          "did": "1480cb50-027b-4185-8a93-e5530ee38705",
-          "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-          "offset": 0,
-          "size": 24,
-          "mediaType": "application/x-www-form-urlencoded"
-        }
+        "content": [
+          {
+            "name": "foobar.txt",
+            "metadata": [
+              {
+                "key": "sourceInfo.123",
+                "value": "456"
+              }
+            ],
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 24,
+              "mediaType": "application/octet-stream"
+            }
+          }
+        ]
       }
     ],
     "markedForDelete": null,

@@ -11,6 +11,8 @@ import { reactive, defineProps, onMounted, computed } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import * as d3 from "d3";
+import _ from "lodash";
+
 const timestampFormat = "YYYY-MM-DD HH:mm:ss.SSS";
 const { formatTimestamp } = useUtilFunctions();
 
@@ -128,6 +130,15 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .enter()
     .append("rect")
     .attr("class", "rectWF")
+    .attr("class", function (d) {
+      if (_.isEqual(d.state, "ERROR")) {
+        return "error-bar";
+      } else if (_.isEqual(d.state, "RETRIED") || _.isEqual(d.state, "FILTERED")) {
+        return "warning-bar";
+      } else {
+        return "normal-bar";
+      }
+    })
     .attr("x", function (d) {
       return x(d.end - d.elapsed);
     })
@@ -165,7 +176,15 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .data(data)
     .enter()
     .append("text")
-    .attr("class", "bar")
+    .attr("class", function (d) {
+      if (_.isEqual(d.state, "ERROR")) {
+        return "error-bar";
+      } else if (_.isEqual(d.state, "RETRIED") || _.isEqual(d.state, "FILTERED")) {
+        return "warning-bar";
+      } else {
+        return "normal-bar";
+      }
+    })
     .on("mouseover", function (d) {
       showToolTip(d, d3.event);
       d3.selectAll(".rectWF").style("opacity", 0.5);

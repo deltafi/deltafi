@@ -3,24 +3,28 @@
     display: none !important;
   }
   .chart {
-    font: 4px sans-serif;
-  }
-
-  .chart rect {
-    fill: steelblue;
-  }
-
-  .chart text.bar {
-    fill: white;
+    font: 0.3rem sans-serif;
+    rect.normal-bar {
+      fill: #b8daff;
+    }
+    rect.warning-bar {
+      fill: #ffeeba;
+    }
+    rect.error-bar {
+      fill: #f5c6cb;
+    }
+    text {
+      fill: #333333;
+    }
   }
 
   .d3-tooltip {
     position: absolute;
-    text-align: center;
+    text-align: left;
     padding: 8px;
     margin-top: -20px;
-    font: 10px sans-serif;
-    background: steelblue;
+    font: 1rem sans-serif;
+    background: #333333;
     pointer-events: none;
     color: white;
     border-radius: 5px;
