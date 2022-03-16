@@ -52,7 +52,7 @@
             </Button>
             <Menu id="config_menu" ref="deltaFilesMenu" :model="deltaFilesMenuItems" :popup="true" />
           </template>
-          <DataTable responsive-layout="scroll" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass">
+          <DataTable responsive-layout="scroll" sort-field="uploadedTimestamp" :sort-order="-1" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass">
             <Column field="did" header="DID" class="did-column">
               <template #body="file">
                 <span v-if="file.data.loading">
@@ -213,7 +213,7 @@ const storeDeltaFileUploadSession = async (results) => {
   if (_.isEmpty(deltaFilesStorage.value)) {
     deltaFilesStorage.value = results;
   } else {
-    deltaFilesStorage.value = _.uniqBy(_.concat(deltaFilesStorage.value, results), "did");
+    deltaFilesStorage.value = _.uniqBy(_.concat(results, deltaFilesStorage.value), "did");
   }
 
   // Save off inputed metadata into store.
