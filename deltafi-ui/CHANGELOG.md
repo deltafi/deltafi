@@ -6,8 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
--  Ability to repopulate metadata on DeltaFi Upload page. (#125)
--  Pause background calls when idle. (#118)
+- Ability to repopulate metadata on DeltaFi Upload page. (#125)
+
+### Changed
+- Search, Error, and Upload pages now only show ingress flows. (#129)
+- Background API calls are now paused when page is idle. (#118)
+- Uploaded files are now sorted by time descending on Upload page. (#128)
+- Trace chart colors for actions in the ERROR, RETRIED, FILTERED state now match the Actions table. (#127)
 
 ## [0.19.0]
 

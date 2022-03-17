@@ -31,11 +31,11 @@
           </div>
           <div class="row align-items-center py-2">
             <div class="col-1 text-right align-text-bottom">
-              <label for="flowId">Flow:</label>
+              <label for="flowId">Ingress Flow:</label>
             </div>
             <div class="col-md-auto">
               <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-              <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select a Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+              <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
             </div>
           </div>
           <div class="row align-items-center py-2">
@@ -78,7 +78,7 @@
           </template>
         </Column>
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
-        <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
+        <Column field="sourceInfo.flow" header="Ingress Flow" :sortable="true" />
         <Column field="stage" header="Stage" :sortable="true" />
         <Column field="created" header="Created" :sortable="true">
           <template #body="row">
@@ -243,21 +243,12 @@ const optionMenuToggle = (event) => {
 };
 
 const fetchConfigTypes = async () => {
-  let configTypeNames = [];
-  let flowTypes = [];
-  let actionTypes = [];
+  const flowTypes = ['INGRESS_FLOW'];
   let enumsConfigTypes = await getEnumValuesByEnumType("ConfigType");
-  configTypeNames = enumsConfigTypes.data.__type.enumValues;
-
-  // Convert array of ConfigType objects with
-  let result = configTypeNames.map((a) => a.name);
-  for (const element of result) {
-    if (element.includes("FLOW")) {
-      flowTypes.push(element);
-    } else {
-      actionTypes.push(element);
-    }
-  }
+  let configTypeNames = enumsConfigTypes.data.__type.enumValues;
+  let actionTypes = configTypeNames
+    .map((a) => a.name)
+    .filter(name => name.includes("ACTION"));
 
   fetchActions(actionTypes);
   fetchFlows(flowTypes);

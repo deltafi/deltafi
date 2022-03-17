@@ -2,7 +2,7 @@
   <div class="errors">
     <PageHeader heading="Errors">
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select a Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3" @change="fetchErrors()" />
+        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3" @change="fetchErrors()" />
         <Button v-model="showAcknowledged" :icon="showAcknowledged ? 'fas fa-eye-slash' : 'fas fa-eye'" :label="showAcknowledged ? 'Hide Acknowledged' : 'Show Acknowledged'" class="p-button p-button-secondary p-button-outlined deltafi-input-field show-acknowledged-toggle ml-3" @click="toggleShowAcknowledged()" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>

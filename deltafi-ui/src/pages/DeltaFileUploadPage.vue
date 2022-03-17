@@ -10,12 +10,12 @@
           </template>
           <div class="row">
             <div class="col-5 p-fluid">
-              <InputText type="text" value="Flow" disabled />
+              <InputText type="text" value="Ingress Flow" disabled />
             </div>
             <div class="col-5">
               <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
               <Dropdown v-model="selectedFlow" :options="ingressFlows" option-label="name" :placeholder="selectedFlow ? selectedFlow.name + ' ' : 'Select an Ingress Flow'" :class="{ 'p-invalid': flowSelectInvalid }" />
-              <InlineMessage v-if="flowSelectInvalid" class="ml-3">Flow is required</InlineMessage>
+              <InlineMessage v-if="flowSelectInvalid" class="ml-3">Ingress Flow is required</InlineMessage>
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -65,7 +65,7 @@
               </template>
             </Column>
             <Column field="filename" header="Filename" class="filename-column" />
-            <Column field="flow" header="Flow" class="flow-column" />
+            <Column field="flow" header="Ingress Flow" class="flow-column" />
             <Column field="uploadedTimestamp" header="Uploaded At" class="updated-timestamp-column">
               <template #body="file">
                 <Timestamp :timestamp="file.data.uploadedTimestamp" />
