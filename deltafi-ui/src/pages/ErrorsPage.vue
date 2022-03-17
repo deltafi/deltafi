@@ -96,10 +96,11 @@ import useErrorRetry from "@/composables/useErrorRetry";
 import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { ref, computed, onUnmounted, onMounted } from "vue";
+import { ref, computed, onUnmounted, onMounted, inject } from "vue";
 
 const maxRetrySuccessDisplay = 10;
 const refreshInterval = 5000; // 5 seconds
+const isIdle = inject("isIdle");
 
 const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
 const { pluralize } = useUtilFunctions();
@@ -178,26 +179,26 @@ const refreshButtonIcon = computed(() => {
 });
 
 const refreshButtonClass = computed(() => {
-  let classes = ['p-button', 'deltafi-input-field', 'ml-3']
+  let classes = ["p-button", "deltafi-input-field", "ml-3"];
   if (newErrorsCount.value > 0) {
-    classes.push('p-button-warning')
+    classes.push("p-button-warning");
   } else {
-    classes.push('p-button-outlined')
+    classes.push("p-button-outlined");
   }
-  return classes.join(' ')
-})
+  return classes.join(" ");
+});
 
 const refreshButtonTooltip = computed(() => {
   let pluralized = pluralize(newErrorsCount.value, "error");
   return {
     value: `${pluralized} occurred since last refresh.`,
-    disabled: newErrorsCount.value === 0
-  }
-})
+    disabled: newErrorsCount.value === 0,
+  };
+});
 
 const refreshButtonBadge = computed(() => {
-  return (newErrorsCount.value > 0) ? newErrorsCount.value.toString() : null
-})
+  return newErrorsCount.value > 0 ? newErrorsCount.value.toString() : null;
+});
 
 const fetchErrors = async () => {
   lastServerContact.value = new Date();
@@ -354,7 +355,11 @@ onUnmounted(() => {
 onMounted(async () => {
   await fetchErrors();
   pollNewErrors();
-  autoRefresh = setInterval(pollNewErrors, refreshInterval);
+  autoRefresh = setInterval(() => {
+    if (!isIdle.value) {
+      pollNewErrors();
+    }
+  }, refreshInterval);
 });
 </script>
 

@@ -20,10 +20,11 @@ import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useVersions from "@/composables/useVersions";
-import { onMounted, computed, onUnmounted} from "vue";
+import { onMounted, computed, onUnmounted, inject } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
 const { data: versions, loaded, loading, fetch: fetchVersions } = useVersions();
+const isIdle = inject("isIdle");
 
 let autoRefresh;
 
@@ -31,7 +32,11 @@ const showLoading = computed(() => !loaded.value && loading.value);
 
 onMounted(() => {
   fetchVersions();
-  autoRefresh = setInterval(fetchVersions, refreshInterval);
+  autoRefresh = setInterval(() => {
+    if (!isIdle.value) {
+      fetchVersions();
+    }
+  }, refreshInterval);
 });
 
 onUnmounted(() => {

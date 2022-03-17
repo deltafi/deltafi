@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 -  Ability to repopulate metadata on DeltaFi Upload page. (#125)
+-  Pause background calls when idle. (#118)
 
 ## [0.19.0]
 

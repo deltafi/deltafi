@@ -27,18 +27,23 @@ import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useQueueMetrics from "@/composables/useQueueMetrics";
-import { computed, onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted, inject } from "vue";
 import Timestamp from "@/components/Timestamp.vue";
 
 const refreshInterval = 5000; // 5 seconds
 const { data: queueMetrics, loaded, loading, fetch: fetchQueueMetrics } = useQueueMetrics();
 const showLoading = computed(() => !loaded.value && loading.value);
+const isIdle = inject("isIdle");
 
 let autoRefresh = null;
 
 onMounted(() => {
   fetchQueueMetrics();
-  autoRefresh = setInterval(fetchQueueMetrics, refreshInterval);
+  autoRefresh = setInterval(() => {
+    if (!isIdle.value) {
+      fetchQueueMetrics();
+    }
+  }, refreshInterval);
 });
 
 onUnmounted(() => {

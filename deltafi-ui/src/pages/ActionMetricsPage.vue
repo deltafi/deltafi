@@ -31,12 +31,13 @@ import PageHeader from "@/components/PageHeader.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { ref, computed, onUnmounted, onMounted } from "vue";
+import { ref, computed, onUnmounted, onMounted, inject } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
 const { data: actionMetrics, fetch: getActionMetrics, errors } = useActionMetrics();
 const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
 const { sentenceCaseString } = useUtilFunctions();
+const isIdle = inject("isIdle");
 
 fetchIngressFlows();
 
@@ -80,7 +81,7 @@ onUnmounted(() => {
 onMounted(async () => {
   await fetchActionMetrics();
   autoRefresh = setInterval(fetchActionMetrics, refreshInterval);
-})
+});
 
 const onPauseTimer = (value) => {
   if (value) {
@@ -88,15 +89,17 @@ const onPauseTimer = (value) => {
   } else {
     autoRefresh = setInterval(fetchActionMetrics, refreshInterval);
   }
-}
+};
 
 const fetchActionMetrics = async () => {
-  let actionMetricsParams = { last: timeRange.value.code };
-  if (ingressFlowNameSelected.value) {
-    actionMetricsParams['flowName'] = ingressFlowNameSelected.value.name;
+  if (!isIdle.value) {
+    let actionMetricsParams = { last: timeRange.value.code };
+    if (ingressFlowNameSelected.value) {
+      actionMetricsParams["flowName"] = ingressFlowNameSelected.value.name;
+    }
+    await getActionMetrics(actionMetricsParams);
+    loadingActionMetrics.value = false;
   }
-  await getActionMetrics(actionMetricsParams);
-  loadingActionMetrics.value = false;
 };
 
 const timeRangeChange = async () => {
