@@ -1,6 +1,12 @@
 {
   "deltaFile": {
     "did": "27186720-723a-4f82-a5ab-2fff441b2c9b",
+    "parentDids": [
+      "27186720-723a-4f82-a5ab-2fff441b2c9b"
+    ],
+    "childDids": [
+      "27186720-723a-4f82-a5ab-2fff441b2c9b"
+    ],
     "sourceInfo": {
       "filename": "fakeData.txt",
       "flow": "mock.ingressFlow",

@@ -13,6 +13,8 @@ export default function useDeltaFiles() {
           did: did,
         },
         did: true,
+        parentDids: true,
+        childDids: true,
         sourceInfo: {
           filename: true,
           flow: true,

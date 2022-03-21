@@ -5,6 +5,7 @@ export default function useDeltaFilesQueryBuilder(): {
   getDeltaFileSearchData: (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
   getRecordCount: (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
   getDeltaFiFileNames: (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
+  getDeltaFilesByDIDs: (didsArray?: string[]) => any;
   getEnumValuesByEnumType: (enumType: string) => any;
   getConfigByType: (typeParam: string) => any;
 } {
@@ -107,6 +108,36 @@ export default function useDeltaFilesQueryBuilder(): {
     return sendGraphQLQuery(query, "getDeltaFiFileNames");
   };
 
+  const getDeltaFilesByDIDs = (didsArray?: string[]) => {
+    const query = {
+      deltaFiles: {
+        __args: {
+          offset: 0,
+          limit: 10000,
+          filter: {
+            dids: didsArray
+          },
+          orderBy: {
+            direction: new EnumType('DESC'),
+            field: 'modified'
+          }
+        },
+        deltaFiles: {
+          did: true,
+          stage: true,
+          modified: true,
+          created: true,
+          sourceInfo: {
+            filename: true,
+            flow: true,
+          },
+        }
+      }
+    };
+    return sendGraphQLQuery(query, "getDeltaFilesByDIDs");
+  };
+
+
   const getEnumValuesByEnumType = (enumType: string) => {
     const query = `
       __type(name: "${enumType}") {
@@ -146,6 +177,7 @@ export default function useDeltaFilesQueryBuilder(): {
     getDeltaFileSearchData,
     getRecordCount,
     getDeltaFiFileNames,
+    getDeltaFilesByDIDs,
     getEnumValuesByEnumType,
     getConfigByType
   };

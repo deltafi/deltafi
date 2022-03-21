@@ -1,0 +1,84 @@
+<template>
+  <div>
+    <CollapsiblePanel header="Parent/Child DeltaFiles" class="table-panel">
+      <DataTable v-model:expandedRowGroups="expandedRowGroups" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :expandable-row-groups="true" :row-class="actionRowClass">
+        <template #empty>No Parent/Child DeltaFiles found.</template>
+        <Column field="didType" header="DID Type" :hidden="false" :sortable="true" />
+        <Column field="did" header="DID (UUID)" class="col-4">
+          <template #body="tData">
+            <router-link class="monospace" :to="{ path: '' + tData.data.did }">{{ tData.data.did }}</router-link>
+          </template>
+        </Column>
+        <Column field="sourceInfo.filename" header="Filename" class="col-4" :sortable="true" />
+        <Column field="stage" header="Stage" class="col-4" :sortable="true" />
+        <template #groupheader="slotProps">
+          <span>{{ slotProps.data.didType }}</span>
+        </template>
+      </DataTable>
+    </CollapsiblePanel>
+  </div>
+</template>
+
+<script setup>
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
+import { defineProps, onMounted, reactive, ref } from "vue";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import _ from "lodash";
+
+const { getDeltaFilesByDIDs } = useDeltaFilesQueryBuilder();
+const { pluralize } = useUtilFunctions();
+
+const props = defineProps({
+  deltaFileData: {
+    type: Object,
+    required: true,
+  },
+});
+
+const expandedRowGroups = ref()
+const didsList = ref([]);
+const deltaFile = reactive(props.deltaFileData);
+
+onMounted(() => {
+  fetchParentChildDidsArrayData();
+});
+
+const fetchParentChildDidsArrayData = async () => {
+  const didTypes = ["parentDids", "childDids"];
+  for (let didType of didTypes) {
+    if (_.isEmpty(deltaFile[didType])) {
+      return
+    } else {
+      let newDidsArrayData = [];
+      let didsArrayData = await getDeltaFilesByDIDs(deltaFile[didType]);
+      let deltaFilesObjectsArray = didsArrayData.data.deltaFiles.deltaFiles;
+      for (let deltaFi of deltaFilesObjectsArray) {
+        if (didType === "parentDids") {
+          deltaFi["didType"] = pluralizeWithCount(deltaFilesObjectsArray.length, "Parent");
+        } else {
+          deltaFi["didType"] = pluralizeWithCount(deltaFilesObjectsArray.length, "Child", "Children");
+        }
+        newDidsArrayData.push(deltaFi);
+      }
+      didsList.value = _.concat(didsList.value, newDidsArrayData);
+    }
+  }
+};
+
+const pluralizeWithCount = (count, singular, plural) => {
+  let pluralized = pluralize(count, singular, plural, false);
+  return (count > 1) ? `${pluralized} (${count})` : pluralized;
+}
+
+const actionRowClass = (data) => {
+  return data.stage === "ERROR" ? "table-danger action-error" : null;
+};
+
+</script>
+
+<style lang="scss">
+@import "@/styles/components/deltafile-info-panel.scss";
+</style>

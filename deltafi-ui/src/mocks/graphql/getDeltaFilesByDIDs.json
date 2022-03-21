@@ -1,0 +1,26 @@
+{
+  "deltaFiles": {
+    "deltaFiles": [
+      {
+        "did": "27186720-723a-4f82-a5ab-2fff441b2c9b",
+        "stage": "ERROR",
+        "created": "2022-03-03T19:23:20.823Z",
+        "modified": "2022-03-03T19:23:20.888Z",
+        "sourceInfo": {
+          "filename": "fakeData.txt",
+          "flow": "mock.ingressFlow"
+        }
+      },
+      {
+        "did": "39498989-723a-3333-a5ab-2fff441b2c9b",
+        "stage": "ERROR",
+        "created": "2022-03-03T19:23:20.823Z",
+        "modified": "2022-03-03T19:23:20.888Z",
+        "sourceInfo": {
+          "filename": "fakeData.txt",
+          "flow": "mock.ingressFlow"
+        }
+      }
+    ]
+  }
+}

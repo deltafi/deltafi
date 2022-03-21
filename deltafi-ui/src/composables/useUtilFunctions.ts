@@ -54,10 +54,19 @@ export default function useUtilFunctions(): {
     }
   }
 
-  const pluralize = (count: number, singular: string, plural?: string) => {
-    if (count === 1) return `${count} ${singular}`;
-    if (plural) return `${count} ${plural}`;
-    return `${count} ${singular}s`;
+  const pluralize = (count: number, singular: string, plural?: string, includeCount: boolean = true) => {
+    const output = [];
+    if (includeCount) output.push(count);
+
+    if (count === 1) {
+      output.push(singular);
+    } else if (plural) {
+      output.push(plural);
+    } else {
+      output.push(`${singular}s`);
+    }
+
+    return output.join(' ');
   }
 
   const formattedBytes = (bytes: number) => {

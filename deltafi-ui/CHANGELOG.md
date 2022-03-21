@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Ability to repopulate metadata on DeltaFi Upload page. (#125)
+- Ability to see Parent and Child DeltaFiles on DeltaFile Viewer Page (#121)
 
 ### Changed
 - Search, Error, and Upload pages now only show ingress flows. (#129)

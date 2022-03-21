@@ -119,8 +119,7 @@ import _ from "lodash";
 dayjs.extend(utc)
 
 const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
-const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
-const { convertLocalDateToUTC } = useUtilFunctions();
+const { duration, formatTimestamp, shortTimezone, convertLocalDateToUTC } = useUtilFunctions();
 
 const uiConfig = inject('uiConfig');
 

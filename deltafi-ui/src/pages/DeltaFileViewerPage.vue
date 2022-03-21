@@ -25,6 +25,11 @@
         </div>
       </div>
       <div class="row mb-3">
+        <div class="col-12">
+          <DeltaFileParentChildPanel :delta-file-data="deltaFile" />
+        </div>
+      </div>
+      <div class="row mb-3">
         <div class="col-6">
           <DeltaFileDomainsPanel :delta-file-data="deltaFile" />
         </div>
@@ -62,6 +67,7 @@ import ProgressBar from "primevue/progressbar";
 import MetadataViewer from "@/components/MetadataViewer.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
+import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";
 import DeltaFileDomainsPanel from "@/components/DeltaFileDomainsPanel.vue";
 import DeltaFileEnrichmentPanel from "@/components/DeltaFileEnrichmentPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
