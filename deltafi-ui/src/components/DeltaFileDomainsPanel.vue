@@ -6,18 +6,18 @@
       </div>
       <div v-else class="list-group list-group-flush">
         <div v-for="item in domainContentReferences" :key="item" class="list-group-item list-group-item-action">
-          <ContentViewer :content-reference="item" :header="`Domain: ${item.name}`">
+          <ContentDialog :content="[item]" :header="`Domain: ${item.name}`">
             <div class="content-viewer-button">
               <div class="d-flex w-100 justify-content-between">
                 <strong class="mb-0">{{ item.name }}</strong>
                 <i class="far fa-window-maximize" />
               </div>
               <small class="mb-1 text-muted d-flex w-100 justify-content-between">
-                <span>{{ item.mediaType }}</span>
-                <span>{{ formattedBytes(item.size) }}</span>
+                <span>{{ item.contentReference.mediaType }}</span>
+                <span>{{ formattedBytes(item.contentReference.size) }}</span>
               </small>
             </div>
-          </ContentViewer>
+          </ContentDialog>
         </div>
       </div>
     </CollapsiblePanel>
@@ -28,7 +28,7 @@
 import { computed, reactive, defineProps } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import ContentViewer from "@/components/ContentViewer.vue";
+import ContentDialog from "@/components/ContentDialog.vue";
 
 const props = defineProps({
   deltaFileData: {
@@ -44,11 +44,14 @@ const domainContentReferences = computed(() => {
   return deltaFile.domains.map((domain) => {
     const content = domain.value || "";
     return {
-      ...domain,
-      did: deltaFile.did,
-      content: content,
-      filename: `${deltaFile.did}-domain-${domain.name}`,
-      size: content.length,
+      name: domain.name,
+      contentReference: {
+        did: deltaFile.did,
+        content: content,
+        filename: `${deltaFile.did}-domain-${domain.name}`,
+        size: content.length,
+        mediaType: domain.mediaType
+      }
     };
   });
 });

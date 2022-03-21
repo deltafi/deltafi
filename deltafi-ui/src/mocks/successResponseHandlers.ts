@@ -15,11 +15,11 @@ export default [
 
   rest.get("/api/v1/*", (req, res, ctx) => {
     try {
-      const responseJson = require(`.${req.url.pathname}.json`);
+      const responseJson = require(`.${req.url.pathname}`);
       return res(
-        ctx.delay(100),
+        ctx.delay(500),
         ctx.status(200, 'Mocked status'),
-        ctx.json(responseJson)
+        ctx.body(JSON.stringify(responseJson, null, 2))
       );
     } catch (e) {
       return

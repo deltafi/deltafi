@@ -1,0 +1,26 @@
+.p-dialog-content {
+  height: 100%;
+  .dialog-container {
+    .p-listbox {
+      border-radius: 4px 4px 0 0;
+    }
+    height: 100%;
+    .dialog-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .dialog-column {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .dialog-column-left {
+      flex: 1;
+      margin-right: 1rem;
+    }
+    .dialog-column-right {
+      flex: 4;
+    }
+  }
+}

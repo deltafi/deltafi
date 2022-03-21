@@ -90,7 +90,12 @@
     "enrichment": [
       {
         "name": "mockEnrichment",
-        "value": "mock enrichment value",
+        "value": "smoke enrichment value",
+        "mediaType": "text/plain"
+      },
+      {
+        "name": "MockEnrichmentTwo",
+        "value": "smoke more enrichment value",
         "mediaType": "text/plain"
       }
     ],
@@ -164,6 +169,266 @@
               "size": 45673,
               "mediaType": "application/octet-stream"
             }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
+          {
+            "name": "testfile2.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
+              "offset": 0,
+              "size": 45673,
+              "mediaType": "application/octet-stream"
+            }
           }
         ]
       },
@@ -171,6 +436,16 @@
         "action": "MockLoadAction",
         "metadata": [],
         "content": [
+          {
+            "name": "testfile1.txt",
+            "contentReference": {
+              "did": "1480cb50-027b-4185-8a93-e5530ee38705",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "offset": 0,
+              "size": 23423,
+              "mediaType": "application/octet-stream"
+            }
+          },
           {
             "name": "foobar.txt",
             "metadata": [
@@ -181,7 +456,7 @@
             ],
             "contentReference": {
               "did": "1480cb50-027b-4185-8a93-e5530ee38705",
-              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60936",
+              "uuid": "7f5133c9-cec9-4116-ac27-62e6e2b60931",
               "offset": 0,
               "size": 24,
               "mediaType": "application/octet-stream"

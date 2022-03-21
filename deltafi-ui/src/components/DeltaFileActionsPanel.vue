@@ -18,11 +18,16 @@
           <template #body="action">{{ action.data.elapsed }}</template>
         </Column>
         <Column header="Content" class="content-column">
-          <template #body="action">
-            <span v-if="contentReferences.hasOwnProperty(action.data.name)">
-              <ContentViewer :content-reference="contentReferences[action.data.name]">
+          <template #body="{ data: action }">
+            <span v-if="protocolLayersByAction.hasOwnProperty(action.name)">
+              <ContentDialog :content="protocolLayersByAction[action.name].content" :action="action.name">
                 <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
-              </ContentViewer>
+              </ContentDialog>
+            </span>
+            <span v-else-if="formattedDataByAction.hasOwnProperty(action.name)">
+              <ContentDialog :content="[formattedDataByAction[action.name]]">
+                <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
+              </ContentDialog>
             </span>
           </template>
         </Column>
@@ -49,7 +54,7 @@ import DataTable from "primevue/datatable";
 import Button from "primevue/button";
 
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import ContentViewer from "@/components/ContentViewer.vue";
+import ContentDialog from "@/components/ContentDialog.vue";
 import MetadataViewer from "@/components/MetadataViewer.vue";
 import ErrorViewer from "@/components/ErrorViewer.vue";
 import Timestamp from "@/components/Timestamp.vue";
@@ -82,24 +87,18 @@ const actions = computed(() => {
   });
 });
 
-const contentReferences = computed(() => {
-  if (Object.keys(deltaFile).length === 0) return {};
-  let layers = deltaFile.protocolStack.concat(deltaFile.formattedData);
-  return layers.reduce((content, layer) => {
+const protocolLayersByAction = computed(() => {
+  return deltaFile.protocolStack.reduce((content, layer) => {
+    content[layer.action] = layer;
+    return content;
+  }, {});
+});
+
+const formattedDataByAction = computed(() => {
+  return deltaFile.formattedData.reduce((content, layer) => {
     let actions = [layer.action, layer.formatAction, layer.egressActions].flat().filter((n) => n);
     for (const action of actions) {
-      let filename = action === "IngressAction" ? deltaFile.sourceInfo.filename : layer.filename || `${deltaFile.did}-${layer.action}`;
-      if (layer.content) {
-        content[action] = {
-          ...layer.content[0].contentReference,
-          filename: filename,
-        };
-      } else {
-        content[action] = {
-          ...layer.contentReference,
-          filename: filename,
-        };
-      }
+      content[action] = layer;
     }
     return content;
   }, {});
