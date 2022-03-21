@@ -70,7 +70,7 @@ let autoRefresh = null;
 onMounted(() => {
   fetchSystemMetrics();
   autoRefresh = setInterval(() => {
-    if (!isIdle.value) {
+    if (!isIdle.value && !loading.value) {
       fetchSystemMetrics();
     }
   }, refreshInterval);

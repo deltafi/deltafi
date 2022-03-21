@@ -356,7 +356,7 @@ onMounted(async () => {
   await fetchErrors();
   pollNewErrors();
   autoRefresh = setInterval(() => {
-    if (!isIdle.value) {
+    if (!isIdle.value && !loading.value) {
       pollNewErrors();
     }
   }, refreshInterval);

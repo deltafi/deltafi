@@ -10,9 +10,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - Search, Error, and Upload pages now only show ingress flows. (#129)
-- Background API calls are now paused when page is idle. (#118)
+- Periodic background API calls are now paused when page is idle. (#118)
 - Uploaded files are now sorted by time descending on Upload page. (#128)
 - Trace chart colors for actions in the ERROR, RETRIED, FILTERED state now match the Actions table. (#127)
+
+### Fixed
+- Periodic background API calls now wait for previous call to finish. (#130)
 
 ## [0.19.0]
 

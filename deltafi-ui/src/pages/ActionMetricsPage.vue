@@ -13,7 +13,7 @@
       <div class="row pr-2 pl-2">
         <div class="col-12 pl-2 pr-2">
           <span>
-            <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="loadingActionMetrics" class="mb-3" @pause-timer="onPauseTimer" />
+            <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="mb-3" @pause-timer="onPauseTimer" />
           </span>
         </div>
       </div>
@@ -34,14 +34,13 @@ import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref, computed, onUnmounted, onMounted, inject } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
-const { data: actionMetrics, fetch: getActionMetrics, errors } = useActionMetrics();
+const { data: actionMetrics, fetch: getActionMetrics, errors, loaded, loading } = useActionMetrics();
 const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
 const { sentenceCaseString } = useUtilFunctions();
 const isIdle = inject("isIdle");
 
 fetchIngressFlows();
 
-const loadingActionMetrics = ref(true);
 const timeRanges = [
   { name: "Last 5 minutes", code: "5m" },
   { name: "Last 15 minutes", code: "15m" },
@@ -92,23 +91,22 @@ const onPauseTimer = (value) => {
 };
 
 const fetchActionMetrics = async () => {
-  if (!isIdle.value) {
+  if (!isIdle.value && !loading.value) {
     let actionMetricsParams = { last: timeRange.value.code };
     if (ingressFlowNameSelected.value) {
       actionMetricsParams["flowName"] = ingressFlowNameSelected.value.name;
     }
     await getActionMetrics(actionMetricsParams);
-    loadingActionMetrics.value = false;
   }
 };
 
 const timeRangeChange = async () => {
-  loadingActionMetrics.value = true;
+  loaded.value = false;
   await fetchActionMetrics();
 };
 
 const flowChange = async () => {
-  loadingActionMetrics.value = true;
+  loaded.value = false;
   await fetchActionMetrics();
 };
 </script>

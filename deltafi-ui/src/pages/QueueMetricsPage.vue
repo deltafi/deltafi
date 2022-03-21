@@ -40,7 +40,7 @@ let autoRefresh = null;
 onMounted(() => {
   fetchQueueMetrics();
   autoRefresh = setInterval(() => {
-    if (!isIdle.value) {
+    if (!isIdle.value && !loading.value) {
       fetchQueueMetrics();
     }
   }, refreshInterval);

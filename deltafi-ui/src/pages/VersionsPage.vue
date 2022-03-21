@@ -33,7 +33,7 @@ const showLoading = computed(() => !loaded.value && loading.value);
 onMounted(() => {
   fetchVersions();
   autoRefresh = setInterval(() => {
-    if (!isIdle.value) {
+    if (!isIdle.value && !loading.value) {
       fetchVersions();
     }
   }, refreshInterval);
