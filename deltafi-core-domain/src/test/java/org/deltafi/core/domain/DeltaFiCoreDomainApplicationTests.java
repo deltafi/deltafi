@@ -1379,6 +1379,37 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
 	}
 
+	@Test
+	void testDeltaFilesEndpoint() {
+		DeltaFile deltaFile1 = Util.buildDeltaFile("1", "flow1", DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+		deltaFileRepo.save(deltaFile1);
+		DeltaFile deltaFile2 = Util.buildDeltaFile("2", "flow2", DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
+		deltaFileRepo.save(deltaFile2);
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
+				DeltaFilesGraphQLQuery.newRequest()
+						.filter(new DeltaFilesFilter())
+						.limit(50)
+						.offset(null)
+						.orderBy(null)
+						.build(),
+				new DeltaFilesProjectionRoot().count().totalCount().offset().deltaFiles().did().sourceInfo().flow().parent());
+
+		DeltaFiles deltaFiles = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.DeltaFiles,
+				new TypeRef<>() {}
+		);
+
+		assertEquals(2, deltaFiles.getCount());
+		assertEquals(2, deltaFiles.getTotalCount());
+		assertEquals(0, deltaFiles.getOffset());
+		assertEquals(deltaFile2.getDid(), deltaFiles.getDeltaFiles().get(0).getDid());
+		assertEquals(deltaFile2.getSourceInfo().getFlow(), deltaFiles.getDeltaFiles().get(0).getSourceInfo().getFlow());
+		assertEquals(deltaFile1.getDid(), deltaFiles.getDeltaFiles().get(1).getDid());
+		assertEquals(deltaFile1.getSourceInfo().getFlow(), deltaFiles.getDeltaFiles().get(1).getSourceInfo().getFlow());
+	}
+
 	private DeltaFile loadDeltaFile(String did) {
 		return deltaFileRepo.findById(did).orElse(null);
 	}

@@ -1,22 +1,29 @@
 package org.deltafi.core.domain.datafetchers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.SelectedField;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFilesService;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @DgsComponent
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
+  ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
   DeltaFilesDatafetcher(DeltaFilesService deltaFilesService) {
     this.deltaFilesService = deltaFilesService;
@@ -36,8 +43,21 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @SuppressWarnings("unused")
-  public DeltaFiles deltaFiles(@InputArgument Integer offset, @InputArgument Integer limit, @InputArgument DeltaFilesFilter filter, @InputArgument DeltaFileOrder orderBy) {
+  public DeltaFiles deltaFiles(DataFetchingEnvironment dfe) {
+    Integer offset = dfe.getArgument("offset");
+    Integer limit = dfe.getArgument("limit");
+    DeltaFilesFilter filter = objectMapper.convertValue(dfe.getArgument("filter"), DeltaFilesFilter.class);
+    DeltaFileOrder orderBy = objectMapper.convertValue(dfe.getArgument("orderBy"), DeltaFileOrder.class);
+
+    List<String> rawIncludeFields = dfe.getSelectionSet().getFields().stream().filter(f -> f.getFullyQualifiedName().contains("/")).map(this::buildName).collect(Collectors.toList());
+    // remove subfields -- for example if we have did, sourceInfo, and sourceInfo.flow, this should resolve to did and sourceInfo.flow
+    List<String> includeFields = rawIncludeFields.stream().filter(f -> rawIncludeFields.stream().noneMatch(p -> p.startsWith(f) && !p.equals(f))).collect(Collectors.toList());
+
     return deltaFilesService.getDeltaFiles(offset, limit, filter, orderBy);
+  }
+
+  String buildName(SelectedField f) {
+    return Arrays.stream(f.getFullyQualifiedName().split("/")).skip(1).map(s -> s.contains(".") ? s.substring(s.lastIndexOf(".") + 1) : s).collect(Collectors.joining("."));
   }
 
   @DgsQuery

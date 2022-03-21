@@ -126,9 +126,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy) {
-        Query query = new Query(buildDeltaFilesCriteria(filter));
+        return deltaFiles(offset, limit, filter, orderBy, null);
+    }
 
-        long total = mongoTemplate.count(query, DeltaFile.class);
+    @Override
+    public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
+
+        Query query = new Query(buildDeltaFilesCriteria(filter));
 
         if (nonNull(offset) && offset > 0) {
             query.skip(offset);
@@ -138,13 +142,28 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         query.limit(limit);
 
+        if (Objects.nonNull(includeFields)) {
+            for (String includeField : includeFields) {
+                query.fields().include(includeField);
+            }
+        }
+
         addDeltaFilesOrderBy(query, orderBy);
 
         DeltaFiles deltaFiles = new DeltaFiles();
         deltaFiles.setOffset(offset);
-        deltaFiles.setTotalCount((int) total);
-        deltaFiles.setDeltaFiles(mongoTemplate.find(query, DeltaFile.class));
+        if (Objects.nonNull(includeFields) && includeFields.isEmpty()) {
+            deltaFiles.setDeltaFiles(Collections.emptyList());
+        } else {
+            deltaFiles.setDeltaFiles(mongoTemplate.find(query, DeltaFile.class));
+        }
         deltaFiles.setCount(deltaFiles.getDeltaFiles().size());
+        if ((Objects.isNull(includeFields) || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
+            deltaFiles.setTotalCount(deltaFiles.getCount());
+        } else {
+            int total = (int) mongoTemplate.count(new Query(buildDeltaFilesCriteria(filter)), DeltaFile.class);
+            deltaFiles.setTotalCount(total);
+        }
 
         return deltaFiles;
     }

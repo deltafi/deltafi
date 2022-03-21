@@ -59,13 +59,16 @@ public interface DeltaFileRepoCustom {
      */
     List<DeltaFile> markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy);
 
+    DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy);
+
     /** Return a list of DeltaFiles matching the given criteria
      *
      * @param offset Offset to use for pagination (defaults to 0)
      * @param limit Maximum number of DeltaFiles to return (defaults to 50)
      * @param filter Filters are used to constrain DeltaFiles that are returned
      * @param orderBy Determines what fields the returned records will be sorted by
+     * @param includeFields List of projection fields to return, or all fields if null
      * @return the list of DeltaFiles
      */
-    DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy);
+    DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields);
 }
