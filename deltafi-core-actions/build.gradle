@@ -34,6 +34,7 @@ dependencies {
     implementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     implementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
     implementation "org.apache.commons:commons-compress:1.21"
+    implementation "commons-io:commons-io:2.11.0"
 
     testImplementation "io.quarkus:quarkus-junit5"
     testImplementation "io.quarkus:quarkus-junit5-mockito"

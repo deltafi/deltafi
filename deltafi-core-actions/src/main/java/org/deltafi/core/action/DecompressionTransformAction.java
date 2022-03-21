@@ -6,6 +6,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformAction;
@@ -22,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.core.MediaType;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -46,7 +46,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
 
         TransformResult result = new TransformResult(actionContext, PRODUCES);
 
-        try(InputStream content = new ByteArrayInputStream(loadContent(deltaFile.getFirstContentReference()))) {
+        try(InputStream content = loadContentAsInputStream(deltaFile.getFirstContentReference())) {
             try {
                 switch (params.getDecompressionType()) {
                     case TAR_GZIP:
@@ -106,10 +106,10 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         }
     }
 
-    <T extends ArchiveInputStream> void unarchive( T archive, @NotNull TransformResult result, @NotNull String did) throws IOException, ObjectStorageException {
+    void unarchive( ArchiveInputStream archive, @NotNull TransformResult result, @NotNull String did) throws IOException, ObjectStorageException {
         ArchiveEntry entry;
         while ((entry = archive.getNextEntry()) != null) {
-            ContentReference reference = saveContent(did, archive, MediaType.APPLICATION_OCTET_STREAM);
+            ContentReference reference = saveContent(did, CloseShieldInputStream.wrap(archive), MediaType.APPLICATION_OCTET_STREAM);
             Content content = new Content(entry.getName(), Collections.singletonList(new KeyValue("lastModified", entry.getLastModifiedDate().toString())), reference);
             result.addContent(content);
         }
