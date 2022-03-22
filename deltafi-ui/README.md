@@ -8,6 +8,7 @@ Web front-end for DeltaFi. Written in Vue.js.
   - [Visual Studio Code](#visual-studio-code)
   - [Run Dev Server](#run-dev-server)
     - [API/GraphQL Proxy](#apigraphql-proxy)
+    - [Mocking](#mocking)
   - [ESLint](#eslint)
 - [Production](#production)
   - [Prerequisites](#prerequisites-1)
@@ -58,6 +59,10 @@ For example, to run the app and point the proxy at your local DeltaFi instance, 
     export DELTAFI_GATEWAY_URL="http://$(deltafi serviceip deltafi-gateway)"
     export DELTAFI_INGRESS_URL="http://$(deltafi serviceip deltafi-ingress)"
     npm run dev
+
+##### Mocking
+
+`TODO`
 
 #### ESLint
 
