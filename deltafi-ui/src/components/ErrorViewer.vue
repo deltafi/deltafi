@@ -32,6 +32,7 @@
         </div>
       </div>
     </div>
+    <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
   </Dialog>
 </template>
 
@@ -40,6 +41,7 @@ import Dialog from "primevue/dialog";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import { computed, defineProps } from "vue";
 import Timestamp from "@/components/Timestamp.vue";
+import ScrollTop from "primevue/scrolltop";
 
 const props = defineProps({
   action: {

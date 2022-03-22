@@ -50,6 +50,7 @@
     </div>
     <Dialog v-model:visible="rawJSONDialog.visible" :header="rawJSONDialog.header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true">
       <HighlightedCode :code="rawJSONDialog.body" />
+      <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
     </Dialog>
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
@@ -81,12 +82,13 @@ import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import { reactive, ref, computed, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConfirm } from "primevue/useconfirm";
+import ScrollTop from "primevue/scrolltop";
 
 const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 const confirm = useConfirm();
 const route = useRoute();
 const router = useRouter();
-const uiConfig = inject('uiConfig');
+const uiConfig = inject("uiConfig");
 const { data: deltaFile, getDeltaFile, loaded, loading } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
 const { retry } = useErrorRetry();

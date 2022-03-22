@@ -10,9 +10,10 @@
       </span>
     </span>
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
+    <ScrollTop target="window" :threshold="10" icon="pi pi-arrow-up" />
   </div>
-</template> 
- 
+</template>
+
 <script setup>
 import ProgressBar from "primevue/progressbar";
 import Message from "primevue/message";
@@ -20,6 +21,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import PropertySet from "@/components/PropertySet.vue";
 import usePropertySets from "@/composables/usePropertySets";
 import { computed, onBeforeMount } from "vue";
+import ScrollTop from "primevue/scrolltop";
 
 const { data: propertySets, fetch: fetchPropertySets, errors } = usePropertySets();
 

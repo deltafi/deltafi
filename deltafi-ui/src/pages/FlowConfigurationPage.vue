@@ -6,6 +6,7 @@
     </span>
     <HighlightedCode v-else-if="flowConfigData" language="yaml" :code="flowConfigData" />
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
+    <ScrollTop target="window" :threshold="10" icon="pi pi-arrow-up" />
   </div>
 </template>
 
@@ -16,6 +17,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import useFlowConfiguration from "@/composables/useFlowConfiguration";
 import { onMounted, computed } from "vue";
+import ScrollTop from "primevue/scrolltop";
 
 const { data: flowConfigData, fetch: fetchFlowConfiguration, errors } = useFlowConfiguration();
 
