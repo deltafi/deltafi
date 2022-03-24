@@ -402,15 +402,15 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("file1", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getFirstProtocolLayer().getContentReference().getOffset());
-		assertEquals(2, child1.getFirstProtocolLayer().getContent().size());
+		assertEquals(0, child1.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
+		assertEquals(2, child1.getLastProtocolLayerContent().size());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("file2", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getFirstProtocolLayer().getContentReference().getOffset());
-		assertEquals(1, child2.getFirstProtocolLayer().getContent().size());
+		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
+		assertEquals(1, child2.getLastProtocolLayerContent().size());
 
 		Mockito.verify(redisService, times(2)).enqueue(eq(Collections.singletonList("SampleTransformAction")), any());
 	}
@@ -954,8 +954,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deltaFile.getSourceInfo().getFilename()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFilename());
 		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
 		assertThat(deltaFile.getSourceInfo().getMetadata()).isEqualTo(new ObjectMapper().convertValue(INGRESS_INPUT.getSourceInfo().getMetadata(), new TypeReference<List<KeyValue>>(){}));
-		assertThat(deltaFile.getFirstProtocolLayer().getType()).isEqualTo("theType");
-		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
+		assertThat(deltaFile.getLastProtocolLayerContent().get(0).getContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
 		assertTrue(deltaFile.getEnrichment().isEmpty());
 		assertTrue(deltaFile.getDomains().isEmpty());
 		assertTrue(deltaFile.getFormattedData().isEmpty());
@@ -974,8 +973,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deltaFile.getDid()).isEqualTo(UUID.fromString(deltaFile.getDid()).toString());
 		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
 		assertTrue(deltaFile.getSourceInfo().getMetadata().isEmpty());
-		assertThat(deltaFile.getFirstProtocolLayer().getType()).isEqualTo("theType");
-		assertThat(deltaFile.getFirstContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
+		assertThat(deltaFile.getLastProtocolLayerContent().get(0).getContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
 		assertTrue(deltaFile.getEnrichment().isEmpty());
 		assertTrue(deltaFile.getDomains().isEmpty());
 		assertTrue(deltaFile.getFormattedData().isEmpty());

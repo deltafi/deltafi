@@ -183,10 +183,10 @@ type DeltaFile {
   stage: DeltaFileStage!
   actions: [Action!]!
   sourceInfo: SourceInfo!
-  protocolStack: [ProtocolLayer]!
+  protocolStack: [ProtocolLayer!]
   domains: [Domain!]!
   enrichment: [Enrichment!]!
-  formattedData: [FormattedData]!
+  formattedData: [FormattedData!]
   created: DateTime!
   modified: DateTime!
   markedForDelete: DateTime

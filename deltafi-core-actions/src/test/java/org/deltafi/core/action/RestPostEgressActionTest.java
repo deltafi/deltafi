@@ -11,7 +11,6 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.FormattedData;
 import org.deltafi.core.parameters.RestPostEgressParameters;
@@ -58,15 +57,10 @@ class RestPostEgressActionTest {
 
     private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_NAME, 0, DATA.length, DID, CONTENT_TYPE);
 
-    private static final DeltaFile DELTA_FILE = DeltaFile.newBuilder()
-            .did(DID)
-            .sourceInfo(new SourceInfo(ORIG_FILENAME, FLOW, List.of()))
-            .formattedData(Collections.singletonList(
-                    FormattedData.newBuilder()
-                            .filename(POST_FILENAME)
-                            .contentReference(CONTENT_REFERENCE)
-                            .build()
-            ))
+    private static final SourceInfo SOURCE_INFO = new SourceInfo(ORIG_FILENAME, FLOW, List.of());
+    private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()
+            .filename(POST_FILENAME)
+            .contentReference(CONTENT_REFERENCE)
             .build();
 
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY);
@@ -91,7 +85,7 @@ class RestPostEgressActionTest {
     }
 
     private Result runTest(int statusCode, String responseBody) throws IOException {
-        ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
+        ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
         when(httpService.post(any(), any(), any(), any())).thenReturn(new HttpResponse<>() {
             @Override
             public int statusCode() {
@@ -133,7 +127,7 @@ class RestPostEgressActionTest {
                 return null;
             }
         });
-        Result result = action.execute(DELTA_FILE, actionContext, PARAMS);
+        Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
@@ -158,8 +152,8 @@ class RestPostEgressActionTest {
     public void executeMissingData() throws ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
 
-        ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
-        Result result = action.execute(DELTA_FILE, actionContext, PARAMS);
+        ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
+        Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         verify(httpService, never()).post(any(), any(), any(), any());
 

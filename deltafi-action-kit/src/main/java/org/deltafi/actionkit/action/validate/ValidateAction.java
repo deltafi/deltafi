@@ -1,31 +1,22 @@
 package org.deltafi.actionkit.action.validate;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
-import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.generated.client.RegisterValidateSchemaGraphQLQuery;
-import org.deltafi.core.domain.generated.client.RegisterValidateSchemaProjectionRoot;
-import org.deltafi.core.domain.generated.types.ValidateActionSchemaInput;
+import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.generated.types.FormattedData;
+import org.jetbrains.annotations.NotNull;
 
-public abstract class ValidateAction<P extends ActionParameters> extends Action<P> {
+public abstract class ValidateAction<P extends ActionParameters> extends ValidateActionBase<P> {
     public ValidateAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }
 
     @Override
-    public GraphQLQuery getRegistrationQuery() {
-        ValidateActionSchemaInput paramInput = ValidateActionSchemaInput.newBuilder()
-                .id(getClassCanonicalName())
-                .paramClass(getParamClass())
-                .actionKitVersion(getVersion())
-                .schema(getDefinition())
-                .build();
-        return RegisterValidateSchemaGraphQLQuery.newRequest().actionSchema(paramInput).build();
+    public final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+        return validate(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData().get(0));
     }
 
-    @Override
-    protected BaseProjectionNode getRegistrationProjection() {
-        return new RegisterValidateSchemaProjectionRoot().id();
-    }
+    public abstract Result validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 }

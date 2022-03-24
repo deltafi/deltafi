@@ -7,14 +7,15 @@ import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FilterInput;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class FilterResult extends Result {
     private final String message;
 
-    public FilterResult(ActionContext actionContext, String message) {
-        super(actionContext);
+    public FilterResult(@NotNull ActionContext context, @NotNull String message) {
+        super(context);
 
         this.message = message;
     }

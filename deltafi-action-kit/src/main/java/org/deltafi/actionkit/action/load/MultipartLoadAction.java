@@ -8,8 +8,11 @@ import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.Content;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class LoadAction<P extends ActionParameters> extends LoadActionBase<P> {
-    public LoadAction(Class<P> actionParametersClass) {
+import java.util.List;
+
+@SuppressWarnings("unused")
+public abstract class MultipartLoadAction<P extends ActionParameters> extends LoadActionBase<P> {
+    public MultipartLoadAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }
 
@@ -18,8 +21,8 @@ public abstract class LoadAction<P extends ActionParameters> extends LoadActionB
     @Override
     protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
 
-        return load(context, params, deltaFile.getSourceInfo(), deltaFile.getLastProtocolLayerContent().get(0));
+        return load(context, params, deltaFile.getSourceInfo(), deltaFile.getLastProtocolLayerContent());
     }
 
-    public abstract Result load(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull Content content);
+    public abstract Result load(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList);
 }

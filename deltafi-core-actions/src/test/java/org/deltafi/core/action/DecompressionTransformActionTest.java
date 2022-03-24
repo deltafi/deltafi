@@ -4,7 +4,6 @@ import lombok.SneakyThrows;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -56,12 +55,12 @@ public class DecompressionTransformActionTest {
     public void decompressTarGz() {
         String testFile = "things.tar.gz";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.TAR_GZIP);
-        DeltaFile df = deltaFile(testFile);
+        Content content = content(testFile);
 
-        Mockito.when(contentStorageService.load(df.getLastProtocolLayer().getContentReference())).thenReturn(content(testFile));
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.execute(df, ACTION_CONTEXT, params);
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -80,11 +79,11 @@ public class DecompressionTransformActionTest {
     public void decompressionTypeMismatch() {
         String testFile = "things.tar.gz";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.ZIP);
-        DeltaFile df = deltaFile(testFile);
+        Content content = content(testFile);
 
-        Mockito.when(contentStorageService.load(df.getLastProtocolLayer().getContentReference())).thenReturn(content(testFile));
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
 
-        Result result = action.execute(df, ACTION_CONTEXT, params);
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Unable to decompress zip"));
     }
@@ -94,11 +93,11 @@ public class DecompressionTransformActionTest {
     public void loadFailure() {
         String testFile = "things.tar.gz";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.GZIP);
-        DeltaFile df = deltaFile(testFile);
+        Content content = content(testFile);
 
-        Mockito.when(contentStorageService.load(df.getLastProtocolLayer().getContentReference())).thenThrow(new ObjectStorageException("Boom", new Exception()));
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        Result result = action.execute(df, ACTION_CONTEXT, params);
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Failed to load compressed binary from storage"));
     }
@@ -108,12 +107,12 @@ public class DecompressionTransformActionTest {
     public void storeFailure() {
         String testFile = "things.tar.gz";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.TAR_GZIP);
-        DeltaFile df = deltaFile(testFile);
+        Content content = content(testFile);
 
-        Mockito.when(contentStorageService.load(df.getLastProtocolLayer().getContentReference())).thenReturn(content(testFile));
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         Mockito.when(contentStorageService.save(eq(DID), (InputStream) Mockito.any(), eq(CONTENT_TYPE))).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        Result result = action.execute(df, ACTION_CONTEXT, params);
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Unable to store content"));
     }
@@ -123,12 +122,12 @@ public class DecompressionTransformActionTest {
     public void decompressZip() {
         String testFile = "things.zip";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.ZIP);
-        DeltaFile df = deltaFile(testFile);
+        Content content = content(testFile);
 
-        Mockito.when(contentStorageService.load(df.getLastProtocolLayer().getContentReference())).thenReturn(content(testFile));
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.execute(df, ACTION_CONTEXT, params);
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -147,12 +146,12 @@ public class DecompressionTransformActionTest {
     public void decompressGzip() {
         String testFile = "thing1.txt.gz";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.GZIP);
-        DeltaFile df = deltaFile(testFile);
+        Content content = content(testFile);
 
-        Mockito.when(contentStorageService.load(df.getLastProtocolLayer().getContentReference())).thenReturn(content(testFile));
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.execute(df, ACTION_CONTEXT, params);
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -169,12 +168,12 @@ public class DecompressionTransformActionTest {
     public void unarchiveTar() {
         String testFile = "things.tar";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.TAR);
-        DeltaFile df = deltaFile(testFile);
+        Content content = content(testFile);
 
-        Mockito.when(contentStorageService.load(df.getLastProtocolLayer().getContentReference())).thenReturn(content(testFile));
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.execute(df, ACTION_CONTEXT, params);
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -203,24 +202,17 @@ public class DecompressionTransformActionTest {
     }
 
     @SneakyThrows
-    InputStream content(String filename) {
+    InputStream contentFor(String filename) {
         return this.getClass().getResourceAsStream("/" + filename);
     }
 
-    @SneakyThrows
-    DeltaFile deltaFile(String filename) {
-        ContentReference contentReference = new ContentReference(DID, 0, content(filename).available(), DID, CONTENT_TYPE);
-        return DeltaFile.newBuilder()
-                .did(DID)
-                .sourceInfo(new SourceInfo(filename, FLOW, List.of()))
-                .protocolStack(Collections.singletonList(
-                        new ProtocolLayer("compressedBinary", DeltaFiConstants.INGRESS_ACTION,
-                                Collections.singletonList(
-                                        new Content(filename, Collections.emptyList(), contentReference)),
-                                Collections.emptyList()
-                        )
-                ))
-                .build();
+    SourceInfo sourceInfo(String filename) {
+        return new SourceInfo(filename, FLOW, List.of());
     }
 
+    @SneakyThrows
+    Content content(String filename) {
+        ContentReference contentReference = new ContentReference(DID, 0, contentFor(filename).available(), DID, CONTENT_TYPE);
+        return new Content(filename, Collections.emptyList(), contentReference);
+    }
 }

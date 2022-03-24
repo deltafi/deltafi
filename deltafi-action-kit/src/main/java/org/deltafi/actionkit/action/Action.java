@@ -31,6 +31,7 @@ import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.event.Observes;
@@ -87,7 +88,7 @@ public abstract class Action<P extends ActionParameters> {
         // quarkus will prune the actions if this is not included
     }
 
-    public abstract Result execute(DeltaFile deltaFile, ActionContext actionContext, P params);
+    protected abstract Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params);
 
     @PostConstruct
     public void startAction() {
@@ -102,9 +103,9 @@ public abstract class Action<P extends ActionParameters> {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionInput actionInput = actionEventService.getAction(getFeedString());
-                ActionContext actionContext = actionInput.getActionContext();
-                actionContext.setActionVersion(getVersion());
-                actionContext.setHostname(getHostname());
+                ActionContext context = actionInput.getActionContext();
+                context.setActionVersion(getVersion());
+                context.setHostname(getHostname());
 
                 log.trace("Running action with input {}", actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();
@@ -112,9 +113,9 @@ public abstract class Action<P extends ActionParameters> {
 
                 SourceInfo sourceInfo = deltaFile.getSourceInfo();
 
-                DeltafiSpan span = zipkinService.isEnabled() ? zipkinService.createChildSpan(deltaFile.getDid(), actionContext.getName(), sourceInfo.getFilename(), sourceInfo.getFlow()) : null;
+                DeltafiSpan span = zipkinService.isEnabled() ? zipkinService.createChildSpan(deltaFile.getDid(), context.getName(), sourceInfo.getFilename(), sourceInfo.getFlow()) : null;
 
-                executeAction(deltaFile, actionContext, params);
+                executeAction(deltaFile, context, params);
 
                 if (Objects.nonNull(span)) { zipkinService.markSpanComplete(span); }
             }
@@ -123,17 +124,17 @@ public abstract class Action<P extends ActionParameters> {
         }
     }
 
-    private void executeAction(DeltaFile deltaFile, ActionContext actionContext, P params) throws JsonProcessingException {
+    private void executeAction(DeltaFile deltaFile, ActionContext context, P params) throws JsonProcessingException {
         try {
-            Result result = execute(deltaFile, actionContext, params);
+            Result result = execute(deltaFile, context, params);
             if (Objects.isNull(result)) {
-                throw new RuntimeException("Action " + actionContext.getName() + " returned null Result for did " + actionContext.getDid());
+                throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
             }
 
             actionEventService.submitResult(result);
             ActionMetricsLogger.logMetrics(result);
         } catch (Throwable e) {
-            ErrorResult errorResult = new ErrorResult(actionContext, "Action execution exception", e).logErrorTo(log);
+            ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
             actionEventService.submitResult(errorResult);
 
             // TODO: Log metrics on error caused by exception???
@@ -214,15 +215,6 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     @SuppressWarnings("unused")
-    protected byte[] loadFirstContent(DeltaFile deltaFile) throws ObjectStorageException {
-        return loadContent(deltaFile.getFirstContentReference());
-    }
-
-    @SuppressWarnings("unused")
-    protected byte[] loadContent(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
-        return loadContent(deltaFile.getContentReference(protocolLayerType).orElseThrow());
-    }
-
     protected byte[] loadContent(ContentReference contentReference) throws ObjectStorageException {
         byte[] content = null;
         try (InputStream contentInputStream = loadContentAsInputStream(contentReference)) {
@@ -231,11 +223,6 @@ public abstract class Action<P extends ActionParameters> {
             log.warn("Unable to close content input stream", e);
         }
         return content;
-    }
-
-    @SuppressWarnings("unused")
-    protected InputStream loadContentAsInputStream(DeltaFile deltaFile, String protocolLayerType) throws ObjectStorageException {
-        return loadContentAsInputStream(deltaFile.getContentReference(protocolLayerType).orElseThrow());
     }
 
     protected InputStream loadContentAsInputStream(ContentReference contentReference) throws ObjectStorageException {

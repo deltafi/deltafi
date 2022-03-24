@@ -3,14 +3,12 @@ package org.deltafi.actionkit.action.format;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.Content;
 import org.deltafi.core.domain.generated.types.FormatInput;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,9 +24,26 @@ public class FormatResult extends Result {
     protected ContentReference contentReference;
     protected List<KeyValue> metadata = new ArrayList<>();
 
-    public FormatResult(ActionContext actionContext, String filename) {
-        super(actionContext);
+    public FormatResult(@NotNull ActionContext context, @NotNull String filename) {
+        super(context);
         this.filename = filename;
+    }
+
+    @SuppressWarnings("unused")
+    public void addMetadata(KeyValue keyValue) {
+        metadata.add(keyValue);
+    }
+
+    public void addMetadata(KeyValue keyValue, String prefix) {
+        metadata.add(new KeyValue(prefix + keyValue.getKey(), keyValue.getValue()));
+    }
+
+    public void addMetadata(List<KeyValue> keyValues) {
+        metadata.addAll(keyValues);
+    }
+
+    public void addMetadata(List<KeyValue> keyValues, String prefix) {
+        keyValues.forEach(kv -> addMetadata(kv, prefix));
     }
 
     public void addMetadata(String key, String value) {

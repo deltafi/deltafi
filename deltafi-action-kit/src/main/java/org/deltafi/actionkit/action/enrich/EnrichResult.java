@@ -18,11 +18,11 @@ import java.util.List;
 public class EnrichResult extends Result {
     private final List<EnrichmentInput> enrichments = new ArrayList<>();
 
-    public EnrichResult(ActionContext actionContext) {
-        super(actionContext);
+    public EnrichResult(@NotNull ActionContext context) {
+        super(context);
     }
 
-    public void addEnrichment(@NotNull String enrichmentName, String value, String mediaType) {
+    public void addEnrichment(@NotNull String enrichmentName, String value, @NotNull String mediaType) {
         enrichments.add(new EnrichmentInput(enrichmentName, value, mediaType));
     }
 

@@ -6,8 +6,8 @@ import org.deltafi.core.domain.generated.types.ActionEventType;
 
 public class DeleteResult extends Result {
 
-    public DeleteResult(ActionContext actionContext) {
-        super(actionContext);
+    public DeleteResult(ActionContext context) {
+        super(context);
     }
 
     @Override

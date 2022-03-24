@@ -17,5 +17,4 @@ public class ActionContext {
     private String egressFlow;
     private String hostname;
     private String actionVersion;
-
 }

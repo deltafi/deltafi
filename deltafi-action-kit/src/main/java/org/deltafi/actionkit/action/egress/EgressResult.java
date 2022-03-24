@@ -6,6 +6,7 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,8 +18,8 @@ public class EgressResult extends Result {
     private final String destination;
     private final long bytesEgressed;
 
-    public EgressResult(ActionContext actionContext, String destination, long bytesEgressed) {
-        super(actionContext);
+    public EgressResult(@NotNull ActionContext context, String destination, long bytesEgressed) {
+        super(context);
 
         this.destination = destination;
         this.bytesEgressed = bytesEgressed;

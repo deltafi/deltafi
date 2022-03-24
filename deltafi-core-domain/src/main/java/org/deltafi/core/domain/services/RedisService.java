@@ -42,12 +42,12 @@ public class RedisService {
         ActionInput actionInput = new ActionInput();
         actionInput.setDeltaFile(deltaFile.forQueue(actionName));
 
-        ActionContext actionContext = ActionContext.builder()
+        ActionContext context = ActionContext.builder()
                 .did(deltaFile.getDid())
                 .name(actionName)
                 .ingressFlow(deltaFile.getSourceInfo().getFlow()).build();
 
-        actionInput.setActionContext(actionContext);
+        actionInput.setActionContext(context);
 
         if (Objects.isNull(actionConfiguration.getParameters())) {
             actionConfiguration.setParameters(Collections.emptyMap());

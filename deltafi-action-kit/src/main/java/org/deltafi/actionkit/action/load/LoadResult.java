@@ -4,7 +4,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -17,12 +16,12 @@ import java.util.List;
 public class LoadResult extends DataAmendedResult {
     private final List<DomainInput> domains = new ArrayList<>();
 
-    public LoadResult(ActionContext actionContext, DeltaFile deltaFile) {
-        super(actionContext);
-        setContent(deltaFile.getLastProtocolLayer().getContent());
+    public LoadResult(@NotNull ActionContext context, @NotNull List<Content> contentList) {
+        super(context);
+        setContent(contentList);
     }
 
-    public void addDomain(@NotNull String domainName, String value, String mediaType) {
+    public void addDomain(@NotNull String domainName, String value, @NotNull String mediaType) {
         domains.add(new DomainInput(domainName, value, mediaType));
     }
 
@@ -36,7 +35,7 @@ public class LoadResult extends DataAmendedResult {
         ActionEventInput event = super.toEvent();
         event.setLoad(LoadInput.newBuilder()
                 .domains(domains)
-                .protocolLayer(new ProtocolLayer(actionContext.getName(), actionContext.getName(), content, metadata))
+                .protocolLayer(new ProtocolLayer(context.getName(), context.getName(), content, metadata))
                 .build());
 
         return event;

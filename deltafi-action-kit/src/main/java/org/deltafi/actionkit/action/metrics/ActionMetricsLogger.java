@@ -14,14 +14,14 @@ public class ActionMetricsLogger {
 
         for (Metric metric : metrics) {
             HashMap<String, String> tags = new HashMap<>();
-            tags.put("action", result.getActionContext().getName());
+            tags.put("action", result.getContext().getName());
 
             if (metric.getTags() != null) {
                 tags.putAll(metric.getTags());
             }
 
-            MetricLogger.logMetric(result.actionEventType().name().toLowerCase(), result.getActionContext().getDid(),
-                    result.getActionContext().getIngressFlow(), metric.getName(), metric.getValue(), tags);
+            MetricLogger.logMetric(result.actionEventType().name().toLowerCase(), result.getContext().getDid(),
+                    result.getContext().getIngressFlow(), metric.getName(), metric.getValue(), tags);
         }
     }
 }

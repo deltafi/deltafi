@@ -7,15 +7,18 @@ import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.FormattedData;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class EgressAction<P extends EgressActionParameters> extends EgressActionBase<P> {
-    public EgressAction(Class<P> actionParametersClass) {
+import java.util.List;
+
+@SuppressWarnings("unused")
+public abstract class MultipartEgressAction<P extends EgressActionParameters> extends EgressActionBase<P> {
+    public MultipartEgressAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }
 
     @Override
     protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return egress(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData().get(0));
+        return egress(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData());
     }
 
-    public abstract Result egress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    public abstract Result egress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<FormattedData> formattedDataList);
 }

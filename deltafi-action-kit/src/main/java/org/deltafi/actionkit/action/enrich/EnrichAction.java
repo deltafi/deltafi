@@ -1,42 +1,34 @@
 package org.deltafi.actionkit.action.enrich;
 
-import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
-import org.deltafi.core.domain.generated.client.RegisterEnrichSchemaGraphQLQuery;
-import org.deltafi.core.domain.generated.client.RegisterEnrichSchemaProjectionRoot;
-import org.deltafi.core.domain.generated.types.EnrichActionSchemaInput;
+import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.generated.types.*;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 
-public abstract class EnrichAction<P extends ActionParameters> extends Action<P> {
+public abstract class EnrichAction<P extends ActionParameters> extends EnrichActionBase<P> {
     public EnrichAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }
 
-    public abstract List<String> getRequiresDomains();
-
-    public List<String> getRequiresEnrichment() {
-        return Collections.emptyList();
-    }
-
     @Override
-    protected BaseProjectionNode getRegistrationProjection() {
-        return new RegisterEnrichSchemaProjectionRoot().id();
+    protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+        return enrich(context,
+                params,
+                deltaFile.getSourceInfo(),
+                deltaFile.getLastProtocolLayerContent().get(0),
+                deltaFile.domainMap(),
+                deltaFile.enrichmentMap());
     }
 
-    @Override
-    public GraphQLQuery getRegistrationQuery() {
-        EnrichActionSchemaInput paramInput = EnrichActionSchemaInput.newBuilder()
-            .id(getClassCanonicalName())
-            .paramClass(getParamClass())
-            .actionKitVersion(getVersion())
-            .schema(getDefinition())
-            .requiresDomains(getRequiresDomains())
-            .requiresEnrichment(getRequiresEnrichment())
-            .build();
-        return RegisterEnrichSchemaGraphQLQuery.newRequest().actionSchema(paramInput).build();
-    }
+    public abstract Result enrich(@NotNull ActionContext context,
+                                  @NotNull P params,
+                                  @NotNull SourceInfo sourceInfo,
+                                  @NotNull Content content,
+                                  @NotNull Map<String, Domain> domains,
+                                  @NotNull Map<String, Enrichment> enrichment);
 }

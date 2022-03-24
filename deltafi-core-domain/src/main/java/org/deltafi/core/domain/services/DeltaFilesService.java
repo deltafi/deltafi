@@ -241,6 +241,10 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+        if (deltaFile.noPendingAction(event.getAction())) {
+            throw new UnexpectedActionException(event.getAction(), deltaFile.getDid(), deltaFile.queuedActions());
+        }
+
         ErrorInput errorInput = event.getError();
         if (deltaFile.hasErrorDomain()) {
             log.error("DeltaFile with error domain has thrown an error:\n" +
@@ -248,14 +252,9 @@ public class DeltaFilesService {
                     "Errored in action : " + event.getAction() + "\n" +
                     "Inception Error cause: " + errorInput.getCause() + "\n" +
                     "Inception Error context: " + errorInput.getContext() + "\n");
-            if (!deltaFile.noPendingAction(event.getAction())) {
-                deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
-            }
-            return deltaFile;
-        }
+            deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
 
-        if (deltaFile.noPendingAction(event.getAction())) {
-            throw new UnexpectedActionException(event.getAction(), deltaFile.getDid(), deltaFile.queuedActions());
+            return deltaFile;
         }
 
         deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
@@ -315,7 +314,7 @@ public class DeltaFilesService {
                 .sourceInfo(new SourceInfo(originator.getSourceInfo().getFilename(),
                         originator.getSourceInfo().getFlow(),
                         originator.getSourceInfo().getMetadata()))
-                .protocolStack(Collections.emptyList())
+                .protocolStack(originator.getProtocolStack())
                 .domains(Collections.singletonList(new Domain(ERROR_DOMAIN, errorDomain, MediaType.APPLICATION_JSON_VALUE)))
                 .enrichment(new ArrayList<>())
                 .formattedData(Collections.emptyList())

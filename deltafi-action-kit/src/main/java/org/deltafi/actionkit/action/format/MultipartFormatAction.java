@@ -10,18 +10,21 @@ import org.deltafi.core.domain.generated.types.Domain;
 import org.deltafi.core.domain.generated.types.Enrichment;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
-public abstract class FormatAction<P extends ActionParameters> extends FormatActionBase<P> {
-    public FormatAction(Class<P> actionParametersClass) {
+@SuppressWarnings("unused")
+public abstract class MultipartFormatAction<P extends ActionParameters> extends FormatActionBase<P> {
+    public MultipartFormatAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }
 
     @Override
     protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
 
-        return format(context, params, deltaFile.getSourceInfo(), deltaFile.getLastProtocolLayerContent().get(0), deltaFile.domainMap(), deltaFile.enrichmentMap());
+        return format(context, params, deltaFile.getSourceInfo(), deltaFile.getLastProtocolLayerContent(), deltaFile.domainMap(), deltaFile.enrichmentMap());
     }
 
-    public abstract Result format(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment);
+    public abstract Result format(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment);
 }

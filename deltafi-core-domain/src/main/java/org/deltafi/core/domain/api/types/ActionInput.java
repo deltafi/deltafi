@@ -6,9 +6,7 @@ import java.util.Map;
 
 @Data
 public class ActionInput {
-
     private DeltaFile deltaFile;
     private ActionContext actionContext;
     private Map<String, Object> actionParams;
-
 }

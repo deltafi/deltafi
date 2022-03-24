@@ -1,26 +1,27 @@
 package org.deltafi.passthrough.action;
 
-import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.LoadResult;
+import org.deltafi.actionkit.action.load.MultipartLoadAction;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.generated.types.Content;
 import org.deltafi.passthrough.param.RoteLoadParameters;
+import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
-@Slf4j
-public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
+@SuppressWarnings("unused")
+public class RoteLoadAction extends MultipartLoadAction<RoteLoadParameters> {
     public RoteLoadAction() {
         super(RoteLoadParameters.class);
     }
 
-    public Result execute(DeltaFile deltaFile, ActionContext actionContext, RoteLoadParameters params) {
-        log.trace(actionContext.getName() + " loading (" + deltaFile.getDid() + ")");
-
-        LoadResult result = new LoadResult(actionContext, deltaFile);
+    @Override
+    public Result load(@NotNull ActionContext context, @NotNull RoteLoadParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
+        LoadResult result = new LoadResult(context, contentList);
         params.getDomains().forEach(d -> result.addDomain(d, null, MediaType.TEXT_PLAIN));
         return result;
     }

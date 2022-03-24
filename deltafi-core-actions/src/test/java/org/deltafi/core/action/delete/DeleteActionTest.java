@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 public class DeleteActionTest {
-    private static final ActionContext actionContext = ActionContext.builder().did("did-1").name("name").build();
+    private static final ActionContext context = ActionContext.builder().did("did-1").name("name").build();
 
     @Mock
     ContentStorageService contentStorageService;
@@ -33,7 +33,7 @@ public class DeleteActionTest {
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters();
 
-        Result result = deleteAction.execute(deltaFile, actionContext, actionParameters);
+        Result result = deleteAction.execute(deltaFile, context, actionParameters);
 
         assertTrue(result instanceof DeleteResult);
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());
@@ -47,7 +47,7 @@ public class DeleteActionTest {
         DeltaFile deltaFile = DeltaFile.newBuilder().did("did-1").build();
         ActionParameters actionParameters = new ActionParameters();
 
-        Result result = deleteAction.execute(deltaFile, actionContext, actionParameters);
+        Result result = deleteAction.execute(deltaFile, context, actionParameters);
 
         assertTrue(result instanceof ErrorResult);
         assertEquals(deltaFile.getDid(), result.toEvent().getDid());

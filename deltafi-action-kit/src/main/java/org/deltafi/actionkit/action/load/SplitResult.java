@@ -16,8 +16,8 @@ import java.util.Map;
 public class SplitResult extends Result {
     List<SplitInput> splitInputs = new ArrayList<>();
 
-    public SplitResult(ActionContext actionContext) {
-        super(actionContext);
+    public SplitResult(ActionContext context) {
+        super(context);
     }
 
     public void addChild(String filename, String flow, List<KeyValue> metadata, List<ContentInput> content) {

@@ -11,6 +11,7 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.generated.client.RegisterDeleteSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterDeleteSchemaProjectionRoot;
 import org.deltafi.core.domain.generated.types.DeleteActionSchemaInput;
+import org.jetbrains.annotations.NotNull;
 
 public class DeleteAction extends Action<ActionParameters> {
     public DeleteAction() {
@@ -18,12 +19,12 @@ public class DeleteAction extends Action<ActionParameters> {
     }
 
     @Override
-    public Result execute(DeltaFile deltaFile, ActionContext actionContext, ActionParameters params) {
+    public Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull ActionParameters params) {
         if (!deleteContent(deltaFile.getDid())) {
-            return new ErrorResult(actionContext, "Unable to delete all objects for delta file.");
+            return new ErrorResult(context, "Unable to delete all objects for delta file.");
         }
 
-        return new DeleteResult(actionContext);
+        return new DeleteResult(context);
     }
 
     @Override

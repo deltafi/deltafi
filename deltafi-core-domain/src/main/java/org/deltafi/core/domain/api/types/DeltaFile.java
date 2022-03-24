@@ -1,7 +1,6 @@
 package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +12,7 @@ import org.springframework.http.MediaType;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
@@ -131,26 +131,22 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
     }
 
     public boolean hasErrorDomain() {
-        if (Objects.isNull(getDomains())) {
-            setDomains(new ArrayList<>());
-        }
-
         return getDomains().stream().anyMatch(d -> d.getName().equals(ERROR_DOMAIN));
     }
 
     public Domain getDomain(String domain) {
-        if (Objects.isNull(getDomains())) {
-            setDomains(new ArrayList<>());
-        }
+        return domainMap().get(domain);
+    }
 
-        return getDomains().stream().filter(d -> d.getName().equals(domain)).findFirst().orElse(null);
+    public Map<String, Domain> domainMap() {
+        return getDomains().stream().collect(Collectors.toMap(Domain::getName, Function.identity()));
+    }
+
+    public Map<String, Enrichment> enrichmentMap() {
+        return getEnrichment().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
     }
 
     public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {
-        if (Objects.isNull(getDomains())) {
-            setDomains(new ArrayList<>());
-        }
-
         Optional<Domain> domain = getDomains().stream().filter(d -> d.getName().equals(domainKey)).findFirst();
         if (domain.isPresent()) {
             domain.get().setValue(domainValue);
@@ -165,10 +161,6 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
     @SuppressWarnings("unused")
     public Enrichment getEnrichment(String enrichment) {
-        if (Objects.isNull(getEnrichment())) {
-            setEnrichment(new ArrayList<>());
-        }
-
         return getEnrichment().stream().filter(e -> e.getName().equals(enrichment)).findFirst().orElse(null);
     }
 
@@ -177,10 +169,6 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
     }
 
     public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {
-        if (Objects.isNull(getEnrichment())) {
-            setEnrichment(new ArrayList<>());
-        }
-
         Optional<Enrichment> enrichment = getEnrichment().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
         if (enrichment.isPresent()) {
             enrichment.get().setValue(enrichmentValue);
@@ -250,38 +238,27 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
     }
 
     @JsonIgnore
-    public ProtocolLayer getFirstProtocolLayer() {
-        return getProtocolStack().get(0);
-    }
-
-    @JsonIgnore
     public ProtocolLayer getLastProtocolLayer() {
-        return getProtocolStack().get(getProtocolStack().size() - 1);
-    }
-
-    public Optional<ProtocolLayer> getProtocolLayer(String protocolLayerType) {
-        return getProtocolStack().stream()
-                .filter(protocolLayer -> protocolLayer.getType().equals(protocolLayerType))
-                .findFirst();
+        return (Objects.isNull(getProtocolStack()) || getProtocolStack().isEmpty()) ? null : getProtocolStack().get(getProtocolStack().size() - 1);
     }
 
     @JsonIgnore
-    public ContentReference getFirstContentReference() {
-        return getFirstProtocolLayer().getContentReference();
-    }
-
-    @JsonIgnore
-    public ContentReference getLastContentReference() {
-        return getLastProtocolLayer().getContentReference();
-    }
-
-    @JsonIgnore
-    public Optional<ContentReference> getContentReference(String protocolLayerType) {
-        Optional<ProtocolLayer> protocolLayerOptional = getProtocolLayer(protocolLayerType);
-        if (protocolLayerOptional.isEmpty()) {
-            return Optional.empty();
+    public @NotNull List<Content> getLastProtocolLayerContent() {
+        if (Objects.isNull(getLastProtocolLayer()) || Objects.isNull(getLastProtocolLayer().getContent())) {
+            return Collections.emptyList();
         }
-        return Optional.of(protocolLayerOptional.get().getContentReference());
+
+        return getLastProtocolLayer().getContent();
+    }
+
+    @Override
+    public @NotNull List<Domain> getDomains() {
+        return Objects.isNull(super.getDomains()) ? Collections.emptyList() : super.getDomains();
+    }
+
+    @Override
+    public @NotNull List<Enrichment> getEnrichment() {
+        return Objects.isNull(super.getEnrichment()) ? Collections.emptyList() : super.getEnrichment();
     }
 
     public static Builder newBuilder() {

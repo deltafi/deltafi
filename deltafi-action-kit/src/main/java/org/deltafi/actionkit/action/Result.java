@@ -6,6 +6,7 @@ import org.deltafi.common.metric.Metric;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -21,25 +22,25 @@ public abstract class Result {
     private static final String FILES_ERRORED = "files_errored";
     private static final String FILES_FILTERED = "files_filtered";
 
-    protected final ActionContext actionContext;
+    protected final ActionContext context;
 
-    public Result(ActionContext actionContext) {
-        this.actionContext = actionContext;
+    public Result(@NotNull ActionContext context) {
+        this.context = context;
     }
 
     public abstract ActionEventType actionEventType();
 
     public ActionEventInput toEvent() {
         return ActionEventInput.newBuilder()
-                .did(actionContext.getDid())
-                .action(actionContext.getName())
+                .did(context.getDid())
+                .action(context.getName())
                 .time(OffsetDateTime.now())
                 .type(actionEventType())
                 .build();
     }
 
-    public ActionContext getActionContext() {
-        return actionContext;
+    public ActionContext getContext() {
+        return context;
     }
 
     public Collection<Metric> getCustomMetrics() {

@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.actionkit.action.format.FormatResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.generated.types.Content;
 import org.deltafi.core.domain.generated.types.Domain;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -60,13 +62,10 @@ public class SimpleErrorFormatActionTest {
                 .cause("something bad")
                 .context("more details")
                 .build();
-        DeltaFile deltaFile = DeltaFile.newBuilder()
-                .did(DID)
-                .sourceInfo(new SourceInfo(FILENAME, FLOW, List.of()))
-                .domains(List.of(new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), "application/json")))
-                .build();
-        ActionContext actionContext = ActionContext.builder().did(DID).name(ACTION).build();
-        FormatResult formatResult = (FormatResult) simpleErrorFormatAction.execute(deltaFile, actionContext, new ActionParameters());
+        Domain domain = new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), "application/json");
+        SourceInfo sourceInfo = new SourceInfo(FILENAME, FLOW, List.of());
+        ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
+        FormatResult formatResult = (FormatResult) simpleErrorFormatAction.format(context, sourceInfo, new Content(), Map.of(ERROR_DOMAIN, domain), Collections.emptyMap());
 
         assertEquals(DID, formatResult.toEvent().getDid());
         assertEquals(ACTION, formatResult.toEvent().getAction());

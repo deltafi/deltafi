@@ -20,8 +20,8 @@ public abstract class DataAmendedResult extends Result {
     protected List<Content> content = new ArrayList<>();
     protected List<KeyValue> metadata = new ArrayList<>();
 
-    public DataAmendedResult(ActionContext actionContext) {
-        super(actionContext);
+    public DataAmendedResult(ActionContext context) {
+        super(context);
     }
 
     public void addMetadata(String key, String value) {

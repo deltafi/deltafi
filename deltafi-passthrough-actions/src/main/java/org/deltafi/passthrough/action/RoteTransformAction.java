@@ -1,26 +1,27 @@
 package org.deltafi.passthrough.action;
 
-import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.MultipartTransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.generated.types.Content;
 import org.deltafi.passthrough.param.RoteTransformParameters;
+import org.jetbrains.annotations.NotNull;
 
-@Slf4j
+import java.util.List;
+
 @SuppressWarnings("unused")
-public class RoteTransformAction extends TransformAction<RoteTransformParameters> {
+public class RoteTransformAction extends MultipartTransformAction<RoteTransformParameters> {
     public RoteTransformAction() {
         super(RoteTransformParameters.class);
     }
 
-    public Result execute(DeltaFile deltaFile, ActionContext actionContext, RoteTransformParameters params) {
-        log.trace(actionContext.getName() + " transforming (" + deltaFile.getDid() + ")");
-
-        TransformResult result = new TransformResult(actionContext, params.getResultType());
-        result.setContent(deltaFile.getLastProtocolLayer().getContent());
+    @Override
+    public Result transform(@NotNull ActionContext context, @NotNull RoteTransformParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
+        TransformResult result = new TransformResult(context, params.getResultType());
+        result.setContent(contentList);
         return result;
     }
 

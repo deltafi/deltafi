@@ -1,6 +1,5 @@
 package org.deltafi.core.action;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -9,13 +8,13 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.MultipartTransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.Content;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
@@ -26,9 +25,9 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.List;
 
-@Slf4j
-public class DecompressionTransformAction extends TransformAction<DecompressionTransformParameters> {
+public class DecompressionTransformAction extends MultipartTransformAction<DecompressionTransformParameters> {
 
     private static final String CONSUMES = "compressedBinary";
     private static final String PRODUCES = "binary";
@@ -42,34 +41,34 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     public String getProduces() { return PRODUCES; }
 
     @Override
-    public Result execute(DeltaFile deltaFile, ActionContext actionContext, DecompressionTransformParameters params) {
+    public Result transform(@NotNull ActionContext context, @NotNull DecompressionTransformParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
 
-        TransformResult result = new TransformResult(actionContext, PRODUCES);
+        TransformResult result = new TransformResult(context, PRODUCES);
 
-        try(InputStream content = loadContentAsInputStream(deltaFile.getFirstContentReference())) {
+        try(InputStream content = loadContentAsInputStream(contentList.get(0).getContentReference())) {
             try {
                 switch (params.getDecompressionType()) {
                     case TAR_GZIP:
-                        decompressTarGzip(content, result, deltaFile.getDid());
+                        decompressTarGzip(content, result, context.getDid());
                         break;
                     case ZIP:
-                        unarchiveZip(content, result, deltaFile.getDid());
+                        unarchiveZip(content, result, context.getDid());
                         break;
                     case TAR:
-                        unarchiveTar(content, result, deltaFile.getDid());
+                        unarchiveTar(content, result, context.getDid());
                         break;
                     case GZIP:
-                        decompressGzip(content, result, deltaFile.getDid(), getContentName(deltaFile));
+                        decompressGzip(content, result, context.getDid(), getContentName(contentList));
                         break;
                     default:
-                        return new ErrorResult(actionContext, "Invalid decompression type: " + params.getDecompressionType());
+                        return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType());
                 }
                 content.close();
             } catch (DecompressionTransformException | IOException e) {
-                return new ErrorResult(actionContext, e.getMessage(), e.getCause());
+                return new ErrorResult(context, e.getMessage(), e.getCause());
             }
         } catch (ObjectStorageException | IOException e) {
-            return new ErrorResult(actionContext, "Failed to load compressed binary from storage", e).logErrorTo(log);
+            return new ErrorResult(context, "Failed to load compressed binary from storage", e);
         }
         result.addMetadata("decompressionType", params.getDecompressionType().getValue());
 
@@ -77,8 +76,8 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     }
 
     @Nullable
-    private String getContentName(@NotNull DeltaFile deltaFile) {
-        Content first = deltaFile.getFirstProtocolLayer().getContent().get(0);
+    private String getContentName(@NotNull List<Content> contentList) {
+        Content first = contentList.get(0);
         String name = null;
         if (first != null) {
             name = first.getName();
