@@ -50,7 +50,7 @@ const fetchParentChildDidsArrayData = async () => {
   const didTypes = ["parentDids", "childDids"];
   for (let didType of didTypes) {
     if (_.isEmpty(deltaFile[didType])) {
-      return
+      continue;
     } else {
       let newDidsArrayData = [];
       let didsArrayData = await getDeltaFilesByDIDs(deltaFile[didType]);
