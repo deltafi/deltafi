@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, ref, defineProps, reactive, nextTick } from "vue";
+import { computed, ref, defineProps, reactive, nextTick, watch } from "vue";
 import Dialog from "primevue/dialog";
 import Listbox from 'primevue/listbox';
 
@@ -57,6 +57,10 @@ const listboxItems = computed(() => {
 const selectedItem = ref(listboxItems.value[0])
 const selectedContent = computed(() => content[selectedItem.value.index])
 const selectedContentReference = computed(() => selectedContent.value.contentReference)
+
+watch(selectedItem, (newItem, oldValue) => {
+  if (newItem === null) selectedItem.value = oldValue
+});
 
 const dialogContainer = ref();
 const dialogContainerHeight = ref();
