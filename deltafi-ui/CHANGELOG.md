@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Bug preventing child DeltaFiles from being displayed when no parent DeltaFiles are present. (#134)
+- Bug that was mutating DeltaFile action metadata. (#135)
 
 ## [0.19.1]
 

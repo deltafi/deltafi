@@ -23,7 +23,7 @@ const props = defineProps({
   },
 });
 
-const deltaFile = reactive(props.deltaFileData);
+const deltaFile = reactive(JSON.parse(JSON.stringify(props.deltaFileData)));
 
 const actions = computed(() => {
   let actions = deltaFile.actions.map((action) => {
