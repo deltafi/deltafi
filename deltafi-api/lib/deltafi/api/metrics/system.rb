@@ -10,35 +10,89 @@ module Deltafi
             node_usage = Deltafi::API.k8s_client.api('metrics.k8s.io/v1beta1').resource('nodes').list
 
             pods = pods_by_node
-            pvs = pvs_by_node
+            disks = disks_by_node(mount_point: '/data')
 
             nodes.map do |node|
-              node_pods = pods[node.metadata.name] || []
               {
                 name: node.metadata.name,
                 resources: {
                   cpu: {
                     limit: normalize_cpu(node.status.capacity.cpu),
-                    request: node_pods.reduce(0) { |ntotal, p| ntotal + p[:resources][:cpu][:request] },
                     usage: normalize_cpu(node_usage.find { |n| n.metadata.name == node.metadata.name }.usage.cpu)
                   },
                   memory: {
                     limit: normalize_bytes(node.status.capacity.memory),
-                    request: node_pods.reduce(0) { |ntotal, p| ntotal + p[:resources][:memory][:request] },
                     usage: normalize_bytes(node_usage.find { |n| n.metadata.name == node.metadata.name }.usage.memory)
                   },
                   disk: {
-                    limit: pvs[node.metadata.name]&.reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) } || 0,
-                    request: pvs[node.metadata.name]&.reduce(0) { |ntotal, pv| ntotal + normalize_bytes(pv.spec.capacity.storage) } || 0,
-                    usage: 0 # TODO
+                    limit: disks[node.metadata.name]&.dig(:limit) || 0,
+                    usage: disks[node.metadata.name]&.dig(:usage) || 0
                   }
                 },
-                pods: node_pods
+                pods: pods[node.metadata.name] || []
               }
             end
           end
 
           private
+
+          def disks_by_node(mount_point:)
+            query = <<-QUERY
+            {
+              "size": 0,
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "system.filesystem.mount_point": "#{mount_point}"
+                      }
+                    }
+                  ]
+                }
+              },
+              "aggs": {
+                "nodes": {
+                  "terms": {
+                    "field": "host.name",
+                    "size": 1000
+                  },
+                  "aggs": {
+                    "last_value": {
+                      "top_hits": {
+                        "_source": {
+                          "includes": [
+                            "system.filesystem"
+                          ]
+                        },
+                        "size": 1,
+                        "sort": [
+                          {
+                            "@timestamp": {
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            QUERY
+
+            response = Deltafi::API.elasticsearch('metricbeat-*/_search', query)
+            raise StandardError, "Elasticsearch query failed: #{response.parsed_response['error']['reason']}" if response.code != 200
+
+            response.parsed_response['aggregations']['nodes']['buckets'].inject({}) do |hash, bucket|
+              fs = bucket['last_value']['hits']['hits'][0]['_source']['system']['filesystem']
+              hash[bucket['key']] = {
+                usage: fs['used']['bytes'],
+                limit: fs['total'],
+              }
+              hash
+            end
+          end
 
           def pods_by_node
             pods_by_node = Deltafi::API.k8s_client.api('v1').resource('pods').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName }
@@ -62,12 +116,6 @@ module Deltafi
                   }
                 }
               end
-            end
-          end
-
-          def pvs_by_node
-            Deltafi::API.k8s_client.api('v1').resource('persistentvolumes').list.group_by do |pv|
-              pv.spec.nodeAffinity.required.nodeSelectorTerms.first.matchExpressions.first.values.first
             end
           end
 
