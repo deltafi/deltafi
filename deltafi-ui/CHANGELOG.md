@@ -3,11 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.19.2]
+## [0.20.0]
 
 ### Fixed
 - Bug preventing child DeltaFiles from being displayed when no parent DeltaFiles are present. (#134)
 - Bug that was mutating DeltaFile action metadata. (#135)
+- Bug improperly setting the MIME type of uploaded files to `application/x-www-form-urlencoded`. (#137)
 
 ## [0.19.1]
 
@@ -147,7 +148,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Requested resource information from System Metrics
 
 [Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.1...main
-[0.19.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.1...main
+[0.20.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.1...main
 [0.19.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.0...0.19.1
 [0.19.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.18.1...0.19.0
 [0.18.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.18.0...0.18.1
