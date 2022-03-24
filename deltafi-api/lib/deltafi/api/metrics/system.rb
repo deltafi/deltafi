@@ -68,7 +68,7 @@ module Deltafi
                         "size": 1,
                         "sort": [
                           {
-                            "time": {
+                            "@timestamp": {
                               "order": "desc"
                             }
                           }
