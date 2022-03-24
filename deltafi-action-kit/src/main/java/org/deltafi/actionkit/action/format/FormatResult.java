@@ -39,10 +39,18 @@ public class FormatResult extends Result {
     }
 
     public void addMetadata(List<KeyValue> keyValues) {
+        if (keyValues == null) {
+            return;
+        }
+        
         metadata.addAll(keyValues);
     }
 
     public void addMetadata(List<KeyValue> keyValues, String prefix) {
+        if (keyValues == null) {
+            return;
+        }
+
         keyValues.forEach(kv -> addMetadata(kv, prefix));
     }
 
