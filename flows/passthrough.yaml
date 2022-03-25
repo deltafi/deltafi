@@ -1,4 +1,10 @@
   ingressFlows:
+    decompress-passthrough:
+      loadAction: DecompressPassthroughLoadAction
+      name: decompress-passthrough
+      transformActions:
+      - DecompressPassthroughTransformAction
+      type: compressedBinary
     passthrough:
       loadAction: PassthroughLoadAction
       name: passthrough
@@ -23,6 +29,12 @@
         resultType: passthrough-binary
       produces: passthrough-binary
       type: org.deltafi.passthrough.action.RoteTransformAction
+    DecompressPassthroughTransformAction:
+      consumes: compressedBinary
+      parameters:
+        decompressionType: tar.gz
+      produces: binary
+      type: org.deltafi.core.action.DecompressionTransformAction
   loadActions:
     PassthroughLoadAction:
       consumes: passthrough-binary
@@ -30,6 +42,11 @@
         domains:
         - binary
       type: org.deltafi.passthrough.action.RoteLoadAction
+    DecompressPassthroughLoadAction:
+      consumes: binary
+      parameters:
+        reinjectFlow: passthrough
+      type: org.deltafi.core.action.SplitterLoadAction
   enrichActions: {}
   formatActions:
     PassthroughFormatAction:
