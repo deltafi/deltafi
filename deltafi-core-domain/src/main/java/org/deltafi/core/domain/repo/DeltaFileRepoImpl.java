@@ -159,7 +159,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
         deltaFiles.setCount(deltaFiles.getDeltaFiles().size());
         if ((Objects.isNull(includeFields) || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
-            deltaFiles.setTotalCount(deltaFiles.getCount());
+            deltaFiles.setTotalCount(deltaFiles.getOffset() + deltaFiles.getCount());
         } else {
             int total = (int) mongoTemplate.count(new Query(buildDeltaFilesCriteria(filter)), DeltaFile.class);
             deltaFiles.setTotalCount(total);

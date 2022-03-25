@@ -1270,6 +1270,10 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFiles = deltaFileRepo.deltaFiles(null, 100, new DeltaFilesFilter(), null);
 		assertEquals(2, deltaFiles.getCount());
 		assertEquals(2, deltaFiles.getTotalCount());
+
+		deltaFiles = deltaFileRepo.deltaFiles(1, 100, new DeltaFilesFilter(), null);
+		assertEquals(1, deltaFiles.getCount());
+		assertEquals(2, deltaFiles.getTotalCount());
 	}
 
 	@Test
