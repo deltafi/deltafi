@@ -16,7 +16,7 @@
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
-      <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="did" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :paginator="totalErrors > 0" :rows="10" :rows-per-page-options="[10, 20, 50, 100]" :lazy="true" :total-records="totalErrors" :always-show-paginator="true" :row-hover="true" @page="onPage($event)" @sort="onSort($event)">
+      <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="did" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :paginator="totalErrors > 0" :rows="perPage" :rows-per-page-options="[10, 20, 50, 100, 1000]" :lazy="true" :total-records="totalErrors" :always-show-paginator="true" :row-hover="true" @page="onPage($event)" @sort="onSort($event)">
         <template #empty>No DeltaFiles with Errors to display.</template>
         <template #loading>Loading DeltaFiles with Errors. Please wait.</template>
         <Column class="expander-column" :expander="true" />
