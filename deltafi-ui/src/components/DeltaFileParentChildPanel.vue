@@ -1,8 +1,9 @@
 <template>
   <div>
     <CollapsiblePanel header="Parent/Child DeltaFiles" class="table-panel">
-      <DataTable v-model:expandedRowGroups="expandedRowGroups" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :expandable-row-groups="true" :row-class="actionRowClass">
+      <DataTable v-model:expandedRowGroups="expandedRowGroups" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading" :expandable-row-groups="true" :row-class="actionRowClass">
         <template #empty>No Parent/Child DeltaFiles found.</template>
+        <template #loading>Loading Parent/Child DeltaFiles. Please wait.</template>
         <Column field="didType" header="DID Type" :hidden="false" :sortable="true" />
         <Column field="did" header="DID (UUID)" class="col-4">
           <template #body="tData">
@@ -41,6 +42,7 @@ const props = defineProps({
 const expandedRowGroups = ref()
 const didsList = ref([]);
 const deltaFile = reactive(props.deltaFileData);
+const loading = ref(true);
 
 onMounted(() => {
   fetchParentChildDidsArrayData();
@@ -48,6 +50,8 @@ onMounted(() => {
 
 const fetchParentChildDidsArrayData = async () => {
   const didTypes = ["parentDids", "childDids"];
+  loading.value = true;
+  let combinDidsList = []
   for (let didType of didTypes) {
     if (_.isEmpty(deltaFile[didType])) {
       continue;
@@ -63,9 +67,11 @@ const fetchParentChildDidsArrayData = async () => {
         }
         newDidsArrayData.push(deltaFi);
       }
-      didsList.value = _.concat(didsList.value, newDidsArrayData);
+      combinDidsList = _.concat(combinDidsList, newDidsArrayData);
     }
   }
+  loading.value = false;
+  didsList.value = _.concat(didsList.value, combinDidsList);
 };
 
 const pluralizeWithCount = (count, singular, plural) => {
