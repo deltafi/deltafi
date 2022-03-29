@@ -4,9 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLError;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import graphql.scalar.GraphqlStringCoercing;
+import graphql.schema.Coercing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentReference;
@@ -36,7 +39,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileService {
-    private final GraphQLClientService graphQLClientService;
+    private final GraphQLClient graphQLClient;
     private final ContentStorageService contentStorageService;
     private final ZipkinService zipkinService;
     private final ObjectMapper objectMapper;
@@ -83,20 +86,26 @@ public class DeltaFileService {
 
         GraphQLResponse response;
         try {
-            response = graphQLClientService.executeGraphQLQuery(toGraphQlRequest(ingressInput));
+            response = graphQLClient.executeQuery(toGraphQlRequest(ingressInput).serialize());
         } catch (DeltafiGraphQLException e) {
-            logMetric(did, sourceFileName, flow, "files_dropped", 1);
+            logIngressRequestError(did, sourceFileName, flow, e);
             throw e;
         } catch (Exception e) {
-            logMetric(did, sourceFileName, flow, "files_dropped", 1);
+            logIngressRequestError(did, sourceFileName, flow, e);
             throw new DeltafiException(e.getMessage());
         }
 
         if (response.hasErrors()) {
-            logMetric(did, sourceFileName, flow, "files_dropped", 1);
-            throw new DeltafiGraphQLException(
-                    response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining(",")));
+            String errors = response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining(", "));
+            DeltafiGraphQLException e = new DeltafiGraphQLException(errors);
+            logIngressRequestError(did, sourceFileName, flow, e);
+            throw e;
         }
+    }
+
+    private void logIngressRequestError(String did, String sourceFileName, String flow, Throwable throwable) {
+        log.error("Unable to execute ingress request", throwable);
+        logMetric(did, sourceFileName, flow, "files_dropped", 1);
     }
 
     List<KeyValue> fromMetadataString(String metadata) throws DeltafiMetadataException {
@@ -108,13 +117,22 @@ public class DeltaFileService {
             Map<String, JsonNode> keyValueMap = objectMapper.readValue(metadata, new TypeReference<>() {});
             return keyValueMap.entrySet().stream().map(this::toKeyValueInput).collect(Collectors.toList());
         } catch (JsonProcessingException e) {
-            throw new DeltafiMetadataException("Could not parse metadata, metadata must be a JSON Object" + e.getMessage());
+            throw new DeltafiMetadataException("Could not parse metadata, metadata must be a JSON Object: " + e.getMessage());
         }
     }
 
     private GraphQLQueryRequest toGraphQlRequest(IngressInput ingressInput) {
+        // Workaround for https://github.com/Netflix/dgs-codegen/issues/334. This will properly escape string values
+        // containing special characters.
+        Map<Class<?>, Coercing<?, ?>> scalars = Map.of(String.class, new GraphqlStringCoercing() {
+            @Override
+            public String serialize(Object input) {
+                return net.minidev.json.JSONValue.escape((String) input);
+            }
+        });
+
         IngressGraphQLQuery ingressGraphQLQuery = IngressGraphQLQuery.newRequest().input(ingressInput).build();
-        return new GraphQLQueryRequest(ingressGraphQLQuery, PROJECTION_ROOT);
+        return new GraphQLQueryRequest(ingressGraphQLQuery, PROJECTION_ROOT, scalars);
     }
 
     private void logMetric(String did, String fileName, String flow, String metric, long value) {

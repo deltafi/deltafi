@@ -1,6 +1,7 @@
 package org.deltafi.ingress.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
@@ -39,7 +40,7 @@ class DeltaFileServiceTest {
     ContentStorageService contentStorageService;
 
     @Mock
-    GraphQLClientService graphQLClientService;
+    GraphQLClient graphQLClient;
 
     @Mock
     ZipkinService zipkinService;
@@ -54,13 +55,13 @@ class DeltaFileServiceTest {
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": []}");
-        Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenReturn(dgsResponse);
+        Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
         Mockito.when(zipkinService.isEnabled()).thenReturn(true);
 
         String did = deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON);
 
         Mockito.verify(contentStorageService).save(eq(did), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
-        Mockito.verify(graphQLClientService).executeGraphQLQuery(any());
+        Mockito.verify(graphQLClient).executeQuery(any());
         Mockito.verify(zipkinService).createChildSpan(eq(did), eq(INGRESS_ACTION), eq(OBJECT_NAME), eq(FLOW), any());
         Mockito.verify(zipkinService).markSpanComplete(any());
         Assertions.assertNotNull(did);
@@ -72,7 +73,7 @@ class DeltaFileServiceTest {
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": [{\"message\": \"Bad graphql mutation\"}]}");
-        Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenReturn(dgsResponse);
+        Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
 
         Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON));
 
@@ -84,9 +85,11 @@ class DeltaFileServiceTest {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
-        Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenThrow(new DeltafiGraphQLException("failed to send to dgs"));
+        Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new DeltafiGraphQLException("failed to send to dgs"));
 
-        Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON));
+        DeltafiGraphQLException e = Assertions.assertThrows(DeltafiGraphQLException.class,
+                () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON));
+        Assertions.assertEquals("failed to send to dgs", e.getMessage());
 
         Mockito.verify(contentStorageService).delete(any());
     }
@@ -96,7 +99,7 @@ class DeltaFileServiceTest {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
-        Mockito.when(graphQLClientService.executeGraphQLQuery(any())).thenThrow(new RuntimeException("failed to send to dgs"));
+        Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new RuntimeException("failed to send to dgs"));
 
         Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON));
 
