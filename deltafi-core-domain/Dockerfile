@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-domain-base:0.20.0
+FROM deltafi/deltafi-domain-base:0.21.0
 VOLUME /tmp
 ADD /build/libs/deltafi-core-domain.jar deltafi-core-domain.jar
 COPY probe.sh /
