@@ -1,7 +1,7 @@
 <template>
   <div>
     <CollapsiblePanel header="Parent/Child DeltaFiles" class="table-panel">
-      <DataTable v-model:expandedRowGroups="expandedRowGroups" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading" :expandable-row-groups="true" :row-class="actionRowClass">
+      <DataTable v-model:expandedRowGroups="expandedRowGroups" :paginator="(didsList.length < 10 ? false : true)" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading" :expandable-row-groups="true" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
         <template #empty>No Parent/Child DeltaFiles found.</template>
         <template #loading>Loading Parent/Child DeltaFiles. Please wait.</template>
         <Column field="didType" header="DID Type" :hidden="false" :sortable="true" />
@@ -15,12 +15,19 @@
         <template #groupheader="slotProps">
           <span>{{ slotProps.data.didType }}</span>
         </template>
+        <template #paginatorstart>
+          <Button type="button" icon="pi pi-refresh" class="p-button-text" />
+        </template>
+        <template #paginatorend>
+          <Button type="button" icon="pi pi-cloud" class="p-button-text" />
+        </template>
       </DataTable>
     </CollapsiblePanel>
   </div>
 </template>
 
 <script setup>
+import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
