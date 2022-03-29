@@ -45,6 +45,8 @@ import ContentViewerHoverMenu from "@/components/ContentViewerHoverMenu.vue";
 import useContent from "@/composables/useContent";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, onMounted, ref, toRefs, watch } from "vue";
+import { useClipboard } from '@vueuse/core'
+import useNotifications from "@/composables/useNotifications";
 
 import Button from "primevue/button";
 import Divider from 'primevue/divider';
@@ -83,6 +85,8 @@ const props = defineProps({
 const { contentReference, maxHeight, filename, metadata } = toRefs(props);
 const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data } = useContent();
 const { formattedBytes } = useUtilFunctions();
+const { copy: copyToClipboard } = useClipboard();
+const notify = useNotifications();
 
 const maxPreviewSize = 100000; // 100kB
 const contentLoaded = ref(false);
@@ -114,6 +118,15 @@ const items = ref([
     disabledLabel: "No Metadata",
     command: () => {
       onToggleMetadataClick();
+    },
+  },
+  {
+    label: "Copy to Clipboard",
+    icon: "pi pi-copy",
+    isEnabled: true,
+    command: () => {
+      copyToClipboard(contentAsString.value);
+      notify.info("Copied to clipboard", "Content copied to clipboard.", 3000)
     },
   },
   {
