@@ -67,7 +67,6 @@ const containerClass = computed(() => {
 });
 
 const disabledLabel = (item) => {
-  console.log("in here")
   return !_.isEmpty(item.disabledLabel) ? item.disabledLabel : 'Disabled ' + item.label;
 };
 

@@ -20,14 +20,14 @@
           </DataTable>
         </span>
         <div class="scrollable-content content-viewer-content">
-          <ContentViewerHoverMenu v-show="_.isEmpty(errors.length)" target="parent" :model="items" />
+          <ContentViewerHoverMenu v-show="(_.isEmpty(errors.length) && contentAsString)" target="parent" :model="items" />
           <div v-if="errors.length > 0">
             <Message v-for="error in errors" :key="error" severity="error" :closable="false" class="mb-3 mt-0">{{ error }}</Message>
           </div>
           <div v-else class="my-n3">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
             <div v-else-if="contentLoaded">
-              <Message v-if="!contentAsString" severity="warn" class="m-0">No content to display.</Message>
+              <Message v-if="!contentAsString" severity="warn" class="m-0 pt-3">No content to display.</Message>
               <HighlightedCode v-if="selectedRenderFormat.name === 'UTF-8'" :highlight="highlightCode" :code="contentAsString" :language="language" />
               <HighlightedCode v-if="selectedRenderFormat.name === 'Hexdump'" :highlight="false" :code="contentAsHexdump" />
             </div>
