@@ -16,11 +16,16 @@ import java.util.Map;
 
 @SuppressWarnings("unused")
 public class RoteFormatAction extends SimpleFormatAction {
-    public Result format(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment) {
+    public Result format(@NotNull ActionContext context,
+                         @NotNull SourceInfo sourceInfo,
+                         @NotNull Content content,
+                         @NotNull Map<String, String> metadata,
+                         @NotNull Map<String, Domain> domains,
+                         @NotNull Map<String, Enrichment> enrichment) {
         FormatResult result = new FormatResult(context, sourceInfo.getFilename());
         result.setContentReference(content.getContentReference());
         result.addMetadata(sourceInfo.getMetadata(), "sourceInfo.");
-        result.addMetadata(content.getMetadata());
+        result.addMetadata(metadata);
         return result;
     }
 

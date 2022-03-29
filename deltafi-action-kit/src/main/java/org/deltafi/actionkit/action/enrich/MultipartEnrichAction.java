@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("unused")
 public abstract class MultipartEnrichAction<P extends ActionParameters> extends EnrichActionBase<P> {
     public MultipartEnrichAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
@@ -21,8 +20,20 @@ public abstract class MultipartEnrichAction<P extends ActionParameters> extends 
 
     @Override
     protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return enrich(context, params, deltaFile.getSourceInfo(), deltaFile.getLastProtocolLayerContent(), deltaFile.domainMap(), deltaFile.enrichmentMap());
+        return enrich(context,
+                params,
+                deltaFile.getSourceInfo(),
+                deltaFile.getLastProtocolLayerContent(),
+                deltaFile.getLastProtocolLayerMetadataAsMap(),
+                deltaFile.domainMap(),
+                deltaFile.enrichmentMap());
     }
 
-    public abstract Result enrich(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment);
+    public abstract Result enrich(@NotNull ActionContext context,
+                                  @NotNull P params,
+                                  @NotNull SourceInfo sourceInfo,
+                                  @NotNull List<Content> contentList,
+                                  @NotNull Map<String, String> metadata,
+                                  @NotNull Map<String, Domain> domains,
+                                  @NotNull Map<String, Enrichment> enrichment);
 }

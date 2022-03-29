@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public class RoteLoadAction extends MultipartLoadAction<RoteLoadParameters> {
@@ -20,7 +21,11 @@ public class RoteLoadAction extends MultipartLoadAction<RoteLoadParameters> {
     }
 
     @Override
-    public Result load(@NotNull ActionContext context, @NotNull RoteLoadParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
+    public Result load(@NotNull ActionContext context,
+                       @NotNull RoteLoadParameters params,
+                       @NotNull SourceInfo sourceInfo,
+                       @NotNull List<Content> contentList,
+                       @NotNull Map<String, String> metadata) {
         LoadResult result = new LoadResult(context, contentList);
         params.getDomains().forEach(d -> result.addDomain(d, null, MediaType.TEXT_PLAIN));
         return result;

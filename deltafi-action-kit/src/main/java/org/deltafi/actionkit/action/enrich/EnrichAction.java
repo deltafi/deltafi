@@ -21,6 +21,7 @@ public abstract class EnrichAction<P extends ActionParameters> extends EnrichAct
                 params,
                 deltaFile.getSourceInfo(),
                 deltaFile.getLastProtocolLayerContent().get(0),
+                deltaFile.getLastProtocolLayerMetadataAsMap(),
                 deltaFile.domainMap(),
                 deltaFile.enrichmentMap());
     }
@@ -29,6 +30,7 @@ public abstract class EnrichAction<P extends ActionParameters> extends EnrichAct
                                   @NotNull P params,
                                   @NotNull SourceInfo sourceInfo,
                                   @NotNull Content content,
+                                  @NotNull Map<String, String> metadata,
                                   @NotNull Map<String, Domain> domains,
                                   @NotNull Map<String, Enrichment> enrichment);
 }

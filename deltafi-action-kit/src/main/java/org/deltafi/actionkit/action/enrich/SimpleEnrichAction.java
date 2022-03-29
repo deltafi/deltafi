@@ -18,9 +18,20 @@ public abstract class SimpleEnrichAction extends EnrichAction<ActionParameters> 
     }
 
     @Override
-    public final Result enrich(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment) {
-        return enrich(context, sourceInfo, content, domains, enrichment);
+    public final Result enrich(@NotNull ActionContext context,
+                               @NotNull ActionParameters params,
+                               @NotNull SourceInfo sourceInfo,
+                               @NotNull Content content,
+                               @NotNull Map<String, String> metadata,
+                               @NotNull Map<String, Domain> domains,
+                               @NotNull Map<String, Enrichment> enrichment) {
+        return enrich(context, sourceInfo, content, metadata, domains, enrichment);
     }
 
-    public abstract Result enrich(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment);
+    public abstract Result enrich(@NotNull ActionContext context,
+                                  @NotNull SourceInfo sourceInfo,
+                                  @NotNull Content content,
+                                  @NotNull Map<String, String> metadata,
+                                  @NotNull Map<String, Domain> domains,
+                                  @NotNull Map<String, Enrichment> enrichment);
 }

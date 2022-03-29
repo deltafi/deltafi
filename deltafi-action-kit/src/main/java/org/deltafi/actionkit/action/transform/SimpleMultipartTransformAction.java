@@ -8,6 +8,7 @@ import org.deltafi.core.domain.generated.types.Content;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartTransformAction extends MultipartTransformAction<ActionParameters> {
@@ -16,9 +17,16 @@ public abstract class SimpleMultipartTransformAction extends MultipartTransformA
     }
 
     @Override
-    public final Result transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
-        return transform(context, sourceInfo, contentList);
+    public final Result transform(@NotNull ActionContext context,
+                                  @NotNull ActionParameters params,
+                                  @NotNull SourceInfo sourceInfo,
+                                  @NotNull List<Content> contentList,
+                                  @NotNull Map<String, String> metadata) {
+        return transform(context, sourceInfo, contentList, metadata);
     }
 
-    public abstract Result transform(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList);
+    public abstract Result transform(@NotNull ActionContext context,
+                                     @NotNull SourceInfo sourceInfo,
+                                     @NotNull List<Content> contentList,
+                                     @NotNull Map<String, String> metadata);
 }

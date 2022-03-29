@@ -1,6 +1,7 @@
 package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -249,6 +250,20 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         }
 
         return getLastProtocolLayer().getContent();
+    }
+
+    @JsonIgnore
+    public @NotNull List<KeyValue> getLastProtocolLayerMetadata() {
+        if (Objects.isNull(getLastProtocolLayer()) || Objects.isNull(getLastProtocolLayer().getMetadata())) {
+            return Collections.emptyList();
+        }
+
+        return getLastProtocolLayer().getMetadata();
+    }
+
+    @JsonIgnore
+    public @NotNull Map<String, String> getLastProtocolLayerMetadataAsMap() {
+        return KeyValueConverter.convertKeyValues(getLastProtocolLayerMetadata());
     }
 
     @Override

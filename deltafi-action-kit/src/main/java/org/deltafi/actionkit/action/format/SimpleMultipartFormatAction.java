@@ -19,9 +19,20 @@ public abstract class SimpleMultipartFormatAction extends MultipartFormatAction<
     }
 
     @Override
-    public final Result format(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment) {
-        return format(context, sourceInfo, contentList, domains, enrichment);
+    public final Result format(@NotNull ActionContext context,
+                               @NotNull ActionParameters params,
+                               @NotNull SourceInfo sourceInfo,
+                               @NotNull List<Content> contentList,
+                               @NotNull Map<String, String> metadata,
+                               @NotNull Map<String, Domain> domains,
+                               @NotNull Map<String, Enrichment> enrichment) {
+        return format(context, sourceInfo, contentList, metadata, domains, enrichment);
     }
 
-    public abstract Result format(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment);
+    public abstract Result format(@NotNull ActionContext context,
+                                  @NotNull SourceInfo sourceInfo,
+                                  @NotNull List<Content> contentList,
+                                  @NotNull Map<String, String> metadata,
+                                  @NotNull Map<String, Domain> domains,
+                                  @NotNull Map<String, Enrichment> enrichment);
 }

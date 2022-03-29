@@ -38,9 +38,12 @@ public class SimpleErrorFormatAction extends SimpleFormatAction {
     }
 
     @Override
-    public Result format(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment) {
-        log.warn(context.getName() + " formatting (" + context.getDid() + ")");
-
+    public Result format(@NotNull ActionContext context,
+                         @NotNull SourceInfo sourceInfo,
+                         @NotNull Content content,
+                         @NotNull Map<String, String> metadata,
+                         @NotNull Map<String, Domain> domains,
+                         @NotNull Map<String, Enrichment> enrichment) {
         String json = domains.get(ERROR_DOMAIN).getValue();
         String filename;
         try {

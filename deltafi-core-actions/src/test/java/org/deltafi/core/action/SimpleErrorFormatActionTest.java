@@ -65,7 +65,7 @@ public class SimpleErrorFormatActionTest {
         Domain domain = new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), "application/json");
         SourceInfo sourceInfo = new SourceInfo(FILENAME, FLOW, List.of());
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        FormatResult formatResult = (FormatResult) simpleErrorFormatAction.format(context, sourceInfo, new Content(), Map.of(ERROR_DOMAIN, domain), Collections.emptyMap());
+        FormatResult formatResult = (FormatResult) simpleErrorFormatAction.format(context, sourceInfo, new Content(), Collections.emptyMap(), Map.of(ERROR_DOMAIN, domain), Collections.emptyMap());
 
         assertEquals(DID, formatResult.toEvent().getDid());
         assertEquals(ACTION, formatResult.toEvent().getAction());

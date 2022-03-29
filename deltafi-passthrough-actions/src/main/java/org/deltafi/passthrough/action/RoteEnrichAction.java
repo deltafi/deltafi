@@ -25,7 +25,13 @@ public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
         super(RoteEnrichParameters.class);
     }
 
-    public Result enrich(@NotNull ActionContext context, @NotNull RoteEnrichParameters params, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, Domain> domainList, @NotNull Map<String, Enrichment> enrichmentList) {
+    public Result enrich(@NotNull ActionContext context,
+                         @NotNull RoteEnrichParameters params,
+                         @NotNull SourceInfo sourceInfo,
+                         @NotNull Content content,
+                         @NotNull Map<String, String> metadata,
+                         @NotNull Map<String, Domain> domainList,
+                         @NotNull Map<String, Enrichment> enrichmentList) {
         EnrichResult result = new EnrichResult(context);
         if (Objects.nonNull(params.getEnrichments())) {
             params.getEnrichments().forEach((k, v) -> result.addEnrichment(k, v, MediaType.TEXT_PLAIN));

@@ -60,7 +60,7 @@ public class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -83,7 +83,7 @@ public class DecompressionTransformActionTest {
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Unable to decompress zip"));
     }
@@ -97,7 +97,7 @@ public class DecompressionTransformActionTest {
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Failed to load compressed binary from storage"));
     }
@@ -112,7 +112,7 @@ public class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         Mockito.when(contentStorageService.save(eq(DID), (InputStream) Mockito.any(), eq(CONTENT_TYPE))).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Unable to store content"));
     }
@@ -127,7 +127,7 @@ public class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -151,7 +151,7 @@ public class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -173,7 +173,7 @@ public class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content));
+        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;

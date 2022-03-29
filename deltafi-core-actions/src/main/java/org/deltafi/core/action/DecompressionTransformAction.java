@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class DecompressionTransformAction extends MultipartTransformAction<DecompressionTransformParameters> {
 
@@ -41,8 +42,11 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     public String getProduces() { return PRODUCES; }
 
     @Override
-    public Result transform(@NotNull ActionContext context, @NotNull DecompressionTransformParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
-
+    public Result transform(@NotNull ActionContext context,
+                            @NotNull DecompressionTransformParameters params,
+                            @NotNull SourceInfo sourceInfo,
+                            @NotNull List<Content> contentList,
+                            @NotNull Map<String, String> metadata) {
         TransformResult result = new TransformResult(context, PRODUCES);
 
         try(InputStream content = loadContentAsInputStream(contentList.get(0).getContentReference())) {

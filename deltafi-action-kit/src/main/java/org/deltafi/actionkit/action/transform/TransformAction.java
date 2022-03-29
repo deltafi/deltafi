@@ -8,16 +8,28 @@ import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.Content;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+
 public abstract class TransformAction<P extends ActionParameters> extends TransformActionBase<P> {
     public TransformAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+    protected final Result execute(@NotNull DeltaFile deltaFile,
+                                   @NotNull ActionContext context,
+                                   @NotNull P params) {
 
-        return transform(context, params, deltaFile.getSourceInfo(), deltaFile.getLastProtocolLayerContent().get(0));
+        return transform(context,
+                params,
+                deltaFile.getSourceInfo(),
+                deltaFile.getLastProtocolLayerContent().get(0),
+                deltaFile.getLastProtocolLayerMetadataAsMap());
     }
 
-    public abstract Result transform(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull Content content);
+    public abstract Result transform(@NotNull ActionContext context,
+                                     @NotNull P params,
+                                     @NotNull SourceInfo sourceInfo,
+                                     @NotNull Content content,
+                                     @NotNull Map<String, String> metadata);
 }

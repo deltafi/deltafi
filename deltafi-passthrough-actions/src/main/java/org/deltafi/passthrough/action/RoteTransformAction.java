@@ -11,6 +11,7 @@ import org.deltafi.passthrough.param.RoteTransformParameters;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public class RoteTransformAction extends MultipartTransformAction<RoteTransformParameters> {
@@ -19,7 +20,11 @@ public class RoteTransformAction extends MultipartTransformAction<RoteTransformP
     }
 
     @Override
-    public Result transform(@NotNull ActionContext context, @NotNull RoteTransformParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
+    public Result transform(@NotNull ActionContext context,
+                            @NotNull RoteTransformParameters params,
+                            @NotNull SourceInfo sourceInfo,
+                            @NotNull List<Content> contentList,
+                            @NotNull Map<String, String> metadata) {
         TransformResult result = new TransformResult(context, params.getResultType());
         result.setContent(contentList);
         return result;

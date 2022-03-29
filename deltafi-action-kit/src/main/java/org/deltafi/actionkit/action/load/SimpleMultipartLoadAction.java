@@ -8,6 +8,7 @@ import org.deltafi.core.domain.generated.types.Content;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartLoadAction extends MultipartLoadAction<ActionParameters> {
@@ -16,9 +17,16 @@ public abstract class SimpleMultipartLoadAction extends MultipartLoadAction<Acti
     }
 
     @Override
-    public final Result load(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList) {
-        return load(context, sourceInfo, contentList);
+    public final Result load(@NotNull ActionContext context,
+                             @NotNull ActionParameters params,
+                             @NotNull SourceInfo sourceInfo,
+                             @NotNull List<Content> contentList,
+                             @NotNull Map<String, String> metadata) {
+        return load(context, sourceInfo, contentList, metadata);
     }
 
-    public abstract Result load(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull List<Content> contentList);
+    public abstract Result load(@NotNull ActionContext context,
+                                @NotNull SourceInfo sourceInfo,
+                                @NotNull List<Content> contentList,
+                                @NotNull Map<String, String> metadata);
 }

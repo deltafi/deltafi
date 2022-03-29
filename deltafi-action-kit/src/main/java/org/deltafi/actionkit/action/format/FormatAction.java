@@ -18,10 +18,23 @@ public abstract class FormatAction<P extends ActionParameters> extends FormatAct
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-
-        return format(context, params, deltaFile.getSourceInfo(), deltaFile.getLastProtocolLayerContent().get(0), deltaFile.domainMap(), deltaFile.enrichmentMap());
+    protected final Result execute(@NotNull DeltaFile deltaFile,
+                                   @NotNull ActionContext context,
+                                   @NotNull P params) {
+        return format(context,
+                params,
+                deltaFile.getSourceInfo(),
+                deltaFile.getLastProtocolLayerContent().get(0),
+                deltaFile.getLastProtocolLayerMetadataAsMap(),
+                deltaFile.domainMap(),
+                deltaFile.enrichmentMap());
     }
 
-    public abstract Result format(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, Domain> domains, @NotNull Map<String, Enrichment> enrichment);
+    public abstract Result format(@NotNull ActionContext context,
+                                  @NotNull P params,
+                                  @NotNull SourceInfo sourceInfo,
+                                  @NotNull Content content,
+                                  @NotNull Map<String, String> metadata,
+                                  @NotNull Map<String, Domain> domains,
+                                  @NotNull Map<String, Enrichment> enrichment);
 }

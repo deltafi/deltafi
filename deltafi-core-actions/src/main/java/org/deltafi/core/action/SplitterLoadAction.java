@@ -12,7 +12,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
+@SuppressWarnings("unused")
 public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParameters> {
 
     final public String CONSUMES = "binary";
@@ -25,8 +27,8 @@ public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParamete
     public Result load(@NotNull ActionContext context,
                        @NotNull SplitterLoadParameters params,
                        @NotNull SourceInfo sourceInfo,
-                       @NotNull List<Content> contentList) {
-
+                       @NotNull List<Content> contentList,
+                       @NotNull Map<String, String> metadata) {
         SplitResult result = new SplitResult(context);
 
         for (Content content : contentList) {
