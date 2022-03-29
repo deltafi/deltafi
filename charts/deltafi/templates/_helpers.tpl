@@ -28,7 +28,7 @@ nginx.ingress.kubernetes.io/auth-cache-duration: 200 1m, 401 1m
 startupProbe:
   exec:
     command: ["/probe.sh"]
-  periodSeconds: 1
+  periodSeconds: 2
   timeoutSeconds: 5
   failureThreshold: 30
 {{- end -}}
