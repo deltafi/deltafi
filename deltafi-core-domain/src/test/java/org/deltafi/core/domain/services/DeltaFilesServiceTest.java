@@ -4,6 +4,7 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
@@ -58,7 +59,7 @@ class DeltaFilesServiceTest {
         when(deltaFiConfigService.getIngressFlow(flow)).thenReturn(Optional.of(new IngressFlowConfiguration()));
         String did = UUID.randomUUID().toString();
         SourceInfo sourceInfo = new SourceInfo(null, flow, List.of());
-        List<ContentInput> content = Collections.singletonList(ContentInput.newBuilder().contentReference(new ContentReference()).build());
+        List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference()).build());
         IngressInput ingressInput = new IngressInput(did, sourceInfo, content, OffsetDateTime.now());
 
         DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
@@ -72,7 +73,7 @@ class DeltaFilesServiceTest {
     @Test
     void setThrowsOnMissingFlow() {
         SourceInfo sourceInfo = new SourceInfo(null, "nonsense", List.of());
-        List<ContentInput> content = Collections.singletonList(ContentInput.newBuilder().contentReference(new ContentReference()).build());
+        List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference()).build());
         IngressInput ingressInput = new IngressInput("did", sourceInfo, content, OffsetDateTime.now());
 
         assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.ingress(ingressInput));

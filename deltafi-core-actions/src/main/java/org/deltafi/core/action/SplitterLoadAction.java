@@ -5,8 +5,7 @@ import org.deltafi.actionkit.action.load.MultipartLoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.Content;
-import org.deltafi.core.domain.generated.types.ContentInput;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.parameters.SplitterLoadParameters;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,11 +31,10 @@ public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParamete
         SplitResult result = new SplitResult(context);
 
         for (Content content : contentList) {
-            ContentInput contentInput = new ContentInput(content.getName(), content.getMetadata(), content.getContentReference());
             result.addChild(content.getName(),
                     params.getReinjectFlow(),
                     sourceInfo.getMetadata(),
-                    Collections.singletonList(contentInput));
+                    Collections.singletonList(content));
         }
 
         return result;

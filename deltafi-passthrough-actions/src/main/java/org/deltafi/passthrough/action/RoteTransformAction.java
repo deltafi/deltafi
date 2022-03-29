@@ -6,7 +6,7 @@ import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.Content;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.passthrough.param.RoteTransformParameters;
 import org.jetbrains.annotations.NotNull;
 

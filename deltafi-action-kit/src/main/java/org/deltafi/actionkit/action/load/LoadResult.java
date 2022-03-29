@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.api.types.ProtocolLayer;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;

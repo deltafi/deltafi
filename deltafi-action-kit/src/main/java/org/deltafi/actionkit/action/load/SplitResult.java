@@ -20,7 +20,7 @@ public class SplitResult extends Result {
         super(context);
     }
 
-    public void addChild(String filename, String flow, List<KeyValue> metadata, List<ContentInput> content) {
+    public void addChild(String filename, String flow, List<KeyValue> metadata, List<Content> content) {
         splitInputs.add(SplitInput.newBuilder()
                 .sourceInfo(new SourceInfo(filename, flow, metadata))
                 .content(content)
@@ -28,7 +28,7 @@ public class SplitResult extends Result {
     }
 
     @SuppressWarnings("unused")
-    public void addChild(String filename, String flow, Map<String, String> metadata, List<ContentInput> content) {
+    public void addChild(String filename, String flow, Map<String, String> metadata, List<Content> content) {
         addChild(filename, flow, KeyValueConverter.fromMap(metadata), content);
     }
 

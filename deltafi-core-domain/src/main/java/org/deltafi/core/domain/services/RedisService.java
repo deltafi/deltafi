@@ -2,6 +2,7 @@ package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.core.domain.api.Constants;
@@ -17,6 +18,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RedisService {
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
     private final DeltaFiConfigService configService;
@@ -30,7 +32,22 @@ public class RedisService {
         try {
             jedisKeyedBlockingQueue.put(actions);
         } catch (JsonProcessingException e) {
-            // TODO: this should never happen, but do something?
+            log.error("Unable to convert action to JSON", e);
+        }
+    }
+
+    public void enqueue(Map<String, List<DeltaFile>> enqueueActions) throws ActionConfigException {
+        List<Pair<String, Object>> actions = new ArrayList<>();
+        for (String actionName : enqueueActions.keySet()) {
+            ActionConfiguration actionConfiguration = configService.getConfigForAction(actionName);
+            for (DeltaFile deltaFile : enqueueActions.get(actionName)) {
+                actions.add(Pair.of(actionConfiguration.getType(), toActionInput(actionName, actionConfiguration, deltaFile)));
+            }
+        }
+        try {
+            jedisKeyedBlockingQueue.put(actions);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to convert action to JSON", e);
         }
     }
 

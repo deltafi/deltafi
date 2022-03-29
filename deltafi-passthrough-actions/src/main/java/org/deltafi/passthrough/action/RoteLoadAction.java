@@ -6,7 +6,7 @@ import org.deltafi.actionkit.action.load.MultipartLoadAction;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.Content;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.passthrough.param.RoteLoadParameters;
 import org.jetbrains.annotations.NotNull;
 

@@ -10,7 +10,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.Content;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.generated.types.Domain;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.junit.jupiter.api.Test;

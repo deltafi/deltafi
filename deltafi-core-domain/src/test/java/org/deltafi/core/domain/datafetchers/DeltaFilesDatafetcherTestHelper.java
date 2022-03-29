@@ -1,6 +1,7 @@
 package org.deltafi.core.domain.datafetchers;
 
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.*;
@@ -21,9 +22,9 @@ public class DeltaFilesDatafetcherTestHelper {
     static final List<KeyValue> METADATA = Arrays.asList(new KeyValue("k1", "v1"), new KeyValue("k2", "v2"));
     static final String MEDIA_TYPE = "plain/text";
     static final ContentReference CONTENT_REFERENCE = new ContentReference(OBJECT_UUID, 0, SIZE, DID, MEDIA_TYPE);
-    static final List<ContentInput> CONTENT = Collections.singletonList(ContentInput.newBuilder().contentReference(CONTENT_REFERENCE).build());
+    static final List<Content> CONTENT = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE).build());
     static final ContentReference CONTENT_REFERENCE_2 = new ContentReference(OBJECT_UUID_2, 0, SIZE, DID, MEDIA_TYPE);
-    static final List<ContentInput> CONTENT_2 = Collections.singletonList(ContentInput.newBuilder().contentReference(CONTENT_REFERENCE_2).build());
+    static final List<Content> CONTENT_2 = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE_2).build());
     static final SourceInfo SOURCE_INFO = new SourceInfo(FILENAME, FLOW, METADATA);
     static final SourceInfo SOURCE_INFO_EMPTY_METADATA = new SourceInfo(FILENAME, FLOW, Collections.emptyList());
     public static final IngressInput INGRESS_INPUT_EMPTY_METADATA = new IngressInput(DID, SOURCE_INFO_EMPTY_METADATA, CONTENT, OffsetDateTime.now());

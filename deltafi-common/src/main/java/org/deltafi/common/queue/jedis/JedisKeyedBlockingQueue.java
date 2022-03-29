@@ -9,6 +9,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.resps.KeyedZSetElement;
@@ -77,9 +78,12 @@ public class JedisKeyedBlockingQueue {
      */
     public void put(List<Pair<String, Object>> items) throws JsonProcessingException {
         try (Jedis jedis = jedisPool.getResource()) {
+            Pipeline p = jedis.pipelined();
             for (Pair<String, Object> item : items) {
-                put(jedis, item.getKey(), item.getValue());
+                p.zadd(item.getKey(), Instant.now().toEpochMilli(),
+                        OBJECT_MAPPER.writeValueAsString(item.getValue()), ZAddParams.zAddParams().nx());
             }
+            p.sync();
         }
     }
 

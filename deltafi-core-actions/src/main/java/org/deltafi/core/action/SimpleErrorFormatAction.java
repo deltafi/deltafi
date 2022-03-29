@@ -12,7 +12,7 @@ import org.deltafi.actionkit.action.format.SimpleFormatAction;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.Content;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.generated.types.Domain;
 import org.deltafi.core.domain.generated.types.Enrichment;
 import org.deltafi.core.domain.generated.types.ErrorDomain;

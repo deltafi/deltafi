@@ -1,7 +1,6 @@
 package org.deltafi.core.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jayway.jsonpath.TypeRef;
@@ -38,6 +37,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -78,7 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
-import static org.mockito.Mockito.times;
 
 @SpringBootTest
 @TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "enableScheduling=false"})
@@ -122,6 +121,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@MockBean
 	PluginRegistryService pluginRegistryService;
+
+	@Captor
+	ArgumentCaptor<Map<String, List<DeltaFile>>> enqueueActionCaptor;
 
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -412,7 +414,11 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
 		assertEquals(1, child2.getLastProtocolLayerContent().size());
 
-		Mockito.verify(redisService, times(2)).enqueue(eq(Collections.singletonList("SampleTransformAction")), any());
+		Mockito.verify(redisService).enqueue(enqueueActionCaptor.capture());
+		assertEquals(1, enqueueActionCaptor.getValue().keySet().size());
+		assertEquals(2, enqueueActionCaptor.getValue().get("SampleTransformAction").size());
+		assertEquals(child1.getDid(), enqueueActionCaptor.getValue().get("SampleTransformAction").get(0).getDid());
+		assertEquals(child2.getDid(), enqueueActionCaptor.getValue().get("SampleTransformAction").get(1).getDid());
 	}
 
 	DeltaFile postEnrichDeltaFile(String did) {
@@ -953,7 +959,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deltaFile.getDid()).isEqualTo(UUID.fromString(deltaFile.getDid()).toString());
 		assertThat(deltaFile.getSourceInfo().getFilename()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFilename());
 		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
-		assertThat(deltaFile.getSourceInfo().getMetadata()).isEqualTo(new ObjectMapper().convertValue(INGRESS_INPUT.getSourceInfo().getMetadata(), new TypeReference<List<KeyValue>>(){}));
+		assertThat(deltaFile.getSourceInfo().getMetadata()).isEqualTo(INGRESS_INPUT.getSourceInfo().getMetadata());
 		assertThat(deltaFile.getLastProtocolLayerContent().get(0).getContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
 		assertTrue(deltaFile.getEnrichment().isEmpty());
 		assertTrue(deltaFile.getDomains().isEmpty());

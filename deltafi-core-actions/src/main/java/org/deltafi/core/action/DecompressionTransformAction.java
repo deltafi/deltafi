@@ -15,7 +15,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.Content;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.jetbrains.annotations.NotNull;
