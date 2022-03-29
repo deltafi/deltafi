@@ -7,6 +7,9 @@ module Deltafi
     module Status
       module Checks
         class StorageCheck < Status::Check
+          USAGE_THRESHOLD = 90
+          DATA_MOUNT_POINT = '/data'
+
           def initialize
             super('Kubernetes Storage Check')
           end
@@ -14,8 +17,9 @@ module Deltafi
           def run
             check_pvs
             check_pvcs
+            check_usage
 
-            if code.positive?
+            if code == 2
               message_lines << '##### Recommendation'
               message_lines << 'Run ansible:'
               message_lines << "\n\t$ ansible-playbook bootstrap-deltafi.yml -i inventory/site"
@@ -44,6 +48,19 @@ module Deltafi
             self.code = 2
             message_lines << '##### Missing Persistent Volume Claims'
             message_lines << pvc_missing.map { |n| "- #{n}" }
+          end
+
+          def check_usage
+            nodes_over_threshold = []
+            Deltafi::API::Metrics::System.disks_by_node(mount_point: DATA_MOUNT_POINT).each do |node, metrics|
+              percent = (metrics&.dig(:usage, :pct).to_f * 100).floor
+              nodes_over_threshold << "__#{node}:#{DATA_MOUNT_POINT}__ at __#{percent}%__" if percent >= USAGE_THRESHOLD
+            end
+            return if nodes_over_threshold.empty?
+
+            self.code = 1
+            message_lines << "##### Nodes with disk usage over threshold (#{USAGE_THRESHOLD}%)"
+            message_lines << nodes_over_threshold.map { |n| "- #{n}" }
           end
 
           private

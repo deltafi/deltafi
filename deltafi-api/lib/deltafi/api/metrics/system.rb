@@ -26,15 +26,13 @@ module Deltafi
                   },
                   disk: {
                     limit: disks[node.metadata.name]&.dig(:limit) || 0,
-                    usage: disks[node.metadata.name]&.dig(:usage) || 0
+                    usage: disks[node.metadata.name]&.dig(:usage, :bytes) || 0
                   }
                 },
                 pods: pods[node.metadata.name] || []
               }
             end
           end
-
-          private
 
           def disks_by_node(mount_point:)
             query = <<-QUERY
@@ -87,8 +85,11 @@ module Deltafi
             response.parsed_response['aggregations']['nodes']['buckets'].inject({}) do |hash, bucket|
               fs = bucket['last_value']['hits']['hits'][0]['_source']['system']['filesystem']
               hash[bucket['key']] = {
-                usage: fs['used']['bytes'],
-                limit: fs['total'],
+                usage: {
+                  bytes: fs['used']['bytes'],
+                  pct: fs['used']['pct']
+                },
+                limit: fs['total']
               }
               hash
             end
@@ -118,6 +119,8 @@ module Deltafi
               end
             end
           end
+
+          private
 
           # Normalize CPU resources
           def normalize_cpu(cpu_string)
