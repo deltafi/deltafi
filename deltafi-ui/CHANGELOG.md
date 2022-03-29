@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Display Content-level MetaData in Content Dialog (#132)
+
 ### Changed
 - Max page size to 1000 on Search and Errors pages (#139)
 

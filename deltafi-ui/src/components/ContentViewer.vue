@@ -5,20 +5,26 @@
         <Toolbar>
           <template #left>
             <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem;" />
-            <Button label="Highlight" :icon="toggleButtonIcon" class="p-button p-button-outlined p-button-secondary" :disabled="selectedRenderFormat.name !== 'UTF-8'" @click="onToggleClick" />
-            <Button :label="contentReference.mediaType" class="p-button-text p-button-secondary" disabled />
           </template>
           <template #right>
+            <Button :label="contentReference.mediaType" class="p-button-text p-button-secondary" disabled />
+            <Divider layout="vertical" />
             <Button :label="contentSize" class="p-button-text p-button-secondary" disabled />
-            <Button label="Download" icon="fa fa-download" @click="download()" />
           </template>
         </Toolbar>
         <Message v-if="partialContent" severity="warn" class="m-0">Content size is over the preview limit. Only showing the first {{ formattedMaxPreviewSize }}.</Message>
+        <span v-if="!_.isEmpty(metadata) && _.isEqual(viewMetadata, true)">
+          <DataTable responsive-layout="scroll" :value="metadata" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm p-datatable-gridlines">
+            <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
+            <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
+          </DataTable>
+        </span>
         <div class="scrollable-content content-viewer-content">
+          <ContentViewerHoverMenu v-show="_.isEmpty(errors.length)" target="parent" :model="items" />
           <div v-if="errors.length > 0">
             <Message v-for="error in errors" :key="error" severity="error" :closable="false" class="mb-3 mt-0">{{ error }}</Message>
           </div>
-          <div v-else>
+          <div v-else class="my-n3">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
             <div v-else-if="contentLoaded">
               <Message v-if="!contentAsString" severity="warn" class="m-0">No content to display.</Message>
@@ -35,22 +41,32 @@
 
 <script setup>
 import HighlightedCode from "@/components/HighlightedCode.vue";
+import ContentViewerHoverMenu from "@/components/ContentViewerHoverMenu.vue";
 import useContent from "@/composables/useContent";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, ref, toRefs, defineProps, onMounted, watch } from "vue";
+import { computed, defineProps, onMounted, ref, toRefs, watch } from "vue";
 
 import Button from "primevue/button";
+import Divider from 'primevue/divider';
 import Dropdown from 'primevue/dropdown';
 import Message from "primevue/message";
 import Toolbar from 'primevue/toolbar';
 import ScrollTop from 'primevue/scrolltop';
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
 
 import hexy from "hexy";
+import _ from "lodash";
 
 const props = defineProps({
   contentReference: {
     type: Object,
     required: true,
+  },
+  metadata: {
+    type: Object,
+    required: false,
+    default: null
   },
   filename: {
     type: String,
@@ -64,14 +80,72 @@ const props = defineProps({
   }
 });
 
+const { contentReference, maxHeight, filename, metadata } = toRefs(props);
+const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data } = useContent();
 const { formattedBytes } = useUtilFunctions();
-const { contentReference, maxHeight, filename } = toRefs(props);
+
 const maxPreviewSize = 100000; // 100kB
 const contentLoaded = ref(false);
 const highlightCode = ref(true);
+const viewMetadata = ref(false);
 const content = ref(new ArrayBuffer());
 const decoder = new TextDecoder("utf-8");
-const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data } = useContent();
+const highlightBtnEnbl = ref(true);
+const metadataBtnEnbl = ref(!_.isEmpty(metadata.value) ? true : false)
+const items = ref([
+  {
+    label: "Highlight Code",
+    icon: "fas fa-highlighter",
+    alternateLabel: "Disable Highlight Code",
+    alternateIcon: "fas fa-ban",
+    isEnabled: highlightBtnEnbl,
+    toggled: false,
+    command: () => {
+      onToggleHiglightCodeClick();
+    },
+  },
+  {
+    label: "View Metadata",
+    icon: "fas fa-table",
+    alternateLabel: "Hide Metadata",
+    alternateIcon: "transparent-icon",
+    isEnabled: metadataBtnEnbl,
+    toggled: true,
+    disabledLabel: "No Metadata",
+    command: () => {
+      onToggleMetadataClick();
+    },
+  },
+  {
+    label: "Download",
+    icon: "pi pi-download",
+    isEnabled: true,
+    command: () => {
+      download();
+    },
+  }
+]);
+const renderFormats = ref([
+  { name: 'Hexdump' },
+  { name: 'UTF-8' }
+])
+const selectedRenderFormat = ref(renderFormats.value[1])
+
+onMounted(() => {
+  loadContent();
+});
+
+watch(() => selectedRenderFormat.value, async () => {
+  highlightBtnEnbl.value = _.isEqual(selectedRenderFormat.value.name, 'UTF-8') ? true : false;
+})
+
+watch(() => metadata.value, async () => {
+  metadataBtnEnbl.value = !_.isEmpty(metadata.value) ? true : false;
+})
+
+watch(() => contentReference.value.uuid, () => {
+  loadContent();
+})
 
 const language = computed(() => {
   try {
@@ -79,20 +153,9 @@ const language = computed(() => {
   } catch {
     return null;
   }
-})
-
-const toggleButtonIcon = computed(() => highlightCode.value ? 'far fa-check-square' : 'far fa-square')
-const onToggleClick = () => {
-  highlightCode.value = !highlightCode.value;
-};
+});
 
 const partialContent = computed(() => contentReference.value.size > maxPreviewSize);
-
-const renderFormats = ref([
-  { name: 'Hexdump' },
-  { name: 'UTF-8' }
-])
-const selectedRenderFormat = ref(renderFormats.value[1])
 
 const contentAsString = computed(() => decoder.decode(new Uint8Array(content.value)));
 
@@ -108,6 +171,14 @@ const embededContent = computed(() => "content" in contentReference.value);
 
 const contentSize = computed(() => formattedBytes(contentReference.value.size));
 const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
+
+const onToggleHiglightCodeClick = () => {
+  highlightCode.value = !highlightCode.value;
+};
+
+const onToggleMetadataClick = () => {
+  viewMetadata.value = !viewMetadata.value;
+};
 
 const download = () => {
   if (embededContent.value) {
@@ -163,14 +234,6 @@ const downloadEmbededContent = () => {
   URL.revokeObjectURL(link.href);
   link.remove();
 };
-
-onMounted(() => {
-  loadContent();
-});
-
-watch(() => contentReference.value.uuid, () => {
-  loadContent();
-})
 </script>
 
 <style lang="scss">

@@ -10,7 +10,7 @@
             <Listbox v-model="selectedItem" :list-style="`height: ${dialogContainerHeight}`" :style="`height: ${dialogContainerHeight}`" :options="listboxItems" option-label="name" />
           </div>
           <div class="dialog-column dialog-column-right" :style="`height: ${dialogContainerHeight}`">
-            <ContentViewer :max-height="dialogContainerHeight" :content-reference="selectedContent.contentReference" :filename="filename" />
+            <ContentViewer :max-height="dialogContainerHeight" :content-reference="selectedContent.contentReference" :metadata="selectedMetadata" :filename="filename" />
           </div>
         </div>
       </div>
@@ -56,7 +56,8 @@ const listboxItems = computed(() => {
 
 const selectedItem = ref(listboxItems.value[0])
 const selectedContent = computed(() => content[selectedItem.value.index])
-const selectedContentReference = computed(() => selectedContent.value.contentReference)
+const selectedContentReference = computed(() => selectedContent.value.contentReference);
+const selectedMetadata = computed(() => selectedContent.value.metadata);
 
 watch(selectedItem, (newItem, oldValue) => {
   if (newItem === null) selectedItem.value = oldValue

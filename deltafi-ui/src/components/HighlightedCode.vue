@@ -38,7 +38,7 @@ const output = computed(() => {
 });
 
 const classes = computed(() => {
-  return `hljs ${result.value.language}`;
+  return `hljs ${result.value.language} py-0`;
 });
 
 const doHighlight = async () => {
