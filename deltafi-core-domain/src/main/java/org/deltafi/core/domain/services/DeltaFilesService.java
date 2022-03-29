@@ -272,8 +272,7 @@ public class DeltaFilesService {
         }
 
         List<SplitInput> splits = event.getSplit();
-        List<DeltaFile> deltaFilesToSave = new ArrayList<>();
-        deltaFilesToSave.add(deltaFile);
+        List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
         Map<String, List<DeltaFile>> enqueueActionMap = new HashMap<>();
 
@@ -295,7 +294,7 @@ public class DeltaFilesService {
                     .build();
             List<String> parentDids = Collections.singletonList(deltaFile.getDid());
 
-            List<DeltaFile> childDeltaFiles = splits.stream().map(split -> {
+            childDeltaFiles = splits.stream().map(split -> {
                 String flow = split.getSourceInfo().getFlow();
                 IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
 
@@ -334,14 +333,17 @@ public class DeltaFilesService {
                 return child;
             }).collect(Collectors.toList());
 
-            deltaFilesToSave.addAll(childDeltaFiles);
             deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 
             deltaFile.splitAction(event.getAction());
         }
 
         stateMachine.advance(deltaFile);
-        deltaFileRepo.saveAll(deltaFilesToSave);
+
+        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
+        deltaFileRepo.save(deltaFile);
+        deltaFileRepo.saveAll(childDeltaFiles);
+
         enqueueActions(enqueueActionMap);
 
         return deltaFile;
