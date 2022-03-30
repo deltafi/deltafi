@@ -21,7 +21,7 @@ nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Values
 nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
 nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/auth
 nginx.ingress.kubernetes.io/auth-cache-key: $remote_user$http_authorization
-nginx.ingress.kubernetes.io/auth-cache-duration: 200 1m, 401 1m
+nginx.ingress.kubernetes.io/auth-cache-duration: 200 5m
 {{- end -}}
 
 {{- define "defaultStartupProbe" -}}
