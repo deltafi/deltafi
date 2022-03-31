@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Fixed
+- Margin in content viewer. (#146)
+
+
 ## [0.21.0]
 
 ### Added
@@ -159,6 +165,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.0...main
 [0.21.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.20.0...0.21.0
 [0.20.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.1...0.20.0
 [0.19.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.0...0.19.1

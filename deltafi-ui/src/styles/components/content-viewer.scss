@@ -25,5 +25,9 @@
     flex-grow: 1;
     overflow: auto;
     min-height: 0;
+
+    .content-wrapper {
+      margin-top: -2.5rem;
+    }
   }
 }

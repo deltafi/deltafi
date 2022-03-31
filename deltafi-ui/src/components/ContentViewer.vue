@@ -12,22 +12,19 @@
             <Button :label="contentSize" class="p-button-text p-button-secondary" disabled />
           </template>
         </Toolbar>
-        <Message v-if="partialContent" severity="warn" class="m-0">Content size is over the preview limit. Only showing the first {{ formattedMaxPreviewSize }}.</Message>
         <span v-if="!_.isEmpty(metadata) && _.isEqual(viewMetadata, true)">
           <DataTable responsive-layout="scroll" :value="metadata" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm p-datatable-gridlines">
             <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
             <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
           </DataTable>
         </span>
+        <Message v-for="error in errors" :key="error" severity="error" :closable="true" class="mb-0 mt-0">{{ error }}</Message>
+        <Message v-for="warning in warnings" :key="warning" severity="warn" :closable="true" class="mb-0 mt-0">{{ warning }}</Message>
         <div class="scrollable-content content-viewer-content">
           <ContentViewerHoverMenu v-show="(_.isEmpty(errors.length) && contentAsString)" target="parent" :model="items" />
-          <div v-if="errors.length > 0">
-            <Message v-for="error in errors" :key="error" severity="error" :closable="false" class="mb-3 mt-0">{{ error }}</Message>
-          </div>
-          <div v-else class="my-n3">
+          <div class="content-wrapper">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
             <div v-else-if="contentLoaded">
-              <Message v-if="!contentAsString" severity="warn" class="m-0 pt-3">No content to display.</Message>
               <HighlightedCode v-if="selectedRenderFormat.name === 'UTF-8'" :highlight="highlightCode" :code="contentAsString" :language="language" />
               <HighlightedCode v-if="selectedRenderFormat.name === 'Hexdump'" :highlight="false" :code="contentAsHexdump" />
             </div>
@@ -184,6 +181,13 @@ const embededContent = computed(() => "content" in contentReference.value);
 
 const contentSize = computed(() => formattedBytes(contentReference.value.size));
 const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
+
+const warnings = computed(() => {
+  let warnings = [];
+  if (contentLoaded.value && content.value.byteLength == 0) warnings.push("No content to display.")
+  if (partialContent.value) warnings.push(`Content size is over the preview limit. Only showing the first ${formattedMaxPreviewSize.value}.`)
+  return warnings;
+})
 
 const onToggleHiglightCodeClick = () => {
   highlightCode.value = !highlightCode.value;
