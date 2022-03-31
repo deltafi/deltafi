@@ -52,7 +52,7 @@
       {
         "key": "quarkus.http.limits.max-body-size",
         "description": "The maximum size of a request body.",
-        "defaultValue": "10240K"
+        "defaultValue": "1024M"
       },
       {
         "key": "quarkus.log.level",
