@@ -4,12 +4,12 @@
     <div class="row">
       <div class="col-12">
         <CollapsiblePanel header="Queues" class="table-panel">
-          <DataTable responsive-layout="scroll" :value="queueMetrics" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="showLoading">
+          <DataTable responsive-layout="scroll" :value="queueMetrics" striped-rows row-hover class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="showLoading">
             <template #empty>No action queue metrics available.</template>
             <template #loading>Loading action queue metrics data. Please wait.</template>
             <Column header="Queue Name" field="name" :sortable="true" />
             <Column header="Queue Size" field="size" :sortable="true" class="metric-column" />
-            <Column header="Timestamp" field="timestamp" :sortable="true" class="metric-column">
+            <Column header="Last Updated" field="timestamp" :sortable="true" class="timestamp-column">
               <template #body="row">
                 <Timestamp :timestamp="row.data.timestamp" />
               </template>
@@ -50,3 +50,7 @@ onUnmounted(() => {
   clearInterval(autoRefresh);
 });
 </script>
+
+<style lang="scss">
+@import "@/styles/pages/queue-metrics-page.scss";
+</style>
