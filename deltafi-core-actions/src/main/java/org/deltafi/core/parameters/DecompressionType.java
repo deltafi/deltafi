@@ -6,9 +6,15 @@ import lombok.Getter;
 
 @AllArgsConstructor
 public enum DecompressionType {
+    @JsonProperty("auto") AUTO("auto"),
     @JsonProperty("tar") TAR("tar"),
     @JsonProperty("zip") ZIP("zip"),
-    @JsonProperty("gzip") GZIP("gzip"),
+    @JsonProperty("gz") GZIP("gz"),
+    @JsonProperty("xz") XZ("xz"),
+    @JsonProperty("z") Z("z"),
+    @JsonProperty("ar") AR("ar"),
+    @JsonProperty("tar.z") TAR_Z("tar.z"),
+    @JsonProperty("tar.xz") TAR_XZ("tar.xz"),
     @JsonProperty("tar.gz") TAR_GZIP("tar.gz");
 
     @Getter

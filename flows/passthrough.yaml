@@ -32,7 +32,7 @@
     DecompressPassthroughTransformAction:
       consumes: compressedBinary
       parameters:
-        decompressionType: tar.gz
+        decompressionType: auto
       produces: binary
       type: org.deltafi.core.action.DecompressionTransformAction
   loadActions:
