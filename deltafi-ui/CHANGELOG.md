@@ -5,9 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- Versions page now groups versions by Core, Plugins, and Other. (#147)
+
 ### Fixed
 - Margin in content viewer. (#146)
-
 
 ## [0.21.0]
 
