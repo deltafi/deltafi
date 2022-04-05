@@ -48,7 +48,7 @@ class EgressSinkServer < Sinatra::Base
   end
 
   def sink_file(json, metadata, body)
-    filename = metadata['filename']
+    filename = metadata['filename'].gsub('/', '__')
     flow = metadata['flow']
 
     flow_path = File.join(OUTPUT_PATH, flow)
