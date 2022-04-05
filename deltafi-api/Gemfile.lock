@@ -127,6 +127,7 @@ GEM
       sinatra (= 2.2.0)
       tilt (~> 2.0)
     tilt (2.0.10)
+    timers (4.3.3)
     to_regexp (0.2.1)
     unicorn (5.8.0)
       kgio (~> 2.6)
@@ -152,6 +153,7 @@ DEPENDENCIES
   rspec (~> 3.0)
   sinatra
   sinatra-contrib
+  timers
 
 BUNDLED WITH
    2.2.33

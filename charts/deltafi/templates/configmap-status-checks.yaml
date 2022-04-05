@@ -17,6 +17,7 @@ data:
     - deltafi-kubernetes-dashboard
     - deltafi-minio
     - deltafi-mongodb
+    - deltafi-monitor
     - deltafi-passthrough-actions
     - deltafi-ui
     - deltafi-zipkin

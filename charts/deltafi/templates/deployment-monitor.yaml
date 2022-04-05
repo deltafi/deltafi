@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-monitor
+  labels:
+    app: deltafi-monitor
+    group: deltafi-core
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-monitor
+      group: deltafi-core
+  template:
+    metadata:
+      labels:
+        app: deltafi-monitor
+        group: deltafi-core
+    spec:
+      containers:
+      - name: deltafi-monitor
+        image: {{ .Values.deltafi.api.image }}
+        imagePullPolicy: IfNotPresent
+        command: [ 'bundle', 'exec', 'bin/monitor.rb' ]
+        env:
+        - name: RUNNING_IN_CLUSTER
+          value: "true"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-password
+              key: redis-password
+        - name: PROBE_DIR
+          value: "/tmp/probe"
+        livenessProbe:
+          exec:
+            command: ["/monitor_probe.sh"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 2
+      imagePullSecrets:
+      - name: docker-secret
+      serviceAccountName: deltafi-api

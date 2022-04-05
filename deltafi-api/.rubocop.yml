@@ -105,3 +105,6 @@ Style/RedundantReturn:
 
 Style/SlicingWithRange:
   Enabled: true
+
+Style/ModuleFunction:
+  Enabled: false

@@ -47,6 +47,8 @@ spec:
             secretKeyRef:
               name: minio-keys
               key: secretkey
+        - name: WORKERS
+          value: {{ default "2" .Values.deltafi.api.workers | quote }}
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}

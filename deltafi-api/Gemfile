@@ -12,6 +12,7 @@ gem 'rainbows'
 gem 'redis'
 gem 'sinatra'
 gem 'sinatra-contrib'
+gem 'timers'
 
 group :test, :development do
   gem 'pry'
