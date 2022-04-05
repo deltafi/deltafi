@@ -21,7 +21,5 @@
     ErrorEgressAction:
       parameters:
         egressFlow: error
-        metadataKey: deltafiMetadata
-        url: http://deltafi-egress-sink-service
-      type: org.deltafi.core.action.RestPostEgressAction
+      type: org.deltafi.core.action.FilterEgressAction
   deleteActions: {}
