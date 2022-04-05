@@ -123,10 +123,10 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     private String decompressAutomatic(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String contentName) {
 
         String decompressionType;
-        try {
+        try (BufferedInputStream buffer = new BufferedInputStream(stream)){
             try {
-                String compressionType = CompressorStreamFactory.detect(stream);
-                try (BufferedInputStream decompressed = new BufferedInputStream(new CompressorStreamFactory().createCompressorInputStream(stream))) {
+                String compressionType = CompressorStreamFactory.detect(buffer);
+                try (BufferedInputStream decompressed = new BufferedInputStream(new CompressorStreamFactory().createCompressorInputStream(buffer))) {
                     try {
                         String archiveType = ArchiveStreamFactory.detect(decompressed);
                         try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(decompressed))) {
@@ -144,8 +144,8 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
                 }
             } catch (CompressorException ex) {
                 try {
-                    String archiveType = ArchiveStreamFactory.detect(stream);
-                    try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(stream))) {
+                    String archiveType = ArchiveStreamFactory.detect(buffer);
+                    try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(buffer))) {
                         unarchive(dearchived, result, did);
                         decompressionType = archiveType;
                     } catch (IOException e) {
@@ -159,6 +159,8 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
             }
         } catch (ObjectStorageException ex) {
             throw new DecompressionTransformException("Unable to store content", ex);
+        } catch (IOException ex) {
+            throw new DecompressionTransformException("Unable to stream content", ex);
         }
 
         return decompressionType;

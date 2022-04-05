@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
 import javax.ws.rs.core.MediaType;
+import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
@@ -504,9 +505,21 @@ public class DecompressionTransformActionTest {
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo(errorCause));
     }
 
+    static class UnmarkableInputStream extends FilterInputStream {
+
+        public UnmarkableInputStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public boolean markSupported() {
+            return false;
+        }
+    }
+
     @SneakyThrows
     InputStream contentFor(String filename) {
-        return this.getClass().getResourceAsStream("/" + filename);
+        return new UnmarkableInputStream(this.getClass().getResourceAsStream("/" + filename));
     }
 
     SourceInfo sourceInfo(String filename) {
