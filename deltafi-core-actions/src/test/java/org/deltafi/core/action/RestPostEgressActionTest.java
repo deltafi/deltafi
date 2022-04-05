@@ -63,7 +63,9 @@ class RestPostEgressActionTest {
             .contentReference(CONTENT_REFERENCE)
             .build();
 
-    private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY);
+    static Integer NUM_TRIES = 3;
+    static Integer RETRY_WAIT = 10;
+    private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
 
     @Mock
     private ContentStorageService contentStorageService;
@@ -77,16 +79,17 @@ class RestPostEgressActionTest {
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
-        Result result = runTest(200, "good job");
+        Result result = runTest(200, "good job", 1);
 
         assertTrue(result instanceof EgressResult);
         assertEquals(DID, result.toEvent().getDid());
         assertEquals(ACTION, result.toEvent().getAction());
     }
 
-    private Result runTest(int statusCode, String responseBody) throws IOException {
+    @SuppressWarnings("unchecked")
+    private Result runTest(int statusCode, String responseBody, int numTries) throws IOException {
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        when(httpService.post(any(), any(), any(), any())).thenReturn(new HttpResponse<>() {
+        HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
             @Override
             public int statusCode() {
                 return statusCode;
@@ -126,13 +129,14 @@ class RestPostEgressActionTest {
             public HttpClient.Version version() {
                 return null;
             }
-        });
+        };
+        when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
         Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
         ArgumentCaptor<InputStream> bodyCaptor = ArgumentCaptor.forClass(InputStream.class);
-        verify(httpService).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture(), eq(CONTENT_TYPE));
+        verify(httpService, times(numTries)).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture(), eq(CONTENT_TYPE));
 
         Map<String, String> actual = headersCaptor.getValue();
         assertNotNull(actual.get(METADATA_KEY));
@@ -176,14 +180,14 @@ class RestPostEgressActionTest {
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new TestInputStream(DATA));
-        Result result = runTest(200, "good job");
+        Result result = runTest(200, "good job", 1);
         assertTrue(result instanceof EgressResult);
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
-        Result result = runTest(500, "uh oh");
+        Result result = runTest(500, "uh oh", 4);
 
         assertTrue(result instanceof ErrorResult);
         assertTrue(((ErrorResult) result).getErrorCause().contains("500"));

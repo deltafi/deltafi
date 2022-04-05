@@ -36,7 +36,30 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
         super(RestPostEgressParameters.class);
     }
 
+    @SuppressWarnings("BusyWait")
     public Result egress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+        int tries = 0;
+
+        while (true) {
+            Result result = doEgress(context, params, sourceInfo, formattedData);
+            tries++;
+
+            if (result instanceof ErrorResult) {
+                if (tries > params.getRetryCount()) {
+                    return result;
+                } else {
+                    log.error("Retrying POST after error: " + ((ErrorResult) result).getErrorCause());
+                    try {
+                        Thread.sleep(params.getRetryDelayMs());
+                    } catch (InterruptedException ignored) {}
+                }
+            } else {
+                return result;
+            }
+        }
+    }
+
+    private Result doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
                     buildHeadersMapString(context.getDid(), sourceInfo, formattedData, params)), inputStream, formattedData.getContentReference().getMediaType());
