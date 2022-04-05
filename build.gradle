@@ -4,6 +4,7 @@ plugins {
 }
 
 allprojects { project ->
+    group 'org.deltafi'
 
     task version {
         doLast {
@@ -24,8 +25,6 @@ allprojects { project ->
 }
 
 subprojects {
-    group 'org.deltafi'
-
     apply plugin: 'java'
 
     java {
@@ -44,6 +43,15 @@ subprojects {
 
     apply plugin: 'jacoco'
 
+    test {
+        useJUnitPlatform()
+        finalizedBy jacocoTestReport
+    }
+
+    jacoco {
+        reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
+    }
+
     jacocoTestReport {
         dependsOn test
         reports {
@@ -59,15 +67,11 @@ subprojects {
         }
     }
 
-    jacoco {
-        reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
-    }
-
     apply plugin: 'maven-publish'
 
     publishing {
         publications {
-            java(MavenPublication) {
+            maven(MavenPublication) {
                 artifact jar
             }
         }
@@ -86,11 +90,6 @@ subprojects {
                 }
             }
         }
-    }
-
-    test {
-        useJUnitPlatform()
-        finalizedBy jacocoTestReport
     }
 
     dependencies {

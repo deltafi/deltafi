@@ -1,6 +1,7 @@
 plugins {
     id 'io.quarkus'
     id "com.palantir.docker" version "${palantirDockerVersion}"
+    id 'org.kordamp.gradle.jandex' version '0.11.0'
 }
 
 dependencies {
@@ -10,8 +11,8 @@ dependencies {
         because 'DGS BOM to automatically define versions of other packages below'
     }
 
-    implementation project(":deltafi-common")
-    implementation project(path: ':deltafi-core-domain', configuration: 'jars')
+    implementation project(':deltafi-common')
+    implementation project(':deltafi-core-domain')
 
     implementation "redis.clients:jedis:${jedisVersion}"
 
@@ -20,8 +21,8 @@ dependencies {
     implementation "io.quarkus:quarkus-arc"
     implementation "io.quarkus:quarkus-config-yaml"
     implementation "io.quarkus:quarkus-kotlin"
-    implementation "io.quarkus:quarkus-resteasy"
-    implementation "io.quarkus:quarkus-resteasy-jackson"
+    implementation 'io.quarkus:quarkus-resteasy-reactive'
+    implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation 'io.quarkus:quarkus-spring-boot-properties'
     implementation 'io.quarkus:quarkus-spring-cloud-config-client'
     implementation("io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}") {

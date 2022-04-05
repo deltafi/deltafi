@@ -5,27 +5,13 @@ plugins {
     id "com.palantir.docker" version "${palantirDockerVersion}"
 }
 
-task renameJar (type: Copy) {
-    from ('build/libs/')
-    include "deltafi-config-server-${project.version}.jar"
-    destinationDir file('build/libs/')
-    rename "deltafi-config-server-${project.version}.jar", 'deltafi-config-server.jar'
+bootJar {
+    archiveFileName = "${project.name}.jar"
 }
-
-assemble.finalizedBy(renameJar)
 
 jar {
-    enabled = true
-    archiveClassifier.set('api')
+    archiveClassifier = '' // boot plugin set this to plain, clear it
     include('org/deltafi/config/server/api/**')
-}
-
-configurations {
-    jars
-}
-
-artifacts {
-    jars jar
 }
 
 generateJava {
@@ -52,10 +38,6 @@ dependencyManagement {
 dependencies {
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
         because 'DGS BOM to automatically define versions of other packages below'
-    }
-
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")) {
-        because 'Override DGS BOM to use latest spring boot'
     }
 
     implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"

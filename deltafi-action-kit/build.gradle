@@ -3,18 +3,6 @@ plugins {
     id 'org.kordamp.gradle.jandex' version '0.11.0'
 }
 
-jar {
-    enabled = true
-}
-
-configurations {
-	jars
-}
-
-artifacts {
-	jars jar
-}
-
 dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
 
@@ -23,7 +11,7 @@ dependencies {
     }
 
     implementation project(':deltafi-common')
-    implementation project(path: ':deltafi-core-domain', configuration: 'jars')
+    implementation project(':deltafi-core-domain')
 
     implementation "redis.clients:jedis:${jedisVersion}"
 
@@ -52,8 +40,6 @@ dependencies {
     implementation 'org.mock-server:mockserver-netty:5.12.0'
     implementation 'org.mock-server:mockserver-junit-jupiter:5.12.0'
 }
-
-compileTestJava.dependsOn jandex
 
 test {
     useJUnitPlatform()

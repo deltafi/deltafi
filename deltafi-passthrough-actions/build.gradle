@@ -1,6 +1,7 @@
 plugins {
     id 'io.quarkus'
 	id "com.palantir.docker" version "${palantirDockerVersion}"
+    id 'org.kordamp.gradle.jandex' version '0.11.0'
 }
 
 dependencies {
@@ -11,8 +12,8 @@ dependencies {
     }
 
     implementation project(':deltafi-common')
-    implementation project(path: ':deltafi-action-kit', configuration: 'jars')
-    implementation project(path: ':deltafi-core-domain', configuration: 'jars')
+    implementation project(':deltafi-action-kit')
+    implementation project(':deltafi-core-domain')
 
     implementation "redis.clients:jedis:${jedisVersion}"
 
@@ -25,7 +26,8 @@ dependencies {
     implementation 'io.quarkus:quarkus-spring-cloud-config-client'
     implementation 'io.quarkus:quarkus-spring-boot-properties'
     implementation "io.quarkus:quarkus-rest-client"
-    implementation "io.quarkus:quarkus-resteasy"
+    implementation 'io.quarkus:quarkus-resteasy-reactive'
+    implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
 
     implementation "com.netflix.graphql.dgs:graphql-dgs-client"

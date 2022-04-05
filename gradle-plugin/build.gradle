@@ -1,0 +1,20 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+dependencies {
+    implementation project(':deltafi-core-domain')
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+}
+
+group 'org.deltafi.gradle-plugin'
+
+gradlePlugin {
+    plugins {
+        pluginPlugin {
+            id = 'org.deltafi.plugin'
+            implementationClass = 'org.deltafi.gradle.plugin.PluginPlugin'
+        }
+    }
+}
