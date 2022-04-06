@@ -9,7 +9,11 @@ export type UiConfig = {
     backgroundColor?: String,
     textColor?: String
     text?: String
-  }
+  },
+  topBar?: {
+    backgroundColor?: String,
+    textColor?: String
+  },
   externalLinks?: Array<{
     name: String,
     url: String,
@@ -28,6 +32,7 @@ const uiConfig: UiConfig = reactive({
   securityBanner: {
     enabled: false,
   },
+  topBar: {},
   externalLinks: [],
   deltaFileLinks: [],
   useUTC: false

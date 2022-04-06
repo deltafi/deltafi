@@ -9,6 +9,10 @@
         "text": "Mocked Data",
         "textColor": "#FFFFFF"
       },
+      "topBar": {
+        "backgroundColor": "#003559",
+        "textColor": "#DDDDDD"
+      },
       "externalLinks": [
         {
           "url": "https://gateway.dev.deltafi.org/",
