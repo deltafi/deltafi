@@ -3,36 +3,38 @@ kind: ConfigMap
 metadata:
   name: deltafi-ui-config
 data:
-  domain: {{ .Values.ingress.domain }}
-  title: {{ default "DeltaFi" .Values.deltafi.ui.title }}
-  useUTC: {{ default "false" .Values.deltafi.ui.useUTC | quote }}
-  deltaFileLinks: |-
-    ---
-{{ if .Values.deltafi.ui.deltaFileLinks -}}
-{{ .Values.deltafi.ui.deltaFileLinks | toYaml | indent 4 }}
-{{ end }}
-  externalLinks: |-
-    ---
-    - url: https://gateway.{{ .Values.ingress.domain }}/
-      name: GraphQL Gateway
-      description: GraphQL query interface
-    - url: https://kibana.{{ .Values.ingress.domain }}/app/dashboards#/view/cf08cb00-aeac-11eb-ac19-f330c8b60a55
-      name: Kibana Dashboard
-      description: Action logging and metrics visualization
-    - url: https://k8s.{{ .Values.ingress.domain }}/#/workloads?namespace=deltafi
-      name: Kubernetes Dashboard
-      description: Kubernetes admin interface
-    - url: https://minio.{{ .Values.ingress.domain }}/
-      name: MinIO
-      description: MinIO storage dashboard
-    - url: https://zipkin.{{ .Values.ingress.domain }}/zipkin/
-      name: Zipkin
-      description: DeltaFile tracing dashboard
-{{ if .Values.deltafi.ui.externalLinks -}}
-{{ .Values.deltafi.ui.externalLinks | toYaml | indent 4 }}
-{{ end }}
-  securityBanner: |-
-    ---
-{{ if .Values.deltafi.ui.securityBanner -}}
-{{ .Values.deltafi.ui.securityBanner | toYaml | indent 4 }}
-{{ end -}}
+  config: |-
+    domain: {{ .Values.ingress.domain }}
+    title: {{ default "DeltaFi" .Values.deltafi.ui.title }}
+    useUTC: {{ default "false" .Values.deltafi.ui.useUTC | quote }}
+{{- if .Values.deltafi.ui.deltaFileLinks }}
+    deltaFileLinks:
+{{ .Values.deltafi.ui.deltaFileLinks | toYaml | indent 6 }}
+{{- end }}
+    externalLinks:
+      - url: https://gateway.{{ .Values.ingress.domain }}/
+        name: GraphQL Gateway
+        description: GraphQL query interface
+      - url: https://kibana.{{ .Values.ingress.domain }}/app/dashboards#/view/cf08cb00-aeac-11eb-ac19-f330c8b60a55
+        name: Kibana Dashboard
+        description: Action logging and metrics visualization
+      - url: https://k8s.{{ .Values.ingress.domain }}/#/workloads?namespace=deltafi
+        name: Kubernetes Dashboard
+        description: Kubernetes admin interface
+      - url: https://minio.{{ .Values.ingress.domain }}/
+        name: MinIO
+        description: MinIO storage dashboard
+      - url: https://zipkin.{{ .Values.ingress.domain }}/zipkin/
+        name: Zipkin
+        description: DeltaFile tracing dashboard
+{{- if .Values.deltafi.ui.externalLinks }}
+{{ .Values.deltafi.ui.externalLinks | toYaml | indent 6 }}
+{{- end }}
+{{- if .Values.deltafi.ui.topBar }}
+    topBar:
+{{ .Values.deltafi.ui.topBar | toYaml | indent 6 }}
+{{- end }}
+{{- if .Values.deltafi.ui.securityBanner }}
+    securityBanner:
+{{ .Values.deltafi.ui.securityBanner | toYaml | indent 6 }}
+{{- end }}
