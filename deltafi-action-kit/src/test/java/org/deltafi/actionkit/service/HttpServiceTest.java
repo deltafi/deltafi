@@ -1,65 +1,127 @@
 package org.deltafi.actionkit.service;
 
-import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.socket.PortFactory;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.inject.Inject;
+import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-@QuarkusTest
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+@ExtendWith(MockitoExtension.class)
 class HttpServiceTest {
+    @Mock
+    HttpClient httpClient;
 
-    @Inject
+    @InjectMocks
     HttpService httpService;
 
-    private static ClientAndServer mockServer;
+    @Test
+    @SuppressWarnings("unchecked")
+    void testPost() throws IOException, InterruptedException {
+        HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
+            @Override
+            public int statusCode() {
+                return 0;
+            }
 
-    @BeforeAll
-    public static void startMockServer() {
-        mockServer = ClientAndServer.startClientAndServer(PortFactory.findFreePort());
-    }
+            @Override
+            public HttpRequest request() {
+                return null;
+            }
 
-    @AfterAll
-    public static void stopMockServer() {
-        mockServer.stop();
+            @Override
+            public Optional<HttpResponse<InputStream>> previousResponse() {
+                return Optional.empty();
+            }
+
+            @Override
+            public HttpHeaders headers() {
+                return null;
+            }
+
+            @Override
+            public InputStream body() {
+                return null;
+            }
+
+            @Override
+            public Optional<SSLSession> sslSession() {
+                return Optional.empty();
+            }
+
+            @Override
+            public URI uri() {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Version version() {
+                return null;
+            }
+        };
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+
+        String url = "http://localhost:1234/any";
+        Map<String, String> headers = Map.of("header1", "value1", "header2", "value2");
+        InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
+        HttpResponse<InputStream> test = httpService.post(url, headers, targetStream, "application/text");
+
+        ArgumentCaptor<HttpRequest> httpRequestArgumentCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        Mockito.verify(httpClient).send(httpRequestArgumentCaptor.capture(), Mockito.any(HttpResponse.BodyHandler.class));
+
+        HttpRequest httpRequest = httpRequestArgumentCaptor.getValue();
+        assertEquals("POST", httpRequest.method());
+        assertEquals(url, httpRequest.uri().toString());
+        Map<String, List<String>> headersMap = httpRequest.headers().map();
+        assertEquals(3, headersMap.size());
+        assertEquals(1, headersMap.get("content-type").size());
+        assertEquals("application/text", headersMap.get("content-type").get(0));
+        assertEquals(1, headersMap.get("header1").size());
+        assertEquals("value1", headersMap.get("header1").get(0));
+        assertEquals(1, headersMap.get("header2").size());
+        assertEquals("value2", headersMap.get("header2").get(0));
+
+        assertEquals(httpResponse, test);
     }
 
     @Test
-    void test_httpRequest() throws IOException {
-        Integer port = mockServer.getPort();
-        String url = String.format("http://localhost:%d/any",port);
-        System.out.println("Using url " + url);
-        mockServer.when(HttpRequest.request().withPath("/any").withSecure(false))
-                .respond(HttpResponse.response().withBody("gotIt").withStatusCode(200));
+    @SuppressWarnings("unchecked")
+    public void testPostFailure() throws IOException, InterruptedException {
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any(HttpResponse.BodyHandler.class)))
+                .thenThrow(new IOException("Test IOException"), new InterruptedException("Test InterruptedException"));
 
+        String url = "http://localhost:1234/any";
         InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
-        java.net.http.HttpResponse<InputStream> test = httpService.post(url, Collections.emptyMap(), targetStream, "application/text");
-        String response = new String(test.body().readAllBytes());
-        Assertions.assertEquals("gotIt", response);
+
+        try {
+            HttpResponse<InputStream> test = httpService.post(url, Map.of(), targetStream, "application/text");
+            fail("RuntimeException not thrown for IOException");
+        } catch (RuntimeException e) {
+            assertEquals("Test IOException", e.getMessage());
+        }
+
+        try {
+            HttpResponse<InputStream> test = httpService.post(url, Map.of(), targetStream, "application/text");
+            fail("RuntimeException not thrown for InterruptedException");
+        } catch (RuntimeException e) {
+            assertEquals("Test InterruptedException", e.getMessage());
+        }
     }
-
-    @Test
-    void test_httpsRequest() throws IOException {
-        Integer port = mockServer.getPort();
-        String url = String.format("https://localhost:%d/any",port);
-        System.out.println("Using url " + url);
-        mockServer.when(HttpRequest.request().withPath("/any").withSecure(true))
-                .respond(HttpResponse.response().withBody("gotIt").withStatusCode(200));
-
-        InputStream targetStream = new ByteArrayInputStream("post body".getBytes());
-        java.net.http.HttpResponse<InputStream> test = httpService.post(url, Collections.emptyMap(), targetStream, "application/text");
-        String response = new String(test.body().readAllBytes());
-        Assertions.assertEquals("gotIt", response);
-    }
-
 }

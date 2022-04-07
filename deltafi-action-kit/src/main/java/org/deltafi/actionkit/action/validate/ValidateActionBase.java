@@ -4,13 +4,14 @@ import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.core.domain.generated.client.RegisterValidateSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterValidateSchemaProjectionRoot;
 import org.deltafi.core.domain.generated.types.ValidateActionSchemaInput;
 
 public abstract class ValidateActionBase<P extends ActionParameters> extends Action<P> {
     public ValidateActionBase(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+        super(ActionType.VALIDATE, actionParametersClass);
     }
 
     @Override

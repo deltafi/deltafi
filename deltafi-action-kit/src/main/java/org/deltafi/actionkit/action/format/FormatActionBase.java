@@ -4,6 +4,7 @@ import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.core.domain.generated.client.RegisterFormatSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterFormatSchemaProjectionRoot;
 import org.deltafi.core.domain.generated.types.FormatActionSchemaInput;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public abstract class FormatActionBase<P extends ActionParameters> extends Action<P> {
     public FormatActionBase(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+        super(ActionType.FORMAT, actionParametersClass);
     }
 
     public abstract List<String> getRequiresDomains();

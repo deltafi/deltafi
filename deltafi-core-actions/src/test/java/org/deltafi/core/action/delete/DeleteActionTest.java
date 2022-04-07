@@ -1,6 +1,7 @@
 package org.deltafi.core.action.delete;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.delete.DeleteResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.content.ContentStorageService;

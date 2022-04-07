@@ -4,6 +4,7 @@ import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.core.domain.generated.client.RegisterEnrichSchemaGraphQLQuery;
 import org.deltafi.core.domain.generated.client.RegisterEnrichSchemaProjectionRoot;
 import org.deltafi.core.domain.generated.types.EnrichActionSchemaInput;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public abstract class EnrichActionBase<P extends ActionParameters> extends Action<P> {
     public EnrichActionBase(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+        super(ActionType.ENRICH, actionParametersClass);
     }
 
     public abstract List<String> getRequiresDomains();

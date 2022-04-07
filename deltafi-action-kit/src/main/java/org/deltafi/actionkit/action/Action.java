@@ -27,10 +27,7 @@ import org.deltafi.common.properties.DeltaFiSystemProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.api.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.PostConstruct;
@@ -76,7 +73,9 @@ public abstract class Action<P extends ActionParameters> {
     @SuppressWarnings("CdiInjectionPointsInspection")
     ActionVersionProperty actionVersionProperty;
 
+    private final ActionType actionType;
     private final Class<P> paramType;
+
     private GraphQLQuery registrationQuery = null;
     private BaseProjectionNode registrationProjection = null;
 
@@ -132,7 +131,7 @@ public abstract class Action<P extends ActionParameters> {
             }
 
             actionEventService.submitResult(result);
-            ActionMetricsLogger.logMetrics(result);
+            ActionMetricsLogger.logMetrics(actionType, result);
         } catch (Throwable e) {
             ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
             actionEventService.submitResult(errorResult);
