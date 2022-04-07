@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Margin bug in content viewer. (#146)
+- Properly handle unknown file types on upload. (#156)
 
 ## [0.21.0]
 

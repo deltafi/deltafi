@@ -20,7 +20,7 @@ export default function useIngress() {
         url: "/deltafile/ingress",
         data: file,
         headers: {
-          "Content-Type": file.type,
+          "Content-Type": file.type || "application/octet-stream",
           Flow: flow,
           Filename: file.name,
           Metadata: JSON.stringify(metadata),
