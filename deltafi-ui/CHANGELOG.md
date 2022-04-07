@@ -8,9 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Versions page now groups versions by Core, Plugins, and Other. (#147)
 - Made top bar color configurable. (#152)
+- Moved Content Viewer overlay menu to panel. (#151)
+- Made improvements to the Queue Metrics page. (#148)
+  - Updated column widths
+  - Added relative timestamp tooltips
+  - Addec row hover
 
 ### Fixed
-- Margin in content viewer. (#146)
+- Margin bug in content viewer. (#146)
 
 ## [0.21.0]
 

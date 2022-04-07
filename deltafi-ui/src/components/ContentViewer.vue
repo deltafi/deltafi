@@ -10,6 +10,8 @@
             <Button :label="contentReference.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
             <Button :label="contentSize" class="p-button-text p-button-secondary" disabled />
+            <Divider layout="vertical" />
+            <ContentViewerMenu :model="items" />
           </template>
         </Toolbar>
         <span v-if="!_.isEmpty(metadata) && _.isEqual(viewMetadata, true)">
@@ -21,7 +23,6 @@
         <Message v-for="error in errors" :key="error" severity="error" :closable="true" class="mb-0 mt-0">{{ error }}</Message>
         <Message v-for="warning in warnings" :key="warning" severity="warn" :closable="true" class="mb-0 mt-0">{{ warning }}</Message>
         <div class="scrollable-content content-viewer-content">
-          <ContentViewerHoverMenu v-show="(_.isEmpty(errors.length) && contentAsString)" target="parent" :model="items" />
           <div class="content-wrapper">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
             <div v-else-if="contentLoaded">
@@ -38,7 +39,7 @@
 
 <script setup>
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import ContentViewerHoverMenu from "@/components/ContentViewerHoverMenu.vue";
+import ContentViewerMenu from "@/components/ContentViewerMenu.vue";
 import useContent from "@/composables/useContent";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, onMounted, ref, toRefs, watch } from "vue";
@@ -91,15 +92,22 @@ const highlightCode = ref(true);
 const viewMetadata = ref(false);
 const content = ref(new ArrayBuffer());
 const decoder = new TextDecoder("utf-8");
-const highlightBtnEnbl = ref(true);
-const metadataBtnEnbl = ref(!_.isEmpty(metadata.value) ? true : false)
+
+// Menu Buttons
+const highlightBtnEnbl = computed(() => {
+  return content.value.byteLength > 0 && _.isEqual(selectedRenderFormat.value.name, 'UTF-8')
+});
+const metadataBtnEnbl = computed(() => !_.isEmpty(metadata.value));
+const copyBtnEnbl = computed(() => content.value.byteLength > 0);
+const downloadBtnEnbl = computed(() => content.value.byteLength > 0);
 const items = ref([
   {
-    label: "Highlight Code",
+    label: "Enable Highlighting",
     icon: "fas fa-highlighter",
-    alternateLabel: "Disable Highlight Code",
+    alternateLabel: "Disable Highlighting",
     alternateIcon: "fas fa-ban",
     isEnabled: highlightBtnEnbl,
+    disabledLabel: "Nothing to Highlight",
     toggled: false,
     command: () => {
       onToggleHiglightCodeClick();
@@ -119,8 +127,9 @@ const items = ref([
   },
   {
     label: "Copy to Clipboard",
-    icon: "pi pi-copy",
-    isEnabled: true,
+    icon: "fas fa-copy",
+    isEnabled: copyBtnEnbl,
+    disabledLabel: "Nothing to Copy",
     command: () => {
       copyToClipboard(contentAsString.value);
       notify.info("Copied to clipboard", "Content copied to clipboard.", 3000)
@@ -128,8 +137,9 @@ const items = ref([
   },
   {
     label: "Download",
-    icon: "pi pi-download",
-    isEnabled: true,
+    icon: "fas fa-download",
+    isEnabled: downloadBtnEnbl,
+    disabledLabel: "Nothing to Download",
     command: () => {
       download();
     },
@@ -144,14 +154,6 @@ const selectedRenderFormat = ref(renderFormats.value[1])
 onMounted(() => {
   loadContent();
 });
-
-watch(() => selectedRenderFormat.value, async () => {
-  highlightBtnEnbl.value = _.isEqual(selectedRenderFormat.value.name, 'UTF-8') ? true : false;
-})
-
-watch(() => metadata.value, async () => {
-  metadataBtnEnbl.value = !_.isEmpty(metadata.value) ? true : false;
-})
 
 watch(() => contentReference.value.uuid, () => {
   loadContent();

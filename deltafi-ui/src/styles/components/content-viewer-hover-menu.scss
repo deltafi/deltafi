@@ -1,30 +1,13 @@
 .context-viewer-hover-menu {
-  position: relative;
-  top: 1rem;
-  padding-right: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: right;
-}
-
-.context-viewer-hover-menu-sticky {
-  position: sticky;
-}
-
-.context-viewer-hover-menu-sticky.p-link {
-  margin-left: auto;
-}
-
-.button-padding {
-  padding-left: 1px !important;
-  padding-right: 1px !important;
-}
-
-.stacked-icons {
-  width: 2.357rem;
-  padding: 0.2rem 0;
-}
-
-.transparent-icon {
-  background-color: transparent;
+  .button-padding {
+    padding-left: 1px !important;
+    padding-right: 1px !important;
+  }
+  .stacked-icons {
+    width: 2.357rem;
+    padding: 0.2rem 0;
+  }
+  .transparent-icon {
+    background-color: transparent;
+  }
 }

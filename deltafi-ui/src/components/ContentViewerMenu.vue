@@ -6,7 +6,7 @@
         <!-- Disabled Stacked Icons Button -->
         <span v-if="!_.isEmpty(item.alternateIcon)">
           <span class="button-padding">
-            <Button type="button" class="p-button p-button-outlined p-button-secondary stacked-icons" :disabled="!item.isEnabled">
+            <Button type="button" class="p-button-text p-button-secondary stacked-icons" :disabled="!item.isEnabled">
               <span class="fa-stack">
                 <i :class="item.icon"></i>
                 <i :class="item.alternateIcon + ' fa-stack-2x'" style="color:#ed969e"></i>
@@ -17,14 +17,14 @@
 
         <!-- Disabled Single Icon Button -->
         <span v-else class="button-padding">
-          <Button type="button" :icon="item.icon" class="p-button p-button-outlined p-button-secondary" :disabled="!item.isEnabled" />
+          <Button type="button" :icon="item.icon" class="p-button-text p-button-secondary" :disabled="!item.isEnabled" />
         </span>
       </span>
 
       <!-- Stacked Icons Button -->
       <span v-else-if="!_.isEmpty(item.alternateIcon)">
         <span v-if="(_.isEmpty(item.toggled) && item.toggled)" class="button-padding">
-          <Button v-tooltip.top="item.label" type="button" class="p-button p-button-outlined p-button-secondary stacked-icons" @click="itemClick(item)">
+          <Button v-tooltip.top="item.label" type="button" class="p-button-text p-button-secondary stacked-icons" :disabled="!item.isEnabled" @click="itemClick(item)">
             <span class="fa-stack">
               <i :class="item.icon"></i>
               <i :class="item.alternateIcon + ' fa-stack-2x'" style="color:#ed969e"></i>
@@ -32,13 +32,13 @@
           </Button>
         </span>
         <span v-else class="button-padding">
-          <Button v-tooltip.top="item.alternateLabel" type="button" :icon="item.icon" class="p-button p-button-outlined p-button-secondary" @click="itemClick(item)" />
+          <Button v-tooltip.top="item.alternateLabel" type="button" :icon="item.icon" class="p-button-text p-button-secondary" :disabled="!item.isEnabled" @click="itemClick(item)" />
         </span>
       </span>
 
       <!-- Single Icon Button -->
       <span v-else class="button-padding">
-        <Button v-tooltip.top="item.label" type="button" :icon="item.icon" class="p-button p-button-outlined p-button-secondary" @click="itemClick(item)" />
+        <Button v-tooltip.top="item.label" type="button" :icon="item.icon" class="p-button-text p-button-secondary" :disabled="!item.isEnabled" @click="itemClick(item)" />
       </span>
     </template>
   </span>
@@ -50,20 +50,16 @@ import { computed, defineProps, toRefs } from "vue";
 import _ from "lodash";
 
 const props = defineProps({
-  target: {
-    type: String,
-    default: 'window'
-  },
   model: {
     type: Array,
     default: null
   }
 });
 
-const { target, model } = toRefs(props);
+const { model } = toRefs(props);
 
 const containerClass = computed(() => {
-  return ['context-viewer-hover-menu p-link p-component', { 'context-viewer-hover-menu-sticky': target.value !== 'window' }];
+  return ['context-viewer-hover-menu p-link p-component'];
 });
 
 const disabledLabel = (item) => {
