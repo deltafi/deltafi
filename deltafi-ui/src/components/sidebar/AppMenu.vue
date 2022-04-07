@@ -45,11 +45,11 @@
 
 <script setup>
 import useErrorCount from "@/composables/useErrorCount";
-import { computed, ref, watch, inject } from "vue";
+import { computed, ref, watch, inject, onMounted } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
-const { errorCount } = useErrorCount();
+const { fetchErrorCount, errorCount } = useErrorCount();
 const uiConfig = inject('uiConfig');
 
 const externalLinks = computed(() => {
@@ -184,6 +184,10 @@ watch(
     activePage.value = path;
   }
 );
+
+onMounted(() => {
+  fetchErrorCount();
+});
 </script>
 
 <style scoped lang="scss">

@@ -20,12 +20,13 @@
 
 <script setup>
 import useServerSentEvents from "@/composables/useServerSentEvents";
+import useStatus from "@/composables/useStatus";
 import MarkdownIt from "markdown-it";
 import Dialog from "primevue/dialog";
 import Tag from "primevue/tag";
 import Message from "primevue/message";
 import Timestamp from "@/components/Timestamp.vue";
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 const status = ref({
   state: "Connecting",
@@ -37,6 +38,11 @@ const status = ref({
 })
 const showStatusDialog = ref(false);
 const { serverSentEvents, connectionStatus } = useServerSentEvents();
+const { fetchStatus } = useStatus();
+
+onMounted(async () => {
+  status.value = await fetchStatus();
+})
 
 watch(connectionStatus, (value) => {
   if (value === 'DISCONNECTED') {
