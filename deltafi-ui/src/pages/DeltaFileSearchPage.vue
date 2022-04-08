@@ -68,8 +68,11 @@
         </CollapsiblePanel>
       </div>
     </div>
-    <CollapsiblePanel header="DeltaFiles" class="table-panel">
-      <DataTable responsive-layout="scroll" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="Showing {first} to {last} of {totalRecords} DeltaFiles" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :paginator="totalRecords > 0" :rows="perPage" :lazy="true" :rows-per-page-options="[10, 20, 50, 100, 1000]" :total-records="totalRecords" :always-show-paginator="true" :row-class="actionRowClass" @page="onPage($event)" @sort="onSort($event)">
+    <Panel header="Results" class="table-panel results">
+      <template #icons>
+        <Paginator v-if="results.length > 0" :rows="10" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
+      </template>
+      <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
         <template #empty>No DeltaFiles in the selected time range.</template>
         <template #loading>Loading DeltaFiles. Please wait.</template>
         <Column field="did" header="DID (UUID)">
@@ -94,20 +97,22 @@
           <template #body="row">{{ row.data.elapsed }}</template>
         </Column>
       </DataTable>
-    </CollapsiblePanel>
+    </Panel>
   </div>
 </template>
 
 <script setup>
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import Button from "primevue/button";
 import Calendar from "primevue/calendar";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
 import Menu from "primevue/menu";
+import Panel from "primevue/panel";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import Paginator from "primevue/paginator";
 import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
@@ -116,12 +121,12 @@ import { ref, computed, watch, onMounted, nextTick, inject } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
 
-dayjs.extend(utc)
+dayjs.extend(utc);
 
 const { getDeltaFileSearchData, getRecordCount, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
 const { duration, formatTimestamp, shortTimezone, convertLocalDateToUTC } = useUtilFunctions();
 
-const uiConfig = inject('uiConfig');
+const uiConfig = inject("uiConfig");
 
 const optionMenu = ref();
 const startTimeDate = ref(new Date());
@@ -155,11 +160,11 @@ const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 
 const startDateISOString = computed(() => {
   return uiConfig.useUTC ? convertLocalDateToUTC(startTimeDate.value).toISOString() : startTimeDate.value.toISOString();
-})
+});
 
 const endDateISOString = computed(() => {
   return uiConfig.useUTC ? convertLocalDateToUTC(endTimeDate.value).toISOString() : endTimeDate.value.toISOString();
-})
+});
 
 const items = ref([
   {
@@ -219,7 +224,7 @@ const updateInputStartTime = async (e) => {
   } else {
     startTimeDate.value = defaultStartTimeDate;
   }
-}
+};
 const updateInputEndTime = async (e) => {
   await nextTick();
   if (dayjs(e.target.value.trim()).isValid()) {
@@ -227,7 +232,7 @@ const updateInputEndTime = async (e) => {
   } else {
     endTimeDate.value = defaultEndTimeDate;
   }
-}
+};
 
 onMounted(() => {
   getPersistedParams();
@@ -242,12 +247,10 @@ const optionMenuToggle = (event) => {
 };
 
 const fetchConfigTypes = async () => {
-  const flowTypes = ['INGRESS_FLOW'];
+  const flowTypes = ["INGRESS_FLOW"];
   let enumsConfigTypes = await getEnumValuesByEnumType("ConfigType");
   let configTypeNames = enumsConfigTypes.data.__type.enumValues;
-  let actionTypes = configTypeNames
-    .map((a) => a.name)
-    .filter(name => name.includes("ACTION"));
+  let actionTypes = configTypeNames.map((a) => a.name).filter((name) => name.includes("ACTION"));
 
   fetchActions(actionTypes);
   fetchFlows(flowTypes);

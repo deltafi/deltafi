@@ -3,16 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.21.1]
 
 ### Changed
 - Versions page now groups versions by Core, Plugins, and Other. (#147)
 - Made top bar color configurable. (#152)
-- Moved Content Viewer overlay menu to panel. (#151)
+- Moved Content Viewer overlay menu to panel header. (#151)
+- Moved paging to panel header on Search page and Errors page. (#149)
 - Made improvements to the Queue Metrics page. (#148)
   - Updated column widths
   - Added relative timestamp tooltips
-  - Addec row hover
+  - Added row hover
 
 ### Fixed
 - Margin bug in content viewer. (#146)
@@ -174,7 +175,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.0...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.1...main
+[0.21.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.0...0.21.1
 [0.21.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.20.0...0.21.0
 [0.20.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.1...0.20.0
 [0.19.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.19.0...0.19.1

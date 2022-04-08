@@ -8,7 +8,14 @@
   }
   .p-panel {
     .p-panel-header {
-      padding: 0.5rem 1.25rem;
+      padding: 0 1.25rem;
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+      .p-panel-header-icon {
+        margin-top: 0.25rem;
+        margin-right: 0;
+      }
     }
     .p-panel-content {
       padding: 0;
@@ -27,5 +34,15 @@
   }
   tr.action-error {
     cursor: pointer !important;
+  }
+  .p-paginator {
+    border: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    .p-paginator-current {
+      background: unset;
+      color: unset;
+      border: unset;
+    }
   }
 }
