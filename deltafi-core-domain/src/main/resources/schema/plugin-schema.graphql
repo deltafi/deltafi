@@ -1,38 +1,38 @@
 """
-A Plugin is a collection of packaged actions and optional domains. A Plugin may depend on other Plugins.
+A Plugin is a collection of actions. It may depend on other Plugins.
 """
 type Plugin {
     "The identifying coordinates"
     pluginCoordinates: PluginCoordinates!
+    "A user-friendly name"
+    displayName: String!
     "A description of the functionality provided"
     description: String!
-    "The packages included"
-    packages: [Package]!
+    "The action kit version"
+    actionKitVersion: String!
+    "The actions included"
+    actions: [ActionDescriptor!]
     "The plugin coordinates of required plugins"
-    dependencies: [PluginCoordinates]
+    dependencies: [PluginCoordinates!]
     "The properties required"
-    propertySets: [PropertySet]
-    "list of actions that this plugin includes"
-    actions: [ActionDescriptor]
-    "list of domains that this plugin includes"
-    domains: [String]
+    propertySets: [PropertySet!]
 }
 
 input PluginInput {
     "The identifying coordinates"
     pluginCoordinates: PluginCoordinatesInput!
+    "A user-friendly name"
+    displayName: String!
     "A description of the functionality provided"
     description: String!
-    "The packages included"
-    packages: [PackageInput]!
+    "The action kit version"
+    actionKitVersion: String!
+    "The actions included"
+    actions: [ActionDescriptorInput!]
     "The plugin coordinates of required plugins"
-    dependencies: [PluginCoordinatesInput]
+    dependencies: [PluginCoordinatesInput!]
     "The properties required"
-    propertySets: [PropertySetInput]
-    "list of actions that this plugin includes"
-    actions: [ActionDescriptorInput]
-    "list of domains that this plugin includes"
-    domains: [String]
+    propertySets: [PropertySetInput!]
 }
 
 """
@@ -48,58 +48,6 @@ input PluginCoordinatesInput {
     groupId: String!
     artifactId: String!
     version: String!
-}
-
-type Package {
-    "The identifying package coordinates"
-    packageCoordinates: PackageCoordinates!
-    "The type of items included"
-    mediaType: PackagemediaType!
-    "The location"
-    location: String!
-}
-
-input PackageInput {
-    "The identifying package coordinates"
-    packageCoordinates: PackageCoordinatesInput!
-    "The type of items included"
-    mediaType: PackagemediaType!
-    "The location"
-    location: String!
-}
-
-"""
-PackageCoordinates are used to uniquely identify a package.
-"""
-type PackageCoordinates {
-    groupId: String!
-    artifactId: String!
-    version: String!
-    type: PackageType!
-}
-
-input PackageCoordinatesInput {
-    groupId: String!
-    artifactId: String!
-    version: String!
-    type: PackageType!
-}
-
-"""
-The type of package
-"""
-enum PackageType {
-    helm
-    docker
-}
-
-"""
-The type of content included in a package
-"""
-enum PackagemediaType {
-    actions
-    domains
-    both
 }
 
 type ActionDescriptor {

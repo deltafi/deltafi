@@ -1,8 +1,6 @@
 package org.deltafi.core.domain.plugin;
 
 import org.deltafi.core.domain.generated.client.PluginsProjectionRoot;
-import org.deltafi.core.domain.generated.types.PackagemediaType;
-import org.deltafi.core.domain.generated.types.PackageType;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,15 +11,14 @@ public class PluginDataFetcherTestHelper {
             .groupId()
             .artifactId()
             .version().parent()
+            .displayName()
             .description()
-            .packages()
-            .packageCoordinates()
-            .groupId()
-            .artifactId()
-            .version()
-            .type().parent().parent()
-            .mediaType().parent()
-            .location().parent()
+            .actionKitVersion()
+            .actions()
+            .name()
+            .consumes()
+            .produces()
+            .requiresDomains().parent()
             .dependencies()
             .groupId()
             .artifactId()
@@ -37,35 +34,30 @@ public class PluginDataFetcherTestHelper {
             .refreshable()
             .editable()
             .hidden()
-            .value().parent().parent()
-            .actions()
-            .name()
-            .consumes()
-            .produces()
-            .requiresDomains().parent()
-            .domains();
+            .value().parent().parent();
 
     public static void validatePlugin1(org.deltafi.core.domain.generated.types.Plugin plugin1) {
         assertEquals("org.deltafi", plugin1.getPluginCoordinates().getGroupId());
         assertEquals("plugin-1", plugin1.getPluginCoordinates().getArtifactId());
         assertEquals("1.0.0", plugin1.getPluginCoordinates().getVersion());
 
+        assertEquals("Test Plugin 1", plugin1.getDisplayName());
         assertEquals("This is a test plugin", plugin1.getDescription());
+        assertEquals("1.1.0", plugin1.getActionKitVersion());
 
-        assertEquals(3, plugin1.getPackages().size());
-        assertEquals("org.deltafi", plugin1.getPackages().get(0).getPackageCoordinates().getGroupId());
-        assertEquals("package-1", plugin1.getPackages().get(0).getPackageCoordinates().getArtifactId());
-        assertEquals("1.0.0", plugin1.getPackages().get(0).getPackageCoordinates().getVersion());
-        assertEquals(PackageType.helm, plugin1.getPackages().get(0).getPackageCoordinates().getType());
-        assertEquals(PackagemediaType.both, plugin1.getPackages().get(0).getMediaType());
-        assertEquals("location of package-1", plugin1.getPackages().get(0).getLocation());
-        assertEquals("package-2", plugin1.getPackages().get(1).getPackageCoordinates().getArtifactId());
+        assertEquals(2, plugin1.getActions().size());
+        assertEquals("org.deltafi.test.actions.TestAction1", plugin1.getActions().get(0).getName());
+        assertEquals("org.deltafi.test.actions.TestAction2", plugin1.getActions().get(1).getName());
+        assertEquals("dataFormat1", plugin1.getActions().get(1).getConsumes());
+        assertEquals("dataFormat2", plugin1.getActions().get(1).getProduces());
+        assertEquals(1, plugin1.getActions().get(1).getRequiresDomains().size());
+        assertEquals("test", plugin1.getActions().get(1).getRequiresDomains().get(0));
 
         assertEquals(2, plugin1.getDependencies().size());
         assertEquals("org.deltafi", plugin1.getDependencies().get(0).getGroupId());
-        assertEquals("dependency-1", plugin1.getDependencies().get(0).getArtifactId());
+        assertEquals("plugin-2", plugin1.getDependencies().get(0).getArtifactId());
         assertEquals("1.0.0", plugin1.getDependencies().get(0).getVersion());
-        assertEquals("dependency-2", plugin1.getDependencies().get(1).getArtifactId());
+        assertEquals("plugin-3", plugin1.getDependencies().get(1).getArtifactId());
 
         assertEquals(2, plugin1.getPropertySets().size());
         assertEquals("propertySet1", plugin1.getPropertySets().get(0).getId());
@@ -81,16 +73,5 @@ public class PluginDataFetcherTestHelper {
         assertEquals("property1Value", plugin1.getPropertySets().get(0).getProperties().get(0).getValue());
         assertEquals("property4Value", plugin1.getPropertySets().get(1).getProperties().get(1).getValue());
         assertEquals("propertySet2", plugin1.getPropertySets().get(1).getId());
-
-        assertEquals(2, plugin1.getActions().size());
-        assertEquals("org.deltafi.test.actions.TestAction1", plugin1.getActions().get(0).getName());
-        assertEquals("org.deltafi.test.actions.TestAction2", plugin1.getActions().get(1).getName());
-        assertEquals("dataFormat1", plugin1.getActions().get(1).getConsumes());
-        assertEquals("dataFormat2", plugin1.getActions().get(1).getProduces());
-        assertEquals(1, plugin1.getActions().get(1).getRequiresDomains().size());
-        assertEquals("test", plugin1.getActions().get(1).getRequiresDomains().get(0));
-
-        assertEquals(1, plugin1.getDomains().size());
-        assertEquals("test", plugin1.getDomains().get(0));
     }
 }
