@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.HttpService;
@@ -21,12 +20,11 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
-public class RestPostEgressAction extends EgressAction<RestPostEgressParameters> {
+public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressParameters> {
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Inject
@@ -36,30 +34,7 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
         super(RestPostEgressParameters.class);
     }
 
-    @SuppressWarnings("BusyWait")
-    public Result egress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
-        int tries = 0;
-
-        while (true) {
-            Result result = doEgress(context, params, sourceInfo, formattedData);
-            tries++;
-
-            if (result instanceof ErrorResult) {
-                if (tries > params.getRetryCount()) {
-                    return result;
-                } else {
-                    log.error("Retrying POST after error: " + ((ErrorResult) result).getErrorCause());
-                    try {
-                        Thread.sleep(params.getRetryDelayMs());
-                    } catch (InterruptedException ignored) {}
-                }
-            } else {
-                return result;
-            }
-        }
-    }
-
-    private Result doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    protected Result doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
                     buildHeadersMapString(context.getDid(), sourceInfo, formattedData, params)), inputStream, formattedData.getContentReference().getMediaType());
@@ -82,19 +57,5 @@ public class RestPostEgressAction extends EgressAction<RestPostEgressParameters>
     private String buildHeadersMapString(String did, SourceInfo sourceInfo, FormattedData formattedData, RestPostEgressParameters params)
             throws JsonProcessingException {
         return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, sourceInfo, formattedData, params));
-    }
-
-    private Map<String, String> buildHeadersMap(String did, SourceInfo sourceInfo, FormattedData formattedData, RestPostEgressParameters params) {
-        Map<String, String> headersMap = new HashMap<>();
-        if (formattedData.getMetadata() != null) {
-            formattedData.getMetadata().forEach(pair -> headersMap.put(pair.getKey(), pair.getValue()));
-        }
-        headersMap.put("did", did);
-        headersMap.put("ingressFlow", sourceInfo.getFlow());
-        headersMap.put("flow", params.getEgressFlow());
-        headersMap.put("originalFilename", sourceInfo.getFilename());
-        headersMap.put("filename", formattedData.getFilename());
-
-        return headersMap;
     }
 }
