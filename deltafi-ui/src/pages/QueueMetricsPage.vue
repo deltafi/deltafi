@@ -3,7 +3,7 @@
     <PageHeader heading="Queue Metrics" />
     <div class="row">
       <div class="col-12">
-        <CollapsiblePanel header="Queues" class="table-panel">
+        <Panel header="Queues" class="table-panel">
           <DataTable responsive-layout="scroll" :value="queueMetrics" striped-rows row-hover class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="showLoading">
             <template #empty>No action queue metrics available.</template>
             <template #loading>Loading action queue metrics data. Please wait.</template>
@@ -15,7 +15,7 @@
               </template>
             </Column>
           </DataTable>
-        </CollapsiblePanel>
+        </Panel>
       </div>
     </div>
   </div>
@@ -24,7 +24,7 @@
 <script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import Panel from "primevue/panel";
 import PageHeader from "@/components/PageHeader.vue";
 import useQueueMetrics from "@/composables/useQueueMetrics";
 import { computed, onMounted, onUnmounted, inject } from "vue";

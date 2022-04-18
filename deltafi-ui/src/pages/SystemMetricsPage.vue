@@ -1,7 +1,7 @@
 <template>
   <div class="system-metrics">
     <PageHeader heading="System Metrics" />
-    <CollapsiblePanel header="Nodes" class="table-panel">
+    <Panel header="Nodes" class="table-panel">
       <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading">
         <template #empty>No System Metrics available</template>
         <template #loading>Loading System Metrics Data. Please wait.</template>
@@ -45,7 +45,7 @@
           </div>
         </template>
       </DataTable>
-    </CollapsiblePanel>
+    </Panel>
   </div>
 </template>
 
@@ -53,10 +53,10 @@
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import ProgressBar from "primevue/progressbar";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 import useUtilFunctions from "@/composables/useUtilFunctions";
+import Panel from "primevue/panel";
 import { computed, onMounted, onUnmounted, ref, inject } from "vue";
 
 const { formattedBytes } = useUtilFunctions();

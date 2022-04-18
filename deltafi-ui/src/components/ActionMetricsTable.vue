@@ -1,6 +1,6 @@
 <template>
   <div>
-    <CollapsiblePanel header="Actions" class="metrics-panel table-panel">
+    <Panel header="Actions" class="metrics-panel table-panel">
       <DataTable v-model:filters="filters" :value="tableData.value" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading" sort-field="action_name" :sort-order="1" filter-display="row">
         <template #empty>No Action Metrics available.</template>
         <template #loading>Loading Action Metrics data. Please wait.</template>
@@ -19,7 +19,7 @@
           <template #body="row">{{ formatMetricValue(row) }}</template>
         </Column>
       </DataTable>
-    </CollapsiblePanel>
+    </Panel>
   </div>
 </template>
 
@@ -29,7 +29,7 @@ import DataTable from "primevue/datatable";
 import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import { FilterMatchMode } from "primevue/api";
-import CollapsiblePanel from "@/components/CollapsiblePanel";
+import Panel from "primevue/panel";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, ref, defineEmits } from "vue";
 
@@ -43,7 +43,7 @@ const props = defineProps({
   loading: {
     type: Boolean,
     required: true,
-  }
+  },
 });
 
 const { sentenceCaseString, formattedBytes } = useUtilFunctions();
@@ -67,11 +67,10 @@ const familyTypes = computed(() => {
   return Array.from(familyTypesArray).sort();
 });
 
-
 // We have to pause the polling timer due to with each time a polling occurs the filter looses focus and clears out if you havent submitted it yet.
 const pauseTimer = (value) => {
   emit("pauseTimer", value);
-}
+};
 
 const rows = computed(() => {
   if (props.actions.length === 0) return [];
