@@ -3,9 +3,9 @@ package org.deltafi.ingress.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
+import lombok.SneakyThrows;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.ingress.exceptions.DeltafiException;
@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
@@ -49,8 +50,8 @@ class DeltaFileServiceTest {
     @SuppressWarnings("unused")
     ObjectMapper objectMapper = new ObjectMapper();
 
-    @Test
-    void ingressData() throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
+    @Test @SneakyThrows
+    void ingressData() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
@@ -58,7 +59,7 @@ class DeltaFileServiceTest {
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
         Mockito.when(zipkinService.isEnabled()).thenReturn(true);
 
-        String did = deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON);
+        String did = deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON);
 
         Mockito.verify(contentStorageService).save(eq(did), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
         Mockito.verify(graphQLClient).executeQuery(any());
@@ -67,47 +68,47 @@ class DeltaFileServiceTest {
         Assertions.assertNotNull(did);
     }
 
-    @Test
-    void ingressData_graphqlErrors() throws ObjectStorageException {
+    @Test @SneakyThrows
+    void ingressData_graphqlErrors() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": [{\"message\": \"Bad graphql mutation\"}]}");
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
 
-        Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON));
+        Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON));
 
         Mockito.verify(contentStorageService).delete(any());
     }
 
-    @Test
-    void ingressData_dgsFail() throws ObjectStorageException {
+    @Test @SneakyThrows
+    void ingressData_dgsFail() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new DeltafiGraphQLException("failed to send to dgs"));
 
         DeltafiGraphQLException e = Assertions.assertThrows(DeltafiGraphQLException.class,
-                () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON));
+                () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON));
         Assertions.assertEquals("failed to send to dgs", e.getMessage());
 
         Mockito.verify(contentStorageService).delete(any());
     }
 
-    @Test
-    void ingressData_unexpectedException() throws ObjectStorageException {
+    @Test @SneakyThrows
+    void ingressData_unexpectedException() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new RuntimeException("failed to send to dgs"));
 
-        Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, null, MediaType.APPLICATION_JSON));
+        Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON));
 
         Mockito.verify(contentStorageService).delete(any());
     }
 
-    @Test
-    void fromMetadataString() throws DeltafiMetadataException {
+    @Test @SneakyThrows
+    void fromMetadataString() {
         String metadata = "{\"simple\": \"value\"}";
 
         List<KeyValue> keyValues = deltaFileService.fromMetadataString(metadata);
@@ -116,8 +117,8 @@ class DeltaFileServiceTest {
         Assertions.assertEquals("value", keyValues.get(0).getValue());
     }
 
-    @Test
-    void fromMetadataString_subObject() throws DeltafiMetadataException {
+    @Test @SneakyThrows
+    void fromMetadataString_subObject() {
         String metadata = "{\"complex\": {\"key\": {\"list\": [1, 2, 3]}}}";
 
         List<KeyValue> keyValues = deltaFileService.fromMetadataString(metadata);

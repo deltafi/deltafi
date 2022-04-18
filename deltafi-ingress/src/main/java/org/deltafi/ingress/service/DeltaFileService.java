@@ -17,6 +17,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.trace.ZipkinService;
+import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.IngressGraphQLQuery;
@@ -46,8 +47,9 @@ public class DeltaFileService {
 
     private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
 
-    public String ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString, String mediaType)
-            throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
+    public String ingressData(InputStream inputStream, String sourceFileName, String flow, List<KeyValue> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
+        if(Objects.isNull(sourceFileName) || Objects.isNull(flow)) throw new DeltafiException("filename and flow are required in source info");
+
         String did = UUID.randomUUID().toString();
         OffsetDateTime created = OffsetDateTime.now();
 
@@ -55,7 +57,7 @@ public class DeltaFileService {
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(contentReference).name(sourceFileName).build());
 
         try {
-            sendToIngressGraphQl(did, sourceFileName, flow, metadataString, content, created);
+            sendToIngressGraphQl(did, sourceFileName, flow, metadata, content, created);
         } catch (Exception e) {
             contentStorageService.delete(contentReference);
             throw e;
@@ -69,17 +71,26 @@ public class DeltaFileService {
         return did;
     }
 
+    public String ingressData(InputStream inputStream, String sourceFileName, String flow, Map<String, String> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
+        return ingressData(inputStream, sourceFileName, flow, KeyValueConverter.fromMap(metadata), mediaType);
+    }
+
+    public String ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString, String mediaType)
+            throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
+        return ingressData(inputStream, sourceFileName, flow, fromMetadataString(metadataString), mediaType);
+    }
+
     private KeyValue toKeyValueInput(Map.Entry<String, JsonNode> entry) {
         JsonNode node = entry.getValue();
         String value = node.isTextual() ? node.asText() : node.toString();
         return new KeyValue(entry.getKey(), value);
     }
 
-    private void sendToIngressGraphQl(String did, String sourceFileName, String flow, String metadataString,
-                                      List<Content> content, OffsetDateTime created) throws DeltafiMetadataException, DeltafiException {
+    private void sendToIngressGraphQl(String did, String sourceFileName, String flow, List<KeyValue> metadata,
+                                      List<Content> content, OffsetDateTime created) throws DeltafiException {
         IngressInput ingressInput = IngressInput.newBuilder()
                 .did(did)
-                .sourceInfo(new SourceInfo(sourceFileName, flow, fromMetadataString(metadataString)))
+                .sourceInfo(new SourceInfo(sourceFileName, flow, metadata))
                 .content(content)
                 .created(created)
                 .build();

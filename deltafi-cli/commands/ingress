@@ -6,12 +6,13 @@ cli_help_command() {
   echo "
 Command: ingress
 
-Usage: 
+Usage:
   ingress FLOW [FILE ...] [OPTIONS]
 
 Options:
-  -t, --trace    Trace the file(s) through the system
-  -h, --help     Show help"
+  -t, --trace                       Trace the file(s) through the system
+  -m, --content-type [CONTENT_TYPE] Set media type on ingress
+  -h, --help                        Show help"
   exit 1
 }
 
@@ -24,6 +25,7 @@ cleanup() {
 
 trap cleanup INT
 
+CONTENT_TYPE="application/octet-stream"
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -32,6 +34,11 @@ while [[ $# -gt 0 ]]; do
     -t|--trace)
       TRACE=true
       shift # past argument
+      ;;
+    -c|--content-type)
+      shift
+      CONTENT_TYPE=$1
+      shift
       ;;
     -h|--help)
       cli_help_command
@@ -52,7 +59,6 @@ FLOW=$2
 INGRESS_HOST=$(deltafi serviceip deltafi-ingress-service)
 INGRESS_PATH="/deltafile/ingress"
 INGRESS_URL="http://${INGRESS_HOST}${INGRESS_PATH}"
-CONTENT_TYPE="application/octet-stream"
 
 get_stage() {
   local did=$1

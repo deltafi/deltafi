@@ -30,11 +30,14 @@ dependencies {
 
     implementation "com.netflix.graphql.dgs:graphql-dgs-client"
     implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
+    implementation "org.apache.commons:commons-compress:1.21"
+    implementation "commons-io:commons-io:2.11.0"
 
     testImplementation "io.quarkus:quarkus-junit5"
     testImplementation "io.quarkus:quarkus-junit5-mockito"
     testImplementation "io.rest-assured:rest-assured"
     testImplementation "org.mockito:mockito-junit-jupiter"
+    testImplementation "org.apache.nifi:nifi-flowfile-packager:1.16.0"
 }
 
 task copyProbe(type: Copy) {
