@@ -72,14 +72,18 @@ public class DeltaFileRest {
         return deltaFileService.ingressData(dataStream, filename, flow, metadata, mediaType);
     }
 
+    static class FlowFile {
+        byte[] content;
+        Map<String, String> metadata;
+    }
+
     private String ingressFlowfileV1(InputStream dataStream, String metadataString, String flow, String filename) throws DeltafiMetadataException, DeltafiException, ObjectStorageException {
-        Map<String, String> metadata = fromJson(metadataString);
-        byte[] content = unarchiveFlowfileV1(dataStream, metadata);
-        if (Objects.isNull(flow)) { flow = metadata.get("flow"); }
-        if (Objects.isNull(filename)) { filename = metadata.get("filename"); }
+        FlowFile flowfile = unarchiveFlowfileV1(dataStream, fromJson(metadataString));
+        if (Objects.isNull(flow)) { flow = flowfile.metadata.get("flow"); }
+        if (Objects.isNull(filename)) { filename = flowfile.metadata.get("filename"); }
         if(Objects.isNull(flow)) throw new DeltafiMetadataException("flow must be passed in as a query parameter, header, or flowfile attribute");
         if(Objects.isNull(filename)) throw new DeltafiMetadataException("filename must be passed in as a query parameter, header, or flowfile attribute");
-        return deltaFileService.ingressData(new ByteArrayInputStream(content), filename, flow, metadata, MediaType.APPLICATION_OCTET_STREAM);
+        return deltaFileService.ingressData(new ByteArrayInputStream(flowfile.content), filename, flow, flowfile.metadata, MediaType.APPLICATION_OCTET_STREAM);
     }
 
     Map<String, String> fromJson(String metadata) throws DeltafiMetadataException {
@@ -93,8 +97,10 @@ public class DeltaFileRest {
         }
     }
 
-    byte[] unarchiveFlowfileV1(@NotNull InputStream stream, Map<String, String> metadata) throws DeltafiException {
+    FlowFile unarchiveFlowfileV1(@NotNull InputStream stream, Map<String, String> metadata) throws DeltafiException {
         try (TarArchiveInputStream archive = new TarArchiveInputStream(stream)) {
+            FlowFile flowfile = new FlowFile();
+            flowfile.metadata = new HashMap<>(metadata);
             final TarArchiveEntry attribEntry = archive.getNextTarEntry();
             if (Objects.isNull(attribEntry)) { throw new DeltafiException("No content in flowfile"); }
             if (!attribEntry.getName().equals(FILENAME_ATTRIBUTES)) {
@@ -103,7 +109,7 @@ public class DeltaFileRest {
                         + FILENAME_ATTRIBUTES);
             }
 
-            metadata.putAll(extractFlowfileAttributes(archive));
+            flowfile.metadata.putAll(extractFlowfileAttributes(archive));
 
             final TarArchiveEntry contentEntry = archive.getNextTarEntry();
 
@@ -113,7 +119,8 @@ public class DeltaFileRest {
                         + FILENAME_ATTRIBUTES);
             }
 
-            return archive.readAllBytes();
+            flowfile.content = archive.readAllBytes();
+            return flowfile;
 
         } catch (IOException e) {
             throw new DeltafiException("Unable to unarchive tar", e);
