@@ -27,7 +27,7 @@ deltafi:
         fieldRef:
           fieldPath: spec.nodeName
   config_server:
-    image: deltafi/deltafi-config-server:0.21.1
+    image: deltafi/deltafi-config-server:0.21.2
     envVars:
       - name: MONGO_HOST
         value: deltafi-mongodb
@@ -46,30 +46,30 @@ deltafi:
     volumes: []
     volumeMounts: []
   gateway:
-    image: deltafi/deltafi-gateway:0.21.1
+    image: deltafi/deltafi-gateway:0.21.2
   passthrough_actions:
-    image: deltafi/deltafi-passthrough-actions:0.21.1
+    image: deltafi/deltafi-passthrough-actions:0.21.2
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
-    image: deltafi/deltafi-core-actions:0.21.1
+    image: deltafi/deltafi-core-actions:0.21.2
     keyStoreSecret: keystore-secret
     keyStorePasswordSecret: keystore-password-secret
     keyStoreMountPath: /etc/pki
   core_domain:
-    image: deltafi/deltafi-core-domain:0.21.1
+    image: deltafi/deltafi-core-domain:0.21.2
     mongo_host: deltafi-mongodb
   ingress:
-    image: deltafi/deltafi-ingress:0.21.1
+    image: deltafi/deltafi-ingress:0.21.2
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:0.21.1
+    image: deltafi/deltafi-auth:0.21.2
     mode: disabled # basic, cert, or disabled
     secret: auth-secret
   api:
-    image: deltafi/deltafi-api:0.21.1
+    image: deltafi/deltafi-api:0.21.2
   ui:
-    image: deltafi/deltafi-ui:0.21.1
+    image: deltafi/deltafi-ui:0.21.2
     # UI Configuration
     # title: DeltaFi
     # securityBanner:
@@ -88,7 +88,7 @@ deltafi:
     #   - name: "View in HTTPBin"
     #     url: "https://httpbin.org/anything/${DID}"
   egress_sink:
-    image: deltafi/deltafi-egress-sink:0.21.1
+    image: deltafi/deltafi-egress-sink:0.21.2
 
 # Kubernetes ingress config
 ingress:
