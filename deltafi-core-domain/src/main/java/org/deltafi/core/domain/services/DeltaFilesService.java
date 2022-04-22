@@ -22,6 +22,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -503,9 +504,19 @@ public class DeltaFilesService {
         }
     }
 
+    /**
+     * Attempt to enqueue a list of actions for a DeltaFile.  If the redis service is unavailable, this action
+     * will silently fail and depend on timeout retries to re-attempt.
+     * @param actionNames list of action name strings to enqueue for the DeltaFile
+     * @param deltaFile DeltaFile for which the actions will be performed
+     */
     private void enqueueActions(List<String> actionNames, DeltaFile deltaFile) {
         try {
             redisService.enqueue(actionNames, deltaFile);
+        } catch (JedisConnectionException e) {
+            // This scenario is most likely due to all Redis instances being unavailable
+            // Eating this exception.  Subsequent timeout/retry will ensure the DeltaFile is processed
+            log.error("Unable to post action(s) to Redis queue", e);
         } catch (ActionConfigException e) {
             log.error("Failed to enqueue {} with error {}", deltaFile.getDid(), e.getMessage());
             ErrorInput error = ErrorInput.newBuilder().cause(e.getMessage()).build();
@@ -518,9 +529,19 @@ public class DeltaFilesService {
         }
     }
 
+    /**
+     * Attempt to enqueue multiple actions, each for a set of DeltaFiles.  If the redis service is unavailable,
+     * this action will silently fail and depend on timeout retries to re-attempt.
+     * @param enqueueActions A map where the keys are individual action strings, and the value is a
+     *                       list of DeltaFiles to apply the action
+     */
     private void enqueueActions(Map<String, List<DeltaFile>> enqueueActions) {
         try {
             redisService.enqueue(enqueueActions);
+        } catch (JedisConnectionException e) {
+            // This scenario is most likely due to all Redis instances being unavailable
+            // Eating this exception.  Subsequent timeout/retry will ensure the DeltaFile is processed
+            log.error("Unable to post action(s) to Redis queue", e);
         } catch (ActionConfigException e) {
             log.error("Failed to enqueue to action {} with error {}", e.getActionName(), e.getMessage());
             ErrorInput error = ErrorInput.newBuilder().cause(e.getMessage()).build();

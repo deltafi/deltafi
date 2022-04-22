@@ -5,6 +5,7 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.core.domain.api.Constants;
 import org.deltafi.core.domain.api.types.ActionInput;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.URISyntaxException;
 
@@ -17,12 +18,12 @@ public class RedisActionEventService implements ActionEventService {
     }
 
     @Override
-    public ActionInput getAction(String actionClassName) throws JsonProcessingException {
+    public ActionInput getAction(String actionClassName) throws JsonProcessingException, JedisConnectionException {
         return jedisKeyedBlockingQueue.take(actionClassName, ActionInput.class);
     }
 
     @Override
-    public void submitResult(Result result) throws JsonProcessingException {
+    public void submitResult(Result result) throws JsonProcessingException, JedisConnectionException {
         jedisKeyedBlockingQueue.put(Constants.DGS_QUEUE, result.toEvent());
     }
 }

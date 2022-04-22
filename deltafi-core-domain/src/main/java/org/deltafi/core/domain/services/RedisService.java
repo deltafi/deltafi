@@ -13,6 +13,7 @@ import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.util.*;
 
@@ -23,7 +24,7 @@ public class RedisService {
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
     private final DeltaFiConfigService configService;
 
-    public void enqueue(List<String> actionNames, DeltaFile deltaFile) throws ActionConfigException {
+    public void enqueue(List<String> actionNames, DeltaFile deltaFile) throws ActionConfigException, JedisConnectionException {
         List<Pair<String, Object>> actions = new ArrayList<>();
         for (String actionName : actionNames) {
             ActionConfiguration actionConfiguration = configService.getConfigForAction(actionName);
@@ -36,7 +37,7 @@ public class RedisService {
         }
     }
 
-    public void enqueue(Map<String, List<DeltaFile>> enqueueActions) throws ActionConfigException {
+    public void enqueue(Map<String, List<DeltaFile>> enqueueActions) throws ActionConfigException, JedisConnectionException {
         List<Pair<String, Object>> actions = new ArrayList<>();
         for (String actionName : enqueueActions.keySet()) {
             ActionConfiguration actionConfiguration = configService.getConfigForAction(actionName);

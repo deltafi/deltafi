@@ -11,6 +11,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.resps.KeyedZSetElement;
 
@@ -76,7 +77,7 @@ public class JedisKeyedBlockingQueue {
      * @throws JsonProcessingException if any object in the map cannot be converted to a JSON string. Objects retrieved
      *                                 from objectMap before the exception occurred will be placed in the queue, all others will not
      */
-    public void put(List<Pair<String, Object>> items) throws JsonProcessingException {
+    public void put(List<Pair<String, Object>> items) throws JsonProcessingException, JedisConnectionException {
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline p = jedis.pipelined();
             for (Pair<String, Object> item : items) {
@@ -100,7 +101,7 @@ public class JedisKeyedBlockingQueue {
      * @throws JsonProcessingException if the JSON string retrieved from the queue cannot be converted to the provided
      *                                 type
      */
-    public <T> T take(String key, Class<T> objectClass) throws JsonProcessingException {
+    public <T> T take(String key, Class<T> objectClass) throws JsonProcessingException, JedisConnectionException {
         try (Jedis jedis = jedisPool.getResource()) {
             KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, key);
             return OBJECT_MAPPER.readValue(keyedZSetElement.getElement(), objectClass);
