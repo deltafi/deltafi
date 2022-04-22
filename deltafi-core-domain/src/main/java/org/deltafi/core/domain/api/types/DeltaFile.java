@@ -227,7 +227,9 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
                 });
         queueAction(DeleteConstants.DELETE_ACTION);
         setStage(DeltaFileStage.DELETE);
-        setModified(now);
+        setMarkedForDelete(now);
+        setMarkedForDeleteReason(policy);
+        // do not update the modified time -- it breaks DeleteAction retries because the onComplete policy countdown is reset
     }
 
     public String sourceMetadata(String key) {
