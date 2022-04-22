@@ -24,39 +24,12 @@ properties prior to startup instead of relying on changing the defaults in Mongo
 
 
 ##### Mount a ConfigMap
-In this example you would create a ConfigMap which is mounted to `/config`. The
-keys are the name of your yaml files followed by the yaml content.
-
-config_server section in the values.yaml:
-
-```yaml
-  config_server:
-    image: deltafi-config-server:tag
-    envVars:
-      - name: MONGO_HOST
-        value: deltafi-mongodb
-      - name: MONGO_AUTH_DB
-        value: deltafi
-      - name: CONFIG_TOKEN
-        valueFrom:
-          secretKeyRef:
-            name: config-repo-secret
-            key: config-token
-      - name: MONGO_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: mongodb-passwords
-            key: mongodb-password
-    volumes:
-      - name: native-config-properties
-        configMap:
-          name: config-server-configmap
-    volumeMounts:
-      - name: native-config-properties
-        mountPath: /config
-```
-
-Sample ConfigMap resource:
+By default, the config-server will look for a ConfigMap named `config-server-configmap`
+and mount that to `/config`. To add additional properties or to override read only properties
+create this ConfigMap with nested yaml, where the data.key will be the fileName. A key of `deltafi-common.yaml`
+will add properties for all applications, a key of `action-kit.yaml` will add properties for all plugins. Any
+other key should match the name of a specific application running in a plugin (i.e. `stix-actions.yaml`)
+to apply the properties to that specific application.
 
 ```yaml
 kind: ConfigMap 
@@ -66,49 +39,24 @@ metadata:
 data:
   deltafi-common.yaml: |-
     deltafi:
-      requeueSeconds: 12
-      deltaFileTtl: 5d
+      delete:
+        onCompletion: false
+        frequency: PT1M
+        policies:
+          oneHourAfterComplete:
+            type: ageOff
+            parameters:
+              afterComplete: PT1H
+          twoHourAfterComplete:
+            type: ageOff
+            parameters:
+              afterComplete: PT2H"
   action-kit.yaml: |-
     actions:
       action-polling-initial-delay-ms: 4000
       action-polling-period-ms: 200
       action-registration-initial-delay-ms: 500
       action-registration-period-ms: 15000
-```
-
-##### Mount a PV
-
-In the following example you would put your custom yaml files in `/data/config-server/`
-and mount them in `/config` for the config-server to read.
-
-config_server section in the values.yaml:
-
-```yaml
-  config_server:
-    image: deltafi-config-server:tag
-    envVars:
-      - name: MONGO_HOST
-        value: deltafi-mongodb
-      - name: MONGO_AUTH_DB
-        value: deltafi
-      - name: CONFIG_TOKEN
-        valueFrom:
-          secretKeyRef:
-            name: config-repo-secret
-            key: config-token
-      - name: MONGO_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: mongodb-passwords
-            key: mongodb-password
-    volumes:
-      - name: native-config
-        hostPath:
-          path: /data/config-server/
-          type: DirectoryOrCreate
-    volumeMounts:
-      - name: native-config
-        mountPath: /config
 ```
 
 #### Read properties from git

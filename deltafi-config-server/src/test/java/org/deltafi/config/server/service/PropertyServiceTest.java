@@ -32,7 +32,7 @@ class PropertyServiceTest {
     private static final String MONGO_VALUE = "mongoValue";
     private static final String MONGO_ONLY = "mongoOnly";
     private static final String DEFAULT_VALUE = "defaultValue";
-    public static final String UNKNOWN_PLUGIN = "unknown-plugin";
+    public static final String EXTERNAL_ONLY = "external-plugin-properties-only";
 
     PropertyService propertyService;
 
@@ -58,12 +58,12 @@ class PropertyServiceTest {
         Mockito.when(gitRepo.findOne(ids)).thenReturn(gitEnv());
         List<PropertySet> propertySets = propertyService.getAllProperties();
 
-        assertThat(propertySets).hasSize(2);
+        assertThat(propertySets).hasSize(3);
 
         Set<Property> common = propertySets.stream().filter(ps -> DELTAFI_PROPERTY_SET.equals(ps.getId()))
                 .findFirst().map(PropertySet::getProperties).orElse(Collections.emptySet());
 
-        assertThat(common).hasSize(4);
+        assertThat(common).hasSize(5);
 
         assertThat(getValue(common, MONGO_ONLY)).isEqualTo(MONGO_VALUE);
         assertThat(getValue(common, IN_BOTH)).isEqualTo(MONGO_VALUE);
@@ -71,9 +71,16 @@ class PropertyServiceTest {
         assertThat(getProperty(common, DEFAULT_VALUE)).isPresent();
         assertThat(getValue(common, DEFAULT_VALUE)).isEqualTo(DEFAULT_VALUE);
 
-        // only known properties should be returned
-        assertThat(getProperty(common, GIT_ONLY)).isEmpty();
-        assertThat(propertySets.stream().filter(ps -> UNKNOWN_PLUGIN.equals(ps.getId()))).isEmpty();
+        // externally defined value should be included
+        assertThat(getProperty(common, GIT_ONLY)).isPresent();
+        assertThat(getValue(common, GIT_ONLY)).isEqualTo(GIT_VALUE);
+        Optional<PropertySet> maybeExternalOnly = propertySets.stream().filter(ps -> EXTERNAL_ONLY.equals(ps.getId())).findFirst();
+        assertThat(maybeExternalOnly).isPresent();
+        PropertySet externalOnly = maybeExternalOnly.get();
+        assertThat(externalOnly.getId()).isEqualTo(EXTERNAL_ONLY);
+        assertThat(externalOnly.getDisplayName()).isEqualTo(EXTERNAL_ONLY);
+        assertThat(externalOnly.getDescription()).isNotBlank();
+        assertThat(externalOnly.getProperties()).hasSize(3);
 
         Set<Property> plugin = propertySets.stream().filter(ps -> PLUGIN_APP.equals(ps.getId()))
                 .findFirst().map(PropertySet::getProperties).orElse(Collections.emptySet());
@@ -157,8 +164,8 @@ class PropertyServiceTest {
         Environment env = new Environment("git", "default");
         Map<String, String> props = Map.of(IN_BOTH, GIT_VALUE, GIT_ONLY, GIT_VALUE, ONLY_SET_IN_GIT, GIT_VALUE);
         PropertySource propertySource = new PropertySource(DELTAFI_PROPERTY_SET, props);
-        PropertySource shouldBeIgnored = new PropertySource(UNKNOWN_PLUGIN, props);
-        env.addFirst(shouldBeIgnored);
+        PropertySource externalOnly = new PropertySource(EXTERNAL_ONLY, props);
+        env.addFirst(externalOnly);
         env.addFirst(propertySource);
         return env;
     }

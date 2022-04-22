@@ -56,6 +56,8 @@ public class PropertyService {
 
         mergedPropertySets.forEach(this::setDefaultValues);
 
+        addExternalOnlyProperties(mergedPropertySets);
+
         return mergedPropertySets;
     }
 
@@ -70,9 +72,52 @@ public class PropertyService {
         }
     }
 
+    private void addExternalOnlyProperties(List<PropertySet> knownProperties) {
+        List<PropertySource> propertySets = getExternalEnvironment().getPropertySources();
+        propertySets.stream().forEach(externalPropertySet -> addExternalOnlyProperties(externalPropertySet, knownProperties));
+    }
+
+    private void addExternalOnlyProperties(PropertySource externalProperty, List<PropertySet> knownProperties) {
+        Optional<PropertySet> knownPropertySet = knownProperties.stream()
+                .filter(propertySet -> propertySetMatches(propertySet, externalProperty))
+                .findFirst();
+
+        if (knownPropertySet.isPresent()) {
+            addExternalOnlyProperties(externalProperty, knownPropertySet.get());
+        } else {
+            PropertySet propertySet = new PropertySet();
+            propertySet.setId(externalProperty.getName());
+            propertySet.setDisplayName(externalProperty.getName());
+            propertySet.setDescription("Externally defined property set");
+            addExternalOnlyProperties(externalProperty, propertySet);
+            knownProperties.add(propertySet);
+        }
+    }
+
+    private void addExternalOnlyProperties(PropertySource externalProperty, PropertySet knownPropertySet) {
+        Set<String> knownProperties = knownPropertySet.getProperties().stream()
+                .map(Property::getKey).collect(Collectors.toSet());
+
+        Map<?, ?> gitPropMap = externalProperty.getSource();
+
+        for (Map.Entry<?, ?> entry : gitPropMap.entrySet()) {
+            if (!knownProperties.contains(entry.getKey())) {
+                knownPropertySet.getProperties().add(Property.builder()
+                        .description("Externally defined property")
+                        .editable(false)
+                        .refreshable(false)
+                        .hidden(false)
+                        .key(entry.getKey().toString())
+                        .value(entry.getValue().toString())
+                        .propertySource(EXTERNAL)
+                        .build());
+            }
+        }
+    }
+
     private PropertySet mergeWithExternalProps(PropertySet propertySet, List<PropertySource> externalPropertySources) {
         PropertySource externalPropertySource = externalPropertySources.stream()
-                .filter(propertySource -> propertySource.getName().contains(propertySet.getId()))
+                .filter(propertySource -> propertySetMatches(propertySet, propertySource))
                 .findFirst().orElse(EMPTY_SOURCE);
 
         // Always run the merge to ensure the propertySource is properly set when the value comes from only mongo
@@ -155,6 +200,10 @@ public class PropertyService {
     private Environment getNativeEnvironment() {
         return nativeEnvironmentRepository.map(nativeEnvRepo -> nativeEnvRepo.findOne(getPropertySetIds()))
                 .orElse(EMPTY_ENV);
+    }
+
+    private boolean propertySetMatches(PropertySet propertySet, PropertySource propertySource) {
+        return propertySource.getName().contains(propertySet.getId());
     }
 
     private Set<String> getPropertySetIds() {
