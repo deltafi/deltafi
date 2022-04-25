@@ -37,7 +37,7 @@ public class DeltaFileRest {
 
     public static final String FILENAME_ATTRIBUTES = "flowfile.attributes";
     public static final String FILENAME_CONTENT = "flowfile.content";
-    public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile-v1";
+    public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile";
 
     @POST
     @Path("ingress")

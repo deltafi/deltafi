@@ -25,7 +25,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
     @Inject
     HttpService httpPostService;
 
-    private static final String FLOWFILE_V1_CONTENT_TYPE = "application/flowfile-v1";
+    static final String FLOWFILE_V1_CONTENT_TYPE = "application/flowfile";
 
     public FlowfileEgressAction() {
         super(HttpEgressParameters.class);

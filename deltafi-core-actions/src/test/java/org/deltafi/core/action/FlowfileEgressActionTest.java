@@ -37,6 +37,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.deltafi.core.action.FlowfileEgressAction.FLOWFILE_V1_CONTENT_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -60,7 +61,7 @@ class FlowfileEgressActionTest {
     private static final String URL = "https://url.com";
 
     private static final String CONTENT_NAME = "contentName";
-    private static final String CONTENT_TYPE = "application/flowfile-v1";
+    private static final String CONTENT_TYPE = FLOWFILE_V1_CONTENT_TYPE;
 
     private static final Map<String, String> ADDITIONAL_METADATA = Map.of(
             "did", DID,
