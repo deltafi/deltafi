@@ -1,13 +1,14 @@
 package org.deltafi.core.domain.plugin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.PluginInput;
+import org.deltafi.core.domain.generated.types.Result;
 
 import java.util.Collection;
 
@@ -19,14 +20,17 @@ public class PluginDataFetcher {
     private final PluginRegistryService pluginRegistryService;
 
     @DgsQuery
-    public Collection<org.deltafi.core.domain.generated.types.Plugin> plugins() {
-        return OBJECT_MAPPER.convertValue(pluginRegistryService.getPlugins(), new TypeReference<>() {});
+    public Collection<Plugin> plugins() {
+        return pluginRegistryService.getPluginsWithVariables();
     }
 
     @DgsMutation
-    public Plugin registerPlugin(PluginInput pluginInput) {
-        Plugin plugin = OBJECT_MAPPER.convertValue(pluginInput, Plugin.class);
-        pluginRegistryService.addPlugin(plugin);
-        return plugin;
+    public Result registerPlugin(PluginInput pluginInput) {
+        return pluginRegistryService.addPlugin(OBJECT_MAPPER.convertValue(pluginInput, Plugin.class));
+    }
+
+    @DgsMutation
+    public Result uninstallPlugin(boolean dryRun, PluginCoordinates pluginCoordinatesInput) {
+        return pluginRegistryService.uninstallPlugin(dryRun, pluginCoordinatesInput);
     }
 }

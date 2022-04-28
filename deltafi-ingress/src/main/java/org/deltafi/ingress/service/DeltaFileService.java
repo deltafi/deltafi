@@ -47,8 +47,8 @@ public class DeltaFileService {
 
     private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
 
-    public String ingressData(InputStream inputStream, String sourceFileName, String flow, List<KeyValue> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
-        if(Objects.isNull(sourceFileName) || Objects.isNull(flow)) throw new DeltafiException("filename and flow are required in source info");
+    public String ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, List<KeyValue> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
+        if(Objects.isNull(sourceFileName) || Objects.isNull(namespacedFlow)) throw new DeltafiException("filename and flow are required in source info");
 
         String did = UUID.randomUUID().toString();
         OffsetDateTime created = OffsetDateTime.now();
@@ -57,16 +57,16 @@ public class DeltaFileService {
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(contentReference).name(sourceFileName).build());
 
         try {
-            sendToIngressGraphQl(did, sourceFileName, flow, metadata, content, created);
+            sendToIngressGraphQl(did, sourceFileName, namespacedFlow, metadata, content, created);
         } catch (Exception e) {
             contentStorageService.delete(contentReference);
             throw e;
         }
 
-        logMetric(did, sourceFileName, flow, "files_in", 1);
-        logMetric(did, sourceFileName, flow, "bytes_in", contentReference.getSize());
+        logMetric(did, sourceFileName, namespacedFlow, "files_in", 1);
+        logMetric(did, sourceFileName, namespacedFlow, "bytes_in", contentReference.getSize());
 
-        sendTrace(did, sourceFileName, flow, created);
+        sendTrace(did, sourceFileName, namespacedFlow, created);
 
         return did;
     }
@@ -86,11 +86,11 @@ public class DeltaFileService {
         return new KeyValue(entry.getKey(), value);
     }
 
-    private void sendToIngressGraphQl(String did, String sourceFileName, String flow, List<KeyValue> metadata,
+    private void sendToIngressGraphQl(String did, String sourceFileName, String namespacedFlow, List<KeyValue> metadata,
                                       List<Content> content, OffsetDateTime created) throws DeltafiException {
         IngressInput ingressInput = IngressInput.newBuilder()
                 .did(did)
-                .sourceInfo(new SourceInfo(sourceFileName, flow, metadata))
+                .sourceInfo(new SourceInfo(sourceFileName, namespacedFlow, metadata))
                 .content(content)
                 .created(created)
                 .build();
@@ -99,24 +99,25 @@ public class DeltaFileService {
         try {
             response = graphQLClient.executeQuery(toGraphQlRequest(ingressInput).serialize());
         } catch (DeltafiGraphQLException e) {
-            logIngressRequestError(did, sourceFileName, flow, e);
+            logIngressRequestError(did, sourceFileName, namespacedFlow, e);
             throw e;
         } catch (Exception e) {
-            logIngressRequestError(did, sourceFileName, flow, e);
+            logIngressRequestError(did, sourceFileName, namespacedFlow, e);
             throw new DeltafiException(e.getMessage());
         }
 
         if (response.hasErrors()) {
             String errors = response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining(", "));
             DeltafiGraphQLException e = new DeltafiGraphQLException(errors);
-            logIngressRequestError(did, sourceFileName, flow, e);
+            logIngressRequestError(did, sourceFileName, namespacedFlow, e);
             throw e;
         }
     }
 
-    private void logIngressRequestError(String did, String sourceFileName, String flow, Throwable throwable) {
+    private void logIngressRequestError(String did, String sourceFileName, String namespacedFlow,
+                                        Throwable throwable) {
         log.error("Unable to execute ingress request", throwable);
-        logMetric(did, sourceFileName, flow, "files_dropped", 1);
+        logMetric(did, sourceFileName, namespacedFlow, "files_dropped", 1);
     }
 
     List<KeyValue> fromMetadataString(String metadata) throws DeltafiMetadataException {
@@ -125,7 +126,8 @@ public class DeltaFileService {
         }
 
         try {
-            Map<String, JsonNode> keyValueMap = objectMapper.readValue(metadata, new TypeReference<>() {});
+            Map<String, JsonNode> keyValueMap = objectMapper.readValue(metadata, new TypeReference<>() {
+            });
             return keyValueMap.entrySet().stream().map(this::toKeyValueInput).collect(Collectors.toList());
         } catch (JsonProcessingException e) {
             throw new DeltafiMetadataException("Could not parse metadata, metadata must be a JSON Object: " + e.getMessage());
@@ -156,4 +158,5 @@ public class DeltaFileService {
             zipkinService.markSpanComplete(zipkinService.createChildSpan(did, INGRESS_ACTION, fileName, flow, created));
         }
     }
+
 }

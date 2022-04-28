@@ -16,10 +16,7 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +43,7 @@ public class ActionProcessor extends AbstractProcessor {
                             .requiresDomains(Arrays.asList(actionAnnotation.requiresDomains()))
                             .build();
                 })
+                .sorted(Comparator.comparing(ActionDescriptor::getName))
                 .collect(Collectors.toList());
 
         try {

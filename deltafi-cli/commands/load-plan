@@ -20,7 +20,6 @@ cleanup() {
 
 trap cleanup INT
 
-MUTATION="saveFlowPlan"
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -41,18 +40,36 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
-FILE=${ARGS[@]:1}
+FLOW_PLAN_FILE=${ARGS[1]}
+SOURCE_PLUGIN_FILE=${ARGS[2]}
 
-if [ ! -f "$FILE" ]; then
-  cli_log "${yellow}${FILE}: No such file${normal}"
+if [ ! -f "$FLOW_PLAN_FILE" ]; then
+  cli_log "${yellow}${FLOW_PLAN_FILE}: No such file${normal}"
   exit 1
 fi
 
-BASENAME="$(basename $FILE)"
-JSON=$(cat "$FILE")
+BASENAME="$(basename $FLOW_PLAN_FILE)"
+JSON=$(cat "$FLOW_PLAN_FILE")
+
+if [ -f "$SOURCE_PLUGIN_FILE" ] && [ "$( jq 'has("sourcePlugin")' <<< $JSON )" == "false" ]; then
+  SOURCE_PLUGIN=$(cat "$SOURCE_PLUGIN_FILE")
+  JSON=$(echo "$JSON" | jq --argjson json "$SOURCE_PLUGIN" '. + {sourcePlugin: $json}')
+fi
+
 VARIABLES="{\"flowPlan\": $JSON }"
 
-QUERY="mutation(\$flowPlan: FlowPlanInput!) {${MUTATION}(flowPlan: \$flowPlan) { name }}"
+if [[ "$JSON" == *"loadAction"* ]]; then
+  OPERATION_NAME="saveIngressFlowPlan"
+  QUERY="mutation(\$flowPlan: IngressFlowPlanInput!) {saveIngressFlowPlan(ingressFlowPlan: \$flowPlan) { name }}"
+elif [[ "$JSON" == *"egressAction"* ]]; then
+  OPERATION_NAME="saveEgressFlowPlan"
+  QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
+else
+  cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must contain a load action or egress action${normal}"
+  echo -e "${red}Loading flow plan failed, plan must contain a load action or egress action${normal}"
+  exit 1
+fi
+
 DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
 
@@ -68,7 +85,8 @@ else
     cli_log "${red}${BASENAME}: Loading flow plan failed${normal}"
     echo -e "${red}Error: ${ERRORS}${normal}"
   else
-    cli_log "Successfully loaded flow plan from file ${cyan}${BASENAME}${normal}"
+    LOADED=$(cat ${TMPFILE} | jq -r ".data.${OPERATION_NAME}.name")
+    cli_log "Successfully loaded flow plan ${LOADED} from file ${cyan}${BASENAME}${normal}"
   fi
 fi
 

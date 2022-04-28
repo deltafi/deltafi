@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: export-ingress-plan
+
+Usage:
+  export-ingress-plan FLOW_PLAN_NAME"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+PLANNAME=${ARGS[@]:1}
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+QUERY="fragment ActionFields on ActionConfiguration {
+          name
+          type
+          parameters
+        }
+
+        query {
+          getIngressFlowPlan(planName: \"$PLANNAME\") {
+            name
+            description
+            sourcePlugin {
+              artifactId
+              groupId
+              version
+            }
+            type
+            transformActions {
+              ... ActionFields
+              consumes
+              produces
+            }
+            loadAction {
+              ... ActionFields
+              consumes
+            }
+          }
+        }
+        "
+
+RESULT=$(deltafi query $QUERY)
+DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  cli_log "${red}${BASENAME}: Failed to export ingress flow plan: $PLANNAME${normal}"
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
+else
+  echo "$RESULT" | jq '.data.getIngressFlowPlan'
+fi

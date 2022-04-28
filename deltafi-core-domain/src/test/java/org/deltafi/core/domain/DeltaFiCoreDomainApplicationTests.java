@@ -8,41 +8,41 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
-import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.api.types.DeleteActionSchema;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.EgressActionSchema;
+import org.deltafi.core.domain.api.types.EnrichActionSchema;
+import org.deltafi.core.domain.api.types.FormatActionSchema;
+import org.deltafi.core.domain.api.types.LoadActionSchema;
+import org.deltafi.core.domain.api.types.TransformActionSchema;
+import org.deltafi.core.domain.api.types.ValidateActionSchema;
+import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.configuration.EgressActionConfiguration;
+import org.deltafi.core.domain.configuration.FormatActionConfiguration;
+import org.deltafi.core.domain.configuration.LoadActionConfiguration;
+import org.deltafi.core.domain.configuration.TransformActionConfiguration;
+import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.datafetchers.FlowPlanDatafetcherTestHelper;
+import org.deltafi.core.domain.delete.DeleteRunner;
+import org.deltafi.core.domain.generated.DgsConstants;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.ConfigType;
-import org.deltafi.core.domain.generated.types.DeleteActionSchema;
-import org.deltafi.core.domain.generated.types.EgressActionSchema;
-import org.deltafi.core.domain.generated.types.EnrichActionSchema;
-import org.deltafi.core.domain.generated.types.FlowPlan;
-import org.deltafi.core.domain.generated.types.FormatActionSchema;
-import org.deltafi.core.domain.generated.types.LoadActionSchema;
-import org.deltafi.core.domain.generated.types.TransformActionSchema;
-import org.deltafi.core.domain.generated.types.ValidateActionSchema;
-import org.deltafi.core.domain.plugin.PluginRegistryService;
-import org.deltafi.core.domain.repo.ActionSchemaRepo;
-import org.deltafi.core.domain.repo.DeltaFileRepo;
-import org.deltafi.core.domain.configuration.DeltaFiProperties;
-import org.deltafi.core.domain.delete.DeleteRunner;
-import org.deltafi.core.domain.exceptions.ActionConfigException;
-import org.deltafi.core.domain.generated.DgsConstants;
+import org.deltafi.core.domain.generated.types.DeltaFiConfiguration;
 import org.deltafi.core.domain.generated.types.*;
-import org.deltafi.core.domain.repo.FlowPlanRepo;
-import org.deltafi.core.domain.services.DeltaFiConfigService;
-import org.deltafi.core.domain.services.DeltaFilesService;
-import org.deltafi.core.domain.services.RedisService;
-import org.deltafi.core.domain.validation.DeltafiRuntimeConfigurationValidator;
+import org.deltafi.core.domain.plugin.Plugin;
+import org.deltafi.core.domain.plugin.PluginRepository;
+import org.deltafi.core.domain.repo.*;
+import org.deltafi.core.domain.services.*;
+import org.deltafi.core.domain.types.PluginVariables;
+import org.deltafi.core.domain.types.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -61,23 +61,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static graphql.Assert.*;
+import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.core.domain.Util.equalIgnoringDates;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
-import static org.deltafi.core.domain.datafetchers.FlowPlanDatafetcherTestHelper.*;
-import static org.deltafi.core.domain.plugin.PluginDataFetcherTestHelper.PLUGINS_PROJECTION_ROOT;
-import static org.deltafi.core.domain.plugin.PluginDataFetcherTestHelper.validatePlugin1;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.deltafi.core.domain.plugin.PluginDataFetcherTestHelper.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 
 @SpringBootTest
 @TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "enableScheduling=false"})
@@ -108,22 +102,37 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFileRepo deltaFileRepo;
 
 	@Autowired
-    DeltaFiConfigService configService;
-
-	@MockBean
-	DeltafiRuntimeConfigurationValidator configValidator;
-
-	@Autowired
 	ActionSchemaRepo actionSchemaRepo;
 
 	@Autowired
-	FlowPlanRepo flowPlanRepo;
+	PluginRepository pluginRepository;
 
-	@MockBean
-	PluginRegistryService pluginRegistryService;
+    @Autowired
+    IngressFlowPlanService ingressFlowPlanService;
 
-	@Captor
-	ArgumentCaptor<Map<String, List<DeltaFile>>> enqueueActionCaptor;
+    @Autowired
+    IngressFlowService ingressFlowService;
+
+	@Autowired
+	IngressFlowRepo ingressFlowRepo;
+
+    @Autowired
+    EgressFlowPlanService egressFlowPlanService;
+
+    @Autowired
+    EgressFlowService egressFlowService;
+
+	@Autowired
+	EgressFlowRepo egressFlowRepo;
+
+	@Autowired
+	IngressFlowPlanRepo ingressFlowPlanRepo;
+
+	@Autowired
+	EgressFlowPlanRepo egressFlowPlanRepo;
+
+	@Autowired
+	PluginVariableRepo pluginVariableRepo;
 
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -160,26 +169,74 @@ class DeltaFiCoreDomainApplicationTests {
 			new KeyValue("sampleVersion", "2.1"));
 
 	@BeforeEach
-	void setup() throws IOException {
+	void setup() {
 		actionSchemaRepo.deleteAll();
 		deltaFileRepo.deleteAll();
-		flowPlanRepo.deleteAll();
 		deltaFiProperties.getDelete().setOnCompletion(false);
 		loadConfig();
 
 		Mockito.clearInvocations(redisService);
 	}
 
-	void loadConfig() throws IOException {
-		String config = new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("deltafi-config.yaml")).readAllBytes());
-		configService.replaceConfig(config);
+	void loadConfig() {
+		loadIngressConfig();
+		loadEgressConfig();
 	}
+
+	void loadIngressConfig() {
+		org.deltafi.core.domain.configuration.LoadActionConfiguration lc = new org.deltafi.core.domain.configuration.LoadActionConfiguration();
+		lc.setName("SampleLoadAction");
+		lc.setConsumes("json-utf8-sample");
+		org.deltafi.core.domain.configuration.TransformActionConfiguration tc = new org.deltafi.core.domain.configuration.TransformActionConfiguration();
+		tc.setName("Utf8TransformAction");
+		TransformActionConfiguration tc2 = new TransformActionConfiguration();
+		tc2.setName("SampleTransformAction");
+
+		IngressFlow sampleIngressFlow = buildRunningFlow("sample", lc, List.of(tc, tc2));
+		IngressFlow retryFlow = buildRunningFlow("theFlow", lc, null);
+		IngressFlow childFlow = buildRunningFlow("childFlow", lc, List.of(tc2));
+
+		ingressFlowRepo.saveAll(List.of(sampleIngressFlow, retryFlow, childFlow));
+	}
+
+    void loadEgressConfig() {
+		org.deltafi.core.domain.configuration.EnrichActionConfiguration sampleEnrich = new org.deltafi.core.domain.configuration.EnrichActionConfiguration();
+		sampleEnrich.setName("SampleEnrichAction");
+		sampleEnrich.setRequiresDomains(List.of("sample"));
+		sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
+
+		org.deltafi.core.domain.configuration.ValidateActionConfiguration authValidate = new org.deltafi.core.domain.configuration.ValidateActionConfiguration();
+		authValidate.setName("AuthorityValidateAction");
+		org.deltafi.core.domain.configuration.ValidateActionConfiguration sampleValidate = new org.deltafi.core.domain.configuration.ValidateActionConfiguration();
+		sampleValidate.setName("SampleValidateAction");
+
+		org.deltafi.core.domain.configuration.FormatActionConfiguration sampleFormat = new org.deltafi.core.domain.configuration.FormatActionConfiguration();
+		sampleFormat.setName("sample.SampleFormatAction");
+		sampleFormat.setRequiresDomains(List.of("sample"));
+		sampleFormat.setRequiresEnrichment(List.of("sampleEnrichment"));
+
+		org.deltafi.core.domain.configuration.EgressActionConfiguration sampleEgress = new org.deltafi.core.domain.configuration.EgressActionConfiguration();
+		sampleEgress.setName("SampleEgressAction");
+
+		EgressFlow sampleEgressFlow = buildRunningFlow("sample", sampleFormat, sampleEgress);
+		sampleEgressFlow.setEnrichActions(List.of(sampleEnrich));
+		sampleEgressFlow.setValidateActions(List.of(authValidate, sampleValidate));
+
+		FormatActionConfiguration errorFormat = new FormatActionConfiguration();
+		errorFormat.setName("ErrorFormatAction");
+		errorFormat.setRequiresDomains(List.of("error"));
+		EgressActionConfiguration errorEgress = new EgressActionConfiguration();
+		errorEgress.setName("ErrorEgressAction");
+		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress);
+
+		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
+    }
 
 	@Test
 	void contextLoads() {
 		assertTrue(true);
 		ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.INGRESS_FLOW).build();
-		assertFalse(configService.getConfigs(input).isEmpty());
+		assertFalse(ingressFlowService.getConfigs(input).isEmpty());
 	}
 
 	@Test
@@ -202,7 +259,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test01Ingress() throws IOException, ActionConfigException {
+	void test01Ingress() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile deltaFileFromDgs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("01.ingress"), did),
@@ -211,13 +268,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 		assertEquals(did, deltaFileFromDgs.getDid());
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postIngressDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("Utf8TransformAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postIngressDeltaFile(did), deltaFile));
+		verifyActionEventResults(postIngressDeltaFile(did), "Utf8TransformAction");
 	}
 
 	DeltaFile postTransformUtf8DeltaFile(String did) {
@@ -231,7 +282,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test03TransformUtf8() throws IOException, ActionConfigException {
+	void test03TransformUtf8() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postIngressDeltaFile(did));
 
@@ -240,13 +291,7 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postTransformUtf8DeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleTransformAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postTransformUtf8DeltaFile(did), deltaFile));
+		verifyActionEventResults(postTransformUtf8DeltaFile(did), "SampleTransformAction");
 	}
 
 	DeltaFile postTransformDeltaFile(String did) {
@@ -260,7 +305,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test05Transform() throws IOException, ActionConfigException {
+	void test05Transform() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
@@ -269,13 +314,7 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postTransformDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleLoadAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postTransformDeltaFile(did), deltaFile));
+		verifyActionEventResults(postTransformDeltaFile(did), "SampleLoadAction");
 	}
 
 	DeltaFile postTransformHadErrorDeltaFile(String did) {
@@ -301,7 +340,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test06Retry() throws IOException, ActionConfigException {
+	void test06Retry() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postTransformHadErrorDeltaFile(did));
 
@@ -314,13 +353,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertTrue(retryResults.get(0).getSuccess());
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postRetryTransformDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleTransformAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postRetryTransformDeltaFile(did), deltaFile));
+		verifyActionEventResults(postRetryTransformDeltaFile(did), "SampleTransformAction");
 	}
 
 	DeltaFile postLoadDeltaFile(String did) {
@@ -335,7 +368,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test08Load() throws IOException, ActionConfigException {
+	void test08Load() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postTransform = postTransformDeltaFile(did);
 		deltaFileRepo.save(postTransform);
@@ -345,13 +378,7 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postLoadDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleEnrichAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postLoadDeltaFile(did), deltaFile));
+		verifyActionEventResults(postLoadDeltaFile(did), "SampleEnrichAction");
 	}
 
 	DeltaFile post09LoadDeltaFile(String did) {
@@ -382,7 +409,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test10Split() throws IOException, ActionConfigException {
+	void test10Split() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postTransform = postTransformDeltaFile(did);
 		deltaFileRepo.save(postTransform);
@@ -414,24 +441,26 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
 		assertEquals(1, child2.getLastProtocolLayerContent().size());
 
-		Mockito.verify(redisService).enqueue(enqueueActionCaptor.capture());
-		assertEquals(1, enqueueActionCaptor.getValue().keySet().size());
-		assertEquals(2, enqueueActionCaptor.getValue().get("SampleTransformAction").size());
-		assertEquals(child1.getDid(), enqueueActionCaptor.getValue().get("SampleTransformAction").get(0).getDid());
-		assertEquals(child2.getDid(), enqueueActionCaptor.getValue().get("SampleTransformAction").get(1).getDid());
+		ArgumentCaptor<List<ActionInput>> actual = ArgumentCaptor.forClass(List.class);
+		Mockito.verify(redisService).enqueue(actual.capture());
+		List<ActionInput> actionInputs = actual.getValue();
+		assertThat(actionInputs).hasSize(2);
+
+		Util.assertEqualsIgnoringDates(child1.forQueue("SampleTransformAction"), actionInputs.get(0).getDeltaFile());
+		Util.assertEqualsIgnoringDates(child2.forQueue("SampleTransformAction"), actionInputs.get(1).getDeltaFile());
 	}
 
 	DeltaFile postEnrichDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
-		deltaFile.queueAction("SampleFormatAction");
+		deltaFile.queueAction("sample.SampleFormatAction");
 		deltaFile.completeAction("SampleEnrichAction");
 		deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
 		return deltaFile;
 	}
 
 	@Test
-	void test11Enrich() throws IOException, ActionConfigException {
+	void test11Enrich() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postLoadDeltaFile(did));
 
@@ -440,22 +469,16 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postEnrichDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleFormatAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postEnrichDeltaFile(did), deltaFile));
+		verifyActionEventResults(postEnrichDeltaFile(did), "sample.SampleFormatAction");
 	}
 
 	DeltaFile postFormatDeltaFile(String did) {
 		DeltaFile deltaFile = postEnrichDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueActionsIfNew(Arrays.asList("AuthorityValidateAction", "SampleValidateAction"));
-		deltaFile.completeAction("SampleFormatAction");
+		deltaFile.completeAction("sample.SampleFormatAction");
 		deltaFile.getFormattedData().add(FormattedData.newBuilder()
-				.formatAction("SampleFormatAction")
+				.formatAction("sample.SampleFormatAction")
 				.filename("output.txt")
 				.metadata(Arrays.asList(new KeyValue("key1", "value1"), new KeyValue("key2", "value2")))
 				.contentReference(new ContentReference("formattedObjectName", 0, 1000, did, "application/octet-stream"))
@@ -466,7 +489,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test13Format() throws IOException, ActionConfigException {
+	void test13Format() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postEnrichDeltaFile(did));
 
@@ -475,13 +498,7 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postFormatDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Arrays.asList("AuthorityValidateAction", "SampleValidateAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postFormatDeltaFile(did), deltaFile));
+		verifyActionEventResults(postFormatDeltaFile(did), "AuthorityValidateAction", "SampleValidateAction");
 	}
 
 	DeltaFile postValidateDeltaFile(String did) {
@@ -492,7 +509,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test15Validate() throws IOException, ActionConfigException {
+	void test15Validate() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postFormatDeltaFile(did));
 
@@ -504,7 +521,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(Util.equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
 
-		Mockito.verify(redisService, never()).enqueue(any(), any());
+		Mockito.verify(redisService, never()).enqueue(any());
 		assertTrue(Util.equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
 	}
 
@@ -516,7 +533,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test17Error() throws IOException, ActionConfigException {
+	void test17Error() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateDeltaFile(did));
 
@@ -532,7 +549,7 @@ class DeltaFiCoreDomainApplicationTests {
 		// ensure an error deltaFile was created
 		assertNotEquals(actual, deltaFilesService.getLastCreatedDeltaFiles(1).get(0));
 
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("ErrorFormatAction")), any());
+        mockRedisEnqueue("ErrorFormatAction");
 	}
 
 	DeltaFile postRetryDeltaFile(String did) {
@@ -543,7 +560,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test18Retry() throws IOException, ActionConfigException {
+	void test18Retry() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postErrorDeltaFile(did));
 
@@ -557,13 +574,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postRetryDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("AuthorityValidateAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postRetryDeltaFile(did), deltaFile));
+		verifyActionEventResults(postRetryDeltaFile(did), "AuthorityValidateAction");
 	}
 
 	@Test
@@ -613,7 +624,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test20ValidateAuthority() throws IOException, ActionConfigException {
+	void test20ValidateAuthority() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateDeltaFile(did));
 
@@ -622,13 +633,7 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postValidateAuthorityDeltaFile(did), deltaFile));
-
-		ArgumentCaptor<DeltaFile> actual = ArgumentCaptor.forClass(DeltaFile.class);
-		Mockito.verify(redisService).enqueue(eq(Collections.singletonList("SampleEgressAction")), actual.capture());
-		deltaFile = actual.getValue();
-		assertTrue(Util.equalIgnoringDates(postValidateAuthorityDeltaFile(did), deltaFile));
+		verifyActionEventResults(postValidateAuthorityDeltaFile(did), "SampleEgressAction");
 	}
 
 	DeltaFile postEgressDeltaFile(String did) {
@@ -639,7 +644,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test22Egress() throws IOException, ActionConfigException {
+	void test22Egress() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
@@ -651,11 +656,11 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertTrue(Util.equalIgnoringDates(postEgressDeltaFile(did), deltaFile));
 
-		Mockito.verify(redisService, never()).enqueue(any(), any());
+		Mockito.verify(redisService, never()).enqueue(any());
 	}
 
 	@Test
-	void testFilterEgress() throws IOException, ActionConfigException {
+	void testFilterEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
@@ -670,11 +675,11 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(ActionState.FILTERED, lastAction.getState());
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 
-		Mockito.verify(redisService, never()).enqueue(any(), any());
+		Mockito.verify(redisService, never()).enqueue(any());
 	}
 
 	@Test
-	void test22EgressDeleteCompleted() throws IOException, ActionConfigException {
+	void test22EgressDeleteCompleted() throws IOException {
 		deltaFiProperties.getDelete().setOnCompletion(true);
 
 		String did = UUID.randomUUID().toString();
@@ -685,25 +690,7 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		Mockito.verify(redisService).enqueue(Mockito.eq(Collections.singletonList("DeleteAction")), Mockito.any());
-	}
-
-	@Test
-	void test25ActionConfigError() throws IOException, ActionConfigException {
-		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postIngressDeltaFile(did));
-
-		Mockito.doThrow(new ActionConfigException("SampleTransformAction", "action not found")).when(redisService).enqueue(eq(Collections.singletonList("SampleTransformAction")), argThat((d) -> did.equals(d.getDid())));
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("03.transformUtf8"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class).getDid();
-
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertThat(DeltaFileStage.ERROR).isEqualTo(deltaFile.getStage());
-
-		Action errored = deltaFile.actionNamed("SampleTransformAction").orElseThrow();
-		assertThat(errored.getErrorCause()).isEqualTo("action not found");
+        mockRedisEnqueue("DeleteAction");
 	}
 
 	@Test
@@ -712,100 +699,160 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void testRegisterDelete() {
-		DeleteActionSchema schema = saveDelete(dgsQueryExecutor);
-		assertEquals(DELETE_ACTION, schema.getId());
+	void testRegisterAll() {
+		int count = saveAll(dgsQueryExecutor);
+		assertEquals(7, count);
+
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(7, schemas.size());
+
+		boolean foundDelete = false;
+		boolean foundEgress = false;
+		boolean foundEnrich = false;
+		boolean foundFormat = false;
+		boolean foundLoad = false;
+		boolean foundTransform = false;
+		boolean foundValidate = false;
+
+		for (ActionSchema schema : schemas) {
+			if (schema instanceof DeleteActionSchema) {
+				checkDeleteSchema((DeleteActionSchema) schema);
+				foundDelete = true;
+
+			} else if (schema instanceof EgressActionSchema) {
+				checkEgressSchema((EgressActionSchema) schema);
+				foundEgress = true;
+
+			} else if (schema instanceof EnrichActionSchema) {
+				checkEnrichSchema((EnrichActionSchema) schema);
+				foundEnrich = true;
+
+			} else if (schema instanceof FormatActionSchema) {
+				checkFormatSchema((FormatActionSchema) schema);
+				foundFormat = true;
+
+			} else if (schema instanceof LoadActionSchema) {
+				checkLoadSchema((LoadActionSchema) schema);
+				foundLoad = true;
+
+			} else if (schema instanceof TransformActionSchema) {
+				checkTransformSchema((TransformActionSchema) schema);
+				foundTransform = true;
+
+			} else if (schema instanceof ValidateActionSchema) {
+				checkValidateSchema((ValidateActionSchema) schema);
+				foundValidate = true;
+			}
+		}
+
+		assertTrue(foundDelete);
+		assertTrue(foundEgress);
+		assertTrue(foundEnrich);
+		assertTrue(foundFormat);
+		assertTrue(foundLoad);
+		assertTrue(foundTransform);
+		assertTrue(foundValidate);
+	}
+
+	private void checkActionCommonFields(ActionSchema schema) {
 		assertEquals(PARAM_CLASS, schema.getParamClass());
 		assertNotNull(schema.getLastHeard());
+	}
+
+	@Test
+	void testRegisterDelete() {
+		assertEquals(1, saveDelete(dgsQueryExecutor));
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(1, schemas.size());
+		checkDeleteSchema((DeleteActionSchema) schemas.get(0));
+	}
+
+	private void checkDeleteSchema(DeleteActionSchema schema) {
+		checkActionCommonFields(schema);
+		assertEquals(DELETE_ACTION, schema.getId());
 	}
 
 	@Test
 	void testRegisterEgress() {
-		EgressActionSchema schema = saveEgress(dgsQueryExecutor);
+		assertEquals(1, saveEgress(dgsQueryExecutor));
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(1, schemas.size());
+		checkEgressSchema((EgressActionSchema) schemas.get(0));
+	}
+
+	private void checkEgressSchema(EgressActionSchema schema) {
+		checkActionCommonFields(schema);
 		assertEquals(EGRESS_ACTION, schema.getId());
-		assertEquals(PARAM_CLASS, schema.getParamClass());
-		assertNotNull(schema.getLastHeard());
 	}
 
 	@Test
 	void testRegisterEnrich() {
-		EnrichActionSchema schema = saveEnrich(dgsQueryExecutor);
+		assertEquals(1, saveEnrich(dgsQueryExecutor));
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(1, schemas.size());
+		checkEnrichSchema((EnrichActionSchema) schemas.get(0));
+	}
+
+	private void checkEnrichSchema(EnrichActionSchema schema) {
+		checkActionCommonFields(schema);
 		assertEquals(ENRICH_ACTION, schema.getId());
-		assertEquals(PARAM_CLASS, schema.getParamClass());
-		assertNotNull(schema.getLastHeard());
 		assertEquals(DOMAIN, schema.getRequiresDomains().get(0));
 	}
 
 	@Test
 	void testRegisterFormat() {
-		FormatActionSchema schema = saveFormat(dgsQueryExecutor);
+		assertEquals(1, saveFormat(dgsQueryExecutor));
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(1, schemas.size());
+		checkFormatSchema((FormatActionSchema) schemas.get(0));
+	}
+
+	private void checkFormatSchema(FormatActionSchema schema) {
+		checkActionCommonFields(schema);
 		assertEquals(FORMAT_ACTION, schema.getId());
-		assertEquals(PARAM_CLASS, schema.getParamClass());
-		assertNotNull(schema.getLastHeard());
 		assertEquals(DOMAIN, schema.getRequiresDomains().get(0));
 	}
 
 	@Test
 	void testRegisterLoad() {
-		LoadActionSchema schema = saveLoad(dgsQueryExecutor);
+		assertEquals(1, saveLoad(dgsQueryExecutor));
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(1, schemas.size());
+		checkLoadSchema((LoadActionSchema) schemas.get(0));
+	}
+
+	private void checkLoadSchema(LoadActionSchema schema) {
+		checkActionCommonFields(schema);
 		assertEquals(LOAD_ACTION, schema.getId());
-		assertEquals(PARAM_CLASS, schema.getParamClass());
-		assertNotNull(schema.getLastHeard());
 		assertEquals(CONSUMES, schema.getConsumes());
 	}
 
 	@Test
 	void testRegisterTransform() {
-		TransformActionSchema schema = saveTransform(dgsQueryExecutor);
+		assertEquals(1, saveTransform(dgsQueryExecutor));
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(1, schemas.size());
+		checkTransformSchema((TransformActionSchema) schemas.get(0));
+	}
+
+	private void checkTransformSchema(TransformActionSchema schema) {
+		checkActionCommonFields(schema);
 		assertEquals(TRANSFORM_ACTION, schema.getId());
-		assertEquals(PARAM_CLASS, schema.getParamClass());
-		assertNotNull(schema.getLastHeard());
 		assertEquals(CONSUMES, schema.getConsumes());
 		assertEquals(PRODUCES, schema.getProduces());
 	}
 
 	@Test
 	void testRegisterValidate() {
-		ValidateActionSchema schema = saveValidate(dgsQueryExecutor);
-		assertEquals(VALIDATE_ACTION, schema.getId());
-		assertEquals(PARAM_CLASS, schema.getParamClass());
-		assertNotNull(schema.getLastHeard());
+		assertEquals(1, saveValidate(dgsQueryExecutor));
+		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
+		assertEquals(1, schemas.size());
+		checkValidateSchema((ValidateActionSchema) schemas.get(0));
 	}
 
-	@Test
-	void testGetAll() {
-		saveEgress(dgsQueryExecutor);
-		saveFormat(dgsQueryExecutor);
-		saveLoad(dgsQueryExecutor);
-		assertEquals(3, actionSchemaRepo.count());
-
-		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
-		assertEquals(3, schemas.size());
-
-		boolean foundEgress = false;
-		boolean foundFormat = false;
-		boolean foundLoad = false;
-
-		for (ActionSchema schema : schemas) {
-			if (schema instanceof EgressActionSchema) {
-				foundEgress = true;
-				EgressActionSchema e = (EgressActionSchema) schema;
-				assertEquals(EGRESS_ACTION, e.getId());
-			} else if (schema instanceof FormatActionSchema) {
-				foundFormat = true;
-				FormatActionSchema f = (FormatActionSchema) schema;
-				assertEquals(FORMAT_ACTION, f.getId());
-				assertEquals(DOMAIN, f.getRequiresDomains().get(0));
-			} else if (schema instanceof LoadActionSchema) {
-				foundLoad = true;
-				LoadActionSchema l = (LoadActionSchema) schema;
-				assertEquals(LOAD_ACTION, l.getId());
-				assertEquals(CONSUMES, l.getConsumes());
-			}
-		}
-		assertTrue(foundEgress);
-		assertTrue(foundFormat);
-		assertTrue(foundLoad);
+	private void checkValidateSchema(ValidateActionSchema schema) {
+		checkActionCommonFields(schema);
+		assertEquals(VALIDATE_ACTION, schema.getId());
 	}
 
 	@Test
@@ -831,119 +878,228 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + findConfig.getOperationName(),
 				listOfConfigs);
 
-		assertTrue(configs.get(0) instanceof LoadActionConfiguration);
+		assertTrue(configs.get(0) instanceof org.deltafi.core.domain.generated.types.LoadActionConfiguration);
 
-		LoadActionConfiguration loadActionConfiguration = (LoadActionConfiguration) configs.get(0);
+		org.deltafi.core.domain.generated.types.LoadActionConfiguration loadActionConfiguration = (org.deltafi.core.domain.generated.types.LoadActionConfiguration) configs.get(0);
 		assertEquals(name, loadActionConfiguration.getName());
 		assertEquals("json-utf8-sample", loadActionConfiguration.getConsumes());
 		Assertions.assertNull(loadActionConfiguration.getType()); // not in the projection should be null
 	}
 
 	@Test
-	void deleteConfigsTest() {
-		RemoveDeltaFiConfigsGraphQLQuery remove = RemoveDeltaFiConfigsGraphQLQuery.newRequest().build();
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(remove, null);
-		Integer removed = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQLQueryRequest.serialize(),
-				"data." + remove.getOperationName(),
-				Integer.class);
-		assertEquals(16, removed.intValue());
+	void testGetIngressFlowPlan() {
+		clearForFlowTests();
+		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan();
+		ingressFlowPlanA.setName("ingressPlan");
+		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan();
+		ingressFlowPlanB.setName("b");
+		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB));
+		IngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getIngressFlowPlan(dgsQueryExecutor);
+		assertThat(plan.getName()).isEqualTo("ingressPlan");
 	}
 
 	@Test
-	void testDeleteFlowPlan() {
-		saveFlowPlan("planA", false, dgsQueryExecutor);
-		saveFlowPlan("planB", true, dgsQueryExecutor);
-		saveFlowPlan("planA", true, dgsQueryExecutor);
-
-		assertEquals(2, flowPlanRepo.count());
-		assertTrue(removeFlowPlan("planB", dgsQueryExecutor));
-		assertEquals(1, flowPlanRepo.count());
-		assertEquals("planA", getFlowPlans(dgsQueryExecutor).get(0).getName());
+	void testGetEgressFlowPlan() {
+		clearForFlowTests();
+		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan();
+		egressFlowPlanA.setName("egressPlan");
+		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan();
+		egressFlowPlanB.setName("b");
+		egressFlowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB));
+		EgressFlowPlan plan = FlowPlanDatafetcherTestHelper.getEgressFlowPlan(dgsQueryExecutor);
+		assertThat(plan.getName()).isEqualTo("egressPlan");
 	}
 
 	@Test
-	void testExportFlowPlan() throws IOException {
-		saveFlowPlan("planA", false, dgsQueryExecutor);
-		saveFlowPlan("planB", true, dgsQueryExecutor);
-
-		String exportedJson = exportFlowPlan("planA", dgsQueryExecutor);
-		String expected = Resource.read("/flowPlans/flow-plan-export-test.json");
-		assertEquals(expected, exportedJson);
+	void testValidateIngressFlow() {
+		clearForFlowTests();
+		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
+		IngressFlow ingressFlow = FlowPlanDatafetcherTestHelper.validateIngressFlow(dgsQueryExecutor);
+		assertThat(ingressFlow.getFlowStatus()).isNotNull();
 	}
 
 	@Test
-	public void testImportFlowPlan() throws IOException {
-		/*
-		 * Another "Save FlowPlan" test with a more complete
-		 * FlowPlanInput and verify, using a JSON file in a
-		 * similar manner as the CLI.
-		 */
-		FlowPlanInput flowPlanInput = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/flow-plan-1.json"), FlowPlanInput.class);
-		SaveFlowPlanGraphQLQuery saveFlowPlanGraphQLQuery = SaveFlowPlanGraphQLQuery.newRequest().flowPlan(flowPlanInput).build();
-
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(saveFlowPlanGraphQLQuery, FLOW_PLAN_PROJECTION_ROOT);
-
-		FlowPlan flowPlan = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
-				"data." + saveFlowPlanGraphQLQuery.getOperationName(), FlowPlan.class);
-
-		assertEquals(1, flowPlanRepo.count());
-
-		assertEquals("stix crossbar plan", flowPlan.getName());
-		assertEquals("stix2_1", flowPlan.getIngressFlowConfigurations().get(0).getName());
-		assertEquals("stix1_x", flowPlan.getIngressFlowConfigurations().get(1).getName());
-		assertEquals("Stix2_1", flowPlan.getEgressFlowConfigurations().get(0).getName());
-		assertEquals("Stix1_x", flowPlan.getEgressFlowConfigurations().get(1).getName());
-		assertEquals("Stix1_xTo2_1TransformAction", flowPlan.getTransformActionConfigurations().get(0).getName());
-		assertEquals("Stix2_1LoadAction", flowPlan.getLoadActionConfigurations().get(0).getName());
-		assertEquals("Stix2_1FormatAction", flowPlan.getFormatActionConfigurations().get(0).getName());
-		assertEquals("Stix1_xFormatAction", flowPlan.getFormatActionConfigurations().get(1).getName());
-		assertEquals("Stix2_1ValidateAction", flowPlan.getValidateActionConfigurations().get(0).getName());
-		assertEquals("Stix1_xValidateAction", flowPlan.getValidateActionConfigurations().get(1).getName());
-		assertEquals("Stix2_1EgressAction", flowPlan.getEgressActionConfigurations().get(0).getName());
-		assertEquals("Stix1_xEgressAction", flowPlan.getEgressActionConfigurations().get(1).getName());
-		assertEquals("org.deltafi.stix", flowPlan.getSourcePlugin().getGroupId());
-		assertEquals("deltafi-stix", flowPlan.getSourcePlugin().getArtifactId());
-		assertEquals("0.17.0", flowPlan.getSourcePlugin().getVersion());
-
-		Variable variable = Variable.newBuilder()
-				.dataType(DATA_TYPE.STRING)
-				.defaultValue("http://deltafi-egress-sink-service")
-				.description("The URL to post the DeltaFile to")
-				.name("egressUrl")
-				.required(true).build();
-
-		assertEquals(variable, flowPlan.getVariables().get(0));
+	void testValidateEgressFlow() {
+		clearForFlowTests();
+		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		EgressFlow egressFlow = FlowPlanDatafetcherTestHelper.validateEgressFlow(dgsQueryExecutor);
+		assertThat(egressFlow.getFlowStatus()).isNotNull();
 	}
 
 	@Test
-	void testUpdateFlowPlan() {
-		FlowPlan created = saveFlowPlan("planA", true, dgsQueryExecutor);
-		assertTrue(verifyFlowPlan(created, "planA", true));
+	void testGetFlows() {
+		clearForFlowTests();
+		pluginRepository.deleteAll();
 
-		FlowPlan updated = saveFlowPlan("planA", false, dgsQueryExecutor);
-		assertEquals(1, flowPlanRepo.count());
-		assertTrue(verifyFlowPlan(updated, "planA", false));
+		PluginCoordinates pluginCoordinates = PluginCoordinates.builder().artifactId("test-actions").groupId("org.deltafi").version("1.0").build();
+		Variable var = Variable.newBuilder().name("var").description("description").defaultValue("value").required(false).build();
+		PluginVariables variables = new PluginVariables();
+		variables.setSourcePlugin(pluginCoordinates);
+		variables.setVariables(List.of(var));
+
+		IngressFlow ingressFlow = new IngressFlow();
+		ingressFlow.setName("ingress");
+		ingressFlow.setSourcePlugin(pluginCoordinates);
+
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName("egress");
+		egressFlow.setSourcePlugin(pluginCoordinates);
+
+		Plugin plugin = new Plugin();
+		plugin.setPluginCoordinates(pluginCoordinates);
+		pluginRepository.save(plugin);
+		pluginVariableRepo.save(variables);
+		ingressFlowRepo.save(ingressFlow);
+		egressFlowRepo.save(egressFlow);
+
+		List<Flows> flows = FlowPlanDatafetcherTestHelper.getFlows(dgsQueryExecutor);
+		assertThat(flows).hasSize(1);
+		Flows pluginFlows = flows.get(0);
+		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
+		assertThat(pluginFlows.getIngressFlows().get(0).getName()).isEqualTo("ingress");
+		assertThat(pluginFlows.getEgressFlows().get(0).getName()).isEqualTo("egress");
 	}
 
 	@Test
-	void testGetFlowPlans() {
-		saveFlowPlan("flowPlan1", true, dgsQueryExecutor);
-		saveFlowPlan("flowPlan2", true, dgsQueryExecutor);
+	void getAllFlows() {
+		clearForFlowTests();
+		IngressFlow ingressFlow = new IngressFlow();
+		ingressFlow.setName("ingressFlow");
 
-		List<FlowPlan> flowPlans = getFlowPlans(dgsQueryExecutor);
-		assertEquals(2, flowPlans.size());
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName("egressFlow");
 
-		Set<String> names = new HashSet<>();
-		flowPlans.forEach(f -> names.add(f.getName()));
-		assertTrue(names.containsAll(Arrays.asList("flowPlan1", "flowPlan2")));
+		ingressFlowRepo.save(ingressFlow);
+		egressFlowRepo.save(egressFlow);
+
+		SystemFlows flows = FlowPlanDatafetcherTestHelper.getAllFlows(dgsQueryExecutor);
+		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> "ingressFlow".equals(ingressFlows.get(0).getName()));
+		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> "egressFlow".equals(egressFlows.get(0).getName()));
 	}
 
 	@Test
-	void testCreateFlowPlan() {
-		FlowPlan flowPlan = saveFlowPlan("flowPlan", true, dgsQueryExecutor);
-		assertEquals(1, flowPlanRepo.count());
-		assertTrue(verifyFlowPlan(flowPlan, "flowPlan", true));
+	void getIngressFlow() {
+		clearForFlowTests();
+		IngressFlow ingressFlow = new IngressFlow();
+		ingressFlow.setName("ingressFlow");
+		ingressFlowRepo.save(ingressFlow);
+
+		IngressFlow foundFlow = FlowPlanDatafetcherTestHelper.getIngressFlow(dgsQueryExecutor);
+		assertThat(foundFlow).isNotNull();
+		assertThat(foundFlow.getName()).isEqualTo("ingressFlow");
+	}
+
+	@Test
+	void getEgressFlow() {
+		clearForFlowTests();
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName("egressFlow");
+		egressFlowRepo.save(egressFlow);
+		EgressFlow foundFlow = FlowPlanDatafetcherTestHelper.getEgressFlow(dgsQueryExecutor);
+		assertThat(foundFlow).isNotNull();
+		assertThat(foundFlow.getName()).isEqualTo("egressFlow");
+	}
+
+	@Test
+	void getActionNamesByFamily() {
+		clearForFlowTests();
+
+		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
+		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+
+		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
+		assertThat(actionFamilies.size()).isEqualTo(8);
+
+		assertThat(getActionNames(actionFamilies, "ingress")).hasSize(1).contains("IngressAction");
+		assertThat(getActionNames(actionFamilies, "delete")).hasSize(1).contains("DeleteAction");
+		assertThat(getActionNames(actionFamilies, "transform")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
+		assertThat(getActionNames(actionFamilies, "load")).hasSize(1).contains("SampleLoadAction");
+		assertThat(getActionNames(actionFamilies, "enrich")).isEmpty();
+		assertThat(getActionNames(actionFamilies, "format")).hasSize(1).contains("sample.SampleFormatAction");
+		assertThat(getActionNames(actionFamilies, "validate")).isEmpty();
+		assertThat(getActionNames(actionFamilies, "egress")).hasSize(1).contains("SampleEgressAction");
+	}
+
+	List<String> getActionNames(List<ActionFamily> actionFamilies, String family) {
+		return actionFamilies.stream()
+				.filter(actionFamily -> family.equals(actionFamily.getFamily()))
+				.map(ActionFamily::getActionNames)
+				.flatMap(Collection::stream)
+				.collect(Collectors.toList());
+	}
+
+	@Test
+	void testSaveIngressFlowPlan() {
+		clearForFlowTests();
+		IngressFlow ingressFlow = FlowPlanDatafetcherTestHelper.saveIngressFlowPlan(dgsQueryExecutor);
+		assertThat(ingressFlow).isNotNull();
+	}
+
+	@Test
+	void testSaveEgressFlowPlan() {
+		clearForFlowTests();
+		EgressFlow egressFlow = FlowPlanDatafetcherTestHelper.saveEgressFlowPlan(dgsQueryExecutor);
+		assertThat(egressFlow).isNotNull();
+	}
+
+	@Test
+	void testRemoveIngressFlowPlan() {
+		clearForFlowTests();
+		IngressFlowPlan ingressFlowPlan = new IngressFlowPlan();
+		ingressFlowPlan.setName("flowPlan");
+		ingressFlowPlanRepo.save(ingressFlowPlan);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeIngressFlowPlan(dgsQueryExecutor));
+	}
+
+	@Test
+	void testRemoveEgressFlowPlan() {
+		clearForFlowTests();
+		EgressFlowPlan egressFlowPlan = new EgressFlowPlan();
+		egressFlowPlan.setName("flowPlan");
+		egressFlowPlanRepo.save(egressFlowPlan);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStartIngressFlow() {
+		clearForFlowTests();
+		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
+		assertTrue(FlowPlanDatafetcherTestHelper.startIngressFlow(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStopIngressFlow() {
+		clearForFlowTests();
+		ingressFlowRepo.save(buildIngressFlow(FlowState.RUNNING));
+		assertTrue(FlowPlanDatafetcherTestHelper.stopIngressFlow(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStartEgressFlow() {
+		clearForFlowTests();
+		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStopEgressFlow() {
+		clearForFlowTests();
+		egressFlowRepo.save(buildEgressFlow(FlowState.RUNNING));
+		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
+	}
+
+	@Test
+	void testSavePluginVariables() {
+		assertTrue(FlowPlanDatafetcherTestHelper.savePluginVariables(dgsQueryExecutor));
+	}
+
+	@Test
+	void testSetPluginVariableValues() {
+		PluginVariables variables = new PluginVariables();
+		variables.setSourcePlugin(FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES);
+		variables.setVariables(List.of(Variable.newBuilder().name("key").value("test").description("description").dataType(DATA_TYPE.STRING).build()));
+		pluginVariableRepo.save(variables);
+		assertTrue(FlowPlanDatafetcherTestHelper.setPluginVariableValues(dgsQueryExecutor));
 	}
 
 	@Test
@@ -1039,8 +1195,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile second = deltaFilesService.ingress(INGRESS_INPUT_2);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(input.getDid());
-		deltaFile.queueNewAction("ActionName");
-		deltaFile.errorAction("ActionName", "blah", "blah");
+		deltaFile.errorAction("SampleLoadAction", "blah", "blah");
 		deltaFilesService.advanceAndSave(deltaFile);
 
 		DeltaFile erroredFile = deltaFilesService.getDeltaFile(input.getDid());
@@ -1074,24 +1229,23 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals("DeltaFile with did badDid not found", results.get(2).getError());
 
 		DeltaFile afterRetryFile = deltaFilesService.getDeltaFile(input.getDid());
-		assertEquals(2, afterRetryFile.getActions().size());
+		assertEquals(3, afterRetryFile.getActions().size());
 		assertEquals(ActionState.COMPLETE, afterRetryFile.getActions().get(0).getState());
 		assertEquals(ActionState.RETRIED, afterRetryFile.getActions().get(1).getState());
-		// StateMachine won't find any pending (no real flow config), nor any errored actions
-		assertEquals(DeltaFileStage.COMPLETE, afterRetryFile.getStage());
+		assertEquals(ActionState.QUEUED, afterRetryFile.getActions().get(2).getState());
+		// StateMachine will queue the failed loadAction again leaving the DeltaFile in the INGRESS stage
+		assertEquals(DeltaFileStage.INGRESS, afterRetryFile.getStage());
 	}
 
 	@Test
-	public void getsPlugins() throws IOException {
-		org.deltafi.core.domain.plugin.Plugin plugin1 = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), org.deltafi.core.domain.plugin.Plugin.class);
-		org.deltafi.core.domain.plugin.Plugin plugin2 = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class);
-		Mockito.when(pluginRegistryService.getPlugins()).thenReturn(List.of(plugin1, plugin2));
+	void getsPlugins() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
 
-		PluginsGraphQLQuery pluginsGraphQLQuery = PluginsGraphQLQuery.newRequest().build();
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(PluginsGraphQLQuery.newRequest().build(), PLUGINS_PROJECTION_ROOT);
 
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(pluginsGraphQLQuery, PLUGINS_PROJECTION_ROOT);
-
-		List<org.deltafi.core.domain.generated.types.Plugin> plugins =
+		List<org.deltafi.core.domain.plugin.Plugin> plugins =
 				dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 						"data.plugins[*]", new TypeRef<>() {});
 
@@ -1101,20 +1255,182 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	public void registersPlugin() throws IOException {
+	void registersPlugin() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), org.deltafi.core.domain.plugin.Plugin.class));
+
 		PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginInput.class);
 		RegisterPluginGraphQLQuery registerPluginGraphQLQuery = RegisterPluginGraphQLQuery.newRequest().pluginInput(pluginInput).build();
 
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(registerPluginGraphQLQuery, PLUGINS_PROJECTION_ROOT);
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(registerPluginGraphQLQuery, REGISTER_PLUGIN_PROJECTION_ROOT);
 
-		org.deltafi.core.domain.plugin.Plugin plugin = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
-				"data." + registerPluginGraphQLQuery.getOperationName(), org.deltafi.core.domain.plugin.Plugin.class);
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + registerPluginGraphQLQuery.getOperationName(), Result.class);
 
-		validatePlugin1(plugin);
+		assertTrue(result.getSuccess());
+		List<org.deltafi.core.domain.plugin.Plugin> plugins = pluginRepository.findAll();
+		assertEquals(3, plugins.size());
+	}
 
-		ArgumentCaptor<org.deltafi.core.domain.plugin.Plugin> pluginArgumentCaptor = ArgumentCaptor.forClass(org.deltafi.core.domain.plugin.Plugin.class);
-		Mockito.verify(pluginRegistryService).addPlugin(pluginArgumentCaptor.capture());
-		validatePlugin1(pluginArgumentCaptor.getValue());
+	@Test
+	void registerPluginReplacesExistingPlugin() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		org.deltafi.core.domain.plugin.Plugin existingPlugin =
+				OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), org.deltafi.core.domain.plugin.Plugin.class);
+		existingPlugin.getPluginCoordinates().setVersion("0.0.9");
+		existingPlugin.setDescription("changed");
+		pluginRepository.save(existingPlugin);
+
+		PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginInput.class);
+		RegisterPluginGraphQLQuery registerPluginGraphQLQuery = RegisterPluginGraphQLQuery.newRequest().pluginInput(pluginInput).build();
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(registerPluginGraphQLQuery, REGISTER_PLUGIN_PROJECTION_ROOT);
+
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + registerPluginGraphQLQuery.getOperationName(), Result.class);
+
+		assertTrue(result.getSuccess());
+		List<org.deltafi.core.domain.plugin.Plugin> plugins = pluginRepository.findAll();
+		assertEquals(3, plugins.size());
+		assertThat(pluginRepository.findById(existingPlugin.getPluginCoordinates())).isEmpty();
+		assertThat(pluginRepository.findById(pluginInput.getPluginCoordinates())).isPresent();
+	}
+
+	@Test
+	void registerPluginReturnsErrorsOnMissingDependencies() throws IOException {
+		pluginRepository.deleteAll();
+
+		PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginInput.class);
+		RegisterPluginGraphQLQuery registerPluginGraphQLQuery = RegisterPluginGraphQLQuery.newRequest().pluginInput(pluginInput).build();
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(registerPluginGraphQLQuery, REGISTER_PLUGIN_PROJECTION_ROOT);
+
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + registerPluginGraphQLQuery.getOperationName(), Result.class);
+
+		assertFalse(result.getSuccess());
+		assertEquals(2, result.getErrors().size());
+		assertTrue(result.getErrors().contains("Plugin dependency not registered: org.deltafi:plugin-2:1.0.0."));
+		assertTrue(result.getErrors().contains("Plugin dependency not registered: org.deltafi:plugin-3:1.0.0."));
+		List<org.deltafi.core.domain.plugin.Plugin> plugins = pluginRepository.findAll();
+		assertTrue(plugins.isEmpty());
+	}
+
+	@Test
+	void uninstallPluginSuccess() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), org.deltafi.core.domain.plugin.Plugin.class));
+
+		PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginInput.class);
+		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
+				UninstallPluginGraphQLQuery.newRequest().dryRun(false)
+						.pluginCoordinatesInput(pluginInput.getPluginCoordinates()).build();
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
+
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
+
+		assertTrue(result.getSuccess());
+		assertEquals(1, pluginRepository.count());
+		Mockito.verify(redisService).dropQueues(List.of("org.deltafi.test.actions.TestAction1", "org.deltafi.test.actions.TestAction2"));
+	}
+
+	@Test
+	void uninstallPluginDryRun() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), org.deltafi.core.domain.plugin.Plugin.class));
+
+		PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginInput.class);
+		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
+				UninstallPluginGraphQLQuery.newRequest().dryRun(true)
+								.pluginCoordinatesInput(pluginInput.getPluginCoordinates()).build();
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
+
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
+
+		assertTrue(result.getSuccess());
+		assertEquals(2, pluginRepository.count());
+	}
+
+	@Test
+	void uninstallPluginNotFound() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), org.deltafi.core.domain.plugin.Plugin.class));
+
+		PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginInput.class);
+		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
+				UninstallPluginGraphQLQuery.newRequest().dryRun(false)
+						.pluginCoordinatesInput(pluginInput.getPluginCoordinates()).build();
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
+
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
+
+		assertFalse(result.getSuccess());
+		assertEquals(1, result.getErrors().size());
+		assertEquals("Plugin not found", result.getErrors().get(0));
+		assertEquals(2, pluginRepository.count());
+	}
+
+	@Test
+	void uninstallPluginFails() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), org.deltafi.core.domain.plugin.Plugin.class));
+
+		PluginInput pluginInput = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginInput.class);
+		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
+				UninstallPluginGraphQLQuery.newRequest().dryRun(false)
+						.pluginCoordinatesInput(pluginInput.getPluginCoordinates()).build();
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
+
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
+
+		assertFalse(result.getSuccess());
+		assertEquals(1, result.getErrors().size());
+		assertEquals("The following plugins depend on this plugin: org.deltafi:plugin-1:1.0.0", result.getErrors().get(0));
+		assertEquals(3, pluginRepository.count());
+	}
+
+    @Test
+	void findPluginsWithDependency() throws IOException {
+		pluginRepository.deleteAll();
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), org.deltafi.core.domain.plugin.Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-4.json"), org.deltafi.core.domain.plugin.Plugin.class));
+
+		List<Plugin> matched = pluginRepository.findPluginsWithDependency(
+				new PluginCoordinates("org.deltafi", "plugin-3", "1.0.0"));
+		assertEquals(2, matched.size());
+		if (matched.get(0).getDisplayName().equals("Test Plugin 1")) {
+			assertEquals("Test Plugin 4", matched.get(1).getDisplayName());
+		} else {
+			assertEquals("Test Plugin 1", matched.get(1).getDisplayName());
+			assertEquals("Test Plugin 4", matched.get(0).getDisplayName());
+		}
+
+		matched = pluginRepository.findPluginsWithDependency(
+				new PluginCoordinates("org.deltafi", "plugin-2", "1.0.0"));
+		assertEquals(1, matched.size());
+		assertEquals("Test Plugin 1", matched.get(0).getDisplayName());
+
+		matched = pluginRepository.findPluginsWithDependency(
+				new PluginCoordinates("org.deltafi", "plugin-2", "2.0.0"));
+		assertEquals(0, matched.size());
 	}
 
 	@Test
@@ -1382,6 +1698,90 @@ class DeltaFiCoreDomainApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2);
 	}
 
+	@Test
+	void deleteIngressFlowPlanByPlugin() {
+		clearForFlowTests();
+		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
+
+		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan();
+		ingressFlowPlanA.setName("a");
+		ingressFlowPlanA.setSourcePlugin(pluginToDelete);
+
+		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan();
+		ingressFlowPlanB.setName("b");
+		ingressFlowPlanB.setSourcePlugin(pluginToDelete);
+
+		IngressFlowPlan ingressFlowPlanC = new IngressFlowPlan();
+		ingressFlowPlanC.setName("c");
+		ingressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC));
+		assertThat(ingressFlowPlanRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(ingressFlowPlanRepo.count()).isEqualTo(1);
+	}
+
+	@Test
+	void deleteIngressFlowByPlugin() {
+		clearForFlowTests();
+		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
+
+		IngressFlow ingressFlowA = new IngressFlow();
+		ingressFlowA.setName("a");
+		ingressFlowA.setSourcePlugin(pluginToDelete);
+
+		IngressFlow ingressFlowB = new IngressFlow();
+		ingressFlowB.setName("b");
+		ingressFlowB.setSourcePlugin(pluginToDelete);
+
+		IngressFlow ingressFlowC = new IngressFlow();
+		ingressFlowC.setName("c");
+		ingressFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		ingressFlowRepo.saveAll(List.of(ingressFlowA, ingressFlowB, ingressFlowC));
+		assertThat(ingressFlowRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(ingressFlowRepo.count()).isEqualTo(1);
+	}
+
+	@Test
+	void deleteEgressFlowPlanByPlugin() {
+		clearForFlowTests();
+		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
+
+		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan();
+		egressFlowPlanA.setName("a");
+		egressFlowPlanA.setSourcePlugin(pluginToDelete);
+
+		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan();
+		egressFlowPlanB.setName("b");
+		egressFlowPlanB.setSourcePlugin(pluginToDelete);
+
+		EgressFlowPlan egressFlowPlanC = new EgressFlowPlan();
+		egressFlowPlanC.setName("c");
+		egressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		egressFlowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB, egressFlowPlanC));
+		assertThat(egressFlowPlanRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(egressFlowPlanRepo.count()).isEqualTo(1);
+	}
+
+	@Test
+	void deleteEgressFlowByPlugin() {
+		clearForFlowTests();
+		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
+
+		EgressFlow egressFlowA = new EgressFlow();
+		egressFlowA.setName("a");
+		egressFlowA.setSourcePlugin(pluginToDelete);
+
+		EgressFlow egressFlowB = new EgressFlow();
+		egressFlowB.setName("b");
+		egressFlowB.setSourcePlugin(pluginToDelete);
+
+		EgressFlow egressFlowC = new EgressFlow();
+		egressFlowC.setName("c");
+		egressFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		egressFlowRepo.saveAll(List.of(egressFlowA, egressFlowB, egressFlowC));
+		assertThat(egressFlowRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(egressFlowRepo.count()).isEqualTo(1);
+	}
+
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
@@ -1418,7 +1818,102 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(deltaFile1.getSourceInfo().getFlow(), deltaFiles.getDeltaFiles().get(1).getSourceInfo().getFlow());
 	}
 
+	@Test
+	void testFindVariablesIgnoringVersion() {
+		PluginCoordinates oldVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("1").build();
+		PluginCoordinates newVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
+		PluginVariables variables = new PluginVariables();
+		variables.setSourcePlugin(oldVersion);
+
+		pluginVariableRepo.save(variables);
+
+		assertThat(pluginVariableRepo.findById(newVersion)).isEmpty();
+		assertThat(pluginVariableRepo.findIgnoringVersion(newVersion.getGroupId(), newVersion.getArtifactId())).isPresent().contains(variables);
+	}
+
 	private DeltaFile loadDeltaFile(String did) {
 		return deltaFileRepo.findById(did).orElse(null);
+	}
+
+    private void mockRedisEnqueue(String actionName) {
+        Mockito.verify(redisService).enqueue(Mockito.argThat((input) -> 1 == input.size() && nameMatches(input.get(0), actionName)));
+    }
+
+	private void verifyActionEventResults(DeltaFile expected, String ... forActions) {
+		DeltaFile afterMutation = deltaFilesService.getDeltaFile(expected.getDid());
+		assertTrue(Util.equalIgnoringDates(expected, afterMutation));
+
+		ArgumentCaptor<List<ActionInput>> actual = ArgumentCaptor.forClass(List.class);
+		Mockito.verify(redisService).enqueue(actual.capture());
+		List<ActionInput> actionInputs = actual.getValue();
+		assertThat(actionInputs).hasSize(forActions.length);
+		for (int i = 0; i < forActions.length; i++) {
+			ActionInput actionInput = actionInputs.get(i);
+			assertThat(actionInput.getActionContext().getName()).isEqualTo(forActions[i]);
+			Util.assertEqualsIgnoringDates(expected.forQueue(forActions[i]), actionInput.getDeltaFile());
+		}
+	}
+
+    private boolean nameMatches(ActionInput actionInput, String wantedName) {
+        return Objects.nonNull(actionInput.getActionContext()) && wantedName.equals(actionInput.getActionContext().getName());
+    }
+
+	private IngressFlow buildIngressFlow(FlowState flowState) {
+		org.deltafi.core.domain.configuration.LoadActionConfiguration lc = new org.deltafi.core.domain.configuration.LoadActionConfiguration();
+		lc.setName("SampleLoadAction");
+		lc.setConsumes("json-utf8-sample");
+		org.deltafi.core.domain.configuration.TransformActionConfiguration tc = new org.deltafi.core.domain.configuration.TransformActionConfiguration();
+		tc.setName("Utf8TransformAction");
+		TransformActionConfiguration tc2 = new TransformActionConfiguration();
+		tc2.setName("SampleTransformAction");
+
+		return buildFlow("ingressFlow", lc, List.of(tc, tc2), flowState);
+	}
+
+	private IngressFlow buildRunningFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms) {
+		return buildFlow(name, loadActionConfiguration, transforms, FlowState.RUNNING);
+	}
+
+	private IngressFlow buildFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState) {
+		IngressFlow ingressFlow = new IngressFlow();
+		ingressFlow.setName(name);
+		ingressFlow.getFlowStatus().setState(flowState);
+		ingressFlow.setType("json");
+		ingressFlow.setLoadAction(loadActionConfiguration);
+		ingressFlow.setTransformActions(transforms);
+		return ingressFlow;
+	}
+
+	private EgressFlow buildEgressFlow(FlowState flowState) {
+		org.deltafi.core.domain.configuration.FormatActionConfiguration sampleFormat = new org.deltafi.core.domain.configuration.FormatActionConfiguration();
+		sampleFormat.setName("sample.SampleFormatAction");
+		sampleFormat.setRequiresDomains(List.of("sample"));
+		sampleFormat.setRequiresEnrichment(List.of("sampleEnrichment"));
+
+		org.deltafi.core.domain.configuration.EgressActionConfiguration sampleEgress = new org.deltafi.core.domain.configuration.EgressActionConfiguration();
+		sampleEgress.setName("SampleEgressAction");
+
+		return buildFlow("egressFlow", sampleFormat, sampleEgress, flowState);
+	}
+
+	private EgressFlow buildRunningFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction) {
+		return buildFlow(name, formatAction, egressAction, FlowState.RUNNING);
+	}
+
+	private EgressFlow buildFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction, FlowState flowState) {
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName(name);
+		egressFlow.setFormatAction(formatAction);
+		egressFlow.setEgressAction(egressAction);
+		egressFlow.getFlowStatus().setState(flowState);
+		return egressFlow;
+	}
+
+	void clearForFlowTests() {
+		ingressFlowRepo.deleteAll();
+		ingressFlowPlanRepo.deleteAll();
+		egressFlowRepo.deleteAll();
+		egressFlowPlanRepo.deleteAll();
+		pluginVariableRepo.deleteAll();
 	}
 }

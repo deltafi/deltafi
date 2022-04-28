@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: list-flows
+
+Usage:
+  list-flows
+
+Options:
+  -h, --help  Show help"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+QUERY="query { getAllFlows { ingress { name flowStatus {state}} egress { name flowStatus {state}}}}"
+RESULT=$(deltafi query "$QUERY")
+
+print_flows() {
+  echo "$RESULT" | jq -r "([\"${1^} Flow\", \"State\"] | (., map(length*\"=\"))), (.data.getAllFlows.$1[] | [.name, .flowStatus.state]) | @tsv" | column -ts $'\t'
+}
+
+DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  cli_log "${red}${BASENAME}: Failed to get the list of flow plans${normal}"
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
+else
+  print_flows "ingress"
+  echo
+  print_flows "egress"
+fi

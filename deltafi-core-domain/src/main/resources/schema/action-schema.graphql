@@ -1,7 +1,6 @@
 interface ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
 }
@@ -9,7 +8,6 @@ interface ActionSchema {
 type DeleteActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
 }
@@ -17,14 +15,12 @@ type DeleteActionSchema implements ActionSchema {
 input DeleteActionSchemaInput {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
 }
 
 type EgressActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
 }
@@ -32,14 +28,12 @@ type EgressActionSchema implements ActionSchema {
 input EgressActionSchemaInput {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
 }
 
 type EnrichActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
     requiresDomains: [String]!
@@ -49,7 +43,6 @@ type EnrichActionSchema implements ActionSchema {
 input EnrichActionSchemaInput {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     requiresDomains: [String]!
     requiresEnrichment: [String]
@@ -58,7 +51,6 @@ input EnrichActionSchemaInput {
 type FormatActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
     requiresDomains: [String]!
@@ -68,7 +60,6 @@ type FormatActionSchema implements ActionSchema {
 input FormatActionSchemaInput {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     requiresDomains: [String]!
     requiresEnrichment: [String]
@@ -77,7 +68,6 @@ input FormatActionSchemaInput {
 type LoadActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
     consumes: String!
@@ -86,7 +76,6 @@ type LoadActionSchema implements ActionSchema {
 input LoadActionSchemaInput {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     consumes: String!
 }
@@ -94,7 +83,6 @@ input LoadActionSchemaInput {
 type TransformActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
     consumes: String!
@@ -104,7 +92,6 @@ type TransformActionSchema implements ActionSchema {
 input TransformActionSchemaInput {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     consumes: String!
     produces: String!
@@ -113,7 +100,6 @@ input TransformActionSchemaInput {
 type ValidateActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
     lastHeard: DateTime!
 }
@@ -121,6 +107,15 @@ type ValidateActionSchema implements ActionSchema {
 input ValidateActionSchemaInput {
     id: String!
     paramClass: String!
-    actionKitVersion: String!
     schema: JSON
+}
+
+input ActionRegistrationInput {
+    transformActions: [TransformActionSchemaInput!]
+    loadActions: [LoadActionSchemaInput!]
+    enrichActions: [EnrichActionSchemaInput!]
+    formatActions: [FormatActionSchemaInput!]
+    validateActions: [ValidateActionSchemaInput!]
+    egressActions: [EgressActionSchemaInput!]
+    deleteActions: [DeleteActionSchemaInput!]
 }

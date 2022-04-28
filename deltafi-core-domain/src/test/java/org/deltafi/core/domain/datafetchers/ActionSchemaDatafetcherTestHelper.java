@@ -6,7 +6,9 @@ import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.generated.client.*;
+import org.deltafi.core.domain.generated.client.ActionSchemasGraphQLQuery;
+import org.deltafi.core.domain.generated.client.ActionSchemasProjectionRoot;
+import org.deltafi.core.domain.generated.client.RegisterActionsGraphQLQuery;
 import org.deltafi.core.domain.generated.types.*;
 
 import java.util.Collections;
@@ -25,7 +27,6 @@ public class ActionSchemaDatafetcherTestHelper {
     public static final String PRODUCES = "produces";
     public static final String PARAM_CLASS = "paramClass";
     public static final String DOMAIN = "domain";
-    public static final String VERSION = "1.2.3";
 
     static public <C extends ActionSchema> C executeRequest(GraphQLQuery query, BaseProjectionNode projection, Class<C> clazz, DgsQueryExecutor dgsQueryExecutor) {
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
@@ -37,24 +38,37 @@ public class ActionSchemaDatafetcherTestHelper {
 
     static public List<ActionSchema> getSchemas(DgsQueryExecutor dgsQueryExecutor) {
         ActionSchemasProjectionRoot projection = new ActionSchemasProjectionRoot()
-                .onEgressActionSchema()
                 .id()
                 .lastHeard()
                 .paramClass()
+                .schema()
+
+                .onDeleteActionSchema()
+                .parent()
+
+                .onEgressActionSchema()
+                .parent()
+
+                .onEnrichActionSchema()
+                .requiresDomains()
+                .requiresEnrichment()
                 .parent()
 
                 .onFormatActionSchema()
-                .id()
-                .lastHeard()
-                .paramClass()
                 .requiresDomains()
+                .requiresEnrichment()
                 .parent()
 
                 .onLoadActionSchema()
-                .id()
-                .lastHeard()
-                .paramClass()
                 .consumes()
+                .parent()
+
+                .onTransformActionSchema()
+                .consumes()
+                .produces()
+                .parent()
+
+                .onValidateActionSchema()
                 .parent();
 
         ActionSchemasGraphQLQuery actionSchemasQuery = ActionSchemasGraphQLQuery.newRequest().build();
@@ -71,160 +85,180 @@ public class ActionSchemaDatafetcherTestHelper {
                 listOfActionSchemas);
     }
 
-    static public DeleteActionSchema saveDelete(DgsQueryExecutor dgsQueryExecutor) {
-        DeleteActionSchemaInput input = DeleteActionSchemaInput.newBuilder()
+    static private int executeRegister(DgsQueryExecutor dgsQueryExecutor, ActionRegistrationInput input) {
+        RegisterActionsGraphQLQuery query = RegisterActionsGraphQLQuery.newRequest().actionRegistration(input).build();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Integer.class);
+    }
+
+    static public int saveAll(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.singletonList(getTransformInput()))
+                .loadActions(Collections.singletonList(getLoadInput()))
+                .enrichActions(Collections.singletonList(getEnrichInput()))
+                .formatActions(Collections.singletonList(getFormatInput()))
+                .validateActions(Collections.singletonList(getValidateInput()))
+                .egressActions(Collections.singletonList(getEgressInput()))
+                .deleteActions(Collections.singletonList(getDeleteInput()))
+                .build();
+
+        return executeRegister(dgsQueryExecutor, input);
+    }
+
+    static private DeleteActionSchemaInput getDeleteInput() {
+        return DeleteActionSchemaInput.newBuilder()
                 .id(DELETE_ACTION)
                 .paramClass(PARAM_CLASS)
-                .actionKitVersion(VERSION)
                 .build();
-
-        RegisterDeleteSchemaProjectionRoot projection = new RegisterDeleteSchemaProjectionRoot()
-                .id()
-                .lastHeard()
-                .onDeleteActionSchema()
-                .paramClass()
-                .parent();
-
-        RegisterDeleteSchemaGraphQLQuery registerQuery = RegisterDeleteSchemaGraphQLQuery
-                .newRequest().actionSchema(input).build();
-
-        return executeRequest(registerQuery,
-                projection, DeleteActionSchema.class, dgsQueryExecutor);
     }
 
-    static public EgressActionSchema saveEgress(DgsQueryExecutor dgsQueryExecutor) {
-        EgressActionSchemaInput input = EgressActionSchemaInput.newBuilder()
+    static public int saveDelete(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.emptyList())
+                .loadActions(Collections.emptyList())
+                .enrichActions(Collections.emptyList())
+                .formatActions(Collections.emptyList())
+                .validateActions(Collections.emptyList())
+                .egressActions(Collections.emptyList())
+                .deleteActions(Collections.singletonList(getDeleteInput()))
+                .build();
+
+        return executeRegister(dgsQueryExecutor, input);
+    }
+
+    static private EgressActionSchemaInput getEgressInput() {
+        return EgressActionSchemaInput.newBuilder()
                 .id(EGRESS_ACTION)
                 .paramClass(PARAM_CLASS)
-                .actionKitVersion(VERSION)
                 .build();
-
-        RegisterEgressSchemaProjectionRoot projection = new RegisterEgressSchemaProjectionRoot()
-                .id()
-                .lastHeard()
-                .onEgressActionSchema()
-                .paramClass()
-                .parent();
-
-        RegisterEgressSchemaGraphQLQuery registerQuery = RegisterEgressSchemaGraphQLQuery
-                .newRequest().actionSchema(input).build();
-
-        return executeRequest(registerQuery,
-                projection, EgressActionSchema.class, dgsQueryExecutor);
     }
 
-    static public EnrichActionSchema saveEnrich(DgsQueryExecutor dgsQueryExecutor) {
-        EnrichActionSchemaInput input = EnrichActionSchemaInput.newBuilder()
+    static public int saveEgress(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.emptyList())
+                .loadActions(Collections.emptyList())
+                .enrichActions(Collections.emptyList())
+                .formatActions(Collections.emptyList())
+                .validateActions(Collections.emptyList())
+                .egressActions(Collections.singletonList(getEgressInput()))
+                .deleteActions(Collections.emptyList())
+                .build();
+
+        return executeRegister(dgsQueryExecutor, input);
+    }
+
+    static private EnrichActionSchemaInput getEnrichInput() {
+        return EnrichActionSchemaInput.newBuilder()
                 .id(ENRICH_ACTION)
                 .paramClass(PARAM_CLASS)
-                .actionKitVersion(VERSION)
                 .requiresDomains(Collections.singletonList(DOMAIN))
                 .build();
-
-        RegisterEnrichSchemaProjectionRoot projection = new RegisterEnrichSchemaProjectionRoot()
-                .id()
-                .lastHeard()
-                .onEnrichActionSchema()
-                .paramClass()
-                .requiresDomains()
-                .parent();
-
-        RegisterEnrichSchemaGraphQLQuery registerQuery = RegisterEnrichSchemaGraphQLQuery
-                .newRequest().actionSchema(input).build();
-
-        return executeRequest(registerQuery,
-                projection, EnrichActionSchema.class, dgsQueryExecutor);
     }
 
-    static public FormatActionSchema saveFormat(DgsQueryExecutor dgsQueryExecutor) {
-        FormatActionSchemaInput input = FormatActionSchemaInput.newBuilder()
+    static public int saveEnrich(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.emptyList())
+                .loadActions(Collections.emptyList())
+                .enrichActions(Collections.singletonList(getEnrichInput()))
+                .formatActions(Collections.emptyList())
+                .validateActions(Collections.emptyList())
+                .egressActions(Collections.emptyList())
+                .deleteActions(Collections.emptyList())
+                .build();
+
+        return executeRegister(dgsQueryExecutor, input);
+    }
+
+    static private FormatActionSchemaInput getFormatInput() {
+        return FormatActionSchemaInput.newBuilder()
                 .id(FORMAT_ACTION)
                 .paramClass(PARAM_CLASS)
-                .actionKitVersion(VERSION)
                 .requiresDomains(Collections.singletonList(DOMAIN))
                 .build();
-
-        RegisterFormatSchemaProjectionRoot projection = new RegisterFormatSchemaProjectionRoot()
-                .id()
-                .lastHeard()
-                .onFormatActionSchema()
-                .paramClass()
-                .requiresDomains()
-                .parent();
-
-        RegisterFormatSchemaGraphQLQuery registerQuery = RegisterFormatSchemaGraphQLQuery
-                .newRequest().actionSchema(input).build();
-
-        return executeRequest(registerQuery,
-                projection, FormatActionSchema.class, dgsQueryExecutor);
     }
 
-    static public LoadActionSchema saveLoad(DgsQueryExecutor dgsQueryExecutor) {
-        LoadActionSchemaInput input = LoadActionSchemaInput.newBuilder()
-                .id(LOAD_ACTION)
-                .paramClass(PARAM_CLASS)
-                .actionKitVersion(VERSION)
-                .consumes(CONSUMES)
+    static public int saveFormat(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.emptyList())
+                .loadActions(Collections.emptyList())
+                .enrichActions(Collections.emptyList())
+                .formatActions(Collections.singletonList(getFormatInput()))
+                .validateActions(Collections.emptyList())
+                .egressActions(Collections.emptyList())
+                .deleteActions(Collections.emptyList())
                 .build();
 
-        RegisterLoadSchemaProjectionRoot projection = new RegisterLoadSchemaProjectionRoot()
-                .id()
-                .lastHeard()
-                .onLoadActionSchema()
-                .paramClass()
-                .consumes()
-                .parent();
-
-        RegisterLoadSchemaGraphQLQuery registerQuery = RegisterLoadSchemaGraphQLQuery
-                .newRequest().actionSchema(input).build();
-
-        return executeRequest(registerQuery,
-                projection, LoadActionSchema.class, dgsQueryExecutor);
+        return executeRegister(dgsQueryExecutor, input);
     }
 
-    static public TransformActionSchema saveTransform(DgsQueryExecutor dgsQueryExecutor) {
-        TransformActionSchemaInput input = TransformActionSchemaInput.newBuilder()
+    static private LoadActionSchemaInput getLoadInput() {
+        return LoadActionSchemaInput.newBuilder()
+                .id(LOAD_ACTION)
+                .paramClass(PARAM_CLASS)
+                .consumes(CONSUMES)
+                .build();
+    }
+
+    static public int saveLoad(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.emptyList())
+                .loadActions(Collections.singletonList(getLoadInput()))
+                .enrichActions(Collections.emptyList())
+                .formatActions(Collections.emptyList())
+                .validateActions(Collections.emptyList())
+                .egressActions(Collections.emptyList())
+                .deleteActions(Collections.emptyList())
+                .build();
+
+        return executeRegister(dgsQueryExecutor, input);
+    }
+
+    static private TransformActionSchemaInput getTransformInput() {
+        return TransformActionSchemaInput.newBuilder()
                 .id(TRANSFORM_ACTION)
                 .paramClass(PARAM_CLASS)
-                .actionKitVersion(VERSION)
                 .consumes(CONSUMES)
                 .produces(PRODUCES)
                 .build();
-
-        RegisterTransformSchemaProjectionRoot projection = new RegisterTransformSchemaProjectionRoot()
-                .id()
-                .lastHeard()
-                .onTransformActionSchema()
-                .paramClass()
-                .consumes()
-                .produces()
-                .parent();
-
-        RegisterTransformSchemaGraphQLQuery registerQuery = RegisterTransformSchemaGraphQLQuery
-                .newRequest().actionSchema(input).build();
-
-        return executeRequest(registerQuery,
-                projection, TransformActionSchema.class, dgsQueryExecutor);
     }
 
-    static public ValidateActionSchema saveValidate(DgsQueryExecutor dgsQueryExecutor) {
-        ValidateActionSchemaInput input = ValidateActionSchemaInput.newBuilder()
-                .id(VALIDATE_ACTION)
-                .paramClass(PARAM_CLASS)
-                .actionKitVersion(VERSION)
+    static public int saveTransform(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.singletonList(getTransformInput()))
+                .loadActions(Collections.emptyList())
+                .enrichActions(Collections.emptyList())
+                .formatActions(Collections.emptyList())
+                .validateActions(Collections.emptyList())
+                .egressActions(Collections.emptyList())
+                .deleteActions(Collections.emptyList())
                 .build();
 
-        RegisterValidateSchemaProjectionRoot projection = new RegisterValidateSchemaProjectionRoot()
-                .id()
-                .lastHeard()
-                .onValidateActionSchema()
-                .paramClass()
-                .parent();
-
-        RegisterValidateSchemaGraphQLQuery registerQuery = RegisterValidateSchemaGraphQLQuery
-                .newRequest().actionSchema(input).build();
-
-        return executeRequest(registerQuery,
-                projection, ValidateActionSchema.class, dgsQueryExecutor);
+        return executeRegister(dgsQueryExecutor, input);
     }
+
+    static private ValidateActionSchemaInput getValidateInput() {
+        return ValidateActionSchemaInput.newBuilder()
+                .id(VALIDATE_ACTION)
+                .paramClass(PARAM_CLASS)
+                .build();
+    }
+
+    static public int saveValidate(DgsQueryExecutor dgsQueryExecutor) {
+        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
+                .transformActions(Collections.emptyList())
+                .loadActions(Collections.emptyList())
+                .enrichActions(Collections.emptyList())
+                .formatActions(Collections.emptyList())
+                .validateActions(Collections.singletonList(getValidateInput()))
+                .egressActions(Collections.emptyList())
+                .deleteActions(Collections.emptyList())
+                .build();
+
+        return executeRegister(dgsQueryExecutor, input);
+    }
+
 }

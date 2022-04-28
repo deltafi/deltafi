@@ -65,6 +65,21 @@ public class JedisKeyedBlockingQueue {
         }
     }
 
+    /**
+     * Drop all queues in key list.
+     *
+     * @param keys list of keys
+     */
+    public void drop(List<String> keys) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            drop(jedis, keys);
+        }
+    }
+
+    private void drop(Jedis jedis, List<String> keys) {
+        keys.forEach(key -> jedis.del(key));
+    }
+
     private void put(Jedis jedis, String key, Object value) throws JsonProcessingException {
         jedis.zadd(key, Instant.now().toEpochMilli(),
                 OBJECT_MAPPER.writeValueAsString(value), ZAddParams.zAddParams().nx());
@@ -90,7 +105,7 @@ public class JedisKeyedBlockingQueue {
 
     /**
      * Takes an object out of the queue.
-     *
+     * <p>
      * This method will block until an object for the provided key is available. When multiple objects are available for
      * the provided key, the earliest one put into the queue is retrieved.
      *

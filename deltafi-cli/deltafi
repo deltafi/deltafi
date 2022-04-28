@@ -104,35 +104,39 @@ Version: $(cat $DELTAFICLI_WORKDIR/VERSION)
 Usage: $cli_name [command]
 
 Commands:
-  did               show did for filename
-  export-config     export the current running configuration as yaml
-  export-plan       export a single flow plan by name as JSON
-  ingress           ingress one or more files to a flow
-  install           install/upgrade the DeltaFi core
-  install-plugin    install/upgrade a DeltaFi plugin
-  list-actions      list the actions registered with deltafi
-  list-plans        list all flow plans within deltafi
-  load-config       add to or replace the deltafi config
-  load-plan         load a flow plan to deltafi from a JSON file
-  mongo-cli         launch the mongo CLI
-  mongo-migrate     run mongo migrations
-  query             send a query to the gateway
-  redis-cli         launch the redis CLI
-  redis-latency     monitor redis latency
-  redis-stats       monitor redis connection stats
-  redis-watch       watch every command issued to redis
-  secrets           show k8s secrets
-  serviceip         show service IP
-  start             (alias for install)
-  status            show status of system
-  stop              (alias for uninstall)
-  trace             show trace data for a DID
-  update            (alias for install)
-  upgrade           (alias for install)
-  uninstall         uninstall the DeltaFi core
-  uninstall-plugin  uninstall a DeltaFi plugin
-  versions          show running versions
-  *                 show help
+  did                  show did for filename
+  egress-flow          start, stop or validate an egress flow
+  export-config        export all the loaded flow configurations as yaml
+  export-egress-plan   export a single flow plan by name as JSON
+  export-ingress-plan  export a single flow plan by name as JSON
+  ingress              ingress one or more files to a flow
+  ingress-flow         start, stop or validate an ingress flow
+  install              install/upgrade the DeltaFi core
+  install-plugin       install/upgrade a DeltaFi plugin
+  list-actions         list the actions registered with deltafi
+  list-flows           list the flows in the system with their status
+  list-plans           list all flow plans within deltafi
+  load-plan            load a flow plan to deltafi from a JSON file
+  load-variables       load plugin variables
+  mongo-cli            launch the mongo CLI
+  mongo-migrate        run mongo migrations
+  query                send a query to the gateway
+  redis-cli            launch the redis CLI
+  redis-latency        monitor redis latency
+  redis-stats          monitor redis connection stats
+  redis-watch          watch every command issued to redis
+  secrets              show k8s secrets
+  serviceip            show service IP
+  start                (alias for install)
+  status               show status of system
+  stop                 (alias for uninstall)
+  trace                show trace data for a DID
+  update               (alias for install)
+  upgrade              (alias for install)
+  uninstall            uninstall the DeltaFi core
+  uninstall-plugin     uninstall a DeltaFi plugin
+  versions             show running versions
+  *                    show help
 
 Flags:
   --help            show help for a specific command
@@ -157,32 +161,44 @@ case "$1" in
   did)
     "$DELTAFICLI_WORKDIR/commands/did" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/did.log"
     ;;
+  egress-flow)
+    "$DELTAFICLI_WORKDIR/commands/egress-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/egress-flow.log"
+    ;;
   export-config)
     "$DELTAFICLI_WORKDIR/commands/export-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-config.log"
     ;;
-  export-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-plan.log"
+  export-egress-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-egress-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-egress-plan.log"
+    ;;
+  export-ingress-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-ingress-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-ingress-plan.log"
     ;;
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/ingress.log"
+    ;;
+  ingress-flow)
+    "$DELTAFICLI_WORKDIR/commands/ingress-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/ingress-flow.log"
     ;;
   install|update|upgrade|start)
     "$DELTAFICLI_WORKDIR/commands/install" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/install.log"
     ;;
   install-plugin)
-    "$DELTAFICLI_WORKDIR/commands/install-plugin" $@
+    "$DELTAFICLI_WORKDIR/commands/install-plugin" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/install-plugin.log"
     ;;
   list-actions)
     "$DELTAFICLI_WORKDIR/commands/list-actions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-actions.log"
     ;;
+  list-flows)
+    "$DELTAFICLI_WORKDIR/commands/list-flows" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-flows.log"
+    ;;
   list-plans)
     "$DELTAFICLI_WORKDIR/commands/list-plans" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-plans.log"
     ;;
-  load-config)
-    "$DELTAFICLI_WORKDIR/commands/load-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-config.log"
-    ;;
   load-plan)
     "$DELTAFICLI_WORKDIR/commands/load-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-plan.log"
+    ;;
+  load-variables)
+    "$DELTAFICLI_WORKDIR/commands/load-variables" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-variables.log"
     ;;
   mongo-cli)
     "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@
@@ -212,7 +228,7 @@ case "$1" in
     "$DELTAFICLI_WORKDIR/commands/uninstall" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/uninstall.log"
     ;;
   uninstall-plugin)
-    "$DELTAFICLI_WORKDIR/commands/uninstall-plugin" $@
+    "$DELTAFICLI_WORKDIR/commands/uninstall-plugin" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/uninstall-plugin.log"
     ;;
   secrets)
     "$DELTAFICLI_WORKDIR/commands/secrets" $@

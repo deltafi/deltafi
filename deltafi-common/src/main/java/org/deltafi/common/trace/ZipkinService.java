@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.properties.ZipkinProperties;
 
+import javax.annotation.PreDestroy;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -37,6 +38,7 @@ public class ZipkinService {
         }
     }
 
+    @PreDestroy
     public void shutdown() {
         executor.shutdown();
     }
@@ -45,10 +47,10 @@ public class ZipkinService {
      * Create a span that represents the entire lifecycle of the given deltaFile.
      * This should be fired when the DeltaFile hits a terminal state.
      *
-     * @param did - DeltaFile id
-     * @param created - time of the deltaFile creation
-     * @param fileName - original fileName
-     * @param flow - flow that this deltaFile belongs too
+     * @param did DeltaFile id
+     * @param created time of the deltaFile creation
+     * @param fileName original fileName
+     * @param flow flow that this deltaFile belongs too
      */
     public void createAndSendRootSpan(String did, OffsetDateTime created, String fileName, String flow) {
         DeltafiSpan rootSpan = DeltafiSpan.newSpanBuilder()
@@ -68,11 +70,11 @@ public class ZipkinService {
      * Create a span that represents the lifecycle of the deltaFile
      * going through the given action.
      *
-     * @param did - DeltaFile id
-     * @param actionName - Action acting on the deltaFile in this span
-     * @param fileName - original fileName
-     * @param flow - flow that this deltaFile belongs too
-     * @return - the span for the deltaFile going through the action
+     * @param did DeltaFile id
+     * @param actionName Action acting on the deltaFile in this span
+     * @param fileName original fileName
+     * @param flow flow that this deltaFile belongs too
+     * @return The span for the deltaFile going through the action
      */
     public DeltafiSpan createChildSpan(String did, String actionName, String fileName, String flow) {
         return createChildSpan(did, actionName, fileName, flow, null);
@@ -82,12 +84,12 @@ public class ZipkinService {
      * Create a span that represents the lifecycle of the deltaFile
      * going through the given action.
      *
-     * @param did - DeltaFile id
-     * @param actionName - Action acting on the deltaFile in this span
-     * @param fileName - original fileName
-     * @param flow - flow that this deltaFile belongs too
-     * @param created - optional timestamp
-     * @return - the span for the deltaFile going through the action
+     * @param did DeltaFile id
+     * @param actionName Action acting on the deltaFile in this span
+     * @param fileName original fileName
+     * @param flow flow that this deltaFile belongs too
+     * @param created optional timestamp
+     * @return The span for the deltaFile going through the action
      */
     public DeltafiSpan createChildSpan(String did, String actionName, String fileName, String flow, OffsetDateTime created) {
         DeltafiSpan.Builder builder = DeltafiSpan.newSpanBuilder()
@@ -109,7 +111,7 @@ public class ZipkinService {
      * Set the duration of the span based on the current time
      * and send the span to the zipkin backend.
      *
-     * @param span - span to finish and send
+     * @param span span to finish and send
      */
     public void markSpanComplete(DeltafiSpan span) {
         if (zipkinProperties.isEnabled()) {

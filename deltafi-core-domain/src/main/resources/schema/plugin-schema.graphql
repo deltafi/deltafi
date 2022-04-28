@@ -16,6 +16,8 @@ type Plugin {
     dependencies: [PluginCoordinates!]
     "The properties required"
     propertySets: [PropertySet!]
+    "Variables associated with this plugin"
+    variables: [Variable]
 }
 
 input PluginInput {

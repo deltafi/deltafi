@@ -31,7 +31,7 @@ import java.util.Optional;
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, DeltaFiProperties.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
-@MockBean({StateMachine.class, DeltaFiConfigService.class, RedisService.class})
+@MockBean({StateMachine.class, IngressFlowService.class, EgressFlowService.class, RedisService.class})
 @EnableRetry
 public class DeltaFileServiceRetryTest {
 

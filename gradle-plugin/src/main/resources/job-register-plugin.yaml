@@ -4,7 +4,7 @@ metadata:
   name: register-deltafi-plugin
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
     spec:
@@ -17,16 +17,32 @@ spec:
         - "-c"
         - |
           echo "Registering {{ .Chart.Name }} plugin..."
-          MUTATION="mutation(\$pluginInput: PluginInput!) {registerPlugin(pluginInput: \$pluginInput) {pluginCoordinates {artifactId}}}"
+          TMPFILE=/tmp/register_response
+          MUTATION="mutation(\$pluginInput: PluginInput!) {registerPlugin(pluginInput: \$pluginInput) {success errors}}"
           JSON={{ .Files.Get "files/plugin.json" | replace "\n" "" | quote}}
           VARIABLES="{\"pluginInput\": $JSON}"
           POST_QUERY="{\"query\": \"$MUTATION\", \"variables\":$VARIABLES}"
           echo "Sending $POST_QUERY"
-          RESPONSE_CODE=$(curl -s -o /tmp/register_response -X POST -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://deltafi-core-domain-service/graphql)
+          RESPONSE_CODE=$(curl -s -o ${TMPFILE} -X POST -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://deltafi-core-domain-service/graphql)
           if [[ "$RESPONSE_CODE" != "200" ]]; then
-            echo "Registering plugin manifest failed" "Bad response code ($RESPONSE_CODE) with response $(cat /tmp/register_response)"
+            echo "Registering plugin manifest failed" "Bad response code ($RESPONSE_CODE) with response $(cat ${TMPFILE})"
             exit 1
           fi
+
+          DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+          if [[ "$DGS_ERRORS" != "" ]]; then
+            echo "Registering plugin manifest failed" "$DGS_ERRORS"
+            exit 1
+          fi
+
+          SUCCESS=$(cat ${TMPFILE} | jq -r '.data.registerPlugin.success')
+          if [[ $SUCCESS == "false" ]]; then
+            ERRORS=$(cat ${TMPFILE} | jq -r '.data.registerPlugin.errors | join(",")')
+            echo "Registering plugin manifest failed ${ERRORS}"
+            exit 1
+          fi
+
           cat /tmp/register_response
           echo "Success"
       restartPolicy: Never
+  backoffLimit: 0

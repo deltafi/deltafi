@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: load-variables
+
+Usage:
+  load-variables VARIABLES_FILE"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-load-variables.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+PLUGIN_VARIABLES_FILE=${ARGS[1]}
+SOURCE_PLUGIN_FILE=${ARGS[2]}
+
+if [ ! -f "$PLUGIN_VARIABLES_FILE" ]; then
+  cli_log "${yellow}${PLUGIN_VARIABLES_FILE}: No such file${normal}"
+  exit 1
+fi
+
+BASENAME="$(basename $PLUGIN_VARIABLES_FILE)"
+JSON=$(cat "$PLUGIN_VARIABLES_FILE")
+
+if [ -f "$SOURCE_PLUGIN_FILE" ] && [ "$( jq 'has("sourcePlugin")' <<< $JSON )" == "false" ]; then
+  SOURCE_PLUGIN=$(cat "$SOURCE_PLUGIN_FILE")
+  JSON=$(echo "$JSON" | jq --argjson json "$SOURCE_PLUGIN" '. + {sourcePlugin: $json}')
+fi
+
+VARIABLES="{\"variables\": $JSON }"
+
+QUERY="mutation(\$variables: PluginVariablesInput!) { savePluginVariables(pluginVariablesInput: \$variables)}"
+
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  cli_log "${red}${BASENAME}: Loading variables failed${normal}"
+  echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
+else
+  ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$ERRORS" != "" ]]; then
+    cli_log "${red}${BASENAME}: Loading variables failed${normal}"
+    echo -e "${red}Error: ${ERRORS}${normal}"
+  else
+    cli_log "Successfully loaded variables from file ${cyan}${BASENAME}${normal}"
+  fi
+fi
+
+cleanup
+

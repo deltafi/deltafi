@@ -33,6 +33,9 @@ class DeltaFileServiceTest {
 
     public static final String OBJECT_NAME = "in.txt";
     public static final String FLOW = "flow";
+    public static final String FLOW_PLAN = "namespace";
+    public static final String FULL_FLOW = FLOW_PLAN + "." + FLOW;
+    public static final String FULL_FLOW_NAME = FLOW_PLAN + "." + FLOW;
 
     @InjectMocks
     DeltaFileService deltaFileService;
@@ -59,11 +62,11 @@ class DeltaFileServiceTest {
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
         Mockito.when(zipkinService.isEnabled()).thenReturn(true);
 
-        String did = deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON);
+        String did = deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON);
 
         Mockito.verify(contentStorageService).save(eq(did), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
         Mockito.verify(graphQLClient).executeQuery(any());
-        Mockito.verify(zipkinService).createChildSpan(eq(did), eq(INGRESS_ACTION), eq(OBJECT_NAME), eq(FLOW), any());
+        Mockito.verify(zipkinService).createChildSpan(eq(did), eq(INGRESS_ACTION), eq(OBJECT_NAME), eq(FULL_FLOW), any());
         Mockito.verify(zipkinService).markSpanComplete(any());
         Assertions.assertNotNull(did);
     }
@@ -76,7 +79,7 @@ class DeltaFileServiceTest {
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": [{\"message\": \"Bad graphql mutation\"}]}");
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
 
-        Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON));
+        Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON));
 
         Mockito.verify(contentStorageService).delete(any());
     }
@@ -89,7 +92,7 @@ class DeltaFileServiceTest {
         Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new DeltafiGraphQLException("failed to send to dgs"));
 
         DeltafiGraphQLException e = Assertions.assertThrows(DeltafiGraphQLException.class,
-                () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON));
+                () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON));
         Assertions.assertEquals("failed to send to dgs", e.getMessage());
 
         Mockito.verify(contentStorageService).delete(any());
@@ -102,7 +105,7 @@ class DeltaFileServiceTest {
 
         Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new RuntimeException("failed to send to dgs"));
 
-        Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FLOW, Collections.emptyMap(), MediaType.APPLICATION_JSON));
+        Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON));
 
         Mockito.verify(contentStorageService).delete(any());
     }

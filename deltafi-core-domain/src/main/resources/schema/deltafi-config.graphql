@@ -24,7 +24,7 @@ type IngressFlowConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String
     type: String!
-    transformActions: [String]!
+    transformActions: [String]
     loadAction: String!
 }
 
@@ -32,7 +32,8 @@ input IngressFlowConfigurationInput {
     name: String!
     apiVersion: String
     type: String!
-    transformActions: [String]!
+
+    transformActions: [String]
     loadAction: String!
 }
 

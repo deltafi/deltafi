@@ -1,23 +1,74 @@
 package org.deltafi.core.domain.configuration;
 
+import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.core.domain.api.types.ActionContext;
+import org.deltafi.core.domain.api.types.ActionInput;
+import org.deltafi.core.domain.api.types.ActionSchema;
+import org.deltafi.core.domain.api.types.DeltaFile;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 public interface ActionConfiguration extends DeltaFiConfiguration {
+    static boolean equalOrAny(String expected, String actual) {
+        return !isBlank(actual) && (expected.equals(DeltaFiConstants.MATCHES_ANY) || actual.equals(expected));
+    }
+
+    static boolean equalOrAny(List<String> schemaList, List<String> configList) {
+        List<String> expected = Objects.isNull(schemaList) ? Collections.emptyList() : schemaList;
+        List<String> actual = Objects.isNull(configList) ? Collections.emptyList() : configList;
+
+        if (expected.contains(DeltaFiConstants.MATCHES_ANY)) {
+            return true;
+        }
+
+        if (expected.isEmpty()) {
+            return actual.isEmpty();
+        }
+
+        return expected.stream().allMatch(item -> actual.stream().anyMatch(i -> i.equals(item)));
+    }
+
     String getType();
+
     Map<String, Object> getParameters();
+
     void setParameters(Map<String, Object> parameters);
+
     /**
      * Validates this action configuration.
      *
      * @return a List of validation errors or an empty list if there are no errors
      */
-    default List<String> validate() {
-        return Collections.emptyList();
+    List<String> validate(ActionSchema actionSchema);
+
+    /**
+     * Create the ActionInput that should be sent to an Action
+     * @param deltaFile DeltaFile that will be acted upon
+     * @return ActionInput containing the ActionConfiguration
+     */
+    default ActionInput buildActionInput(DeltaFile deltaFile) {
+        ActionInput actionInput = new ActionInput();
+        actionInput.setQueueName(getType());
+
+        ActionContext actionContext = ActionContext.builder()
+                .did(deltaFile.getDid())
+                .name(getName())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow()).build();
+
+        actionInput.setActionContext(actionContext);
+
+        if (Objects.isNull(getParameters())) {
+            setParameters(Collections.emptyMap());
     }
-    static boolean missingRequiredList(List<?> list) {
-        return Objects.isNull(list) || list.isEmpty();
+
+        actionInput.setActionParams(getParameters());
+
+        actionInput.setDeltaFile(deltaFile.forQueue(actionInput.getActionContext().getName()));
+        return actionInput;
     }
 }

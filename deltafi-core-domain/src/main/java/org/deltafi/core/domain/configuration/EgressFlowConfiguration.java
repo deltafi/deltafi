@@ -3,6 +3,7 @@ package org.deltafi.core.domain.configuration;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NONE
@@ -14,6 +15,10 @@ public class EgressFlowConfiguration extends org.deltafi.core.domain.generated.t
         setValidateActions(new ArrayList<>());
         setIncludeIngressFlows(new ArrayList<>());
         setExcludeIngressFlows(new ArrayList<>());
+    }
+
+    public boolean hasFormatAction(String formatAction) {
+        return Objects.equals(getFormatAction(), formatAction);
     }
 
 }

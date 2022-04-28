@@ -1,125 +1,190 @@
 package org.deltafi.core.domain.validation;
 
+import org.assertj.core.api.Assertions;
 import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.generated.types.FlowConfigError;
+import org.deltafi.core.domain.generated.types.FlowErrorType;
+import org.deltafi.core.domain.generated.types.FlowState;
+import org.deltafi.core.domain.generated.types.FlowStatus;
+import org.deltafi.core.domain.types.EgressFlow;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
 
-import static java.util.List.of;
-import static org.assertj.core.api.Assertions.assertThat;
-
+@ExtendWith(MockitoExtension.class)
 class EgressFlowValidatorTest {
 
-    EgressFlowValidator egressFlowValidator = new EgressFlowValidator();
+    @InjectMocks
+    EgressFlowValidator egressFlowValidator;
+
+    @Mock
+    SchemaCompliancyValidator schemaCompliancyValidator;
+
+    @Captor
+    ArgumentCaptor<ActionConfiguration> actionConfigCaptor;
+
 
     @Test
-    void validate() {
-        Optional<String> error = egressFlowValidator.validate(new DeltafiRuntimeConfiguration(), new EgressFlowConfiguration());
-        assertThat(error)
-                .isPresent()
-                .contains("Egress Flow Configuration: EgressFlowConfiguration{name='null',apiVersion='null',egressAction='null',formatAction='null',enrichActions='[]',validateActions='[]',includeIngressFlows='[]',excludeIngressFlows='[]'} has the following errors: \n" +
-                        "Required property egressAction is not set; Required property formatAction is not set; Required property name is not set");
+    void validate_noErrors() {
+        EgressFlow egressFlow = new EgressFlow();
+        egressFlow.setName("egressFlow");
+
+        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
+        enrich1.setName("enrich1");
+
+        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
+        enrich2.setName("enrich2");
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("format");
+
+        ValidateActionConfiguration validate1 = new ValidateActionConfiguration();
+        validate1.setName("validate1");
+
+        ValidateActionConfiguration validate2 = new ValidateActionConfiguration();
+        validate2.setName("validate2");
+
+        EgressActionConfiguration egress = new EgressActionConfiguration();
+        egress.setName("egress");
+
+        egressFlow.setEnrichActions(List.of(enrich1, enrich2));
+        egressFlow.setFormatAction(format);
+        egressFlow.setValidateActions(List.of(validate1, validate2));
+        egressFlow.setEgressAction(egress);
+
+        egressFlowValidator.validate(egressFlow);
+
+        Mockito.verify(schemaCompliancyValidator, Mockito.times(6)).validate(actionConfigCaptor.capture());
+
+        List<ActionConfiguration> validatedActions = actionConfigCaptor.getAllValues();
+        Assertions.assertThat(validatedActions).hasSize(6)
+                .contains(enrich1)
+                .contains(enrich2)
+                .contains(format)
+                .contains(validate1)
+                .contains(validate2)
+                .contains(egress);
+
+        Assertions.assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
+        Assertions.assertThat(egressFlow.getFlowStatus().getErrors()).isEmpty();
     }
 
     @Test
-    void runValidateEgressFlow() {
-        List<String> errors = egressFlowValidator.runValidateEgressFlow(new DeltafiRuntimeConfiguration(), new EgressFlowConfiguration());
-        assertThat(errors)
+    void validate_createErrors() {
+        EgressFlow egressFlow = new EgressFlow();
+        egressFlow.setName("egressFlow");
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("fail");
+        egressFlow.setFormatAction(format);
+        egressFlow.setEgressAction(new EgressActionConfiguration());
+
+        FlowConfigError expected = expectedError();
+        Mockito.when(schemaCompliancyValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
+                        .thenReturn(List.of(expected));
+
+        egressFlowValidator.validate(egressFlow);
+
+        FlowStatus status = egressFlow.getFlowStatus();
+        Assertions.assertThat(status.getState()).isEqualTo(FlowState.INVALID);
+        Assertions.assertThat(status.getErrors()).hasSize(1).contains(expected);
+    }
+
+    @Test
+    void duplicateActionNameErrors() {
+        EgressFlow egressFlow = new EgressFlow();
+        egressFlow.setName("egressFlow");
+
+        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
+        enrich1.setName("action");
+        enrich1.setType("org.deltafi.enrich.Action1");
+
+        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
+        enrich2.setName("enrich");
+        enrich2.setType("org.deltafi.enrich.Action2");
+
+        EnrichActionConfiguration enrich3 = new EnrichActionConfiguration();
+        enrich3.setName("enrich");
+        enrich3.setType("org.deltafi.enrich.Action3");
+
+        FormatActionConfiguration format = new FormatActionConfiguration();
+        format.setName("action");
+        format.setType("org.deltafi.format.Action");
+
+        ValidateActionConfiguration validate1 = new ValidateActionConfiguration();
+        validate1.setName("action");
+        validate1.setType("org.deltafi.validate.Action1");
+
+        ValidateActionConfiguration validate2 = new ValidateActionConfiguration();
+        validate2.setName("validate");
+        validate2.setType("org.deltafi.validate.Action2");
+
+        ValidateActionConfiguration validate3 = new ValidateActionConfiguration();
+        validate3.setName("validate");
+        validate3.setType("org.deltafi.validate.Action3");
+
+        EgressActionConfiguration egress = new EgressActionConfiguration();
+        egress.setName("action");
+        egress.setType("org.deltafi.egress.Action");
+
+        egressFlow.setEnrichActions(List.of(enrich1, enrich2, enrich3));
+        egressFlow.setFormatAction(format);
+        egressFlow.setValidateActions(List.of(validate1, validate2, validate3));
+        egressFlow.setEgressAction(egress);
+
+        egressFlowValidator.validate(egressFlow);
+
+        Assertions.assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
+        Assertions.assertThat(egressFlow.getFlowStatus().getErrors())
                 .hasSize(3)
-                .contains("Required property name is not set")
-                .contains("Required property egressAction is not set")
-                .contains("Required property formatAction is not set");
+                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("action")
+                        .message("The action name: action is duplicated for the following action types: org.deltafi.format.Action, org.deltafi.egress.Action, org.deltafi.enrich.Action1, org.deltafi.validate.Action1").build())
+                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("enrich")
+                        .message("The action name: enrich is duplicated for the following action types: org.deltafi.enrich.Action2, org.deltafi.enrich.Action3").build())
+                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("validate")
+                        .message("The action name: validate is duplicated for the following action types: org.deltafi.validate.Action2, org.deltafi.validate.Action3").build());
     }
 
     @Test
-    void missingIngressCheck() {
-        DeltafiRuntimeConfiguration config = new DeltafiRuntimeConfiguration();
-        config.getIngressFlows().put("a", new IngressFlowConfiguration());
-        config.getIngressFlows().put("b", new IngressFlowConfiguration());
-        List<String> errors = egressFlowValidator.missingIngressCheck(config, of("c"));
-
-        assertThat(errors).hasSize(1).contains("The referenced Ingress Flow named: c was not found");
-
-        assertThat(egressFlowValidator.missingIngressCheck(config, of("a"))).isEmpty();
-        assertThat(egressFlowValidator.missingIngressCheck(config, null)).isEmpty();
+    void testValidateActions_null() {
+        Assertions.assertThat(egressFlowValidator.validateActions(null)).isEmpty();
     }
 
     @Test
-    void excludedAndIncluded() {
-        EgressFlowConfiguration config = new EgressFlowConfiguration();
-        config.setIncludeIngressFlows(of("a", "b"));
-        config.setExcludeIngressFlows(of("b", "c"));
-        List<String> errors = egressFlowValidator.excludedAndIncluded(config);
+    void testExcludedAndIncluded() {
+        EgressFlow egressFlow = new EgressFlow();
+        egressFlow.setName("egressFlowName");
+        egressFlow.setIncludeIngressFlows(List.of("passthrough", "dupe2", "included"));
+        egressFlow.setExcludeIngressFlows(List.of("passthrough", "dupe2", "excluded"));
+        List<FlowConfigError> errors = egressFlowValidator.excludedAndIncluded(egressFlow);
+        Assertions.assertThat(errors).hasSize(2);
 
-        assertThat(errors).hasSize(1).contains("Ingress Flow b is both included and excluded");
-
-        config.setIncludeIngressFlows(null);
-        assertThat(egressFlowValidator.excludedAndIncluded(config)).isEmpty();
+        Assertions.assertThat(errors.get(0).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
+        Assertions.assertThat(errors.get(0).getConfigName()).isEqualTo("egressFlowName");
+        Assertions.assertThat(errors.get(0).getMessage()).isEqualTo("Flow: passthrough is both included and excluded");
+        Assertions.assertThat(errors.get(1).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
+        Assertions.assertThat(errors.get(1).getConfigName()).isEqualTo("egressFlowName");
+        Assertions.assertThat(errors.get(1).getMessage()).isEqualTo("Flow: dupe2 is both included and excluded");
     }
 
     @Test
-    void getEgressActionErrors() {
-        EgressFlowConfiguration config = new EgressFlowConfiguration();
-        config.setEgressAction("Egressor");
-
-        DeltafiRuntimeConfiguration deltafiRuntimeConfiguration = new DeltafiRuntimeConfiguration();
-
-        Optional<String> error = egressFlowValidator.getEgressActionErrors(deltafiRuntimeConfiguration, config);
-
-        assertThat(error).isPresent().contains("The referenced Egress Action named: Egressor was not found");
-
-        deltafiRuntimeConfiguration.getEgressActions().put("Egressor", new EgressActionConfiguration());
-        assertThat(egressFlowValidator.getEgressActionErrors(deltafiRuntimeConfiguration, config)).isEmpty();
+    void testExcludedAndIncluded_null() {
+        EgressFlow egressFlow = new EgressFlow();
+        egressFlow.setName("egressFlowName");
+        egressFlow.setIncludeIngressFlows(null);
+        egressFlow.setExcludeIngressFlows(List.of("passthrough", "dupe2", "excluded"));
+        Assertions.assertThat(egressFlowValidator.excludedAndIncluded(egressFlow)).isEmpty();
     }
 
-    @Test
-    void getFormatActionErrors() {
-        EgressFlowConfiguration config = new EgressFlowConfiguration();
-        config.setFormatAction("Formatter");
-
-        DeltafiRuntimeConfiguration deltafiRuntimeConfiguration = new DeltafiRuntimeConfiguration();
-
-        Optional<String> error = egressFlowValidator.getFormatActionErrors(deltafiRuntimeConfiguration, config);
-
-        assertThat(error).isPresent().contains("The referenced Format Action named: Formatter was not found");
-
-        deltafiRuntimeConfiguration.getFormatActions().put("Formatter", new FormatActionConfiguration());
-        assertThat(egressFlowValidator.getFormatActionErrors(deltafiRuntimeConfiguration, config)).isEmpty();
-    }
-
-    @Test
-    void getEnrichActionErrors() {
-        DeltafiRuntimeConfiguration runtimeConfiguration = new DeltafiRuntimeConfiguration();
-        runtimeConfiguration.getEnrichActions().put("a", new EnrichActionConfiguration());
-
-        EgressFlowConfiguration flowConfig = new EgressFlowConfiguration();
-        flowConfig.getEnrichActions().add("a");
-
-        assertThat(egressFlowValidator.getEnrichActionErrors(runtimeConfiguration, flowConfig)).isEmpty();
-
-        flowConfig.getEnrichActions().add("b");
-        assertThat(egressFlowValidator.getEnrichActionErrors(runtimeConfiguration, flowConfig)).hasSize(1).contains("The referenced Enrich Action named: b was not found");
-
-        flowConfig.setEnrichActions(null);
-        assertThat(egressFlowValidator.getEnrichActionErrors(runtimeConfiguration, flowConfig)).isEmpty();
-    }
-
-    @Test
-    void getValidateActionErrors() {
-        DeltafiRuntimeConfiguration runtimeConfiguration = new DeltafiRuntimeConfiguration();
-        runtimeConfiguration.getValidateActions().put("a", new ValidateActionConfiguration());
-
-        EgressFlowConfiguration flowConfig = new EgressFlowConfiguration();
-        flowConfig.getValidateActions().add("a");
-
-        assertThat(egressFlowValidator.getValidateActionErrors(runtimeConfiguration, flowConfig)).isEmpty();
-
-        flowConfig.getValidateActions().add("b");
-        assertThat(egressFlowValidator.getValidateActionErrors(runtimeConfiguration, flowConfig)).hasSize(1).contains("The referenced Validate Action named: b was not found");
-
-        flowConfig.setValidateActions(null);
-        assertThat(egressFlowValidator.getValidateActionErrors(runtimeConfiguration, flowConfig)).isEmpty();
+    FlowConfigError expectedError() {
+        FlowConfigError actionConfigError = new FlowConfigError();
+        actionConfigError.setConfigName("brokenAction");
+        actionConfigError.setErrorType(FlowErrorType.UNREGISTERED_ACTION);
+        actionConfigError.setMessage("Action: brokenAction has not been registered with the system");
+        return actionConfigError;
     }
 
 }

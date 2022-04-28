@@ -2,7 +2,7 @@ mutation {
     actionEvent(
         event: {
             did: "%1$s"
-            action: "SampleFormatAction"
+            action: "sample.SampleFormatAction"
             time: "2021-07-11T13:44:22.183Z"
             type: FORMAT
             format: {

@@ -10,19 +10,30 @@ Usage:
   install-plugin PLUGIN_DIRECTORY [OPTIONS] [helm flags]
 
 Options:
-  -l, --load-flows Load flows included with plugin (if present)
-  -h, --help       Show help"
+  -h, --help        Show help
+  -v, --verbose     Verbose output"
   exit 1
 }
 
-LOAD_FLOWS=false
+TMP_SOURCE_PLUGIN_FILE="/tmp/.deltafi-source-plugin.$$"
+TMPFILE="/tmp/.deltafi-register-plugin-manifest.$$"
+
+cleanup() {
+  rm -f $TMP_SOURCE_PLUGIN_FILE
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
+VERBOSE=false
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
-    -l|--load-flows)
-      LOAD_FLOWS=true
+    -v|--verbose)
+      VERBOSE=true
       shift
       ;;
     *)
@@ -38,24 +49,43 @@ ARGS=($@)
 
 PLUGIN_DIRECTORY=${ARGS[1]}
 if [ ! -d "$PLUGIN_DIRECTORY" ]; then
-  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory not found${normal}"
+  cli_log "${red}$PLUGIN_DIRECTORY: Plugin directory not found${normal}"
   exit 1
 fi
 PLUGIN_DIRECTORY=$(cd $PLUGIN_DIRECTORY && pwd)
 
 CHARTS_DIRECTORY="$PLUGIN_DIRECTORY/charts"
 if [ ! -d "$CHARTS_DIRECTORY" ]; then
-  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory does not include a ${bold}charts${normal}${red} subdirectory${normal}"
+  cli_log "${red}$PLUGIN_DIRECTORY: Plugin directory does not include a ${bold}charts${normal}${red} subdirectory${normal}"
   exit 1
 fi
 
 CHART_YAML="$CHARTS_DIRECTORY/Chart.yaml"
 if [ ! -f "$CHART_YAML" ]; then
-  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin missing ${bold}charts/Chart.yaml${normal}"
+  cli_log "${red}$PLUGIN_DIRECTORY: Plugin missing ${bold}charts/Chart.yaml${normal}"
   exit 1
 fi
 
 PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
+
+cli_log "${bold}$PLUGIN_NAME${normal}: Registering plugin manifest"
+PLUGIN_MANIFEST="$CHARTS_DIRECTORY/files/plugin.json"
+if [ ! -f "$PLUGIN_MANIFEST" ]; then
+  cli_log "${red}$PLUGIN_DIRECTORY: Plugin manifest (plugin.json) not found in ${bold}.plugin${normal}${red} subdirectory. Make sure the project uses the generate-plugin-manifest gradle plugin.${normal}"
+  exit 1
+fi
+
+load_plan() {
+  if [[ ! "${1}" =~ "variables.json" ]]; then
+    deltafi load-plan $1 $2
+  fi
+}
+
+fail() {
+  cli_log "${red}$PLUGIN_DIRECTORY: $1${normal}"
+  echo -e "${red}Error: $2${normal}"
+  cleanup
+}
 
 cli_log "${bold}$PLUGIN_NAME${normal}: Installing plugin"
 helm upgrade --install --wait \
@@ -66,14 +96,23 @@ helm upgrade --install --wait \
 HELM_RETURN_CODE=$?
 [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
 
-if [[ "$LOAD_FLOWS" == true ]]; then
-  FLOWS_DIRECTORY="$PLUGIN_DIRECTORY/flows"
-  if [ ! -d "$FLOWS_DIRECTORY" ]; then
-    cli_log "${yellow}${PLUGIN_NAME}: Plugin directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
-  else
-    cli_log "${bold}$PLUGIN_NAME${normal}: Loading plugin flows"
-    find $FLOWS_DIRECTORY -name *.y*ml -exec deltafi load-config {} \;
+FLOWS_DIRECTORY="$PLUGIN_DIRECTORY/flows"
+if [ ! -d "$FLOWS_DIRECTORY" ]; then
+  cli_log "${yellow}$PLUGIN_NAME: Plugin directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
+else
+  cli_log "${bold}$PLUGIN_NAME${normal}: Loading plugin flow plans ... waiting for action registration"
+  sleep 15
+
+  JSON=$(cat "$PLUGIN_MANIFEST")
+  echo $JSON | jq -r '.pluginCoordinates' > $TMP_SOURCE_PLUGIN_FILE
+  export -f load_plan
+
+  if [[ -f $FLOWS_DIRECTORY/variables.json ]]; then
+    deltafi load-variables "${FLOWS_DIRECTORY}/variables.json" "$TMP_SOURCE_PLUGIN_FILE"
   fi
+
+  find $FLOWS_DIRECTORY -name *.json -exec bash -c "load_plan \"{}\" \"$TMP_SOURCE_PLUGIN_FILE\"" \;
 fi
 
 cli_log "${bold}$PLUGIN_NAME${normal}: Plugin install complete."
+cleanup

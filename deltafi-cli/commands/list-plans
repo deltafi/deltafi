@@ -10,7 +10,6 @@ Usage:
   list-plans [OPTIONS]
 
 Options:
-  -l, --long  Show a long listing of the flow plan details
   -h, --help     Show help"
   exit 1
 }
@@ -18,17 +17,19 @@ Options:
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
-if [[ " ${ARGS[@]} " =~ " --long " || " ${ARGS[@]} " =~ " -l " ]]; then
-  PROJECTION="name description ingressFlowConfigurations {  name transformActions loadActions } egressFlowConfigurations { name egressAction formatAction validateActions enrichActions }"
-else
-  PROJECTION="name"
-fi
-
-QUERY="query { flowPlans { $PROJECTION }}"
+QUERY="query { getAllFlowPlans { ingressPlans { name description sourcePlugin {groupId artifactId version}} egressPlans { name description sourcePlugin {groupId artifactId version}}}}"
 RESULT=$(deltafi query "$QUERY")
 
-if [[ " ${ARGS[@]} " =~ " --long " || " ${ARGS[@]} " =~ " -l " ]]; then
-  echo "$RESULT"
+print_plans() {
+  echo "$RESULT" | jq -r "([\"${1^} Flow Plan\", \"Source Plugin\", \"Description\"] | (., map(length*\"=\"))), (.data.getAllFlowPlans.$1Plans[] | [.name, (.sourcePlugin.groupId + \":\" + .sourcePlugin.artifactId + \":\" + .sourcePlugin.version), .description]) | @tsv" | column -ts $'\t'
+}
+
+DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  cli_log "${red}${BASENAME}: Failed to get the list of flow plans${normal}"
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
-  echo "$RESULT" | jq -r '.data.flowPlans[] | .name' | sort
+  print_plans "ingress"
+  echo
+  print_plans "egress"
 fi

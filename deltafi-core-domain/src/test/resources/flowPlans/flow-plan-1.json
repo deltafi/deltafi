@@ -2,7 +2,6 @@
    "name": "stix crossbar plan",
    "description": "Stix 1.x and 2.1 ingress/egress flows",
    "version": "0.17.0",
-   "draft" : false,
    "ingressFlowConfigurations": [
       {
          "name": "stix2_1",

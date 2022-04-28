@@ -1,0 +1,57 @@
+{
+  "name": "passthrough",
+  "description": "Flow that passes data through unchanged",
+  "sourcePlugin": {
+    "groupId": "org.deltafi.passthrough",
+    "artifactId": "deltafi-passthrough",
+    "version": "0.17.0"
+  },
+  "egressAction": {
+    "name": "PassthroughEgressAction",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
+      "egressFlow": "egressFlow",
+      "metadataKey": "deltafiMetadata",
+      "url": "${egressUrl}"
+    }
+  },
+  "formatAction": {
+    "name": "PassthroughFormatAction",
+    "requiresDomains": [
+      "${domain.type}"
+    ],
+    "requiresEnrichment": [
+      "${domain.type}"
+    ],
+    "type": "org.deltafi.passthrough.action.RoteFormatAction"
+  },
+  "enrichActions": [
+    {
+      "name": "PassthroughEnrichAction",
+      "type": "org.deltafi.passthrough.action.RoteEnrichAction",
+      "requiresDomains": [
+        "${domain.type}"
+      ],
+      "requiresEnrichment": [
+        "${domain.type}"
+      ],
+      "parameters": {
+        "enrichments": {
+          "passthroughEnrichment": "${enrichment.value}"
+        }
+      }
+    }
+  ],
+  "includeIngressFlows": [
+    "ingressFlow"
+  ],
+  "excludeIngressFlows": [
+    "otherFlow"
+  ],
+  "validateActions": [
+    {
+      "name": "PassthroughValidateAction",
+      "type": "org.deltafi.passthrough.action.RubberStampValidateAction"
+    }
+  ]
+}

@@ -6,18 +6,20 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
-import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.converters.ErrorConverter;
 import org.deltafi.core.domain.delete.DeleteConstants;
-import org.deltafi.core.domain.exceptions.ActionConfigException;
+import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.exceptions.UnexpectedActionException;
 import org.deltafi.core.domain.exceptions.UnknownTypeException;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.retry.MongoRetryable;
+import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.IngressFlow;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
@@ -43,7 +45,8 @@ public class DeltaFilesService {
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
-    final DeltaFiConfigService configService;
+    final IngressFlowService ingressFlowService;
+    final EgressFlowService egressFlowService;
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
@@ -92,8 +95,7 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile ingress(IngressInput input, List<String> parentDids) {
-        String flow = input.getSourceInfo().getFlow();
-        IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
+        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(input.getSourceInfo().getFlow());
 
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -111,7 +113,7 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(input.getSourceInfo())
-                .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, input.getContent(), null)))
+                .protocolStack(List.of(new ProtocolLayer(ingressFlow.getType(), INGRESS_ACTION, input.getContent(), null)))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())
@@ -200,13 +202,14 @@ public class DeltaFilesService {
     }
 
     public DeltaFile format(DeltaFile deltaFile, ActionEventInput event) {
+        EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
         FormattedData formattedData = FormattedData.newBuilder()
                 .formatAction(event.getAction())
                 .filename(event.getFormat().getFilename())
                 .metadata(event.getFormat().getMetadata())
                 .contentReference(event.getFormat().getContentReference())
-                .egressActions(configService.getEgressActionsWithFormatAction(event.getAction()))
-                .validateActions(configService.getValidateActionsWithFormatAction(event.getAction()))
+                .egressActions(List.of(egressFlow.getEgressAction().getName()))
+                .validateActions(egressFlow.validateActionNames())
                 .build();
         deltaFile.getFormattedData().add(formattedData);
         deltaFile.completeAction(event.getAction());
@@ -275,9 +278,10 @@ public class DeltaFilesService {
         List<SplitInput> splits = event.getSplit();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
-        Map<String, List<DeltaFile>> enqueueActionMap = new HashMap<>();
+        List<ActionInput> enqueueActions = new ArrayList<>();
 
-        if (Objects.isNull(configService.getLoadAction(event.getAction()))) {
+        String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
+        if (!event.getAction().equals(loadActionName)) {
             deltaFile.errorAction(event.getAction(), "Attempted to split from an Action that is not a LoadAction: " + event.getAction(), "");
         } else if (Objects.isNull(splits) || splits.isEmpty()) {
             deltaFile.errorAction(event.getAction(), "Attempted to split DeltaFile into 0 children", "");
@@ -296,9 +300,7 @@ public class DeltaFilesService {
             List<String> parentDids = Collections.singletonList(deltaFile.getDid());
 
             childDeltaFiles = splits.stream().map(split -> {
-                String flow = split.getSourceInfo().getFlow();
-                IngressFlowConfiguration flowConfiguration = configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
-
+                String ingressType = ingressFlowService.getRunningFlowByName(split.getSourceInfo().getFlow()).getType();
                 DeltaFile child = DeltaFile.newBuilder()
                         .did(UUID.randomUUID().toString())
                         .parentDids(parentDids)
@@ -306,7 +308,7 @@ public class DeltaFilesService {
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
                         .sourceInfo(split.getSourceInfo())
-                        .protocolStack(List.of(new ProtocolLayer(flowConfiguration.getType(), INGRESS_ACTION, split.getContent(), Collections.emptyList())))
+                        .protocolStack(List.of(new ProtocolLayer(ingressType, INGRESS_ACTION, split.getContent(), Collections.emptyList())))
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())
                         .formattedData(Collections.emptyList())
@@ -314,21 +316,12 @@ public class DeltaFilesService {
                         .modified(now)
                         .build();
 
-                List<String> enqueueActions = stateMachine.advance(child);
-                enqueueActions.forEach(a -> {
-                    if (!enqueueActionMap.containsKey(a)) {
-                        enqueueActionMap.put(a, new ArrayList<>());
-                    }
-                    enqueueActionMap.get(a).add(child);
-                });
+                enqueueActions.addAll(stateMachine.advance(child));
 
                 if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
                     deltaFile.markForDelete("on completion");
 
-                    if (!enqueueActionMap.containsKey(DeleteConstants.DELETE_ACTION)) {
-                        enqueueActionMap.put(DeleteConstants.DELETE_ACTION, new ArrayList<>());
-                    }
-                    enqueueActionMap.get(DeleteConstants.DELETE_ACTION).add(child);
+                    enqueueActions.add(getDeleteActionInput(child));
                 }
 
                 return child;
@@ -345,7 +338,7 @@ public class DeltaFilesService {
         deltaFileRepo.save(deltaFile);
         deltaFileRepo.saveAll(childDeltaFiles);
 
-        enqueueActions(enqueueActionMap);
+        enqueueActions(enqueueActions);
 
         return deltaFile;
     }
@@ -438,7 +431,7 @@ public class DeltaFilesService {
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
-        List<String> enqueueActions = stateMachine.advance(deltaFile);
+        List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
         if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
             deltaFile.markForDelete("on completion");
             deltaFileRepo.save(deltaFile);
@@ -446,7 +439,7 @@ public class DeltaFilesService {
         } else {
             deltaFileRepo.save(deltaFile);
             if (!enqueueActions.isEmpty()) {
-                enqueueActions(enqueueActions, deltaFile);
+                enqueueActions(enqueueActions);
             }
         }
         return deltaFile;
@@ -454,11 +447,15 @@ public class DeltaFilesService {
 
     public void markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy) {
         List<DeltaFile> deltaFilesMarkedForDelete = deltaFileRepo.markForDelete(createdBefore, completedBefore, flow, policy);
-        deltaFilesMarkedForDelete.forEach(this::enqueueDeleteAction);
+        enqueueActions(deltaFilesMarkedForDelete.stream().map(this::getDeleteActionInput).collect(Collectors.toList()));
     }
 
     private void enqueueDeleteAction(DeltaFile deltaFile) {
-        enqueueActions(List.of(DeleteConstants.DELETE_ACTION), deltaFile);
+        enqueueActions(List.of(getDeleteActionInput(deltaFile)));
+    }
+
+    private ActionInput getDeleteActionInput(DeltaFile deltaFile) {
+        return DeleteConstants.DELETE_ACTION_CONFIGURATION.buildActionInput(deltaFile);
     }
 
     public void delete(DeltaFile deltaFile) {
@@ -468,11 +465,30 @@ public class DeltaFilesService {
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now();
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, properties.getRequeueSeconds());
-        requeuedDeltaFiles.forEach(deltaFile -> enqueueActions(requeuedActions(deltaFile, modified), deltaFile));
+        requeuedDeltaFiles.forEach(deltaFile -> enqueueActions(requeuedActionInput(deltaFile, modified)));
     }
 
-    private List<String> requeuedActions(DeltaFile deltaFile, OffsetDateTime modified) {
-        return deltaFile.getActions().stream().filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli()).map(Action::getName).collect(Collectors.toList());
+    private List<ActionInput> requeuedActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
+        return deltaFile.getActions().stream()
+                .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
+                .map(action -> toActionInput(action, deltaFile))
+                .collect(Collectors.toList());
+    }
+
+    private ActionInput toActionInput(Action action, DeltaFile deltaFile) {
+        ActionConfiguration actionConfiguration = null;
+        if (DeleteConstants.DELETE_ACTION.equals(action.getName())) {
+            actionConfiguration = DeleteConstants.DELETE_ACTION_CONFIGURATION;
+        } else if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
+            actionConfiguration = ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), action.getName());
+        } else if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())){
+            actionConfiguration = egressFlowService.findActionConfig(action.getName());
+        }
+
+        if (Objects.isNull(actionConfiguration)) {
+            throw new DeltafiConfigurationException("Action named " + action.getName() + " could not be found");
+        }
+        return actionConfiguration.buildActionInput(deltaFile);
     }
 
     public void processActionEvents() {
@@ -504,55 +520,13 @@ public class DeltaFilesService {
         }
     }
 
-    /**
-     * Attempt to enqueue a list of actions for a DeltaFile.  If the redis service is unavailable, this action
-     * will silently fail and depend on timeout retries to re-attempt.
-     * @param actionNames list of action name strings to enqueue for the DeltaFile
-     * @param deltaFile DeltaFile for which the actions will be performed
-     */
-    private void enqueueActions(List<String> actionNames, DeltaFile deltaFile) {
-        try {
-            redisService.enqueue(actionNames, deltaFile);
-        } catch (JedisConnectionException e) {
-            // This scenario is most likely due to all Redis instances being unavailable
-            // Eating this exception.  Subsequent timeout/retry will ensure the DeltaFile is processed
-            log.error("Unable to post action(s) to Redis queue", e);
-        } catch (ActionConfigException e) {
-            log.error("Failed to enqueue {} with error {}", deltaFile.getDid(), e.getMessage());
-            ErrorInput error = ErrorInput.newBuilder().cause(e.getMessage()).build();
-            ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(e.getActionName()).error(error).build();
-            try {
-                this.error(deltaFile, event);
-            } catch (JsonProcessingException ex) {
-                log.error("Failed to create error for " + deltaFile.getDid() + " with event " + event + ": " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Attempt to enqueue multiple actions, each for a set of DeltaFiles.  If the redis service is unavailable,
-     * this action will silently fail and depend on timeout retries to re-attempt.
-     * @param enqueueActions A map where the keys are individual action strings, and the value is a
-     *                       list of DeltaFiles to apply the action
-     */
-    private void enqueueActions(Map<String, List<DeltaFile>> enqueueActions) {
+    private void enqueueActions(List<ActionInput> enqueueActions) {
         try {
             redisService.enqueue(enqueueActions);
         } catch (JedisConnectionException e) {
             // This scenario is most likely due to all Redis instances being unavailable
             // Eating this exception.  Subsequent timeout/retry will ensure the DeltaFile is processed
             log.error("Unable to post action(s) to Redis queue", e);
-        } catch (ActionConfigException e) {
-            log.error("Failed to enqueue to action {} with error {}", e.getActionName(), e.getMessage());
-            ErrorInput error = ErrorInput.newBuilder().cause(e.getMessage()).build();
-            enqueueActions.get(e.getActionName()).forEach(deltaFile -> {
-                ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(e.getActionName()).error(error).build();
-                try {
-                    this.error(deltaFile, event);
-                } catch (JsonProcessingException ex) {
-                    log.error("Failed to create error for " + deltaFile.getDid() + " with event " + event + ": " + e.getMessage());
-                }
-            });
         }
     }
 }

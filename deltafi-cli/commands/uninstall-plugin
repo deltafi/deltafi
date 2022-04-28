@@ -7,13 +7,55 @@ cli_help_command() {
 Command: uninstall-plugin
 
 Usage:
-  uninstall-plugin PLUGIN_DIRECTORY [helm flags]"
+  uninstall-plugin PLUGIN_DIRECTORY [OPTIONS] [helm flags]
+
+Options:
+  --dry-run         Simulate the helm uninstall
+  -h, --help        Show help
+  -f, --force       Force helm uninstall"
   exit 1
 }
 
+HELMDRYRUN=false
+FORCE=false
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -f|--force)
+      FORCE=true
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- "${POSITIONAL[@]}"
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+[[ " ${ARGS[@]} " =~ " --dry-run " ]] && HELMDRYRUN=true
+
+TMPFILE="/tmp/.deltafi-uninstall-plugin.$$"
+FORCEAFTERERROR=false
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+log_failed() {
+  cli_log "${red}${BASENAME}: Plugin cannot be removed${normal}"
+  echo -e "${red}Error: ${1}${normal}"
+  if [[ $FORCE == "true" ]]; then
+    FORCEAFTERERROR=true
+  else
+    cleanup
+  fi
+}
 
 PLUGIN_DIRECTORY=${ARGS[1]}
 if [ ! -d "$PLUGIN_DIRECTORY" ]; then
@@ -35,5 +77,63 @@ fi
 
 PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
 
-cli_log "Uninstalling ${PLUGIN_NAME} plugin"
+PLUGIN_MANIFEST="$CHARTS_DIRECTORY/files/plugin.json"
+if [ ! -f "$PLUGIN_MANIFEST" ]; then
+  cli_log "${red}$PLUGIN_DIRECTORY: Plugin manifest (plugin.json) not found in ${bold}.plugin${normal}${red} subdirectory. Make sure the project uses the generate-plugin-manifest gradle plugin.${normal}"
+  exit 1
+fi
+
+DGSVARDRYRUN=true
+PLUGIN_ID=$(cat ${PLUGIN_MANIFEST} | jq -r '.pluginCoordinates')
+
+uninstallPlugin() {
+  MUTATION="uninstallPlugin"
+  DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+  QUERY="mutation (\$pluginId: PluginCoordinatesInput!) {$MUTATION(dryRun: $DGSVARDRYRUN, pluginCoordinatesInput: \$pluginId) {success errors}}"
+  VARIABLES=$(echo "{}" |  jq --argjson pluginId "$PLUGIN_ID" '. + {pluginId: $pluginId}')
+  POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+  truncate --size 0 ${TMPFILE}
+  RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+  if [[ "$RESPONSE_CODE" != "200" ]]; then
+    ERRORS=$(cat ${TMPFILE})
+    log_failed "$ERRORS"
+  else
+    DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+    if [[ "$DGS_ERRORS" != "" ]]; then
+      log_failed "$DGS_ERRORS"
+    else
+      SUCCESS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.success')
+      if [[ $SUCCESS == "true" ]]; then
+        if [[ $DGSVARDRYRUN == "true" ]]; then
+          cli_log "Safe to remove plugin"
+        fi
+      else
+        ERRORS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.errors | join(",")')
+        log_failed "$ERRORS"
+      fi
+    fi
+  fi
+}
+
+cli_log "Checking to see if plugin can be safely uninstalled"
+uninstallPlugin
+
+if [[ $FORCEAFTERERROR == "true" ]]; then
+  cli_log "Forcing removal of the plugin from the cluster"
+  helm uninstall ${PLUGIN_NAME} ${ARGS[@]:2}
+  cleanup
+fi
+
+cli_log "Removing the plugin from the cluster"
 helm uninstall ${PLUGIN_NAME} ${ARGS[@]:2}
+
+if [[ $HELMDRYRUN == "false" ]]; then
+  cli_log "Removing the plugin from the DeltaFi Plugin registry"
+  DGSVARDRYRUN=false
+  uninstallPlugin
+  cli_log "Plugin ${PLUGIN_NAME} has been successfully uninstalled"
+fi
+
+cleanup

@@ -48,9 +48,7 @@ deltafi:
     volumes: []
     volumeMounts: []
   gateway:
-    image: deltafi/deltafi-gateway:0.21.4
-  passthrough_actions:
-    image: deltafi/deltafi-passthrough-actions:0.21.4
+    image: deltafi/deltafi-gateway:0.21.2
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
     image: deltafi/deltafi-core-actions:0.21.4

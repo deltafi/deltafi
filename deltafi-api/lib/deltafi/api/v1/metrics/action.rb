@@ -148,17 +148,14 @@ module Deltafi
             end
 
             def action_names_by_family
-              config_yaml = DF.graphql('query { exportConfigAsYaml }').parsed_response['data']['exportConfigAsYaml']
-              config = YAML.safe_load(config_yaml, aliases: true)
+              action_families = DF.graphql('query { getActionNamesByFamily { family actionNames } }')
+                                  .parsed_response['data']['getActionNamesByFamily']
 
               output = Hash.new { |h, k| h[k] = h.dup.clear }
-              output['ingress']['IngressAction'] = {}
-
-              config.each_key do |key|
-                next unless /Actions$/.match?(key)
-
-                family = key.split('A')[0]
-                config[key].each_key do |action_name|
+              
+              action_families.each_entry do |family_entry|
+                family = family_entry['family']
+                family_entry['actionNames'].each do |action_name|
                   output[family][action_name] = {}
                 end
               end

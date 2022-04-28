@@ -18,7 +18,7 @@ Options:
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
-QUERY="query { actionSchemas { id actionKitVersion schema }}"
+QUERY="query { actionSchemas { id schema }}"
 RESULT=$(deltafi query "$QUERY")
 
 if [[ " ${ARGS[@]} " =~ " --json " || " ${ARGS[@]} " =~ " -j " ]]; then

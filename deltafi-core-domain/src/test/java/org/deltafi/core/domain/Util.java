@@ -1,5 +1,6 @@
 package org.deltafi.core.domain;
 
+import org.assertj.core.api.Assertions;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.Action;
@@ -45,6 +46,41 @@ public class Util {
                 .enrichment(new ArrayList<>())
                 .formattedData(new ArrayList<>())
                 .build();
+    }
+
+    public static void assertEqualsIgnoringDates(DeltaFile expected, DeltaFile actual) {
+        Assertions.assertThat(actual.getDid()).isEqualTo(expected.getDid());
+        Assertions.assertThat(actual.getStage()).isEqualTo(expected.getStage());
+        assertActionsEqualIgnoringDates(expected.getActions(), actual.getActions());
+        Assertions.assertThat(actual.getSourceInfo()).isEqualTo(expected.getSourceInfo());
+        Assertions.assertThat(actual.getProtocolStack()).isEqualTo(expected.getProtocolStack());
+        Assertions.assertThat(actual.getDomains()).isEqualTo(expected.getDomains());
+        Assertions.assertThat(actual.getEnrichment()).isEqualTo(expected.getEnrichment());
+        Assertions.assertThat(actual.getFormattedData()).isEqualTo(expected.getFormattedData());
+    }
+
+    public static void assertActionsEqualIgnoringDates(List<Action> expected, List<Action> actual) {
+        if (expected == null || actual == null) {
+            Assertions.assertThat(actual).isEqualTo(expected);
+            return;
+        }
+
+        Assertions.assertThat(actual).hasSize(expected.size());
+        for (int i = 0; i < expected.size(); i++) {
+            assertActionEqualIgnoringDates(expected.get(i), actual.get(i));
+        }
+    }
+
+    public static void assertActionEqualIgnoringDates(Action expected, Action actual) {
+        if (expected == null || actual == null) {
+            Assertions.assertThat(actual).isEqualTo(expected);
+            return;
+        } else {
+            Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
+            Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
+            Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
+            Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
+        }
     }
 
     public static boolean equalIgnoringDates(DeltaFile d1, DeltaFile d2) {

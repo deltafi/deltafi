@@ -1,12 +1,9 @@
 package org.deltafi.actionkit.action.format;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.ActionType;
-import org.deltafi.core.domain.generated.client.RegisterFormatSchemaGraphQLQuery;
-import org.deltafi.core.domain.generated.client.RegisterFormatSchemaProjectionRoot;
+import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.deltafi.core.domain.generated.types.FormatActionSchemaInput;
 
 import java.util.Collections;
@@ -24,20 +21,14 @@ public abstract class FormatActionBase<P extends ActionParameters> extends Actio
     }
 
     @Override
-    public GraphQLQuery getRegistrationQuery() {
-        FormatActionSchemaInput paramInput = FormatActionSchemaInput.newBuilder()
-            .id(getClassCanonicalName())
-            .paramClass(getParamClass())
-            .actionKitVersion(getVersion())
-            .schema(getDefinition())
-            .requiresDomains(getRequiresDomains())
-            .requiresEnrichment(getRequiresEnrichment())
-            .build();
-        return RegisterFormatSchemaGraphQLQuery.newRequest().actionSchema(paramInput).build();
-    }
-
-    @Override
-    protected BaseProjectionNode getRegistrationProjection() {
-        return new RegisterFormatSchemaProjectionRoot().id();
+    public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
+        FormatActionSchemaInput input = FormatActionSchemaInput.newBuilder()
+                .id(getClassCanonicalName())
+                .paramClass(getParamClass())
+                .schema(getDefinition())
+                .requiresDomains(getRequiresDomains())
+                .requiresEnrichment(getRequiresEnrichment())
+                .build();
+        actionRegistrationInput.getFormatActions().add(input);
     }
 }

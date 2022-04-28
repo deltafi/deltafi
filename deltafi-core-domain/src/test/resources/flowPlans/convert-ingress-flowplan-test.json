@@ -1,0 +1,31 @@
+{
+  "name": "passthrough",
+  "description": "Flow that passes data through unchanged",
+  "sourcePlugin": {
+    "groupId": "org.deltafi.passthrough",
+    "artifactId": "deltafi-passthrough",
+    "version": "0.17.0"
+  },
+  "loadAction": {
+    "name": "PassthroughLoadAction",
+    "consumes": "passthrough-binary",
+    "type": "org.deltafi.passthrough.action.RoteLoadAction",
+    "parameters": {
+      "domains": [
+        "${domain.type}"
+      ]
+    }
+  },
+  "transformActions": [
+    {
+      "name": "PassthroughTransformAction",
+      "consumes": "binary",
+      "produces": "passthrough-binary",
+      "type": "org.deltafi.passthrough.action.RoteTransformAction",
+      "parameters": {
+        "resultType": "${transform.produces}"
+      }
+    }
+  ],
+  "type": "binary"
+}

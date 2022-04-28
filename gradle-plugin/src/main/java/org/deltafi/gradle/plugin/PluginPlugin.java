@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import groovy.lang.Closure;
+import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.ActionDescriptor;
 import org.deltafi.core.domain.generated.types.Plugin;
-import org.deltafi.core.domain.generated.types.PluginCoordinates;
 import org.gradle.api.Project;
 
 import java.io.File;

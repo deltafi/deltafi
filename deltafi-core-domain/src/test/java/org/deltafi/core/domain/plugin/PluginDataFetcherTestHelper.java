@@ -1,6 +1,8 @@
 package org.deltafi.core.domain.plugin;
 
 import org.deltafi.core.domain.generated.client.PluginsProjectionRoot;
+import org.deltafi.core.domain.generated.client.RegisterPluginProjectionRoot;
+import org.deltafi.core.domain.generated.client.UninstallPluginProjectionRoot;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,6 +37,14 @@ public class PluginDataFetcherTestHelper {
             .editable()
             .hidden()
             .value().parent().parent();
+
+    public static final RegisterPluginProjectionRoot REGISTER_PLUGIN_PROJECTION_ROOT = new RegisterPluginProjectionRoot()
+            .success()
+            .errors();
+
+    public static final UninstallPluginProjectionRoot UNINSTALL_PLUGIN_PROJECTION_ROOT = new UninstallPluginProjectionRoot()
+            .success()
+            .errors();
 
     public static void validatePlugin1(org.deltafi.core.domain.generated.types.Plugin plugin1) {
         assertEquals("org.deltafi", plugin1.getPluginCoordinates().getGroupId());

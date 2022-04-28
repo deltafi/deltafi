@@ -9,4 +9,5 @@ public class ActionInput {
     private DeltaFile deltaFile;
     private ActionContext actionContext;
     private Map<String, Object> actionParams;
+    private String queueName;
 }

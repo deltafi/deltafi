@@ -1,0 +1,37 @@
+{
+  "name": "error",
+  "description": "Defines the flow for errored DeltaFiles",
+  "version": "0.17.0",
+  "sourcePlugin": {
+    "groupId": "org.deltafi.core",
+    "artifactId": "deltafi-core-actions",
+    "version": "0.17.0"
+  },
+  "egressFlowConfigurations": [
+    {
+      "name": "error",
+      "egressAction": "ErrorEgressAction",
+      "formatAction": "ErrorFormatAction"
+    }
+  ],
+  "formatActionConfigurations": [
+    {
+      "name": "ErrorFormatAction",
+      "type": "org.deltafi.core.action.SimpleErrorFormatAction",
+      "requiresDomains": [
+        "error"
+      ]
+    }
+  ],
+  "egressActionConfigurations": [
+    {
+      "name": "ErrorEgressAction",
+      "type": "org.deltafi.core.action.RestPostEgressAction",
+      "parameters": {
+        "egressFlow": "egress",
+        "metadataKey": "deltafiMetadata",
+        "url": "http://deltafi-egress-sink-service"
+      }
+    }
+  ]
+}

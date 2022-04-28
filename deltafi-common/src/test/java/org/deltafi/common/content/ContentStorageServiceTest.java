@@ -5,7 +5,6 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;

@@ -1,31 +1,26 @@
 package org.deltafi.core.domain.services;
 
-import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import lombok.AllArgsConstructor;
 import org.deltafi.common.trace.ZipkinService;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
-import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
-import org.deltafi.core.domain.configuration.FormatActionConfiguration;
-import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
+import org.deltafi.core.domain.api.types.ActionInput;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.IngressFlow;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class StateMachine {
 
-    @Autowired
-    DeltaFiConfigService configService;
-
-    @Autowired
-    ZipkinService zipkinService;
+    private final IngressFlowService ingressFlowService;
+    private final EgressFlowService egressFlowService;
+    private final ZipkinService zipkinService;
 
     /**
      * Advance the state of the given DeltaFile
@@ -33,50 +28,44 @@ public class StateMachine {
      * @param deltaFile The deltaFile to advance
      * @return a list of actions that should receive this DeltaFile next
      */
-    public List<String> advance(DeltaFile deltaFile) {
-        List<String> enqueueActions = new ArrayList<>();
+    public List<ActionInput> advance(DeltaFile deltaFile) {
+        List<ActionInput> enqueueActions = new ArrayList<>();
         switch (deltaFile.getStage()) {
             case INGRESS:
                 if (deltaFile.hasErroredAction()) {
                     break;
                 }
 
+                IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+
                 // transform
-                String nextTransformAction = getTransformAction(deltaFile);
+                TransformActionConfiguration nextTransformAction = getTransformAction(ingressFlow, deltaFile);
                 if (nextTransformAction != null) {
-                    deltaFile.queueAction(nextTransformAction);
-                    enqueueActions.add(nextTransformAction);
+                    deltaFile.queueAction(nextTransformAction.getName());
+                    enqueueActions.add(nextTransformAction.buildActionInput(deltaFile));
                     break;
                 }
 
                 // load
-                String loadAction = getLoadAction(deltaFile);
-                if (loadAction != null && !deltaFile.hasTerminalAction(loadAction)) {
-                    deltaFile.queueAction(loadAction);
-                    enqueueActions.add(loadAction);
+                LoadActionConfiguration loadAction = ingressFlow.getLoadAction();
+                if (loadAction != null && !deltaFile.hasTerminalAction(loadAction.getName())) {
+                    deltaFile.queueAction(loadAction.getName());
+                    enqueueActions.add(loadAction.buildActionInput(deltaFile));
                     break;
                 }
 
                 // if transform and load are complete, move to egress stage
                 deltaFile.setStage(DeltaFileStage.EGRESS);
             case EGRESS:
-                // enrich
-                List<String> enrichActions = getEnrichActions(deltaFile);
-                List<String> newActions = new ArrayList<>(deltaFile.queueActionsIfNew(enrichActions));
+                List<ActionInput> egressActions = egressFlowService.getMatchingFlows(deltaFile.getSourceInfo().getFlow()).stream()
+                        .map(egressFlow -> advanceEgress(egressFlow, deltaFile))
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList());
 
-                // format
-                List<String> formatActions = getFormatActions(deltaFile);
-                newActions.addAll(deltaFile.queueActionsIfNew(formatActions));
+                egressActions.forEach(actionInput -> deltaFile.queueNewAction(actionInput.getActionContext().getName()));
 
-                // validate
-                List<String> validateActions = getValidateActions(deltaFile);
-                newActions.addAll(deltaFile.queueActionsIfNew(validateActions));
+                enqueueActions.addAll(egressActions);
 
-                // egress
-                List<String> egressActions = getEgressActions(deltaFile);
-                newActions.addAll(deltaFile.queueActionsIfNew(egressActions));
-
-                enqueueActions.addAll(newActions);
                 break;
         }
 
@@ -88,36 +77,59 @@ public class StateMachine {
         return enqueueActions;
     }
 
-    private IngressFlowConfiguration flowConfiguration(DeltaFile deltaFile) {
-        String flow = deltaFile.getSourceInfo().getFlow();
-        return configService.getIngressFlow(flow).orElseThrow(() -> new DgsEntityNotFoundException("Ingress flow " + flow + " is not configured."));
+    private TransformActionConfiguration getTransformAction(IngressFlow ingressFlow, DeltaFile deltaFile) {
+        return ingressFlow.getTransformActions().stream()
+                .filter(transformAction -> !deltaFile.hasTerminalAction(transformAction.getName()))
+                .findFirst().orElse(null);
     }
 
-    private String getTransformAction(DeltaFile deltaFile) {
-        Optional<String> nextAction = flowConfiguration(deltaFile).getTransformActions().stream().filter(a -> !deltaFile.hasTerminalAction(a)).findFirst();
-
-        return nextAction.orElse(null);
-    }
-
-    private String getLoadAction(DeltaFile deltaFile) {
-        return flowConfiguration(deltaFile).getLoadAction();
-    }
-
-    List<String> getEnrichActions(DeltaFile deltaFile) {
-        return configService.getEgressFlows().stream()
-                .filter(egressFlow -> matchesFlowFilter(egressFlow, deltaFile))
-                .flatMap(f -> f.getEnrichActions().stream())
-                .filter(e -> enrichActionReady(e, deltaFile))
-                .distinct()
+    List<ActionInput> advanceEgress(EgressFlow egressFlow, DeltaFile deltaFile) {
+        return nextEgressActions(egressFlow, deltaFile).stream()
+                .filter(actionConfiguration -> isNewAction(actionConfiguration, deltaFile))
+                .map(actionConfiguration -> actionConfiguration.buildActionInput(deltaFile))
                 .collect(Collectors.toList());
     }
 
-    private boolean enrichActionReady(String enrichActionName, DeltaFile deltaFile) {
-        EnrichActionConfiguration config = configService.getEnrichAction(enrichActionName);
-        return !deltaFile.hasTerminalAction(enrichActionName) &&
-                deltaFile.hasDomains(config.getRequiresDomains()) &&
-                deltaFile.hasEnrichments(config.getRequiresEnrichment()) &&
-                hasMetadataMatches(deltaFile, config);
+    List<ActionConfiguration> nextEgressActions(EgressFlow egressFlow, DeltaFile deltaFile) {
+        List<ActionConfiguration> nextActions = new ArrayList<>(nextEnrichActions(egressFlow, deltaFile));
+
+        if (!nextActions.isEmpty()) {
+            return nextActions;
+        }
+
+        if (formatActionReady(egressFlow.getFormatAction(), deltaFile)) {
+            nextActions.add(egressFlow.getFormatAction());
+            return nextActions;
+        }
+
+        nextActions.addAll(getValidateActions(egressFlow, deltaFile));
+
+        if (nextActions.isEmpty() && egressActionReady(egressFlow, deltaFile)) {
+            nextActions.add(egressFlow.getEgressAction());
+        }
+
+        return nextActions;
+    }
+
+    boolean isNewAction(ActionConfiguration actionConfiguration, DeltaFile deltaFile) {
+        return deltaFile.isNewAction(actionConfiguration.getName());
+    }
+
+    List<ActionConfiguration> nextEnrichActions(EgressFlow egressFlow, DeltaFile deltaFile) {
+        if (Objects.isNull(egressFlow.getEnrichActions())) {
+            return Collections.emptyList();
+    }
+
+        return egressFlow.getEnrichActions().stream()
+                .filter(enrich -> enrichActionReady(enrich, deltaFile))
+                .collect(Collectors.toList());
+    }
+
+    private boolean enrichActionReady(EnrichActionConfiguration enrichAction, DeltaFile deltaFile) {
+        return !deltaFile.hasTerminalAction(enrichAction.getName()) &&
+                deltaFile.hasDomains(enrichAction.getRequiresDomains()) &&
+                deltaFile.hasEnrichments(enrichAction.getRequiresEnrichment()) &&
+                hasMetadataMatches(deltaFile, enrichAction);
     }
 
     private boolean hasMetadataMatches(DeltaFile deltaFile, EnrichActionConfiguration config) {
@@ -144,56 +156,29 @@ public class StateMachine {
         return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadataMap.get(k)));
     }
 
-    List<String> getFormatActions(DeltaFile deltaFile) {
-        return configService.getEgressFlows().stream()
-                .filter(egressFlow -> matchesFlowFilter(egressFlow, deltaFile))
-                .map(EgressFlowConfiguration::getFormatAction)
-                .filter(f -> formatActionReady(f, deltaFile))
-                .collect(Collectors.toList());
-    }
-
-    private boolean formatActionReady(String formatActionName, DeltaFile deltaFile) {
-        FormatActionConfiguration config = configService.getFormatAction(formatActionName);
-        return !deltaFile.hasTerminalAction(formatActionName) &&
+    private boolean formatActionReady(FormatActionConfiguration config, DeltaFile deltaFile) {
+        return !deltaFile.hasTerminalAction(config.getName()) &&
                 deltaFile.hasDomains(config.getRequiresDomains()) &&
                 deltaFile.hasEnrichments(config.getRequiresEnrichment());
     }
 
-    List<String> getValidateActions(DeltaFile deltaFile) {
-        return configService.getEgressFlows().stream()
-                .filter(egressFlow -> validateActionsReady(egressFlow, deltaFile))
-                .flatMap(f -> f.getValidateActions().stream())
-                .filter(v -> !deltaFile.hasTerminalAction(v))
-                .distinct()
-                .collect(Collectors.toList());
+    List<ActionConfiguration> getValidateActions(EgressFlow egressFlow, DeltaFile deltaFile) {
+        if (Objects.isNull(egressFlow.getValidateActions()) || !validateActionsReady(egressFlow, deltaFile)) {
+            return Collections.emptyList();
     }
 
-    private boolean validateActionsReady(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
-        return deltaFile.hasCompletedAction(egressFlow.getFormatAction()) &&
-                matchesFlowFilter(egressFlow, deltaFile);
+        return egressFlow.getValidateActions().stream()
+                .filter(v -> !deltaFile.hasTerminalAction(v.getName())).collect(Collectors.toList());
     }
 
-    List<String> getEgressActions(DeltaFile deltaFile) {
-        return configService.getEgressFlows().stream()
-                .filter(egressFlow -> egressActionReady(egressFlow, deltaFile))
-                .map(org.deltafi.core.domain.generated.types.EgressFlowConfiguration::getEgressAction)
-                .filter(egressAction -> !deltaFile.hasTerminalAction(egressAction))
-                .collect(Collectors.toList());
+    private boolean validateActionsReady(EgressFlow egressFlow, DeltaFile deltaFile) {
+        return deltaFile.hasCompletedAction(egressFlow.getFormatAction().getName());
     }
 
-    private boolean matchesFlowFilter(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
-        return (egressFlow.getIncludeIngressFlows() == null ||
-                egressFlow.getIncludeIngressFlows().isEmpty() ||
-                egressFlow.getIncludeIngressFlows().contains(deltaFile.getSourceInfo().getFlow())) &&
-                (egressFlow.getExcludeIngressFlows() == null ||
-                        egressFlow.getExcludeIngressFlows().isEmpty() ||
-                        !egressFlow.getExcludeIngressFlows().contains(deltaFile.getSourceInfo().getFlow()));
-    }
-
-    private boolean egressActionReady(EgressFlowConfiguration egressFlow, DeltaFile deltaFile) {
-        return deltaFile.hasCompletedAction(egressFlow.getFormatAction()) &&
-                deltaFile.hasCompletedActions(egressFlow.getValidateActions()) &&
-                matchesFlowFilter(egressFlow, deltaFile);
+    private boolean egressActionReady(EgressFlow egressFlow, DeltaFile deltaFile) {
+        return deltaFile.hasCompletedAction(egressFlow.getFormatAction().getName()) &&
+                deltaFile.hasCompletedActions(egressFlow.validateActionNames()) &&
+                !deltaFile.hasTerminalAction(egressFlow.getEgressAction().getName());
     }
 
     private void sendTrace(DeltaFile deltaFile) {

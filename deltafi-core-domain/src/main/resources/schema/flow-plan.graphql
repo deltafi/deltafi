@@ -22,42 +22,126 @@ input VariableInput {
   value: String
 }
 
-input FlowPlanInput {
-  name: String!
-  description: String!
-  version: String!
-  draft: Boolean!
+type PluginVariables {
+  sourcePlugin: PluginCoordinates!
+  variables: [Variable]!
+}
 
-  ingressFlowConfigurations: [IngressFlowConfigurationInput!]
-  egressFlowConfigurations: [EgressFlowConfigurationInput!]
-
-  transformActionConfigurations: [TransformActionConfigurationInput!]
-  loadActionConfigurations: [LoadActionConfigurationInput!]
-  enrichActionConfigurations: [EnrichActionConfigurationInput!]
-  formatActionConfigurations: [FormatActionConfigurationInput!]
-  validateActionConfigurations: [ValidateActionConfigurationInput!]
-  egressActionConfigurations: [EgressActionConfigurationInput!]
-
+input PluginVariablesInput {
   sourcePlugin: PluginCoordinatesInput!
   variables: [VariableInput]!
 }
 
-type FlowPlan {
+type IngressFlowPlan {
   name: String!
   description: String!
-  version: String!
-  draft: Boolean!
+  sourcePlugin: PluginCoordinates!
+  type: String!
+  transformActions: [TransformActionConfiguration]
+  loadAction: LoadActionConfiguration!
+}
 
-  ingressFlowConfigurations: [IngressFlowConfiguration!]
-  egressFlowConfigurations: [EgressFlowConfiguration!]
+type EgressFlowPlan {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  egressAction: EgressActionConfiguration!
+  formatAction: FormatActionConfiguration!
+  enrichActions: [EnrichActionConfiguration]
+  validateActions: [ValidateActionConfiguration]
+  includeIngressFlows: [String]
+  excludeIngressFlows: [String]
+}
 
-  transformActionConfigurations: [TransformActionConfiguration!]
-  loadActionConfigurations: [LoadActionConfiguration!]
-  enrichActionConfigurations: [EnrichActionConfiguration!]
-  formatActionConfigurations: [FormatActionConfiguration!]
-  validateActionConfigurations: [ValidateActionConfiguration!]
-  egressActionConfigurations: [EgressActionConfiguration!]
+input IngressFlowPlanInput {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinatesInput!
+  type: String!
+  transformActions: [TransformActionConfigurationInput]
+  loadAction: LoadActionConfigurationInput!
+}
 
+input EgressFlowPlanInput {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinatesInput!
+  egressAction: EgressActionConfigurationInput!
+  formatAction: FormatActionConfigurationInput!
+  enrichActions: [EnrichActionConfigurationInput]
+  validateActions: [ValidateActionConfigurationInput]
+  includeIngressFlows: [String]
+  excludeIngressFlows: [String]
+}
+
+enum FlowState {
+  STOPPED
+  RUNNING
+  INVALID
+}
+
+enum FlowErrorType {
+  UNRESOLVED_VARIABLE
+  UNREGISTERED_ACTION
+  INACTIVE_ACTION
+  INVALID_ACTION_PARAMETERS
+  INVALID_CONFIG
+}
+
+type FlowConfigError {
+  configName: String!
+  errorType: FlowErrorType!
+  message: String!
+}
+
+type FlowStatus {
+  state: FlowState!
+  errors: [FlowConfigError]
+}
+
+type Flows {
   sourcePlugin: PluginCoordinates!
   variables: [Variable]
+  ingressFlows: [IngressFlow]
+  egressFlows: [EgressFlow]
+}
+
+type SystemFlows {
+  ingress: [IngressFlow]!
+  egress: [EgressFlow]!
+}
+
+type SystemFlowPlans {
+  ingressPlans: [IngressFlowPlan]!
+  egressPlans: [EgressFlowPlan]!
+}
+
+type IngressFlow {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  flowStatus: FlowStatus!
+  type: String!
+  transformActions: [TransformActionConfiguration]
+  loadAction: LoadActionConfiguration!
+  variables: [Variable]!
+}
+
+type EgressFlow {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  flowStatus: FlowStatus!
+  egressAction: EgressActionConfiguration!
+  formatAction: FormatActionConfiguration!
+  enrichActions: [EnrichActionConfiguration]
+  validateActions: [ValidateActionConfiguration]
+  includeIngressFlows: [String]
+  excludeIngressFlows: [String]
+  variables: [Variable]!
+}
+
+type ActionFamily {
+  family: String!
+  actionNames: [String]!
 }

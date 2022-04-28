@@ -31,8 +31,6 @@ public interface ActionSchema {
 
     String getParamClass();
 
-    String getActionKitVersion();
-
     Map<String, Object> getSchema();
 
     OffsetDateTime getLastHeard();

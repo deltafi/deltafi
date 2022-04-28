@@ -14,7 +14,8 @@ module Deltafi
       SMOKE_TIMEOUT_MS = 5000
 
       GATEWAY_URL = 'http://deltafi-gateway-service/graphql'
-      SMOKE_QUERY = '{"query":"{ deltaFiConfigs(configQuery: {configType: INGRESS_FLOW, name: \"smoke\"}) { name } }"}'
+      SMOKE_QUERIES = {"getIngressFlow" => '{"query":"{ getIngressFlow(flowName:\"smoke\") { flowStatus { state } } }"}',
+                       "getEgressFlow" => '{"query":"{ getEgressFlow(flowName:\"smoke\") { flowStatus { state } } }"}'}
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
       def initialize
         @smoke = {}
@@ -54,16 +55,16 @@ module Deltafi
         end
       end
 
-      def smoke_installed?
+      def smoke_running?(queryName)
         begin
-          response = HTTParty.post(GATEWAY_URL, body: SMOKE_QUERY, headers: { 'Content-Type' => 'application/json' })
+          response = HTTParty.post(GATEWAY_URL, body: SMOKE_QUERIES[queryName], headers: { 'Content-Type' => 'application/json' })
           @connected_to_gateway = true
         rescue StandardError => e
           @logger.error "Error connecting to gateway:\n#{e.message}\n#{e.backtrace}" if @connected_to_gateway
           @connected_to_gateway = false
           return false
         end
-        return !(JSON.parse(response.body).dig('data', 'deltaFiConfigs') || []).empty?
+        return (JSON.parse(response.body).dig('data', queryName, 'flowStatus', 'state') || "") == "RUNNING"
       end
 
       def timeout_smoke
@@ -76,7 +77,7 @@ module Deltafi
       end
 
       def run_smoke
-        unless smoke_installed?
+        unless smoke_running?("getIngressFlow") && smoke_running?("getEgressFlow")
           @smoke.clear
           return
         end

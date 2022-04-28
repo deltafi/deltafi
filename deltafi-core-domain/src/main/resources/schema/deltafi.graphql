@@ -277,9 +277,22 @@ type AcknowledgeResult {
   error: String
 }
 
+type Result {
+  success: Boolean!
+  errors: [String]
+}
+
 type Query {
-  flowPlans: [FlowPlan]!
-  exportFlowPlan(name: String!): String!
+  getIngressFlowPlan(planName: String!): IngressFlowPlan!
+  getEgressFlowPlan(planName: String!): EgressFlowPlan!
+  getIngressFlow(flowName: String!): IngressFlow!
+  getEgressFlow(flowName: String!): EgressFlow!
+  validateIngressFlow(flowName: String!): IngressFlow!
+  validateEgressFlow(flowName: String!): EgressFlow!
+  getFlows: [Flows]!
+  getAllFlows: SystemFlows!
+  getAllFlowPlans: SystemFlowPlans!
+  getActionNamesByFamily: [ActionFamily]!
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile
@@ -296,8 +309,18 @@ type Query {
 }
 
 type Mutation {
-  saveFlowPlan(flowPlan: FlowPlanInput!) : FlowPlan!
-  removeFlowPlan(name: String!) : Boolean!
+  saveIngressFlowPlan(ingressFlowPlan: IngressFlowPlanInput!) : IngressFlow!
+  saveEgressFlowPlan(egressFlowPlan: EgressFlowPlanInput!) : EgressFlow!
+  removeIngressFlowPlan(name: String!) : Boolean!
+  removeEgressFlowPlan(name: String!) : Boolean!
+
+  savePluginVariables(pluginVariablesInput: PluginVariablesInput!) : Boolean!
+  setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput]!) : Boolean!
+
+  startIngressFlow(flowName: String!) : Boolean!
+  stopIngressFlow(flowName: String!) : Boolean!
+  startEgressFlow(flowName: String!) : Boolean!
+  stopEgressFlow(flowName: String!) : Boolean!
 
   ingress(input: IngressInput!): DeltaFile!
   actionEvent(event: ActionEventInput!): DeltaFile!
@@ -305,18 +328,8 @@ type Mutation {
   retry(dids: [String!]!) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
 
-  registerDeleteSchema(actionSchema: DeleteActionSchemaInput!): ActionSchema!
-  registerEgressSchema(actionSchema: EgressActionSchemaInput!): ActionSchema!
-  registerEnrichSchema(actionSchema: EnrichActionSchemaInput!): ActionSchema!
-  registerFormatSchema(actionSchema: FormatActionSchemaInput!): ActionSchema!
-  registerLoadSchema(actionSchema: LoadActionSchemaInput!): ActionSchema!
-  registerTransformSchema(actionSchema: TransformActionSchemaInput!): ActionSchema!
-  registerValidateSchema(actionSchema: ValidateActionSchemaInput!): ActionSchema!
+  registerActions(actionRegistration: ActionRegistrationInput!): Int!
 
-  replaceConfig(configYaml: String!): String
-  mergeConfig(configYaml: String!): String
-
-  removeDeltaFiConfigs(configQuery: ConfigQueryInput): Int!
-
-  registerPlugin(pluginInput: PluginInput!): Plugin!
+  registerPlugin(pluginInput: PluginInput!): Result!
+  uninstallPlugin(dryRun: Boolean!, pluginCoordinatesInput: PluginCoordinatesInput!): Result!
 }

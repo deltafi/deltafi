@@ -1,50 +1,88 @@
 package org.deltafi.core.domain.validation;
 
-import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
-import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
 import org.deltafi.core.domain.configuration.TransformActionConfiguration;
+import org.deltafi.core.domain.generated.types.FlowConfigError;
+import org.deltafi.core.domain.generated.types.FlowErrorType;
+import org.deltafi.core.domain.generated.types.FlowState;
+import org.deltafi.core.domain.types.IngressFlow;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+@Slf4j
 @Service
-public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowConfiguration> {
+@AllArgsConstructor
+public class IngressFlowValidator {
 
-    @Override
-    public Optional<String> validate(DeltafiRuntimeConfiguration configuration, IngressFlowConfiguration ingressFlowConfiguration) {
-        List<String> errors = runValidateIngressFlow(configuration, ingressFlowConfiguration);
-        if (!errors.isEmpty()) {
-            return Optional.of("Ingress Flow Configuration: " + ingressFlowConfiguration + " has the following errors: \n" + String.join("; ", errors));
+    private final SchemaCompliancyValidator schemaCompliancyValidator;
+
+    /**
+     * Validate the given ingress flow. If errors are found update the
+     * FlowState to invalid and add the errors to the FlowStatus of the ingressFlow
+     * @param ingressFlow IngressFlow that will be validated
+     */
+    public void validate(IngressFlow ingressFlow) {
+        // preserve any variable errors
+        List<FlowConfigError> errors = ingressFlow.getFlowStatus()
+                .getErrors().stream().filter(error -> FlowErrorType.UNRESOLVED_VARIABLE.equals(error.getErrorType()))
+                .collect(Collectors.toList());
+
+        errors.addAll(CommonFlowValidator.validateConfigurationNames(ingressFlow));
+
+        if (isBlank(ingressFlow.getType())) {
+            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                    .configName(ingressFlow.getName())
+                    .message("The ingress flow type cannot be blank").build());
         }
 
-        return Optional.empty();
+        errors.addAll(validateAction(ingressFlow.getLoadAction()));
+
+        // validate the transform actions
+        if (Objects.nonNull(ingressFlow.getTransformActions())) {
+            ingressFlow.getTransformActions().stream()
+                    .map(this::validateAction)
+                    .flatMap(Collection::stream)
+                    .forEach(errors::add);
+        }
+
+        // TODO - refactor the consumes/produces checks once it's determined what checks are necessary
+//        runValidateIngressFlow(ingressFlow);
+
+        if (!errors.isEmpty()) {
+            ingressFlow.getFlowStatus().setState(FlowState.INVALID);
+        } else if(FlowState.INVALID.equals(ingressFlow.getFlowStatus().getState())) {
+            ingressFlow.getFlowStatus().setState(FlowState.STOPPED);
+        }
+
+        ingressFlow.getFlowStatus().setErrors(errors);
     }
 
-    @Override
-    public String getName() {
-        return "Ingress Flow";
+    List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
+        return schemaCompliancyValidator.validate(actionConfiguration);
     }
 
-    List<String> runValidateIngressFlow(DeltafiRuntimeConfiguration config, IngressFlowConfiguration ingressFlowConfiguration) {
+    List<String> runValidateIngressFlow(IngressFlow ingressFlow) {
         List<String> errors = new ArrayList<>();
-        String flowType = ingressFlowConfiguration.getType();
+        String flowType = ingressFlow.getType();
 
         if (isBlank(flowType)) {
             errors.add("Required property type is not set");
         }
 
-        if (isBlank(ingressFlowConfiguration.getName())) {
+        if (isBlank(ingressFlow.getName())) {
             errors.add("Required property name is not set");
         }
 
-        List<TransformActionConfiguration> transformActionConfigurations = getTransformConfigs(config, ingressFlowConfiguration, errors);
-        LoadActionConfiguration loadActionConfiguration = getLoadConfig(config, ingressFlowConfiguration, errors);
+        List<TransformActionConfiguration> transformActionConfigurations = ingressFlow.getTransformActions();
+        LoadActionConfiguration loadActionConfiguration = ingressFlow.getLoadAction();
 
         // if a referenced action could not be found we cannot do further validation of the flow
         if (!errors.isEmpty()) {
@@ -104,30 +142,4 @@ public class IngressFlowValidator implements RuntimeConfigValidator<IngressFlowC
         return errors;
     }
 
-    List<TransformActionConfiguration> getTransformConfigs(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, IngressFlowConfiguration ingressFlowConfiguration, List<String> errors) {
-        List<TransformActionConfiguration> transformActionConfigurations = new ArrayList<>();
-        for (String name : ingressFlowConfiguration.getTransformActions()) {
-            TransformActionConfiguration transformActionConfiguration = deltafiRuntimeConfiguration.getTransformActions().get(name);
-            if (isNull(transformActionConfiguration)) {
-                errors.add(RuntimeConfigValidator.referenceError("Transform Action", name));
-            } else {
-                transformActionConfigurations.add(transformActionConfiguration);
-            }
-        }
-        return transformActionConfigurations;
-    }
-
-    LoadActionConfiguration getLoadConfig(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, IngressFlowConfiguration ingressFlowConfiguration, List<String> errors) {
-        String loadAction = ingressFlowConfiguration.getLoadAction();
-        if (isBlank(loadAction)) {
-            errors.add("Required property loadAction must be set");
-            return null;
-        }
-
-        LoadActionConfiguration loadActionConfiguration = deltafiRuntimeConfiguration.getLoadActions().get(loadAction);
-        if (isNull(loadActionConfiguration)) {
-            errors.add(RuntimeConfigValidator.referenceError("Load Action", loadAction));
-        }
-        return loadActionConfiguration;
-    }
 }

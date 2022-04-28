@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.core.domain.Util;
+import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
-import org.deltafi.core.domain.exceptions.ActionConfigException;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.junit.jupiter.api.Test;
@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class RedisServiceTest {
+
     public static final String EGRESS_CLASS = "org.deltafi.core.action.RestPostEgressAction";
     public static final String FORMAT_CLASS = "org.deltafi.passthrough.action.RoteFormatAction";
 
@@ -35,29 +36,21 @@ class RedisServiceTest {
     @Mock
     JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
 
-    @Mock
-    DeltaFiConfigService configService;
-
     @Captor
     ArgumentCaptor<List<Pair<String, Object>>> listArgCaptor;
 
     @Test
-    void testEnqueue() throws ActionConfigException, JsonProcessingException {
-        List<String> actionNames = new ArrayList<>(Arrays.asList(PASSTHROUGH_FORMAT, SMOKE_FORMAT, PASSTHROUGH_EGRESS));
-
+    void testEnqueue() throws JsonProcessingException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "notIncludedFlow");
         Action action = Action.newBuilder().state(ActionState.COMPLETE).name("FormatAction").build();
         deltaFile.getActions().add(action);
 
-        ActionConfiguration smokeFormatConfig = makeConfig(SMOKE_FORMAT);
-        ActionConfiguration passthroughFormatConfig = makeConfig(PASSTHROUGH_FORMAT);
-        ActionConfiguration passthroughEgressConfig = makeConfig(PASSTHROUGH_EGRESS);
+        ActionInput smokeFormat = makeActionInput(SMOKE_FORMAT, deltaFile);
+        ActionInput passthroughFormat = makeActionInput(PASSTHROUGH_FORMAT, deltaFile);
+        ActionInput passthroughEgress = makeActionInput(PASSTHROUGH_EGRESS, deltaFile);
 
-        Mockito.when(configService.getConfigForAction(SMOKE_FORMAT)).thenReturn(smokeFormatConfig);
-        Mockito.when(configService.getConfigForAction(PASSTHROUGH_FORMAT)).thenReturn(passthroughFormatConfig);
-        Mockito.when(configService.getConfigForAction(PASSTHROUGH_EGRESS)).thenReturn(passthroughEgressConfig);
 
-        redisService.enqueue(actionNames, deltaFile);
+        redisService.enqueue(List.of(smokeFormat, passthroughFormat, passthroughEgress));
         Mockito.verify(jedisKeyedBlockingQueue).put(listArgCaptor.capture());
         List<Pair<String, Object>> capturedList = listArgCaptor.getValue();
         assertEquals(3, capturedList.size());
@@ -92,6 +85,10 @@ class RedisServiceTest {
         config.setApiVersion("0.7.0");
         config.setType(FORMAT_CLASS);
         return config;
+    }
+
+    private ActionInput makeActionInput(String name, DeltaFile deltaFile) {
+        return makeConfig(name).buildActionInput(deltaFile);
     }
 
     private ActionConfiguration makeConfig(final String name) {

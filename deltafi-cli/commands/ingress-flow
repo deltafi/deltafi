@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: ingress-flow
+Subcommands:
+  start
+  stop
+  validate
+  show
+Usage:
+  ingress-flow [SUBCOMMAND] FLOW_NAME"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-ingress-flow.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+log_failed() {
+  cli_log "${red}${BASENAME}: Failed to ${SUBCOMMAND} flow ${cyan}${FLOW_NAME}${normal}"
+  echo -e "${red}Error: ${1}${normal}"
+}
+
+trap cleanup INT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
+SUBCOMMAND=${ARGS[1]}
+FLOW_NAME=${ARGS[2]}
+
+VARIABLES="{\"flowName\": \"$FLOW_NAME\" }"
+case "$SUBCOMMAND" in
+  start)
+    EXTRACT_PATH=".data.startIngressFlow"
+    QUERY="mutation(\$flowName: String!) { startIngressFlow(flowName: \$flowName) }"
+    ;;
+  stop)
+    EXTRACT_PATH=".data.stopIngressFlow"
+    QUERY="mutation(\$flowName: String!) { stopIngressFlow(flowName: \$flowName) }"
+    ;;
+  validate)
+    EXTRACT_PATH=".data.validateIngressFlow"
+    QUERY="query(\$flowName: String!) {validateIngressFlow(flowName: \$flowName) { flowStatus { state errors { configName errorType message } } } }"
+    ;;
+  show)
+    EXTRACT_PATH=".data.getIngressFlow"
+    QUERY="query(\$flowName: String!) {
+             getIngressFlow(flowName: \$flowName) {
+               name
+               description
+               sourcePlugin {
+                 artifactId
+                 groupId
+                 version
+               }
+               flowStatus {
+                 state
+                 errors {
+                   errorType
+                   configName
+                   message
+                 }
+               }
+               type
+               transformActions {
+                 name
+                 type
+                 consumes
+                 produces
+                 parameters
+               }
+               loadAction {
+                 name
+                 type
+                 consumes
+                 parameters
+               }
+               variables {
+                 name
+                 value
+                 description
+                 defaultValue
+                 dataType
+               }
+             }
+           }"
+    ;;
+  *)
+    cli_help_command
+    ;;
+esac
+
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  ERRORS=$(cat ${TMPFILE})
+  log_failed "$ERRORS"
+else
+  DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$DGS_ERRORS" != "" ]]; then
+    log_failed "$DGS_ERRORS"
+  elif  [[ "$SUBCOMMAND" == "validate" || "$SUBCOMMAND" == "show" ]]; then
+    cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"
+  else
+    STARTED=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}")
+    if [[ $STARTED == "true" ]]; then
+      cli_log "Successfully executed ${SUBCOMMAND} for flow ${cyan}${FLOW_NAME}${normal}"
+    else
+      cli_log "${yellow}Flow ${FLOW_NAME} did not ${SUBCOMMAND}.${normal}"
+    fi
+  fi
+fi
+
+cleanup

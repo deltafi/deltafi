@@ -2,146 +2,134 @@ package org.deltafi.core.domain.datafetchers;
 
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
+import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
+import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.EgressFlowPlan;
+import org.deltafi.core.domain.types.IngressFlow;
+import org.deltafi.core.domain.types.IngressFlowPlan;
 
 import java.util.List;
 
-import static java.util.Collections.singletonList;
-
 public class FlowPlanDatafetcherTestHelper {
 
-    public static final SaveFlowPlanProjectionRoot FLOW_PLAN_PROJECTION_ROOT = new SaveFlowPlanProjectionRoot()
-            .name()
-            .description()
-            .version()
-            .draft()
-            .ingressFlowConfigurations()
-            .name()
-            .parent()
-            .egressFlowConfigurations()
-            .name()
-            .parent()
-            .transformActionConfigurations()
-            .name()
-            .parent()
-            .loadActionConfigurations()
-            .name()
-            .parent()
-            .enrichActionConfigurations()
-            .name()
-            .parent()
-            .formatActionConfigurations()
-            .name()
-            .parent()
-            .validateActionConfigurations()
-            .name()
-            .parent()
-            .egressActionConfigurations()
-            .name()
-            .parent()
-            .sourcePlugin()
-            .groupId()
-            .artifactId()
-            .version()
-            .parent()
-            .variables()
-            .name()
-            .dataType()
-            .parent()
-            .description()
-            .defaultValue()
-            .required()
-            .parent();
+    public static final PluginCoordinates PLUGIN_COORDINATES = PluginCoordinates.builder().artifactId("test-plugin").groupId("org.deltafi").version("1.0.0").build();
 
-    public static final String DESCRIPTION = "description";
-    public static final String VERSION = "version";
-
-    public static List<FlowPlan> getFlowPlans(DgsQueryExecutor dgsQueryExecutor) {
-        FlowPlansProjectionRoot projection = new FlowPlansProjectionRoot().name();
-
-        FlowPlansGraphQLQuery flowPlansQuery = FlowPlansGraphQLQuery.newRequest().build();
-
-        GraphQLQueryRequest graphQLQueryRequest =
-                new GraphQLQueryRequest(flowPlansQuery, projection);
-
-        TypeRef<List<FlowPlan>> listOfFlowPlans = new TypeRef<>() {
-        };
-
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + flowPlansQuery.getOperationName(),
-                listOfFlowPlans);
+    public static IngressFlowPlan getIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetIngressFlowPlanGraphQLQuery.newRequest().planName("ingressPlan").build(), new GetIngressFlowPlanProjectionRoot().name(), IngressFlowPlan.class);
     }
 
-    public static String exportFlowPlan(String planName, DgsQueryExecutor dgsQueryExecutor) {
-        ExportFlowPlanGraphQLQuery exportFlowPlan = ExportFlowPlanGraphQLQuery.newRequest().name(planName).build();
-
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(exportFlowPlan, null);
-
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + exportFlowPlan.getOperationName(),
-                String.class);
+    public static EgressFlowPlan getEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name(), EgressFlowPlan.class);
     }
 
-    public static boolean removeFlowPlan(String planName, DgsQueryExecutor dgsQueryExecutor) {
-        RemoveFlowPlanGraphQLQuery removeFlowPlan = RemoveFlowPlanGraphQLQuery.newRequest().name(planName).build();
-
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(removeFlowPlan, null);
-
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + removeFlowPlan.getOperationName(),
-                Boolean.class);
+    public static IngressFlow validateIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, ValidateIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build(), new ValidateIngressFlowProjectionRoot().name(), IngressFlow.class);
     }
 
-    public static boolean verifyFlowPlan(FlowPlan plan, String name, boolean draft) {
-        return plan.getName().equals(name) &&
-                plan.getDescription().equals(DESCRIPTION) &&
-                plan.getVersion().equals(VERSION) &&
-                plan.getDraft() == draft &&
-                plan.getIngressFlowConfigurations().size() == 1 &&
-                plan.getEgressFlowConfigurations() == null;
+    public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, ValidateEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build(), new ValidateIngressFlowProjectionRoot().name(), EgressFlow.class);
     }
 
-    public static FlowPlan saveFlowPlan(String planName, boolean draft, DgsQueryExecutor dgsQueryExecutor) {
-        IngressFlowConfigurationInput ingressInput = IngressFlowConfigurationInput.newBuilder()
-                .name("name")
-                .loadAction("loader")
-                .transformActions(singletonList("transformer"))
-                .type("test-type")
+    public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
+        TypeRef<List<Flows>> typeRef = new TypeRef<>() {};
+        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().ingressFlows().name().parent().egressFlows().name().root(), typeRef);
+    }
+
+    public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
+                new GetAllFlowsProjectionRoot().ingress().name().parent().egress().name().root(), SystemFlows.class);
+    }
+
+    public static IngressFlow getIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build(),
+                new GetIngressFlowProjectionRoot().name(), IngressFlow.class);
+    }
+
+    public static EgressFlow getEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build(),
+                new GetEgressFlowProjectionRoot().name(), EgressFlow.class);
+    }
+
+    public static List<ActionFamily> getActionFamilies(DgsQueryExecutor dgsQueryExecutor) {
+        TypeRef<List<ActionFamily>> typeRef = new TypeRef<>() {};
+        return executeQuery(dgsQueryExecutor, GetActionNamesByFamilyGraphQLQuery.newRequest().build(), new GetActionNamesByFamilyProjectionRoot().family().actionNames(), typeRef);
+    }
+
+    public static IngressFlow saveIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").consumes("json").type("org.deltafi.action.Loader").build();
+        IngressFlowPlanInput input = IngressFlowPlanInput.newBuilder()
+                .sourcePlugin(PLUGIN_COORDINATES)
+                .name("flowPlan")
+                .description("description")
+                .type("json")
+                .loadAction(loadActionConfigurationInput)
                 .build();
 
-        PluginCoordinatesInput plugin = PluginCoordinatesInput.newBuilder()
-                .artifactId("plugin-a").groupId("dev.plugin").version("1.0").build();
+        return executeQuery(dgsQueryExecutor, SaveIngressFlowPlanGraphQLQuery.newRequest().ingressFlowPlan(input).build(), new SaveIngressFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), IngressFlow.class);
+    }
 
-        VariableInput variable = VariableInput.newBuilder()
-                .dataType(DATA_TYPE.STRING).name("egressUrl")
-                .description("The URL to post the DeltaFile to")
-                .defaultValue("http://deltafi-egress-sink-service")
-                .required(true).build();
-
-        FlowPlanInput input = FlowPlanInput.newBuilder()
-                .name(planName)
-                .description(DESCRIPTION)
-                .version(VERSION)
-                .draft(draft)
-                .ingressFlowConfigurations(singletonList(ingressInput))
-                .sourcePlugin(plugin)
-                .variables(List.of(variable))
+    public static EgressFlow saveEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        FormatActionConfigurationInput format = FormatActionConfigurationInput.newBuilder().name("format").type("org.deltafi.actions.Formatter").requiresDomains(List.of("domain")).build();
+        EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
+        EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
+                .name("flowPlan")
+                .sourcePlugin(PLUGIN_COORDINATES)
+                .description("description")
+                .formatAction(format)
+                .egressAction(egress)
                 .build();
+        return executeQuery(dgsQueryExecutor, SaveEgressFlowPlanGraphQLQuery.newRequest().egressFlowPlan(input).build(), new SaveEgressFlowPlanProjectionRoot().name(), EgressFlow.class);
+    }
 
-        SaveFlowPlanGraphQLQuery saveFlowPlan = SaveFlowPlanGraphQLQuery
-                .newRequest().flowPlan(input).build();
+    public static boolean removeIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, RemoveIngressFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
+    }
 
-        GraphQLQueryRequest graphQLQueryRequest =
-                new GraphQLQueryRequest(saveFlowPlan, FLOW_PLAN_PROJECTION_ROOT);
+    public static boolean removeEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, RemoveEgressFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
+    }
 
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + saveFlowPlan.getOperationName(),
-                FlowPlan.class);
+    public static boolean startIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StartIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build());
+    }
+
+    public static boolean stopIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StopIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build());
+    }
+
+    public static boolean startEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StartEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build());
+    }
+
+    public static boolean stopEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StopEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build());
+    }
+
+    public static boolean savePluginVariables(DgsQueryExecutor dgsQueryExecutor) {
+        List<VariableInput> variableInputs = List.of(VariableInput.newBuilder().name("var").defaultValue("default").required(false).description("description").dataType(DATA_TYPE.STRING).build());
+        PluginVariablesInput pluginVariablesInput = PluginVariablesInput.newBuilder().sourcePlugin(PLUGIN_COORDINATES).variables(variableInputs).build();
+        return executeQuery(dgsQueryExecutor, SavePluginVariablesGraphQLQuery.newRequest().pluginVariablesInput(pluginVariablesInput).build());
+    }
+
+    public static boolean setPluginVariableValues(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, SetPluginVariableValuesGraphQLQuery.newRequest().pluginCoordinates(PLUGIN_COORDINATES).variables(List.of(new KeyValue("key", "value"))).build());
+    }
+
+    static <T> T executeQuery(DgsQueryExecutor dgsQueryExecutor, GraphQLQuery query, BaseProjectionNode projection, TypeRef<T> typeRef) {
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(new GraphQLQueryRequest(query, projection).serialize(), "data." + query.getOperationName(), typeRef);
+    }
+
+    static boolean executeQuery(DgsQueryExecutor dgsQueryExecutor, GraphQLQuery query) {
+        return executeQuery(dgsQueryExecutor, query, null, Boolean.class);
+    }
+
+    static <T> T executeQuery(DgsQueryExecutor dgsQueryExecutor, GraphQLQuery query, BaseProjectionNode projection, Class<T> clazz) {
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(new GraphQLQueryRequest(query, projection).serialize(), "data." + query.getOperationName(), clazz);
     }
 }

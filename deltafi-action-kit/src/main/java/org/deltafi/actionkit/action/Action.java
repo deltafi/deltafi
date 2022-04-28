@@ -5,9 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +16,6 @@ import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.actionkit.config.ActionKitConfig;
 import org.deltafi.actionkit.config.ActionVersionProperty;
 import org.deltafi.actionkit.service.ActionEventService;
-import org.deltafi.actionkit.service.DomainGatewayService;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
@@ -28,6 +24,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.trace.DeltafiSpan;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.PostConstruct;
@@ -46,9 +43,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class Action<P extends ActionParameters> {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
-
-    @Inject
-    protected DomainGatewayService domainGatewayService;
 
     @Inject
     protected ContentStorageService contentStorageService;
@@ -76,11 +70,7 @@ public abstract class Action<P extends ActionParameters> {
     private final ActionType actionType;
     private final Class<P> paramType;
 
-    private GraphQLQuery registrationQuery = null;
-    private BaseProjectionNode registrationProjection = null;
-
     private final ScheduledExecutorService startListeningExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final ScheduledExecutorService registerParamSchemaExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @SuppressWarnings({"unused", "EmptyMethod"})
     public void start(@Observes StartupEvent start) {
@@ -94,8 +84,6 @@ public abstract class Action<P extends ActionParameters> {
         log.info("Starting action: {}", getFeedString());
         startListeningExecutor.scheduleWithFixedDelay(this::startListening,
                 config.actionPollingInitialDelayMs(), config.actionPollingPeriodMs(), TimeUnit.MILLISECONDS);
-        registerParamSchemaExecutor.scheduleWithFixedDelay(this::registerParamSchema,
-                config.actionRegistrationInitialDelayMs(), config.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
     }
 
     private void startListening() {
@@ -148,15 +136,6 @@ public abstract class Action<P extends ActionParameters> {
         return this.getClass().getCanonicalName();
     }
 
-    private void registerParamSchema() {
-        try {
-            domainGatewayService.submit(
-                    new GraphQLQueryRequest(doGetRegistrationQuery(), doGetRegistrationProjection()));
-        } catch (Exception exception) {
-            log.error("Could not send action parameter schema", exception);
-        }
-    }
-
     public final String getVersion() {
         if (Objects.nonNull(actionVersionProperty)) {
             return actionVersionProperty.getVersion();
@@ -181,29 +160,11 @@ public abstract class Action<P extends ActionParameters> {
     protected Map<String, Object> getDefinition() {
         JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
         Map<String, Object> definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>(){});
-        log.trace("Registering schema: {}", schemaJson.toPrettyString());
+        log.trace("Action schema: {}", schemaJson.toPrettyString());
         return definition;
     }
 
-    private GraphQLQuery doGetRegistrationQuery() {
-        if (Objects.isNull(registrationQuery)) {
-            registrationQuery = getRegistrationQuery();
-        }
-
-        return registrationQuery;
-    }
-
-    public abstract GraphQLQuery getRegistrationQuery();
-
-    private BaseProjectionNode doGetRegistrationProjection() {
-        if (Objects.isNull(registrationProjection)) {
-            registrationProjection = getRegistrationProjection();
-        }
-
-        return registrationProjection;
-    }
-
-    protected abstract BaseProjectionNode getRegistrationProjection();
+    public abstract void registerSchema(ActionRegistrationInput a);
 
     protected String getClassCanonicalName() {
         return this instanceof Subclass ? this.getClass().getSuperclass().getCanonicalName() : this.getClass().getCanonicalName();

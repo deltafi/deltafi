@@ -1,134 +1,76 @@
 package org.deltafi.core.domain.validation;
 
-import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
-import org.deltafi.core.domain.configuration.EgressFlowConfiguration;
+import lombok.AllArgsConstructor;
+import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.generated.types.FlowConfigError;
+import org.deltafi.core.domain.generated.types.FlowErrorType;
+import org.deltafi.core.domain.generated.types.FlowState;
+import org.deltafi.core.domain.types.EgressFlow;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 @Service
-public class EgressFlowValidator implements RuntimeConfigValidator<EgressFlowConfiguration> {
+@AllArgsConstructor
+public class EgressFlowValidator {
 
-    @Override
-    public Optional<String> validate(DeltafiRuntimeConfiguration configuration, EgressFlowConfiguration egressFlowConfiguration) {
-        List<String> errors = runValidateEgressFlow(configuration, egressFlowConfiguration);
+    private final SchemaCompliancyValidator schemaCompliancyValidator;
+
+    public void validate(EgressFlow egressFlow) {
+        // preserve any variable errors
+        List<FlowConfigError> errors = egressFlow.getFlowStatus()
+                .getErrors().stream().filter(error -> FlowErrorType.UNRESOLVED_VARIABLE.equals(error.getErrorType()))
+                .collect(Collectors.toList());
+
+        errors.addAll(CommonFlowValidator.validateConfigurationNames(egressFlow));
+
+        errors.addAll(validateActions(egressFlow.getEnrichActions()));
+        errors.addAll(validateAction(egressFlow.getFormatAction()));
+        errors.addAll(validateAction(egressFlow.getEgressAction()));
+        errors.addAll(validateActions(egressFlow.getValidateActions()));
+        errors.addAll(excludedAndIncluded(egressFlow));
+
         if (!errors.isEmpty()) {
-            return Optional.of("Egress Flow Configuration: " + egressFlowConfiguration + " has the following errors: \n" + String.join("; ", errors));
+            egressFlow.getFlowStatus().setState(FlowState.INVALID);
+        } else if(FlowState.INVALID.equals(egressFlow.getFlowStatus().getState())) {
+            egressFlow.getFlowStatus().setState(FlowState.STOPPED);
         }
 
-        return Optional.empty();
+        egressFlow.getFlowStatus().setErrors(errors);
     }
 
-    @Override
-    public String getName() {
-        return "Egress Flow";
-    }
-
-    List<String> runValidateEgressFlow(DeltafiRuntimeConfiguration config, EgressFlowConfiguration egressFlowConfiguration) {
-        List<String> errors = new ArrayList<>();
-
-        getEgressActionErrors(config, egressFlowConfiguration).ifPresent(errors::add);
-        getFormatActionErrors(config, egressFlowConfiguration).ifPresent(errors::add);
-        errors.addAll(getEnrichActionErrors(config, egressFlowConfiguration));
-        errors.addAll(getValidateActionErrors(config, egressFlowConfiguration));
-
-        if (isBlank(egressFlowConfiguration.getName())) {
-            errors.add("Required property name is not set");
+    List<FlowConfigError> validateActions(List<? extends ActionConfiguration> actionConfigurations) {
+        if (Objects.isNull(actionConfigurations)) {
+            return Collections.emptyList();
         }
 
-        errors.addAll(missingIngressCheck(config, egressFlowConfiguration.getExcludeIngressFlows()));
-        errors.addAll(missingIngressCheck(config, egressFlowConfiguration.getIncludeIngressFlows()));
-        errors.addAll(excludedAndIncluded(egressFlowConfiguration));
-
-        return errors;
-    }
-
-    List<String> missingIngressCheck(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, List<String> ingressFlows) {
-        if (isNull(ingressFlows)) {
-            return emptyList();
-        }
-
-        return ingressFlows.stream()
-                .filter(flowName -> isIngressFlowMissing(deltafiRuntimeConfiguration, flowName))
-                .map(flowName -> RuntimeConfigValidator.referenceError("Ingress Flow", flowName))
+        return actionConfigurations.stream()
+                .map(this::validateAction)
+                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
 
-    List<String> excludedAndIncluded(EgressFlowConfiguration egressFlowConfiguration) {
-        if (nonNull(egressFlowConfiguration.getExcludeIngressFlows()) && nonNull(egressFlowConfiguration.getIncludeIngressFlows())) {
-            return egressFlowConfiguration.getExcludeIngressFlows().stream()
-                    .filter(flowName -> egressFlowConfiguration.getIncludeIngressFlows().contains(flowName))
-                    .map(flowName -> "Ingress Flow " + flowName + " is both included and excluded")
+    List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
+        return schemaCompliancyValidator.validate(actionConfiguration);
+    }
+
+    List<FlowConfigError> excludedAndIncluded(EgressFlow egressFlow) {
+        if (Objects.nonNull(egressFlow.getExcludeIngressFlows()) && Objects.nonNull(egressFlow.getIncludeIngressFlows())) {
+            return egressFlow.getExcludeIngressFlows().stream()
+                    .filter(flowName -> egressFlow.getIncludeIngressFlows().contains(flowName))
+                    .map(flowName -> excludedAndIncludedError(egressFlow.getName(), flowName))
                     .collect(Collectors.toList());
         }
 
-        return emptyList();
+        return Collections.emptyList();
     }
 
-    Optional<String> getEgressActionErrors(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, EgressFlowConfiguration egressFlowConfiguration) {
-        String egressAction = egressFlowConfiguration.getEgressAction();
-
-        if (isBlank(egressAction)) {
-            return Optional.of("Required property egressAction is not set");
-        } else if (!deltafiRuntimeConfiguration.getEgressActions().containsKey(egressAction)) {
-            return Optional.of(RuntimeConfigValidator.referenceError("Egress Action", egressAction));
-        }
-
-        return Optional.empty();
+    FlowConfigError excludedAndIncludedError(String egressFlow, String ingressFlow) {
+        FlowConfigError configError = new FlowConfigError();
+        configError.setConfigName(egressFlow);
+        configError.setErrorType(FlowErrorType.INVALID_CONFIG);
+        configError.setMessage("Flow: " + ingressFlow + " is both included and excluded");
+        return configError;
     }
-
-    Optional<String> getFormatActionErrors(DeltafiRuntimeConfiguration deltafiRuntimeConfiguration, EgressFlowConfiguration egressFlowConfiguration) {
-        String formatAction = egressFlowConfiguration.getFormatAction();
-
-        if (isBlank(formatAction)) {
-            return Optional.of("Required property formatAction is not set");
-        } else if (!deltafiRuntimeConfiguration.getFormatActions().containsKey(formatAction)) {
-            return Optional.of(RuntimeConfigValidator.referenceError("Format Action", formatAction));
-        }
-
-        return Optional.empty();
-    }
-
-    List<String> getEnrichActionErrors(DeltafiRuntimeConfiguration config, EgressFlowConfiguration egressFlowConfiguration) {
-        if (isNull(egressFlowConfiguration.getEnrichActions())) {
-            return emptyList();
-        }
-
-        return egressFlowConfiguration.getEnrichActions().stream()
-                .filter(enrichAction -> isEnrichActionMissing(config, enrichAction))
-                .map(name -> RuntimeConfigValidator.referenceError("Enrich Action", name))
-                .collect(Collectors.toList());
-    }
-
-    List<String> getValidateActionErrors(DeltafiRuntimeConfiguration config, EgressFlowConfiguration egressFlowConfiguration) {
-        if (isNull(egressFlowConfiguration.getValidateActions())) {
-            return emptyList();
-        }
-
-        return egressFlowConfiguration.getValidateActions().stream()
-                .filter(validateAction -> isValidateActionMissing(config, validateAction))
-                .map(name -> RuntimeConfigValidator.referenceError("Validate Action", name))
-                .collect(Collectors.toList());
-    }
-
-    boolean isIngressFlowMissing(DeltafiRuntimeConfiguration runtimeConfiguration, String flowName) {
-        return !runtimeConfiguration.getIngressFlows().containsKey(flowName);
-    }
-
-    boolean isEnrichActionMissing(DeltafiRuntimeConfiguration runtimeConfiguration, String actionName) {
-        return !runtimeConfiguration.getEnrichActions().containsKey(actionName);
-    }
-
-    boolean isValidateActionMissing(DeltafiRuntimeConfiguration runtimeConfiguration, String actionName) {
-        return !runtimeConfiguration.getValidateActions().containsKey(actionName);
-    }
-
 }

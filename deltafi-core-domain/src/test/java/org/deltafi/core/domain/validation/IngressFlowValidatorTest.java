@@ -1,14 +1,20 @@
 package org.deltafi.core.domain.validation;
 
-import org.deltafi.core.domain.configuration.DeltafiRuntimeConfiguration;
-import org.deltafi.core.domain.configuration.IngressFlowConfiguration;
+import org.assertj.core.api.Assertions;
+import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
 import org.deltafi.core.domain.configuration.TransformActionConfiguration;
+import org.deltafi.core.domain.generated.types.FlowConfigError;
+import org.deltafi.core.domain.generated.types.FlowErrorType;
+import org.deltafi.core.domain.generated.types.FlowState;
+import org.deltafi.core.domain.generated.types.FlowStatus;
+import org.deltafi.core.domain.types.IngressFlow;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
@@ -16,45 +22,118 @@ import static java.util.Collections.emptySet;
 import static java.util.List.of;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(MockitoExtension.class)
 class IngressFlowValidatorTest {
 
-    IngressFlowValidator ingressFlowValidator = new IngressFlowValidator();
+    @InjectMocks
+    IngressFlowValidator ingressFlowValidator;
+
+    @Mock
+    SchemaCompliancyValidator schemaCompliancyValidator;
+
+    @Captor
+    ArgumentCaptor<ActionConfiguration> actionConfigCaptor;
 
     @Test
     void validate() {
-        Optional<String> error = ingressFlowValidator.validate(new DeltafiRuntimeConfiguration(), new IngressFlowConfiguration());
-        assertThat(error)
-                .isPresent()
-                .contains("Ingress Flow Configuration: IngressFlowConfiguration{name='null',apiVersion='null',type='null',transformActions='[]',loadAction='null'} has the following errors: \n" +
-                        "Required property type is not set; Required property name is not set; Required property loadAction must be set");
+        IngressFlow ingressFlow = new IngressFlow();
+        ingressFlow.setName("ingress");
+        TransformActionConfiguration transform1 = new TransformActionConfiguration();
+        transform1.setName("transform1");
+        TransformActionConfiguration transform2 = new TransformActionConfiguration();
+        transform1.setName("transform2");
+        LoadActionConfiguration load = new LoadActionConfiguration();
+        load.setName("load");
+
+        ingressFlow.setType("json");
+        ingressFlow.setTransformActions(List.of(transform1, transform2));
+        ingressFlow.setLoadAction(load);
+
+        ingressFlowValidator.validate(ingressFlow);
+        Mockito.verify(schemaCompliancyValidator, Mockito.times(3)).validate(actionConfigCaptor.capture());
+
+        List<ActionConfiguration> validatedActions = actionConfigCaptor.getAllValues();
+        Assertions.assertThat(validatedActions).hasSize(3)
+                .contains(transform1)
+                .contains(transform2)
+                .contains(load);
+
+        Assertions.assertThat(ingressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
+        Assertions.assertThat(ingressFlow.getFlowStatus().getErrors()).isEmpty();
     }
 
     @Test
-    void runValidateIngressFlow() {
-        List<String> errors = ingressFlowValidator.runValidateIngressFlow(new DeltafiRuntimeConfiguration(), new IngressFlowConfiguration());
-        assertThat(errors)
-                .hasSize(3)
-                .contains("Required property type is not set")
-                .contains("Required property name is not set")
-                .contains("Required property loadAction must be set");
+    void blankNameAndTypeError() {
+        IngressFlow ingressFlow = new IngressFlow();
+        ingressFlow.setName("  ");
+        ingressFlow.setType("  ");
+
+        LoadActionConfiguration load = new LoadActionConfiguration();
+        load.setName("load");
+        ingressFlow.setLoadAction(load);
+
+        ingressFlowValidator.validate(ingressFlow);
+
+        Assertions.assertThat(ingressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
+        Assertions.assertThat(ingressFlow.getFlowStatus().getErrors())
+                .hasSize(2)
+                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("  ").message("The ingress flow type cannot be blank").build())
+                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("  ").message("The flow name cannot be blank").build());
     }
 
     @Test
-    void runValidateIngressFlow_allValid() {
-        IngressFlowConfiguration ingressConfig = new IngressFlowConfiguration();
-        ingressConfig.setName("ingress");
-        ingressConfig.setType("json");
-        ingressConfig.setLoadAction("l1");
+    void duplicateActionNameErrors() {
+        IngressFlow ingressFlow = new IngressFlow();
+        ingressFlow.setName("flow");
+        ingressFlow.setType("json");
 
-        DeltafiRuntimeConfiguration runtimeConfig = new DeltafiRuntimeConfiguration();
+        LoadActionConfiguration load = new LoadActionConfiguration();
+        load.setName("action");
+        load.setType("org.deltafi.load.Action");
+        ingressFlow.setLoadAction(load);
 
-        LoadActionConfiguration l1 = new LoadActionConfiguration();
-        l1.setConsumes("json");
-        runtimeConfig.getLoadActions().put("l1", l1);
-        List<String> errors = ingressFlowValidator.runValidateIngressFlow(runtimeConfig, ingressConfig);
+        TransformActionConfiguration transform1 = new TransformActionConfiguration();
+        transform1.setName("action");
+        transform1.setType("org.deltafi.transform.Action1");
+        TransformActionConfiguration transform2 = new TransformActionConfiguration();
+        transform2.setName("transform");
+        transform2.setType("org.deltafi.transform.Action2");
+        TransformActionConfiguration transform3 = new TransformActionConfiguration();
+        transform3.setName("transform");
+        transform3.setType("org.deltafi.transform.Action3");
 
-        assertThat(errors).isEmpty();
+        ingressFlow.setTransformActions(List.of(transform1, transform2, transform3));
+
+        ingressFlowValidator.validate(ingressFlow);
+
+        Assertions.assertThat(ingressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
+        Assertions.assertThat(ingressFlow.getFlowStatus().getErrors())
+                .hasSize(2)
+                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("action")
+                        .message("The action name: action is duplicated for the following action types: org.deltafi.load.Action, org.deltafi.transform.Action1").build())
+                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("transform").message("The action name: transform is duplicated for the following action types: org.deltafi.transform.Action2, org.deltafi.transform.Action3").build());
     }
+
+    @Test
+    void validate_createErrors() {
+        IngressFlow ingressFlow = new IngressFlow();
+        ingressFlow.setName("ingress");
+        LoadActionConfiguration load = new LoadActionConfiguration();
+        load.setName("fail");
+        ingressFlow.setType("json");
+        ingressFlow.setLoadAction(load);
+
+        FlowConfigError expected = expectedError();
+        Mockito.when(schemaCompliancyValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
+                .thenReturn(List.of(expected));
+
+        ingressFlowValidator.validate(ingressFlow);
+
+        FlowStatus status = ingressFlow.getFlowStatus();
+        Assertions.assertThat(status.getState()).isEqualTo(FlowState.INVALID);
+        Assertions.assertThat(status.getErrors()).hasSize(1).contains(expected);
+    }
+
 
     @Test
     void validateTransformsAreReachable_valid() {
@@ -123,59 +202,12 @@ class IngressFlowValidatorTest {
                 .contains("None of the configured Load Actions in this flow consume the ingress flow type: flowType");
     }
 
-    @Test
-    void getTransformConfigs_valid() {
-        List<String> errors = new ArrayList<>();
-
-        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.getTransformActions().add("transformer");
-
-        DeltafiRuntimeConfiguration runtimeConfiguration = new DeltafiRuntimeConfiguration();
-        runtimeConfiguration.getTransformActions().put("transformer", new TransformActionConfiguration());
-
-        List<TransformActionConfiguration> found = ingressFlowValidator.getTransformConfigs(runtimeConfiguration, ingressFlowConfiguration, errors);
-        assertThat(found).hasSize(1);
-
-        assertThat(errors).isEmpty();
+    FlowConfigError expectedError() {
+        FlowConfigError actionConfigError = new FlowConfigError();
+        actionConfigError.setConfigName("brokenAction");
+        actionConfigError.setErrorType(FlowErrorType.UNREGISTERED_ACTION);
+        actionConfigError.setMessage("Action: brokenAction has not been registered with the system");
+        return actionConfigError;
     }
 
-    @Test
-    void getTransformConfigs_missing() {
-        List<String> errors = new ArrayList<>();
-
-        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.getTransformActions().add("transformer");
-
-        List<TransformActionConfiguration> found = ingressFlowValidator.getTransformConfigs(new DeltafiRuntimeConfiguration(), ingressFlowConfiguration, errors);
-        assertThat(found).isEmpty();
-        assertThat(errors).hasSize(1).contains("The referenced Transform Action named: transformer was not found");
-    }
-
-    @Test
-    void getLoadConfig_valid() {
-        List<String> errors = new ArrayList<>();
-
-        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.setLoadAction("loader");
-
-        DeltafiRuntimeConfiguration runtimeConfiguration = new DeltafiRuntimeConfiguration();
-        runtimeConfiguration.getLoadActions().put("loader", new LoadActionConfiguration());
-
-        LoadActionConfiguration found = ingressFlowValidator.getLoadConfig(runtimeConfiguration, ingressFlowConfiguration, errors);
-        assertThat(found).isNotNull();
-
-        assertThat(errors).isEmpty();
-    }
-
-    @Test
-    void getLoadConfig_missing() {
-        List<String> errors = new ArrayList<>();
-
-        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.setLoadAction("loader");
-
-        LoadActionConfiguration found = ingressFlowValidator.getLoadConfig(new DeltafiRuntimeConfiguration(), ingressFlowConfiguration, errors);
-        assertThat(found).isNull();
-        assertThat(errors).hasSize(1).contains("The referenced Load Action named: loader was not found");
-    }
 }
