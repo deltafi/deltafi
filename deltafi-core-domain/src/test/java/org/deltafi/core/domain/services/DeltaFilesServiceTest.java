@@ -1,6 +1,7 @@
 package org.deltafi.core.domain.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
@@ -8,22 +9,25 @@ import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.delete.DeleteConstants;
+import org.deltafi.core.domain.generated.types.Action;
+import org.deltafi.core.domain.generated.types.ActionState;
+import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.generated.types.IngressInput;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,6 +55,9 @@ class DeltaFilesServiceTest {
     @SuppressWarnings("unused")
     @Mock
     StateMachine stateMachine;
+
+    @Mock
+    EgressFlowService egressFlowService;
 
     @InjectMocks
     DeltaFilesService deltaFilesService;
@@ -101,6 +108,43 @@ class DeltaFilesServiceTest {
         verify(redisService).enqueue(deltaFileArgumentCaptor.capture());
         Util.assertEqualsIgnoringDates(deltaFile1.forQueue(DeleteConstants.DELETE_ACTION), deltaFileArgumentCaptor.getValue().get(0).getDeltaFile());
         Util.assertEqualsIgnoringDates(deltaFile2.forQueue(DeleteConstants.DELETE_ACTION), deltaFileArgumentCaptor.getValue().get(1).getDeltaFile());
+    }
+
+    @Test
+    void testRequeue_actionFound() {
+        OffsetDateTime modified = OffsetDateTime.now();
+        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.getActions().add(Action.newBuilder().name("action").state(ActionState.QUEUED).modified(modified).build());
+
+        ActionConfiguration actionConfiguration = new FormatActionConfiguration();
+        Mockito.when(egressFlowService.findActionConfig("action")).thenReturn(actionConfiguration);
+
+        List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
+        Assertions.assertThat(toQueue).hasSize(1);
+        Mockito.verifyNoInteractions(stateMachine);
+    }
+
+    @Test
+    void testRequeue_actionNotFound() {
+        OffsetDateTime modified = OffsetDateTime.now();
+        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        deltaFile.getActions().add(Action.newBuilder().name("action").state(ActionState.QUEUED).modified(modified).build());
+
+        List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
+        Assertions.assertThat(toQueue).isEmpty();
+
+        ArgumentCaptor<DeltaFile> deltaFileCaptor = ArgumentCaptor.forClass(DeltaFile.class);
+        Mockito.verify(stateMachine, times(2)).advance(deltaFileCaptor.capture());
+
+        List<DeltaFile> captured = deltaFileCaptor.getAllValues();
+
+        DeltaFile erroredDeltaFile = captured.get(1);
+        Optional<Action> maybeAction = erroredDeltaFile.actionNamed("action");
+        Assertions.assertThat(maybeAction).isPresent();
+        Action action = maybeAction.get();
+        Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
+        Assertions.assertThat(action.getErrorCause()).isEqualTo("Action named action is no longer running");
     }
 
 }

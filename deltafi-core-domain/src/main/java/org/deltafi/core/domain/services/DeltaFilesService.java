@@ -12,7 +12,6 @@ import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.converters.ErrorConverter;
 import org.deltafi.core.domain.delete.DeleteConstants;
-import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.exceptions.UnexpectedActionException;
 import org.deltafi.core.domain.exceptions.UnknownTypeException;
 import org.deltafi.core.domain.generated.types.*;
@@ -468,10 +467,11 @@ public class DeltaFilesService {
         requeuedDeltaFiles.forEach(deltaFile -> enqueueActions(requeuedActionInput(deltaFile, modified)));
     }
 
-    private List<ActionInput> requeuedActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
+    List<ActionInput> requeuedActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream()
                 .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
                 .map(action -> toActionInput(action, deltaFile))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -486,8 +486,19 @@ public class DeltaFilesService {
         }
 
         if (Objects.isNull(actionConfiguration)) {
-            throw new DeltafiConfigurationException("Action named " + action.getName() + " could not be found");
+            String errorMessage = "Action named " + action.getName() + " is no longer running";
+            log.error(errorMessage);
+            ErrorInput error = ErrorInput.newBuilder().cause(errorMessage).build();
+            ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(action.getName()).error(error).build();
+            try {
+                this.error(deltaFile, event);
+            } catch (JsonProcessingException ex) {
+                log.error("Failed to create error for " + deltaFile.getDid() + " with event " + event + ": " + ex.getMessage());
+            }
+
+            return null;
         }
+
         return actionConfiguration.buildActionInput(deltaFile);
     }
 
