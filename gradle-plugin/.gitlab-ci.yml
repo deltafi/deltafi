@@ -1,23 +1,23 @@
-.action_kit:
+.gradle_plugin:
   variables:
-    PROJECT_NAME: deltafi-action-kit
+    PROJECT_NAME: gradle-plugin
 
-action_kit:publish:
+gradle_plugin:publish:
   stage: publish
   extends:
-    - .action_kit
+    - .gradle_plugin
     - .gradle
     - .publish
   needs:
     - job: "build"
   script: ${GRADLE} ${PROJECT_NAME}:publish
 
-# action_kit:coverage_report:
+# gradle_plugin:coverage_report:
 #   stage: publish
 #   extends:
-#     - .action_kit
+#     - .gradle_plugin
 #     - .coverage_report
 #   needs:
 #     - job: "build"
 #   dependencies:
-#     - action_kit:test
+#     - gradle_plugin:test
