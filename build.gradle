@@ -27,6 +27,10 @@ allprojects { project ->
 subprojects {
     apply plugin: 'java'
 
+    ext {
+        excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12", "**/*.yaml", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar", "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**"]
+    }
+
     java {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

@@ -100,7 +100,7 @@ trigger_deltafi_stix:
 build:
   stage: build
   script:
-    - ${GRADLE} --rerun-tasks assemble test
+    - ${GRADLE} --rerun-tasks license assemble test
   extends:
     - .gradle
   artifacts:
@@ -111,9 +111,6 @@ build:
       - "**/build"
       - ".gradle"
 
-include:
-  - local: '*/.gitlab-ci.yml'
-
 hub_docker_quota_check:
     stage: build
     image: alpine:latest
@@ -123,3 +120,7 @@ hub_docker_quota_check:
     script:
       - |
         TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq --raw-output .token) && curl --head --header "Authorization: Bearer $TOKEN" "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>&1
+
+include:
+  - local: '*/.gitlab-ci.yml'
+

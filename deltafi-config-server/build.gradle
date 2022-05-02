@@ -3,6 +3,12 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'org.springframework.boot' version "${springBootVersion}"
     id "com.palantir.docker" version "${palantirDockerVersion}"
+    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+}
+license {
+    excludes(excludeFromLicense)
+    header(rootProject.file('HEADER'))
+    mapping("graphql", "SCRIPT_STYLE")
 }
 
 bootJar {

@@ -1,8 +1,15 @@
 plugins {
+	id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 	id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'org.springframework.boot' version "${springBootVersion}"
 	id "com.palantir.docker" version "${palantirDockerVersion}"
+}
+
+license {
+	mapping("graphql", "SCRIPT_STYLE")
+	header(rootProject.file('HEADER'))
+	excludes(excludeFromLicense)
 }
 
 bootJar {

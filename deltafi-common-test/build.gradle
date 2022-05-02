@@ -1,3 +1,13 @@
+plugins {
+    id 'idea'
+    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+}
+
+license {
+    header(rootProject.file('HEADER'))
+    excludes(excludeFromLicense)
+}
+
 dependencies {
     implementation "io.minio:minio:${minioVersion}"
     implementation 'org.testcontainers:testcontainers:1.16.3'

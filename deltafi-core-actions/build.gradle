@@ -2,6 +2,12 @@ plugins {
     id 'io.quarkus'
     id "com.palantir.docker" version "${palantirDockerVersion}"
     id 'org.kordamp.gradle.jandex' version '0.11.0'
+    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+}
+
+license {
+    header(rootProject.file('HEADER'))
+    excludes(excludeFromLicense)
 }
 
 dependencies {

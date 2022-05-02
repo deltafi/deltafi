@@ -1,6 +1,12 @@
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+}
+
+license {
+    header(rootProject.file('HEADER'))
+	  excludes(excludeFromLicense)
 }
 
 dependencies {

@@ -42,6 +42,9 @@ dependencyResolutionManagement {
 rootProject.name='deltafi'
 
 include 'deltafi-action-kit'
+include 'deltafi-api'
+include 'deltafi-auth'
+include 'deltafi-cli'
 include 'deltafi-common'
 include 'deltafi-core-domain'
 include 'deltafi-core-actions'
@@ -49,5 +52,7 @@ include 'deltafi-ingress'
 include 'deltafi-gateway'
 include 'deltafi-common-test'
 include 'deltafi-config-server'
+include 'deltafi-egress-sink'
+include 'deltafi-gateway'
 include 'gradle-plugin'
 
