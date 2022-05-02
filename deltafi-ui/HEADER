@@ -1,4 +1,3 @@
-/*
    DeltaFi - Data transformation and enrichment platform
 
    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -14,24 +13,3 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-*/
-
-import { ref, Ref } from 'vue'
-import useApi from './useApi'
-
-export default function useVersions() {
-  const { response, get, loading, loaded } = useApi();
-  const endpoint: string = 'versions';
-  const data: Ref<Array<any>> = ref([]);
-
-  const fetch = async () => {
-    try {
-      await get(endpoint);
-      data.value = response.value.versions;
-    } catch {
-      // Continue regardless of error
-    }
-  }
-
-  return { data, loaded, loading, fetch };
-}
