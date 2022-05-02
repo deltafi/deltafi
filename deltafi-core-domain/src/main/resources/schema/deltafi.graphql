@@ -172,6 +172,7 @@ enum ActionEventType {
   LOAD
   ENRICH
   FORMAT
+  FORMAT_MANY
   VALIDATE
   EGRESS
   ERROR
@@ -189,6 +190,7 @@ input ActionEventInput {
   load: LoadInput
   enrich: EnrichInput
   format: FormatInput
+  formatMany: [FormatInput]
   error: ErrorInput
   filter: FilterInput
   split: [SplitInput]

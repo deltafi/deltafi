@@ -174,6 +174,8 @@ public class DeltaFilesService {
                 return deltaFile;
             case SPLIT:
                 return split(deltaFile, event);
+            case FORMAT_MANY:
+                return formatMany(deltaFile, event);
         }
 
         throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
@@ -287,10 +289,6 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) {
-        if (deltaFile.noPendingAction(event.getAction())) {
-            throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
-        }
-
         List<SplitInput> splits = event.getSplit();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
@@ -334,8 +332,76 @@ public class DeltaFilesService {
 
                 enqueueActions.addAll(stateMachine.advance(child));
 
-                if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
-                    deltaFile.markForDelete("on completion");
+                if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
+                    child.markForDelete("on completion");
+
+                    enqueueActions.add(getDeleteActionInput(child));
+                }
+
+                return child;
+            }).collect(Collectors.toList());
+
+            deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+
+            deltaFile.splitAction(event.getAction());
+        }
+
+        stateMachine.advance(deltaFile);
+
+        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
+        deltaFileRepo.save(deltaFile);
+        deltaFileRepo.saveAll(childDeltaFiles);
+
+        enqueueActions(enqueueActions);
+
+        return deltaFile;
+    }
+
+    @MongoRetryable
+    public DeltaFile formatMany(DeltaFile deltaFile, ActionEventInput event) {
+        List<FormatInput> formatInputs = event.getFormatMany();
+        List<DeltaFile> childDeltaFiles = Collections.emptyList();
+
+        List<ActionInput> enqueueActions = new ArrayList<>();
+
+        List<String> formatActions = egressFlowService.getAll().stream().map(ef -> ef.getFormatAction().getName()).collect(Collectors.toList());
+
+        if (!formatActions.contains(event.getAction())) {
+            deltaFile.errorAction(event.getAction(), "Attempted to split from an Action that is not a current FormatAction: " + event.getAction(), "");
+        } else if (Objects.isNull(formatInputs) || formatInputs.isEmpty()) {
+            deltaFile.errorAction(event.getAction(), "Attempted to split DeltaFile into 0 children with formatMany", "");
+        } else {
+            if (Objects.isNull(deltaFile.getChildDids())) {
+                deltaFile.setChildDids(new ArrayList<>());
+            }
+
+            List<String> parentDids = Collections.singletonList(deltaFile.getDid());
+
+            EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
+
+            childDeltaFiles = formatInputs.stream().map(formatInput -> {
+                DeltaFile child = OBJECT_MAPPER.convertValue(deltaFile, DeltaFile.class);
+                child.setVersion(0);
+                child.setDid(UUID.randomUUID().toString());
+                child.setChildDids(Collections.emptyList());
+                child.setParentDids(parentDids);
+                child.completeAction(event.getAction());
+
+                FormattedData formattedData = FormattedData.newBuilder()
+                        .formatAction(event.getAction())
+                        .filename(formatInput.getFilename())
+                        .metadata(formatInput.getMetadata())
+                        .contentReference(formatInput.getContentReference())
+                        .egressActions(Collections.singletonList(egressFlow.getEgressAction().getName()))
+                        .validateActions(egressFlow.getValidateActions().stream().map(ValidateActionConfiguration::getName).collect(Collectors.toList()))
+                        .build();
+
+                child.setFormattedData(Collections.singletonList(formattedData));
+
+                enqueueActions.addAll(stateMachine.advance(child));
+
+                if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
+                    child.markForDelete("on completion");
 
                     enqueueActions.add(getDeleteActionInput(child));
                 }

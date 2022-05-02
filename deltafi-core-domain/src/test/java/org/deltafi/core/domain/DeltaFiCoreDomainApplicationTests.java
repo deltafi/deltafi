@@ -56,6 +56,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -150,6 +151,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	PluginVariableRepo pluginVariableRepo;
+
+	@Captor
+	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
 
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -458,9 +462,8 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
 		assertEquals(1, child2.getLastProtocolLayerContent().size());
 
-		ArgumentCaptor<List<ActionInput>> actual = ArgumentCaptor.forClass(List.class);
-		Mockito.verify(redisService).enqueue(actual.capture());
-		List<ActionInput> actionInputs = actual.getValue();
+		Mockito.verify(redisService).enqueue(actionInputListCaptor.capture());
+		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
 		Util.assertEqualsIgnoringDates(child1.forQueue("SampleTransformAction"), actionInputs.get(0).getDeltaFile());
@@ -516,6 +519,45 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		verifyActionEventResults(postFormatDeltaFile(did), "AuthorityValidateAction", "SampleValidateAction");
+	}
+
+	@Test
+	void test14FormatMany() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile postEnrich = postEnrichDeltaFile(did);
+		deltaFileRepo.save(postEnrich);
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("14.formatMany"), did),
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class);
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
+		assertEquals(2, deltaFile.getChildDids().size());
+		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+
+		List<DeltaFile> children = deltaFilesService.getDeltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
+		assertEquals(2, children.size());
+
+		DeltaFile child1 = children.get(0);
+		assertEquals(DeltaFileStage.EGRESS, child1.getStage());
+		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
+		assertEquals("input.txt", child1.getSourceInfo().getFilename());
+		assertEquals(0, child1.getFormattedData().get(0).getContentReference().getOffset());
+
+		DeltaFile child2 = children.get(1);
+		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
+		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
+		assertEquals("input.txt", child2.getSourceInfo().getFilename());
+		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getOffset());
+
+		Mockito.verify(redisService).enqueue(actionInputListCaptor.capture());
+		assertEquals(4, actionInputListCaptor.getValue().size());
+		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(0).getActionContext().getDid());
+		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
+		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(2).getActionContext().getDid());
+		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(3).getActionContext().getDid());
 	}
 
 	DeltaFile postValidateDeltaFile(String did) {
@@ -1860,9 +1902,8 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile afterMutation = deltaFilesService.getDeltaFile(expected.getDid());
 		assertTrue(Util.equalIgnoringDates(expected, afterMutation));
 
-		ArgumentCaptor<List<ActionInput>> actual = ArgumentCaptor.forClass(List.class);
-		Mockito.verify(redisService).enqueue(actual.capture());
-		List<ActionInput> actionInputs = actual.getValue();
+		Mockito.verify(redisService).enqueue(actionInputListCaptor.capture());
+		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(forActions.length);
 		for (int i = 0; i < forActions.length; i++) {
 			ActionInput actionInput = actionInputs.get(i);
