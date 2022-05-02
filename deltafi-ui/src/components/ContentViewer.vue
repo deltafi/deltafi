@@ -4,12 +4,14 @@
       <div class="content-viewer-section">
         <Toolbar>
           <template #left>
-            <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem;" />
+            <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
           </template>
           <template #right>
             <Button :label="contentReference.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
-            <Button :label="contentSize" class="p-button-text p-button-secondary" disabled />
+            <div v-tooltip.top="contentSizeBytes">
+              <Button :label="contentSize" class="p-button-text p-button-secondary" disabled />
+            </div>
             <Divider layout="vertical" />
             <ContentViewerMenu :model="items" />
           </template>
@@ -43,15 +45,15 @@ import ContentViewerMenu from "@/components/ContentViewerMenu.vue";
 import useContent from "@/composables/useContent";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, onMounted, ref, toRefs, watch } from "vue";
-import { useClipboard } from '@vueuse/core'
+import { useClipboard } from "@vueuse/core";
 import useNotifications from "@/composables/useNotifications";
 
 import Button from "primevue/button";
-import Divider from 'primevue/divider';
-import Dropdown from 'primevue/dropdown';
+import Divider from "primevue/divider";
+import Dropdown from "primevue/dropdown";
 import Message from "primevue/message";
-import Toolbar from 'primevue/toolbar';
-import ScrollTop from 'primevue/scrolltop';
+import Toolbar from "primevue/toolbar";
+import ScrollTop from "primevue/scrolltop";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 
@@ -66,18 +68,18 @@ const props = defineProps({
   metadata: {
     type: Object,
     required: false,
-    default: null
+    default: null,
   },
   filename: {
     type: String,
     required: false,
-    default: null
+    default: null,
   },
   maxHeight: {
     type: String,
     required: false,
-    default: '100%'
-  }
+    default: "100%",
+  },
 });
 
 const { contentReference, maxHeight, filename, metadata } = toRefs(props);
@@ -95,7 +97,7 @@ const decoder = new TextDecoder("utf-8");
 
 // Menu Buttons
 const highlightBtnEnbl = computed(() => {
-  return content.value.byteLength > 0 && _.isEqual(selectedRenderFormat.value.name, 'UTF-8')
+  return content.value.byteLength > 0 && _.isEqual(selectedRenderFormat.value.name, "UTF-8");
 });
 const metadataBtnEnbl = computed(() => !_.isEmpty(metadata.value));
 const copyBtnEnbl = computed(() => content.value.byteLength > 0);
@@ -132,7 +134,7 @@ const items = ref([
     disabledLabel: "Nothing to Copy",
     command: () => {
       copyToClipboard(contentAsString.value);
-      notify.info("Copied to clipboard", "Content copied to clipboard.", 3000)
+      notify.info("Copied to clipboard", "Content copied to clipboard.", 3000);
     },
   },
   {
@@ -143,25 +145,25 @@ const items = ref([
     command: () => {
       download();
     },
-  }
+  },
 ]);
-const renderFormats = ref([
-  { name: 'Hexdump' },
-  { name: 'UTF-8' }
-])
-const selectedRenderFormat = ref(renderFormats.value[1])
+const renderFormats = ref([{ name: "Hexdump" }, { name: "UTF-8" }]);
+const selectedRenderFormat = ref(renderFormats.value[1]);
 
 onMounted(() => {
   loadContent();
 });
 
-watch(() => contentReference.value.uuid, () => {
-  loadContent();
-})
+watch(
+  () => contentReference.value.uuid,
+  () => {
+    loadContent();
+  }
+);
 
 const language = computed(() => {
   try {
-    return contentReference.value.mediaType.split('/')[1];
+    return contentReference.value.mediaType.split("/")[1];
   } catch {
     return null;
   }
@@ -175,21 +177,22 @@ const contentAsHexdump = computed(() => {
   let buffer = Buffer.from(content.value);
   return hexy.hexy(buffer, {
     format: "twos",
-    width: 16
+    width: 16,
   });
 });
 
 const embededContent = computed(() => "content" in contentReference.value);
 
 const contentSize = computed(() => formattedBytes(contentReference.value.size));
+const contentSizeBytes = `${contentReference.value.size.toLocaleString()} B`;
 const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
 
 const warnings = computed(() => {
   let warnings = [];
-  if (contentLoaded.value && content.value.byteLength == 0) warnings.push("No content to display.")
-  if (partialContent.value) warnings.push(`Content size is over the preview limit. Only showing the first ${formattedMaxPreviewSize.value}.`)
+  if (contentLoaded.value && content.value.byteLength == 0) warnings.push("No content to display.");
+  if (partialContent.value) warnings.push(`Content size is over the preview limit. Only showing the first ${formattedMaxPreviewSize.value}.`);
   return warnings;
-})
+});
 
 const onToggleHiglightCodeClick = () => {
   highlightCode.value = !highlightCode.value;
@@ -205,7 +208,7 @@ const download = () => {
   } else {
     let url = downloadURL({
       ...contentReference.value,
-      filename: filename.value
+      filename: filename.value,
     });
     window.open(url);
   }
