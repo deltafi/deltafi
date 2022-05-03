@@ -19,6 +19,7 @@ package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentReference;
@@ -28,6 +29,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ProtocolLayer {
     private String type;
     private String action;

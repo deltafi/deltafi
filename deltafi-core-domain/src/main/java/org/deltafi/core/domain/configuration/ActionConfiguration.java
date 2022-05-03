@@ -70,24 +70,19 @@ public interface ActionConfiguration extends DeltaFiConfiguration {
      * @return ActionInput containing the ActionConfiguration
      */
     default ActionInput buildActionInput(DeltaFile deltaFile) {
-        ActionInput actionInput = new ActionInput();
-        actionInput.setQueueName(getType());
-
-        ActionContext actionContext = ActionContext.builder()
-                .did(deltaFile.getDid())
-                .name(getName())
-                .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .build();
-
-        actionInput.setActionContext(actionContext);
-
         if (Objects.isNull(getParameters())) {
             setParameters(Collections.emptyMap());
-    }
+        }
 
-        actionInput.setActionParams(getParameters());
-
-        actionInput.setDeltaFile(deltaFile.forQueue(actionInput.getActionContext().getName()));
-        return actionInput;
+        return ActionInput.builder()
+                .queueName(getType())
+                .actionContext(ActionContext.builder()
+                        .did(deltaFile.getDid())
+                        .name(getName())
+                        .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                        .build())
+                .actionParams(getParameters())
+                .deltaFile(deltaFile.forQueue(getName()))
+                .build();
     }
 }

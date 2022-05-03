@@ -19,21 +19,24 @@ package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class SourceInfo {
     private String filename;
     private String flow;
-    private List<KeyValue> metadata;
+    private List<KeyValue> metadata = new ArrayList<>();
 
     @JsonIgnore
     public Map<String, String> getMetadataAsMap() {

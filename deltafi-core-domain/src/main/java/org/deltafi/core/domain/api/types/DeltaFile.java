@@ -18,6 +18,7 @@
 package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.generated.types.*;
@@ -40,25 +41,16 @@ import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 @CompoundIndex(name = "completed_before_index", def="{'stage': 1, 'modified': 1, 'sourceInfo.flow': 1}")
 @CompoundIndex(name = "created_before_index", def="{'created': 1, 'sourceInfo.flow': 1}")
 @CompoundIndex(name = "modified_before_index", def="{'modified': 1, 'sourceInfo.flow': 1}")
+@NoArgsConstructor
 public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile {
 
-    @Version
+    @Version @Getter @Setter
     private long version;
 
     @Id
     @Override
     public String getDid() {
         return super.getDid();
-    }
-
-    @SuppressWarnings("unused")
-    public long getVersion() {
-        return version;
-    }
-
-    @SuppressWarnings("unused")
-    public void setVersion(long version) {
-        this.version = version;
     }
 
     public void queueAction(String name) {
