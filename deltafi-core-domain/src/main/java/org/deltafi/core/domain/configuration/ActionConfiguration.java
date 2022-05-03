@@ -23,6 +23,7 @@ import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.api.types.DeltaFile;
 
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,9 @@ public interface ActionConfiguration extends DeltaFiConfiguration {
         ActionContext actionContext = ActionContext.builder()
                 .did(deltaFile.getDid())
                 .name(getName())
-                .ingressFlow(deltaFile.getSourceInfo().getFlow()).build();
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .startTime(OffsetDateTime.now())
+                .build();
 
         actionInput.setActionContext(actionContext);
 

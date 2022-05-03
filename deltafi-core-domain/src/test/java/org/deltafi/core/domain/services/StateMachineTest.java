@@ -254,7 +254,7 @@ class StateMachineTest {
         addCompletedActions(deltaFile, "EnrichAction");
 
         deltaFile.queueAction("FormatAction");
-        deltaFile.errorAction("FormatAction", "failed", "failed");
+        deltaFile.errorAction("FormatAction", null, null, "failed", "failed");
 
         EgressFlow egressFlow = EgressFlowMaker.builder().build().makeEgressFlow();
 
@@ -465,7 +465,7 @@ class StateMachineTest {
     private void addCompletedActions(DeltaFile deltaFile, String ... actions) {
         for (String action : actions) {
             deltaFile.queueAction(action);
-            deltaFile.completeAction(action);
+            deltaFile.completeAction(action, null, null);
         }
     }
 

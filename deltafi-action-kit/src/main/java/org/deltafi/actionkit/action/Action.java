@@ -49,6 +49,7 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -110,6 +111,7 @@ public abstract class Action<P extends ActionParameters> {
                 ActionContext context = actionInput.getActionContext();
                 context.setActionVersion(getVersion());
                 context.setHostname(getHostname());
+                context.setStartTime(OffsetDateTime.now());
 
                 log.trace("Running action with input {}", actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();

@@ -31,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +48,7 @@ public class ActionMetricsLoggerTest {
     @Test
     public void logsDefaultMetrics() {
         Result result = new FormatResult(
-                new ActionContext("did", "TestFormatActionName", "flow", "flow", "host", "1.0.0"), "filename");
+                new ActionContext("did", "TestFormatActionName", "flow", "flow", "host", "1.0.0", OffsetDateTime.now()), "filename");
         ActionMetricsLogger.logMetrics(ActionType.FORMAT, result);
 
         verifyCoreMetrics(result.getContext().getName(), "format", "files_completed");

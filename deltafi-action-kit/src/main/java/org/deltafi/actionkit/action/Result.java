@@ -51,8 +51,9 @@ public abstract class Result {
         return ActionEventInput.newBuilder()
                 .did(context.getDid())
                 .action(context.getName())
-                .time(OffsetDateTime.now())
                 .type(actionEventType())
+                .start(context.getStartTime())
+                .stop(OffsetDateTime.now())
                 .build();
     }
 

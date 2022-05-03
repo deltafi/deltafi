@@ -22,10 +22,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.OffsetDateTime;
+
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class ActionContext {
 
     private String did;
@@ -34,4 +36,14 @@ public class ActionContext {
     private String egressFlow;
     private String hostname;
     private String actionVersion;
+    private OffsetDateTime startTime;
+
+    public ActionContext(String did, String name, String ingressFlow, String egressFlow, String hostname, String actionVersion) {
+        this.did = did;
+        this.name = name;
+        this.ingressFlow = ingressFlow;
+        this.egressFlow = egressFlow;
+        this.hostname = hostname;
+        this.actionVersion = actionVersion;
+    }
 }

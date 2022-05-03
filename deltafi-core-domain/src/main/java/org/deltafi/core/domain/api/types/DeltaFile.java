@@ -64,7 +64,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
     public void queueAction(String name) {
         Optional<Action> maybeAction = actionNamed(name);
         if (maybeAction.isPresent()) {
-            setActionState(maybeAction.get(), ActionState.QUEUED);
+            setActionState(maybeAction.get(), ActionState.QUEUED, null, null);
         } else {
             queueNewAction(name);
         }
@@ -73,7 +73,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
     public void queueNewAction(String name) {
         OffsetDateTime now = OffsetDateTime.now();
-        getActions().add(Action.newBuilder().name(name).state(ActionState.QUEUED).created(now).modified(now).build());
+        getActions().add(Action.newBuilder().name(name).state(ActionState.QUEUED).created(now).queued(now).modified(now).build());
     }
 
     /* Get the most recent action with the given name */
@@ -93,28 +93,36 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return newActions;
     }
 
-    public void completeAction(String name) {
-        getActions().stream()
-                .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
-                .forEach(action -> setActionState(action, ActionState.COMPLETE));
+    public void completeAction(ActionEventInput event) {
+        completeAction(event.getAction(), event.getStart(), event.getStop());
     }
 
-    public void filterAction(String name, String filterMessage) {
+    public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop) {
         getActions().stream()
                 .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
-                .forEach(action -> setActionState(action, ActionState.FILTERED, filterMessage, null));
+                .forEach(action -> setActionState(action, ActionState.COMPLETE, start, stop));
     }
 
-    public void splitAction(String name) {
+    public void filterAction(ActionEventInput event, String filterMessage) {
         getActions().stream()
-                .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
-                .forEach(action -> setActionState(action, ActionState.SPLIT, null, null));
+                .filter(action -> action.getName().equals(event.getAction()) && !terminalState(action.getState()))
+                .forEach(action -> setActionState(action, ActionState.FILTERED, event.getStart(), event.getStop(), filterMessage, null));
     }
 
-    public void errorAction(String name, String errorCause, String errorContext) {
+    public void splitAction(ActionEventInput event) {
+        getActions().stream()
+                .filter(action -> action.getName().equals(event.getAction()) && !terminalState(action.getState()))
+                .forEach(action -> setActionState(action, ActionState.SPLIT, event.getStart(), event.getStop()));
+    }
+
+    public void errorAction(ActionEventInput event, String errorCause, String errorContext) {
+        errorAction(event.getAction(), event.getStart(), event.getStop(), errorCause, errorContext);
+    }
+
+    public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext) {
         getActions().stream()
                 .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
-                .forEach(action -> setActionState(action, ActionState.ERROR, errorCause, errorContext));
+                .forEach(action -> setActionState(action, ActionState.ERROR, start, stop, errorCause, errorContext));
     }
 
     public List<String> retryErrors() {
@@ -128,16 +136,18 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return actionsToRetry.stream().map(Action::getName).collect(Collectors.toList());
     }
 
-    private void setActionState(Action action, ActionState actionState) {
-        setActionState(action, actionState, null, null);
+    private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop) {
+        setActionState(action, actionState, start, stop, null, null);
     }
 
-    private void setActionState(Action action, ActionState actionState, String errorCause, String errorContext) {
+    private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext) {
         OffsetDateTime now = OffsetDateTime.now();
         action.setState(actionState);
         if (action.getCreated() == null) {
             action.setCreated(now);
         }
+        action.setStart(start);
+        action.setStop(stop);
         action.setModified(now);
         action.setErrorCause(errorCause);
         action.setErrorContext(errorContext);

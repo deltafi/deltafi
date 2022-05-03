@@ -162,6 +162,9 @@ type Action {
   name: String!
   state: ActionState!
   created: DateTime!
+  queued: DateTime
+  start: DateTime
+  stop: DateTime
   modified: DateTime!
   errorCause: String
   errorContext: String
@@ -184,7 +187,10 @@ enum ActionEventType {
 input ActionEventInput {
   did: String!
   action: String!
-  time: DateTime!
+  start: DateTime!
+  stop: DateTime!
+  # deprecated -- remove after a few releases have bumped through (5/3/22)
+  time: DateTime
   type: ActionEventType!
   transform: TransformInput
   load: LoadInput

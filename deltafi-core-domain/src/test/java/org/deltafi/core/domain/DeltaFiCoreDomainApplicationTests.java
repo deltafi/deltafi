@@ -160,6 +160,9 @@ class DeltaFiCoreDomainApplicationTests {
 	// mongo eats microseconds, jump through hoops
 	private final OffsetDateTime MONGO_NOW =  OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
 
+	private final OffsetDateTime START_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 183, ZoneOffset.UTC);
+	private final OffsetDateTime STOP_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 184, ZoneOffset.UTC);
+
 	@TestConfiguration
 	public static class Configuration {
 		@Bean
@@ -295,7 +298,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postTransformUtf8DeltaFile(String did) {
 		DeltaFile deltaFile = postIngressDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.INGRESS);
-		deltaFile.completeAction("Utf8TransformAction");
+		deltaFile.completeAction("Utf8TransformAction", START_TIME, STOP_TIME);
 		deltaFile.queueAction("SampleTransformAction");
 		Content content = Content.newBuilder().name("file.json").contentReference(new ContentReference("utf8ObjectName", 0, 500, did, "application/octet-stream")).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8", "Utf8TransformAction", List.of(content), null));
@@ -318,7 +321,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postTransformDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.INGRESS);
-		deltaFile.completeAction("SampleTransformAction");
+		deltaFile.completeAction("SampleTransformAction", START_TIME, STOP_TIME);
 		deltaFile.queueAction("SampleLoadAction");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", List.of(content), transformSampleMetadata));
@@ -341,7 +344,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postTransformHadErrorDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR);
-		deltaFile.errorAction("SampleTransformAction", "transform failed", "message");
+		deltaFile.errorAction("SampleTransformAction", START_TIME, STOP_TIME, "transform failed", "message");
 		/*
 		 * Even though this action is being used as an ERROR, fake its
 		 * protocol layer results so that we can verify the State Machine
@@ -381,7 +384,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleEnrichAction");
-		deltaFile.completeAction("SampleLoadAction");
+		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", List.of(content), loadSampleMetadata));
@@ -405,7 +408,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile post09LoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.COMPLETE);
-		deltaFile.completeAction("SampleLoadAction");
+		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", List.of(content), loadWrongMetadata));
@@ -474,7 +477,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("sample.SampleFormatAction");
-		deltaFile.completeAction("SampleEnrichAction");
+		deltaFile.completeAction("SampleEnrichAction", START_TIME, STOP_TIME);
 		deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
 		return deltaFile;
 	}
@@ -496,7 +499,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = postEnrichDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueActionsIfNew(Arrays.asList("AuthorityValidateAction", "SampleValidateAction"));
-		deltaFile.completeAction("sample.SampleFormatAction");
+		deltaFile.completeAction("sample.SampleFormatAction", START_TIME, STOP_TIME);
 		deltaFile.getFormattedData().add(FormattedData.newBuilder()
 				.formatAction("sample.SampleFormatAction")
 				.filename("output.txt")
@@ -563,7 +566,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postValidateDeltaFile(String did) {
 		DeltaFile deltaFile = postFormatDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
-		deltaFile.completeAction("SampleValidateAction");
+		deltaFile.completeAction("SampleValidateAction", START_TIME, STOP_TIME);
 		return deltaFile;
 	}
 
@@ -587,7 +590,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postErrorDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR);
-		deltaFile.errorAction("AuthorityValidateAction", "Authority XYZ not recognized", "Dead beef feed face cafe");
+		deltaFile.errorAction("AuthorityValidateAction", START_TIME, STOP_TIME, "Authority XYZ not recognized", "Dead beef feed face cafe");
 		return deltaFile;
 	}
 
@@ -678,7 +681,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("SampleEgressAction");
-		deltaFile.completeAction("AuthorityValidateAction");
+		deltaFile.completeAction("AuthorityValidateAction", START_TIME, STOP_TIME);
 		return deltaFile;
 	}
 
@@ -698,7 +701,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postEgressDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateAuthorityDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.COMPLETE);
-		deltaFile.completeAction("SampleEgressAction");
+		deltaFile.completeAction("SampleEgressAction", START_TIME, STOP_TIME);
 		return deltaFile;
 	}
 
@@ -1254,7 +1257,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile second = deltaFilesService.ingress(INGRESS_INPUT_2);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(input.getDid());
-		deltaFile.errorAction("SampleLoadAction", "blah", "blah");
+		deltaFile.errorAction("SampleLoadAction", START_TIME, STOP_TIME, "blah", "blah");
 		deltaFilesService.advanceAndSave(deltaFile);
 
 		DeltaFile erroredFile = deltaFilesService.getDeltaFile(input.getDid());

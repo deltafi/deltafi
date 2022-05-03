@@ -185,13 +185,13 @@ public class DeltaFilesService {
         if (event.getTransform().getProtocolLayer() != null) {
             deltaFile.getProtocolStack().add(event.getTransform().getProtocolLayer());
         }
-        deltaFile.completeAction(event.getAction());
+        deltaFile.completeAction(event);
 
         return advanceAndSave(deltaFile);
     }
 
     public DeltaFile load(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.completeAction(event.getAction());
+        deltaFile.completeAction(event);
 
         if (event.getLoad() != null) {
             if (event.getLoad().getProtocolLayer() != null) {
@@ -208,7 +208,7 @@ public class DeltaFilesService {
     }
 
     public DeltaFile enrich(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.completeAction(event.getAction());
+        deltaFile.completeAction(event);
 
         if (event.getEnrich() != null && event.getEnrich().getEnrichments() != null) {
             for (EnrichmentInput enrichment : event.getEnrich().getEnrichments()) {
@@ -230,19 +230,19 @@ public class DeltaFilesService {
                 .validateActions(egressFlow.validateActionNames())
                 .build();
         deltaFile.getFormattedData().add(formattedData);
-        deltaFile.completeAction(event.getAction());
+        deltaFile.completeAction(event);
 
         return advanceAndSave(deltaFile);
     }
 
     public DeltaFile validate(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.completeAction(event.getAction());
+        deltaFile.completeAction(event);
 
         return advanceAndSave(deltaFile);
     }
 
     public DeltaFile egress(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.completeAction(event.getAction());
+        deltaFile.completeAction(event);
 
         return advanceAndSave(deltaFile);
     }
@@ -253,7 +253,7 @@ public class DeltaFilesService {
             throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
         }
 
-        deltaFile.filterAction(event.getAction(), event.getFilter().getMessage());
+        deltaFile.filterAction(event, event.getFilter().getMessage());
 
         return advanceAndSave(deltaFile);
     }
@@ -271,12 +271,12 @@ public class DeltaFilesService {
                     "Errored in action : " + event.getAction() + "\n" +
                     "Inception Error cause: " + errorInput.getCause() + "\n" +
                     "Inception Error context: " + errorInput.getContext() + "\n");
-            deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
+            deltaFile.errorAction(event, errorInput.getCause(), errorInput.getContext());
 
             return deltaFile;
         }
 
-        deltaFile.errorAction(event.getAction(), errorInput.getCause(), errorInput.getContext());
+        deltaFile.errorAction(event, errorInput.getCause(), errorInput.getContext());
 
         ErrorDomain errorDomain = ErrorConverter.convert(event, deltaFile);
         DeltaFile errorDeltaFile = convert(deltaFile, OBJECT_MAPPER.writeValueAsString(errorDomain));
@@ -296,9 +296,9 @@ public class DeltaFilesService {
 
         String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
-            deltaFile.errorAction(event.getAction(), "Attempted to split from an Action that is not a LoadAction: " + event.getAction(), "");
+            deltaFile.errorAction(event, "Attempted to split from an Action that is not a LoadAction: " + event.getAction(), "");
         } else if (Objects.isNull(splits) || splits.isEmpty()) {
-            deltaFile.errorAction(event.getAction(), "Attempted to split DeltaFile into 0 children", "");
+            deltaFile.errorAction(event, "Attempted to split DeltaFile into 0 children", "");
         } else {
             if (Objects.isNull(deltaFile.getChildDids())) {
                 deltaFile.setChildDids(new ArrayList<>());
@@ -343,7 +343,7 @@ public class DeltaFilesService {
 
             deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 
-            deltaFile.splitAction(event.getAction());
+            deltaFile.splitAction(event);
         }
 
         stateMachine.advance(deltaFile);
@@ -367,9 +367,9 @@ public class DeltaFilesService {
         List<String> formatActions = egressFlowService.getAll().stream().map(ef -> ef.getFormatAction().getName()).collect(Collectors.toList());
 
         if (!formatActions.contains(event.getAction())) {
-            deltaFile.errorAction(event.getAction(), "Attempted to split from an Action that is not a current FormatAction: " + event.getAction(), "");
+            deltaFile.errorAction(event, "Attempted to split from an Action that is not a current FormatAction: " + event.getAction(), "");
         } else if (Objects.isNull(formatInputs) || formatInputs.isEmpty()) {
-            deltaFile.errorAction(event.getAction(), "Attempted to split DeltaFile into 0 children with formatMany", "");
+            deltaFile.errorAction(event, "Attempted to split DeltaFile into 0 children with formatMany", "");
         } else {
             if (Objects.isNull(deltaFile.getChildDids())) {
                 deltaFile.setChildDids(new ArrayList<>());
@@ -385,7 +385,7 @@ public class DeltaFilesService {
                 child.setDid(UUID.randomUUID().toString());
                 child.setChildDids(Collections.emptyList());
                 child.setParentDids(parentDids);
-                child.completeAction(event.getAction());
+                child.completeAction(event);
 
                 FormattedData formattedData = FormattedData.newBuilder()
                         .formatAction(event.getAction())
@@ -411,7 +411,7 @@ public class DeltaFilesService {
 
             deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 
-            deltaFile.splitAction(event.getAction());
+            deltaFile.splitAction(event);
         }
 
         stateMachine.advance(deltaFile);

@@ -21,7 +21,8 @@ mutation {
         event: {
             did: "%1$s"
             action: "Utf8TransformAction"
-            time: "2021-07-11T13:44:22.183Z"
+            start: "2021-07-11T13:44:22.183Z"
+            stop: "2021-07-11T13:44:22.184Z"
             type: TRANSFORM
             transform: {
                 protocolLayer: {
