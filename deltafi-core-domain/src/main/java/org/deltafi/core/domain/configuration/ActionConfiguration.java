@@ -77,7 +77,6 @@ public interface ActionConfiguration extends DeltaFiConfiguration {
                 .did(deltaFile.getDid())
                 .name(getName())
                 .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .startTime(OffsetDateTime.now())
                 .build();
 
         actionInput.setActionContext(actionContext);
