@@ -17,7 +17,7 @@
 */
 
 import { ref, Ref } from "vue";
-import { jsonToGraphQLQuery } from 'json-to-graphql-query';
+import { jsonToGraphQLQuery, EnumType } from 'json-to-graphql-query';
 import useNotifications from "./useNotifications";
 
 type GraphQLService = "config" | "core-domain";
@@ -30,9 +30,38 @@ export default function useGraphQL(service: GraphQLService = 'core-domain') {
   const loaded: Ref<Boolean> = ref(false);
   const errors: Ref<Array<string>> = ref([]);
 
+  const removeEmptyKeyValues = (queryObj: any): any => {
+    const newObj: any = {};
+    Object.entries(queryObj).forEach(([k, v]) => {
+      if (v instanceof EnumType) {
+        newObj[k] = queryObj[k];
+      } else if (v === Object(v)) {
+        newObj[k] = removeEmptyKeyValues(v);
+      } else if (v != null) {
+        newObj[k] = queryObj[k];
+      }
+    });
+    return newObj;
+  }
+
+  const clearEmptyObjects = (queryObj: any) => {
+    for (const objKey in queryObj) {
+      if (!queryObj[objKey] || typeof queryObj[objKey] !== "object") {
+        continue;
+      }
+
+      clearEmptyObjects(queryObj[objKey]);
+      if (Object.keys(queryObj[objKey]).length === 0) {
+        delete queryObj[objKey];
+      }
+    }
+  };
+
   const queryGraphQL = async (query: string | object, queryName: string, queryType: string = "query") => {
     if (typeof query === 'object') {
-      query = jsonToGraphQLQuery(query, { pretty: false });
+      const cleanedQuery = removeEmptyKeyValues(query);
+      clearEmptyObjects(cleanedQuery);
+      query = jsonToGraphQLQuery(cleanedQuery, { pretty: false });
     }
     query = JSON.stringify({ "query": `${queryType} ${queryName} { ${query} }`, "operationName": queryName });
     loading.value = true;

@@ -66,7 +66,7 @@ export default function useDeltaFilesQueryBuilder(): {
       }
     };
     return sendGraphQLQuery(query, "getDeltaFileSearchData");
-  }
+  };
 
   const getRecordCount = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
     const query = {
@@ -91,9 +91,9 @@ export default function useDeltaFilesQueryBuilder(): {
         },
         totalCount: true,
       }
-    }
+    };
     return sendGraphQLQuery(query, "getRecordCount");
-  }
+  };
 
   const getDeltaFiFileNames = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
     const query = {
@@ -104,7 +104,7 @@ export default function useDeltaFilesQueryBuilder(): {
           filter: {
             sourceInfo: {
               flow: flowName,
-              filename: fileName
+              filename: fileName,
             },
             stage: stageName ? new EnumType(stageName) : null,
             actions: actionName,
@@ -157,12 +157,16 @@ export default function useDeltaFilesQueryBuilder(): {
 
 
   const getEnumValuesByEnumType = (enumType: string) => {
-    const query = `
-      __type(name: "${enumType}") {
-        enumValues {
-          name
+    const query = {
+      __type: {
+        __args: {
+          name: enumType
+        },
+        enumValues: {
+          name: true
         }
-      }`
+      }
+    };
     return sendGraphQLQuery(query, "getEnumValuesByEnumType");
   };
 
@@ -176,9 +180,9 @@ export default function useDeltaFilesQueryBuilder(): {
         },
         name: true
       }
-    }
+    };
     return sendGraphQLQuery(query, "getConfigByType");
-  }
+  };
 
 
   const sendGraphQLQuery = async (query: any, operationName: string) => {
@@ -188,7 +192,7 @@ export default function useDeltaFilesQueryBuilder(): {
     } catch {
       // Continue regardless of error
     }
-  }
+  };
 
 
   return {
