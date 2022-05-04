@@ -29,6 +29,7 @@ import { reactive, defineProps, onMounted, computed } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import * as d3 from "d3";
+import dayjs from "dayjs";
 import _ from "lodash";
 
 const timestampFormat = "YYYY-MM-DD HH:mm:ss.SSS";
@@ -43,33 +44,65 @@ const props = defineProps({
 
 const deltaFile = reactive(JSON.parse(JSON.stringify(props.deltaFileData)));
 
-const actions = computed(() => {
+const deltaFileActions = computed(() => {
   let actions = deltaFile.actions.map((action) => {
     const timeElapsed = new Date(action.modified) - new Date(action.created);
     action.created = new Date(action.created);
+    action.createdOrginal = new Date(action.created);
     action.modified = new Date(action.modified);
+    action.modifiedOrginal = new Date(action.modified);
     action.end = new Date(action.created) - new Date(deltaFile.created) + timeElapsed;
     if (action.end === 0) {
       action.end = timeElapsed;
     }
+
     return {
       ...action,
       elapsed: timeElapsed,
     };
   });
-  const total = new Date(deltaFile.modified) - new Date(deltaFile.created);
+  if (actions.some((action) => action.state === "RETRIED")) {
+    actions = handleRetried(actions);
+  }
+  let total = new Date(actions[actions.length - 1].modified) - new Date(deltaFile.created);
+
   actions.unshift({
     name: "DeltaFileFlow",
     elapsed: total,
     end: total,
-    modified: deltaFile.modified,
+    modified: actions[actions.length - 1].modified,
     created: deltaFile.created,
   });
   return actions;
 });
 
+const handleRetried = (newActions) => {
+  let retriedActions = [
+    {
+      name: "",
+      modified: Date(),
+    },
+  ];
+  for (let x in newActions) {
+    if (newActions[x].state === "RETRIED" && !retriedActions.some((retried) => retried.name === newActions[x].name)) {
+      retriedActions.push({ name: newActions[x].name, modified: newActions[x].modified });
+    } else {
+      if (retriedActions.some((retried) => retried.name === newActions[x].name)) {
+        let retriedIndex = retriedActions.findIndex((retried) => retried.name === newActions[x].name);
+        newActions[x].created = retriedActions[retriedIndex].modified;
+        newActions[x].modified = new Date(dayjs(newActions[x].created).add(newActions[x].elapsed, "millisecond")).toISOString();
+        newActions[x].end = new Date(newActions[x].created) - new Date(deltaFile.created) + newActions[x].elapsed;
+        retriedActions.splice(retriedIndex, 1);
+      }
+      if (newActions[x].state === "RETRIED") {
+        retriedActions.push({ name: newActions[x].name, modified: newActions[x].modified });
+      }
+    }
+  }
+  return newActions;
+};
 onMounted(() => {
-  HorizontalWaterfallChart("#traceChart", actions.value);
+  HorizontalWaterfallChart("#traceChart", deltaFileActions.value);
 });
 
 const HorizontalWaterfallChart = (attachTo, data) => {
@@ -81,20 +114,25 @@ const HorizontalWaterfallChart = (attachTo, data) => {
   const svgHeight = lineHeight + 18;
   const maxData = data[0].elapsed;
   // Append the chart and pad it a bit
-  d3.select(attachTo).selectAll('svg').remove();
-  let chart = d3.select(attachTo).append("svg").attr("class", "chart").attr("preserveAspectRatio", "none").attr("viewBox", `0 10 ${svgWidth} ${svgHeight - rowWidth}`);
+  d3.select(attachTo).selectAll("svg").remove();
+  let chart = d3
+    .select(attachTo)
+    .append("svg")
+    .attr("class", "chart")
+    .attr("preserveAspectRatio", "none")
+    .attr("viewBox", `0 10 ${svgWidth} ${svgHeight - rowWidth}`);
 
   // create tooltip element
   const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "10").style("visibility", "hidden");
   const showToolTip = (d, event) => {
     tooltip
-      .html(`Action: ${d.name} </br> Created: ${formatTimestamp(new Date(d.created), timestampFormat)} </br> Modified:   ${formatTimestamp(new Date(d.modified), timestampFormat)}</br> Elapsed: ${d.elapsed}ms`)
+      .html(`Action: ${d.name} </br> Created: ${formatTimestamp(new Date(d.createdOrginal), timestampFormat)} </br> Modified:   ${formatTimestamp(new Date(d.modifiedOrginal), timestampFormat)}</br> Elapsed: ${d.elapsed}ms`)
       .style("visibility", "visible")
       .style("top", `${event.offsetY - 15}px`)
       .style("left", `${event.offsetX}px`);
   };
   const hideToolTip = () => {
-    tooltip.html('').style("visibility", "hidden");
+    tooltip.html("").style("visibility", "hidden");
   };
 
   // Set the x-axis scale
@@ -105,10 +143,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .range([svgHeight - 18, 0]);
 
   // The main graph area
-  chart = chart
-    .append("g")
-    .attr("transform", `translate(${leftMargin}, 3)`)
-    .attr("class", "gMainGraphArea");
+  chart = chart.append("g").attr("transform", `translate(${leftMargin}, 3)`).attr("class", "gMainGraphArea");
   let yGridLine = d3.svg
     .axis()
     .scale(yScale)
@@ -117,11 +152,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .tickValues([...Array(data.length).keys()])
     .orient("right")
     .ticks(data.length - 1);
-  chart
-    .append("g")
-    .style("stroke", "#dddddd")
-    .attr("transform", `translate(${leftMargin}, 10)`)
-    .call(yGridLine);
+  chart.append("g").style("stroke", "#dddddd").attr("transform", `translate(${leftMargin}, 10)`).call(yGridLine);
 
   // Set the vertical lines for axis
   chart
@@ -221,19 +252,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     });
 
   // Set the numbering on the lines for axis
-  chart
-    .append("g")
-    .attr("transform", `translate(${leftMargin}, 15)`)
-    .selectAll(".rule")
-    .data(x.ticks(numTicks))
-    .enter()
-    .append("text")
-    .attr("class", "rule")
-    .attr("x", x)
-    .attr("y", 0)
-    .attr("dy", -3)
-    .attr("text-anchor", "middle")
-    .text(String);
+  chart.append("g").attr("transform", `translate(${leftMargin}, 15)`).selectAll(".rule").data(x.ticks(numTicks)).enter().append("text").attr("class", "rule").attr("x", x).attr("y", 0).attr("dy", -3).attr("text-anchor", "middle").text(String);
 
   let ll = chart.append("g").attr("class", "gAxis");
 
@@ -249,7 +268,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .attr("dy", 13) // vertical-align: middle
     .attr("text-anchor", "end") // text-align: right
     .text(function (d) {
-      return d.name;
+      return d.name.split("", 24).reduce((o, c) => (o.length === 23 ? `${o}${c}...` : `${o}${c}`), "");
     });
 };
 </script>
