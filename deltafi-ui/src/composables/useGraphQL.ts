@@ -33,7 +33,9 @@ export default function useGraphQL(service: GraphQLService = 'core-domain') {
   const removeEmptyKeyValues = (queryObj: any): any => {
     const newObj: any = {};
     Object.entries(queryObj).forEach(([k, v]) => {
-      if (v instanceof EnumType) {
+      if (v instanceof Array) {
+        newObj[k] = queryObj[k];
+      } else if (v instanceof EnumType) {
         newObj[k] = queryObj[k];
       } else if (v === Object(v)) {
         newObj[k] = removeEmptyKeyValues(v);
