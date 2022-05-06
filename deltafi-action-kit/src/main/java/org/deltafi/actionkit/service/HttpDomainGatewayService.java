@@ -28,6 +28,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Collections;
 
+/**
+ * Implementation of the DomainGatewayService utilizing a GraphQLClient to post to a remote server
+ */
 @ApplicationScoped
 @Slf4j
 public class HttpDomainGatewayService implements DomainGatewayService{

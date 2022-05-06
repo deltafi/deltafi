@@ -30,6 +30,9 @@ import org.slf4j.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+/**
+ * Specialized result class for ERROR results
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class ErrorResult extends Result {
@@ -37,6 +40,11 @@ public class ErrorResult extends Result {
     private final String errorContext;
     private final String errorSummary;
 
+    /**
+     * @param context Execution context of the errored action
+     * @param errorMessage Message explaining the error result
+     * @param throwable An exception that indicates the reason for the error
+     */
     public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull Throwable throwable) {
         super(context);
 
@@ -48,6 +56,10 @@ public class ErrorResult extends Result {
         this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
     }
 
+    /**
+     * @param context Execution context of the errored action
+     * @param errorMessage Message explaining the error result
+     */
     @SuppressWarnings("unused")
     public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage) {
         super(context);
@@ -57,6 +69,11 @@ public class ErrorResult extends Result {
         this.errorSummary = errorMessage + ": " + context.getDid();
     }
 
+    /**
+     * Log the error summary of the result.  Should be used prior to returning the result
+     * @param logger A logger object to log the error summary
+     * @return this ErrorResult for continued operations
+     */
     public ErrorResult logErrorTo(Logger logger) {
         logger.error(errorSummary);
         return this;

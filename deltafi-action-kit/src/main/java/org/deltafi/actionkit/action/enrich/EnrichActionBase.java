@@ -26,13 +26,30 @@ import org.deltafi.core.domain.generated.types.EnrichActionSchemaInput;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Specialization class for ENRICH actions.  This class should not be used directly, but instead use one of
+ * the provided enrich action implementation classes.
+ * @param <P> Parameter class for configuring the enrich action
+ * @see EnrichAction
+ * @see SimpleEnrichAction
+ * @see MultipartEnrichAction
+ * @see SimpleMultipartEnrichAction
+ */
 public abstract class EnrichActionBase<P extends ActionParameters> extends Action<P> {
     public EnrichActionBase(Class<P> actionParametersClass) {
         super(ActionType.ENRICH, actionParametersClass);
     }
 
+    /**
+     * Implement to provide a list of required domains for enrichment to proceed
+     * @return List of domain name strings
+     */
     public abstract List<String> getRequiresDomains();
 
+    /**
+     * Implement to provide a list of required enrichments for enrichment to proceed
+     * @return List of enrichment name strings
+     */
     public List<String> getRequiresEnrichment() {
         return Collections.emptyList();
     }

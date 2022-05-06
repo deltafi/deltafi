@@ -30,16 +30,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Specialized result class for FORMAT actions that generate multiple formatted results to be independently egressed.
+ * Each FormatResult added to the FormatManyResult will be processed by applicable egress actions.
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public class FormatManyResult extends Result {
     private List<FormatResult> formatResults = new ArrayList<>();
 
+    /**
+     * @param context Execution context of the action
+     */
     public FormatManyResult(@NotNull ActionContext context) {
         super(context);
     }
 
+    /**
+     * Add a new format result
+     * @param formatResult A format result to be added to the result object
+     */
     @SuppressWarnings("unused")
     public void add(FormatResult formatResult) {
         formatResults.add(formatResult);

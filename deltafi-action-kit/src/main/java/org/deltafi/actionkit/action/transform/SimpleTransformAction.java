@@ -26,6 +26,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
+/**
+ * Base class for a TRANSFORM action that does not need to extend ActionParameters for configuration
+ *
+ * @see SimpleMultipartTransformAction
+ * @see MultipartTransformAction
+ * @see TransformAction
+ */
 @SuppressWarnings("unused")
 public abstract class SimpleTransformAction extends TransformAction<ActionParameters> {
     public SimpleTransformAction() {
@@ -41,6 +48,18 @@ public abstract class SimpleTransformAction extends TransformAction<ActionParame
         return transform(context, sourceInfo, content, metadata);
     }
 
+    /**
+     * Implements the transform execution function of a transform action
+     * @param context The action configuration context object for this transform execution
+     * @param sourceInfo The source info for this action
+     * @param content The content for this transformation action
+     * @param metadata A key-value map of metadata items for this transform execution
+     * @return A result object containing results for the transform execution.  The result can be an ErrorResult, a FilterResult, or
+     * a TransformResult
+     * @see TransformResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract Result transform(@NotNull ActionContext context,
                                      @NotNull SourceInfo sourceInfo,
                                      @NotNull Content content,

@@ -21,7 +21,13 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 
+/**
+ * Specialized result class for DELETE actions
+ */
 public class DeleteResult extends Result {
+    /**
+     * @param context Context of the executed action
+     */
     public DeleteResult(ActionContext context) {
         super(context);
     }

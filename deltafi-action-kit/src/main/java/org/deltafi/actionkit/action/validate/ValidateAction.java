@@ -25,6 +25,14 @@ import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.FormattedData;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Base class for a VALIDATE action that will not process multi-part content, but needs to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleValidateAction
+ * @see MultipartValidateAction
+ * @see SimpleMultipartValidateAction
+ */
 public abstract class ValidateAction<P extends ActionParameters> extends ValidateActionBase<P> {
     public ValidateAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
@@ -35,5 +43,17 @@ public abstract class ValidateAction<P extends ActionParameters> extends Validat
         return validate(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData().get(0));
     }
 
+    /**
+     * Implements the validate execution function of a validate action
+     * @param context The action configuration context object for this action execution
+     * @param params The parameter class that configures the behavior of this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param formattedData The content to be validated by this action
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
+     * a ValidateResult
+     * @see ValidateResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract Result validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 }

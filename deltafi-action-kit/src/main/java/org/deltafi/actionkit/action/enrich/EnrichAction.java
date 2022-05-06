@@ -28,6 +28,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
+/**
+ * Base class for a ENRICH action that will not process multi-part content, but needs to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleEnrichAction
+ * @see MultipartEnrichAction
+ * @see SimpleMultipartEnrichAction
+ */
 public abstract class EnrichAction<P extends ActionParameters> extends EnrichActionBase<P> {
     public EnrichAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
@@ -44,6 +52,21 @@ public abstract class EnrichAction<P extends ActionParameters> extends EnrichAct
                 deltaFile.enrichmentMap());
     }
 
+    /**
+     * Implements the enrichment execution function of an enrich action
+     * @param context The action configuration context object for this action execution
+     * @param params The parameter class that configures the behavior of this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param content The content to be enriched by this action
+     * @param metadata The metadata for this enrich action
+     * @param domains A map of domain names with their associated domain values for this action
+     * @param enrichment A map of enrichment names with their associated domain values for this action
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
+     * a EnrichResult
+     * @see EnrichResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract Result enrich(@NotNull ActionContext context,
                                   @NotNull P params,
                                   @NotNull SourceInfo sourceInfo,

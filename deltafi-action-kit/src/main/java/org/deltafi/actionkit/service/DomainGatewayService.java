@@ -23,7 +23,17 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Service interface for submitting GraphQL queries
+ */
 public interface DomainGatewayService {
+    /**
+     * Submit a GraphQL query request, and return the response
+     * @param request The GraphQL query
+     * @return the reponse from the GraphQL server
+     */
     GraphQLResponse submit(GraphQLQueryRequest request);
+
+    // FIXME: REmove deprecated interface
     default List<String> getUnsentQueries() { return Collections.emptyList(); }
 }

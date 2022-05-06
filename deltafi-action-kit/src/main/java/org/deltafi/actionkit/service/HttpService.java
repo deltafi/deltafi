@@ -33,6 +33,9 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+/**
+ * General purpose HTTP client service
+ */
 @ApplicationScoped
 @RequiredArgsConstructor
 @Slf4j
@@ -43,6 +46,15 @@ public class HttpService {
     @SuppressWarnings("EmptyMethod")
     void startup(@Observes StartupEvent event) {}
 
+    /**
+     * Post data to an HTTP endpoint
+     * @param url URL endpoint where data will be posted
+     * @param headers Map of key-value pairs for HTTP header fields and values
+     * @param body Body content to be posted to the HTTP endpoint
+     * @param mediaType Media type of the HTTP post
+     * @return an HTTP response object with success/failure details
+     * @throws RuntimeException when the HTTP client throws an IOException or InterruptedException
+     */
     @SuppressWarnings("UnusedReturnValue")
     @NotNull
     public java.net.http.HttpResponse<InputStream> post(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) {
@@ -65,9 +77,13 @@ public class HttpService {
         }
     }
 
-    private void addHeaders(@NotNull HttpRequest.Builder builder, @NotNull Map<String, String> headers) {
+    /**
+     * Add a string map of headers to an HttpRequest
+     * @param builder Builder used to create an HttpRequest
+     * @param headers String map of headers to add to the HttpRequest
+     */
+    static private void addHeaders(@NotNull HttpRequest.Builder builder, @NotNull Map<String, String> headers) {
         if (!headers.isEmpty()) {
-            // Flatten out the map to fit the silly, silly API
             builder.headers(
                     headers.entrySet().stream().flatMap(x -> Stream.of(x.getKey(), x.getValue())).toArray(String[]::new)
             );

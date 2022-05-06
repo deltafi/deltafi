@@ -28,15 +28,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Specialized result class for LOAD actions that split DeltaFiles into multiple child flows.  Each child added to
+ * this result object will be ingressed as a new DeltaFile on the specified flow.
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class SplitResult extends Result {
     List<SplitInput> splitInputs = new ArrayList<>();
 
+    /**
+     * @param context Execution context for the current action
+     */
     public SplitResult(ActionContext context) {
         super(context);
     }
 
+    /**
+     * Add a new child to the result that will be ingressed as a new DeltaFile
+     * @param filename Ingress file name for the new DeltaFile
+     * @param flow Flow for the new DeltaFile to be ingressed on
+     * @param metadata Source metadata for the new DeltaFile
+     * @param content Content of the new DeltaFile
+     */
     public void addChild(String filename, String flow, List<KeyValue> metadata, List<Content> content) {
         splitInputs.add(SplitInput.newBuilder()
                 .sourceInfo(new SourceInfo(filename, flow, metadata))
@@ -44,6 +58,13 @@ public class SplitResult extends Result {
                 .build());
     }
 
+    /**
+     * Add a new child to the result that will be ingressed as a new DeltaFile
+     * @param filename Ingress file name for the new DeltaFile
+     * @param flow Flow for the new DeltaFile to be ingressed on
+     * @param metadata Source metadata for the new DeltaFile
+     * @param content Content of the new DeltaFile
+     */
     @SuppressWarnings("unused")
     public void addChild(String filename, String flow, Map<String, String> metadata, List<Content> content) {
         addChild(filename, flow, KeyValueConverter.fromMap(metadata), content);

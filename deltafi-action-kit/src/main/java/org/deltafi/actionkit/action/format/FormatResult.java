@@ -33,6 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Specialized result class for FORMAT actions
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
@@ -41,20 +44,38 @@ public class FormatResult extends Result {
     protected ContentReference contentReference;
     protected List<KeyValue> metadata = new ArrayList<>();
 
+    /**
+     * @param context Context of the executed action
+     * @param filename File name of the formatted result content
+     */
     public FormatResult(@NotNull ActionContext context, @NotNull String filename) {
         super(context);
         this.filename = filename;
     }
 
+    /**
+     * Add metadata by single KeyValue
+     * @param keyValue A single KeyValue to add to metadata
+     */
     @SuppressWarnings("unused")
     public void addMetadata(KeyValue keyValue) {
         metadata.add(keyValue);
     }
 
+    /**
+     * Add metadata by single KeyValue with a prefix for the key
+     * @param keyValue A single KeyValue to add to metadata
+     * @param prefix String to prepend to each key before adding to metadata
+     */
     public void addMetadata(KeyValue keyValue, String prefix) {
         metadata.add(new KeyValue(prefix + keyValue.getKey(), keyValue.getValue()));
     }
 
+    /**
+     * Add metadata by list of KeyValue objects
+     * @param keyValues List of KeyValue object to add to metadata
+     */
+    @SuppressWarnings("unused")
     public void addMetadata(List<KeyValue> keyValues) {
         if (keyValues == null) {
             return;
@@ -63,6 +84,11 @@ public class FormatResult extends Result {
         metadata.addAll(keyValues);
     }
 
+    /**
+     * Add metadata by list of KeyValue objects, prefixing each key with a fixed string
+     * @param keyValues List of KeyValue object to add to metadata
+     * @param prefix String to prepend to each key before adding to metadata
+     */
     public void addMetadata(List<KeyValue> keyValues, String prefix) {
         if (keyValues == null) {
             return;
@@ -71,10 +97,19 @@ public class FormatResult extends Result {
         keyValues.forEach(kv -> addMetadata(kv, prefix));
     }
 
+    /**
+     * Add metadata by key and value
+     * @param key Key for a metadata value
+     * @param value A metadata value
+     */
     public void addMetadata(String key, String value) {
         metadata.add(new KeyValue(key, value));
     }
 
+    /**
+     * Add metadata by key/value map
+     * @param map String pairs to add to metadata
+     */
     @SuppressWarnings("unused")
     public void addMetadata(@NotNull Map<String, String> map) {
         map.forEach(this::addMetadata);

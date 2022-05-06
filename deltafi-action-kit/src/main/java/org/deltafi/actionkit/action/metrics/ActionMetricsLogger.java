@@ -25,11 +25,18 @@ import org.deltafi.actionkit.action.ActionType;
 import java.util.Collection;
 import java.util.HashMap;
 
+/**
+ * Utility class for logging action metrics
+ */
 public class ActionMetricsLogger {
 
+    /**
+     * Log action metrics to the {@link MetricLogger}
+     * @param actionType Type of action for the metric being logged
+     * @param result Result object containing the metrics to be logged
+     */
     public static void logMetrics(ActionType actionType, Result result) {
         Collection<Metric> metrics = result.getMetrics();
-
         for (Metric metric : metrics) {
             HashMap<String, String> tags = new HashMap<>();
             tags.put("action", result.getContext().getName());

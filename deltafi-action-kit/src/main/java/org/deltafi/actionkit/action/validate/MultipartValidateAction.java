@@ -29,6 +29,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Base class for a VALIDATE action that will handle multi-part content on input and needs to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleMultipartValidateAction
+ * @see SimpleValidateAction
+ * @see ValidateAction
+ */
 @SuppressWarnings("unused")
 public abstract class MultipartValidateAction<P extends ActionParameters> extends ValidateActionBase<P> {
     public MultipartValidateAction(Class<P> actionParametersClass) {
@@ -40,5 +48,17 @@ public abstract class MultipartValidateAction<P extends ActionParameters> extend
         return validate(context, params, deltaFile.getSourceInfo(), Objects.isNull(deltaFile.getFormattedData()) ? Collections.emptyList() : deltaFile.getFormattedData());
     }
 
+    /**
+     * Implements the validate execution function of a validate action
+     * @param context The action configuration context object for this action execution
+     * @param params The parameter class that configures the behavior of this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param formattedDataList The list of data objects to be validated by this action
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
+     * a ValidateResult
+     * @see ValidateResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract Result validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<FormattedData> formattedDataList);
 }

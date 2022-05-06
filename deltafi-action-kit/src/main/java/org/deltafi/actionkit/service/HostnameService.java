@@ -25,6 +25,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 
+/**
+ * Service object that provides access to the local hostname
+ */
 @Slf4j
 @ApplicationScoped
 public class HostnameService {
@@ -43,6 +46,9 @@ public class HostnameService {
         }
     }
 
+    /**
+     * @return the local hostname where an action is running
+     */
     public String getHostname() {
         return hostname;
     }

@@ -17,6 +17,7 @@
  */
 package org.deltafi.actionkit.action.egress;
 
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
@@ -29,12 +30,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Specialized result class for EGRESS actions
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class EgressResult extends Result {
     private final String destination;
     private final long bytesEgressed;
 
+    /**
+     * @param context Context of the executed action
+     * @param destination Location where data was egressed
+     * @param bytesEgressed Number of bytes egressed in the action
+     */
+    @Builder
     public EgressResult(@NotNull ActionContext context, String destination, long bytesEgressed) {
         super(context);
 

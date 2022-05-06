@@ -28,13 +28,19 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Base class for a LOAD action that will handle multi-part content on input and needs to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleMultipartLoadAction
+ * @see SimpleLoadAction
+ * @see LoadAction
+ */
 @SuppressWarnings("unused")
 public abstract class MultipartLoadAction<P extends ActionParameters> extends LoadActionBase<P> {
     public MultipartLoadAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }
-
-    public abstract String getConsumes();
 
     @Override
     protected final Result execute(@NotNull DeltaFile deltaFile,
@@ -47,6 +53,20 @@ public abstract class MultipartLoadAction<P extends ActionParameters> extends Lo
                 deltaFile.getLastProtocolLayerMetadataAsMap());
     }
 
+    /**
+     * Implements the load execution function of a load action
+     * @param context The action configuration context object for this action execution
+     * @param params The parameter class that configures the behavior of this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param contentList The content to be loaded by this action
+     * @param metadata The metadata to be applied to this action
+     * @return A result object containing results for the action execution.
+     *         The result can be an ErrorResult, SplitResult, FilterResult, or LoadResult
+     * @see LoadResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     * @see SplitResult
+     */
     public abstract Result load(@NotNull ActionContext context,
                                 @NotNull P params,
                                 @NotNull SourceInfo sourceInfo,

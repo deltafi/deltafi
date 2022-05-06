@@ -26,13 +26,30 @@ import org.deltafi.core.domain.generated.types.FormatActionSchemaInput;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Specialization class for FORMAT actions.  This class should not be used directly, but instead use one of
+ * the provided format action implementation classes.
+ * @param <P> Parameter class for configuring the format action
+ * @see FormatAction
+ * @see SimpleFormatAction
+ * @see MultipartFormatAction
+ * @see SimpleMultipartFormatAction
+ */
 public abstract class FormatActionBase<P extends ActionParameters> extends Action<P> {
     public FormatActionBase(Class<P> actionParametersClass) {
         super(ActionType.FORMAT, actionParametersClass);
     }
 
+    /**
+     * Implement to provide a list of required domains for formatting to proceed
+     * @return List of domain name strings
+     */
     public abstract List<String> getRequiresDomains();
 
+    /**
+     * Implement to provide a list of required enrichments for formatting to proceed
+     * @return List of enrichment name strings
+     */
     public List<String> getRequiresEnrichment() {
         return Collections.emptyList();
     }

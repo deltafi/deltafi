@@ -27,6 +27,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
+/**
+ * Base class for a TRANSFORM action that will not process multi-part content, but needs to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleTransformAction
+ * @see MultipartTransformAction
+ * @see SimpleMultipartTransformAction
+ */
 public abstract class TransformAction<P extends ActionParameters> extends TransformActionBase<P> {
     public TransformAction(Class<P> actionParametersClass) {
         super(actionParametersClass);

@@ -27,11 +27,18 @@ import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.TransformInput;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Specialized result class for TRANSFORM actions
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class TransformResult extends DataAmendedResult {
     private final String type;
 
+    /**
+     * @param context Context of executing action
+     * @param type Content type of resulting content
+     */
     public TransformResult(@NotNull ActionContext context, @NotNull String type) {
         super(context);
 

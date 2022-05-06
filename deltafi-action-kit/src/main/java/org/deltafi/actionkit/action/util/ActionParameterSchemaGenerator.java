@@ -21,9 +21,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 import java.util.Map;
 
+/**
+ * Helper class that provides a generic schema generation function for arbitrary parameter classes that are used to
+ * configure actions
+ *
+ * @see ActionParameters
+ */
 public class ActionParameterSchemaGenerator {
 
     private static final SchemaGenerator SCHEMA_GENERATOR;

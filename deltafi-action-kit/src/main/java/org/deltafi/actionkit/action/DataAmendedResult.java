@@ -30,6 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Specialization of the Result base class that allows metadata and content to be collected in the result.
+ *
+ * This class is extended for Load and Transform results
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
@@ -37,24 +42,44 @@ public abstract class DataAmendedResult extends Result {
     protected List<Content> content = new ArrayList<>();
     protected List<KeyValue> metadata = new ArrayList<>();
 
+    /**
+     * @param context Action context
+     */
     public DataAmendedResult(ActionContext context) {
         super(context);
     }
 
+    /**
+     * Add metadata by key and value Strings
+     * @param key Metadata key to add
+     * @param value Metadata value to add
+     */
     public void addMetadata(String key, String value) {
         metadata.add(new KeyValue(key, value));
     }
 
+    /**
+     * Add metadata by map
+     * @param map Key-value pairs to add to metadata
+     */
     @SuppressWarnings("unused")
     public void addMetadata(@NotNull Map<String, String> map) {
         map.forEach(this::addMetadata);
     }
 
+    /**
+     * Add a Content object to the list of content in the result
+     * @param contentItem Content object to add to the result
+     */
     @SuppressWarnings("unused")
     public void addContent(@NotNull Content contentItem) {
         content.add(contentItem);
     }
 
+    /**
+     * Add a content reference to the list of content in the result
+     * @param contentReference A content reference to be added to the result
+     */
     @SuppressWarnings("unused")
     public void addContentReference(@NotNull ContentReference contentReference) {
         addContent(Content.newBuilder().contentReference(contentReference).build());

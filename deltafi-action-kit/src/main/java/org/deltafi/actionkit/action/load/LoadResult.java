@@ -29,16 +29,30 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Specialized result class for LOAD actions
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class LoadResult extends DataAmendedResult {
     private final List<DomainInput> domains = new ArrayList<>();
 
+    /**
+     * @param context Context of executing action
+     * @param contentList List of content objects to be processed with the execution result
+     */
     public LoadResult(@NotNull ActionContext context, @NotNull List<Content> contentList) {
         super(context);
         setContent(contentList);
     }
 
+    /**
+     * Add a domain to the result.  This method can be invoked multiple times to add additional
+     * domains.
+     * @param domainName Key/name of the domain that is being added
+     * @param value Value of the domain that is being added
+     * @param mediaType The media type of the added domain
+     */
     public void addDomain(@NotNull String domainName, String value, @NotNull String mediaType) {
         domains.add(new DomainInput(domainName, value, mediaType));
     }

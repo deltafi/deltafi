@@ -23,6 +23,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
+/**
+ * Parameter class that all EgressAction parameters should extend.
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EgressActionParameters extends ActionParameters {
@@ -30,6 +33,7 @@ public class EgressActionParameters extends ActionParameters {
     @JsonPropertyDescription("Name of the egress flow the DeltaFile is flowing through")
     private String egressFlow;
 
+    // FIXME: Should use lombok annotation
     public EgressActionParameters() {}
 
     public EgressActionParameters(String egressFlow) {

@@ -37,6 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Service that gathers up all the extant actions and registers them with the domain
+ */
 @Slf4j
 @ApplicationScoped
 public class RegistrationService {

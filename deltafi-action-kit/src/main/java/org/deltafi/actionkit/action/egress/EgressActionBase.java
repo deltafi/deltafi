@@ -22,6 +22,15 @@ import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.deltafi.core.domain.generated.types.EgressActionSchemaInput;
 
+/**
+ * Specialization class for EGRESS actions.  This class should not be used directly, but instead use one of
+ * the provided egress action implementation classes.
+ * @param <P> Parameter class for configuring the egress action
+ * @see EgressAction
+ * @see SimpleEgressAction
+ * @see MultipartEgressAction
+ * @see SimpleMultipartEgressAction
+ */
 public abstract class EgressActionBase<P extends EgressActionParameters> extends Action<P> {
     public EgressActionBase(Class<P> actionParametersClass) {
         super(ActionType.EGRESS, actionParametersClass);

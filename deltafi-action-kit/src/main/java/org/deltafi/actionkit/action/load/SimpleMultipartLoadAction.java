@@ -27,6 +27,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Base class for a LOAD action that will process multi-part content, but does not need to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleLoadAction
+ * @see MultipartLoadAction
+ * @see LoadAction
+ */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartLoadAction extends MultipartLoadAction<ActionParameters> {
     public SimpleMultipartLoadAction() {
@@ -42,6 +50,19 @@ public abstract class SimpleMultipartLoadAction extends MultipartLoadAction<Acti
         return load(context, sourceInfo, contentList, metadata);
     }
 
+    /**
+     * Implements the load execution function of a load action
+     * @param context The action configuration context object for this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param contentList The content to be loaded by this action
+     * @param metadata The metadata to be applied to this action
+     * @return A result object containing results for the action execution.
+     *         The result can be an ErrorResult, SplitResult, FilterResult, or LoadResult
+     * @see LoadResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     * @see SplitResult
+     */
     public abstract Result load(@NotNull ActionContext context,
                                 @NotNull SourceInfo sourceInfo,
                                 @NotNull List<Content> contentList,

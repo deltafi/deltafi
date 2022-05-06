@@ -17,8 +17,15 @@
  */
 package org.deltafi.actionkit.action;
 
+/**
+ * Enumeration for action types
+ */
 public enum ActionType {
-    TRANSFORM, LOAD,
-    ENRICH, FORMAT, VALIDATE, EGRESS,
+    TRANSFORM,
+    LOAD,
+    ENRICH,
+    FORMAT,
+    VALIDATE,
+    EGRESS,
     DELETE
 }

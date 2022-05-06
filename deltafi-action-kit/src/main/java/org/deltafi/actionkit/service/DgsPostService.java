@@ -33,6 +33,9 @@ import java.net.http.HttpRequest;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Helper service that wraps an HTTP client for use by the DomainGatewayService
+ */
 @ApplicationScoped
 @RequiredArgsConstructor
 @Slf4j

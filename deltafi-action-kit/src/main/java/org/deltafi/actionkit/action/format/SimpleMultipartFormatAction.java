@@ -29,6 +29,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Base class for a FORMAT action that will process multi-part content, but does not need to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleFormatAction
+ * @see MultipartFormatAction
+ * @see FormatAction
+ */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartFormatAction extends MultipartFormatAction<ActionParameters> {
     public SimpleMultipartFormatAction() {
@@ -46,6 +54,21 @@ public abstract class SimpleMultipartFormatAction extends MultipartFormatAction<
         return format(context, sourceInfo, contentList, metadata, domains, enrichment);
     }
 
+    /**
+     * Implements the format execution function of a format action
+     * @param context The action configuration context object for this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param contentList The list of data objects to be formatted by this action
+     * @param metadata The metadata for this format action
+     * @param domains A map of domain names with their associated domain values for this action
+     * @param enrichment A map of enrichment names with their associated domain values for this action
+     * @return A result object containing results for the action execution.
+     *         The result can be an ErrorResult, FilterResult, FormatResult, or FormatManyResult
+     * @see FormatResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     * @see FormatManyResult
+     */
     public abstract Result format(@NotNull ActionContext context,
                                   @NotNull SourceInfo sourceInfo,
                                   @NotNull List<Content> contentList,

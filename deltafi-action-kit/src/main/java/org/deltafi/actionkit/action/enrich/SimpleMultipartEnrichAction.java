@@ -29,6 +29,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Base class for a ENRICH action that will process multi-part content, but does not need to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleEnrichAction
+ * @see MultipartEnrichAction
+ * @see EnrichAction
+ */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartEnrichAction extends MultipartEnrichAction<ActionParameters> {
     public SimpleMultipartEnrichAction() {
@@ -46,6 +54,20 @@ public abstract class SimpleMultipartEnrichAction extends MultipartEnrichAction<
         return enrich(context, sourceInfo, contentList, metadata, domains, enrichment);
     }
 
+    /**
+     * Implements the enrichment execution function of an enrich action
+     * @param context The action configuration context object for this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param contentList The content to be enriched by this action
+     * @param metadata The metadata for this enrich action
+     * @param domains A map of domain names with their associated domain values for this action
+     * @param enrichment A map of enrichment names with their associated domain values for this action
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
+     * a EnrichResult
+     * @see EnrichResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract Result enrich(@NotNull ActionContext context,
                                   @NotNull SourceInfo sourceInfo,
                                   @NotNull List<Content> contentList,

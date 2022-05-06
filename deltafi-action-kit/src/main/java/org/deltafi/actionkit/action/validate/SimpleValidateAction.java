@@ -24,6 +24,13 @@ import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.FormattedData;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Base class for a VALIDATE action that does not need to extend ActionParameters for configuration
+ *
+ * @see SimpleMultipartValidateAction
+ * @see MultipartValidateAction
+ * @see ValidateAction
+ */
 public abstract class SimpleValidateAction extends ValidateAction<ActionParameters> {
     public SimpleValidateAction() {
         super(ActionParameters.class);
@@ -34,5 +41,16 @@ public abstract class SimpleValidateAction extends ValidateAction<ActionParamete
         return validate(context, sourceInfo, formattedData);
     }
 
+    /**
+     * Implements the validate execution function of a validate action
+     * @param context The action configuration context object for this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param formattedData The content to be validated by this action
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
+     * a ValidateResult
+     * @see ValidateResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract Result validate(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 }

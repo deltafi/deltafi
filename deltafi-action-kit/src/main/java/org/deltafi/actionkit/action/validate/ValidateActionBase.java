@@ -23,6 +23,15 @@ import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.deltafi.core.domain.generated.types.ValidateActionSchemaInput;
 
+/**
+ * Specialization class for VALIDATE actions.  This class should not be used directly, but instead use one of
+ * the provided validate action implementation classes.
+ * @param <P> Parameter class for configuring the validate action
+ * @see ValidateAction
+ * @see SimpleValidateAction
+ * @see MultipartValidateAction
+ * @see SimpleMultipartValidateAction
+ */
 public abstract class ValidateActionBase<P extends ActionParameters> extends Action<P> {
     public ValidateActionBase(Class<P> actionParametersClass) {
         super(ActionType.VALIDATE, actionParametersClass);

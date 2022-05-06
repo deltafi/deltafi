@@ -20,14 +20,28 @@ package org.deltafi.actionkit.action.load;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.ActionType;
+
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.deltafi.core.domain.generated.types.LoadActionSchemaInput;
 
+/**
+ * Specialization class for LOAD actions.  This class should not be used directly, but instead use one of
+ * the provided Load action implementation classes.
+ * @param <P> Parameter class for configuring the Load action
+ * @see LoadAction
+ * @see SimpleLoadAction
+ * @see MultipartLoadAction
+ * @see SimpleMultipartLoadAction
+ */
 public abstract class LoadActionBase<P extends ActionParameters> extends Action<P> {
     public LoadActionBase(Class<P> actionParametersClass) {
         super(ActionType.LOAD, actionParametersClass);
     }
 
+    /**
+     * Declares a consumer type for this action
+     * @return consumer type string
+     */
     public abstract String getConsumes();
 
     @Override

@@ -24,10 +24,16 @@ import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Specialized result class for VALIDATE actions
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class ValidateResult extends Result {
 
+    /**
+     * @param context Context of executing action
+     */
     public ValidateResult(@NotNull ActionContext context) {
         super(context);
     }

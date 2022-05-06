@@ -56,6 +56,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Base class for all DeltaFi Actions.  No action should directly extend this class, but should use
+ * specialized classes in the action taxonomy (LoadAction, EgressAction, etc.)
+ * @param <P> The parameter class that will be used to configure the action instance.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public abstract class Action<P extends ActionParameters> {
@@ -83,20 +88,37 @@ public abstract class Action<P extends ActionParameters> {
 
     @Inject
     @SuppressWarnings("CdiInjectionPointsInspection")
-    ActionVersionProperty actionVersionProperty;
+    protected ActionVersionProperty actionVersionProperty;
 
     private final ActionType actionType;
     private final Class<P> paramType;
 
     private final ScheduledExecutorService startListeningExecutor = Executors.newSingleThreadScheduledExecutor();
 
+    /**
+     * Empty method that prevents Quarkus engine from pruning action classes at startup
+     * @param start Event that is generated at startup
+     */
     @SuppressWarnings({"unused", "EmptyMethod"})
     public void start(@Observes StartupEvent start) {
         // quarkus will prune the actions if this is not included
     }
 
+    /**
+     * This is the action entry point where all specific action functionality is implemented.  This abstract method
+     * must be implemented by each Action subclass.
+     * @param deltaFile An instance of DeltaFile against which the action is executed
+     * @param context The context for the specific instance of the action being executed.  This includes the name of the
+     *                action, the flow to which it is attached, the version of the action, and the hostname
+     * @param params Any configuration parameters that belong to the specific instance of the action.
+     * @return An action result object.  If there is an error, an ErrorResult object should be returned.
+     * @see ErrorResult
+     */
     protected abstract Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params);
 
+    /**
+     * Automatically called after construction to initiate polling for inbound actions to be executed
+     */
     @PostConstruct
     public void startAction() {
         log.info("Starting action: {}", getFeedString());
@@ -126,7 +148,7 @@ public abstract class Action<P extends ActionParameters> {
                 if (Objects.nonNull(span)) { zipkinService.markSpanComplete(span); }
             }
         } catch (Throwable e) {
-            log.error("Tell Jeremy he really, really needs to fix this exception: " + e.getMessage());
+            log.error("Unexpected exception caught at Action thread execution level: " + e.getMessage());
         }
     }
 
@@ -155,6 +177,9 @@ public abstract class Action<P extends ActionParameters> {
         return this.getClass().getCanonicalName();
     }
 
+    /**
+     * @return the version of this action
+     */
     public final String getVersion() {
         if (Objects.nonNull(actionVersionProperty)) {
             return actionVersionProperty.getVersion();
@@ -163,19 +188,33 @@ public abstract class Action<P extends ActionParameters> {
         return "UNKNOWN";
     }
 
+    /**
+     * @return hostname of the host where this action is running
+     */
     public final String getHostname() {
         return hostnameService.getHostname();
     }
 
+    /**
+     * @return system name for the current DeltaFi system
+     */
     @SuppressWarnings("unused")
     public final String getSystemName() {
         return deltaFiSystemProperties.getSystemName();
     }
 
+    /**
+     * Get the canonical class name of the parameter class
+     * @return parameter class name
+     */
     protected String getParamClass() {
         return paramType.getCanonicalName();
     }
 
+    /**
+     * Generate a key/value map for the parameter schema of this action
+     * @return Map of parameter class used to configure this action
+     */
     protected Map<String, Object> getDefinition() {
         JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
         Map<String, Object> definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>(){});
@@ -183,15 +222,38 @@ public abstract class Action<P extends ActionParameters> {
         return definition;
     }
 
+    /**
+     * Each action type base class should implement this method.  The implementation should provide an action
+     * schema and add it to the provided ActionRegistrationInput.  This method will be invoked by an action
+     * registration service for each type of action that is created.
+     *
+     * @param a An ActionRegistrationInput object representing the schema for the implemented action type
+     */
     public abstract void registerSchema(ActionRegistrationInput a);
 
+    /**
+     * Safely get the canonical name of this action class
+     * @return the canonical name of the action class as a string
+     */
     protected String getClassCanonicalName() {
         return this instanceof Subclass ? this.getClass().getSuperclass().getCanonicalName() : this.getClass().getCanonicalName();
     }
 
+    /**
+     * Convert a map of key/values to a parameter object for the Action
+     * @param params Key-value map representing the values in the paraameter object
+     * @return a parameter object initialized by the params map
+     */
     public P convertToParams(Map<String, Object> params) {
         return OBJECT_MAPPER.convertValue(params, paramType);
     }
+
+    /**
+     * Load a content reference from the content storage service as a byte array
+     * @param contentReference Reference to content to be loaded
+     * @return a byte array for the loaded content
+     * @throws ObjectStorageException when the load from the content storage service fails
+     */
 
     @SuppressWarnings("unused")
     protected byte[] loadContent(ContentReference contentReference) throws ObjectStorageException {
@@ -204,18 +266,47 @@ public abstract class Action<P extends ActionParameters> {
         return content;
     }
 
+    /**
+     * Load a content reference from the content storage service as an InputStream
+     * @param contentReference Reference to content to be loaded
+     * @return an InputStream for the loaded content
+     * @throws ObjectStorageException when the load from the content storage service fails
+     */
     protected InputStream loadContentAsInputStream(ContentReference contentReference) throws ObjectStorageException {
         return contentStorageService.load(contentReference);
     }
 
+    /**
+     * Save content associated with a DeltaFile to content storage
+     * @param did The DID for the DeltaFile associated with the saved content
+     * @param content Byte array of content to store.  The entire byte array will be stored in content storage
+     * @param mediaType Media type for the content being stored
+     * @return a content reference for the new stored content
+     * @throws ObjectStorageException when the content storage service fails to store content
+     */
     protected ContentReference saveContent(String did, byte[] content, String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
     }
 
+    /**
+     * Save content associated with a DeltaFile to content storage
+     * @param did The DID for the DeltaFile associated with the saved content
+     * @param content InputStream of content to store.  The entire stream will be read into content storage, and the
+     *                stream may be closed by underlying processors after execution
+     * @param mediaType Media type for the content being stored
+     * @return a content reference for the new stored content
+     * @throws ObjectStorageException when the content storage service fails to store content
+     */
     protected ContentReference saveContent(String did, InputStream content, String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
     }
 
+    /**
+     * Delete content for a specific DID.  All content associated with a specific
+     * DeltaFile DID will be deleted
+     * @param did DeltaFile identifier for content to be deleted
+     * @return true on success, false if unable to delete content
+     */
     protected boolean deleteContent(String did) {
         return contentStorageService.deleteAll(did);
     }

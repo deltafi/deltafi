@@ -31,6 +31,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Base class for all action results.  Specializations of the Result class are provided for each action type.
+ */
 @Getter
 @EqualsAndHashCode
 public abstract class Result {
@@ -45,8 +48,14 @@ public abstract class Result {
         this.context = context;
     }
 
+    /**
+     * @return the action event type for the specific type of action being executed
+     */
     public abstract ActionEventType actionEventType();
 
+    /**
+     * @return action event summary object based on the action context
+     */
     public ActionEventInput toEvent() {
         return ActionEventInput.newBuilder()
                 .did(context.getDid())
@@ -57,14 +66,24 @@ public abstract class Result {
                 .build();
     }
 
+    /**
+     * @return action execution context
+     */
     public ActionContext getContext() {
         return context;
     }
 
+    /**
+     * This method should be overridden to provide any custom metrics when the result is harvested.
+     * @return collection of Metric objects
+     */
     public Collection<Metric> getCustomMetrics() {
         return Collections.emptyList();
     }
 
+    /**
+     * @return a collection of default metrics (based on the result event type) and custom metrics
+     */
     public Collection<Metric> getMetrics() {
         List<String> metricCounters = new ArrayList<>();
 

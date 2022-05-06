@@ -26,6 +26,9 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.URISyntaxException;
 
+/**
+ * Specialization of ActionEventService.  Service for pushing and popping action events to a redis queue.
+ */
 public class RedisActionEventService implements ActionEventService {
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
 

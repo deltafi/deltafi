@@ -29,6 +29,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
+/**
+ * Base class for a FORMAT action that will not process multi-part content, but needs to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleFormatAction
+ * @see MultipartFormatAction
+ * @see SimpleMultipartFormatAction
+ */
 public abstract class FormatAction<P extends ActionParameters> extends FormatActionBase<P> {
     public FormatAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
@@ -47,6 +55,22 @@ public abstract class FormatAction<P extends ActionParameters> extends FormatAct
                 deltaFile.enrichmentMap());
     }
 
+    /**
+     * Implements the format execution function of a format action
+     * @param context The action configuration context object for this action execution
+     * @param params The parameter class that configures the behavior of this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param content The content to be formatted by this action
+     * @param metadata The metadata for this format action
+     * @param domains A map of domain names with their associated domain values for this action
+     * @param enrichment A map of enrichment names with their associated domain values for this action
+     * @return A result object containing results for the action execution.
+     *         The result can be an ErrorResult, FilterResult, FormatResult, or FormatManyResult
+     * @see FormatResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     * @see FormatManyResult
+     */
     public abstract Result format(@NotNull ActionContext context,
                                   @NotNull P params,
                                   @NotNull SourceInfo sourceInfo,

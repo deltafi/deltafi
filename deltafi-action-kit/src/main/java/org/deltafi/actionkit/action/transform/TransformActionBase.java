@@ -23,13 +23,30 @@ import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.deltafi.core.domain.generated.types.TransformActionSchemaInput;
 
+/**
+ * Specialization class for TRANSFORM actions.  This class should not be used directly, but instead use one of
+ * the provided transform action implementation classes.
+ * @param <P> Parameter class for configuring the transform action
+ * @see TransformAction
+ * @see SimpleTransformAction
+ * @see MultipartTransformAction
+ * @see SimpleMultipartTransformAction
+ */
 public abstract class TransformActionBase<P extends ActionParameters> extends Action<P> {
     public TransformActionBase(Class<P> actionParametersClass) {
         super(ActionType.TRANSFORM, actionParametersClass);
     }
 
+    /**
+     * Declares a consumer type for this action
+     * @return consumer type string
+     */
     public abstract String getConsumes();
 
+    /**
+     * Declares a producer type for this action
+     * @return producer type string
+     */
     public abstract String getProduces();
 
     @Override

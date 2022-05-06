@@ -26,11 +26,18 @@ import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.deltafi.core.domain.generated.types.FilterInput;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Specialized result class for terminating an action in the FILTERED state
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class FilterResult extends Result {
     private final String message;
 
+    /**
+     * @param context Execution context of the filtered action
+     * @param message Message explaining the reason for the filtered action
+     */
     public FilterResult(@NotNull ActionContext context, @NotNull String message) {
         super(context);
 

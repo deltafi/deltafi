@@ -30,15 +30,29 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Specialized result class for ENRICH actions
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result {
     private final List<EnrichmentInput> enrichments = new ArrayList<>();
 
+    /**
+     * @param context Context of the executed action
+     */
     public EnrichResult(@NotNull ActionContext context) {
         super(context);
     }
 
+    /**
+     * Apply an enrichment to the DeltaFile when processing the result of
+     * this action.  Multiple enrichments can be applied by invoking this method
+     * multiple times.
+     * @param enrichmentName Name of enrichment being applied to the DeltaFile
+     * @param value String value of the applied enrichment
+     * @param mediaType Media type of the applied enrichment
+     */
     public void addEnrichment(@NotNull String enrichmentName, String value, @NotNull String mediaType) {
         enrichments.add(new EnrichmentInput(enrichmentName, value, mediaType));
     }

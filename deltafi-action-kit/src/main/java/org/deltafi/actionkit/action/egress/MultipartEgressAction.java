@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
@@ -26,6 +27,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+/**
+ * Base class for an EGRESS action that will handle multi-part content on input and needs to extend
+ * ActionParameters for configuration
+ *
+ * @see SimpleMultipartEgressAction
+ * @see SimpleEgressAction
+ * @see EgressAction
+ */
 @SuppressWarnings("unused")
 public abstract class MultipartEgressAction<P extends EgressActionParameters> extends EgressActionBase<P> {
     public MultipartEgressAction(Class<P> actionParametersClass) {
@@ -37,5 +46,17 @@ public abstract class MultipartEgressAction<P extends EgressActionParameters> ex
         return egress(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData());
     }
 
+    /**
+     * Implements the egress execution function of an egress action
+     * @param context The action configuration context object for this action execution
+     * @param params The parameter class that configures the behavior of this action execution
+     * @param sourceInfo The source info for this action execution
+     * @param formattedDataList The content to be egressed by this action
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
+     * a FormatResult
+     * @see FormatResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract Result egress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<FormattedData> formattedDataList);
 }
