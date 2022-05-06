@@ -46,8 +46,3 @@ dependencies {
     implementation 'org.mock-server:mockserver-netty:5.12.0'
     implementation 'org.mock-server:mockserver-junit-jupiter:5.12.0'
 }
-
-test {
-    useJUnitPlatform()
-    finalizedBy jacocoTestReport
-}

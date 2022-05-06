@@ -19,28 +19,3 @@ core-domain:publish:
   needs:
     - job: "build"
   script: ${GRADLE} ${PROJECT_NAME}:publish
-
-core-domain:coverage_report:
-  stage: publish
-  extends:
-    - .core-domain
-    - .coverage_report
-  needs: ["build"]
-  dependencies:
-    - build
-
-# include:
-#  - template: Code-Quality.gitlab-ci.yml
-
-# code_quality:
-#   artifacts:
-#     paths: [gl-code-quality-report.json]
-
-# code_quality_html:
-#   extends: code_quality
-#   variables:
-#     REPORT_FORMAT: html
-#   artifacts:
-#     expose_as: 'Code Quality Report'
-#     paths: [gl-code-quality-report.html]
-

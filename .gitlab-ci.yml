@@ -44,6 +44,9 @@ trigger_deltafi_stix:
   trigger:
     project: systolic/deltafi/deltafi-stix
     branch: $CI_COMMIT_REF_NAME
+    forward:
+      yaml_variables: false
+      pipeline_variables: false
 
 .gradle:
   image: gradle:7.3.3-jdk11
@@ -82,20 +85,6 @@ trigger_deltafi_stix:
     - docker push ${DOCKER_NAMED_TAG}
     - docker images
 
-.coverage_report:
-  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.8
-  before_script:
-    - test -n "$PROJECT_NAME"
-    - cd $PROJECT_NAME
-  script:
-    - 'python /opt/cover2cover.py build/jacocoReport/test/jacocoTestReport.xml src/main/java > build/cobertura.xml'
-    - 'python /opt/source2filename.py build/cobertura.xml'
-  artifacts:
-    reports:
-      cobertura: $PROJECT_NAME/build/jacocoReport/test/cobertura.xml
-    paths:
-      - $PROJECT_NAME/build/cobertura.xml
-
 # Main build job (builds all the gradle things)
 build:
   stage: build
@@ -109,7 +98,9 @@ build:
       junit: "**/build/test-results/test/**/TEST-*.xml"
     paths:
       - "**/build"
-      - ".gradle"
+    exclude:
+      - "**/build/tmp"
+      - "**/build/classes"
 
 hub_docker_quota_check:
     stage: build
