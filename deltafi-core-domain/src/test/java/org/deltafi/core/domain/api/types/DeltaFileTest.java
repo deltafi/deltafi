@@ -17,11 +17,14 @@
  */
 package org.deltafi.core.domain.api.types;
 
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
+import org.deltafi.core.domain.generated.types.FormattedData;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,6 +44,31 @@ class DeltaFileTest {
         assertEquals("value2", deltaFile.sourceMetadata("key2", "default"));
         assertNull(deltaFile.sourceMetadata("key3"));
         assertEquals("default", deltaFile.sourceMetadata("key3", "default"));
+    }
+
+    @Test
+    void testCalculateBytes() {
+        ContentReference contentReference1 = new ContentReference("uuid1", 0, 500, "did1", "*/*");
+        ContentReference contentReference2 = new ContentReference("uuid1", 400, 200, "did1", "*/*");
+        ContentReference contentReference3 = new ContentReference("uuid1", 200, 200, "did1", "*/*");
+        ContentReference contentReference4 = new ContentReference("uuid2", 5, 200, "did1", "*/*");
+
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .protocolStack(List.of(
+                        new ProtocolLayer("type", "action", List.of(
+                                new Content("name", Collections.emptyList(), contentReference1),
+                                new Content("name2", Collections.emptyList(), contentReference2)), Collections.emptyList()),
+                        new ProtocolLayer("type2", "action2", List.of(
+                                new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
+                ))
+                .formattedData(List.of(
+                        FormattedData.newBuilder().contentReference(contentReference4).build()
+                ))
+                .build();
+
+        deltaFile.calculateTotalBytes();
+        assertEquals(800, deltaFile.getTotalBytes());
+
     }
 
     @Test

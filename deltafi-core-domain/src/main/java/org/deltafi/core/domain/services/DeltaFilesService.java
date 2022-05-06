@@ -344,6 +344,8 @@ public class DeltaFilesService {
                     enqueueActions.add(getDeleteActionInput(child));
                 }
 
+                child.calculateTotalBytes();
+
                 return child;
             }).collect(Collectors.toList());
 
@@ -411,6 +413,8 @@ public class DeltaFilesService {
 
                     enqueueActions.add(getDeleteActionInput(child));
                 }
+
+                child.calculateTotalBytes();
 
                 return child;
             }).collect(Collectors.toList());

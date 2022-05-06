@@ -91,6 +91,7 @@ public class StateMachine {
             sendTrace(deltaFile);
         }
 
+        deltaFile.calculateTotalBytes();
         return enqueueActions;
     }
 
