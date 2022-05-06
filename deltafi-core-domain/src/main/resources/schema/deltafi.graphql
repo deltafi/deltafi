@@ -219,6 +219,8 @@ type DeltaFile {
   markedForDeleteReason: String
   errorAcknowledged: DateTime
   errorAcknowledgedReason: String
+  egressed: Boolean
+  filtered: Boolean
 }
 
 input IngressInput {
@@ -289,6 +291,8 @@ input DeltaFilesFilter {
   actions: [String!]
   formattedData: FormattedDataFilter
   errorAcknowledged: Boolean
+  egressed: Boolean
+  filtered: Boolean
 }
 
 type RetryResult {

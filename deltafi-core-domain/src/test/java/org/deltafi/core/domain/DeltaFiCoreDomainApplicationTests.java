@@ -701,6 +701,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postEgressDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateAuthorityDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.COMPLETE);
+		deltaFile.setEgressed(true);
 		deltaFile.completeAction("SampleEgressAction", START_TIME, STOP_TIME);
 		return deltaFile;
 	}
@@ -736,6 +737,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals("SampleEgressAction", lastAction.getName());
 		assertEquals(ActionState.FILTERED, lastAction.getState());
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
+		assertEquals(true, deltaFile.getFiltered());
 
 		Mockito.verify(redisService, never()).enqueue(any());
 	}
@@ -1721,6 +1723,8 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", List.of()));
 		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").build(), Action.newBuilder().name("action2").build()));
 		deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename2").formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));
+		deltaFile2.setEgressed(true);
+		deltaFile2.setFiltered(true);
 		deltaFileRepo.save(deltaFile2);
 
 		testFilter(DeltaFilesFilter.newBuilder().createdAfter(MONGO_NOW).build(), deltaFile2);
@@ -1758,6 +1762,10 @@ class DeltaFiCoreDomainApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of("3", "4")).build());
 		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(true).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().egressed(false).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().filtered(true).build(), deltaFile2);
 	}
 
 	@Test

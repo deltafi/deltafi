@@ -36,6 +36,7 @@ import java.util.Map;
 public class SourceInfo {
     private String filename;
     private String flow;
+    @Builder.Default
     private List<KeyValue> metadata = new ArrayList<>();
 
     @JsonIgnore

@@ -112,6 +112,8 @@ public class DeltaFilesDatafetcherTestHelper {
                 .did()
                 .parent()
                 .parent()
+                .filtered()
+                .egressed()
             .parent()
             .offset()
             .count()
@@ -124,6 +126,9 @@ public class DeltaFilesDatafetcherTestHelper {
             .actions()
                 .name()
                 .created()
+                .queued()
+                .start()
+                .stop()
                 .modified()
                 .errorCause()
                 .errorContext()
@@ -179,6 +184,7 @@ public class DeltaFilesDatafetcherTestHelper {
                     .size()
                     .did()
                     .parent()
-                .parent();
-
+                .parent()
+            .egressed()
+            .filtered();
 }

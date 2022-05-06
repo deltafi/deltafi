@@ -62,6 +62,8 @@ public class Util {
                 .domains(new ArrayList<>())
                 .enrichment(new ArrayList<>())
                 .formattedData(new ArrayList<>())
+                .egressed(false)
+                .filtered(false)
                 .build();
     }
 
@@ -91,7 +93,6 @@ public class Util {
     public static void assertActionEqualIgnoringDates(Action expected, Action actual) {
         if (expected == null || actual == null) {
             Assertions.assertThat(actual).isEqualTo(expected);
-            return;
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
@@ -108,7 +109,9 @@ public class Util {
                 java.util.Objects.equals(d1.getProtocolStack(), d2.getProtocolStack()) &&
                 java.util.Objects.equals(d1.getDomains(), d2.getDomains()) &&
                 java.util.Objects.equals(d1.getEnrichment(), d2.getEnrichment()) &&
-                java.util.Objects.equals(d1.getFormattedData(), d2.getFormattedData());
+                java.util.Objects.equals(d1.getFormattedData(), d2.getFormattedData()) &&
+                java.util.Objects.equals(d1.getEgressed(), d2.getEgressed()) &&
+                java.util.Objects.equals(d1.getFiltered(), d2.getFiltered());
     }
 
     public static boolean actionsEqualIgnoringDates(List<Action> a1, List<Action> a2) {

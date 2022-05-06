@@ -332,6 +332,8 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         private List<FormattedData> formattedData;
         private OffsetDateTime created;
         private OffsetDateTime modified;
+        private Boolean egressed;
+        private Boolean filtered;
 
         public DeltaFile build() {
             DeltaFile result = new DeltaFile();
@@ -347,6 +349,8 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
             result.setFormattedData(this.formattedData);
             result.setCreated(this.created);
             result.setModified(this.modified);
+            result.setEgressed(this.egressed);
+            result.setFiltered(this.filtered);
             return result;
         }
 
@@ -407,6 +411,16 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
 
         public Builder modified(OffsetDateTime modified) {
             this.modified = modified;
+            return this;
+        }
+
+        public Builder egressed(Boolean egressed) {
+            this.egressed = egressed;
+            return this;
+        }
+
+        public Builder filtered(Boolean filtered) {
+            this.filtered = filtered;
             return this;
         }
     }

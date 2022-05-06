@@ -135,6 +135,8 @@ public class DeltaFilesService {
                 .formattedData(Collections.emptyList())
                 .created(input.getCreated())
                 .modified(now)
+                .egressed(false)
+                .filtered(false)
                 .build();
 
         return advanceAndSave(deltaFile);
@@ -243,6 +245,7 @@ public class DeltaFilesService {
 
     public DeltaFile egress(DeltaFile deltaFile, ActionEventInput event) {
         deltaFile.completeAction(event);
+        deltaFile.setEgressed(true);
 
         return advanceAndSave(deltaFile);
     }
@@ -254,6 +257,7 @@ public class DeltaFilesService {
         }
 
         deltaFile.filterAction(event, event.getFilter().getMessage());
+        deltaFile.setFiltered(true);
 
         return advanceAndSave(deltaFile);
     }
@@ -328,6 +332,8 @@ public class DeltaFilesService {
                         .formattedData(Collections.emptyList())
                         .created(now)
                         .modified(now)
+                        .egressed(false)
+                        .filtered(false)
                         .build();
 
                 enqueueActions.addAll(stateMachine.advance(child));
@@ -440,6 +446,8 @@ public class DeltaFilesService {
                 .formattedData(Collections.emptyList())
                 .created(now)
                 .modified(now)
+                .egressed(false)
+                .filtered(false)
                 .build();
     }
 
