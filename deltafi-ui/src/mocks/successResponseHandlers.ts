@@ -60,5 +60,21 @@ export default [
       console.error(e)
       return
     }
+  }),
+
+  graphql.mutation(/.*/, (req, res, ctx) => {
+    try {
+      if (req.body && 'operationName' in req.body) {
+        const mockModule = require(`./graphql/mutations/${req.body.operationName}`);
+        const responseJson = ('default' in mockModule) ? mockModule.default : mockModule
+        return res(
+          ctx.delay(100),
+          ctx.data(responseJson)
+        );
+      }
+    } catch (e) {
+      console.error(e)
+      return
+    }
   })
 ]

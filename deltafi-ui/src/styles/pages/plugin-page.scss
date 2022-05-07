@@ -16,39 +16,30 @@
    limitations under the License.
 */
 
-.sidebar {
-  transition: all 0.3s;
-}
-
-.sidebar {
-  -ms-flex: 0 0 300px;
-  flex: 0 0 300px;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar.hidden {
-  margin-left: -300px;
-}
-
-.wrapper {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-}
-
-.wrapper .content-wrapper {
-  overflow-x: hidden;
-  width: 100%;
-  padding: 0.25rem 1rem 0 1rem;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    -ms-flex: 0 0 150px !important;
-    flex: 0 0 150px !important;
-  }
-  .sidebar.hidden {
-    margin-left: -150px !important;
+.plugins-page {
+  .plugin-container {
+    height: 100%;
+    .plugin-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      min-height: 100%;
+      height: 85vh;
+    }
+    .plugin-column {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      .p-listbox {
+        height: 100%;
+      }
+    }
+    .plugin-column-left {
+      flex: 1;
+      margin-right: 1rem;
+    }
+    .plugin-column-right {
+      flex: 3;
+    }
   }
 }

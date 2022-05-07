@@ -16,39 +16,6 @@
    limitations under the License.
 */
 
-.sidebar {
-  transition: all 0.3s;
-}
-
-.sidebar {
-  -ms-flex: 0 0 300px;
-  flex: 0 0 300px;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar.hidden {
-  margin-left: -300px;
-}
-
-.wrapper {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-}
-
-.wrapper .content-wrapper {
-  overflow-x: hidden;
-  width: 100%;
-  padding: 0.25rem 1rem 0 1rem;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    -ms-flex: 0 0 150px !important;
-    flex: 0 0 150px !important;
-  }
-  .sidebar.hidden {
-    margin-left: -150px !important;
-  }
+.flow-panel-search-txt {
+  font-size: 1rem !important;
 }

@@ -19,14 +19,7 @@
 import { EnumType } from 'json-to-graphql-query';
 import useGraphQL from './useGraphQL'
 
-export default function useDeltaFilesQueryBuilder(): {
-  getDeltaFileSearchData: (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
-  getRecordCount: (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
-  getDeltaFiFileNames: (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => any;
-  getDeltaFilesByDIDs: (didsArray?: string[]) => any;
-  getEnumValuesByEnumType: (enumType: string) => any;
-  getConfigByType: (typeParam: string) => any;
-} {
+export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
   const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
@@ -155,7 +148,6 @@ export default function useDeltaFilesQueryBuilder(): {
     return sendGraphQLQuery(query, "getDeltaFilesByDIDs");
   };
 
-
   const getEnumValuesByEnumType = (enumType: string) => {
     const query = {
       __type: {
@@ -184,7 +176,6 @@ export default function useDeltaFilesQueryBuilder(): {
     return sendGraphQLQuery(query, "getConfigByType");
   };
 
-
   const sendGraphQLQuery = async (query: any, operationName: string) => {
     try {
       await queryGraphQL(query, operationName);
@@ -193,7 +184,6 @@ export default function useDeltaFilesQueryBuilder(): {
       // Continue regardless of error
     }
   };
-
 
   return {
     getDeltaFileSearchData,

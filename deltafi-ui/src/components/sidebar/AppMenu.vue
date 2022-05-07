@@ -16,7 +16,6 @@
    limitations under the License.
 -->
 
-
 <template>
   <nav class="bg-light menu">
     <div class="pt-3">
@@ -112,14 +111,17 @@ const staticMenuItems = ref([
       {
         name: "Flow Configuration",
         icon: "fas fa-random fa-fw",
-        path: "/config/flow",
-        hidden: false,
+        path: "/config/flow/",
+      },
+      {
+        name: "Flows",
+        icon: "fas fa-project-diagram fa-fw",
+        path: "/config/flows",
       },
       {
         name: "Plugins",
-        icon: "fas fa-plus fa-fw",
-        path: "/config/plugin",
-        hidden: true,
+        icon: "fas fa-plug fa-rotate-90 fa-fw",
+        path: "/config/plugins",
       },
     ],
   },
@@ -189,8 +191,12 @@ const folderIcon = (item) => {
 const menuItemClass = (item, isChild = false) => {
   let classes = ["nav-link", "noselect"];
   if (isChild) classes.push("indent");
-  if (item.path === activePage.value) classes.push("active");
   if (item.children) classes.push("folder");
+  if (item.name === "Dashboard") {
+    if (activePage.value === item.path) classes.push("active");
+  } else {
+    if (activePage.value.includes(item.path)) classes.push("active");
+  }
   return classes.join(" ");
 };
 

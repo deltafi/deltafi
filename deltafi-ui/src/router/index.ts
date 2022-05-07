@@ -71,6 +71,16 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/FlowConfigurationPage.vue'),
   },
   {
+    path: "/config/plugins/:pluginCordinates?",
+    name: "Plugins",
+    component: () => import('@/pages/PluginsPage.vue'),
+  },
+  {
+    path: '/config/flows',
+    name: 'Flows',
+    component: () => import('@/pages/FlowPlansPage.vue'),
+  },
+  {
     path: "/versions",
     name: "Versions",
     component: () => import('@/pages/VersionsPage.vue'),
