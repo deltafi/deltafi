@@ -20,6 +20,7 @@ package org.deltafi.actionkit.service;
 import io.quarkus.runtime.StartupEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.exception.HttpPostException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -44,7 +45,8 @@ public class HttpService {
 
     // Guarantee instantiation if not injected...
     @SuppressWarnings("EmptyMethod")
-    void startup(@Observes StartupEvent event) {}
+    void startup(@Observes StartupEvent event) {
+    }
 
     /**
      * Post data to an HTTP endpoint
@@ -53,11 +55,11 @@ public class HttpService {
      * @param body Body content to be posted to the HTTP endpoint
      * @param mediaType Media type of the HTTP post
      * @return an HTTP response object with success/failure details
-     * @throws RuntimeException when the HTTP client throws an IOException or InterruptedException
+     * @throws HttpPostException when the HTTP client throws an IOException, InterruptedException, IllegalArgumentException , or SecurityException
      */
     @SuppressWarnings("UnusedReturnValue")
     @NotNull
-    public java.net.http.HttpResponse<InputStream> post(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) {
+    public java.net.http.HttpResponse<InputStream> post(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) throws HttpPostException {
         Supplier<InputStream> is = () -> body;
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -70,10 +72,8 @@ public class HttpService {
         try {
             // TODO: Should exceptions be thrown for 4xx return codes?
             return httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
-        } catch (IOException | InterruptedException e) {
-            // TODO: Make this better
-            log.error("Error in http request", e);
-            throw new RuntimeException(e.getMessage());
+        } catch (IOException | InterruptedException | IllegalArgumentException | SecurityException e) {
+            throw new HttpPostException(e.getClass().getSimpleName(), e.getMessage());
         }
     }
 

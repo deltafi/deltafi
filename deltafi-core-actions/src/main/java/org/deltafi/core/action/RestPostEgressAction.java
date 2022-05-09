@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.exception.HttpPostException;
 import org.deltafi.actionkit.service.HttpService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.domain.api.types.ActionContext;
@@ -66,6 +67,8 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
             return new ErrorResult(context, "Unable to get object from content storage", e);
         } catch (IOException e) {
             log.warn("Unable to close input stream from content storage", e);
+        } catch (HttpPostException e) {
+            return new ErrorResult(context, "Service post failure", e);
         }
 
         return new EgressResult(context, params.getUrl(), formattedData.getContentReference().getSize());

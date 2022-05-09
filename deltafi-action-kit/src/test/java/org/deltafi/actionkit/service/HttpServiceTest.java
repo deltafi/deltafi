@@ -131,14 +131,14 @@ class HttpServiceTest {
             HttpResponse<InputStream> test = httpService.post(url, Map.of(), targetStream, "application/text");
             fail("RuntimeException not thrown for IOException");
         } catch (RuntimeException e) {
-            assertEquals("Test IOException", e.getMessage());
+            assertEquals("IOException: Test IOException", e.getMessage());
         }
 
         try {
             HttpResponse<InputStream> test = httpService.post(url, Map.of(), targetStream, "application/text");
             fail("RuntimeException not thrown for InterruptedException");
         } catch (RuntimeException e) {
-            assertEquals("Test InterruptedException", e.getMessage());
+            assertEquals("InterruptedException: Test InterruptedException", e.getMessage());
         }
     }
 }

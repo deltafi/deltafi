@@ -23,10 +23,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.exception.HttpPostException;
 import org.deltafi.actionkit.service.HttpService;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.FormattedData;
@@ -47,7 +48,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -73,13 +77,11 @@ class RestPostEgressActionTest {
     private static final String CONTENT_TYPE = "application/json";
 
     private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_NAME, 0, DATA.length, DID, CONTENT_TYPE);
-
-    private static final SourceInfo SOURCE_INFO = new SourceInfo(ORIG_FILENAME, FLOW, List.of());
     private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()
             .filename(POST_FILENAME)
             .contentReference(CONTENT_REFERENCE)
             .build();
-
+    private static final SourceInfo SOURCE_INFO = new SourceInfo(ORIG_FILENAME, FLOW, List.of());
     static Integer NUM_TRIES = 3;
     static Integer RETRY_WAIT = 10;
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
@@ -147,7 +149,11 @@ class RestPostEgressActionTest {
                 return null;
             }
         };
-        when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
+        if (statusCode < 0) {
+            when(httpService.post(any(), any(), any(), any())).thenThrow(HttpPostException.class);
+        } else {
+            when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
+        }
         Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         @SuppressWarnings("unchecked")
@@ -157,7 +163,8 @@ class RestPostEgressActionTest {
 
         Map<String, String> actual = headersCaptor.getValue();
         assertNotNull(actual.get(METADATA_KEY));
-        Map<String, String> metadata = OBJECT_MAPPER.readValue(actual.get(METADATA_KEY), new TypeReference<>() {});
+        Map<String, String> metadata = OBJECT_MAPPER.readValue(actual.get(METADATA_KEY), new TypeReference<>() {
+        });
         assertEquals(DID, metadata.get("did"));
         assertEquals(FLOW, metadata.get("ingressFlow"));
         assertEquals(EGRESS_FLOW, metadata.get("flow"));
@@ -183,17 +190,6 @@ class RestPostEgressActionTest {
         assertEquals(ACTION, result.toEvent().getAction());
     }
 
-    private static class TestInputStream extends ByteArrayInputStream {
-        public TestInputStream(byte[] buf) {
-            super(buf);
-        }
-
-        @Override
-        public void close() throws IOException {
-            throw new IOException();
-        }
-    }
-
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new TestInputStream(DATA));
@@ -209,5 +205,25 @@ class RestPostEgressActionTest {
         assertTrue(result instanceof ErrorResult);
         assertTrue(((ErrorResult) result).getErrorCause().contains("500"));
         assertTrue(((ErrorResult) result).getErrorCause().contains("uh oh"));
+    }
+
+    @Test
+    public void badPost() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
+        Result result = runTest(-1, "uh oh", 4);
+
+        assertTrue(result instanceof ErrorResult);
+        assertTrue(((ErrorResult) result).getErrorCause().contains("Service post failure"));
+    }
+
+    private static class TestInputStream extends ByteArrayInputStream {
+        public TestInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        @Override
+        public void close() throws IOException {
+            throw new IOException();
+        }
     }
 }

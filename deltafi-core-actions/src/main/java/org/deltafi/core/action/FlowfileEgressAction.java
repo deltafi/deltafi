@@ -22,6 +22,7 @@ import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.exception.HttpPostException;
 import org.deltafi.actionkit.service.HttpService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.domain.api.types.ActionContext;
@@ -32,17 +33,19 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
 public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParameters> {
+    static final String FLOWFILE_V1_CONTENT_TYPE = "application/flowfile";
     @Inject
     HttpService httpPostService;
-
-    static final String FLOWFILE_V1_CONTENT_TYPE = "application/flowfile";
 
     public FlowfileEgressAction() {
         super(HttpEgressParameters.class);
@@ -51,7 +54,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
     protected Result doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
             FlowFilePackagerV1 packager = new FlowFilePackagerV1();
-            try(ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 packager.packageFlowFile(inputStream, out,
                         buildHeadersMap(context.getDid(), sourceInfo, formattedData, params),
                         formattedData.getContentReference().getSize());
@@ -72,6 +75,8 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
             return new ErrorResult(context, "Unable to get object from content storage", e);
         } catch (IOException e) {
             log.warn("Unable to close input stream from content storage", e);
+        } catch (HttpPostException e) {
+            return new ErrorResult(context, "Service post failure", e);
         }
 
         return new EgressResult(context, params.getUrl(), formattedData.getContentReference().getSize());
