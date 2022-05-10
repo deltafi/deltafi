@@ -6,12 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Changed
-- Added bytes tooltip on size in content viewer (#158)
 - Added Apache 2 license header to all source files (#167)
-- Trace chart now handles retries better (#140)
-- Removed keys with null values from GraphQL queries (#150)
 - Added Flows page (#119)
 - Added Plugins page (#120)
+- Added Total File Size to DeltaFile Viewer page (#164)
+- Added bytes tooltip on size in content viewer (#158)
+- Added sortable Size column to DeltaFile Search page (#164)
+- Removed keys with null values from GraphQL queries (#150)
+- Trace chart now handles retries better (#140)
 
 ## [0.21.2]
 

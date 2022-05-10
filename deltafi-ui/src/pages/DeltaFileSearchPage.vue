@@ -111,6 +111,11 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
+        <Column field="totalBytes" header="Size" :sortable="true">
+          <template #body="{ data }">
+            <FormattedBytes :bytes="data.totalBytes" />
+          </template>
+        </Column>
         <Column field="elapsed" header="Elapsed" :sortable="false">
           <template #body="row">{{ row.data.elapsed }}</template>
         </Column>
@@ -130,6 +135,7 @@ import Dropdown from "primevue/dropdown";
 import Menu from "primevue/menu";
 import Panel from "primevue/panel";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import FormattedBytes from "@/components/FormattedBytes.vue";
 import Paginator from "primevue/paginator";
 import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";

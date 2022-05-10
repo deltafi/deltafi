@@ -27,6 +27,9 @@
               <span v-if="['Modified', 'Created'].includes(key)">
                 <Timestamp :timestamp="value" />
               </span>
+              <span v-else-if="['Original File Size', 'Total File Size'].includes(key)">
+                <FormattedBytes :bytes="originalFileSize" />
+              </span>
               <span v-else>{{ value }}</span>
               <span v-if="key === 'Stage'">
                 <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" />
@@ -41,8 +44,8 @@
 
 <script setup>
 import { computed, reactive, defineProps } from "vue";
-import useUtilFunctions from "@/composables/useUtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import FormattedBytes from "@/components/FormattedBytes.vue";
 import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
 
@@ -54,14 +57,13 @@ const props = defineProps({
 });
 
 const deltaFile = reactive(props.deltaFileData);
-const { formattedBytes } = useUtilFunctions();
 
 const originalFileSize = computed(() => {
   const ingressAction = deltaFile.protocolStack.find((p) => {
     return p.action === "IngressAction";
   });
   if (!ingressAction) return "N/A";
-  return formattedBytes(ingressAction.content[0].contentReference.size);
+  return ingressAction.content[0].contentReference.size;
 });
 
 const infoFields = computed(() => {
@@ -69,6 +71,7 @@ const infoFields = computed(() => {
   fields["DID"] = deltaFile.did;
   fields["Original Filename"] = deltaFile.sourceInfo.filename;
   fields["Original File Size"] = originalFileSize.value;
+  fields["Total File Size"] = deltaFile.totalBytes;
   fields["Ingress Flow"] = deltaFile.sourceInfo.flow;
   fields["Stage"] = deltaFile.stage;
   fields["Created"] = deltaFile.created;

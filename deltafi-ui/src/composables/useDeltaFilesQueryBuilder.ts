@@ -55,6 +55,7 @@ export default function useDeltaFilesQueryBuilder() {
             filename: true,
             flow: true,
           },
+          totalBytes: true
         }
       }
     };

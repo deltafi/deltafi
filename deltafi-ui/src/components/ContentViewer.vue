@@ -27,9 +27,9 @@
           <template #right>
             <Button :label="contentReference.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
-            <div v-tooltip.top="contentSizeBytes">
-              <Button :label="contentSize" class="p-button-text p-button-secondary" disabled />
-            </div>
+            <Button class="p-button-text p-button-secondary" disabled>
+              <FormattedBytes :bytes="contentReference.size" />
+            </Button>
             <Divider layout="vertical" />
             <ContentViewerMenu :model="items" />
           </template>
@@ -65,6 +65,7 @@ import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, onMounted, ref, toRefs, watch } from "vue";
 import { useClipboard } from "@vueuse/core";
 import useNotifications from "@/composables/useNotifications";
+import FormattedBytes from "@/components/FormattedBytes.vue";
 
 import Button from "primevue/button";
 import Divider from "primevue/divider";
@@ -201,8 +202,6 @@ const contentAsHexdump = computed(() => {
 
 const embededContent = computed(() => "content" in contentReference.value);
 
-const contentSize = computed(() => formattedBytes(contentReference.value.size));
-const contentSizeBytes = `${contentReference.value.size.toLocaleString()} B`;
 const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
 
 const warnings = computed(() => {
