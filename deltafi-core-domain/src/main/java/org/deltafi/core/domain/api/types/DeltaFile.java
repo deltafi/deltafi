@@ -19,8 +19,6 @@ package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.apache.commons.lang3.tuple.Pair;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.generated.types.*;
@@ -63,25 +61,6 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
             queueNewAction(name);
         }
 
-    }
-
-    public void calculateTotalBytes() {
-        List<ContentReference> contentReferences = getProtocolStack().stream().flatMap(p -> p.getContent().stream()).map(Content::getContentReference).collect(Collectors.toList());
-        contentReferences.addAll(getFormattedData().stream().map(FormattedData::getContentReference).collect(Collectors.toList()));
-
-        // keep track of the first and last offset for each unique did + uuid contentReference
-        // make an assumption that we won't have disjoint segments
-        Map<String, Pair<Long, Long>> segments = new HashMap<>();
-        contentReferences.forEach(c -> {
-            if (segments.containsKey(c.getDid() + c.getUuid())) {
-                Pair<Long, Long> segment = segments.get(c.getDid() + c.getUuid());
-                segments.put(c.getDid() + c.getUuid(), Pair.of(Math.min(segment.getLeft(), c.getOffset()), Math.max(segment.getRight(), c.getOffset() + c.getSize())));
-            } else {
-                segments.put(c.getDid() + c.getUuid(), Pair.of(c.getOffset(), c.getOffset() + c.getSize()));
-            }
-        });
-
-        setTotalBytes(segments.values().stream().map(p -> p.getRight() - p.getLeft()).mapToLong(Long::longValue).sum());
     }
 
     public void queueNewAction(String name) {

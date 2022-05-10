@@ -22,18 +22,13 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.api.types.Content;
+import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.delete.DeleteConstants;
-import org.deltafi.core.domain.generated.types.Action;
-import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
-import org.deltafi.core.domain.generated.types.IngressInput;
+import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.junit.jupiter.api.Test;
@@ -79,6 +74,9 @@ class DeltaFilesServiceTest {
     @InjectMocks
     DeltaFilesService deltaFilesService;
 
+    @Captor
+    ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
+
     @Test
     void setsAndGets() {
         final String flow = "theFlow";
@@ -121,10 +119,9 @@ class DeltaFilesServiceTest {
 
         deltaFilesService.markForDelete(OffsetDateTime.now().plusSeconds(1), null, null, "policy");
 
-        ArgumentCaptor<List<ActionInput>> deltaFileArgumentCaptor = ArgumentCaptor.forClass(List.class);
-        verify(redisService).enqueue(deltaFileArgumentCaptor.capture());
-        Util.assertEqualsIgnoringDates(deltaFile1.forQueue(DeleteConstants.DELETE_ACTION), deltaFileArgumentCaptor.getValue().get(0).getDeltaFile());
-        Util.assertEqualsIgnoringDates(deltaFile2.forQueue(DeleteConstants.DELETE_ACTION), deltaFileArgumentCaptor.getValue().get(1).getDeltaFile());
+        verify(redisService).enqueue(actionInputListCaptor.capture());
+        Util.assertEqualsIgnoringDates(deltaFile1.forQueue(DeleteConstants.DELETE_ACTION), actionInputListCaptor.getValue().get(0).getDeltaFile());
+        Util.assertEqualsIgnoringDates(deltaFile2.forQueue(DeleteConstants.DELETE_ACTION), actionInputListCaptor.getValue().get(1).getDeltaFile());
     }
 
     @Test
@@ -164,4 +161,27 @@ class DeltaFilesServiceTest {
         Assertions.assertThat(action.getErrorCause()).isEqualTo("Action named action is no longer running");
     }
 
+    @Test
+    void testCalculateBytes() {
+        ContentReference contentReference1 = new ContentReference("uuid1", 0, 500, "did1", "*/*");
+        ContentReference contentReference2 = new ContentReference("uuid1", 400, 200, "did1", "*/*");
+        ContentReference contentReference3 = new ContentReference("uuid1", 200, 200, "did1", "*/*");
+        ContentReference contentReference4 = new ContentReference("uuid2", 5, 200, "did1", "*/*");
+
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .protocolStack(List.of(
+                        new ProtocolLayer("type", "action", List.of(
+                                new Content("name", Collections.emptyList(), contentReference1),
+                                new Content("name2", Collections.emptyList(), contentReference2)), Collections.emptyList()),
+                        new ProtocolLayer("type2", "action2", List.of(
+                                new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
+                ))
+                .formattedData(List.of(
+                        FormattedData.newBuilder().contentReference(contentReference4).build()
+                ))
+                .build();
+
+        DeltaFilesService.calculateTotalBytes(deltaFile);
+        assertEquals(800, deltaFile.getTotalBytes());
+    }
 }

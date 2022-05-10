@@ -47,31 +47,6 @@ class DeltaFileTest {
     }
 
     @Test
-    void testCalculateBytes() {
-        ContentReference contentReference1 = new ContentReference("uuid1", 0, 500, "did1", "*/*");
-        ContentReference contentReference2 = new ContentReference("uuid1", 400, 200, "did1", "*/*");
-        ContentReference contentReference3 = new ContentReference("uuid1", 200, 200, "did1", "*/*");
-        ContentReference contentReference4 = new ContentReference("uuid2", 5, 200, "did1", "*/*");
-
-        DeltaFile deltaFile = DeltaFile.newBuilder()
-                .protocolStack(List.of(
-                        new ProtocolLayer("type", "action", List.of(
-                                new Content("name", Collections.emptyList(), contentReference1),
-                                new Content("name2", Collections.emptyList(), contentReference2)), Collections.emptyList()),
-                        new ProtocolLayer("type2", "action2", List.of(
-                                new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
-                ))
-                .formattedData(List.of(
-                        FormattedData.newBuilder().contentReference(contentReference4).build()
-                ))
-                .build();
-
-        deltaFile.calculateTotalBytes();
-        assertEquals(800, deltaFile.getTotalBytes());
-
-    }
-
-    @Test
     void testRetryErrors() {
         Action action1 = Action.newBuilder()
                 .name("action1")
