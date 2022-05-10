@@ -229,7 +229,7 @@ const items = ref([
 
 const fetchFileNames = async () => {
   let fileNameDataArray = [];
-  let fetchFileNames = await getDeltaFiFileNames(startDateISOString.value, endDateISOString.value, fileName.value, stageName.value, actionName.value, flowName.value, JSON.parse(egressed.value), JSON.parse(filtered.value));
+  let fetchFileNames = await getDeltaFiFileNames(startDateISOString.value, endDateISOString.value);
   let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
   for (const deltaFiObject of deltaFilesObjectsArray) {
     fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });

@@ -93,19 +93,13 @@ export default function useDeltaFilesQueryBuilder() {
     return sendGraphQLQuery(query, "getRecordCount");
   };
 
-  const getDeltaFiFileNames = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
+  const getDeltaFiFileNames = (startDateISOString: String, endDateISOString: String) => {
     const query = {
       deltaFiles: {
         __args: {
           offset: 0,
           limit: 10000,
           filter: {
-            sourceInfo: {
-              flow: flowName,
-              filename: fileName,
-            },
-            stage: stageName ? new EnumType(stageName) : null,
-            actions: actionName,
             modifiedAfter: startDateISOString,
             modifiedBefore: endDateISOString
           },
