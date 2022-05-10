@@ -22,13 +22,15 @@ import useGraphQL from './useGraphQL'
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean) => {
     const query = {
       deltaFiles: {
         __args: {
           offset: offSet,
           limit: perPage,
           filter: {
+            egressed: egressed,
+            filtered: filtered,
             sourceInfo: {
               flow: flowName,
               filename: fileName
@@ -62,13 +64,15 @@ export default function useDeltaFilesQueryBuilder() {
     return sendGraphQLQuery(query, "getDeltaFileSearchData");
   };
 
-  const getRecordCount = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string) => {
+  const getRecordCount = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean) => {
     const query = {
       deltaFiles: {
         __args: {
           offset: 0,
           limit: 1,
           filter: {
+            egressed: egressed,
+            filtered: filtered,
             sourceInfo: {
               flow: flowName,
               filename: fileName

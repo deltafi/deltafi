@@ -58,11 +58,13 @@ export default function useDeltaFiles() {
           value: true,
           mediaType: true,
         },
+        egressed: true,
         enrichment: {
           name: true,
           value: true,
           mediaType: true,
         },
+        filtered: true,
         formattedData: {
           filename: true,
           metadata: {

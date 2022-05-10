@@ -46,17 +46,6 @@
               <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
               <Dropdown id="fileNameId" v-model="fileNameOptionSelected" :placeholder="fileNameOptionSelected ? fileNameOptionSelected.name + ' ' : 'Select a File Name'" :options="fileNameOptions" option-label="name" :filter="true" :show-clear="true" class="deltafi-input-field min-width" />
             </div>
-          </div>
-          <div class="row align-items-center py-2">
-            <div class="col-1 text-right align-text-bottom">
-              <label for="flowId">Ingress Flow:</label>
-            </div>
-            <div class="col-md-auto">
-              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-              <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
-            </div>
-          </div>
-          <div class="row align-items-center py-2">
             <div class="col-1 text-right">
               <label for="stageId">Stage:</label>
             </div>
@@ -66,12 +55,35 @@
             </div>
           </div>
           <div class="row align-items-center py-2">
+            <div class="col-1 text-right align-text-bottom">
+              <label for="flowId">Ingress Flow:</label>
+            </div>
+            <div class="col-md-auto">
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+            </div>
+            <div class="col-1 text-right">
+              <label for="egressedState">Egressed:</label>
+            </div>
+            <div class="col-md-auto">
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown id="egressState" v-model="egressedOptionSelected" :placeholder="egressedOptionSelected ? egressedOptionSelected.name + ' ' : 'Select if Egressed'" :options="egressedOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
+            </div>
+          </div>
+          <div class="row align-items-center py-2">
             <div class="col-1 text-right pl-0 pr-3">
               <label for="actionTypeId">Action Type:</label>
             </div>
             <div class="col-md-auto">
               <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
               <Dropdown id="actionTypeId" v-model="actionTypeOptionSelected" :placeholder="actionTypeOptionSelected ? actionTypeOptionSelected.name + ' ' : 'Select an Action Type'" :options="actionTypeOptions" option-label="name" :filter="true" :show-clear="true" class="deltafi-input-field min-width" />
+            </div>
+            <div class="col-1 text-right">
+              <label for="filteredState">Filtered:</label>
+            </div>
+            <div class="col-md-auto">
+              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+              <Dropdown id="filteredState" v-model="filteredOptionSelected" :placeholder="filteredOptionSelected ? filteredOptionSelected.name + ' ' : 'Select if Filtered'" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
             </div>
           </div>
           <div class="row align-items-center py-2">
@@ -167,6 +179,10 @@ const flowOptions = ref([]);
 const flowOptionSelected = ref(null);
 const stageOptions = ref([]);
 const stageOptionSelected = ref(null);
+const egressedOptions = ref([{ name: "true" }, { name: "false" }])
+const egressedOptionSelected = ref(null);
+const filteredOptions = ref([{ name: "true" }, { name: "false" }])
+const filteredOptionSelected = ref(null);
 const loading = ref(true);
 const totalRecords = ref(0);
 const recordCount = ref("");
@@ -176,6 +192,8 @@ const fileName = ref(null);
 const stageName = ref(null);
 const actionName = ref(null);
 const flowName = ref(null);
+const egressed = ref(null);
+const filtered = ref(null);
 const offset = ref(0);
 const perPage = ref(10);
 const sortField = ref("modified");
@@ -211,7 +229,7 @@ const items = ref([
 
 const fetchFileNames = async () => {
   let fileNameDataArray = [];
-  let fetchFileNames = await getDeltaFiFileNames(startDateISOString.value, endDateISOString.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  let fetchFileNames = await getDeltaFiFileNames(startDateISOString.value, endDateISOString.value, fileName.value, stageName.value, actionName.value, flowName.value, JSON.parse(egressed.value), JSON.parse(filtered.value));
   let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
   for (const deltaFiObject of deltaFilesObjectsArray) {
     fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });
@@ -238,6 +256,12 @@ watch(flowOptionSelected, () => {
   fetchRecordCount();
 });
 watch(stageOptionSelected, () => {
+  fetchRecordCount();
+});
+watch(egressedOptionSelected, () => {
+  fetchRecordCount();
+});
+watch(filteredOptionSelected, () => {
   fetchRecordCount();
 });
 
@@ -310,7 +334,7 @@ const fetchDeltaFilesData = async () => {
 
   loading.value = true;
   fetchRecordCount();
-  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value, JSON.parse(egressed.value), JSON.parse(filtered.value));
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
@@ -319,7 +343,7 @@ const fetchDeltaFilesData = async () => {
 const fetchRecordCount = async () => {
   setQueryParams();
 
-  let fetchRecordCount = await getRecordCount(startDateISOString.value, endDateISOString.value, fileName.value, stageName.value, actionName.value, flowName.value);
+  let fetchRecordCount = await getRecordCount(startDateISOString.value, endDateISOString.value, fileName.value, stageName.value, actionName.value, flowName.value, JSON.parse(egressed.value), JSON.parse(filtered.value));
   recordCount.value = fetchRecordCount.data.deltaFiles.totalCount.toString();
 };
 
@@ -338,6 +362,8 @@ const setQueryParams = () => {
   stageName.value = stageOptionSelected.value ? stageOptionSelected.value.name : null;
   actionName.value = actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null;
   flowName.value = flowOptionSelected.value ? flowOptionSelected.value.name : null;
+  egressed.value = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
+  filtered.value = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
 };
 
 const onSort = (event) => {
@@ -365,10 +391,12 @@ const getPersistedParams = () => {
   stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
   actionTypeOptionSelected.value = state.value.actionTypeOptionState ? { name: state.value.actionTypeOptionState } : null;
   flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
+  egressedOptionSelected.value = state.value.egressedOptionState ? { name: state.value.egressedOptionState } : null;
+  filteredOptionSelected.value = state.value.filteredOptionState ? { name: state.value.filteredOptionState } : null;
 
   // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
   // what search options are being used.
-  if (fileNameOptionSelected.value || stageOptionSelected.value || actionTypeOptionSelected.value || flowOptionSelected.value) {
+  if (fileNameOptionSelected.value || stageOptionSelected.value || actionTypeOptionSelected.value || flowOptionSelected.value || egressedOptionSelected.value || filteredOptionSelected.value) {
     collapsedSearchOption.value = false;
   } else {
     collapsedSearchOption.value = true;
@@ -384,6 +412,8 @@ const setPersistedParams = () => {
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
     actionTypeOptionState: actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null,
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
+    egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
+    filteredOptionState: filteredOptionSelected.value ? filteredOptionSelected.value.name : null,
   };
 };
 </script>

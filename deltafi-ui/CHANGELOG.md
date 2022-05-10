@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added sortable Size column to DeltaFile Search page (#164)
 - Removed keys with null values from GraphQL queries (#150)
 - Trace chart now handles retries better (#140)
+- Added Egressed and Filtered search options to Search Page (#165)
 
 ## [0.21.2]
 
