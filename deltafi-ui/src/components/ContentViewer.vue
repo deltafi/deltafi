@@ -113,6 +113,7 @@ const highlightCode = ref(true);
 const viewMetadata = ref(false);
 const content = ref(new ArrayBuffer());
 const decoder = new TextDecoder("utf-8");
+const encoder = new TextEncoder("utf-8");
 
 // Menu Buttons
 const highlightBtnEnbl = computed(() => {
@@ -190,7 +191,7 @@ const language = computed(() => {
 
 const partialContent = computed(() => contentReference.value.size > maxPreviewSize);
 
-const contentAsString = computed(() => decoder.decode(new Uint8Array(content.value)));
+const contentAsString = computed(() => decoder.decode(content.value));
 
 const contentAsHexdump = computed(() => {
   let buffer = Buffer.from(content.value);
@@ -251,13 +252,8 @@ const loadContent = async () => {
 };
 
 const loadEmbededContent = () => {
-  const str = contentReference.value.content;
-  content.value = new ArrayBuffer(str.length * 2);
-  const bufView = new Uint16Array(content.value);
-  for (var i = 0, strLen = str.length; i < strLen; i++) {
-    bufView[i] = str.charCodeAt(i);
-  }
-  contentReference.value.size = str.length;
+  content.value = encoder.encode(contentReference.value.content);
+  contentReference.value.size = contentReference.value.content.length;
   contentLoaded.value = true;
 };
 

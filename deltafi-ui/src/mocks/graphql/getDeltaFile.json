@@ -7,6 +7,7 @@
     "childDids": [
       "27186720-723a-4f82-a5ab-2fff441b2c9b"
     ],
+    "totalBytes": 65535,
     "sourceInfo": {
       "filename": "fakeData.txt",
       "flow": "mock.ingressFlow",
@@ -88,9 +89,9 @@
     ],
     "domains": [
       {
-        "name": "binary",
-        "value": null,
-        "mediaType": "text/plain"
+        "name": "xml",
+        "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><note><to>Alice</to><from>Bob</from><heading>Congratulations!</heading><body>Congratulations, Alice! 🎉</body></note>",
+        "mediaType": "application/xml"
       }
     ],
     "enrichment": [

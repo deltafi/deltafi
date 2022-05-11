@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.95.1]
 
 ### Changed
 - Added Apache 2 license header to all source files (#167)
@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Removed keys with null values from GraphQL queries (#150)
 - Trace chart now handles retries better (#140)
 - Added Egressed and Filtered search options to Search Page (#165)
+- Fixed encoding bug in content viewer (#170)
 
 ## [0.21.2]
 
@@ -193,7 +194,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.2...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.1...main
+[0.95.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.2...0.95.1
 [0.21.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.1...0.21.2
 [0.21.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.0...0.21.1
 [0.21.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.20.0...0.21.0
