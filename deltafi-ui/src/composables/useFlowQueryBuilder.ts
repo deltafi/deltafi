@@ -244,14 +244,14 @@ export default function useFlowQueryBuilder() {
       validateIngressFlow: {
         __args: {
           flowName: flowName,
-        }
-      },
-      flowStatus: {
-        state: true,
-        errors: {
-          configName: true,
-          errorType: true,
-          message: true,
+        },      
+        flowStatus: {
+          state: true,
+          errors: {
+            configName: true,
+            errorType: true,
+            message: true,
+          }
         }
       }
     };
@@ -264,16 +264,16 @@ export default function useFlowQueryBuilder() {
       validateEgressFlow: {
         __args: {
           flowName: flowName,
+        }, 
+        flowStatus: {
+          state: true,
+          errors: {
+            configName: true,
+            errorType: true,
+            message: true,
+          }
         }
       },
-      flowStatus: {
-        state: true,
-        errors: {
-          configName: true,
-          errorType: true,
-          message: true,
-        }
-      }
     };
     return sendGraphQLQuery(query, "validateEgressFlow");
   }

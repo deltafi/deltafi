@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.95.2]
+
+### Changed
+- Fixed flow validation query bug (#173)
+
 ## [0.95.1]
 
 ### Changed
@@ -194,7 +199,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.1...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.2...main
+[0.95.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.1...0.95.2
 [0.95.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.2...0.95.1
 [0.21.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.1...0.21.2
 [0.21.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.0...0.21.1
