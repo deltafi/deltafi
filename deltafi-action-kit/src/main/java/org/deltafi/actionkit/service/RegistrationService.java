@@ -23,7 +23,7 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.config.ActionKitConfig;
+import org.deltafi.actionkit.config.ActionsProperties;
 import org.deltafi.core.domain.generated.client.RegisterActionsGraphQLQuery;
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 
@@ -40,14 +40,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Service that gathers up all the extant actions and registers them with the domain
  */
-@Slf4j
 @ApplicationScoped
+@Slf4j
 public class RegistrationService {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
-    private ActionKitConfig actionKitConfig;
+    private ActionsProperties actionsProperties;
 
     @Inject
     private DomainGatewayService domainGatewayService;
@@ -77,7 +77,8 @@ public class RegistrationService {
 
         actions.forEach(action -> action.registerSchema(input));
         query = RegisterActionsGraphQLQuery.newRequest().actionRegistration(input).build();
-        scheduler.scheduleWithFixedDelay(this::registerActions, actionKitConfig.actionRegistrationInitialDelayMs(), actionKitConfig.actionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(this::registerActions, actionsProperties.getActionRegistrationInitialDelayMs(),
+                actionsProperties.getActionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
     }
 
     private void registerActions() {

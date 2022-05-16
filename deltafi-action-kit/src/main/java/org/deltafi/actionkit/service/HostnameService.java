@@ -18,7 +18,7 @@
 package org.deltafi.actionkit.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.config.ActionKitConfig;
+import org.deltafi.actionkit.config.ActionsProperties;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.net.InetAddress;
@@ -38,9 +38,9 @@ public class HostnameService {
 
     private final String hostname;
 
-    public HostnameService(ActionKitConfig actionKitConfig) {
-        if (actionKitConfig.hostname().isPresent()) {
-            this.hostname = actionKitConfig.hostname().get();
+    public HostnameService(ActionsProperties actionsProperties) {
+        if (actionsProperties.getHostname() != null) {
+            this.hostname = actionsProperties.getHostname();
         } else {
             this.hostname = detectHostname();
         }

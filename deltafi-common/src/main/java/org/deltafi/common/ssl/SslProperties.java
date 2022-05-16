@@ -15,11 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.exception;
+package org.deltafi.common.ssl;
 
-public class SslConfigException extends RuntimeException {
+import lombok.Data;
 
-    public SslConfigException(Throwable cause) {
-        super(cause);
-    }
+@Data
+public class SslProperties {
+    private String protocol;
+
+    private String keyStore;
+    private String keyStorePassword;
+    private String keyStoreType;
+
+    private String trustStore;
+    private String trustStorePassword;
+    private String trustStoreType;
 }

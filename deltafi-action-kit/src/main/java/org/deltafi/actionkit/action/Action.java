@@ -30,7 +30,7 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.metrics.ActionMetricsLogger;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
-import org.deltafi.actionkit.config.ActionKitConfig;
+import org.deltafi.actionkit.config.ActionsProperties;
 import org.deltafi.actionkit.config.ActionVersionProperty;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.HostnameService;
@@ -77,7 +77,7 @@ public abstract class Action<P extends ActionParameters> {
     protected ActionEventService actionEventService;
 
     @Inject
-    protected ActionKitConfig config;
+    protected ActionsProperties actionsProperties;
 
     @Inject
     protected HostnameService hostnameService;
@@ -123,7 +123,8 @@ public abstract class Action<P extends ActionParameters> {
     public void startAction() {
         log.info("Starting action: {}", getFeedString());
         startListeningExecutor.scheduleWithFixedDelay(this::startListening,
-                config.actionPollingInitialDelayMs(), config.actionPollingPeriodMs(), TimeUnit.MILLISECONDS);
+                actionsProperties.getActionPollingInitialDelayMs(), actionsProperties.getActionPollingPeriodMs(),
+                TimeUnit.MILLISECONDS);
     }
 
     private void startListening() {

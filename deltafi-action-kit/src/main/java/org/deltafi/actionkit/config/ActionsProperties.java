@@ -17,26 +17,19 @@
  */
 package org.deltafi.actionkit.config;
 
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
+import lombok.Data;
+import org.deltafi.common.ssl.SslProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.Optional;
+@Data
+@ConfigurationProperties(prefix = "actions")
+public class ActionsProperties {
+    private long actionPollingInitialDelayMs = 3000L;
+    private long actionPollingPeriodMs = 100L;
+    private long actionRegistrationInitialDelayMs = 1000L;
+    private long actionRegistrationPeriodMs = 10000L;
 
-@ConfigMapping(prefix = "actions")
-public interface ActionKitConfig {
-    @WithDefault("3000")
-    long actionPollingInitialDelayMs();
+    private String hostname;
 
-    @WithDefault("100")
-    long actionPollingPeriodMs();
-
-    @WithDefault("1000")
-    long actionRegistrationInitialDelayMs();
-
-    @WithDefault("10000")
-    long actionRegistrationPeriodMs();
-
-    Optional<String> hostname();
-
-    Optional<SslConfig> ssl();
+    private SslProperties ssl;
 }
