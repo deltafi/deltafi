@@ -17,27 +17,23 @@
  */
 package org.deltafi.core.domain.converters;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.DeltaFile;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.domain.generated.types.Domain;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 
+@Slf4j
 public class ErrorConverter {
-    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-    private ErrorConverter() {}
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    public static ErrorDomain convert(ActionEventInput event, DeltaFile deltaFile) {
-        return ErrorDomain.newBuilder()
-                .cause(event.getError().getCause())
-                .context(event.getError().getContext())
-                .fromAction(event.getAction())
-                .originatorDid(event.getDid())
-                .originator(deltaFile)
-                .build();
-    }
-
-    public static ErrorDomain convert(Object errorDomain) {
-        return objectMapper.convertValue(errorDomain, ErrorDomain.class);
+    public static ErrorDomain convert(Domain domain) {
+        try {
+            return OBJECT_MAPPER.readValue(domain.getValue(), ErrorDomain.class);
+        } catch (JsonProcessingException e) {
+            log.warn("Unable to convert domain to ErrorDomain", e);
+            return null;
+        }
     }
 }

@@ -20,20 +20,16 @@ package org.deltafi.core.domain.datafetchers;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.services.ErrorService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @DgsComponent
+@RequiredArgsConstructor
 public class ErrorDatafetcher {
-
-    final ErrorService errorService;
-
-    public ErrorDatafetcher(ErrorService errorService) {
-        this.errorService = errorService;
-    }
+    private final ErrorService errorService;
 
     @DgsQuery
     @SuppressWarnings("unused")
@@ -50,13 +46,6 @@ public class ErrorDatafetcher {
     @DgsQuery
     @SuppressWarnings("unused")
     public List<ErrorDomain> getErrorsFor(String originatorDid) {
-        List<ErrorDomain> errors = errorService.getErrorsFor(originatorDid);
-
-        if (errors == null) {
-            return new ArrayList<>();
-        }
-
-        return errors;
+        return errorService.getErrorsFor(originatorDid);
     }
-
 }

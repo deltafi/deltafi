@@ -17,33 +17,48 @@
  */
 package org.deltafi.core.domain.services;
 
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.domain.api.Constants;
+import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.converters.ErrorConverter;
+import org.deltafi.core.domain.generated.types.DeltaFilesFilter;
 import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ErrorService {
     private final DeltaFileRepo deltaFileRepo;
 
-    public ErrorService(DeltaFileRepo deltaFileRepo) {
-        this.deltaFileRepo = deltaFileRepo;
-    }
-
     public ErrorDomain getError(String did) {
-        DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
-        if(deltaFile == null) return null;
-        return ErrorConverter.convert(deltaFile.getDomain("error"));
+        Optional<DeltaFile> deltaFile = deltaFileRepo.findById(did);
+        if (deltaFile.isEmpty()) {
+            return null;
+        }
+        return ErrorConverter.convert(deltaFile.get().getDomain(Constants.ERROR_DOMAIN));
     }
 
+    /**
+     * Gets the ErrorDomain instances for each error triggered processing the DeltaFile of the given id. The resulting
+     * list is ordered by creation date in descending order (most recent first).
+     * @param did the id of the DeltaFile
+     * @return a list of ErrorDomain instances for the DeltaFile, which will be empty if there are no errors
+     */
     public List<ErrorDomain> getErrorsFor(String did) {
-        // TODO: once we have child/parent relationships between deltaFiles, query that way
-        return null;
-        //List<DeltaFile> deltaFiles = deltaFileRepo.findAllByDomainsErrorOriginatorDid(did);
-        //return deltaFiles.stream().map(err -> ErrorConverter.convert(err.getDomains().get("error"))).collect(Collectors.toList());
-    }
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        filter.setDomains(List.of(Constants.ERROR_DOMAIN));
+        filter.setParentDid(did);
 
+        DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, Integer.MAX_VALUE, filter, null);
+
+        return deltaFiles.getDeltaFiles().stream()
+                .map(deltaFile -> ErrorConverter.convert(deltaFile.getDomain(Constants.ERROR_DOMAIN)))
+                .collect(Collectors.toList());
+    }
 }

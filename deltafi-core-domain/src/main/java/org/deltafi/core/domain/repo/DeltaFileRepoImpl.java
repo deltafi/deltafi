@@ -48,6 +48,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     public static final String ID = "_id";
     public static final String VERSION = "version";
+    public static final String PARENT_DIDS = "parentDids";
     public static final String MODIFIED = "modified";
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
@@ -261,6 +262,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (nonNull(filter.getDids()) && !filter.getDids().isEmpty()) {
             andCriteria.add(Criteria.where(ID).in(filter.getDids()));
+        }
+
+        if (nonNull(filter.getParentDid())) {
+            andCriteria.add(Criteria.where(PARENT_DIDS).in(filter.getParentDid()));
         }
 
         if (nonNull(filter.getCreatedAfter())) {

@@ -282,6 +282,7 @@ enum DeltaFileDirection {
 
 input DeltaFilesFilter {
   dids: [String!]
+  parentDid: String
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]

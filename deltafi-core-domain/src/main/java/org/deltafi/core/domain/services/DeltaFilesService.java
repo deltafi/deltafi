@@ -29,7 +29,6 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
-import org.deltafi.core.domain.converters.ErrorConverter;
 import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.exceptions.UnexpectedActionException;
 import org.deltafi.core.domain.exceptions.UnknownTypeException;
@@ -272,6 +271,7 @@ public class DeltaFilesService {
         }
 
         ErrorInput errorInput = event.getError();
+
         if (deltaFile.hasErrorDomain()) {
             log.error("DeltaFile with error domain has thrown an error:\n" +
                     "Error DID: " + deltaFile.getDid() + "\n" +
@@ -285,13 +285,52 @@ public class DeltaFilesService {
 
         deltaFile.errorAction(event, errorInput.getCause(), errorInput.getContext());
 
-        ErrorDomain errorDomain = ErrorConverter.convert(event, deltaFile);
-        DeltaFile errorDeltaFile = convert(deltaFile, OBJECT_MAPPER.writeValueAsString(errorDomain));
-        errorDeltaFile.getSourceInfo().setFilename(errorDeltaFile.getSourceInfo().getFilename() + ".error");
-
+        DeltaFile errorDeltaFile = buildErrorDeltaFile(deltaFile, event);
         advanceAndSave(errorDeltaFile);
 
         return advanceAndSave(deltaFile);
+    }
+
+    private DeltaFile buildErrorDeltaFile(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+        String did = UUID.randomUUID().toString();
+
+        if (deltaFile.getChildDids() == null) {
+            deltaFile.setChildDids(List.of(did));
+        } else {
+            deltaFile.getChildDids().add(did);
+        }
+
+        Domain errorDomain = buildErrorDomain(deltaFile, event);
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        return DeltaFile.newBuilder()
+                .did(did)
+                .parentDids(List.of(deltaFile.getDid()))
+                .stage(DeltaFileStage.EGRESS)
+                .actions(new ArrayList<>())
+                .sourceInfo(new SourceInfo(deltaFile.getSourceInfo().getFilename() + ".error",
+                        deltaFile.getSourceInfo().getFlow(), deltaFile.getSourceInfo().getMetadata()))
+                .protocolStack(deltaFile.getProtocolStack())
+                .domains(List.of(errorDomain))
+                .enrichment(new ArrayList<>())
+                .formattedData(Collections.emptyList())
+                .created(now)
+                .modified(now)
+                .egressed(false)
+                .filtered(false)
+                .build();
+    }
+
+    private Domain buildErrorDomain(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+        ErrorDomain errorDomain = ErrorDomain.newBuilder()
+                .cause(event.getError().getCause())
+                .context(event.getError().getContext())
+                .fromAction(event.getAction())
+                .originatorDid(event.getDid())
+                .originator(deltaFile)
+                .build();
+        return new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), MediaType.APPLICATION_JSON_VALUE);
     }
 
     @MongoRetryable
@@ -318,13 +357,12 @@ public class DeltaFilesService {
                     .created(now)
                     .modified(now)
                     .build();
-            List<String> parentDids = Collections.singletonList(deltaFile.getDid());
 
             childDeltaFiles = splits.stream().map(split -> {
                 String ingressType = ingressFlowService.getRunningFlowByName(split.getSourceInfo().getFlow()).getType();
                 DeltaFile child = DeltaFile.newBuilder()
                         .did(UUID.randomUUID().toString())
-                        .parentDids(parentDids)
+                        .parentDids(List.of(deltaFile.getDid()))
                         .childDids(Collections.emptyList())
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
@@ -405,8 +443,6 @@ public class DeltaFilesService {
                 deltaFile.setChildDids(new ArrayList<>());
             }
 
-            List<String> parentDids = Collections.singletonList(deltaFile.getDid());
-
             EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
 
             childDeltaFiles = formatInputs.stream().map(formatInput -> {
@@ -414,7 +450,7 @@ public class DeltaFilesService {
                 child.setVersion(0);
                 child.setDid(UUID.randomUUID().toString());
                 child.setChildDids(Collections.emptyList());
-                child.setParentDids(parentDids);
+                child.setParentDids(List.of(deltaFile.getDid()));
                 child.completeAction(event);
 
                 FormattedData formattedData = FormattedData.newBuilder()
@@ -422,11 +458,11 @@ public class DeltaFilesService {
                         .filename(formatInput.getFilename())
                         .metadata(formatInput.getMetadata())
                         .contentReference(formatInput.getContentReference())
-                        .egressActions(Collections.singletonList(egressFlow.getEgressAction().getName()))
+                        .egressActions(List.of(egressFlow.getEgressAction().getName()))
                         .validateActions(egressFlow.getValidateActions().stream().map(ValidateActionConfiguration::getName).collect(Collectors.toList()))
                         .build();
 
-                child.setFormattedData(Collections.singletonList(formattedData));
+                child.setFormattedData(List.of(formattedData));
 
                 enqueueActions.addAll(stateMachine.advance(child));
 
@@ -455,26 +491,6 @@ public class DeltaFilesService {
         enqueueActions(enqueueActions);
 
         return deltaFile;
-    }
-
-    private DeltaFile convert(DeltaFile originator, String errorDomain) {
-        OffsetDateTime now = OffsetDateTime.now();
-        return DeltaFile.newBuilder()
-                .did(UUID.randomUUID().toString())
-                .stage(DeltaFileStage.EGRESS)
-                .actions(new ArrayList<>())
-                .sourceInfo(new SourceInfo(originator.getSourceInfo().getFilename(),
-                        originator.getSourceInfo().getFlow(),
-                        originator.getSourceInfo().getMetadata()))
-                .protocolStack(originator.getProtocolStack())
-                .domains(Collections.singletonList(new Domain(ERROR_DOMAIN, errorDomain, MediaType.APPLICATION_JSON_VALUE)))
-                .enrichment(new ArrayList<>())
-                .formattedData(Collections.emptyList())
-                .created(now)
-                .modified(now)
-                .egressed(false)
-                .filtered(false)
-                .build();
     }
 
     public List<RetryResult> retry(List<String> dids) {

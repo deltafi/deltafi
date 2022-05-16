@@ -25,6 +25,7 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.core.domain.api.Constants;
 import org.deltafi.core.domain.api.types.DeleteActionSchema;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.EgressActionSchema;
@@ -63,6 +64,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.index.IndexInfo;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -84,6 +86,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.core.domain.Util.equalIgnoringDates;
+import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.plugin.PluginDataFetcherTestHelper.*;
@@ -126,19 +129,10 @@ class DeltaFiCoreDomainApplicationTests {
 	PluginRepository pluginRepository;
 
     @Autowired
-    IngressFlowPlanService ingressFlowPlanService;
-
-    @Autowired
     IngressFlowService ingressFlowService;
 
 	@Autowired
 	IngressFlowRepo ingressFlowRepo;
-
-    @Autowired
-    EgressFlowPlanService egressFlowPlanService;
-
-    @Autowired
-    EgressFlowService egressFlowService;
 
 	@Autowired
 	EgressFlowRepo egressFlowRepo;
@@ -157,6 +151,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	PluginVariableRepo pluginVariableRepo;
+
+	@Autowired
+	ErrorService errorService;
 
 	@Captor
 	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
@@ -249,7 +246,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 		FormatActionConfiguration errorFormat = new FormatActionConfiguration();
 		errorFormat.setName("ErrorFormatAction");
-		errorFormat.setRequiresDomains(List.of("error"));
+		errorFormat.setRequiresDomains(List.of(Constants.ERROR_DOMAIN));
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration();
 		errorEgress.setName("ErrorEgressAction");
 		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress);
@@ -1905,6 +1902,43 @@ class DeltaFiCoreDomainApplicationTests {
 
 		assertThat(pluginVariableRepo.findById(newVersion)).isEmpty();
 		assertThat(pluginVariableRepo.findIgnoringVersion(newVersion.getGroupId(), newVersion.getArtifactId())).isPresent().contains(variables);
+	}
+
+	@Test
+	void testGetsErrorsFor() throws JsonProcessingException {
+		DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+		deltaFileRepo.save(deltaFile1);
+		DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+		deltaFileRepo.save(deltaFile2);
+
+		DeltaFile errorDeltaFileA = Util.buildDeltaFile("A", null, DeltaFileStage.EGRESS, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+		errorDeltaFileA.setParentDids(List.of("1"));
+		ActionEventInput errorEventA = ActionEventInput.newBuilder().error(ErrorInput.newBuilder().cause("cause A").build()).build();
+		errorDeltaFileA.setDomains(List.of(buildErrorDomain(deltaFile1, errorEventA)));
+		deltaFileRepo.save(errorDeltaFileA);
+
+		DeltaFile errorDeltaFileB = Util.buildDeltaFile("B", null, DeltaFileStage.EGRESS, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+		errorDeltaFileB.setParentDids(List.of("1"));
+		ActionEventInput errorEventB = ActionEventInput.newBuilder().error(ErrorInput.newBuilder().cause("cause B").build()).build();
+		errorDeltaFileB.setDomains(List.of(buildErrorDomain(deltaFile1, errorEventB)));
+		deltaFileRepo.save(errorDeltaFileB);
+
+		List<ErrorDomain> errorDomains = errorService.getErrorsFor("1");
+
+		assertEquals(2, errorDomains.size());
+		assertEquals("cause B", errorDomains.get(0).getCause());
+		assertEquals("cause A", errorDomains.get(1).getCause());
+	}
+
+	private Domain buildErrorDomain(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+		ErrorDomain errorDomain = ErrorDomain.newBuilder()
+				.cause(event.getError().getCause())
+				.context(event.getError().getContext())
+				.fromAction(event.getAction())
+				.originatorDid(event.getDid())
+				.originator(deltaFile)
+				.build();
+		return new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), MediaType.APPLICATION_JSON_VALUE);
 	}
 
 	private DeltaFile loadDeltaFile(String did) {

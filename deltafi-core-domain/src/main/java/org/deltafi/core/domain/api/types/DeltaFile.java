@@ -45,6 +45,7 @@ import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile {
 
     @Version @Getter @Setter
+    @JsonIgnore
     private long version;
 
     @Id

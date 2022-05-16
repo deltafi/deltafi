@@ -27,6 +27,7 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.format.SimpleFormatAction;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.core.domain.api.Constants;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.api.types.Content;
@@ -44,14 +45,14 @@ import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 
 @Slf4j
 public class SimpleErrorFormatAction extends SimpleFormatAction {
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true)
             .registerModule(new JavaTimeModule());
 
     @Override
     public List<String> getRequiresDomains() {
-        return List.of("error");
+        return List.of(Constants.ERROR_DOMAIN);
     }
 
     @Override
