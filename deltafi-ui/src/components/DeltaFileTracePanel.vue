@@ -63,6 +63,7 @@ const deltaFileActions = computed(() => {
     action.startOrignal = new Date(action.start);
     const startTimeElapsed = new Date(action.stop) - new Date(action.start);
     action.startTimeElapsed = startTimeElapsed > 0 ? startTimeElapsed : 0.1;
+    action.startTimeElapsedOrginal = startTimeElapsed;
     action.startEnd = new Date(action.start) - new Date(deltaFile.created) + action.startTimeElapsed;
     if (action.end === 0) {
       action.end = timeElapsed;
@@ -141,7 +142,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
   // create tooltip element
   const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "10").style("visibility", "hidden");
   const showToolTip = (d, event) => {
-    let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Action: ${d.name} </br> Created: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Elapsed: ${d.elapsed}ms </br> Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)}` : `Action: ${d.name} </br> Created: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Elapsed: ${d.elapsed}ms`;
+    let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
     tooltip
       .html(tipString)
       .style("visibility", "visible")
