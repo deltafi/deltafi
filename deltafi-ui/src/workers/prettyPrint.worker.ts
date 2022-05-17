@@ -18,16 +18,16 @@
 
 import vkbeautify from "vkbeautify";
 
-export const prettyPrint = async (content: string, format: string) => {
+export const prettyPrint = async (content: string, format: string, indent: number = 2) => {
   const workerStart = Date.now();
   console.debug("PrettyPrint worker started");
 
   const output = (function (format) {
     switch (format) {
       case 'json':
-        return vkbeautify.json(content);
+        return vkbeautify.json(content, indent);
       case 'xml':
-        return vkbeautify.xml(content);
+        return vkbeautify.xml(content, indent);
       default:
         return content;
     }
