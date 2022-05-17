@@ -9,13 +9,3 @@ config-server:docker:
     - .docker
   needs:
     - job: "build"
-
-config-server:publish:
-  stage: publish
-  extends:
-    - .config-server
-    - .gradle
-    - .publish
-  needs:
-    - job: "build"
-  script: ${GRADLE} ${PROJECT_NAME}:publish

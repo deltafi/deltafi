@@ -3,6 +3,10 @@ plugins {
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 }
 
+description "Common test library for DeltaFi"
+
+apply plugin: 'maven-publish'
+
 license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)

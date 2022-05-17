@@ -9,13 +9,3 @@ core-domain:docker:
     - .docker
   needs:
     - job: "build"
-
-core-domain:publish:
-  stage: publish
-  extends:
-    - .core-domain
-    - .gradle
-    - .publish
-  needs:
-    - job: "build"
-  script: ${GRADLE} ${PROJECT_NAME}:publish

@@ -9,10 +9,10 @@ license {
 }
 
 task licenseLocal(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
-        source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
+    source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
 }
 
 task licenseFormatLocal(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
-        source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
+    source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
 }
 licenseFormat.dependsOn licenseFormatLocal

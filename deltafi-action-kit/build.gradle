@@ -4,6 +4,10 @@ plugins {
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 }
 
+description = 'DeltaFi Action Kit - Action implementation SDK for DeltaFi actions'
+
+apply plugin: 'maven-publish'
+
 license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)

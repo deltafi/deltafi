@@ -5,6 +5,8 @@ plugins {
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 }
 
+description = 'Core actions for DeltaFi core'
+
 license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)

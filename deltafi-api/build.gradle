@@ -8,16 +8,17 @@ license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)
 }
+
 docker {
     name "${project.name}:${project.version}"
     copySpec.from(".").exclude("**/build").into(".")
 }
 
 task licenseLocal(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
-        source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").include("**/*.sh")
+    source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").include("**/*.sh")
 }
 
 task licenseFormatLocal(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
-        source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").include("**/*.sh")
+    source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").include("**/*.sh")
 }
 licenseFormat.dependsOn licenseFormatLocal

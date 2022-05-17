@@ -1,8 +1,11 @@
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id 'com.gradle.plugin-publish' version '1.0.0-rc-2'
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 }
+
+description = 'DeltaFi gradle plugin'
 
 license {
     header(rootProject.file('HEADER'))
@@ -16,11 +19,21 @@ dependencies {
 
 group 'org.deltafi.gradle-plugin'
 
+pluginBundle {
+    website = 'https://deltafi.org'
+    vcsUrl = 'https://github.com/deltafi-org/deltafi'
+    tags = ['deltafi', 'DeltaFi']
+    description = 'Gradle plugin used to build DeltaFi plugins'
+}
+
 gradlePlugin {
+    description = 'Gradle plugin used to build DeltaFi plugins'
     plugins {
         pluginPlugin {
             id = 'org.deltafi.plugin'
             implementationClass = 'org.deltafi.gradle.plugin.PluginPlugin'
+            displayName = 'Deltafi Plugin Gradle Plugins'
+            description = 'Gradle plugin used to build DeltaFi plugins'
         }
     }
 }

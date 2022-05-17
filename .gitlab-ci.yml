@@ -53,12 +53,6 @@ trigger_deltafi_stix:
   variables:
     GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
 
-.publish:
-  only:
-    refs:
-      - main
-      - tags
-
 .docker:
   services:
     - name: docker:18.09.7-dind
@@ -101,6 +95,46 @@ build:
     exclude:
       - "**/build/tmp"
       - "**/build/classes"
+
+publish-nexus:
+  only:
+    refs:
+      - tags
+  stage: publish
+  extends:
+    - .gradle
+  needs:
+    - job: "build"
+  script:
+    - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
+    - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -PsonatypeNexusUsername="${SONATYPE_NEXUS_USERNAME}" -PsonatypeNexusPassword="${SONATYPE_NEXUS_PASSWORD}" publishPublicPublicationToSonatype closeSonatypeStagingRepository releaseSonatypeStagingRepository
+
+publish-gradle:
+  only:
+    refs:
+      - tags
+  stage: publish
+  extends:
+    - .gradle
+  needs:
+    - job: "build"
+  script:
+    - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
+    - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -Pgradle.publish.key="${GRADLE_PUBLISH_KEY}" -Pgradle.publish.secret="${GRADLE_PUBLISH_SECRET}" publishPlugin
+
+publish-gitlab:
+  only:
+    refs:
+      - tags
+      - main
+  stage: publish
+  extends:
+    - .gradle
+  needs:
+    - job: "build"
+  script:
+    - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
+    - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
 
 hub_docker_quota_check:
     stage: build

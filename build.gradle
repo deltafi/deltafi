@@ -1,10 +1,16 @@
 plugins {
   id 'test-summary' // Local plugin
   id 'version-reckoning' // Local plugin
+  id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
 allprojects { project ->
     group 'org.deltafi'
+
+    ext {
+        isReleaseVersion = !version.endsWith("SNAPSHOT")
+        isSignable = project.hasProperty("signing.keyId") && project.hasProperty("signing.password") && project.hasProperty("signing.secretKeyRingFile")
+    }
 
     task version {
         doLast {
@@ -70,25 +76,85 @@ subprojects {
         }
     }
 
-    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                artifact jar
+    afterEvaluate {
+        // Only apply to subprojects with maven-publish applied
+        pluginManager.withPlugin('maven-publish') {
+            task javadocJar(type: Jar) {
+                archiveClassifier = 'javadoc'
+                dependsOn javadoc
+                from javadoc
             }
-        }
-        repositories {
-            if (project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
-                maven {
-                    url projectMavenRepo
-                    credentials(HttpHeaderCredentials) {
-                        // the following variables reside in ~/.gradle/gradle.properties
-                        name = gitLabTokenType
-                        value = gitLabToken
+
+            task sourcesJar(type: Jar) {
+                archiveClassifier = 'sources'
+                from sourceSets.main.allSource
+            }
+
+            artifacts {
+                archives javadocJar, sourcesJar
+            }
+
+            publishing {
+                repositories {
+                    if (project.hasProperty('gitLabTokenType') && project.hasProperty('gitLabToken')) {
+                        maven {
+                            name "Gitlab"
+                            url projectMavenRepo
+                            credentials(HttpHeaderCredentials) {
+                                // the following variables reside in ~/.gradle/gradle.properties
+                                name = gitLabTokenType
+                                value = gitLabToken
+                            }
+                            authentication {
+                                header(HttpHeaderAuthentication)
+                            }
+                        }
                     }
-                    authentication {
-                        header(HttpHeaderAuthentication)
+                }
+
+                if (project.name != 'gradle-plugin') {
+                    publications {
+                        Public(MavenPublication) {
+                            artifact sourcesJar
+                            artifact javadocJar
+                            artifact jar
+                            pom {
+                                name = project.name
+                                description = project.description
+                                url = 'https://www.deltafi.org'
+                                inceptionYear = '2021'
+
+                                licenses {
+                                    license {
+                                        name = 'The Apache Software License, Version 2.0'
+                                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                                        distribution = 'repo'
+                                    }
+                                }
+                                developers {
+                                    developer {
+                                         id = 'deltafi'
+                                         name = 'DeltaFi Contributors'
+                                         email = 'info@deltafi.org'
+                                    }
+                                }
+                                scm {
+                                    url = 'https://github.com/deltafi-org/deltafi'
+                                    connection = 'scm:https://github.com/deltafi-org/deltafi.git'
+                                    developerConnection = 'scm:git://github.com/deltafi-org/deltafi'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (project.name != 'gradle-plugin') {
+                if (isSignable) {
+                    signing {
+                        sign publishing.publications
                     }
                 }
             }
@@ -103,4 +169,17 @@ subprojects {
     }
 
     task allDeps(type: DependencyReportTask) {}
+}
+
+if (isReleaseVersion && project.hasProperty('sonatypeNexusUsername') && project.hasProperty('sonatypeNexusPassword')) {
+    nexusPublishing {
+        repositories {
+            sonatype {  //only for users registered in Sonatype after 24 Feb 2021
+                nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+                snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+                password = sonatypeNexusPassword
+                username = sonatypeNexusUsername
+            }
+        }
+    }
 }

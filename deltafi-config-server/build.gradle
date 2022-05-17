@@ -5,6 +5,9 @@ plugins {
     id "com.palantir.docker" version "${palantirDockerVersion}"
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 }
+
+description = 'Configuration server for DeltaFi'
+
 license {
     excludes(excludeFromLicense)
     header(rootProject.file('HEADER'))

@@ -1,13 +1,3 @@
 .common:
   variables:
     PROJECT_NAME: deltafi-common
-
-common:publish:
-  stage: publish
-  extends:
-    - .common
-    - .gradle
-    - .publish
-  needs:
-    - job: "build"
-  script: ${GRADLE} ${PROJECT_NAME}:publish
