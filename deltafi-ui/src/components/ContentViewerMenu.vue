@@ -20,7 +20,7 @@
   <span :class="containerClass">
     <template v-for="(item, i) of model" :key="i.toString()">
       <!-- Disabled Button -->
-      <span v-if="(!item.isEnabled)" v-tooltip.top="disabledLabel(item)" class="button-padding">
+      <span v-if="(!item.isEnabled)" v-tooltip.top="disabledLabel(item)">
         <!-- Disabled Stacked Icons Button -->
         <span v-if="!_.isEmpty(item.alternateIcon)">
           <span class="button-padding">

@@ -51,6 +51,8 @@ watch(highlight, () => {
   if (result.value.code == null) doHighlight();
 });
 
+watch(code, () => doHighlight());
+
 const output = computed(() => {
   return highlight.value && result.value.code ? result.value.code : escapeHtml(code.value);
 });
@@ -60,7 +62,7 @@ const classes = computed(() => {
 });
 
 const doHighlight = async () => {
-  result.value = await highlightCode(code.value, language.value);
+  result.value = highlight.value ? await highlightCode(code.value, language.value) : code.value;
 };
 
 const escapeHtml = (value) => {

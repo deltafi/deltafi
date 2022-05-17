@@ -97,8 +97,8 @@
     "enrichment": [
       {
         "name": "mockEnrichment",
-        "value": "smoke enrichment value",
-        "mediaType": "text/plain"
+        "value": "{\"stage\":\"ERROR\",\"actions\":[{\"name\":\"IngressAction\",\"state\":\"ERROR\",\"errorCause\":\"Failed Ingress\",\"errorContext\":\"Details...\"}],\"sourceInfo\":{\"flow\":\"smoke\"}}",
+        "mediaType": "application/json"
       },
       {
         "name": "MockEnrichmentTwo",

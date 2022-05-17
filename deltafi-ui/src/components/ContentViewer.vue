@@ -46,7 +46,7 @@
           <div class="content-wrapper">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
             <div v-else-if="contentLoaded">
-              <HighlightedCode v-if="selectedRenderFormat.name === 'UTF-8'" :highlight="highlightCode" :code="contentAsString" :language="language" />
+              <HighlightedCode v-if="selectedRenderFormat.name === 'UTF-8'" :highlight="highlightCode" :code="displayedContent" :language="language" />
               <HighlightedCode v-if="selectedRenderFormat.name === 'Hexdump'" :highlight="false" :code="contentAsHexdump" />
             </div>
           </div>
@@ -66,6 +66,7 @@ import { computed, defineProps, onMounted, ref, toRefs, watch } from "vue";
 import { useClipboard } from "@vueuse/core";
 import useNotifications from "@/composables/useNotifications";
 import FormattedBytes from "@/components/FormattedBytes.vue";
+import { prettyPrint } from "@/workers/prettyPrint.worker";
 
 import Button from "primevue/button";
 import Divider from "primevue/divider";
@@ -112,8 +113,19 @@ const contentLoaded = ref(false);
 const highlightCode = ref(true);
 const viewMetadata = ref(false);
 const content = ref(new ArrayBuffer());
+const displayedContent = ref("");
 const decoder = new TextDecoder("utf-8");
 const encoder = new TextEncoder("utf-8");
+
+const shouldPrettyPrint = ref(true);
+const prettyPrintFormats = ["json", "xml"];
+const canPrettyPrint = computed(() => {
+  return prettyPrintFormats.includes(language.value) && _.isEqual(selectedRenderFormat.value.name, "UTF-8");
+});
+
+watch([content, shouldPrettyPrint], async () => {
+  displayedContent.value = (canPrettyPrint.value && shouldPrettyPrint.value) ? await prettyPrint(contentAsString.value, language.value) : contentAsString.value
+})
 
 // Menu Buttons
 const highlightBtnEnbl = computed(() => {
@@ -124,12 +136,24 @@ const copyBtnEnbl = computed(() => content.value.byteLength > 0);
 const downloadBtnEnbl = computed(() => content.value.byteLength > 0);
 const items = ref([
   {
+    label: "Enable Pretty Print",
+    icon: "fas fa-file-code",
+    alternateLabel: "Disable Pretty Print",
+    alternateIcon: "fas fa-ban",
+    isEnabled: canPrettyPrint,
+    disabledLabel: "Pretty Print Disabled",
+    toggled: false,
+    command: () => {
+      shouldPrettyPrint.value = !shouldPrettyPrint.value;
+    },
+  },
+  {
     label: "Enable Highlighting",
     icon: "fas fa-highlighter",
     alternateLabel: "Disable Highlighting",
     alternateIcon: "fas fa-ban",
     isEnabled: highlightBtnEnbl,
-    disabledLabel: "Nothing to Highlight",
+    disabledLabel: "Highlighting Disabled",
     toggled: false,
     command: () => {
       onToggleHiglightCodeClick();
