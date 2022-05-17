@@ -21,7 +21,7 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" :header="filename" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" @show="onResize" @maximize="onResize" @unmaximize="onResize">
+    <Dialog v-model:visible="dialogVisible" :header="filename" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" @show="onResize" @maximize="onResize" @unmaximize="onResize">
       <div ref="dialogContainer" class="dialog-container">
         <div class="dialog-row">
           <div v-if="showListbox" class="dialog-column dialog-column-left" :style="`height: ${dialogContainerHeight}`">

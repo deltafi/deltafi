@@ -66,7 +66,7 @@
         </div>
       </div>
     </div>
-    <Dialog v-model:visible="rawJSONDialog.visible" :header="rawJSONDialog.header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true">
+    <Dialog v-model:visible="rawJSONDialog.visible" :header="rawJSONDialog.header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
       <HighlightedCode :code="rawJSONDialog.body" />
       <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
     </Dialog>

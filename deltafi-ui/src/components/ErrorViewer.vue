@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Dialog v-bind="$attrs" :header="header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true">
+  <Dialog v-bind="$attrs" :header="header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
     <div class="error-viewer">
       <div class="error-row">
         <div class="error-col">
