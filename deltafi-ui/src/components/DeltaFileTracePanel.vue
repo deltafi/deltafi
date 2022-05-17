@@ -46,12 +46,24 @@ const deltaFile = reactive(JSON.parse(JSON.stringify(props.deltaFileData)));
 
 const deltaFileActions = computed(() => {
   let actions = deltaFile.actions.map((action) => {
+    if (action.queued !== null) {
+      action.created = new Date(action.queued);
+      action.createdOrginal = new Date(action.queued);
+    } else {
+      action.created = new Date(action.created);
+      action.createdOrginal = new Date(action.created);
+    }
     const timeElapsed = new Date(action.modified) - new Date(action.created);
-    action.created = new Date(action.created);
-    action.createdOrginal = new Date(action.created);
     action.modified = new Date(action.modified);
     action.modifiedOrginal = new Date(action.modified);
     action.end = new Date(action.created) - new Date(deltaFile.created) + timeElapsed;
+    action.stop = new Date(action.stop);
+    action.stopOrignal = new Date(action.stop);
+    action.start = new Date(action.start);
+    action.startOrignal = new Date(action.start);
+    const startTimeElapsed = new Date(action.stop) - new Date(action.start);
+    action.startTimeElapsed = startTimeElapsed > 0 ? startTimeElapsed : 0.1;
+    action.startEnd = new Date(action.start) - new Date(deltaFile.created) + action.startTimeElapsed;
     if (action.end === 0) {
       action.end = timeElapsed;
     }
@@ -64,14 +76,14 @@ const deltaFileActions = computed(() => {
   if (actions.some((action) => action.state === "RETRIED")) {
     actions = handleRetried(actions);
   }
-  let total = new Date(actions[actions.length - 1].modified) - new Date(deltaFile.created);
+  let total = new Date(Math.max(...actions.map((e) => new Date(e.modified)))) - new Date(deltaFile.created);
 
   actions.unshift({
     name: "DeltaFileFlow",
     elapsed: total,
     end: total,
-    modified: actions[actions.length - 1].modified,
-    created: deltaFile.created,
+    modified: actions[actions.length - 1].modifiedOrginal,
+    created: deltaFile.createdOrginal,
   });
   return actions;
 });
@@ -88,10 +100,14 @@ const handleRetried = (newActions) => {
       retriedActions.push({ name: newActions[x].name, modified: newActions[x].modified });
     } else {
       if (retriedActions.some((retried) => retried.name === newActions[x].name)) {
-        let retriedIndex = retriedActions.findIndex((retried) => retried.name === newActions[x].name);
+        const retriedIndex = retriedActions.findIndex((retried) => retried.name === newActions[x].name);
+        const shiftTime = new Date(newActions[x].created) - new Date(retriedActions[retriedIndex].modified);
+        newActions[x].start = new Date(dayjs(newActions[x].start).subtract(shiftTime, "millisecond")).toISOString();
+        newActions[x].stop = new Date(dayjs(newActions[x].stop).subtract(shiftTime, "millisecond")).toISOString();
         newActions[x].created = retriedActions[retriedIndex].modified;
         newActions[x].modified = new Date(dayjs(newActions[x].created).add(newActions[x].elapsed, "millisecond")).toISOString();
         newActions[x].end = new Date(newActions[x].created) - new Date(deltaFile.created) + newActions[x].elapsed;
+        newActions[x].startEnd = new Date(newActions[x].start) - new Date(deltaFile.created) + newActions[x].startTimeElapsed;
         retriedActions.splice(retriedIndex, 1);
       }
       if (newActions[x].state === "RETRIED") {
@@ -125,8 +141,9 @@ const HorizontalWaterfallChart = (attachTo, data) => {
   // create tooltip element
   const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "10").style("visibility", "hidden");
   const showToolTip = (d, event) => {
+    let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Action: ${d.name} </br> Created: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Elapsed: ${d.elapsed}ms </br> Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)}` : `Action: ${d.name} </br> Created: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Elapsed: ${d.elapsed}ms`;
     tooltip
-      .html(`Action: ${d.name} </br> Created: ${formatTimestamp(new Date(d.createdOrginal), timestampFormat)} </br> Modified:   ${formatTimestamp(new Date(d.modifiedOrginal), timestampFormat)}</br> Elapsed: ${d.elapsed}ms`)
+      .html(tipString)
       .style("visibility", "visible")
       .style("top", `${event.offsetY - 15}px`)
       .style("left", `${event.offsetX}px`);
@@ -214,6 +231,50 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .duration(1000)
     .attr("width", function (d) {
       return x(d.elapsed);
+    });
+
+  // add start stop
+  chart
+    .append("g")
+    .attr("transform", `translate(${leftMargin}, 15)`)
+    .selectAll("rect")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("class", "rectWF")
+    .attr("class", function (d) {
+      if (_.isEqual(d.name, "DeltaFileFlow")) {
+        return "normal-bar";
+      } else {
+        return "start-stop-bar";
+      }
+    })
+    .attr("x", function (d) {
+      return x(d.startEnd - d.startTimeElapsed);
+    })
+    .attr("y", function (d, i) {
+      return i * rowWidth + 1;
+    })
+    .attr("rx", 2)
+    .attr("ry", 2)
+    .attr("height", rowWidth - 2)
+    .attr("width", 10)
+    .attr("id", (d) => {
+      return d.name;
+    })
+    .on("mouseover", function (d) {
+      showToolTip(d, d3.event);
+      d3.selectAll(".rectWF").style("opacity", 0.5);
+      //   d3.select(this).style("opacity", 1);
+    })
+    .on("mouseout", function () {
+      hideToolTip();
+      //   d3.selectAll(".rectWF").style("opacity", 1);
+    })
+    .transition()
+    .duration(1000)
+    .attr("width", function (d) {
+      return x(d.startTimeElapsed);
     });
 
   // Set the values on the bars

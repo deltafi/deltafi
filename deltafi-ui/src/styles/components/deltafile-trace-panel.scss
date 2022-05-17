@@ -22,6 +22,11 @@
   }
   .chart {
     font: 0.3rem sans-serif;
+    rect {
+      stroke: #888;
+      stroke-width: 0.2;
+      stroke-linejoin: round;
+    }
     rect.normal-bar {
       fill: #b8daff;
     }
@@ -30,6 +35,10 @@
     }
     rect.error-bar {
       fill: #f5c6cb;
+    }
+    rect.start-stop-bar {
+      fill: #fff;
+      opacity: 0.45;
     }
     text {
       fill: #333333;
