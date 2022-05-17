@@ -12,6 +12,8 @@ license {
 	  excludes(excludeFromLicense)
 }
 
+compileJava.dependsOn(processResources)
+
 dependencies {
     implementation "redis.clients:jedis:${jedisVersion}"
 
@@ -23,6 +25,7 @@ dependencies {
 
     implementation "org.slf4j:slf4j-api:1.7.33"
     implementation "org.springframework.boot:spring-boot:${springBootVersion}"
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'

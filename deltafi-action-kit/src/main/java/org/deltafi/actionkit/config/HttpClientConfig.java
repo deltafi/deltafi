@@ -28,7 +28,7 @@ import java.net.http.HttpClient;
 public class HttpClientConfig {
     @Produces
     @ApplicationScoped
-    public HttpClient httpClient(ActionsProperties config) throws Exception {
+    public HttpClient httpClient(ActionsProperties config) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
         if (config.getSsl() != null) {
             try {

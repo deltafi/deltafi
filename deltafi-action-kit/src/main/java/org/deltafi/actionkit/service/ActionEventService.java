@@ -29,37 +29,18 @@ import java.util.List;
  * Service interface for publishing and retrieving action events
  */
 public interface ActionEventService {
-
-    // FIXME: Remove putAction
-    /**
-     * Deprecated interface method that is not implemented...
-     * @param actionClassName OBE
-     * @param actionEventInput OBE
-     */
-    default void putAction(String actionClassName, ActionInput actionEventInput) {}
-
     /**
      * Request an ActionInput object from the ActionEvent queue for the specified action
      * @param actionClassName Name of action for Action event request
      * @return next Action on the queue for the given action name
-     * @throws JsonProcessingException
-     * @throws InterruptedException
+     * @throws JsonProcessingException if the incoming event cannot be serialized
      */
-    ActionInput getAction(String actionClassName) throws JsonProcessingException, InterruptedException;
+    ActionInput getAction(String actionClassName) throws JsonProcessingException;
 
     /**
      * Submit a result object for action processing
      * @param result Result object to be posted to the action queue
-     * @throws JsonProcessingException
+     * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */
     void submitResult(Result result) throws JsonProcessingException;
-
-    // FIXME: Remove getResults
-
-    /**
-     * Deprecated method
-     * @param actionClassName OBE
-     * @return OBE
-     */
-    default List<ActionEventInput> getResults(String actionClassName) { return Collections.emptyList(); }
 }

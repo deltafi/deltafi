@@ -35,7 +35,7 @@ public class ErrorService {
 
     public ErrorDomain getError(String did) {
         DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
-        if(deltaFile == null || deltaFile.getDomains() == null) return null;
+        if(deltaFile == null) return null;
         return ErrorConverter.convert(deltaFile.getDomain("error"));
     }
 

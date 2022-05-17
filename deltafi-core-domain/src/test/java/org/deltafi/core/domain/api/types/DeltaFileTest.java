@@ -17,14 +17,11 @@
  */
 package org.deltafi.core.domain.api.types;
 
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.FormattedData;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

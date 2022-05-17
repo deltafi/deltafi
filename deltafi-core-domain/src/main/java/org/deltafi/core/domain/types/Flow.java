@@ -76,7 +76,7 @@ public interface Flow {
 
     /**
      * Add the action names in this flow to the appropriate action family
-     * @param actionFamilyMap
+     * @param actionFamilyMap map of action names to ActionFamily
      */
     void updateActionNamesByFamily(Map<String, ActionFamily> actionFamilyMap);
 

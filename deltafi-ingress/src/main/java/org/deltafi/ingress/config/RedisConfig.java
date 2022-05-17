@@ -27,6 +27,6 @@ public class RedisConfig {
 
     @Produces
     public RedisService redisService(RedisProperties redisProperties) throws URISyntaxException {
-        return new RedisService(redisProperties.getUrl(), redisProperties.getPassword().orElseGet(() ->""));
+        return new RedisService(redisProperties.getUrl(), redisProperties.getPassword().orElse(""));
     }
 }

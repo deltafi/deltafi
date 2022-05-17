@@ -91,7 +91,7 @@ public class PropertyService {
 
     private void addExternalOnlyProperties(List<PropertySet> knownProperties) {
         List<PropertySource> propertySets = getExternalEnvironment().getPropertySources();
-        propertySets.stream().forEach(externalPropertySet -> addExternalOnlyProperties(externalPropertySet, knownProperties));
+        propertySets.forEach(externalPropertySet -> addExternalOnlyProperties(externalPropertySet, knownProperties));
     }
 
     private void addExternalOnlyProperties(PropertySource externalProperty, List<PropertySet> knownProperties) {

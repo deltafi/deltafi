@@ -94,7 +94,7 @@ public class JedisKeyedBlockingQueue {
     }
 
     private void drop(Jedis jedis, List<String> keys) {
-        keys.forEach(key -> jedis.del(key));
+        keys.forEach(jedis::del);
     }
 
     private void put(Jedis jedis, String key, Object value) throws JsonProcessingException {

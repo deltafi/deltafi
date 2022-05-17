@@ -56,7 +56,6 @@ import java.util.stream.Stream;
 
 import static org.deltafi.core.action.FlowfileEgressAction.FLOWFILE_V1_CONTENT_TYPE;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -47,13 +47,13 @@ public class RegistrationService {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
-    private ActionsProperties actionsProperties;
+    ActionsProperties actionsProperties;
 
     @Inject
-    private DomainGatewayService domainGatewayService;
+    DomainGatewayService domainGatewayService;
 
     @Inject
-    private Instance<Action<?>> actions;
+    Instance<Action<?>> actions;
 
     private GraphQLQuery query;
     private boolean firstTime = true;

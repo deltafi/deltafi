@@ -33,7 +33,4 @@ public interface DomainGatewayService {
      * @return the reponse from the GraphQL server
      */
     GraphQLResponse submit(GraphQLQueryRequest request);
-
-    // FIXME: REmove deprecated interface
-    default List<String> getUnsentQueries() { return Collections.emptyList(); }
 }

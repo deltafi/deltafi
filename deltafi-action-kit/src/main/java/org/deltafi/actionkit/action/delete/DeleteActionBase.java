@@ -20,10 +20,6 @@ package org.deltafi.actionkit.action.delete;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.transform.MultipartTransformAction;
-import org.deltafi.actionkit.action.transform.SimpleMultipartTransformAction;
-import org.deltafi.actionkit.action.transform.SimpleTransformAction;
-import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.deltafi.core.domain.generated.types.DeleteActionSchemaInput;
 

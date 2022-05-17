@@ -21,6 +21,7 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
+import org.jetbrains.annotations.NotNull;
 
 public class StringCoercing implements Coercing<String, String> {
 
@@ -29,13 +30,15 @@ public class StringCoercing implements Coercing<String, String> {
         return "\"\"" + dataFetcherResult.toString() + "\"\"";
     }
 
+    @NotNull
     @Override
-    public String parseValue(Object input) throws CoercingParseValueException {
+    public String parseValue(@NotNull Object input) throws CoercingParseValueException {
         return input.toString();
     }
 
+    @NotNull
     @Override
-    public String parseLiteral(Object input) throws CoercingParseLiteralException {
+    public String parseLiteral(@NotNull Object input) throws CoercingParseLiteralException {
         return input.toString();
     }
 }
