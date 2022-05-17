@@ -46,8 +46,7 @@
           <div class="content-wrapper">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
             <div v-else-if="contentLoaded">
-              <HighlightedCode v-if="selectedRenderFormat.name === 'UTF-8'" :highlight="highlightCode" :code="displayedContent" :language="language" />
-              <HighlightedCode v-if="selectedRenderFormat.name === 'Hexdump'" :highlight="false" :code="contentAsHexdump" />
+              <HighlightedCode :highlight="highlightCode && selectedRenderFormat.highlight" :code="displayedContent" :language="language" />
             </div>
           </div>
           <ScrollTop target="parent" :threshold="100" icon="pi pi-arrow-up" />
@@ -62,7 +61,7 @@ import HighlightedCode from "@/components/HighlightedCode.vue";
 import ContentViewerMenu from "@/components/ContentViewerMenu.vue";
 import useContent from "@/composables/useContent";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineProps, onMounted, ref, toRefs, watch } from "vue";
+import { computed, defineProps, onMounted, ref, toRefs, watch, reactive } from "vue";
 import { useClipboard } from "@vueuse/core";
 import useNotifications from "@/composables/useNotifications";
 import FormattedBytes from "@/components/FormattedBytes.vue";
@@ -113,40 +112,43 @@ const contentLoaded = ref(false);
 const highlightCode = ref(true);
 const viewMetadata = ref(false);
 const content = ref(new ArrayBuffer());
-const displayedContent = ref("");
+const contentAs = reactive({})
 const decoder = new TextDecoder("utf-8");
 const encoder = new TextEncoder("utf-8");
-
-const shouldPrettyPrint = ref(true);
 const prettyPrintFormats = ["json", "xml"];
-const canPrettyPrint = computed(() => {
-  return prettyPrintFormats.includes(language.value) && _.isEqual(selectedRenderFormat.value.name, "UTF-8");
-});
 
-watch([content, shouldPrettyPrint], async () => {
-  displayedContent.value = (canPrettyPrint.value && shouldPrettyPrint.value) ? await prettyPrint(contentAsString.value, language.value) : contentAsString.value
+watch(content, () => processContent());
+
+const processContent = async () => {
+  // Hex
+  const buffer = Buffer.from(content.value);
+  contentAs.hex = hexy.hexy(buffer, {
+    format: "twos",
+    width: 16,
+  });
+
+  // UTF-8
+  contentAs.utf8 = decoder.decode(content.value)
+
+  // Formatted JSON/XML
+  if (prettyPrintFormats.includes(language.value)) {
+    contentAs.formatted = "Loading..."
+    contentAs.formatted = await prettyPrint(contentAs.utf8, language.value)
+  }
+};
+
+const displayedContent = computed(() => {
+  return contentAs[selectedRenderFormat.value.id];
 })
 
 // Menu Buttons
 const highlightBtnEnbl = computed(() => {
-  return content.value.byteLength > 0 && _.isEqual(selectedRenderFormat.value.name, "UTF-8");
+  return content.value.byteLength > 0 && selectedRenderFormat.value.highlight;
 });
 const metadataBtnEnbl = computed(() => !_.isEmpty(metadata.value));
 const copyBtnEnbl = computed(() => content.value.byteLength > 0);
 const downloadBtnEnbl = computed(() => content.value.byteLength > 0);
 const items = ref([
-  {
-    label: "Enable Pretty Print",
-    icon: "fas fa-file-code",
-    alternateLabel: "Disable Pretty Print",
-    alternateIcon: "fas fa-ban",
-    isEnabled: canPrettyPrint,
-    disabledLabel: "Pretty Print Disabled",
-    toggled: false,
-    command: () => {
-      shouldPrettyPrint.value = !shouldPrettyPrint.value;
-    },
-  },
   {
     label: "Enable Highlighting",
     icon: "fas fa-highlighter",
@@ -177,7 +179,7 @@ const items = ref([
     isEnabled: copyBtnEnbl,
     disabledLabel: "Nothing to Copy",
     command: () => {
-      copyToClipboard(contentAsString.value);
+      copyToClipboard(displayedContent.value);
       notify.info("Copied to clipboard", "Content copied to clipboard.", 3000);
     },
   },
@@ -191,11 +193,22 @@ const items = ref([
     },
   },
 ]);
-const renderFormats = ref([{ name: "Hexdump" }, { name: "UTF-8" }]);
+const renderFormats = ref([
+  { name: "Hexdump", id: 'hex', highlight: false },
+  { name: "UTF-8", id: 'utf8', highlight: true }
+]);
 const selectedRenderFormat = ref(renderFormats.value[1]);
 
 onMounted(() => {
   loadContent();
+  if (prettyPrintFormats.includes(language.value)) {
+    renderFormats.value.push({
+      name: `Formatted ${language.value.toUpperCase()}`,
+      id: 'formatted',
+      highlight: true
+    })
+    renderFormats.value = _.sortBy(renderFormats.value, 'name')
+  }
 });
 
 watch(
@@ -214,16 +227,6 @@ const language = computed(() => {
 });
 
 const partialContent = computed(() => contentReference.value.size > maxPreviewSize);
-
-const contentAsString = computed(() => decoder.decode(content.value));
-
-const contentAsHexdump = computed(() => {
-  let buffer = Buffer.from(content.value);
-  return hexy.hexy(buffer, {
-    format: "twos",
-    width: 16,
-  });
-});
 
 const embededContent = computed(() => "content" in contentReference.value);
 
