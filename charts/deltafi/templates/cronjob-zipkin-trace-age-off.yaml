@@ -1,3 +1,4 @@
+{{- if not .Values.zipkin.tracesAgeOffJob.suspend }}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -43,3 +44,4 @@ spec:
               log "Failed to connect to Elasticsearch."
               exit 1
           restartPolicy: Never
+{{- end }}

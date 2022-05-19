@@ -195,6 +195,7 @@ fluentd:
   metricsAgeOffJob:
     schedule: "0 * * * *" # Top of every hour
     threshold: "1d"
+    suspend: false
 # Kibana config
 kibana:
   load_saved_objects: true
@@ -218,6 +219,7 @@ zipkin:
       value: http://elasticsearch-master:9200
   tracesAgeOffJob:
     schedule: "0 1 * * *" # Once daily at 0100
+    suspend: false
 # Kubernetes Dashboard config
 kubernetes-dashboard:
   protocolHttp: true
