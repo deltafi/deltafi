@@ -11,6 +11,7 @@ license {
 
 docker {
     name "${project.name}:${project.version}"
+    tag "local", "${localDockerRegistry}/${project.name}:latest"
     copySpec.from(".").exclude("**/build").into(".")
 }
 

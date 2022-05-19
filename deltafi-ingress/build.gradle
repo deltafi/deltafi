@@ -60,6 +60,9 @@ dockerPrepare {
 }
 
 docker {
+    dependsOn compileJava
+    dependsOn build
+    tag "local", "${localDockerRegistry}/${project.name}:latest"
     name "${project.name}:${project.version}"
     copySpec.from("build/quarkus-app/").into("build/quarkus-app/")
 }

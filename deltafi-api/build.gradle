@@ -12,6 +12,7 @@ license {
 docker {
     name "${project.name}:${project.version}"
     copySpec.from(".").exclude("**/build").into(".")
+    tag "local", "${localDockerRegistry}/${project.name}:latest"
 }
 
 task licenseLocal(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
