@@ -29,6 +29,9 @@
   <div class="row pb-2">
     <div class="col pb-3">
       <h3>Ingress</h3>
+      <template v-if="checkFlowsVisible(flowData['ingress'])">
+        <Message severity="info" :closable="false">No Ingress flows found</Message>
+      </template>
       <template v-for="(ingressFlowValue, ingressFlowKey) in flowData['ingress']" :key="ingressFlowKey">
         <FlowPanel :flow-data-prop="ingressFlowValue" />
       </template>
@@ -37,6 +40,9 @@
       <Divider layout="vertical" class="mx-0 flow-divider-color" />
       <div class="col pb-3">
         <h3>Enrich</h3>
+        <template v-if="checkFlowsVisible(flowData['enrich'])">
+          <Message severity="info" :closable="false">No Enrich flows found</Message>
+        </template>
         <template v-for="(enrichFlowValue, enrichFlowKey) in flowData['enrich']" :key="enrichFlowKey">
           <FlowPanel :flow-data-prop="enrichFlowValue" />
         </template>
@@ -45,6 +51,9 @@
     <Divider layout="vertical" class="mx-0 flow-divider-color" />
     <div class="col pb-3">
       <h3>Egress</h3>
+      <template v-if="checkFlowsVisible(flowData['egress'])">
+        <Message severity="info" :closable="false">No Egress flows found</Message>
+      </template>
       <template v-for="(egressFlowValue, egressFlowKey) in flowData['egress']" :key="egressFlowKey">
         <FlowPanel :flow-data-prop="egressFlowValue" />
       </template>
@@ -61,6 +70,7 @@ import { nextTick, onBeforeMount, ref, watch } from "vue";
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
+import Message from "primevue/message";
 import _ from "lodash";
 
 const { getAllFlows } = useFlowQueryBuilder();
@@ -94,6 +104,13 @@ const fetchFlows = async () => {
   allFlowData.value = response.data.getAllFlows;
   pluginNames.value = pluginNamesList(allFlowData.value);
   applyFilters();
+};
+
+const checkFlowsVisible = (flowsList) => {
+  if (_.isEmpty(flowsList)) {
+    return false;
+  }
+  return flowsList.every((el) => el.visible === false);
 };
 
 const foundTextInObject = (flow) => {
