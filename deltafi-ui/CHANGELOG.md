@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated Trace chart to use queued vs created and added start/stop bar (#166)
 - Made content dialogs not draggable (#175)
 - Added enrich flows to the flows page (#171)
+- Changed Divider color on flows page (#177)
 
 ## [0.95.2]
 

@@ -34,7 +34,7 @@
       </template>
     </div>
     <template v-if="!_.isEmpty(flowData['enrich'])">
-      <Divider layout="vertical" class="mx-0" />
+      <Divider layout="vertical" class="mx-0 flow-divider-color" />
       <div class="col pb-3">
         <h3>Enrich</h3>
         <template v-for="(enrichFlowValue, enrichFlowKey) in flowData['enrich']" :key="enrichFlowKey">
@@ -42,7 +42,7 @@
         </template>
       </div>
     </template>
-    <Divider layout="vertical" class="mx-0" />
+    <Divider layout="vertical" class="mx-0 flow-divider-color" />
     <div class="col pb-3">
       <h3>Egress</h3>
       <template v-for="(egressFlowValue, egressFlowKey) in flowData['egress']" :key="egressFlowKey">
