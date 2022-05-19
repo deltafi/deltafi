@@ -22,7 +22,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
-import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
@@ -47,12 +46,11 @@ class EgressFlowPlanConverterTest {
     @Test
     void testConverter() throws IOException {
         EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-test.json"), EgressFlowPlan.class);
-        EgressFlow egressFlow = egressFlowPlanConverter.toEgressFlow(flowPlan, variables());
+        EgressFlow egressFlow = egressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(egressFlow.getName()).isEqualTo("passthrough");
         assertThat(egressFlow.getEgressAction()).isEqualTo(expectedEgressAction());
         assertThat(egressFlow.getFormatAction()).isEqualTo(expectedFormatAction());
-        assertThat(egressFlow.getEnrichActions()).hasSize(1).contains(expectedEnrichAction());
         assertThat(egressFlow.getValidateActions()).hasSize(1).contains(expectedValidateAction());
         assertThat(egressFlow.getIncludeIngressFlows()).hasSize(1).contains("ingressFlow");
         assertThat(egressFlow.getExcludeIngressFlows()).hasSize(1).contains("otherFlow");
@@ -62,7 +60,7 @@ class EgressFlowPlanConverterTest {
     void testUnresolvedPlaceholder() throws IOException {
         EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-test.json"), EgressFlowPlan.class);
         flowPlan.getFormatAction().setName("${missing.placeholder:defaultignored}");
-        EgressFlow egressFlow = egressFlowPlanConverter.toEgressFlow(flowPlan, variables());
+        EgressFlow egressFlow = egressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
         FlowConfigError expected = FlowConfigError.newBuilder()
@@ -70,16 +68,6 @@ class EgressFlowPlanConverterTest {
                 .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not resolve placeholder 'missing.placeholder:defaultignored' in value \"${missing.placeholder:defaultignored}\"").build();
 
         assertThat(egressFlow.getFlowStatus().getErrors()).hasSize(1).contains(expected);
-    }
-
-    EnrichActionConfiguration expectedEnrichAction() {
-        EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration();
-        enrichActionConfiguration.setName("passthrough.PassthroughEnrichAction");
-        enrichActionConfiguration.setType("org.deltafi.passthrough.action.RoteEnrichAction");
-        enrichActionConfiguration.setRequiresDomains(List.of("binary"));
-        enrichActionConfiguration.setRequiresEnrichment(List.of("binary"));
-        enrichActionConfiguration.setParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value")));
-        return enrichActionConfiguration;
     }
 
     FormatActionConfiguration expectedFormatAction() {

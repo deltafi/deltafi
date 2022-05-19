@@ -150,6 +150,12 @@ class DeltaFiCoreDomainApplicationTests {
 	EgressFlowPlanRepo egressFlowPlanRepo;
 
 	@Autowired
+	EnrichFlowPlanRepo enrichFlowPlanRepo;
+
+	@Autowired
+	EnrichFlowRepo enrichFlowRepo;
+
+	@Autowired
 	PluginVariableRepo pluginVariableRepo;
 
 	@Captor
@@ -204,6 +210,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	void loadConfig() {
 		loadIngressConfig();
+		loadEnrichConfig();
 		loadEgressConfig();
 	}
 
@@ -224,11 +231,6 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
     void loadEgressConfig() {
-		org.deltafi.core.domain.configuration.EnrichActionConfiguration sampleEnrich = new org.deltafi.core.domain.configuration.EnrichActionConfiguration();
-		sampleEnrich.setName("SampleEnrichAction");
-		sampleEnrich.setRequiresDomains(List.of("sample"));
-		sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
-
 		org.deltafi.core.domain.configuration.ValidateActionConfiguration authValidate = new org.deltafi.core.domain.configuration.ValidateActionConfiguration();
 		authValidate.setName("AuthorityValidateAction");
 		org.deltafi.core.domain.configuration.ValidateActionConfiguration sampleValidate = new org.deltafi.core.domain.configuration.ValidateActionConfiguration();
@@ -243,7 +245,6 @@ class DeltaFiCoreDomainApplicationTests {
 		sampleEgress.setName("SampleEgressAction");
 
 		EgressFlow sampleEgressFlow = buildRunningFlow("sample", sampleFormat, sampleEgress);
-		sampleEgressFlow.setEnrichActions(List.of(sampleEnrich));
 		sampleEgressFlow.setValidateActions(List.of(authValidate, sampleValidate));
 
 		FormatActionConfiguration errorFormat = new FormatActionConfiguration();
@@ -255,6 +256,10 @@ class DeltaFiCoreDomainApplicationTests {
 
 		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
     }
+
+	void loadEnrichConfig() {
+		enrichFlowRepo.save(buildEnrichFlow(FlowState.RUNNING));
+	}
 
 	@Test
 	void contextLoads() {
@@ -382,7 +387,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.EGRESS);
+		deltaFile.setStage(DeltaFileStage.ENRICH);
 		deltaFile.queueAction("SampleEnrichAction");
 		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
@@ -1069,6 +1074,7 @@ class DeltaFiCoreDomainApplicationTests {
 		clearForFlowTests();
 
 		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
+		enrichFlowRepo.save(buildEnrichFlow(FlowState.STOPPED));
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
 
 		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
@@ -1078,7 +1084,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(getActionNames(actionFamilies, "delete")).hasSize(1).contains("DeleteAction");
 		assertThat(getActionNames(actionFamilies, "transform")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
 		assertThat(getActionNames(actionFamilies, "load")).hasSize(1).contains("SampleLoadAction");
-		assertThat(getActionNames(actionFamilies, "enrich")).isEmpty();
+		assertThat(getActionNames(actionFamilies, "enrich")).hasSize(1).contains("SampleEnrichAction");
 		assertThat(getActionNames(actionFamilies, "format")).hasSize(1).contains("sample.SampleFormatAction");
 		assertThat(getActionNames(actionFamilies, "validate")).isEmpty();
 		assertThat(getActionNames(actionFamilies, "egress")).hasSize(1).contains("SampleEgressAction");
@@ -1401,7 +1407,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 		assertTrue(result.getSuccess());
 		assertEquals(1, pluginRepository.count());
-		Mockito.verify(redisService).dropQueues(List.of("org.deltafi.test.actions.TestAction1", "org.deltafi.test.actions.TestAction2"));
+		Mockito.verify(redisService).cleanupFor(any());
 	}
 
 	@Test
@@ -1965,6 +1971,20 @@ class DeltaFiCoreDomainApplicationTests {
 		return buildFlow("egressFlow", sampleFormat, sampleEgress, flowState);
 	}
 
+	private EnrichFlow buildEnrichFlow(FlowState flowState) {
+		EnrichFlow enrichFlow = new EnrichFlow();
+		enrichFlow.setName("enrich");
+
+		org.deltafi.core.domain.configuration.EnrichActionConfiguration sampleEnrich = new org.deltafi.core.domain.configuration.EnrichActionConfiguration();
+		sampleEnrich.setName("SampleEnrichAction");
+		sampleEnrich.setRequiresDomains(List.of("sample"));
+		sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
+
+		enrichFlow.setEnrichActions(List.of(sampleEnrich));
+		enrichFlow.getFlowStatus().setState(flowState);
+		return enrichFlow;
+	}
+
 	private EgressFlow buildRunningFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction) {
 		return buildFlow(name, formatAction, egressAction, FlowState.RUNNING);
 	}
@@ -1981,6 +2001,8 @@ class DeltaFiCoreDomainApplicationTests {
 	void clearForFlowTests() {
 		ingressFlowRepo.deleteAll();
 		ingressFlowPlanRepo.deleteAll();
+		enrichFlowPlanRepo.deleteAll();
+		enrichFlowRepo.deleteAll();
 		egressFlowRepo.deleteAll();
 		egressFlowPlanRepo.deleteAll();
 		pluginVariableRepo.deleteAll();

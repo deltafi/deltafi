@@ -15,17 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action;
+package org.deltafi.core.domain.validation;
 
-/**
- * Enumeration for action types
- */
-public enum ActionType {
-    TRANSFORM,
-    LOAD,
-    ENRICH,
-    FORMAT,
-    VALIDATE,
-    EGRESS,
-    DELETE
+import org.deltafi.core.domain.types.EgressFlowPlan;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EgressFlowPlanValidator extends FlowPlanValidator<EgressFlowPlan> {
 }

@@ -17,18 +17,18 @@
  */
 package org.deltafi.core.domain.validation;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
 import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
-import org.deltafi.core.domain.generated.types.FlowState;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -36,55 +36,26 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
 @Service
-@AllArgsConstructor
-public class IngressFlowValidator {
+public class IngressFlowValidator extends FlowValidator<IngressFlow> {
 
-    private final SchemaCompliancyValidator schemaCompliancyValidator;
+    public IngressFlowValidator(SchemaCompliancyValidator schemaCompliancyValidator) {
+        super(schemaCompliancyValidator);
+    }
 
-    /**
-     * Validate the given ingress flow. If errors are found update the
-     * FlowState to invalid and add the errors to the FlowStatus of the ingressFlow
-     * @param ingressFlow IngressFlow that will be validated
-     */
-    public void validate(IngressFlow ingressFlow) {
-        // preserve any variable errors
-        List<FlowConfigError> errors = ingressFlow.getFlowStatus()
-                .getErrors().stream().filter(error -> FlowErrorType.UNRESOLVED_VARIABLE.equals(error.getErrorType()))
-                .collect(Collectors.toList());
-
-        errors.addAll(CommonFlowValidator.validateConfigurationNames(ingressFlow));
-
-        if (isBlank(ingressFlow.getType())) {
-            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
-                    .configName(ingressFlow.getName())
-                    .message("The ingress flow type cannot be blank").build());
-        }
-
-        errors.addAll(validateAction(ingressFlow.getLoadAction()));
-
-        // validate the transform actions
-        if (Objects.nonNull(ingressFlow.getTransformActions())) {
-            ingressFlow.getTransformActions().stream()
-                    .map(this::validateAction)
-                    .flatMap(Collection::stream)
-                    .forEach(errors::add);
-        }
-
+    @Override
+    public List<FlowConfigError> flowSpecificValidation(IngressFlow ingressFlow) {
         // TODO - refactor the consumes/produces checks once it's determined what checks are necessary
-//        runValidateIngressFlow(ingressFlow);
+        //runValidateIngressFlow(ingressFlow);
 
-        if (!errors.isEmpty()) {
-            ingressFlow.getFlowStatus().setState(FlowState.INVALID);
-        } else if(FlowState.INVALID.equals(ingressFlow.getFlowStatus().getState())) {
-            ingressFlow.getFlowStatus().setState(FlowState.STOPPED);
-        }
-
-        ingressFlow.getFlowStatus().setErrors(errors);
+        return isBlank(ingressFlow.getType()) ? List.of(blankTypeError(ingressFlow.getType())) : List.of();
     }
 
-    List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
-        return schemaCompliancyValidator.validate(actionConfiguration);
+    FlowConfigError blankTypeError(String name) {
+        return FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                .configName(name)
+                .message("The ingress flow type cannot be blank").build();
     }
+
 
     List<String> runValidateIngressFlow(IngressFlow ingressFlow) {
         List<String> errors = new ArrayList<>();

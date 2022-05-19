@@ -19,6 +19,7 @@ package org.deltafi.core.domain.api.types;
 
 public enum ConfigType {
     INGRESS_FLOW,
+    ENRICH_FLOW,
     EGRESS_FLOW,
     TRANSFORM_ACTION,
     LOAD_ACTION,

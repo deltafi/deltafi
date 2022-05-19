@@ -18,6 +18,7 @@
 
 enum ConfigType {
     INGRESS_FLOW
+    ENRICH_FLOW
     EGRESS_FLOW
     TRANSFORM_ACTION
     LOAD_ACTION
@@ -46,13 +47,10 @@ type IngressFlowConfiguration implements DeltaFiConfiguration {
     loadAction: String!
 }
 
-input IngressFlowConfigurationInput {
+type EnrichFlowConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    type: String!
-
-    transformActions: [String]
-    loadAction: String!
+    enrichActions: [String]!
 }
 
 type EgressFlowConfiguration implements DeltaFiConfiguration {
@@ -60,18 +58,6 @@ type EgressFlowConfiguration implements DeltaFiConfiguration {
     apiVersion: String
     egressAction: String!
     formatAction: String!
-    enrichActions: [String]
-    validateActions: [String]
-    includeIngressFlows: [String]
-    excludeIngressFlows: [String]
-}
-
-input EgressFlowConfigurationInput {
-    name: String!
-    egressAction: String!
-    formatAction: String!
-    apiVersion: String
-    enrichActions: [String]
     validateActions: [String]
     includeIngressFlows: [String]
     excludeIngressFlows: [String]

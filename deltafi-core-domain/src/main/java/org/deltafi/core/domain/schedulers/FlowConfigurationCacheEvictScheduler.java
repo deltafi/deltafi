@@ -17,29 +17,27 @@
  */
 package org.deltafi.core.domain.schedulers;
 
-import org.deltafi.core.domain.services.EgressFlowService;
-import org.deltafi.core.domain.services.IngressFlowService;
+import org.deltafi.core.domain.services.FlowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 public class FlowConfigurationCacheEvictScheduler {
 
-    IngressFlowService ingressFlowService;
-    EgressFlowService egressFlowService;
+    List<FlowService> flowServices;
 
-    public FlowConfigurationCacheEvictScheduler(IngressFlowService ingressFlowService, EgressFlowService egressFlowService) {
-        this.ingressFlowService = ingressFlowService;
-        this.egressFlowService = egressFlowService;
+    public FlowConfigurationCacheEvictScheduler(List<FlowService> flowServices) {
+        this.flowServices = flowServices;
     }
 
     @Scheduled(fixedDelay = 30000)
     public void cacheEvict() {
-        ingressFlowService.refreshCache();
-        egressFlowService.refreshCache();
+        flowServices.forEach(FlowService::refreshCache);
     }
 }

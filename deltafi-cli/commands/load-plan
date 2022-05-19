@@ -64,9 +64,12 @@ if [[ "$JSON" == *"loadAction"* ]]; then
 elif [[ "$JSON" == *"egressAction"* ]]; then
   OPERATION_NAME="saveEgressFlowPlan"
   QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
+elif [[ "$JSON" == *"enrichActions"* ]]; then
+  OPERATION_NAME="saveEnrichFlowPlan"
+  QUERY="mutation(\$flowPlan: EnrichFlowPlanInput!) {saveEnrichFlowPlan(enrichFlowPlan: \$flowPlan) { name }}"
 else
   cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must contain a load action or egress action${normal}"
-  echo -e "${red}Loading flow plan failed, plan must contain a load action or egress action${normal}"
+  echo -e "${red}Loading flow plan failed, plan must contain a load action, enrich actions or an egress action${normal}"
   exit 1
 fi
 

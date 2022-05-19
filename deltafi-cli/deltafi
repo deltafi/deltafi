@@ -106,9 +106,11 @@ Usage: $cli_name [command]
 Commands:
   did                  show did for filename
   egress-flow          start, stop or validate an egress flow
+  enrich-flow          start, stop or validate an enrich flow
   export-config        export all the loaded flow configurations as yaml
-  export-egress-plan   export a single flow plan by name as JSON
-  export-ingress-plan  export a single flow plan by name as JSON
+  export-egress-plan   export a single egress flow plan by name as JSON
+  export-enrich-plan   export a single enrich flow plan by name as JSON
+  export-ingress-plan  export a single ingress flow plan by name as JSON
   ingress              ingress one or more files to a flow
   ingress-flow         start, stop or validate an ingress flow
   install              install/upgrade the DeltaFi core
@@ -164,11 +166,17 @@ case "$1" in
   egress-flow)
     "$DELTAFICLI_WORKDIR/commands/egress-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/egress-flow.log"
     ;;
+  enrich-flow)
+    "$DELTAFICLI_WORKDIR/commands/enrich-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/enrich-flow.log"
+    ;;
   export-config)
     "$DELTAFICLI_WORKDIR/commands/export-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-config.log"
     ;;
   export-egress-plan)
     "$DELTAFICLI_WORKDIR/commands/export-egress-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-egress-plan.log"
+    ;;
+  export-enrich-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-enrich-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-enrich-plan.log"
     ;;
   export-ingress-plan)
     "$DELTAFICLI_WORKDIR/commands/export-ingress-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-ingress-plan.log"

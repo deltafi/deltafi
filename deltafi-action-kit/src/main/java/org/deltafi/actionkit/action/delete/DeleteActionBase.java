@@ -18,8 +18,8 @@
 package org.deltafi.actionkit.action.delete;
 
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.ActionType;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.core.domain.api.types.ActionType;
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.deltafi.core.domain.generated.types.DeleteActionSchemaInput;
 

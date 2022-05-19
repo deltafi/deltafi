@@ -18,11 +18,12 @@
 package org.deltafi.core.domain.validation;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.configuration.ActionConfiguration;
+import org.deltafi.core.domain.configuration.EgressActionConfiguration;
+import org.deltafi.core.domain.configuration.FormatActionConfiguration;
+import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
-import org.deltafi.core.domain.generated.types.FlowState;
-import org.deltafi.core.domain.generated.types.FlowStatus;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,17 +44,10 @@ class EgressFlowValidatorTest {
     @Captor
     ArgumentCaptor<ActionConfiguration> actionConfigCaptor;
 
-
     @Test
     void validate_noErrors() {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName("egressFlow");
-
-        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
-        enrich1.setName("enrich1");
-
-        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
-        enrich2.setName("enrich2");
 
         FormatActionConfiguration format = new FormatActionConfiguration();
         format.setName("format");
@@ -67,26 +61,22 @@ class EgressFlowValidatorTest {
         EgressActionConfiguration egress = new EgressActionConfiguration();
         egress.setName("egress");
 
-        egressFlow.setEnrichActions(List.of(enrich1, enrich2));
         egressFlow.setFormatAction(format);
         egressFlow.setValidateActions(List.of(validate1, validate2));
         egressFlow.setEgressAction(egress);
 
-        egressFlowValidator.validate(egressFlow);
+        List<FlowConfigError> errors = egressFlowValidator.validate(egressFlow);
 
-        Mockito.verify(schemaCompliancyValidator, Mockito.times(6)).validate(actionConfigCaptor.capture());
+        Mockito.verify(schemaCompliancyValidator, Mockito.times(4)).validate(actionConfigCaptor.capture());
 
         List<ActionConfiguration> validatedActions = actionConfigCaptor.getAllValues();
-        Assertions.assertThat(validatedActions).hasSize(6)
-                .contains(enrich1)
-                .contains(enrich2)
+        Assertions.assertThat(validatedActions).hasSize(4)
                 .contains(format)
                 .contains(validate1)
                 .contains(validate2)
                 .contains(egress);
 
-        Assertions.assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
-        Assertions.assertThat(egressFlow.getFlowStatus().getErrors()).isEmpty();
+        Assertions.assertThat(errors).isEmpty();
     }
 
     @Test
@@ -103,66 +93,8 @@ class EgressFlowValidatorTest {
         Mockito.when(schemaCompliancyValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
                         .thenReturn(List.of(expected));
 
-        egressFlowValidator.validate(egressFlow);
-
-        FlowStatus status = egressFlow.getFlowStatus();
-        Assertions.assertThat(status.getState()).isEqualTo(FlowState.INVALID);
-        Assertions.assertThat(status.getErrors()).hasSize(1).contains(expected);
-    }
-
-    @Test
-    void duplicateActionNameErrors() {
-        EgressFlow egressFlow = new EgressFlow();
-        egressFlow.setName("egressFlow");
-
-        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
-        enrich1.setName("action");
-        enrich1.setType("org.deltafi.enrich.Action1");
-
-        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
-        enrich2.setName("enrich");
-        enrich2.setType("org.deltafi.enrich.Action2");
-
-        EnrichActionConfiguration enrich3 = new EnrichActionConfiguration();
-        enrich3.setName("enrich");
-        enrich3.setType("org.deltafi.enrich.Action3");
-
-        FormatActionConfiguration format = new FormatActionConfiguration();
-        format.setName("action");
-        format.setType("org.deltafi.format.Action");
-
-        ValidateActionConfiguration validate1 = new ValidateActionConfiguration();
-        validate1.setName("action");
-        validate1.setType("org.deltafi.validate.Action1");
-
-        ValidateActionConfiguration validate2 = new ValidateActionConfiguration();
-        validate2.setName("validate");
-        validate2.setType("org.deltafi.validate.Action2");
-
-        ValidateActionConfiguration validate3 = new ValidateActionConfiguration();
-        validate3.setName("validate");
-        validate3.setType("org.deltafi.validate.Action3");
-
-        EgressActionConfiguration egress = new EgressActionConfiguration();
-        egress.setName("action");
-        egress.setType("org.deltafi.egress.Action");
-
-        egressFlow.setEnrichActions(List.of(enrich1, enrich2, enrich3));
-        egressFlow.setFormatAction(format);
-        egressFlow.setValidateActions(List.of(validate1, validate2, validate3));
-        egressFlow.setEgressAction(egress);
-
-        egressFlowValidator.validate(egressFlow);
-
-        Assertions.assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
-        Assertions.assertThat(egressFlow.getFlowStatus().getErrors())
-                .hasSize(3)
-                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("action")
-                        .message("The action name: action is duplicated for the following action types: org.deltafi.format.Action, org.deltafi.egress.Action, org.deltafi.enrich.Action1, org.deltafi.validate.Action1").build())
-                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("enrich")
-                        .message("The action name: enrich is duplicated for the following action types: org.deltafi.enrich.Action2, org.deltafi.enrich.Action3").build())
-                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("validate")
-                        .message("The action name: validate is duplicated for the following action types: org.deltafi.validate.Action2, org.deltafi.validate.Action3").build());
+        List<FlowConfigError> errors = egressFlowValidator.validate(egressFlow);
+        Assertions.assertThat(errors).hasSize(1).contains(expected);
     }
 
     @Test

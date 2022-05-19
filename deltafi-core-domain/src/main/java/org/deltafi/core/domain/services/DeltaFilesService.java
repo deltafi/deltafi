@@ -64,6 +64,7 @@ public class DeltaFilesService {
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
     final IngressFlowService ingressFlowService;
+    final EnrichFlowService enrichFlowService;
     final EgressFlowService egressFlowService;
     final DeltaFiProperties properties;
     final StateMachine stateMachine;
@@ -597,6 +598,8 @@ public class DeltaFilesService {
             actionConfiguration = DeleteConstants.DELETE_ACTION_CONFIGURATION;
         } else if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
             actionConfiguration = ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), action.getName());
+        } else if (DeltaFileStage.ENRICH.equals(deltaFile.getStage())) {
+            actionConfiguration = enrichFlowService.findActionConfig(action.getName());
         } else if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())){
             actionConfiguration = egressFlowService.findActionConfig(action.getName());
         }

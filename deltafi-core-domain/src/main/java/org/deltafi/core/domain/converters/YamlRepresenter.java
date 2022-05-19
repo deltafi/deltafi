@@ -18,6 +18,7 @@
 package org.deltafi.core.domain.converters;
 
 import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.nodes.NodeTuple;
@@ -39,6 +40,7 @@ public class YamlRepresenter extends Representer {
         super();
         this.addClassTag(IngressFlow.class, Tag.MAP);
         this.addClassTag(EgressFlow.class, Tag.MAP);
+        this.addClassTag(EnrichFlow.class, Tag.MAP);
     }
 
     @Override

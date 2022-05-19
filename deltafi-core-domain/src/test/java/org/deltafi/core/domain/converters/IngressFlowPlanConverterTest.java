@@ -47,7 +47,7 @@ class IngressFlowPlanConverterTest {
     void testConverter() throws IOException {
         IngressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-ingress-flowplan-test.json"), IngressFlowPlan.class);
 
-        IngressFlow ingressFlow = ingressFlowPlanConverter.toIngressFlow(flowPlan, variables());
+        IngressFlow ingressFlow = ingressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(ingressFlow.getName()).isEqualTo("passthrough");
         assertThat(ingressFlow.getType()).isEqualTo("binary");
@@ -64,7 +64,7 @@ class IngressFlowPlanConverterTest {
         IngressFlowPlan ingressFlowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-ingress-flowplan-test.json"), IngressFlowPlan.class);
         ingressFlowPlan.getLoadAction().setName("${missing.placeholder:defaultignored}");
 
-        IngressFlow ingressFlow = ingressFlowPlanConverter.toIngressFlow(ingressFlowPlan, variables());
+        IngressFlow ingressFlow = ingressFlowPlanConverter.convert(ingressFlowPlan, variables());
 
         assertThat(ingressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
         FlowConfigError expected = FlowConfigError.newBuilder()

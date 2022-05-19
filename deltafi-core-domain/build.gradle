@@ -41,6 +41,8 @@ generateJava {
 	  "DeltaFiles": "org.deltafi.core.domain.api.types.DeltaFiles",
 	  "EgressFlow": "org.deltafi.core.domain.types.EgressFlow",
 	  "EgressFlowPlan": "org.deltafi.core.domain.types.EgressFlowPlan",
+	  "EnrichFlow": "org.deltafi.core.domain.types.EnrichFlow",
+	  "EnrichFlowPlan": "org.deltafi.core.domain.types.EnrichFlowPlan",
 	  "IngressFlow": "org.deltafi.core.domain.types.IngressFlow",
 	  "IngressFlowPlan": "org.deltafi.core.domain.types.IngressFlowPlan",
 	  "KeyValue": "org.deltafi.core.domain.api.types.KeyValue",

@@ -28,6 +28,8 @@ import org.deltafi.core.domain.api.types.TransformActionSchema;
 import org.deltafi.core.domain.api.types.ValidateActionSchema;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.plugin.Plugin;
+import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.deltafi.core.domain.repo.ActionSchemaRepo;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +39,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ActionSchemaService {
+public class ActionSchemaService implements PluginCleaner {
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final ActionSchemaRepo actionSchemaRepo;
@@ -52,10 +54,6 @@ public class ActionSchemaService {
 
     public Optional<ActionSchema> getByActionClass(String id) {
         return actionSchemaRepo.findById(id);
-    }
-
-    public void removeAllInList(List<String> actionNames) {
-        actionSchemaRepo.deleteAllById(actionNames);
     }
 
     public int saveAll(ActionRegistrationInput input) {
@@ -136,4 +134,8 @@ public class ActionSchemaService {
         return actionSchema;
     }
 
+    @Override
+    public void cleanupFor(Plugin plugin) {
+        actionSchemaRepo.deleteAllById(plugin.actionNames());
+    }
 }

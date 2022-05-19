@@ -17,7 +17,8 @@ Options:
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
-QUERY="query { getAllFlowPlans { ingressPlans { name description sourcePlugin {groupId artifactId version}} egressPlans { name description sourcePlugin {groupId artifactId version}}}}"
+FIELDS="{ name description sourcePlugin {groupId artifactId version}}"
+QUERY="query { getAllFlowPlans { ingressPlans $FIELDS enrichPlans $FIELDS egressPlans $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_plans() {
@@ -30,6 +31,8 @@ if [[ "$DGS_ERRORS" != "" ]]; then
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
   print_plans "ingress"
+  echo
+  print_plans "enrich"
   echo
   print_plans "egress"
 fi

@@ -25,6 +25,8 @@ import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.core.domain.api.Constants;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.core.domain.plugin.Plugin;
+import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
@@ -34,12 +36,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RedisService {
+public class RedisService implements PluginCleaner {
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
-
-    public void dropQueues(List<String> actionNames) {
-        jedisKeyedBlockingQueue.drop(actionNames);
-    }
 
     public void enqueue(List<ActionInput> actionInputs) throws JedisConnectionException {
         List<Pair<String, Object>> actions = new ArrayList<>();
@@ -58,4 +56,8 @@ public class RedisService {
         return jedisKeyedBlockingQueue.take(Constants.DGS_QUEUE, ActionEventInput.class);
     }
 
+    @Override
+    public void cleanupFor(Plugin plugin) {
+        jedisKeyedBlockingQueue.drop(plugin.actionNames());
+    }
 }

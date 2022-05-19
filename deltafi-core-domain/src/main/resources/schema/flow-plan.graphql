@@ -65,10 +65,16 @@ type EgressFlowPlan {
   sourcePlugin: PluginCoordinates!
   egressAction: EgressActionConfiguration!
   formatAction: FormatActionConfiguration!
-  enrichActions: [EnrichActionConfiguration]
   validateActions: [ValidateActionConfiguration]
   includeIngressFlows: [String]
   excludeIngressFlows: [String]
+}
+
+type EnrichFlowPlan {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  enrichActions: [EnrichActionConfiguration]!
 }
 
 input IngressFlowPlanInput {
@@ -86,10 +92,16 @@ input EgressFlowPlanInput {
   sourcePlugin: PluginCoordinatesInput!
   egressAction: EgressActionConfigurationInput!
   formatAction: FormatActionConfigurationInput!
-  enrichActions: [EnrichActionConfigurationInput]
   validateActions: [ValidateActionConfigurationInput]
   includeIngressFlows: [String]
   excludeIngressFlows: [String]
+}
+
+input EnrichFlowPlanInput {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinatesInput!
+  enrichActions: [EnrichActionConfigurationInput]!
 }
 
 enum FlowState {
@@ -121,16 +133,19 @@ type Flows {
   sourcePlugin: PluginCoordinates!
   variables: [Variable]
   ingressFlows: [IngressFlow]
+  enrichFlows: [EnrichFlow]
   egressFlows: [EgressFlow]
 }
 
 type SystemFlows {
   ingress: [IngressFlow]!
+  enrich: [EnrichFlow]!
   egress: [EgressFlow]!
 }
 
 type SystemFlowPlans {
   ingressPlans: [IngressFlowPlan]!
+  enrichPlans: [EnrichFlowPlan]!
   egressPlans: [EgressFlowPlan]!
 }
 
@@ -145,6 +160,15 @@ type IngressFlow {
   variables: [Variable]!
 }
 
+type EnrichFlow {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  flowStatus: FlowStatus!
+  enrichActions: [EnrichActionConfiguration]!
+  variables: [Variable]!
+}
+
 type EgressFlow {
   name: String!
   description: String!
@@ -152,7 +176,6 @@ type EgressFlow {
   flowStatus: FlowStatus!
   egressAction: EgressActionConfiguration!
   formatAction: FormatActionConfiguration!
-  enrichActions: [EnrichActionConfiguration]
   validateActions: [ValidateActionConfiguration]
   includeIngressFlows: [String]
   excludeIngressFlows: [String]

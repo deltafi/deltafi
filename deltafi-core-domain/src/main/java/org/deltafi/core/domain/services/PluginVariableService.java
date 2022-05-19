@@ -27,6 +27,8 @@ import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.PluginVariablesInput;
 import org.deltafi.core.domain.generated.types.Variable;
 import org.deltafi.core.domain.generated.types.VariableInput;
+import org.deltafi.core.domain.plugin.Plugin;
+import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.deltafi.core.domain.repo.PluginVariableRepo;
 import org.deltafi.core.domain.types.PluginVariables;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class PluginVariableService {
+public class PluginVariableService implements PluginCleaner {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -170,5 +172,10 @@ public class PluginVariableService {
 
     private PluginVariables mapFromInput(PluginVariablesInput pluginVariablesInput) {
         return OBJECT_MAPPER.convertValue(pluginVariablesInput, PluginVariables.class);
+    }
+
+    @Override
+    public void cleanupFor(Plugin plugin) {
+        removeVariables(plugin.getPluginCoordinates());
     }
 }

@@ -31,6 +31,7 @@ import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.EnrichFlow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -69,9 +70,9 @@ class StateMachineTest {
     @Test
     void testGetEnrichActions() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "includedFlow");
-        EgressFlow egressFlow = EgressFlowMaker.builder().formatRequiresEnrichment(List.of("block")).build().makeEgressFlow();
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder().build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEgress(egressFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
 
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
@@ -80,13 +81,12 @@ class StateMachineTest {
     void testGetEnrichActionsMatchesDomainAndEnrichment() {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
-        EgressFlow egressFlow = EgressFlowMaker.builder()
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder()
                 .enrichRequiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
-                .formatRequiresEnrichment("block")
-                .build().makeEgressFlow();
+                .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEgress(egressFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
 
@@ -94,68 +94,63 @@ class StateMachineTest {
     void testGetEnrichActionsDomainDoesNotMatch() {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
-        EgressFlow egressFlow = EgressFlowMaker.builder()
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder()
                 .enrichRequiresDomain("otherDomain")
                 .enrichRequiresEnrichment(ENRICH)
-                .formatRequiresEnrichment("block")
-                .build().makeEgressFlow();
+                .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEgress(egressFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
     void testGetEnrichActionsEnrichmentDoesNotMatch() {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
-        EgressFlow egressFlow = EgressFlowMaker.builder()
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder()
                 .enrichRequiresDomain(DOMAIN)
                 .enrichRequiresEnrichment("otherEnrich")
-                .formatRequiresEnrichment("block")
-                .build().makeEgressFlow();
+                .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEgress(egressFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
     void testGetEnrichActionsDoesNotMatchMetadata() {
         DeltaFile deltaFile = makeDeltaFile();
 
-        EgressFlow egressFlow = EgressFlowMaker.builder()
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder()
                 .enrichRequiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue("wrongKey", "value"))
-                .formatRequiresEnrichment("block")
-                .build().makeEgressFlow();
+                .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEgress(egressFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
     void testGetEnrichActionsNoMetadataAvailable() {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
-        EgressFlow egressFlow = EgressFlowMaker.builder()
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder()
                 .enrichRequiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
-                .formatRequiresEnrichment("block")
-                .build().makeEgressFlow();
+                .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEgress(egressFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
     void testGetEnrichActionsMatchesSourceInfoMetadata() {
         DeltaFile deltaFile = makeDeltaFile();
 
-        EgressFlow egressFlow = EgressFlowMaker.builder()
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder()
                 .enrichRequiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
-                .formatRequiresEnrichment("block")
-                .build().makeEgressFlow();
+                .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEgress(egressFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
 
@@ -163,14 +158,13 @@ class StateMachineTest {
     void testGetEnrichActionsMatchesProtocolLayerMetadata() {
         DeltaFile deltaFile = makeDeltaFile();
 
-        EgressFlow egressFlow = EgressFlowMaker.builder()
+        EnrichFlow enrichFlow = EnrichFlowMaker.builder()
                 .enrichRequiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue(PROTOCOL_LAYER_KEY, "value"))
-                .formatRequiresEnrichment("block")
-                .build().makeEgressFlow();
+                .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEgress(egressFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
 
@@ -343,14 +337,12 @@ class StateMachineTest {
         addCompletedActions(deltaFile, "EnrichAction2");
 
         EgressFlow egressFlowAtEnrich = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction1")
                 .egressActionName("EgressAction1")
                 .formatActionName("FormatAction1")
                 .validateActions(List.of("ValidateAction1"))
                 .build().makeEgressFlow();
 
         EgressFlow egressFlowAtFormat = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction2")
                 .egressActionName("EgressAction2")
                 .formatActionName("FormatAction2")
                 .validateActions(List.of("ValidateAction2"))
@@ -362,7 +354,7 @@ class StateMachineTest {
         assertThat(actionInputs).hasSize(2);
 
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.EGRESS);
-        assertThat(actionInputs.get(0)).matches(actionInput -> "EnrichAction1".equals(actionInput.getActionContext().getName()));
+        assertThat(actionInputs.get(0)).matches(actionInput -> "FormatAction1".equals(actionInput.getActionContext().getName()));
         assertThat(actionInputs.get(1)).matches(actionInput -> "FormatAction2".equals(actionInput.getActionContext().getName()));
     }
 
@@ -374,14 +366,12 @@ class StateMachineTest {
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2");
 
         EgressFlow egress1 = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction1")
                 .egressActionName("EgressAction1")
                 .formatActionName("FormatAction1")
                 .validateActions(List.of("ValidateAction1"))
                 .build().makeEgressFlow();
 
         EgressFlow egress2 = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction2")
                 .egressActionName("EgressAction2")
                 .formatActionName("FormatAction2")
                 .validateActions(List.of("ValidateAction2"))
@@ -408,14 +398,12 @@ class StateMachineTest {
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2", "EgressAction1");
 
         EgressFlow egress1 = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction1")
                 .egressActionName("EgressAction1")
                 .formatActionName("FormatAction1")
                 .validateActions(List.of("ValidateAction1"))
                 .build().makeEgressFlow();
 
         EgressFlow egress2 = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction2")
                 .egressActionName("EgressAction2")
                 .formatActionName("FormatAction2")
                 .validateActions(List.of("ValidateAction2"))
@@ -437,17 +425,13 @@ class StateMachineTest {
 
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2", "EgressAction1", "EgressAction2");
 
-
-
         EgressFlow egress1 = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction1")
                 .egressActionName("EgressAction1")
                 .formatActionName("FormatAction1")
                 .validateActions(List.of("ValidateAction1"))
                 .build().makeEgressFlow();
 
         EgressFlow egress2 = EgressFlowMaker.builder()
-                .enrichActionName("EnrichAction2")
                 .egressActionName("EgressAction2")
                 .formatActionName("FormatAction2")
                 .validateActions(List.of("ValidateAction2"))
@@ -498,17 +482,9 @@ class StateMachineTest {
     @Builder
     private static class EgressFlowMaker {
         @Singular
-        List<String> enrichRequiresDomains;
-        @Singular("enrichRequiresEnrichment")
-        List<String> enrichRequiresEnrichment;
-        @Singular("enrichRequiresMetadata")
-        List<KeyValue> enrichRequiresMetadata;
-        @Singular
         List<String> formatRequiresDomains;
         @Singular("formatRequiresEnrichment")
         List<String> formatRequiresEnrichment;
-        @Builder.Default
-        String enrichActionName = "EnrichAction";
         @Builder.Default
         String formatActionName = "FormatAction";
         @Builder.Default
@@ -518,13 +494,6 @@ class StateMachineTest {
 
         private EgressFlow makeEgressFlow() {
             EgressFlow egressFlow = new EgressFlow();
-
-            EnrichActionConfiguration enrich = new EnrichActionConfiguration();
-            enrich.setName(enrichActionName);
-            enrich.setRequiresDomains(enrichRequiresDomains);
-            enrich.setRequiresEnrichment(enrichRequiresEnrichment);
-            enrich.setRequiresMetadataKeyValues(enrichRequiresMetadata);
-            egressFlow.setEnrichActions(List.of(enrich));
 
             EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration();
             egressActionConfiguration.setName(egressActionName);
@@ -544,6 +513,31 @@ class StateMachineTest {
             ValidateActionConfiguration validateActionConfiguration = new ValidateActionConfiguration();
             validateActionConfiguration.setName(name);
             return validateActionConfiguration;
+        }
+    }
+
+    @Builder
+    private static class EnrichFlowMaker {
+        @Singular
+        List<String> enrichRequiresDomains;
+        @Singular("enrichRequiresEnrichment")
+        List<String> enrichRequiresEnrichment;
+        @Singular("enrichRequiresMetadata")
+        List<KeyValue> enrichRequiresMetadata;
+        @Builder.Default
+        String enrichActionName = "EnrichAction";
+
+        private EnrichFlow makeEnrichFlow() {
+            EnrichFlow enrichFlow = new EnrichFlow();
+
+            EnrichActionConfiguration enrich = new EnrichActionConfiguration();
+            enrich.setName(enrichActionName);
+            enrich.setRequiresDomains(enrichRequiresDomains);
+            enrich.setRequiresEnrichment(enrichRequiresEnrichment);
+            enrich.setRequiresMetadataKeyValues(enrichRequiresMetadata);
+            enrichFlow.setEnrichActions(List.of(enrich));
+
+            return enrichFlow;
         }
     }
 }

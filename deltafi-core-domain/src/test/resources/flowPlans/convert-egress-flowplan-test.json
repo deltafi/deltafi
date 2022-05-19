@@ -25,23 +25,6 @@
     ],
     "type": "org.deltafi.passthrough.action.RoteFormatAction"
   },
-  "enrichActions": [
-    {
-      "name": "PassthroughEnrichAction",
-      "type": "org.deltafi.passthrough.action.RoteEnrichAction",
-      "requiresDomains": [
-        "${domain.type}"
-      ],
-      "requiresEnrichment": [
-        "${domain.type}"
-      ],
-      "parameters": {
-        "enrichments": {
-          "passthroughEnrichment": "${enrichment.value}"
-        }
-      }
-    }
-  ],
   "includeIngressFlows": [
     "ingressFlow"
   ],

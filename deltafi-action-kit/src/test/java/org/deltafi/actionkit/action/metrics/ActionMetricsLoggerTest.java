@@ -24,7 +24,7 @@ import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.actionkit.action.ActionType;
+import org.deltafi.core.domain.api.types.ActionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

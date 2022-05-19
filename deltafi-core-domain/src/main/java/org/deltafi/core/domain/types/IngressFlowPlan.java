@@ -18,10 +18,10 @@
 package org.deltafi.core.domain.types;
 
 import lombok.Data;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
-import org.deltafi.core.domain.generated.types.LoadActionConfiguration;
-import org.deltafi.core.domain.generated.types.TransformActionConfiguration;
-import org.springframework.data.annotation.Id;
+import lombok.EqualsAndHashCode;
+import org.deltafi.core.domain.configuration.ActionConfiguration;
+import org.deltafi.core.domain.configuration.LoadActionConfiguration;
+import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -29,13 +29,18 @@ import java.util.List;
 
 @Data
 @Document("ingressFlowPlan")
-public class IngressFlowPlan {
+@EqualsAndHashCode(callSuper = true)
+public class IngressFlowPlan extends FlowPlan {
 
-    @Id
-    private String name;
-    private String description;
-    private PluginCoordinates sourcePlugin;
     private String type;
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
+
+    @Override
+    public List<ActionConfiguration> allActionConfigurations() {
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+        actionConfigurations.add(loadAction);
+        actionConfigurations.addAll(transformActions);
+        return actionConfigurations;
+    }
 }

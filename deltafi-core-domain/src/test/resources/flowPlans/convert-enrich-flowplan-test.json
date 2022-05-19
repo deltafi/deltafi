@@ -1,0 +1,26 @@
+{
+  "name": "passthrough",
+  "description": "Flow that passes data through unchanged",
+  "sourcePlugin": {
+    "groupId": "org.deltafi.passthrough",
+    "artifactId": "deltafi-passthrough",
+    "version": "0.17.0"
+  },
+  "enrichActions": [
+    {
+      "name": "PassthroughEnrichAction",
+      "type": "org.deltafi.passthrough.action.RoteEnrichAction",
+      "requiresDomains": [
+        "${domain.type}"
+      ],
+      "requiresEnrichment": [
+        "${domain.type}"
+      ],
+      "parameters": {
+        "enrichments": {
+          "passthroughEnrichment": "${enrichment.value}"
+        }
+      }
+    }
+  ]
+}

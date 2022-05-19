@@ -18,8 +18,13 @@
 package org.deltafi.core.domain.plugin;
 
 import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.core.domain.generated.types.ActionDescriptor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Document
 public class Plugin extends org.deltafi.core.domain.generated.types.Plugin {
@@ -27,5 +32,10 @@ public class Plugin extends org.deltafi.core.domain.generated.types.Plugin {
     @Override
     public PluginCoordinates getPluginCoordinates() {
         return super.getPluginCoordinates();
+    }
+
+    public List<String> actionNames() {
+        return Objects.nonNull(getActions()) ?
+                getActions().stream().map(ActionDescriptor::getName).collect(Collectors.toList()) : List.of();
     }
 }

@@ -17,7 +17,8 @@ Options:
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
-QUERY="query { getAllFlows { ingress { name flowStatus {state}} egress { name flowStatus {state}}}}"
+FIELDS="{ name flowStatus {state}}"
+QUERY="query { getAllFlows { ingress $FIELDS enrich $FIELDS egress $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_flows() {
@@ -30,6 +31,8 @@ if [[ "$DGS_ERRORS" != "" ]]; then
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
   print_flows "ingress"
+  echo
+  print_flows "enrich"
   echo
   print_flows "egress"
 fi

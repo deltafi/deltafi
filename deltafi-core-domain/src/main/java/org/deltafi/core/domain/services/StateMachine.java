@@ -25,6 +25,7 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 public class StateMachine {
 
     private final IngressFlowService ingressFlowService;
+    private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
     private final ZipkinService zipkinService;
 
@@ -71,7 +73,21 @@ public class StateMachine {
                     break;
                 }
 
-                // if transform and load are complete, move to egress stage
+                // if transform and load are complete, move to enrich stage
+                deltaFile.setStage(DeltaFileStage.ENRICH);
+            case ENRICH:
+                List<ActionInput> enrichActions = enrichFlowService.getRunningFlows().stream()
+                        .map(enrichFlow -> advanceEnrich(enrichFlow, deltaFile))
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList());
+
+                if (!enrichActions.isEmpty()) {
+                    enrichActions.forEach(actionInput -> deltaFile.queueNewAction(actionInput.getActionContext().getName()));
+                    enqueueActions.addAll(enrichActions);
+                    break;
+                }
+
+                // if all enrich actions are complete, move to egress stage
                 deltaFile.setStage(DeltaFileStage.EGRESS);
             case EGRESS:
                 List<ActionInput> egressActions = egressFlowService.getMatchingFlows(deltaFile.getSourceInfo().getFlow()).stream()
@@ -101,6 +117,14 @@ public class StateMachine {
                 .findFirst().orElse(null);
     }
 
+    List<ActionInput> advanceEnrich(EnrichFlow enrichFlow, DeltaFile deltaFile) {
+        return enrichFlow.getEnrichActions().stream()
+                .filter(enrichActionConfiguration -> enrichActionReady(enrichActionConfiguration, deltaFile))
+                .filter(enrichActionConfiguration -> isNewAction(enrichActionConfiguration, deltaFile))
+                .map(actionConfiguration -> actionConfiguration.buildActionInput(deltaFile))
+                .collect(Collectors.toList());
+    }
+
     List<ActionInput> advanceEgress(EgressFlow egressFlow, DeltaFile deltaFile) {
         return nextEgressActions(egressFlow, deltaFile).stream()
                 .filter(actionConfiguration -> isNewAction(actionConfiguration, deltaFile))
@@ -109,11 +133,7 @@ public class StateMachine {
     }
 
     List<ActionConfiguration> nextEgressActions(EgressFlow egressFlow, DeltaFile deltaFile) {
-        List<ActionConfiguration> nextActions = new ArrayList<>(nextEnrichActions(egressFlow, deltaFile));
-
-        if (!nextActions.isEmpty()) {
-            return nextActions;
-        }
+        List<ActionConfiguration> nextActions = new ArrayList<>();
 
         if (formatActionReady(egressFlow.getFormatAction(), deltaFile)) {
             nextActions.add(egressFlow.getFormatAction());
@@ -131,16 +151,6 @@ public class StateMachine {
 
     boolean isNewAction(ActionConfiguration actionConfiguration, DeltaFile deltaFile) {
         return deltaFile.isNewAction(actionConfiguration.getName());
-    }
-
-    List<ActionConfiguration> nextEnrichActions(EgressFlow egressFlow, DeltaFile deltaFile) {
-        if (Objects.isNull(egressFlow.getEnrichActions())) {
-            return Collections.emptyList();
-    }
-
-        return egressFlow.getEnrichActions().stream()
-                .filter(enrich -> enrichActionReady(enrich, deltaFile))
-                .collect(Collectors.toList());
     }
 
     private boolean enrichActionReady(EnrichActionConfiguration enrichAction, DeltaFile deltaFile) {

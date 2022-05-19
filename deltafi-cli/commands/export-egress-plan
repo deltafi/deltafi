@@ -32,15 +32,6 @@ QUERY="fragment ActionFields on ActionConfiguration {
               groupId
               version
             }
-            enrichActions {
-              ... ActionFields
-              requiresDomains
-              requiresEnrichment
-              requiresMetadataKeyValues {
-                key
-                value
-              }
-            }
             formatAction {
               ... ActionFields
               requiresDomains

@@ -17,94 +17,113 @@
  */
 package org.deltafi.core.domain.types;
 
+import lombok.Data;
+import org.deltafi.core.domain.api.types.ActionType;
 import org.deltafi.core.domain.api.types.ConfigType;
 import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
-import org.deltafi.core.domain.generated.types.ActionFamily;
-import org.deltafi.core.domain.generated.types.FlowStatus;
+import org.deltafi.core.domain.generated.types.*;
+import org.springframework.data.annotation.Id;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public interface Flow {
+@Data
+public abstract class Flow {
 
-    /**
-     * Get the PluginCoordinates of the plugin that provided this flow
-     * @return source plugin coordinates
-     */
-    PluginCoordinates getSourcePlugin();
-
-    /**
-     * Get the name of the flow
-     * @return name of the flow
-     */
-    String getName();
-
-    /**
-     * Get the status of the flow
-     * @return flow status
-     */
-    FlowStatus getFlowStatus();
-
-    /**
-     * Find the action configuration with the given name in this flow
-     * @param actionName name of the action configuration to find
-     * @return ActionConfiguration if it exists otherwise null
-     */
-    ActionConfiguration findActionConfigByName(String actionName);
+    @Id
+    private String name;
+    private String description;
+    private PluginCoordinates sourcePlugin;
+    private FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>());
+    // list of variables that are applicable to this flow
+    private Set<Variable> variables = new HashSet<>();
 
     /**
      * Get all the configurations in this flow, including itself
      * @return all configurations in the flow
      */
-    List<DeltaFiConfiguration> allConfigurations();
-
-    /**
-     * Get all the action configurations in this flow
-     * @return all action configurations in the flow
-     */
-    List<ActionConfiguration> allActionConfigurations();
-
-    /**
-     * Get all the action configurations of the given type in this flow
-     * @param configType type of ActionsConfigurations that should be returned
-     * @return list of matching ActionConfigurations
-     */
-    List<DeltaFiConfiguration> findByConfigType(ConfigType configType);
-
-    /**
-     * Add the action names in this flow to the appropriate action family
-     * @param actionFamilyMap map of action names to ActionFamily
-     */
-    void updateActionNamesByFamily(Map<String, ActionFamily> actionFamilyMap);
-
-    /**
-     * Add the given action name to an existing ActionFamily or create a
-     * new ActionFamily to hold the list of action names for that family
-     * @param actionFamilyMap map of family name to list of action names
-     * @param actionFamily type of action i.e. load, transform ... egress
-     * @param actionName action name to add
-     */
-    default void updateActionNamesByFamily(Map<String, ActionFamily> actionFamilyMap, String actionFamily, String actionName) {
-        updateActionNamesByFamily(actionFamilyMap, actionFamily, List.of(actionName));
+    public List<DeltaFiConfiguration> allConfigurations() {
+        List<DeltaFiConfiguration> configs = new ArrayList<>(allActionConfigurations());
+        configs.add(asFlowConfiguration());
+        return configs;
     }
 
     /**
      * Add the given action names to an existing ActionFamily or create a
      * new ActionFamily to hold the list of action names for that family
      * @param actionFamilyMap map of family name to list of action names
-     * @param actionFamily type of action i.e. load, transform ... egress
+     * @param actionType type of action i.e. load, transform ... egress
      * @param actionNames list of action names to add
      */
-    default void updateActionNamesByFamily(Map<String, ActionFamily> actionFamilyMap, String actionFamily, List<String> actionNames) {
-        if (actionFamilyMap.containsKey(actionFamily)) {
-            actionFamilyMap.get(actionFamily).getActionNames().addAll(actionNames);
+    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, List<String> actionNames) {
+        if (actionFamilyMap.containsKey(actionType)) {
+            actionFamilyMap.get(actionType).getActionNames().addAll(actionNames);
         } else {
-            ActionFamily newFamily = ActionFamily.newBuilder().family(actionFamily).actionNames(new ArrayList<>(actionNames)).build();
-            actionFamilyMap.put(actionFamily, newFamily);
+            ActionFamily newFamily = ActionFamily.newBuilder().family(actionType.getDisplay()).actionNames(new ArrayList<>(actionNames)).build();
+            actionFamilyMap.put(actionType, newFamily);
         }
     }
 
+    /**
+     * Find the action configuration with the given name in this flow
+     * @param actionName name of the action configuration to find
+     * @return ActionConfiguration if it exists otherwise null
+     */
+    public abstract ActionConfiguration findActionConfigByName(String actionName);
+
+    /**
+     * Get all the action configurations in this flow
+     * @return all action configurations in the flow
+     */
+    public abstract List<ActionConfiguration> allActionConfigurations();
+
+    /**
+     * Get all the action configurations of the given type in this flow
+     * @param configType type of ActionsConfigurations that should be returned
+     * @return list of matching ActionConfigurations
+     */
+    public abstract List<DeltaFiConfiguration> findByConfigType(ConfigType configType);
+
+    /**
+     * Add the action names in this flow to the appropriate action family
+     * @param actionFamilyMap map of family type to action families
+     */
+    public abstract void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap);
+
+    /**
+     * Add the given action name to an existing ActionFamily or create a
+     * new ActionFamily to hold the list of action names for that family
+     * @param actionFamilyMap map of family name to list of action names
+     * @param actionType type of action i.e. load, transform ... egress
+     * @param actionName action name to add
+     */
+    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, String actionName) {
+        updateActionNamesByFamily(actionFamilyMap, actionType, List.of(actionName));
+    }
+
+    public boolean isRunning() {
+        return FlowState.RUNNING.equals(getFlowStatus().getState());
+    }
+
+    public boolean hasErrors() {
+        return !getFlowStatus().getErrors().isEmpty();
+    }
+
+    public <T extends ActionConfiguration> List<String> actionNames(List<T> actions) {
+        return Objects.nonNull(actions) ? actions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()) : List.of();
+    }
+
+    public <T extends ActionConfiguration> ActionConfiguration actionNamed(List<T> actions, String actionName) {
+        return actions.stream()
+                .filter(actionConfiguration -> nameMatches(actionConfiguration, actionName))
+                .findFirst().orElse(null);
+    }
+
+    public boolean nameMatches(ActionConfiguration action, String named) {
+        return named.equals(action.getName());
+    }
+
+    abstract DeltaFiConfiguration asFlowConfiguration();
 }

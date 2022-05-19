@@ -20,7 +20,7 @@ package org.deltafi.actionkit.action.metrics;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.metric.Metric;
 import org.deltafi.common.metric.MetricLogger;
-import org.deltafi.actionkit.action.ActionType;
+import org.deltafi.core.domain.api.types.ActionType;
 
 import java.util.Collection;
 import java.util.HashMap;

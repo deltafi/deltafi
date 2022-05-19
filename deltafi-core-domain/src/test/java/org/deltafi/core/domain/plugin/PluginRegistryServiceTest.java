@@ -22,12 +22,10 @@ import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.ActionDescriptor;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -36,7 +34,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-public class PluginRegistryServiceTest {
+class PluginRegistryServiceTest {
 
     private static final PluginCoordinates PLUGIN_COORDINATES_1 = new PluginCoordinates("org.mock", "plugin-1", "1.0.0");
     private static final PluginCoordinates PLUGIN_COORDINATES_2 = new PluginCoordinates("org.mock", "plugin-2", "1.0.0");
@@ -57,6 +55,12 @@ public class PluginRegistryServiceTest {
     IngressFlowService ingressFlowService;
 
     @Mock
+    EnrichFlowPlanService enrichFlowPlanService;
+
+    @Mock
+    EnrichFlowService enrichFlowService;
+
+    @Mock
     EgressFlowPlanService egressFlowPlanService;
 
     @Mock
@@ -68,8 +72,15 @@ public class PluginRegistryServiceTest {
     @Mock
     RedisService redisService;
 
-    @InjectMocks
     PluginRegistryService pluginRegistryService;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, pluginVariableService, actionSchemaService, redisService);
+        List<PluginUninstallCheck> checkers = List.of(ingressFlowService, enrichFlowService, egressFlowService);
+        pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService, pluginVariableService, pluginRepository, pluginValidator, checkers, cleaners);
+    }
 
     @Test
     public void addsPluginWithDependencies() {
@@ -118,7 +129,7 @@ public class PluginRegistryServiceTest {
         Plugin plugin1 = makePlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
-        Mockito.when(ingressFlowService.findRunningFromPlugin(PLUGIN_COORDINATES_1)).thenReturn(List.of("mockIngress"));
+        Mockito.when(ingressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
 
         Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
         assertFalse(result.getSuccess());
@@ -147,14 +158,16 @@ public class PluginRegistryServiceTest {
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
-        Mockito.when(ingressFlowService.findRunningFromPlugin(PLUGIN_COORDINATES_1)).thenReturn(List.of("mockIngress"));
-        Mockito.when(egressFlowService.findRunningFromPlugin(PLUGIN_COORDINATES_1)).thenReturn(List.of("mockEgress"));
+        Mockito.when(ingressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
+        Mockito.when(enrichFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
+        Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
         Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
         assertFalse(result.getSuccess());
 
-        Assertions.assertThat(result.getErrors()).hasSize(3)
+        Assertions.assertThat(result.getErrors()).hasSize(4)
                 .contains("The plugin has created the following ingress flows which are still running: mockIngress")
+                .contains("The plugin has created the following enrich flows which are still running: mockEnrich")
                 .contains("The plugin has created the following egress flows which are still running: mockEgress")
                 .contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
     }
@@ -170,10 +183,11 @@ public class PluginRegistryServiceTest {
 
         // none of the removal steps should run for a dry-run
         Mockito.verify(pluginRepository, Mockito.never()).deleteById(Mockito.any());
-        Mockito.verify(actionSchemaService, Mockito.never()).removeAllInList(Mockito.any());
-        Mockito.verify(ingressFlowPlanService, Mockito.never()).rebuildFlowsForPlugin(Mockito.any());
-        Mockito.verify(egressFlowPlanService, Mockito.never()).rebuildFlowsForPlugin(Mockito.any());
-        Mockito.verify(pluginVariableService, Mockito.never()).removeVariables(Mockito.any());
+        Mockito.verify(actionSchemaService, Mockito.never()).cleanupFor(Mockito.any());
+        Mockito.verify(ingressFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
+        Mockito.verify(enrichFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
+        Mockito.verify(egressFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
+        Mockito.verify(pluginVariableService, Mockito.never()).cleanupFor(Mockito.any());
     }
 
     @Test
@@ -185,23 +199,13 @@ public class PluginRegistryServiceTest {
         Result result = pluginRegistryService.uninstallPlugin(false, PLUGIN_COORDINATES_1);
         assertTrue(result.getSuccess());
 
-
         Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
-        Mockito.verify(ingressFlowPlanService).removeFlowsAndPlansBySourcePlugin(PLUGIN_COORDINATES_1);
-        Mockito.verify(egressFlowPlanService).removeFlowsAndPlansBySourcePlugin(PLUGIN_COORDINATES_1);
-        Mockito.verify(pluginVariableService).removeVariables(PLUGIN_COORDINATES_1);
-
-        ArgumentCaptor<List<String>> actionCapture = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(actionSchemaService).removeAllInList(actionCapture.capture());
-
-
-        List<String> actionNames = actionCapture.getValue();
-        Assertions.assertThat(actionNames).hasSize(2).contains("action-1").contains("action-2");
-
-        ArgumentCaptor<List<String>> redisCapture = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(redisService).dropQueues(redisCapture.capture());
-        List<String> queueNames = redisCapture.getValue();
-        Assertions.assertThat(queueNames).hasSize(2).contains("action-1").contains("action-2");
+        Mockito.verify(ingressFlowPlanService).cleanupFor(plugin1);
+        Mockito.verify(enrichFlowPlanService).cleanupFor(plugin1);
+        Mockito.verify(egressFlowPlanService).cleanupFor(plugin1);
+        Mockito.verify(pluginVariableService).cleanupFor(plugin1);
+        Mockito.verify(actionSchemaService).cleanupFor(plugin1);
+        Mockito.verify(redisService).cleanupFor(plugin1);
     }
 
     private Plugin makeDependencyPlugin() {

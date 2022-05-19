@@ -17,59 +17,26 @@
  */
 package org.deltafi.core.domain.validation;
 
-import lombok.AllArgsConstructor;
-import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
-import org.deltafi.core.domain.generated.types.FlowState;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
-public class EgressFlowValidator {
+public class EgressFlowValidator extends FlowValidator<EgressFlow> {
 
-    private final SchemaCompliancyValidator schemaCompliancyValidator;
-
-    public void validate(EgressFlow egressFlow) {
-        // preserve any variable errors
-        List<FlowConfigError> errors = egressFlow.getFlowStatus()
-                .getErrors().stream().filter(error -> FlowErrorType.UNRESOLVED_VARIABLE.equals(error.getErrorType()))
-                .collect(Collectors.toList());
-
-        errors.addAll(CommonFlowValidator.validateConfigurationNames(egressFlow));
-
-        errors.addAll(validateActions(egressFlow.getEnrichActions()));
-        errors.addAll(validateAction(egressFlow.getFormatAction()));
-        errors.addAll(validateAction(egressFlow.getEgressAction()));
-        errors.addAll(validateActions(egressFlow.getValidateActions()));
-        errors.addAll(excludedAndIncluded(egressFlow));
-
-        if (!errors.isEmpty()) {
-            egressFlow.getFlowStatus().setState(FlowState.INVALID);
-        } else if(FlowState.INVALID.equals(egressFlow.getFlowStatus().getState())) {
-            egressFlow.getFlowStatus().setState(FlowState.STOPPED);
-        }
-
-        egressFlow.getFlowStatus().setErrors(errors);
+    public EgressFlowValidator(SchemaCompliancyValidator schemaCompliancyValidator) {
+        super(schemaCompliancyValidator);
     }
 
-    List<FlowConfigError> validateActions(List<? extends ActionConfiguration> actionConfigurations) {
-        if (Objects.isNull(actionConfigurations)) {
-            return Collections.emptyList();
-        }
-
-        return actionConfigurations.stream()
-                .map(this::validateAction)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-    }
-
-    List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
-        return schemaCompliancyValidator.validate(actionConfiguration);
+    @Override
+    public List<FlowConfigError> flowSpecificValidation(EgressFlow egressFlow) {
+        return excludedAndIncluded(egressFlow);
     }
 
     List<FlowConfigError> excludedAndIncluded(EgressFlow egressFlow) {

@@ -19,11 +19,14 @@ package org.deltafi.core.domain.plugin;
 
 import lombok.AllArgsConstructor;
 import org.deltafi.core.domain.api.types.PluginCoordinates;
-import org.deltafi.core.domain.generated.types.ActionDescriptor;
 import org.deltafi.core.domain.generated.types.Flows;
 import org.deltafi.core.domain.generated.types.Result;
-import org.deltafi.core.domain.services.*;
+import org.deltafi.core.domain.services.EgressFlowService;
+import org.deltafi.core.domain.services.EnrichFlowService;
+import org.deltafi.core.domain.services.IngressFlowService;
+import org.deltafi.core.domain.services.PluginVariableService;
 import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.springframework.stereotype.Service;
 
@@ -34,15 +37,15 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class PluginRegistryService {
 
-    private final IngressFlowPlanService ingressFlowPlanService;
-    private final EgressFlowPlanService egressFlowPlanService;
     private final IngressFlowService ingressFlowService;
+    private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
     private final PluginVariableService pluginVariableService;
-    private final ActionSchemaService actionSchemaService;
     private final PluginRepository pluginRepository;
     private final PluginValidator pluginValidator;
-    private final RedisService redisService;
+
+    private final List<PluginUninstallCheck> pluginUninstallChecks;
+    private final List<PluginCleaner> pluginCleaners;
 
     public Result addPlugin(Plugin plugin) {
         List<String> validationErrors = pluginValidator.validate(plugin);
@@ -77,17 +80,19 @@ public class PluginRegistryService {
     public List<Flows> getFlowsByPlugin() {
         Map<PluginCoordinates, List<IngressFlow>> ingressFlows = ingressFlowService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<EgressFlow>> egressFlows = egressFlowService.getFlowsGroupedByPlugin();
+        Map<PluginCoordinates, List<EnrichFlow>> enrichFlows = enrichFlowService.getFlowsGroupedByPlugin();
 
         return getPluginsWithVariables().stream()
-                .map(plugin -> toPluginFlows(plugin, ingressFlows, egressFlows))
+                .map(plugin -> toPluginFlows(plugin, ingressFlows, enrichFlows, egressFlows))
                 .collect(Collectors.toList());
     }
 
-    private Flows toPluginFlows(Plugin plugin, Map<PluginCoordinates, List<IngressFlow>> ingressFlows, Map<PluginCoordinates, List<EgressFlow>> egressFlows) {
+    private Flows toPluginFlows(Plugin plugin, Map<PluginCoordinates, List<IngressFlow>> ingressFlows, Map<PluginCoordinates, List<EnrichFlow>> enrichFlows, Map<PluginCoordinates, List<EgressFlow>> egressFlows) {
         return Flows.newBuilder()
                 .sourcePlugin(plugin.getPluginCoordinates())
                 .variables(plugin.getVariables())
                 .ingressFlows(ingressFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
+                .enrichFlows(enrichFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .egressFlows(egressFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .build();
     }
@@ -121,18 +126,13 @@ public class PluginRegistryService {
             return List.of("Plugin not found");
         }
 
+        List<String> blockers = pluginUninstallChecks.stream()
+                .map(pluginUninstallCheck -> pluginUninstallCheck.uninstallBlockers(plugin))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
         PluginCoordinates pluginCoordinates = plugin.getPluginCoordinates();
-        List<String> errors = new ArrayList<>();
-
-        List<String> ingressFlows = ingressFlowService.findRunningFromPlugin(pluginCoordinates);
-        if (!ingressFlows.isEmpty()) {
-            errors.add("The plugin has created the following ingress flows which are still running: " + String.join(", ", ingressFlows));
-        }
-
-        List<String> egressFlows = egressFlowService.findRunningFromPlugin(pluginCoordinates);
-        if (!egressFlows.isEmpty()) {
-            errors.add("The plugin has created the following egress flows which are still running: " + String.join(", ", egressFlows));
-        }
+        List<String> errors = new ArrayList<>(blockers);
 
         // If this plugin is the dependency of another plugin, then it cannot be removed.
         String dependents = getPluginsWithDependency(pluginCoordinates).stream()
@@ -146,42 +146,10 @@ public class PluginRegistryService {
     }
 
     private void doUninstallPlugin(Plugin plugin) {
-        // remove flow plans where this is the source plugin
-        removeFlowsAndFlowPlans(plugin.getPluginCoordinates());
-        removeVariables(plugin.getPluginCoordinates());
-
-        // remove action schema registrations
-        List<String> actionNames = removeActionSchemas(plugin);
-
-        if (!actionNames.isEmpty()) {
-            // remove any redis queues
-            redisService.dropQueues(actionNames);
-        }
-
         // TODO: TBD: remove plugin property sets
-
+        pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
         // remove the plugin from the registry
         removePlugin(plugin);
     }
 
-    private void removeVariables(PluginCoordinates sourcePlugin) {
-        pluginVariableService.removeVariables(sourcePlugin);
-    }
-
-    private void removeFlowsAndFlowPlans(PluginCoordinates sourcePlugin) {
-        ingressFlowPlanService.removeFlowsAndPlansBySourcePlugin(sourcePlugin);
-        egressFlowPlanService.removeFlowsAndPlansBySourcePlugin(sourcePlugin);
-    }
-
-
-    private List<String> removeActionSchemas(Plugin plugin) {
-        if (!Objects.isNull(plugin.getActions())) {
-            List<String> actionNames = plugin.getActions().stream()
-                    .map(ActionDescriptor::getName)
-                    .collect(Collectors.toList());
-            actionSchemaService.removeAllInList(actionNames);
-            return actionNames;
-        }
-        return Collections.emptyList();
-    }
 }

@@ -88,17 +88,6 @@ case "$SUBCOMMAND" in
                }
                includeIngressFlows
                excludeIngressFlows
-               enrichActions {
-                 name
-                 type
-                 requiresDomains
-                 requiresEnrichment
-                 requiresMetadataKeyValues {
-                   key
-                   value
-                 }
-                 parameters
-               }
                formatAction {
                  name
                  type

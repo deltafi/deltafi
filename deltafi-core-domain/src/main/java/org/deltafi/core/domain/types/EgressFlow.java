@@ -19,60 +19,31 @@ package org.deltafi.core.domain.types;
 
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.deltafi.core.domain.api.types.ActionType;
 import org.deltafi.core.domain.api.types.ConfigType;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.generated.types.ActionFamily;
-import org.deltafi.core.domain.generated.types.FlowState;
-import org.deltafi.core.domain.generated.types.FlowStatus;
-import org.deltafi.core.domain.generated.types.Variable;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Data
 @Document("egressFlow")
-public class EgressFlow implements Flow {
+@EqualsAndHashCode(callSuper = true)
+public class EgressFlow extends Flow {
 
-    @Id
-    private String name;
-    private String description;
-    private PluginCoordinates sourcePlugin;
-    private FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>());
     private EgressActionConfiguration egressAction;
     private FormatActionConfiguration formatAction;
-    private List<EnrichActionConfiguration> enrichActions = new ArrayList<>();
     private List<ValidateActionConfiguration> validateActions = new ArrayList<>();
     private List<String> includeIngressFlows = new ArrayList<>();
     private List<String> excludeIngressFlows = new ArrayList<>();
-    // list of variables that are applicable to this flow
-    private Set<Variable> variables = new HashSet<>();
-
-    public List<String> validateActionNames() {
-        return validateActions.stream()
-                .map(ValidateActionConfiguration::getName)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<DeltaFiConfiguration> allConfigurations() {
-        List<DeltaFiConfiguration> allConfigurations = new ArrayList<>();
-        allConfigurations.add(formatAction);
-        allConfigurations.add(egressAction);
-        allConfigurations.addAll(enrichActions);
-        allConfigurations.addAll(validateActions);
-        allConfigurations.add(asEgressFlowConfiguration());
-        return allConfigurations;
-    }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
         List<ActionConfiguration> actionConfigurations = new ArrayList<>();
         actionConfigurations.add(formatAction);
         actionConfigurations.add(egressAction);
-        actionConfigurations.addAll(enrichActions);
         actionConfigurations.addAll(validateActions);
         return actionConfigurations;
     }
@@ -81,9 +52,7 @@ public class EgressFlow implements Flow {
     public List<DeltaFiConfiguration> findByConfigType(ConfigType configType) {
         switch (configType) {
             case EGRESS_FLOW:
-                return List.of(asEgressFlowConfiguration());
-            case ENRICH_ACTION:
-                return Objects.nonNull(enrichActions) ? new ArrayList<>(enrichActions) : Collections.emptyList();
+                return List.of(asFlowConfiguration());
             case FORMAT_ACTION:
                 return List.of(formatAction);
             case VALIDATE_ACTION:
@@ -97,44 +66,31 @@ public class EgressFlow implements Flow {
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {
-        if (actionName.equals(egressAction.getName())) {
+        if (nameMatches(egressAction, actionName)) {
             return egressAction;
         }
 
-        if (actionName.equals(formatAction.getName())) {
+        if (nameMatches(formatAction, actionName)) {
             return formatAction;
         }
 
-        ActionConfiguration enrichAction = enrichActions.stream()
-                .filter(enrichActionConfiguration -> actionName.equals(enrichActionConfiguration.getName()))
-                .findFirst().orElse(null);
-
-        if (Objects.nonNull(enrichAction)) {
-            return enrichAction;
-        }
-
-        return validateActions.stream()
-                .filter(validateActionConfiguration -> actionName.equals(validateActionConfiguration.getName()))
-                .findFirst().orElse(null);
+        return actionNamed(validateActions, actionName);
     }
 
-    public void updateActionNamesByFamily(Map<String, ActionFamily> actionFamilyMap) {
-        updateActionNamesByFamily(actionFamilyMap, "enrich", enrichActionNames());
-        updateActionNamesByFamily(actionFamilyMap, "format", formatAction.getName());
-        updateActionNamesByFamily(actionFamilyMap, "validate", validateActionNames());
-        updateActionNamesByFamily(actionFamilyMap, "egress", egressAction.getName());
+    public List<String> validateActionNames() {
+        return actionNames(validateActions);
     }
 
-    List<String> enrichActionNames() {
-        return enrichActions.stream()
-                .map(EnrichActionConfiguration::getName)
-                .collect(Collectors.toList());
+    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+        updateActionNamesByFamily(actionFamilyMap, ActionType.FORMAT, formatAction.getName());
+        updateActionNamesByFamily(actionFamilyMap, ActionType.VALIDATE, validateActionNames());
+        updateActionNamesByFamily(actionFamilyMap, ActionType.EGRESS, egressAction.getName());
     }
 
-    public DeltaFiConfiguration asEgressFlowConfiguration() {
+    @Override
+    public DeltaFiConfiguration asFlowConfiguration() {
         EgressFlowConfiguration egressFlowConfiguration = new EgressFlowConfiguration();
-        egressFlowConfiguration.setName(this.name);
-        egressFlowConfiguration.setEnrichActions(enrichActions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()));
+        egressFlowConfiguration.setName(getName());
         egressFlowConfiguration.setFormatAction(this.formatAction.getName());
         egressFlowConfiguration.setValidateActions(validateActionNames());
         egressFlowConfiguration.setEgressAction(this.egressAction.getName());
@@ -146,14 +102,6 @@ public class EgressFlow implements Flow {
 
     public boolean flowMatches(String flow) {
         return includesFlow(flow) && notExcludedFlow(flow);
-    }
-
-    public boolean isValid() {
-        return !FlowState.INVALID.equals(flowStatus.getState());
-    }
-
-    public boolean isRunning() {
-        return FlowState.RUNNING.equals(flowStatus.getState());
     }
 
     private boolean includesFlow(String flow) {

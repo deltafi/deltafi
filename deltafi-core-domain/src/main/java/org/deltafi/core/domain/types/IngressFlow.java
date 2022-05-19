@@ -19,14 +19,11 @@ package org.deltafi.core.domain.types;
 
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.deltafi.core.domain.api.types.ActionType;
 import org.deltafi.core.domain.api.types.ConfigType;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.generated.types.ActionFamily;
-import org.deltafi.core.domain.generated.types.FlowState;
-import org.deltafi.core.domain.generated.types.FlowStatus;
-import org.deltafi.core.domain.generated.types.Variable;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
@@ -34,27 +31,12 @@ import java.util.stream.Collectors;
 
 @Data
 @Document("ingressFlow")
-public class IngressFlow implements Flow {
+@EqualsAndHashCode(callSuper = true)
+public class IngressFlow extends Flow {
 
-    @Id
-    private String name;
-    private String description;
-    private PluginCoordinates sourcePlugin;
-    private FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>());
     private String type;
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
-    // list of variables that are applicable to this flow
-    private Set<Variable> variables = new HashSet<>();
-
-    @Override
-    public List<DeltaFiConfiguration> allConfigurations() {
-        List<DeltaFiConfiguration> allConfigurations = new ArrayList<>();
-        allConfigurations.add(loadAction);
-        allConfigurations.addAll(transformActions);
-        allConfigurations.add(asIngressFlowConfiguration());
-        return allConfigurations;
-    }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
@@ -68,7 +50,7 @@ public class IngressFlow implements Flow {
     public List<DeltaFiConfiguration> findByConfigType(ConfigType configType)  {
         switch (configType) {
             case INGRESS_FLOW:
-                return List.of(asIngressFlowConfiguration());
+                return List.of(asFlowConfiguration());
             case LOAD_ACTION:
                 return List.of(loadAction);
             case TRANSFORM_ACTION:
@@ -84,12 +66,13 @@ public class IngressFlow implements Flow {
             return loadAction;
         }
 
-        return transformAction(actionNamed);
+        return actionNamed(transformActions, actionNamed);
     }
 
-    public DeltaFiConfiguration asIngressFlowConfiguration() {
+    @Override
+    public DeltaFiConfiguration asFlowConfiguration() {
         IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.setName(this.name);
+        ingressFlowConfiguration.setName(this.getName());
         ingressFlowConfiguration.setType(this.type);
         ingressFlowConfiguration.setLoadAction(this.loadAction.getName());
         ingressFlowConfiguration.setTransformActions(this.transformActions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()));
@@ -97,32 +80,9 @@ public class IngressFlow implements Flow {
     }
 
     @Override
-    public void updateActionNamesByFamily(Map<String, ActionFamily> actionFamilyMap) {
-        updateActionNamesByFamily(actionFamilyMap, "load", loadAction.getName());
-        updateActionNamesByFamily(actionFamilyMap, "transform", transformActionNames());
+    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+        updateActionNamesByFamily(actionFamilyMap, ActionType.LOAD, loadAction.getName());
+        updateActionNamesByFamily(actionFamilyMap, ActionType.TRANSFORM, actionNames(transformActions));
     }
-
-    public boolean isValid() {
-        return !FlowState.INVALID.equals(flowStatus.getState());
-    }
-
-    public boolean isRunning() {
-        return FlowState.RUNNING.equals(flowStatus.getState());
-    }
-
-    private List<String> transformActionNames() {
-        return transformActions.stream().map(TransformActionConfiguration::getName).collect(Collectors.toList());
-    }
-
-    private TransformActionConfiguration transformAction(String named) {
-        return transformActions.stream()
-                .filter(transform -> nameMatches(transform, named))
-                .findFirst().orElse(null);
-    }
-
-    private boolean nameMatches(DeltaFiConfiguration action, String named) {
-        return named.equals(action.getName());
-    }
-
 
 }
