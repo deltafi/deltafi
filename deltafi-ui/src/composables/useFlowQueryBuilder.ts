@@ -151,6 +151,34 @@ export default function useFlowQueryBuilder() {
             defaultValue: true,
             dataType: true,
           }
+        },    
+        enrich: {
+          name: true,
+          description: true,
+          sourcePlugin: {
+            groupId: true,
+            artifactId: true,
+            version: true,
+          },
+          flowStatus: {
+            state: true,
+            errors: {
+              configName: true,
+              message: true,
+              errorType: true,
+            }
+          },
+          enrichActions: {
+            name: true,
+            type: true,
+            requiresDomains: true,
+            requiresEnrichment: true,
+            requiresMetadataKeyValues: {
+              key: true,
+              value: true,
+            },
+            parameters: true,
+          }
         },
         egress: {
           name: true,
@@ -170,17 +198,6 @@ export default function useFlowQueryBuilder() {
           },
           includeIngressFlows: true,
           excludeIngressFlows: true,
-          enrichActions: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            requiresEnrichment: true,
-            requiresMetadataKeyValues: {
-              key: true,
-              value: true,
-            },
-            parameters: true,
-          },
           formatAction: {
             name: true,
             type: true,
@@ -225,6 +242,19 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "getIngressFlowByName");
   }
 
+  // Get an Enrich Flow - (if you want to grab a single flow, return type is EnrichFlow)
+  const getEnrichFlowByName = (flowName: string) => {
+    const query = {
+      getEnrichFlow: {
+        __args: {
+          flowName: flowName
+        }
+      },
+      name: true
+    };
+    return sendGraphQLQuery(query, "getEnrichFlowByName");
+  };
+
   // Get an Egress Flow - (if you want to grab a single flow, return type is EgressFlow)
   const getEgressFlowByName = (flowName: string) => {
     const query = {
@@ -257,6 +287,26 @@ export default function useFlowQueryBuilder() {
     };
     return sendGraphQLQuery(query, "validateIngressFlow");
   }
+
+  // Validate an Enrich flow - return type is EnrichFlow
+  const validateEnrichFlow = (flowName: string) => {
+    const query = {
+      validateEnrichFlow: {
+        __args: {
+          flowName: flowName,
+        },      
+        flowStatus: {
+          state: true,
+          errors: {
+            configName: true,
+            errorType: true,
+            message: true,
+          }
+        }
+      }
+    };
+    return sendGraphQLQuery(query, "validateEnrichFlow");
+  };
 
   // Validate an egress flow - return type is EgressFlow
   const validateEgressFlow = (flowName: string) => {
@@ -314,6 +364,30 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "stopIngressFlowByName", "mutation");
   };
 
+  // Starts an enrich flow
+  const startEnrichFlowByName = (flowName: string) => {
+    const query = {
+      startEnrichFlow: {
+        __args: {
+          flowName: flowName
+        }
+      }
+    };
+    return sendGraphQLQuery(query, "startEnrichFlowByName", "mutation");
+  };
+
+  // Stops an enrich flow
+  const stopEnrichFlowByName = (flowName: string) => {
+    const query = {
+      stopEnrichFlow: {
+        __args: {
+          flowName: flowName
+        }
+      }
+    };
+    return sendGraphQLQuery(query, "stopEnrichFlowByName", "mutation");
+  };
+
   // Starts an egress flow
   const startEgressFlowByName = (flowName: string) => {
     const query = {
@@ -351,12 +425,16 @@ export default function useFlowQueryBuilder() {
     getFlowsGroupedByPlugin,
     getAllFlows,
     getIngressFlowByName,
+    getEnrichFlowByName,
     getEgressFlowByName,
     validateIngressFlow,
+    validateEnrichFlow,
     validateEgressFlow,
     setPluginVariables,
     startIngressFlowByName,
     stopIngressFlowByName,
+    startEnrichFlowByName,
+    stopEnrichFlowByName,
     startEgressFlowByName,
     stopEgressFlowByName
   };

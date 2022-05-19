@@ -27,13 +27,23 @@
     </div>
   </PageHeader>
   <div class="row pb-2">
-    <div class="col-6">
+    <div class="col pb-3">
       <h3>Ingress</h3>
       <template v-for="(ingressFlowValue, ingressFlowKey) in flowData['ingress']" :key="ingressFlowKey">
         <FlowPanel :flow-data-prop="ingressFlowValue" />
       </template>
     </div>
-    <div class="col-6 pb-3">
+    <template v-if="!_.isEmpty(flowData['enrich'])">
+      <Divider layout="vertical" class="mx-0" />
+      <div class="col pb-3">
+        <h3>Enrich</h3>
+        <template v-for="(enrichFlowValue, enrichFlowKey) in flowData['enrich']" :key="enrichFlowKey">
+          <FlowPanel :flow-data-prop="enrichFlowValue" />
+        </template>
+      </div>
+    </template>
+    <Divider layout="vertical" class="mx-0" />
+    <div class="col pb-3">
       <h3>Egress</h3>
       <template v-for="(egressFlowValue, egressFlowKey) in flowData['egress']" :key="egressFlowKey">
         <FlowPanel :flow-data-prop="egressFlowValue" />
@@ -48,6 +58,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { nextTick, onBeforeMount, ref, watch } from "vue";
 
+import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 import _ from "lodash";
@@ -113,7 +124,7 @@ const pluginNameChange = () => {
 
 const formatData = (allFlowData) => {
   let formattedFlowData = JSON.parse(JSON.stringify(allFlowData));
-  const flowTypes = ["ingress", "egress"];
+  const flowTypes = ["ingress", "enrich", "egress"];
 
   for (const flowType of flowTypes) {
     formattedFlowData[flowType.toString()].forEach((flow) => {

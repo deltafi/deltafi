@@ -48,7 +48,8 @@
       </Message>
     </div>
     <Divider />
-    <span>Source Plugin:
+    <span>
+      Source Plugin:
       <router-link class="monospace" :to="{ path: 'plugins/' + flowData.mvnCoordinates }">{{ flowData.mvnCoordinates }}</router-link>
     </span>
   </Panel>
@@ -66,7 +67,7 @@ import Message from "primevue/message";
 import Panel from "primevue/panel";
 import _ from "lodash";
 
-const { startIngressFlowByName, stopIngressFlowByName, startEgressFlowByName, stopEgressFlowByName, validateIngressFlow, validateEgressFlow } = useFlowQueryBuilder();
+const { startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName, validateIngressFlow, validateEnrichFlow, validateEgressFlow } = useFlowQueryBuilder();
 
 const props = defineProps({
   flowDataProp: {
@@ -82,12 +83,15 @@ const validationRetry = async (flowName, flowType) => {
   if (_.isEqual(flowType, "ingress")) {
     let response = await validateIngressFlow(flowName);
     validatedFlowStatus = response.data.validateIngressFlow;
+  } else if (_.isEqual(flowType, "enrich")) {
+    let response = await validateEnrichFlow(flowName);
+    validatedFlowStatus = response.data.validateEnrichFlow;
   } else if (_.isEqual(flowType, "egress")) {
     let response = await validateEgressFlow(flowName);
     validatedFlowStatus = response.data.validateEgressFlow;
   }
   await nextTick();
-  Object.assign(flowData, { ...flowData, ...validatedFlowStatus })
+  Object.assign(flowData, { ...flowData, ...validatedFlowStatus });
 };
 
 const toggleFlowState = async (flowName, newflowState, flowType) => {
@@ -96,6 +100,12 @@ const toggleFlowState = async (flowName, newflowState, flowType) => {
       await startIngressFlowByName(flowName);
     } else {
       await stopIngressFlowByName(flowName);
+    }
+  } else if (_.isEqual(flowType, "enrich")) {
+    if (_.isEqual(newflowState, "STOPPED")) {
+      await startEnrichFlowByName(flowName);
+    } else {
+      await stopEnrichFlowByName(flowName);
     }
   } else if (_.isEqual(flowType, "egress")) {
     if (_.isEqual(newflowState, "STOPPED")) {
