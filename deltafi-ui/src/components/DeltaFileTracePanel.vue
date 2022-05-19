@@ -251,7 +251,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
       }
     })
     .attr("x", function (d) {
-      return x(d.startEnd - d.startTimeElapsed);
+      return d.name !== "DeltaFileFlow" && d.name !== "IngressAction" ? x(d.startEnd - d.startTimeElapsed) : x(0);
     })
     .attr("y", function (d, i) {
       return i * rowWidth + 1;
@@ -275,7 +275,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .transition()
     .duration(1000)
     .attr("width", function (d) {
-      return x(d.startTimeElapsed);
+      return d.name !== "DeltaFileFlow" && d.name !== "IngressAction" ? x(d.startTimeElapsed) : x(0);
     });
 
   // Set the values on the bars
