@@ -151,6 +151,10 @@ subprojects {
                 }
             }
 
+            signing {
+                required { isSignable }
+            }
+
             if (project.name != 'gradle-plugin') {
                 if (isSignable) {
                     signing {
