@@ -67,7 +67,7 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 const { fetchErrorCount, errorCount } = useErrorCount();
-const uiConfig = inject('uiConfig');
+const uiConfig = inject("uiConfig");
 
 const externalLinks = computed(() => {
   return JSON.parse(JSON.stringify(uiConfig.externalLinks)).map((link) => {
@@ -107,11 +107,6 @@ const staticMenuItems = ref([
         name: "System Properties",
         icon: "fas fa-cogs fa-fw",
         path: "/config/system",
-      },
-      {
-        name: "Flow Configuration",
-        icon: "fas fa-random fa-fw",
-        path: "/config/flow/",
       },
       {
         name: "Flows",

@@ -19,7 +19,8 @@
 <template>
   <PageHeader heading="Flows">
     <div class="btn-toolbar mb-2 mb-md-0">
-      <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3 mr-2" @change="pluginNameChange" />
+      <Button type="button" class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="showFlowConfigData">Flow Configuration</Button>
+      <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3 mr-3" @change="pluginNameChange" />
       <span class="p-input-icon-left">
         <i class="pi pi-search" />
         <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt" />
@@ -59,13 +60,27 @@
       </template>
     </div>
   </div>
+  <div>
+    <Dialog v-model:visible="flowConfigDataVisable" header="Flow Configuration" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
+      <span v-if="hasErrors">
+        <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
+      </span>
+      <HighlightedCode v-else-if="flowConfigData" language="yaml" :code="flowConfigData" />
+      <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
+    </Dialog>
+  </div>
 </template>
 
 <script setup>
 import FlowPanel from "@/components/FlowPanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import Dialog from "primevue/dialog";
+import HighlightedCode from "@/components/HighlightedCode.vue";
+import Button from "primevue/button";
+import ScrollTop from "primevue/scrolltop";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { nextTick, onBeforeMount, ref, watch } from "vue";
+import useFlowConfiguration from "@/composables/useFlowConfiguration";
+import { nextTick, onBeforeMount, ref, watch, computed } from "vue";
 
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
@@ -74,15 +89,17 @@ import Message from "primevue/message";
 import _ from "lodash";
 
 const { getAllFlows } = useFlowQueryBuilder();
-
+const flowConfigDataVisable = ref(false);
 const allFlowData = ref("");
 const flowData = ref("");
 const filterFlowsText = ref("");
 const pluginNames = ref([]);
 const pluginNameSelected = ref(null);
+const { data: flowConfigData, fetch: fetchFlowConfiguration, errors } = useFlowConfiguration();
 
 onBeforeMount(async () => {
   fetchFlows();
+  fetchFlowConfiguration();
 });
 
 watch(
@@ -91,13 +108,18 @@ watch(
     applyFilters();
   }
 );
-
+const hasErrors = computed(() => {
+  return errors.value.length > 0;
+});
 const applyFilters = async () => {
   flowData.value = [];
   await nextTick();
   flowData.value = formatData(allFlowData.value);
 };
 
+const showFlowConfigData = () => {
+  flowConfigDataVisable.value = true;
+};
 const fetchFlows = async () => {
   let response = await getAllFlows();
 
