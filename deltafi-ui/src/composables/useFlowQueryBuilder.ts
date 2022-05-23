@@ -63,6 +63,29 @@ export default function useFlowQueryBuilder() {
             parameters: true,
           }
         },
+        enrichFlows: {
+          name: true,
+          description: true,
+          flowStatus: {
+            state: true,
+            errors: {
+              configName: true,
+              message: true,
+              errorType: true,
+            }
+          },
+          enrichActions: {
+            name: true,
+            type: true,
+            requiresDomains: true,
+            requiresEnrichment: true,
+            requiresMetadataKeyValues: {
+              key: true,
+              value: true,
+            },
+            parameters: true,
+          }
+        },
         egressFlows: {
           name: true,
           description: true,
@@ -76,17 +99,6 @@ export default function useFlowQueryBuilder() {
           },
           includeIngressFlows: true,
           excludeIngressFlows: true,
-          enrichActions: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            requiresEnrichment: true,
-            requiresMetadataKeyValues: {
-              key: true,
-              value: true
-            },
-            parameters: true
-          },
           formatAction: {
             name: true,
             type: true,
