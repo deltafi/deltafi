@@ -27,7 +27,7 @@
           <Listbox v-model="selectedPlugin" :options="listItems" option-label="label" />
         </div>
         <div class="plugin-column plugin-column-right">
-          <div v-if="selectedPlugin !== null" class="col ml-0 pl-0">
+          <div v-if="selectedPlugin !== null && selectedPlugin !== undefined" class="col ml-0 pl-0">
             <PluginInfoPanel :info="selectedPlugin" class="mb-3" />
             <PluginActionTable :actions="selectedPlugin.actions" class="mb-3" />
             <PluginVariablesTable :variables="selectedPlugin.variables" :plugin-coordinates="selectedPlugin.pluginCoordinates" class="mb-3" />
@@ -44,6 +44,7 @@ import { onMounted, ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import usePlugins from "@/composables/usePlugins";
 import Listbox from "primevue/listbox";
+import useNotifications from "@/composables/useNotifications";
 import PluginActionTable from "@/components/PluginActionTable.vue";
 import PluginInfoPanel from "@/components/PluginInfoPanel.vue";
 import PluginVariablesTable from "@/components/PluginVariablesTable.vue";
@@ -52,6 +53,7 @@ import _ from "lodash";
 const selectedPlugin = ref(null);
 const route = useRoute();
 const router = useRouter();
+const notify = useNotifications();
 const { data: plugins, fetch: fetchPlugins } = usePlugins();
 
 const listItems = computed(() => {
@@ -61,29 +63,31 @@ const listItems = computed(() => {
       return {
         label: `${plugin.displayName} - ${plugin.pluginCoordinates.version}`,
         id: buildId(plugin.pluginCoordinates),
-        ...plugin
-      }
-    })
+        ...plugin,
+      };
+    });
   }
-  return _.orderBy(items, ['label'], ['asc']);
+  return _.orderBy(items, ["label"], ["asc"]);
 });
 
 onMounted(async () => {
   await fetchPlugins();
-  selectedPlugin.value = route.params.pluginCordinates ? listItems.value.find(e => e.id == route.params.pluginCordinates) : null
+  selectedPlugin.value = route.params.pluginCordinates ? listItems.value.find((e) => e.id == route.params.pluginCordinates) : null;
 });
 
 watch(route, () => {
-  if (route.path === '/config/plugins') selectedPlugin.value = null;
+  if (route.path === "/config/plugins") {
+    selectedPlugin.value = null;
+  }
 });
 
 watch(selectedPlugin, (newItem) => {
-  console.log(newItem)
-  const path = (newItem === null || newItem === undefined) ? '/config/plugins' : `/config/plugins/${selectedPlugin.value.id}`;
+  if (newItem === undefined) notify.error("Plugin Not Found", route.params.pluginCordinates);
+  const path = newItem === null || newItem === undefined ? "/config/plugins" : `/config/plugins/${selectedPlugin.value.id}`;
   router.push({ path });
 });
 
-const buildId = (pluginCoordinates) => [pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version].join(':');
+const buildId = (pluginCoordinates) => [pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version].join(":");
 </script>
 
 <style lang="scss">
