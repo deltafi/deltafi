@@ -35,7 +35,7 @@
         <Menu ref="menu" :model="menuItems" :popup="true" />
         <Paginator v-if="errors.length > 0" :rows="10" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
       </template>
-      <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" @sort="onSort($event)">
+      <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty>No DeltaFiles with Errors to display.</template>
         <template #loading>Loading DeltaFiles with Errors. Please wait.</template>
         <Column class="expander-column" :expander="true" />
@@ -241,6 +241,11 @@ const toggleShowAcknowledged = () => {
   showAcknowledged.value = !showAcknowledged.value;
   selectedErrors.value = [];
   fetchErrors();
+};
+const onRowContextMenu = (event) => {
+  if (selectedErrors.value.length <= 0) {
+    selectedErrors.value = [event.data];
+  }
 };
 const onPanelRightClick = (event) => {
   menu.value.show(event);
