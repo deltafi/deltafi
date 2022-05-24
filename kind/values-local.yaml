@@ -1,0 +1,22 @@
+# DeltaFi config
+deltafi:
+  config_server:
+    image: localhost:5000/deltafi-config-server:latest
+  gateway:
+    image: localhost:5000/deltafi-gateway:latest
+  passthrough_actions:
+    image: localhost:5000/deltafi-passthrough-actions:latest
+  core_actions:
+    image: localhost:5000/deltafi-core-actions:latest
+  core_domain:
+    image: localhost:5000/deltafi-core-domain:latest
+  ingress:
+    image: localhost:5000/deltafi-ingress:latest
+  auth:
+    image: localhost:5000/deltafi-auth:latest
+  api:
+    image: localhost:5000/deltafi-api:latest
+  egress_sink:
+    image: localhost:5000/deltafi-egress-sink:latest
+  # ui:
+  #   image: localhost:5000/deltafi-ui:latest

@@ -1,0 +1,5 @@
+pv/
+mounts/
+config/
+.logs/
+Brewfile.lock.json
