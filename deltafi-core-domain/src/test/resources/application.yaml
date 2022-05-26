@@ -41,6 +41,3 @@ dgs:
   graphql:
     graphiql:
       enabled: false
-
-zipkin:
-  enabled: false

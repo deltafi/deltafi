@@ -30,16 +30,14 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.metrics.ActionMetricsLogger;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
-import org.deltafi.actionkit.config.ActionsProperties;
 import org.deltafi.actionkit.config.ActionVersionProperty;
+import org.deltafi.actionkit.config.ActionsProperties;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.properties.DeltaFiSystemProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.trace.DeltafiSpan;
-import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
 import org.jetbrains.annotations.NotNull;
@@ -69,9 +67,6 @@ public abstract class Action<P extends ActionParameters> {
 
     @Inject
     protected ContentStorageService contentStorageService;
-
-    @Inject
-    protected ZipkinService zipkinService;
 
     @Inject
     protected ActionEventService actionEventService;
@@ -142,11 +137,8 @@ public abstract class Action<P extends ActionParameters> {
 
                 SourceInfo sourceInfo = deltaFile.getSourceInfo();
 
-                DeltafiSpan span = zipkinService.isEnabled() ? zipkinService.createChildSpan(deltaFile.getDid(), context.getName(), sourceInfo.getFilename(), sourceInfo.getFlow()) : null;
-
                 executeAction(deltaFile, context, params);
 
-                if (Objects.nonNull(span)) { zipkinService.markSpanComplete(span); }
             }
         } catch (Throwable e) {
             log.error("Unexpected exception caught at Action thread execution level: " + e.getMessage());

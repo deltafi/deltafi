@@ -33,13 +33,12 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
+import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.IngressGraphQLQuery;
 import org.deltafi.core.domain.generated.client.IngressProjectionRoot;
-import org.deltafi.core.domain.api.types.Content;
 import org.deltafi.core.domain.generated.types.IngressInput;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
@@ -59,7 +58,6 @@ import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 public class DeltaFileService {
     private final GraphQLClient graphQLClient;
     private final ContentStorageService contentStorageService;
-    private final ZipkinService zipkinService;
     private final ObjectMapper objectMapper;
 
     private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
@@ -82,8 +80,6 @@ public class DeltaFileService {
 
         logMetric(did, sourceFileName, namespacedFlow, "files_in", 1);
         logMetric(did, sourceFileName, namespacedFlow, "bytes_in", contentReference.getSize());
-
-        sendTrace(did, sourceFileName, namespacedFlow, created);
 
         return did;
     }
@@ -168,12 +164,6 @@ public class DeltaFileService {
     private void logMetric(String did, String fileName, String flow, String metric, long value) {
         Map<String, String> tags = Map.of("filename", fileName, "action", INGRESS_ACTION);
         MetricLogger.logMetric("ingress", did, flow, metric, value, tags);
-    }
-
-    private void sendTrace(String did, String fileName, String flow, OffsetDateTime created) {
-        if (zipkinService.isEnabled()) {
-            zipkinService.markSpanComplete(zipkinService.createChildSpan(did, INGRESS_ACTION, fileName, flow, created));
-        }
     }
 
 }

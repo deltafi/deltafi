@@ -20,7 +20,6 @@ package org.deltafi.core.domain.services;
 import lombok.Builder;
 import lombok.Singular;
 import org.deltafi.common.content.ContentReference;
-import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
@@ -62,10 +61,6 @@ class StateMachineTest {
 
     @Mock
     EgressFlowService egressFlowService;
-
-    @Mock
-    @SuppressWarnings("unused")
-    ZipkinService zipkinService;
 
     @Test
     void testGetEnrichActions() {

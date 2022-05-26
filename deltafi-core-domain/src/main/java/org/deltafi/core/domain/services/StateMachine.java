@@ -18,7 +18,6 @@
 package org.deltafi.core.domain.services;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -39,7 +38,6 @@ public class StateMachine {
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
-    private final ZipkinService zipkinService;
 
     /**
      * Advance the state of the given DeltaFile
@@ -104,7 +102,6 @@ public class StateMachine {
 
         if (!deltaFile.hasPendingActions()) {
             deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
-            sendTrace(deltaFile);
         }
 
         DeltaFilesService.calculateTotalBytes(deltaFile);
@@ -209,7 +206,4 @@ public class StateMachine {
                 !deltaFile.hasTerminalAction(egressFlow.getEgressAction().getName());
     }
 
-    private void sendTrace(DeltaFile deltaFile) {
-        zipkinService.createAndSendRootSpan(deltaFile.getDid(), deltaFile.getCreated(), deltaFile.getSourceInfo().getFilename(), deltaFile.getSourceInfo().getFlow());
-    }
 }

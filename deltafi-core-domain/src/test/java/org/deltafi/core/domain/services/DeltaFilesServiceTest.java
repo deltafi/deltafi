@@ -20,10 +20,9 @@ package org.deltafi.core.domain.services;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentReference;
-import org.deltafi.common.trace.ZipkinService;
 import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
@@ -59,10 +58,6 @@ class DeltaFilesServiceTest {
     @SuppressWarnings("unused")
     @Spy
     DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-
-    @SuppressWarnings("unused")
-    @Mock
-    ZipkinService zipkinService;
 
     @SuppressWarnings("unused")
     @Mock

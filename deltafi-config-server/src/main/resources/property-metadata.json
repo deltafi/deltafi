@@ -207,36 +207,6 @@
         "defaultValue": "${REDIS_PASSWORD}"
       },
       {
-        "key": "zipkin.enabled",
-        "description": "Toggle Zipkin tracing on or off.",
-        "defaultValue": "true",
-        "editable": true
-      },
-      {
-        "key": "zipkin.url",
-        "description": "URL to send spans to.",
-        "defaultValue": "http://deltafi-zipkin:9411/api/v2/spans",
-        "editable": true
-      },
-      {
-        "key": "zipkin.send-initial-delay-ms",
-        "description": "Initial delay before attempting to send spans.",
-        "defaultValue": "500",
-        "editable": true
-      },
-      {
-        "key": "zipkin.send-period-ms",
-        "description": "How often spans should be sent to Zipkin.",
-        "defaultValue": "500",
-        "editable": true
-      },
-      {
-        "key": "zipkin.max-batch-size",
-        "description": "Maximum number of spans to send at once to Zipkin.",
-        "defaultValue": "10000",
-        "editable": true
-      },
-      {
         "key": "deltafi.systemName",
         "description": "Name of the DeltaFi cluster",
         "defaultValue": "deltafi",
