@@ -18,6 +18,8 @@
 
 # frozen_string_literal: true
 
+require 'deltafi/common'
+
 module Deltafi
   module Monitor
     module ErrorCount
