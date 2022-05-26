@@ -16,11 +16,11 @@
    limitations under the License.
 */
 
-.action-metrics-table {
+.queue-metrics {
   .metric-column {
-    width: 10% !important;
+    width: 10rem;
   }
-  .type-column {
-    width: 15% !important;
+  .timestamp-column {
+    width: 15rem;
   }
 }

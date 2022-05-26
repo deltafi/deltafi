@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Changed Divider color on flows page (#177)
 - Moved Flows config to a dialog box on Flows page (#168)
 - Added auto select on right click for errors table (#161)
+- Moved Queue Metrics to Action Metrics page (#180)
 
 ## [0.95.2]
 

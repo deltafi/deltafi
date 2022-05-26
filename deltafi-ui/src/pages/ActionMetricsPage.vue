@@ -18,23 +18,21 @@
 
 <template>
   <div class="action-metrics">
-    <PageHeader heading="Action Metrics">
-      <div class="btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select a Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3" @change="flowChange" />
-        <Dropdown v-model="timeRange" :options="timeRanges" option-label="name" placeholder="Time Range" class="deltafi-input-field ml-3" @change="timeRangeChange" />
-      </div>
-    </PageHeader>
+    <PageHeader heading="Action Metrics" />
     <span v-if="hasErrors">
       <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
     </span>
     <div v-else-if="actionMetrics">
-      <div class="row pr-2 pl-2">
-        <div class="col-12 pl-2 pr-2">
-          <span>
-            <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="mb-3" @pause-timer="onPauseTimer" />
-          </span>
-        </div>
-      </div>
+      <CollapsiblePanel header="Actions" class="action-metrics-panel table-panel mb-3">
+        <template #icons>
+          <Dropdown v-model="ingressFlowNameSelected" placeholder="Select a Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field mr-3" @change="flowChange" />
+          <Dropdown v-model="timeRange" :options="timeRanges" option-label="name" placeholder="Time Range" class="deltafi-input-field mr-3" @change="timeRangeChange" />
+        </template>
+        <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="mb-3" @pause-timer="onPauseTimer" />
+      </CollapsiblePanel>
+      <CollapsiblePanel header="Queues" class="queue-metrics-panel table-panel mb-3">
+        <QueueMetricsTable />
+      </CollapsiblePanel>
     </div>
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
   </div>
@@ -45,10 +43,12 @@ import Dropdown from "primevue/dropdown";
 import Message from "primevue/message";
 import ProgressBar from "primevue/progressbar";
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
+import QueueMetricsTable from "@/components/QueueMetricsTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import { ref, computed, onUnmounted, onMounted, inject } from "vue";
 
 const refreshInterval = 5000; // 5 seconds

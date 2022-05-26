@@ -92,11 +92,6 @@ const staticMenuItems = ref([
         icon: "fas fa-chart-line fa-fw",
         path: "/metrics/action",
       },
-      {
-        name: "Queue Metrics",
-        icon: "fas fa-list-alt fa-fw",
-        path: "/metrics/queue",
-      },
     ],
   },
   {

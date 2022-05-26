@@ -39,4 +39,12 @@
     text-align: right !important;
     width: 15%;
   }
+  .action-metrics-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+    }
+  }
 }

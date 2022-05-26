@@ -18,26 +18,24 @@
 
 <template>
   <div>
-    <Panel header="Actions" class="metrics-panel table-panel">
-      <DataTable v-model:filters="filters" :value="tableData.value" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="loading" sort-field="action_name" :sort-order="1" filter-display="row">
-        <template #empty>No Action Metrics available.</template>
-        <template #loading>Loading Action Metrics data. Please wait.</template>
-        <Column header="Action Name" field="action_name" :sortable="true">
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText v-model="filterModel.value" type="text" class="p-inputtext-sm p-column-filter" placeholder="Filter by Action Name" @focus="pauseTimer(true)" @blur="pauseTimer(false)" @input="filterCallback()" />
-          </template>
-        </Column>
-        <Column header="Type" field="family_type" :sortable="true" class="type-column">
-          <template #body="{ data }">{{ sentenceCaseString(data.family_type) }}</template>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect v-model="filterModel.value" type="text" class="p-inputtext-sm deltafi-input-field p-column-filter" placeholder="Filter by Type" :options="familyTypes" @before-show="pauseTimer(true)" @before-hide="pauseTimer(false)" @change="filterCallback()" />
-          </template>
-        </Column>
-        <Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header" :sortable="true" class="metric-column">
-          <template #body="row">{{ formatMetricValue(row) }}</template>
-        </Column>
-      </DataTable>
-    </Panel>
+    <DataTable v-model:filters="filters" :value="tableData.value" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines action-metrics-table" :loading="loading" sort-field="action_name" :sort-order="1" filter-display="row">
+      <template #empty>No Action Metrics available.</template>
+      <template #loading>Loading Action Metrics data. Please wait.</template>
+      <Column header="Action Name" field="action_name" :sortable="true">
+        <template #filter="{ filterModel, filterCallback }">
+          <InputText v-model="filterModel.value" type="text" class="p-inputtext-sm p-column-filter" placeholder="Filter by Action Name" @focus="pauseTimer(true)" @blur="pauseTimer(false)" @input="filterCallback()" />
+        </template>
+      </Column>
+      <Column header="Type" field="family_type" :sortable="true" class="type-column">
+        <template #body="{ data }">{{ sentenceCaseString(data.family_type) }}</template>
+        <template #filter="{ filterModel, filterCallback }">
+          <MultiSelect v-model="filterModel.value" type="text" class="p-inputtext-sm deltafi-input-field p-column-filter" placeholder="Filter by Type" :options="familyTypes" @before-show="pauseTimer(true)" @before-hide="pauseTimer(false)" @change="filterCallback()" />
+        </template>
+      </Column>
+      <Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header" :sortable="true" class="metric-column">
+        <template #body="row">{{ formatMetricValue(row) }}</template>
+      </Column>
+    </DataTable>
   </div>
 </template>
 
@@ -47,7 +45,6 @@ import DataTable from "primevue/datatable";
 import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import { FilterMatchMode } from "primevue/api";
-import Panel from "primevue/panel";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, ref, defineEmits } from "vue";
 
