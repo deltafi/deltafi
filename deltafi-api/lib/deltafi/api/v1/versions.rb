@@ -31,12 +31,14 @@ module Deltafi
               app = pod.metadata.labels.app || pod.metadata.labels['app.kubernetes.io/name']
               pod.spec.containers.map do |container|
                 image = container.image.split(':')
+                image_tag = image.pop
+                image_name = image.join(':')
                 {
                   app: app,
                   container: container.name,
                   image: {
-                    name: image[0],
-                    tag: image[1]
+                    name: image_name,
+                    tag: image_tag
                   },
                   group: pod.metadata.labels.group
                 }
