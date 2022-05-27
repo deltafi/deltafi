@@ -42,11 +42,12 @@ public class DeltaFileIndexService {
 
     @EventListener
     public void onRefresh(final RefreshScopeRefreshedEvent event) {
-        setDeltaFileTtl();
+        this.deltaFileRepo.setExpirationIndex(deltaFiProperties.getDeltaFileTtl());
     }
 
     @PostConstruct
-    public void setDeltaFileTtl() {
-        this.deltaFileRepo.setExpirationIndex(deltaFiProperties.getDeltaFileTtl());
+    public void ensureAllIndices() {
+        this.deltaFileRepo.ensureAllIndices(deltaFiProperties.getDeltaFileTtl());
     }
+
 }

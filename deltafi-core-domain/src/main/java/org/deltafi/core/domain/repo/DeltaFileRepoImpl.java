@@ -17,18 +17,23 @@
  */
 package org.deltafi.core.domain.repo;
 
+import com.mongodb.MongoException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.IndexInfo;
+import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.util.MongoDbErrorCodes;
+import org.springframework.util.ObjectUtils;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -83,8 +88,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_ERROR_CONTEXT = "actions.$[action].errorContext";
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
 
+    private static final Map<String, Index> INDICES = Map.of(
+            "action_search", new Index().named("action_search").on(ACTIONS_NAME, Sort.Direction.ASC),
+            "completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
+            "created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
+            "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
+
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
+
+    public void ensureAllIndices(Duration newTtl) {
+        setExpirationIndex(newTtl);
+        IndexOperations idxOps = mongoTemplate.indexOps(DeltaFile.class);
+        List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
+
+        INDICES.forEach((indexName, indexDef) -> updateIndices(idxOps, indexName, indexDef, existingIndexes));
+
+        Set<String> expected = new HashSet<>(INDICES.keySet());
+        expected.add("_id_");
+        expected.add(TTL_INDEX_NAME);
+        existingIndexes.forEach(existingIndex -> removeUnknownIndices(idxOps, existingIndex, expected));
+    }
 
     @Override
     public void setExpirationIndex(Duration newTtl) {
@@ -404,5 +428,48 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private OffsetDateTime requeueThreshold(OffsetDateTime requeueTime, int requeueSeconds) {
         return requeueTime.minusSeconds(requeueSeconds);
+    }
+
+    private void updateIndices(IndexOperations idxOps, String indexName, Index index, List<IndexInfo> existingIndexes) {
+        try {
+            log.debug("Ensure index {}", indexName);
+            idxOps.ensureIndex(index);
+        } catch (UncategorizedMongoDbException ex) {
+            if ( ex.getCause() instanceof MongoException && MongoDbErrorCodes.isDataIntegrityViolationCode(((MongoException) ex.getCause()).getCode()) && indexExists(indexName, existingIndexes)) {
+                log.info("An old version of index {} exists, attempting to recreate it", indexName);
+                recreateIndex(idxOps, indexName, index);
+            } else {
+                log.error("Failed to ensure index: {}", index, ex);
+            }
+        }
+    }
+
+    private void recreateIndex(IndexOperations idxOps, String indexName, Index index) {
+        try {
+            idxOps.dropIndex(indexName);
+            idxOps.ensureIndex(index);
+        } catch (UncategorizedMongoDbException ex) {
+            log.error("Failed to recreate index: {}", index, ex);
+        }
+    }
+
+    private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndicies) {
+        if (!knownIndicies.contains(existing.getName())) {
+            log.info("Dropping unknown index {}", existing.getName());
+            dropIndex(idxOps, existing.getName());
+        }
+    }
+
+    private void dropIndex(IndexOperations idxOps, String indexName) {
+        try {
+            idxOps.dropIndex(indexName);
+        } catch (UncategorizedMongoDbException ex) {
+            log.error("Failed to remove unknown index {}", indexName, ex);
+        }
+    }
+
+    private boolean indexExists(String name, List<IndexInfo> existingIndexes) {
+        return existingIndexes.stream()
+                .anyMatch(indexInfo -> ObjectUtils.nullSafeEquals(name, indexInfo.getName()));
     }
 }

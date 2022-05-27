@@ -36,30 +36,40 @@ public interface DeltaFileRepoCustom {
     Set<String> readDids();
 
     /**
+     * Ensure the latest versions of the indices defined in the Repository
+     * are created. Ensure the TTL index has the latest expiration value.
+     * Remove indices that are not defined in the Repository.
+     *
+     * @param newTtl duration that a DeltaFile should be persisted
+     *
+     */
+    void ensureAllIndices(Duration newTtl);
+
+    /**
      * Set or verify the expiration TTL value on the collection.
      *
-     * @param expirationDuration - duration until expiration
+     * @param expirationDuration duration until expiration
      */
     void setExpirationIndex(Duration expirationDuration);
 
     /**
      * Get a list of all indexes on the collection.
      *
-     * @return - list of indexes.
+     * @return list of indexes.
      */
     List<IndexInfo> getIndexes();
 
     /**
      * Get the current expiration TTL on the collection.
      *
-     * @return - Duration, current TTL value, or null if not set.
+     * @return Duration, current TTL value, or null if not set.
      */
     Duration getTtlExpiration();
 
     /**
      * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.
      *
-     * @return - list of the DeltaFiles to be requeued
+     * @return the list of the DeltaFiles to be requeued
      */
     List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds);
 
@@ -68,10 +78,10 @@ public interface DeltaFileRepoCustom {
      * Any actions in a non-terminal state will be marked as errors stating the given policy
      * marked the DeltaFile for deletion.
      *
-     * @param createdBefore - if non-null find DeltaFiles created before this date
-     * @param completedBefore - if non-null find DeltaFiles in the completed stage that were last modified before this date
-     * @param flow - if non-null the DeltaFiles must have this flow set in the source info
-     * @param policy - policy name to use in any metadata
+     * @param createdBefore if non-null find DeltaFiles created before this date
+     * @param completedBefore if non-null find DeltaFiles in the completed stage that were last modified before this date
+     * @param flow if non-null the DeltaFiles must have this flow set in the source info
+     * @param policy policy name to use in any metadata
      * @return the list of DeltaFiles marked for deletion
      */
     List<DeltaFile> markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy);

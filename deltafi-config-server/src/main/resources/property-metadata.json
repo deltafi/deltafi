@@ -35,11 +35,6 @@
         "defaultValue": "deltafi"
       },
       {
-        "key": "spring.data.mongodb.auto-index-creation",
-        "description": "Whether to enable auto-index creation.",
-        "defaultValue": "true"
-      },
-      {
         "key": "spring.task.scheduling.pool.size",
         "description": "Maximum allowed number of threads.",
         "defaultValue": "32"

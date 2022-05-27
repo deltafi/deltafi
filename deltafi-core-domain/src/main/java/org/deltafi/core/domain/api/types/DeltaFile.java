@@ -25,7 +25,6 @@ import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.http.MediaType;
 
@@ -37,10 +36,6 @@ import java.util.stream.Collectors;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 
 @Document
-@CompoundIndex(name = "dispatch_index", def = "{'actions.name': 1, 'actions.state': 1, 'actions.modified': 1}")
-@CompoundIndex(name = "completed_before_index", def="{'stage': 1, 'modified': 1, 'sourceInfo.flow': 1}")
-@CompoundIndex(name = "created_before_index", def="{'created': 1, 'sourceInfo.flow': 1}")
-@CompoundIndex(name = "modified_before_index", def="{'modified': 1, 'sourceInfo.flow': 1}")
 @NoArgsConstructor
 public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile {
 
