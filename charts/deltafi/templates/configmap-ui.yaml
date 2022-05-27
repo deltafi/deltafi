@@ -24,9 +24,6 @@ data:
       - url: https://minio.{{ .Values.ingress.domain }}/
         name: MinIO
         description: MinIO storage dashboard
-      - url: https://zipkin.{{ .Values.ingress.domain }}/zipkin/
-        name: Zipkin
-        description: DeltaFile tracing dashboard
 {{- if .Values.deltafi.ui.externalLinks }}
 {{ .Values.deltafi.ui.externalLinks | toYaml | indent 6 }}
 {{- end }}

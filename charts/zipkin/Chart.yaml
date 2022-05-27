@@ -1,6 +1,0 @@
-apiVersion: v2
-name: zipkin
-description: Open-Zipkin distributed trace installer
-type: application
-version: 1.0.0
-appVersion: "2.23.15"

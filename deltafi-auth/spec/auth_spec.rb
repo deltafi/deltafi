@@ -52,7 +52,7 @@ RSpec.describe 'Auth' do
       {
         'all'    => ['CN=TestUser1'],
         'nifi'   => ['CN=TestUser2'],
-        'zipkin' => ['CN=TestUser3'],
+        'minio' => ['CN=TestUser3'],
         'kibana' => ['CN=TestUser2', 'CN=TestUser3']
       }.to_yaml
     end
@@ -86,12 +86,12 @@ RSpec.describe 'Auth' do
     it "should be granted access to expected subdomains" do
       should_allow('CN=TestUser2', 'https://nifi.test.deltafi.org/')
       should_allow('CN=TestUser2', 'https://kibana.test.deltafi.org/')
-      should_allow('CN=TestUser3', 'https://zipkin.test.deltafi.org/')
+      should_allow('CN=TestUser3', 'https://minio.test.deltafi.org/')
       should_allow('CN=TestUser3', 'https://kibana.test.deltafi.org/')
     end
 
     it "should be denied access to expected subdomains" do
-      should_deny('CN=TestUser2', 'https://zipkin.test.deltafi.org/')
+      should_deny('CN=TestUser2', 'https://minio.test.deltafi.org/')
       should_deny('CN=TestUser3', 'https://nifi.test.deltafi.org/')
     end
 
@@ -108,6 +108,6 @@ RSpec.describe 'Auth' do
 
     it "should be denied access to unknown subdomains" do
       should_deny('CN=TestUser0', 'https://k8s.test.deltafi.org/')
-    end  
+    end
   end
 end

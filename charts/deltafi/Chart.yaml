@@ -53,10 +53,6 @@ dependencies:
     version: "14.6.2"
     repository: https://charts.bitnami.com/bitnami
     condition: enable.redis
-  - name: zipkin
-    version: 1.0.0
-    repository: file://../zipkin
-    condition: enable.zipkin
   - name: kubernetes-dashboard
     version: 4.3.1
     repository: https://kubernetes.github.io/dashboard/

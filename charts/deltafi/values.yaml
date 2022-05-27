@@ -208,18 +208,6 @@ redis:
   master:
     persistence:
       enabled: false
-# Zipkin config
-zipkin:
-  ingress:
-    enabled: true
-  envVars:
-    - name: STORAGE_TYPE
-      value: elasticsearch
-    - name: ES_HOSTS
-      value: http://elasticsearch-master:9200
-  tracesAgeOffJob:
-    schedule: "0 1 * * *" # Once daily at 0100
-    suspend: false
 # Kubernetes Dashboard config
 kubernetes-dashboard:
   protocolHttp: true

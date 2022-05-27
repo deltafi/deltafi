@@ -19,7 +19,6 @@ data:
     - deltafi-mongodb
     - deltafi-monitor
     - deltafi-ui
-    - deltafi-zipkin
   IngressCheck: |
     expected_ingresses:
     - deltafi-gateway-ingress
@@ -28,7 +27,6 @@ data:
     - deltafi-kubernetes-dashboard
     - deltafi-minio
     - deltafi-ui-ingress
-    - deltafi-zipkin
   ServiceCheck: |
     expected_services:
     - deltafi-api-service
@@ -45,7 +43,6 @@ data:
     - deltafi-redis-headless
     - deltafi-redis-master
     - deltafi-ui-service
-    - deltafi-zipkin
     - elasticsearch-master
     - elasticsearch-master-headless
   StorageCheck: |

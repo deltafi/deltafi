@@ -10,7 +10,7 @@ Usage:
   ingress FLOW [FILE ...] [OPTIONS]
 
 Options:
-  -t, --trace                       Trace the file(s) through the system
+  -t, --trace                       (Disabled) Trace the file(s) through the system
   -m, --content-type [CONTENT_TYPE] Set media type on ingress
   -h, --help                        Show help"
   exit 1
@@ -32,7 +32,8 @@ while [[ $# -gt 0 ]]; do
 
   case $key in
     -t|--trace)
-      TRACE=true
+      TRACE=false
+      cli_log "${yellow}Tracing disabled${normal}"
       shift # past argument
       ;;
     -c|--content-type)

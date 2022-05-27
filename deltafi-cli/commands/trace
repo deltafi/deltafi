@@ -2,6 +2,9 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
+cli_log "${yellow}Tracing disabled${normal}"
+exit 1
+
 # Compatability with GNU sed and BSD sed (MacOS)
 _sed_prepend() {
   if sed --help >/dev/null 2>&1

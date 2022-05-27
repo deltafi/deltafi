@@ -5,16 +5,16 @@
 3. Email the DeltaFi team at **deltafi@systolic.com** and request access to the DeltaFi group and project repositories.
 
 4. Confirm you have been granted **Developer** access to the required projects in the **DeltaFi** group.  From GitLab, navigate to the DeltaFi group, then select **Menu > Projects > Your projects**
-    
+
      At a minimum, the following projects should be listed:
     - ansible (SYSTOLIC/DeltaFi/ansible)
     - deltafi (SYSTOLIC/DeltaFi/deltafi)
     - devbox (SYSTOLIC/DeltaFi/devbox)
     - dotfiles (SYSTOLIC/DeltaFi/dotfiles)
     - deltafi-inator (SYSTOLIC/DeltaFi/deltafi-inator)
-  
+
     From the list of projects, you can select any project and view its members. You should see your username listed as a project Developer for all of your required projects.  Note that the DeltaFi projects are maintained under https://gitlab.com/systolic/deltafi.
- 
+
 5. Download CentOS Stream 8 x86_64 boot ISO (https://mirror.umd.edu/centos/8-stream/isos/x86_64/CentOS-Stream-8-x86_64-latest-boot.iso).
 6. Install VirtualBox:
    1. Create a VM of type Linux with a version of Red Hat (64-bit).
@@ -61,8 +61,8 @@
 
 13. Add the following localhost aliases to /etc/hosts (or C:\Windows\System32\drivers\etc\hosts):
     ```
-    gateway.local.deltafi.org kibana.local.deltafi.org minio.local.deltafi.org nifi.local.deltafi.org zipkin.local.deltafi.org
-    
+    gateway.local.deltafi.org kibana.local.deltafi.org minio.local.deltafi.org nifi.local.deltafi.org
+
 14. Install DeltaFi:
     1. git clone git@gitlab.com:systolic/deltafi/deltafi.git
     2. cd deltafi/deltafi-cli

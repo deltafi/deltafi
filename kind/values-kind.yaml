@@ -8,11 +8,6 @@ fluentd:
 kibana:
   load_saved_objects: false
   replicas: 0
-zipkin:
-  replicaCount: 0
-  tracesAgeOffJob:
-    suspend: true
-    schedule: "1 5 31 2 *"
 deltafi:
   ui:
     title: DeltaFi (KinD Cluster)
