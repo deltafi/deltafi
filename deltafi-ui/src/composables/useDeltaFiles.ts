@@ -105,8 +105,8 @@ export default function useDeltaFiles() {
             }
           },
         },
-        markedForDelete: true,
-        markedForDeleteReason: true,
+        contentDeleted: true,
+        contentDeletedReason: true,
         errorAcknowledged: true,
         errorAcknowledgedReason: true,
       }

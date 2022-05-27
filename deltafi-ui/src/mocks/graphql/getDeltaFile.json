@@ -472,8 +472,8 @@
         ]
       }
     ],
-    "markedForDelete": null,
-    "markedForDeleteReason": null,
+    "contentDeleted": null,
+    "contentDeletedReason": null,
     "errorAcknowledged": null,
     "errorAcknowledgedReason": null
   }
