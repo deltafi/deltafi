@@ -1,4 +1,4 @@
-# Pinning base image to 2.7-alpine3.13 as 2.7-alpine3.14 had issues in gitlab-ci.
+# Pinning base image to 2.7-alpine3.13 as 2.7-alpine3.16 had issues in gitlab-ci.
 FROM ruby:2.7-alpine3.13 AS build
 WORKDIR /app
 COPY Gemfile Gemfile.lock /app/

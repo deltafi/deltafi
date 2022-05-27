@@ -1,4 +1,4 @@
-FROM node:15-alpine
+FROM node:18-alpine
 WORKDIR /usr/src/app
 COPY package.json package-lock.json /usr/src/app/
 RUN apk add --no-cache curl && \

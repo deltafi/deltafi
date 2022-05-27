@@ -21,6 +21,7 @@ buildSrc/build/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+*.hprof
 
 # NetBeans
 nb-configuration.xml
