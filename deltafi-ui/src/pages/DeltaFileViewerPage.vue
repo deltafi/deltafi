@@ -159,16 +159,6 @@ const staticMenuItems = reactive([
       retryConfirm();
     },
   },
-  {
-    separator: true,
-  },
-  {
-    label: "View Zipkin Trace",
-    icon: "fas fa-external-link-alt fa-fw",
-    command: () => {
-      openZipkinURL();
-    },
-  },
 ]);
 
 const menuItems = computed(() => {
@@ -183,6 +173,11 @@ const menuItems = computed(() => {
       },
     };
   });
+  if (customLinks.length > 0) {
+    customLinks.unshift({
+      separator: true,
+    })
+  }
   return items.concat(customLinks);
 });
 
@@ -287,11 +282,6 @@ const requestRetry = async () => {
   } catch (error) {
     notify.error("Retry request failed", error);
   }
-};
-
-const openZipkinURL = () => {
-  const zipkinURL = `https://zipkin.${uiConfig.domain}/zipkin/traces/${did.value.replaceAll("-", "")}`;
-  window.open(zipkinURL, "_blank");
 };
 
 watch(

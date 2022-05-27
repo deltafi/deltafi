@@ -4,19 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.95.3]
 
 ### Changed
 
-- Added Pretty Print to content viewer for JSON and XML (#84)
-- Updated Trace chart to use queued vs created and added start/stop bar (#166)
-- Made content dialogs not draggable (#175)
-- Added enrich flows to the flows page (#171)
-- Message on flow pages if no flow is found (#176)
-- Changed Divider color on flows page (#177)
-- Moved Flows config to a dialog box on Flows page (#168)
+- Added Pretty Print to Content Viewer for JSON and XML (#84)
 - Added auto select on right click for errors table (#161)
+- Added enrich flows to the flows page (#171)
+- Added message on flow pages if no flow is found (#176)
+- Changed Divider color on flows page (#177)
+- Made content dialogs not draggable (#175)
+- Moved Flows config to a dialog box on Flows page (#168)
 - Moved Queue Metrics to Action Metrics page (#180)
+- Removed link to Zipkin from DeltaFile Viewer page (#185)
+- Updated Trace chart to use queued vs created and added start/stop bar (#166)
 
 ## [0.95.2]
 
@@ -253,7 +254,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.2...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.3...main
+[0.95.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.2...0.95.3
 [0.95.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.1...0.95.2
 [0.95.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.2...0.95.1
 [0.21.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.21.1...0.21.2
