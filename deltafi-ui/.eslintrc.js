@@ -13,7 +13,8 @@ module.exports = {
     }]
   },
   ignorePatterns: [
-    "dist"
+    "dist",
+    "graphiql"
   ],
   env: {
     node: true,
