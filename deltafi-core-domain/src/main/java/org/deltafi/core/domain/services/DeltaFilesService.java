@@ -519,10 +519,12 @@ public class DeltaFilesService {
                                 deltaFile.setErrorAcknowledgedReason(null);
 
                                 if (replaceFilename != null) {
+                                    deltaFile.getSourceInfo().addMetadata("sourceInfo.filename.original", deltaFile.getSourceInfo().getFilename());
                                     deltaFile.getSourceInfo().setFilename(replaceFilename);
                                 }
 
                                 if (replaceFlow != null) {
+                                    deltaFile.getSourceInfo().addMetadata("sourceInfo.flow.original", deltaFile.getSourceInfo().getFlow());
                                     deltaFile.getSourceInfo().setFlow(replaceFlow);
                                 }
 
