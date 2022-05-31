@@ -29,10 +29,12 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFilesService;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -115,8 +117,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public List<RetryResult> retry(@InputArgument List<String> dids) {
-    return deltaFilesService.retry(dids);
+  public List<RetryResult> retry(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument(collectionType = String.class) List<String> removeSourceMetadata, @InputArgument(collectionType = KeyValue.class) List<KeyValue> replaceSourceMetadata) {
+    return deltaFilesService.retry(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
   @DgsMutation

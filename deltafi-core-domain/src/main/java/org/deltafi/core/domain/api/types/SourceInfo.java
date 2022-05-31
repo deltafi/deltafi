@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Data
 @NoArgsConstructor
@@ -45,6 +46,11 @@ public class SourceInfo {
     }
 
     @JsonIgnore
+    public boolean containsKey(String key) {
+        return metadata.stream().anyMatch(kv -> kv.getKey().equals(key));
+    }
+
+    @JsonIgnore
     public String getMetadata(String key) {
         return getMetadata(key, null);
     }
@@ -54,24 +60,32 @@ public class SourceInfo {
         return metadata.stream().filter(k-> k.getKey().equals(key)).findFirst().map(KeyValue::getValue).orElse(defaultValue);
     }
 
-    @JsonIgnore
     public void addMetadata(KeyValue keyValue) {
-        metadata.add(keyValue);
+        Optional<KeyValue> existing = metadata.stream().filter(kv -> kv.getKey().equals(keyValue.getKey())).findFirst();
+        if (existing.isPresent()) {
+            existing.get().setValue(keyValue.getValue());
+        } else {
+            metadata.add(keyValue);
+        }
     }
 
-    @JsonIgnore
+    @SuppressWarnings("unused")
     public void addMetadata(List<KeyValue> keyValues) {
         if (keyValues == null) { return; }
-        metadata.addAll(keyValues);
+        for (KeyValue keyValue : keyValues) {
+            addMetadata(keyValue);
+        }
     }
 
-    @JsonIgnore
     public void addMetadata(String key, String value) {
-        metadata.add(new KeyValue(key, value));
+        addMetadata(new KeyValue(key, value));
     }
 
-    @JsonIgnore
     public void addMetadata(@NotNull Map<String, String> map) {
         map.forEach(this::addMetadata);
+    }
+
+    public void removeMetadata(String key) {
+        metadata.removeIf(kv -> kv.getKey().equals(key));
     }
 }

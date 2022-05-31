@@ -37,6 +37,7 @@ import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.retry.MongoRetryable;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.IngressFlow;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
@@ -493,7 +494,7 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    public List<RetryResult> retry(List<String> dids) {
+    public List<RetryResult> retry(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
         return dids.stream()
                 .map(did -> {
                     RetryResult result = RetryResult.newBuilder()
@@ -504,7 +505,7 @@ public class DeltaFilesService {
                     try {
                         DeltaFile deltaFile = getDeltaFile(did);
 
-                        if (Objects.isNull(deltaFile)) {
+                        if (deltaFile == null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
                         } else {
@@ -516,6 +517,31 @@ public class DeltaFilesService {
                                 deltaFile.setStage(DeltaFileStage.INGRESS);
                                 deltaFile.setErrorAcknowledged(null);
                                 deltaFile.setErrorAcknowledgedReason(null);
+
+                                if (replaceFilename != null) {
+                                    deltaFile.getSourceInfo().setFilename(replaceFilename);
+                                }
+
+                                if (replaceFlow != null) {
+                                    deltaFile.getSourceInfo().setFlow(replaceFlow);
+                                }
+
+                                SourceInfo sourceInfo = deltaFile.getSourceInfo();
+
+                                for (String removeKey : removeSourceMetadata) {
+                                    if (sourceInfo.containsKey(removeKey)) {
+                                        sourceInfo.addMetadata(removeKey + ".original", sourceInfo.getMetadata(removeKey));
+                                        sourceInfo.removeMetadata(removeKey);
+                                    }
+                                }
+
+                                for (KeyValue keyValue : replaceSourceMetadata) {
+                                    if (sourceInfo.containsKey(keyValue.getKey())) {
+                                        sourceInfo.addMetadata(keyValue.getKey() + ".original", sourceInfo.getMetadata(keyValue.getKey()));
+                                    }
+                                    sourceInfo.addMetadata(keyValue.getKey(), keyValue.getValue());
+                                }
+
                                 advanceAndSave(deltaFile);
                             }
                         }

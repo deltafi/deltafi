@@ -53,7 +53,7 @@ public class Util {
 
         return DeltaFile.newBuilder()
                 .did(did)
-                .sourceInfo(new SourceInfo(null, flow, List.of()))
+                .sourceInfo(new SourceInfo(null, flow, new ArrayList<>()))
                 .stage(stage)
                 .created(created)
                 .modified(modified)

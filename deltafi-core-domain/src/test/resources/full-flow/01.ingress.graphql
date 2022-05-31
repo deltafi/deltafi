@@ -23,10 +23,15 @@ mutation {
             sourceInfo: {
                 filename: "input.txt"
                 flow: "sample"
-                metadata: {
-                    key: "AuthorizedBy"
-                    value: "XYZ"
-                }
+                metadata: [
+                    {
+                        key: "AuthorizedBy"
+                        value: "XYZ"
+                    }
+                    {
+                        key: "removeMe"
+                        value: "whatever"
+                    } ]
             }
             content: [
                 {

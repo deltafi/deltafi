@@ -278,7 +278,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postIngressDeltaFile(String did) {
 		DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
 		deltaFile.queueAction("Utf8TransformAction");
-		deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", List.of(new KeyValue("AuthorizedBy", "XYZ"))));
+		deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", new ArrayList<>(List.of(new KeyValue("AuthorizedBy", "XYZ"), new KeyValue("removeMe", "whatever")))));
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION, List.of(content), null));
 		return deltaFile;
@@ -379,7 +379,11 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertTrue(retryResults.get(0).getSuccess());
 
-		verifyActionEventResults(postRetryTransformDeltaFile(did), "SampleTransformAction");
+		DeltaFile expected = postRetryTransformDeltaFile(did);
+		expected.getSourceInfo().setFilename("newFilename");
+		expected.getSourceInfo().setFlow("theFlow");
+		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
+		verifyActionEventResults(expected, "SampleLoadAction");
 	}
 
 	DeltaFile postLoadDeltaFile(String did) {
