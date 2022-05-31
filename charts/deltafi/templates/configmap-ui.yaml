@@ -12,8 +12,8 @@ data:
 {{ .Values.deltafi.ui.deltaFileLinks | toYaml | indent 6 }}
 {{- end }}
     externalLinks:
-      - url: https://gateway.{{ .Values.ingress.domain }}/
-        name: GraphQL Gateway
+      - url: /graphiql/
+        name: GraphiQL
         description: GraphQL query interface
       - url: https://kibana.{{ .Values.ingress.domain }}/app/dashboards#/view/cf08cb00-aeac-11eb-ac19-f330c8b60a55
         name: Kibana Dashboard
