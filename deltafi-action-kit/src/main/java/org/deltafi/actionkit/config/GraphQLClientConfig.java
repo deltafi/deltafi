@@ -26,6 +26,6 @@ import javax.enterprise.inject.Produces;
 public class GraphQLClientConfig {
     @Produces
     public GraphQLClient graphQLClient(GraphqlClientProperties graphqlProperties) {
-        return new DefaultGraphQLClient(graphqlProperties.getGateway());
+        return new DefaultGraphQLClient(graphqlProperties.getCoreDomain());
     }
 }

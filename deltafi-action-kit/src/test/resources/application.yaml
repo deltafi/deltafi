@@ -22,7 +22,6 @@ minio:
   access-key: empty
 graphql:
   urls:
-    gateway: gateway
     core-domain: core-domain
 redis:
   url: redis

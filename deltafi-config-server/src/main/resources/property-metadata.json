@@ -154,11 +154,6 @@
         "editable": true
       },
       {
-        "key": "graphql.urls.gateway",
-        "description": "URL of the gateway service.",
-        "defaultValue": "http://deltafi-gateway-service/graphql"
-      },
-      {
         "key": "graphql.urls.core-domain",
         "description": "URL of the core-domain service",
         "defaultValue": "http://deltafi-core-domain-service/graphql"
