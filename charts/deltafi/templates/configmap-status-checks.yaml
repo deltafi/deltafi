@@ -21,7 +21,6 @@ data:
     - deltafi-ui
   IngressCheck: |
     expected_ingresses:
-    - deltafi-gateway-ingress
     - deltafi-ingress
     - deltafi-kibana
     - deltafi-kubernetes-dashboard
