@@ -29,7 +29,7 @@ dependencies:
     condition: enable.minio
   - name: mongodb
     version: "10.12.2"
-    repository: https://charts.bitnami.com/bitnami
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: enable.mongo
   - name: elasticsearch
     version: "7.16.2"
@@ -51,7 +51,7 @@ dependencies:
       - metrics
   - name: redis
     version: "14.6.2"
-    repository: https://charts.bitnami.com/bitnami
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: enable.redis
   - name: kubernetes-dashboard
     version: 4.3.1
