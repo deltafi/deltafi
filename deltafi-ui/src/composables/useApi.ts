@@ -64,5 +64,54 @@ export default function useApi(version: Number = 1) {
     }
   }
 
-  return { response, loading, loaded, errors, get, buildURL };
+  const postPut = async (verb: string, endpoint: string, body: Record<string, string>) => {
+    const url = buildURL(endpoint);
+    try {
+      const res = await fetch(url, {
+        method: verb,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) return Promise.reject(res);
+      response.value = await res.json();
+      loaded.value = true;
+      return Promise.resolve(res);
+    } catch (error: any) {
+      errors.value.push(error)
+      notify.error("Error Contacting API", error);
+      return Promise.reject(error);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  const put = async (endpoint: string, body: Record<string, string>) => {
+    return postPut('PUT', endpoint, body)
+  }
+
+  const post = async (endpoint: string, body: Record<string, string>) => {
+    return postPut('POST', endpoint, body)
+  }
+
+  const remove = async (endpoint: String, id: String) => {
+    const url = buildURL(`${endpoint}/${id}`,);
+    try {
+      const res = await fetch(url, { method: 'DELETE' });
+      if (!res.ok) return Promise.reject(res);
+      response.value = await res.json();
+      loaded.value = true;
+      return Promise.resolve(res);
+    } catch (error: any) {
+      errors.value.push(error)
+      notify.error("Error Contacting API", error);
+      return Promise.reject(error);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { response, loading, loaded, errors, get, put, remove, post, buildURL };
 }

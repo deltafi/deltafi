@@ -89,6 +89,16 @@ const routes: Array<RouteRecordRaw> = [
     path: "/:catchAll(.*)",
     name: "404 Not Found",
     component: () => import('@/pages/PageNotFound.vue')
+  },
+  {
+    path: "/admin/users",
+    name: "Users",
+    component: () => import('@/pages/UsersPage.vue')
+  },
+  {
+    path: "/admin/audit",
+    name: "Audit Log",
+    component: () => import('@/pages/AuditLogPage.vue')
   }
 ]
 

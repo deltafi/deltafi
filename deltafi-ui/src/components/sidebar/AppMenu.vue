@@ -144,6 +144,23 @@ const staticMenuItems = ref([
       },
     ],
   },
+  {
+    name: "Administration",
+    expand: true,
+    children: [
+      {
+        name: "Audit Log",
+        icon: "fas fa-file-alt fa-fw",
+        path: "/admin/audit",
+        hidden: true
+      },
+      {
+        name: "Users",
+        icon: "fas fa-users fa-fw",
+        path: "/admin/users",
+      },
+    ],
+  },
   { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions" },
 ]);
 
@@ -160,7 +177,7 @@ const menuItems = computed(() => {
     if (objIndex != -1) {
       items[objIndex] = externalLinksObject;
     } else {
-      items.splice(4, 0, externalLinksObject);
+      items.splice(5, 0, externalLinksObject);
     }
   }
   return items;
