@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 #
 #    DeltaFi - Data transformation and enrichment platform
 #
@@ -19,8 +18,26 @@
 
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
+class ApiServer < Sinatra::Base
+  register Sinatra::Namespace
 
-require 'deltafi'
+  AUTH_URL = ENV['DELTAFI_AUTH_URL'] || 'http://deltafi-auth-service'
 
-DF::Monitor.run
+  proxy_to_auth = lambda do
+    path = request.path.gsub('/api/v1', '')
+    url = File.join(AUTH_URL, path)
+    options = {}
+    options[:body] = request.body.read if %w[POST PUT].include?(request.request_method)
+    response = HTTParty.send(request.request_method.downcase, url, options)
+    status response.code
+    return response.body
+  end
+
+  namespace '/api/v1' do
+    get    '/users/?',   &proxy_to_auth
+    get    '/users/:id', &proxy_to_auth
+    post   '/users',     &proxy_to_auth
+    put    '/users/:id', &proxy_to_auth
+    delete '/users/:id', &proxy_to_auth
+  end
+end

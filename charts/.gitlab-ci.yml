@@ -1,4 +1,4 @@
-helm-lint:
+.helm-lint:
   image: alpine:3.14
   stage: build
   script:

@@ -1,11 +1,15 @@
 source 'https://rubygems.org'
 
+gem 'eventmachine'
+gem 'rainbows'
 gem 'sinatra'
 gem 'sinatra-contrib'
-gem 'k8s-ruby'
+gem 'sequel'
+gem 'sqlite3'
 
 group :test, :development do
   gem 'rspec', '~> 3.0'
   gem 'rack-test'
   gem 'pry'
+  gem 'rerun'
 end

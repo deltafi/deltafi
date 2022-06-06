@@ -25,6 +25,7 @@ require 'sinatra/base'
 require 'sinatra/streaming'
 require 'sinatra/quiet_logger'
 require 'sinatra/namespace'
+require './routes/users'
 
 $sse_service = DF::API::V1::ServerSentEvents::Service.new
 
@@ -101,7 +102,7 @@ class ApiServer < Sinatra::Base
   end
 
   not_found do
-    build_response({ error: 'API endpoint not found.' })
+    build_response({ error: '404 Not Found' })
   end
 
   def stream_content(content_reference)

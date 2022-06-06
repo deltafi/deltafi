@@ -1,4 +1,3 @@
-{{- if eq .Values.deltafi.auth.mode "cert" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,21 +17,25 @@ spec:
         app: deltafi-auth
         group: deltafi-core
     spec:
+      volumes:
+        - name: deltafi-auth
+          persistentVolumeClaim:
+            claimName: deltafi-auth
       containers:
       - name: deltafi-auth
         image: {{ .Values.deltafi.auth.image }}
         env:
-        - name: SECRET
-          value: {{ .Values.deltafi.auth.secret }}
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
+        - name: DATA_DIR
+          value: /data
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
+        volumeMounts:
+          - name: deltafi-auth
+            mountPath: /data
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-auth
-{{- end }}

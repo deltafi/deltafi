@@ -1,2 +1,2 @@
-require './auth'
-run Auth
+require './auth_api'
+run AuthApi

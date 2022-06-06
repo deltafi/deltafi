@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 #
 #    DeltaFi - Data transformation and enrichment platform
 #
@@ -19,8 +18,15 @@
 
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
-
-require 'deltafi'
-
-DF::Monitor.run
+Sequel.migration do
+  change do
+    create_table(:users) do
+      primary_key :id
+      String   :name,       :null => false
+      String   :dn,         :null => false
+      String   :domains,    :null => false
+      DateTime :created_at, :null => false
+      DateTime :updated_at, :null => false
+    end
+  end
+end

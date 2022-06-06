@@ -1,5 +1,7 @@
 charts/.logs
 
+*.sqlite3
+
 # Gradle
 output/
 .gradle/

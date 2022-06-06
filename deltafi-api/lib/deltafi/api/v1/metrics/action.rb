@@ -170,7 +170,7 @@ module Deltafi
                                   .parsed_response['data']['getActionNamesByFamily']
 
               output = Hash.new { |h, k| h[k] = h.dup.clear }
-              
+
               action_families.each_entry do |family_entry|
                 family = family_entry['family']
                 family_entry['actionNames'].each do |action_name|

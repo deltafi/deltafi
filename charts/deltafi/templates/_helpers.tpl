@@ -22,6 +22,7 @@ nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
 nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/auth
 nginx.ingress.kubernetes.io/auth-cache-key: $ssl_client_s_dn$http_authorization
 nginx.ingress.kubernetes.io/auth-cache-duration: 200 5m
+nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID
 {{- end -}}
 
 {{- define "defaultStartupProbe" -}}
