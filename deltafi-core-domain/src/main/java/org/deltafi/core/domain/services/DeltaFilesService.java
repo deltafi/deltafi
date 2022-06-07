@@ -292,7 +292,7 @@ public class DeltaFilesService {
         return advanceAndSave(deltaFile);
     }
 
-    private DeltaFile buildErrorDeltaFile(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+    private static DeltaFile buildErrorDeltaFile(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
         String did = UUID.randomUUID().toString();
 
         if (deltaFile.getChildDids() == null) {
@@ -323,7 +323,7 @@ public class DeltaFilesService {
                 .build();
     }
 
-    private Domain buildErrorDomain(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+    private static Domain buildErrorDomain(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
         ErrorDomain errorDomain = ErrorDomain.newBuilder()
                 .cause(event.getError().getCause())
                 .context(event.getError().getContext())
@@ -518,31 +518,7 @@ public class DeltaFilesService {
                                 deltaFile.setErrorAcknowledged(null);
                                 deltaFile.setErrorAcknowledgedReason(null);
 
-                                if (replaceFilename != null) {
-                                    deltaFile.getSourceInfo().addMetadata("sourceInfo.filename.original", deltaFile.getSourceInfo().getFilename());
-                                    deltaFile.getSourceInfo().setFilename(replaceFilename);
-                                }
-
-                                if (replaceFlow != null) {
-                                    deltaFile.getSourceInfo().addMetadata("sourceInfo.flow.original", deltaFile.getSourceInfo().getFlow());
-                                    deltaFile.getSourceInfo().setFlow(replaceFlow);
-                                }
-
-                                SourceInfo sourceInfo = deltaFile.getSourceInfo();
-
-                                for (String removeKey : removeSourceMetadata) {
-                                    if (sourceInfo.containsKey(removeKey)) {
-                                        sourceInfo.addMetadata(removeKey + ".original", sourceInfo.getMetadata(removeKey));
-                                        sourceInfo.removeMetadata(removeKey);
-                                    }
-                                }
-
-                                for (KeyValue keyValue : replaceSourceMetadata) {
-                                    if (sourceInfo.containsKey(keyValue.getKey())) {
-                                        sourceInfo.addMetadata(keyValue.getKey() + ".original", sourceInfo.getMetadata(keyValue.getKey()));
-                                    }
-                                    sourceInfo.addMetadata(keyValue.getKey(), keyValue.getValue());
-                                }
+                                applyRetryOverrides(deltaFile, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
 
                                 advanceAndSave(deltaFile);
                             }
@@ -554,6 +530,120 @@ public class DeltaFilesService {
                     return result;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private static void applyRetryOverrides(DeltaFile deltaFile, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
+        if (replaceFilename != null) {
+            deltaFile.getSourceInfo().addMetadata("sourceInfo.filename.original", deltaFile.getSourceInfo().getFilename());
+            deltaFile.getSourceInfo().setFilename(replaceFilename);
+        }
+
+        if (replaceFlow != null) {
+            deltaFile.getSourceInfo().addMetadata("sourceInfo.flow.original", deltaFile.getSourceInfo().getFlow());
+            deltaFile.getSourceInfo().setFlow(replaceFlow);
+        }
+
+        SourceInfo sourceInfo = deltaFile.getSourceInfo();
+
+        for (String removeKey : removeSourceMetadata) {
+            if (sourceInfo.containsKey(removeKey)) {
+                sourceInfo.addMetadata(removeKey + ".original", sourceInfo.getMetadata(removeKey));
+                sourceInfo.removeMetadata(removeKey);
+            }
+        }
+
+        for (KeyValue keyValue : replaceSourceMetadata) {
+            if (sourceInfo.containsKey(keyValue.getKey())) {
+                sourceInfo.addMetadata(keyValue.getKey() + ".original", sourceInfo.getMetadata(keyValue.getKey()));
+            }
+            sourceInfo.addMetadata(keyValue.getKey(), keyValue.getValue());
+        }
+    }
+
+    public List<RetryResult> replay(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
+        List<DeltaFile> parentDeltaFiles = new ArrayList<>();
+        List<DeltaFile> childDeltaFiles = new ArrayList<>();
+        List<ActionInput> enqueueActions = new ArrayList<>();
+
+        List<RetryResult> results = dids.stream()
+                .map(did -> {
+                    RetryResult result = RetryResult.newBuilder()
+                            .did(did)
+                            .success(true)
+                            .build();
+
+                    try {
+                        DeltaFile deltaFile = getDeltaFile(did);
+
+                        if (deltaFile == null) {
+                            result.setSuccess(false);
+                            result.setError("DeltaFile with did " + did + " not found");
+                        } else if (deltaFile.getReplayed() != null) {
+                            result.setSuccess(false);
+                            result.setError("DeltaFile with did " + did + " has already been replayed with child " + deltaFile.getReplayDid());
+                        } else {
+                            OffsetDateTime now = OffsetDateTime.now();
+                            Action action = Action.newBuilder()
+                                    .name(INGRESS_ACTION)
+                                    .state(ActionState.COMPLETE)
+                                    .created(now)
+                                    .modified(now)
+                                    .build();
+
+                            String flow = replaceFlow == null ? deltaFile.getSourceInfo().getFlow() : replaceFlow;
+                            String ingressType = ingressFlowService.getRunningFlowByName(flow).getType();
+
+                            DeltaFile child = DeltaFile.newBuilder()
+                                    .did(UUID.randomUUID().toString())
+                                    .parentDids(List.of(deltaFile.getDid()))
+                                    .childDids(Collections.emptyList())
+                                    .stage(DeltaFileStage.INGRESS)
+                                    .actions(new ArrayList<>(List.of(action)))
+                                    .sourceInfo(deltaFile.getSourceInfo())
+                                    .protocolStack(List.of(new ProtocolLayer(ingressType, INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), null)))
+                                    .domains(Collections.emptyList())
+                                    .enrichment(Collections.emptyList())
+                                    .formattedData(Collections.emptyList())
+                                    .created(now)
+                                    .modified(now)
+                                    .egressed(false)
+                                    .filtered(false)
+                                    .build();
+
+                            applyRetryOverrides(child, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
+
+                            enqueueActions.addAll(stateMachine.advance(child));
+
+                            if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
+                                child.markForDelete("on completion");
+
+                                enqueueActions.add(getDeleteActionInput(child));
+                            }
+
+                            calculateTotalBytes(child);
+                            deltaFile.setReplayed(now);
+                            deltaFile.setReplayDid(child.getDid());
+                            if (Objects.isNull(deltaFile.getChildDids())) {
+                                deltaFile.setChildDids(new ArrayList<>());
+                            }
+                            deltaFile.getChildDids().add(child.getDid());
+                            childDeltaFiles.add(child);
+                            parentDeltaFiles.add(deltaFile);
+                            result.setDid(child.getDid());
+                        }
+                    } catch (Exception e) {
+                        result.setSuccess(false);
+                        result.setError(e.getMessage());
+                    }
+                    return result;
+                })
+                .collect(Collectors.toList());
+
+        deltaFileRepo.saveAll(childDeltaFiles);
+        deltaFileRepo.saveAll(parentDeltaFiles);
+        enqueueActions(enqueueActions);
+
+        return results;
     }
 
     public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {

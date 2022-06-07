@@ -205,17 +205,17 @@ input ActionEventInput {
 
 type DeltaFile {
   did: String!
-  parentDids: [String!]
-  childDids: [String!]
+  parentDids: [String!]!
+  childDids: [String!]!
   # TODO: Make this a required field in a future release.  Optional for now for backward compatibility.
   totalBytes: Long
   stage: DeltaFileStage!
   actions: [Action!]!
   sourceInfo: SourceInfo!
-  protocolStack: [ProtocolLayer!]
+  protocolStack: [ProtocolLayer!]!
   domains: [Domain!]!
   enrichment: [Enrichment!]!
-  formattedData: [FormattedData!]
+  formattedData: [FormattedData!]!
   created: DateTime!
   modified: DateTime!
   markedForDelete: DateTime
@@ -224,6 +224,8 @@ type DeltaFile {
   errorAcknowledgedReason: String
   egressed: Boolean
   filtered: Boolean
+  replayed: DateTime
+  replayDid: String
 }
 
 input IngressInput {
@@ -367,6 +369,7 @@ type Mutation {
   actionEvent(event: ActionEventInput!): DeltaFile!
 
   retry(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
+  replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
 
   registerActions(actionRegistration: ActionRegistrationInput!): Int!

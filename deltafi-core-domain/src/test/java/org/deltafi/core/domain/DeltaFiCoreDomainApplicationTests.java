@@ -85,7 +85,7 @@ import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
-import static org.deltafi.core.domain.Util.equalIgnoringDates;
+import static org.deltafi.core.domain.Util.assertEqualsIgnoringDates;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
@@ -358,10 +358,12 @@ class DeltaFiCoreDomainApplicationTests {
 		return deltaFile;
 	}
 
-	DeltaFile postRetryTransformDeltaFile(String did) {
+	@SuppressWarnings("SameParameterValue")
+	DeltaFile postRetryTransformDeltaFile(String did, String retryAction) {
 		DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
 		deltaFile.retryErrors();
 		deltaFile.setStage(DeltaFileStage.INGRESS);
+		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).build());
 		return deltaFile;
 	}
 
@@ -379,7 +381,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertTrue(retryResults.get(0).getSuccess());
 
-		DeltaFile expected = postRetryTransformDeltaFile(did);
+		DeltaFile expected = postRetryTransformDeltaFile(did, "SampleLoadAction");
 		expected.getSourceInfo().setFilename("newFilename");
 		expected.getSourceInfo().setFlow("theFlow");
 		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("sourceInfo.filename.original", "input.txt"), new KeyValue("sourceInfo.flow.original", "sample"), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
@@ -435,7 +437,7 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(post09LoadDeltaFile(did), deltaFile));
+		assertEqualsIgnoringDates(post09LoadDeltaFile(did), deltaFile);
 	}
 
 	@Test
@@ -475,8 +477,8 @@ class DeltaFiCoreDomainApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		Util.assertEqualsIgnoringDates(child1.forQueue("SampleTransformAction"), actionInputs.get(0).getDeltaFile());
-		Util.assertEqualsIgnoringDates(child2.forQueue("SampleTransformAction"), actionInputs.get(1).getDeltaFile());
+		assertEqualsIgnoringDates(child1.forQueue("SampleTransformAction"), actionInputs.get(0).getDeltaFile());
+		assertEqualsIgnoringDates(child2.forQueue("SampleTransformAction"), actionInputs.get(1).getDeltaFile());
 	}
 
 	DeltaFile postEnrichDeltaFile(String did) {
@@ -587,10 +589,10 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
+		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 
 		Mockito.verify(redisService, never()).enqueue(any());
-		assertTrue(Util.equalIgnoringDates(postValidateDeltaFile(did), deltaFile));
+		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 	}
 
 	DeltaFile postErrorDeltaFile(String did) {
@@ -611,19 +613,24 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
-		DeltaFile expected = postErrorDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(expected, actual));
 
 		// ensure an error deltaFile was created
-		assertNotEquals(actual, deltaFilesService.getLastCreatedDeltaFiles(1).get(0));
+		DeltaFile errorDeltaFile = deltaFilesService.getLastCreatedDeltaFiles(1).get(0);
+		assertNotEquals(actual, errorDeltaFile);
+
+		DeltaFile expected = postErrorDeltaFile(did);
+		expected.getChildDids().add(errorDeltaFile.getDid());
+		assertEqualsIgnoringDates(expected, actual);
 
         mockRedisEnqueue("ErrorFormatAction");
 	}
 
-	DeltaFile postRetryDeltaFile(String did) {
+	@SuppressWarnings("SameParameterValue")
+	DeltaFile postRetryDeltaFile(String did, String retryAction) {
 		DeltaFile deltaFile = postErrorDeltaFile(did);
 		deltaFile.retryErrors();
 		deltaFile.setStage(DeltaFileStage.EGRESS);
+		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).build());
 		return deltaFile;
 	}
 
@@ -642,7 +649,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
-		verifyActionEventResults(postRetryDeltaFile(did), "AuthorityValidateAction");
+		verifyActionEventResults(postRetryDeltaFile(did, "AuthorityValidateAction"), "AuthorityValidateAction");
 	}
 
 	@Test
@@ -723,9 +730,46 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertTrue(Util.equalIgnoringDates(postEgressDeltaFile(did), deltaFile));
+		assertEqualsIgnoringDates(postEgressDeltaFile(did), deltaFile);
 
 		Mockito.verify(redisService, never()).enqueue(any());
+	}
+
+	@Test
+	void test23Replay() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postEgressDeltaFile(did));
+
+		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("23.replay"), did),
+				"data." + DgsConstants.MUTATION.Replay,
+				new TypeRef<>() {});
+
+		assertEquals(1, results.size());
+		assertTrue(results.get(0).getSuccess());
+
+		DeltaFile parent = deltaFilesService.getDeltaFile(did);
+		assertEquals(1, parent.getChildDids().size());
+		assertEquals(parent.getChildDids().get(0), parent.getReplayDid());
+		assertEquals(results.get(0).getDid(), parent.getReplayDid());
+		assertNotNull(parent.getReplayed());
+
+		DeltaFile expected = postIngressDeltaFile(did);
+		expected.setDid(parent.getChildDids().get(0));
+		expected.setParentDids(List.of(did));
+		expected.getActions().get(1).setName("SampleLoadAction");
+		expected.getSourceInfo().setFilename("newFilename");
+		expected.getSourceInfo().setFlow("theFlow");
+		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("sourceInfo.filename.original", "input.txt"), new KeyValue("sourceInfo.flow.original", "sample"), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
+		verifyActionEventResults(expected, "SampleLoadAction");
+
+		List<RetryResult> secondResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("23.replay"), did),
+				"data." + DgsConstants.MUTATION.Replay,
+				new TypeRef<>() {});
+
+		assertEquals(1, secondResults.size());
+		assertFalse(secondResults.get(0).getSuccess());
 	}
 
 	@Test
@@ -1227,7 +1271,7 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class
 		);
 
-		assertTrue(equalIgnoringDates(expected, actual));
+		assertEqualsIgnoringDates(expected, actual);
 	}
 
 	@Test
@@ -1257,7 +1301,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(expected.getOffset(), actual.getOffset());
 		assertEquals(expected.getCount(), actual.getCount());
 		assertEquals(expected.getTotalCount(), actual.getTotalCount());
-		assertTrue(equalIgnoringDates(expected.getDeltaFiles().get(0), actual.getDeltaFiles().get(0)));
+		assertEqualsIgnoringDates(expected.getDeltaFiles().get(0), actual.getDeltaFiles().get(0));
 	}
 
 	@Test
@@ -1955,7 +1999,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 	private void verifyActionEventResults(DeltaFile expected, String ... forActions) {
 		DeltaFile afterMutation = deltaFilesService.getDeltaFile(expected.getDid());
-		assertTrue(Util.equalIgnoringDates(expected, afterMutation));
+		assertEqualsIgnoringDates(expected, afterMutation);
 
 		Mockito.verify(redisService).enqueue(actionInputListCaptor.capture());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
@@ -1963,7 +2007,7 @@ class DeltaFiCoreDomainApplicationTests {
 		for (int i = 0; i < forActions.length; i++) {
 			ActionInput actionInput = actionInputs.get(i);
 			assertThat(actionInput.getActionContext().getName()).isEqualTo(forActions[i]);
-			Util.assertEqualsIgnoringDates(expected.forQueue(forActions[i]), actionInput.getDeltaFile());
+			assertEqualsIgnoringDates(expected.forQueue(forActions[i]), actionInput.getDeltaFile());
 		}
 	}
 

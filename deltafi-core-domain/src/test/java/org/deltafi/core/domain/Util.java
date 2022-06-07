@@ -53,6 +53,8 @@ public class Util {
 
         return DeltaFile.newBuilder()
                 .did(did)
+                .parentDids(new ArrayList<>())
+                .childDids(new ArrayList<>())
                 .sourceInfo(new SourceInfo(null, flow, new ArrayList<>()))
                 .stage(stage)
                 .created(created)
@@ -70,12 +72,16 @@ public class Util {
     public static void assertEqualsIgnoringDates(DeltaFile expected, DeltaFile actual) {
         Assertions.assertThat(actual.getDid()).isEqualTo(expected.getDid());
         Assertions.assertThat(actual.getStage()).isEqualTo(expected.getStage());
+        Assertions.assertThat(actual.getChildDids()).isEqualTo(expected.getChildDids());
+        Assertions.assertThat(actual.getParentDids()).isEqualTo(expected.getParentDids());
         assertActionsEqualIgnoringDates(expected.getActions(), actual.getActions());
         Assertions.assertThat(actual.getSourceInfo()).isEqualTo(expected.getSourceInfo());
         Assertions.assertThat(actual.getProtocolStack()).isEqualTo(expected.getProtocolStack());
         Assertions.assertThat(actual.getDomains()).isEqualTo(expected.getDomains());
         Assertions.assertThat(actual.getEnrichment()).isEqualTo(expected.getEnrichment());
         Assertions.assertThat(actual.getFormattedData()).isEqualTo(expected.getFormattedData());
+        Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
+        Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
     }
 
     public static void assertActionsEqualIgnoringDates(List<Action> expected, List<Action> actual) {
@@ -98,48 +104,6 @@ public class Util {
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
             Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
-        }
-    }
-
-    public static boolean equalIgnoringDates(DeltaFile d1, DeltaFile d2) {
-        return java.util.Objects.equals(d1.getDid(), d2.getDid()) &&
-                java.util.Objects.equals(d1.getStage(), d2.getStage()) &&
-                actionsEqualIgnoringDates(d1.getActions(), d2.getActions()) &&
-                java.util.Objects.equals(d1.getSourceInfo(), d2.getSourceInfo()) &&
-                java.util.Objects.equals(d1.getProtocolStack(), d2.getProtocolStack()) &&
-                java.util.Objects.equals(d1.getDomains(), d2.getDomains()) &&
-                java.util.Objects.equals(d1.getEnrichment(), d2.getEnrichment()) &&
-                java.util.Objects.equals(d1.getFormattedData(), d2.getFormattedData()) &&
-                java.util.Objects.equals(d1.getEgressed(), d2.getEgressed()) &&
-                java.util.Objects.equals(d1.getFiltered(), d2.getFiltered());
-    }
-
-    public static boolean actionsEqualIgnoringDates(List<Action> a1, List<Action> a2) {
-        if (a1 == null && a2 == null) {
-            return true;
-        } else if (a1 == null || a2 == null) {
-            return false;
-        } else {
-            for (int i = 0; i < a1.size(); i++) {
-                if (!actionEqualIgnoringDates(a1.get(i), a2.get(i))) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public static boolean actionEqualIgnoringDates(Action a1, Action a2) {
-        if (a1 == null && a2 == null) {
-            return true;
-        } else if (a1 == null || a2 == null) {
-            return false;
-        } else {
-            return java.util.Objects.equals(a1.getName(), a2.getName()) &&
-                    java.util.Objects.equals(a1.getState(), a2.getState()) &&
-                    java.util.Objects.equals(a1.getErrorContext(), a2.getErrorContext()) &&
-                    java.util.Objects.equals(a1.getErrorCause(), a2.getErrorCause());
         }
     }
 }

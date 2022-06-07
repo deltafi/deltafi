@@ -51,6 +51,8 @@ public class DeltaFilesDatafetcherTestHelper {
     public static final DeltaFilesProjectionRoot DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot()
             .deltaFiles()
                 .did()
+                .parentDids()
+                .childDids()
                 .stage()
                 .parent()
                 .actions()
@@ -121,6 +123,8 @@ public class DeltaFilesDatafetcherTestHelper {
 
     public static final DeltaFileProjectionRoot DELTA_FILE_PROJECTION_ROOT = new DeltaFileProjectionRoot()
             .did()
+            .parentDids()
+            .childDids()
             .stage()
                 .parent()
             .actions()

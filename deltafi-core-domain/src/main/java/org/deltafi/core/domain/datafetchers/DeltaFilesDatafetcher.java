@@ -123,6 +123,12 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
+  public List<RetryResult> replay(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument(collectionType = String.class) List<String> removeSourceMetadata, @InputArgument(collectionType = KeyValue.class) List<KeyValue> replaceSourceMetadata) {
+    return deltaFilesService.replay(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
+  }
+
+  @DgsMutation
+  @SuppressWarnings("unused")
   public List<AcknowledgeResult> acknowledge(@InputArgument List<String> dids, @InputArgument String reason) {
     return deltaFilesService.acknowledge(dids, reason);
   }
