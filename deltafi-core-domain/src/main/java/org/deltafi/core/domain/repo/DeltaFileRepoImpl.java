@@ -37,9 +37,8 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoField;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -60,12 +59,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String STATE = "state";
     public static final String DOMAINS_NAME = "domains.name";
     public static final String ENRICHMENT_NAME = "enrichment.name";
-    public static final String MARKED_FOR_DELETE = "markedForDelete";
+    public static final String CONTENT_DELETED = "contentDeleted";
     public static final String KEY = "key";
     public static final String VALUE = "value";
     public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
     public static final String FILTERED = "filtered";
+    public static final String TOTAL_BYTES = "totalBytes";
 
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
@@ -141,10 +141,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
     }
 
-    public Set<String> readDids() {
-        return StreamSupport
-                .stream(mongoTemplate.getCollection(COLLECTION).distinct(ID, String.class).spliterator(), true)
-                .collect(Collectors.toSet());
+    public List<String> readDidsWithContent() {
+        Criteria criteria = new Criteria(CONTENT_DELETED).isNull();
+        Query query = new Query();
+        query.addCriteria(criteria);
+        return mongoTemplate.findDistinct(query, ID, DeltaFile.class, String.class);
     }
 
     @Override
@@ -154,19 +155,54 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> markForDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                         String flowName, String policy) {
+    public List<DeltaFile> findForDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
+                                         long minBytes, String flowName, String policy, boolean deleteMetadata) {
         // one of these must be set for any matches to occur
         if (isNull(createdBeforeDate) && isNull(completedBeforeDate)) {
             return Collections.emptyList();
         }
 
-        Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, flowName));
+        Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata));
 
-        List<DeltaFile> deltaFilesToMark = mongoTemplate.find(query, DeltaFile.class);
-        deltaFilesToMark.forEach(deltaFile -> doMarkForDeleteAndSave(deltaFile, policy));
+        return mongoTemplate.find(query, DeltaFile.class);
+    }
 
-        return deltaFilesToMark;
+    @Override
+    public List<DeltaFile> findForDelete(long bytesToDelete, String flow, String policy) {
+        if (bytesToDelete < 1) {
+            throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
+        }
+
+        // get an exhaustive list of all deltafiles with content, sorted by created date ASC, so we can figure out when to start the delete threshold
+        // TODO: move to mongo 5 and use $setWindowFields to push this work to the database (see https://stackoverflow.com/questions/27995085/how-to-calculate-the-running-total-using-aggregate/70135796#70135796)
+        Query query = new Query();
+        query.fields().include(TOTAL_BYTES, CREATED);
+
+        query.addCriteria(Criteria.where(CONTENT_DELETED).isNull());
+        query.addCriteria(Criteria.where(TOTAL_BYTES).gt(0L));
+
+        DeltaFileOrder orderBy = DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build();
+        query.with(Sort.by(Collections.singletonList(new Sort.Order(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()))));
+        List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
+
+        if (deltaFiles.isEmpty()) {
+            return deltaFiles;
+        }
+
+        OffsetDateTime createdDate = null;
+        long bytesSoFar = 0;
+        for (DeltaFile deltaFile : deltaFiles) {
+            bytesSoFar += deltaFile.getTotalBytes();
+            createdDate = deltaFile.getCreated();
+            if (bytesSoFar >= bytesToDelete) {
+                break;
+            }
+        }
+
+        // add a millisecond to include the last DeltaFile we found
+        createdDate = createdDate.plus(1, ChronoField.MILLI_OF_DAY.getBaseUnit());
+
+        return findForDelete(createdDate, null, 0, flow, policy, false);
     }
 
     @Override
@@ -211,11 +247,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return deltaFiles;
-    }
-
-    void doMarkForDeleteAndSave(DeltaFile deltaFile, String policy) {
-        deltaFile.markForDelete(policy);
-        mongoTemplate.save(deltaFile);
     }
 
     void requeue(OffsetDateTime requeueTime, int requeueSeconds) {
@@ -267,12 +298,33 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return new Query(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
     }
 
-    private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate, String flowName) {
-        Criteria deleteTimeCriteria = buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate);
-        if (nonNull(flowName)) {
-            return new Criteria().andOperator(deleteTimeCriteria, Criteria.where(SOURCE_INFO_FLOW).is(flowName));
+    private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate, long minBytes, String flowName, boolean deleteMetadata) {
+        Criteria criteria = new Criteria();
+        List<Criteria> andCriteria = new ArrayList<>();
+
+        if (createdBeforeDate != null || completedBeforeDate != null) {
+            andCriteria.add(buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate));
         }
-        return deleteTimeCriteria;
+
+        if (nonNull(flowName)) {
+            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(flowName));
+        }
+
+        if (minBytes > 0L) {
+            andCriteria.add(Criteria.where(TOTAL_BYTES).gte(minBytes));
+        }
+
+        if (!deleteMetadata) {
+            andCriteria.add(Criteria.where(CONTENT_DELETED).isNull());
+        }
+
+        if (andCriteria.size() == 1) {
+            criteria = andCriteria.get(0);
+        } else {
+            criteria.andOperator(andCriteria.toArray(new Criteria[0]));
+        }
+
+        return criteria;
     }
 
     private Criteria buildDeltaFilesCriteria(DeltaFilesFilter filter) {
@@ -308,11 +360,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             andCriteria.add(Criteria.where(ENRICHMENT_NAME).all(filter.getEnrichment()));
         }
 
-        if (nonNull(filter.getIsMarkedForDelete())) {
-            if (filter.getIsMarkedForDelete()) {
-                andCriteria.add(Criteria.where(MARKED_FOR_DELETE).ne(null));
+        if (nonNull(filter.getContentDeleted())) {
+            if (filter.getContentDeleted()) {
+                andCriteria.add(Criteria.where(CONTENT_DELETED).ne(null));
             } else {
-                andCriteria.add(Criteria.where(MARKED_FOR_DELETE).is(null));
+                andCriteria.add(Criteria.where(CONTENT_DELETED).is(null));
             }
         }
 
@@ -393,7 +445,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
         if (isNull(orderBy)) {
-            orderBy = DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.DESC).build();
+            orderBy = DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.DESC).build();
         }
 
         query.with(Sort.by(Collections.singletonList(new Sort.Order(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()))));
@@ -415,9 +467,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Criteria createdBeforeCriteria(OffsetDateTime createdBeforeDate) {
-        Criteria notDeleted = Criteria.where(STAGE).ne(DeltaFileStage.DELETE);
-        Criteria created = Criteria.where(CREATED).lt(createdBeforeDate);
-        return new Criteria().andOperator(notDeleted, created);
+        return Criteria.where(CREATED).lt(createdBeforeDate);
     }
 
     private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {

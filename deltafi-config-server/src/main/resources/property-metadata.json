@@ -74,6 +74,14 @@
         "editable": false
       },
       {
+        "key": "deltafi.apiUrl",
+        "description": "The URL used to reach the DeltaFi API",
+        "defaultValue": "http://deltafi-api-service",
+        "hidden": true,
+        "refreshable": false,
+        "editable": false
+      },
+      {
         "key": "deltafi.checks.actionQueue.sizeThreshold",
         "description": "Threshold for Action Queue size check.",
         "defaultValue": "0",

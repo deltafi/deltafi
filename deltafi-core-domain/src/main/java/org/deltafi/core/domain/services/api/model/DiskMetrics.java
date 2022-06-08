@@ -15,25 +15,29 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.delete;
+package org.deltafi.core.domain.services.api.model;
 
-import org.deltafi.actionkit.action.Result;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.generated.types.ActionEventType;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-/**
- * Specialized result class for DELETE actions
- */
-public class DeleteResult extends Result {
+@AllArgsConstructor
+@Data
+public class DiskMetrics {
+    long limit;
+    long usage;
+
     /**
-     * @param context Context of the executed action
+     * Disk % used
+     * 50.51% will be returned as 50.51, not 0.5051
+     *
+     * @return % used
      */
-    public DeleteResult(ActionContext context) {
-        super(context);
+    public double percentUsed() {
+        return ((double) usage / limit) * 100;
     }
 
-    @Override
-    public ActionEventType actionEventType() {
-        return ActionEventType.DELETE;
+    public long bytesOverPercentage(int percent) {
+        long targetBytes = (long)((double) percent / 100 * limit);
+        return usage - targetBytes;
     }
 }

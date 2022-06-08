@@ -54,6 +54,10 @@ class ApiServer < Sinatra::Base
       build_response({ config: config })
     end
 
+    get '/metrics/system/content' do
+      build_response({ content: DF::API::V1::Metrics::System.content })
+    end
+
     get '/metrics/system/nodes' do
       build_response({ nodes: DF::API::V1::Metrics::System.nodes })
     end

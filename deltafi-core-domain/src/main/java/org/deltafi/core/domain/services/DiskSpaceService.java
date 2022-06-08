@@ -15,18 +15,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.delete;
+package org.deltafi.core.domain.services;
 
-import org.deltafi.core.domain.configuration.DeleteActionConfiguration;
-import org.deltafi.core.domain.generated.types.ActionFamily;
+import lombok.AllArgsConstructor;
+import org.deltafi.core.domain.services.api.DeltafiApiClient;
+import org.deltafi.core.domain.services.api.model.DiskMetrics;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
+@Service
+@AllArgsConstructor
+public class DiskSpaceService {
+    @Autowired
+    DeltafiApiClient deltafiApiClient;
 
-public class DeleteConstants {
-
-    private DeleteConstants() {}
-
-    public static final String DELETE_ACTION = "DeleteAction";
-    public static final DeleteActionConfiguration DELETE_ACTION_CONFIGURATION = new DeleteActionConfiguration(DELETE_ACTION, "org.deltafi.core.action.delete.DeleteAction");
-    public static final ActionFamily DELETE_FAMILY = ActionFamily.newBuilder().family("delete").actionNames(List.of(DELETE_ACTION)).build();
+    public DiskMetrics contentMetrics() {
+        return deltafiApiClient.contentMetrics();
+    }
 }

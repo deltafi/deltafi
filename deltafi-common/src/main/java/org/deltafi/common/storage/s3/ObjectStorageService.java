@@ -24,11 +24,11 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface ObjectStorageService {
-    default List<String> getObjectNames(String bucket, String prefix) {
-        return getObjectNames(bucket, prefix, null);
+    default List<String> getObjectNames(String bucket, List<String> prefixes) {
+        return getObjectNames(bucket, prefixes, null);
     }
 
-    List<String> getObjectNames(String bucket, String prefix, ZonedDateTime lastModifiedBefore);
+    List<String> getObjectNames(String bucket, List<String> prefixes, ZonedDateTime lastModifiedBefore);
 
     InputStream getObject(ObjectReference objectReference) throws ObjectStorageException;
 
@@ -44,7 +44,7 @@ public interface ObjectStorageService {
 
     void removeObject(ObjectReference objectReference);
 
-    boolean removeObjects(String bucket, String prefix);
+    boolean removeObjects(String bucket, List<String> prefixes);
 
     long getObjectSize(String bucket, String name);
 }

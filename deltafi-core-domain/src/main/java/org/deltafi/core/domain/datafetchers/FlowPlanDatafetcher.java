@@ -41,8 +41,6 @@ import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.*;
 
-import static org.deltafi.core.domain.delete.DeleteConstants.DELETE_FAMILY;
-
 @Slf4j
 @DgsComponent
 @RequiredArgsConstructor
@@ -225,7 +223,6 @@ public class FlowPlanDatafetcher {
     @DgsQuery
     public Collection<ActionFamily> getActionNamesByFamily() {
         EnumMap<ActionType, ActionFamily> actionFamilyMap = new EnumMap<>(ActionType.class);
-        actionFamilyMap.put(ActionType.DELETE, DELETE_FAMILY);
         actionFamilyMap.put(ActionType.INGRESS, INGRESS_FAMILY);
         ingressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         enrichFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));

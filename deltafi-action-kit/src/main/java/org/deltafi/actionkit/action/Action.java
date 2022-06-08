@@ -293,14 +293,4 @@ public abstract class Action<P extends ActionParameters> {
     protected ContentReference saveContent(String did, InputStream content, String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
     }
-
-    /**
-     * Delete content for a specific DID.  All content associated with a specific
-     * DeltaFile DID will be deleted
-     * @param did DeltaFile identifier for content to be deleted
-     * @return true on success, false if unable to delete content
-     */
-    protected boolean deleteContent(String did) {
-        return contentStorageService.deleteAll(did);
-    }
 }

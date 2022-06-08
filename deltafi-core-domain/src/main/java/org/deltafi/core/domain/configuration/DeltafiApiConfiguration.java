@@ -17,25 +17,15 @@
  */
 package org.deltafi.core.domain.configuration;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.deltafi.core.domain.housekeeping.HousekeepingConfiguration;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.deltafi.core.domain.services.api.DeltafiApiClient;
+import org.deltafi.core.domain.services.api.DeltafiApiRestClient;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Duration;
-
 @Configuration
-@ConfigurationProperties(prefix = "deltafi")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class DeltaFiProperties {
-    private int requeueSeconds = 30;
-    private Duration deltaFileTtl= Duration.ofDays(14);
-    private DeleteConfiguration delete = new DeleteConfiguration();
-    private Duration actionInactivityThreshold = Duration.ofMinutes(5);
-    private HousekeepingConfiguration housekeeping = new HousekeepingConfiguration();
-    private String apiUrl;
+public class DeltafiApiConfiguration {
+    @Bean
+    public DeltafiApiClient deltafiApiClient(DeltaFiProperties properties) {
+        return new DeltafiApiRestClient(properties.getApiUrl());
+    }
 }

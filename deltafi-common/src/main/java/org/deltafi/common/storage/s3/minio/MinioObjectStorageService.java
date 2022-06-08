@@ -46,25 +46,29 @@ public class MinioObjectStorageService implements ObjectStorageService {
     protected final MinioProperties minioProperties;
 
     @Override
-    public List<String> getObjectNames(String bucket, String prefix, ZonedDateTime lastModifiedBefore) {
+    public List<String> getObjectNames(String bucket, List<String> prefixes, ZonedDateTime lastModifiedBefore) {
         List<String> names = new ArrayList<>();
-        
-        Iterable<Result<Item>> objects = minioClient.listObjects(ListObjectsArgs.builder().bucket(bucket).prefix(prefix).recursive(true).build());
-        for (Result<Item> itemResult : objects) {
-            Item item;
-            try {
-                item = itemResult.get();
-            } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | XmlParserException e) {
-                log.error("Failed to retrieve minio object for did {}", prefix, e);
-                continue;
-            }
+        for (String prefix : prefixes) {
+            // TODO: this only returns a maximum of 1000 objects. When calling to delete, we need to keep calling this until < 1000 objects are returned
+            Iterable<Result<Item>> objects = minioClient.listObjects(ListObjectsArgs.builder().bucket(bucket).prefix(prefix).recursive(true).build());
+            for (Result<Item> itemResult : objects) {
+                Item item;
+                try {
+                    item = itemResult.get();
+                } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException |
+                         InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
+                         XmlParserException | IllegalArgumentException e) {
+                    log.error("Failed to retrieve minio object for did {}", prefix, e);
+                    continue;
+                }
 
-            if (item.isDir()) {
-                continue;
-            }
+                if (item.isDir()) {
+                    continue;
+                }
 
-            if ((lastModifiedBefore == null) || (item.lastModified().isBefore(lastModifiedBefore))) {
-                names.add(item.objectName());
+                if ((lastModifiedBefore == null) || (item.lastModified().isBefore(lastModifiedBefore))) {
+                    names.add(item.objectName());
+                }
             }
         }
         return names;
@@ -121,8 +125,8 @@ public class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public boolean removeObjects(String bucket, String prefix) {
-        List<DeleteObject> objectsInStorage = getObjectNames(bucket, prefix).stream().map(DeleteObject::new).collect(Collectors.toList());
+    public boolean removeObjects(String bucket, List<String> prefixes) {
+        List<DeleteObject> objectsInStorage = getObjectNames(bucket, prefixes).stream().map(DeleteObject::new).collect(Collectors.toList());
 
         Iterable<Result<DeleteError>> removeResults =
                 minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucket).objects(objectsInStorage).build());
@@ -132,7 +136,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
                 DeleteError error = removeResult.get();
                 log.error("Failed to remove object {} with an error of {}", error.objectName(), error.message());
             } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | XmlParserException e) {
-                log.error("Failed to remove object from bucket {} with prefix {}: {}", bucket, prefix, e.getMessage());
+                log.error("Failed to remove object: {}", e.getMessage());
             }
             return false;
         }

@@ -20,13 +20,13 @@ package org.deltafi.core.domain.services;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
-import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.types.IngressFlow;
@@ -53,7 +53,13 @@ class DeltaFilesServiceTest {
     DeltaFileRepo deltaFileRepo;
 
     @Mock
-    RedisService redisService;
+    ContentStorageService contentStorageService;
+
+    @Captor
+    ArgumentCaptor<List<String>> stringListCaptor;
+
+    @Captor
+    ArgumentCaptor<List<DeltaFile>> deltaFileListCaptor;
 
     @SuppressWarnings("unused")
     @Spy
@@ -68,9 +74,6 @@ class DeltaFilesServiceTest {
 
     @InjectMocks
     DeltaFilesService deltaFilesService;
-
-    @Captor
-    ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
 
     @Test
     void setsAndGets() {
@@ -107,16 +110,35 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testMarkForDelete() {
+    void testDelete() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1");
         DeltaFile deltaFile2 = Util.buildDeltaFile("2");
-        when(deltaFileRepo.markForDelete(any(), any(), any(), any())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.markForDelete(OffsetDateTime.now().plusSeconds(1), null, null, "policy");
+        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
-        verify(redisService).enqueue(actionInputListCaptor.capture());
-        Util.assertEqualsIgnoringDates(deltaFile1.forQueue(DeleteConstants.DELETE_ACTION), actionInputListCaptor.getValue().get(0).getDeltaFile());
-        Util.assertEqualsIgnoringDates(deltaFile2.forQueue(DeleteConstants.DELETE_ACTION), actionInputListCaptor.getValue().get(1).getDeltaFile());
+        verify(contentStorageService).deleteAll(stringListCaptor.capture());
+        assertEquals(List.of("1", "2"), stringListCaptor.getValue());
+        verify(deltaFileRepo).saveAll(deltaFileListCaptor.capture());
+        assertEquals(List.of(deltaFile1, deltaFile2), deltaFileListCaptor.getValue());
+        assertNotNull(deltaFile1.getContentDeleted());
+        assertNotNull(deltaFile2.getContentDeleted());
+        verify(deltaFileRepo, never()).deleteAll(any());
+    }
+
+    @Test
+    void testDeleteMetadata() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1");
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2");
+        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
+
+        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
+
+        verify(contentStorageService).deleteAll(stringListCaptor.capture());
+        assertEquals(List.of("1", "2"), stringListCaptor.getValue());
+        verify(deltaFileRepo, never()).saveAll(any());
+        verify(deltaFileRepo).deleteAll(deltaFileListCaptor.capture());
+        assertEquals(List.of(deltaFile1, deltaFile2), deltaFileListCaptor.getValue());
     }
 
     @Test

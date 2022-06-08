@@ -22,6 +22,10 @@ deltafi:
         type: ageOff
         parameters:
           afterComplete: PT2S
+      diskSpacePercent:
+        type: diskSpace
+        parameters:
+          maxPercent: 99
   housekeeping:
     minio:
       initialDelaySeconds: 0

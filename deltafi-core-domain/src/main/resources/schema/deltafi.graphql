@@ -147,7 +147,6 @@ enum DeltaFileStage {
   EGRESS
   COMPLETE
   ERROR
-  DELETE
 }
 
 enum ActionState {
@@ -181,7 +180,6 @@ enum ActionEventType {
   EGRESS
   ERROR
   FILTER
-  DELETE
   SPLIT
 }
 
@@ -218,8 +216,8 @@ type DeltaFile {
   formattedData: [FormattedData!]!
   created: DateTime!
   modified: DateTime!
-  markedForDelete: DateTime
-  markedForDeleteReason: String
+  contentDeleted: DateTime
+  contentDeletedReason: String
   errorAcknowledged: DateTime
   errorAcknowledgedReason: String
   egressed: Boolean
@@ -289,7 +287,7 @@ input DeltaFilesFilter {
   createdBefore: DateTime
   domains: [String!]
   enrichment: [String!]
-  isMarkedForDelete: Boolean
+  contentDeleted: Boolean
   modifiedAfter: DateTime
   modifiedBefore: DateTime
   sourceInfo: SourceInfoFilter

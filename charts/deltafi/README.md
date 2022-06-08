@@ -46,11 +46,22 @@ data:
           oneHourAfterComplete:
             type: ageOff
             parameters:
+              flow: myShortRetentionFlow
               afterComplete: PT1H
           twoHourAfterComplete:
             type: ageOff
             parameters:
-              afterComplete: PT2H"
+              afterComplete: PT2H
+          eightyPercent:
+            type: diskSpace
+            parameters:
+            maxPercent: 80
+          largeFiles:
+            type: ageOff
+            parameters:
+              afterCreate: PT1M
+              minBytes: 1000000
+              deleteMetadata: true
   action-kit.yaml: |-
     actions:
       action-polling-initial-delay-ms: 4000

@@ -37,6 +37,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -86,19 +87,19 @@ public class MinioObjectStorageServiceTest {
         MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
                 new MinioProperties());
 
-        List<String> objectNames = minioObjectStorageService.getObjectNames(BUCKET, "did-1");
+        List<String> objectNames = minioObjectStorageService.getObjectNames(BUCKET, Collections.singletonList("did-1"));
         assertEquals(2, objectNames.size());
         assertEquals("objectName1", objectNames.get(0));
         assertEquals("objectName2", objectNames.get(1));
 
-        objectNames = minioObjectStorageService.getObjectNames(BUCKET, "did-1", testTime.minusSeconds(5));
+        objectNames = minioObjectStorageService.getObjectNames(BUCKET, Collections.singletonList("did-1"), testTime.minusSeconds(5));
         assertEquals(1, objectNames.size());
         assertEquals("objectName2", objectNames.get(0));
 
-        objectNames = minioObjectStorageService.getObjectNames(BUCKET, "did-2");
+        objectNames = minioObjectStorageService.getObjectNames(BUCKET, Collections.singletonList("did-2"));
         assertTrue(objectNames.isEmpty());
 
-        objectNames = minioObjectStorageService.getObjectNames("unused", "did-1");
+        objectNames = minioObjectStorageService.getObjectNames("unused", Collections.singletonList("did-1"));
         assertTrue(objectNames.isEmpty());
     }
 
@@ -216,9 +217,9 @@ public class MinioObjectStorageServiceTest {
                         .thenReturn(new ArrayList<>())
                         .thenReturn(results);
 
-        assertTrue(minioObjectStorageService.removeObjects(BUCKET, "did-1"));
+        assertTrue(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
 
-        assertFalse(minioObjectStorageService.removeObjects(BUCKET, "did-1"));
+        assertFalse(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
     }
 
     @Test

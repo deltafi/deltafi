@@ -25,11 +25,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
-import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.exceptions.UnexpectedActionException;
 import org.deltafi.core.domain.exceptions.UnknownTypeException;
 import org.deltafi.core.domain.generated.types.*;
@@ -70,6 +70,7 @@ public class DeltaFilesService {
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
     final RedisService redisService;
+    final ContentStorageService contentStorageService;
 
     public static final int EXECUTOR_THREADS = 16;
 
@@ -174,9 +175,6 @@ public class DeltaFilesService {
                 return error(deltaFile, event);
             case FILTER:
                 return filter(deltaFile, event);
-            case DELETE:
-                delete(deltaFile);
-                return deltaFile;
             case SPLIT:
                 return split(deltaFile, event);
             case FORMAT_MANY:
@@ -381,12 +379,6 @@ public class DeltaFilesService {
 
                 enqueueActions.addAll(stateMachine.advance(child));
 
-                if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
-                    child.markForDelete("on completion");
-
-                    enqueueActions.add(getDeleteActionInput(child));
-                }
-
                 calculateTotalBytes(child);
 
                 return child;
@@ -467,12 +459,6 @@ public class DeltaFilesService {
                 child.setFormattedData(List.of(formattedData));
 
                 enqueueActions.addAll(stateMachine.advance(child));
-
-                if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
-                    child.markForDelete("on completion");
-
-                    enqueueActions.add(getDeleteActionInput(child));
-                }
 
                 calculateTotalBytes(child);
 
@@ -616,9 +602,7 @@ public class DeltaFilesService {
                             enqueueActions.addAll(stateMachine.advance(child));
 
                             if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
-                                child.markForDelete("on completion");
-
-                                enqueueActions.add(getDeleteActionInput(child));
+                                delete(Collections.singletonList(deltaFile), "on completion", false);
                             }
 
                             calculateTotalBytes(child);
@@ -684,9 +668,7 @@ public class DeltaFilesService {
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
         List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
         if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
-            deltaFile.markForDelete("on completion");
-            deltaFileRepo.save(deltaFile);
-            enqueueDeleteAction(deltaFile);
+            delete(Collections.singletonList(deltaFile), "on completion", false);
         } else {
             deltaFileRepo.save(deltaFile);
             if (!enqueueActions.isEmpty()) {
@@ -696,21 +678,21 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    public void markForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, String flow, String policy) {
-        List<DeltaFile> deltaFilesMarkedForDelete = deltaFileRepo.markForDelete(createdBefore, completedBefore, flow, policy);
-        enqueueActions(deltaFilesMarkedForDelete.stream().map(this::getDeleteActionInput).collect(Collectors.toList()));
+    public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
+        delete(deltaFileRepo.findForDelete(createdBefore, completedBefore, minBytes, flow, policy, deleteMetadata), policy, deleteMetadata);
     }
 
-    private void enqueueDeleteAction(DeltaFile deltaFile) {
-        enqueueActions(List.of(getDeleteActionInput(deltaFile)));
+    public void delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata) {
+        delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy), policy, deleteMetadata);
     }
 
-    private ActionInput getDeleteActionInput(DeltaFile deltaFile) {
-        return DeleteConstants.DELETE_ACTION_CONFIGURATION.buildActionInput(deltaFile);
-    }
-
-    public void delete(DeltaFile deltaFile) {
-        deltaFileRepo.deleteById(deltaFile.getDid());
+    public void delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
+        deleteContent(deltaFiles, policy);
+        if (deleteMetadata) {
+            deleteMetadata(deltaFiles);
+        } else {
+            deltaFileRepo.saveAll(deltaFiles);
+        }
     }
 
     public void requeue() {
@@ -729,9 +711,7 @@ public class DeltaFilesService {
 
     private ActionInput toActionInput(Action action, DeltaFile deltaFile) {
         ActionConfiguration actionConfiguration = null;
-        if (DeleteConstants.DELETE_ACTION.equals(action.getName())) {
-            actionConfiguration = DeleteConstants.DELETE_ACTION_CONFIGURATION;
-        } else if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
+        if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
             actionConfiguration = ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), action.getName());
         } else if (DeltaFileStage.ENRICH.equals(deltaFile.getStage())) {
             actionConfiguration = enrichFlowService.findActionConfig(action.getName());
@@ -793,5 +773,16 @@ public class DeltaFilesService {
             // Eating this exception.  Subsequent timeout/retry will ensure the DeltaFile is processed
             log.error("Unable to post action(s) to Redis queue", e);
         }
+    }
+
+    private void deleteContent(List<DeltaFile> deltaFiles, String policy) {
+        for (DeltaFile deltaFile : deltaFiles) {
+            deltaFile.markForDelete(policy);
+        }
+        contentStorageService.deleteAll(deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+    }
+
+    private void deleteMetadata(List<DeltaFile> deltaFiles) {
+        deltaFileRepo.deleteAll(deltaFiles);
     }
 }

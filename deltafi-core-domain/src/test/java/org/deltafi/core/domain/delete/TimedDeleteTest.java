@@ -86,7 +86,7 @@ public class TimedDeleteTest {
         TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
         timedDelete.run();
 
-        verify(deltaFilesService).markForDelete(ArgumentMatchers.any(), ArgumentMatchers.isNull(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName));
+        verify(deltaFilesService).delete(ArgumentMatchers.any(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(0L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
     }
 
     @Test
@@ -96,6 +96,15 @@ public class TimedDeleteTest {
         TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
         timedDelete.run();
 
-        verify(deltaFilesService).markForDelete(ArgumentMatchers.isNull(), ArgumentMatchers.any(), ArgumentMatchers.eq(flow), ArgumentMatchers.eq(policyName));
+        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.any(), ArgumentMatchers.eq(0L), ArgumentMatchers.eq(flow), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
+    }
+
+    @Test
+    void runsWithMinByes() {
+        parameters.put("minBytes", "234");
+        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
+        timedDelete.run();
+
+        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(234L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
     }
 }

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.domain.services;
 
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -48,7 +49,7 @@ import java.util.Optional;
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, DeltaFiProperties.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
-@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, RedisService.class})
+@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, RedisService.class, ContentStorageService.class})
 @EnableRetry
 public class DeltaFileServiceRetryTest {
 

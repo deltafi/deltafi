@@ -30,6 +30,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Set;
 
 public class UnreferencedObjectCleanUpTest {
@@ -56,33 +57,29 @@ public class UnreferencedObjectCleanUpTest {
     public void unreferencedMinioObjectsOfMinimumAgeAreRemoved() {
         Mockito.when(contentStorageService.findDidsLastModifiedBefore(Mockito.eq(ZonedDateTime.ofInstant(
                 clock.instant().minusSeconds(MIN_AGE), clock.getZone())))).thenReturn(Set.of("did-1", "did-2", "did-3", "did-4"));
-        Mockito.when(deltaFileRepo.readDids()).thenReturn(Set.of("did-2", "did-4"));
+        Mockito.when(deltaFileRepo.readDidsWithContent()).thenReturn(List.of("did-2", "did-4"));
 
         unreferencedObjectCleanUp.removeUnreferencedObjects();
 
-        Mockito.verify(contentStorageService, Mockito.times(2)).deleteAll(Mockito.any());
-        Mockito.verify(contentStorageService).deleteAll(Mockito.eq("did-1"));
-        Mockito.verify(contentStorageService).deleteAll(Mockito.eq("did-3"));
+        Mockito.verify(contentStorageService).deleteAll(Mockito.eq(List.of("did-1", "did-3")));
     }
 
     @Test
     public void allMinioObjectsOfMinimumAgeAreRemovedWhenDeltaFileRepoIsEmpty() {
         Mockito.when(contentStorageService.findDidsLastModifiedBefore(Mockito.eq(ZonedDateTime.ofInstant(
                 clock.instant().minusSeconds(MIN_AGE), clock.getZone())))).thenReturn(Set.of("did-1", "did-2"));
-        Mockito.when(deltaFileRepo.readDids()).thenReturn(Set.of());
+        Mockito.when(deltaFileRepo.readDidsWithContent()).thenReturn(List.of());
 
         unreferencedObjectCleanUp.removeUnreferencedObjects();
 
-        Mockito.verify(contentStorageService, Mockito.times(2)).deleteAll(Mockito.any());
-        Mockito.verify(contentStorageService).deleteAll(Mockito.eq("did-1"));
-        Mockito.verify(contentStorageService).deleteAll(Mockito.eq("did-2"));
+        Mockito.verify(contentStorageService).deleteAll(Mockito.eq(List.of("did-1", "did-2")));
     }
 
     @Test
     public void noMinioObjectsOfMinimumAgeAreRemovedWhenAllAreReferenced() {
         Mockito.when(contentStorageService.findDidsLastModifiedBefore(Mockito.eq(ZonedDateTime.ofInstant(
                 clock.instant().minusSeconds(MIN_AGE), clock.getZone())))).thenReturn(Set.of("did-1", "did-2"));
-        Mockito.when(deltaFileRepo.readDids()).thenReturn(Set.of("did-1", "did-2"));
+        Mockito.when(deltaFileRepo.readDidsWithContent()).thenReturn(List.of("did-1", "did-2"));
 
         unreferencedObjectCleanUp.removeUnreferencedObjects();
 

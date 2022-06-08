@@ -25,6 +25,8 @@ import org.deltafi.common.storage.s3.ObjectStorageService;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -56,12 +58,12 @@ public class ContentStorageService {
         objectStorageService.removeObject(buildObjectReference(contentReference));
     }
 
-    public boolean deleteAll(String did) {
-        return objectStorageService.removeObjects(CONTENT_BUCKET, did);
+    public boolean deleteAll(List<String> dids) {
+        return objectStorageService.removeObjects(CONTENT_BUCKET, dids);
     }
 
     public Set<String> findDidsLastModifiedBefore(ZonedDateTime lastModifiedBefore) {
-       return objectStorageService.getObjectNames(CONTENT_BUCKET, "", lastModifiedBefore).stream()
+       return objectStorageService.getObjectNames(CONTENT_BUCKET, Collections.singletonList(""), lastModifiedBefore).stream()
                 .map(objectName -> objectName.substring(0, objectName.indexOf('/')))
                 .collect(Collectors.toSet());
     }

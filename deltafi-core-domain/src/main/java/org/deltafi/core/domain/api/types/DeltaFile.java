@@ -20,7 +20,6 @@ package org.deltafi.core.domain.api.types;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
-import org.deltafi.core.domain.delete.DeleteConstants;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
@@ -231,18 +230,14 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         OffsetDateTime now = OffsetDateTime.now();
 
         getActions().stream()
-                .filter(action -> !action.getName().equals(DeleteConstants.DELETE_ACTION))
                 .filter(action -> action.getState().equals(ActionState.QUEUED))
                 .forEach(action -> {
                     action.setModified(now);
                     action.setState(ActionState.ERROR);
                     action.setErrorCause("DeltaFile marked for deletion by " + policy + " policy");
                 });
-        queueAction(DeleteConstants.DELETE_ACTION);
-        setStage(DeltaFileStage.DELETE);
-        setMarkedForDelete(now);
-        setMarkedForDeleteReason(policy);
-        // do not update the modified time -- it breaks DeleteAction retries because the onComplete policy countdown is reset
+        setContentDeleted(now);
+        setContentDeletedReason(policy);
     }
 
     public String sourceMetadata(String key) {

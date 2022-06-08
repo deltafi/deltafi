@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import javax.inject.Inject;
 import java.time.Clock;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,6 +39,7 @@ public class UnreferencedObjectCleanUp {
     private final int objectMinimumAgeForRemovalSeconds;
 
     @Inject
+    @SuppressWarnings("CdiInjectionPointsInspection")
     public UnreferencedObjectCleanUp(ContentStorageService contentStorageService, DeltaFileRepo deltaFileRepo,
             Clock clock, DeltaFiProperties deltaFiProperties) {
         this.contentStorageService = contentStorageService;
@@ -52,12 +54,9 @@ public class UnreferencedObjectCleanUp {
         ZonedDateTime lastModifiedBefore = ZonedDateTime.now(clock).minusSeconds(objectMinimumAgeForRemovalSeconds);
 
         Set<String> didsInObjectStorage = new HashSet<>(contentStorageService.findDidsLastModifiedBefore(lastModifiedBefore));
-
-        didsInObjectStorage.removeAll(deltaFileRepo.readDids());
-
-        didsInObjectStorage.forEach(did -> {
-            log.info("Removing unreferenced objects from object storage with prefix {}", did);
-            contentStorageService.deleteAll(did);
-        });
+        didsInObjectStorage.removeAll(deltaFileRepo.readDidsWithContent());
+        if (!didsInObjectStorage.isEmpty()) {
+            contentStorageService.deleteAll(new ArrayList<>(didsInObjectStorage));
+        }
     }
 }

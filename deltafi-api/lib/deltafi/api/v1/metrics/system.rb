@@ -138,6 +138,10 @@ module Deltafi
               end
             end
 
+            def content
+              nodes.find { |node| node[:pods].any? { |p| p[:name].include? 'minio' } }&.dig(:resources, :disk)
+            end
+
             private
 
             # Normalize CPU resources
