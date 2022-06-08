@@ -38,11 +38,10 @@ import java.util.List;
 @AllArgsConstructor
 public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginCleaner {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .enable(SerializationFeature.INDENT_OUTPUT)
-            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            .setSerializationInclusion(JsonInclude.Include.ALWAYS);
 
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
     private final FlowPlanRepo<FlowPlanT> flowPlanRepo;
@@ -122,9 +121,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
         return false;
     }
 
-    private FlowPlanT mapFromInput(FlowPlanInput flowPlanInput) {
-        return OBJECT_MAPPER.convertValue(flowPlanInput, type);
-    }
+    abstract FlowPlanT mapFromInput(FlowPlanInput flowPlanInput);
 
     @Override
     public void cleanupFor(Plugin plugin) {

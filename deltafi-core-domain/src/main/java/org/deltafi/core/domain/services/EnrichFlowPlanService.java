@@ -20,8 +20,11 @@ package org.deltafi.core.domain.services;
 import org.deltafi.core.domain.repo.EnrichFlowPlanRepo;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.EnrichFlowPlan;
+import org.deltafi.core.domain.types.FlowPlanInput;
 import org.deltafi.core.domain.validation.EnrichFlowPlanValidator;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 
 @Service
 public class EnrichFlowPlanService extends FlowPlanService<EnrichFlowPlan, EnrichFlow> {
@@ -30,4 +33,14 @@ public class EnrichFlowPlanService extends FlowPlanService<EnrichFlowPlan, Enric
         super(enrichFlowPlanValidator, flowPlanRepo, flowService, EnrichFlowPlan.class);
     }
 
+    @Override
+    EnrichFlowPlan mapFromInput(FlowPlanInput flowPlanInput) {
+        EnrichFlowPlan flowPlan = OBJECT_MAPPER.convertValue(flowPlanInput, EnrichFlowPlan.class);
+
+        if (null == flowPlan.getEnrichActions()) {
+            flowPlan.setEnrichActions(new ArrayList<>());
+        }
+
+        return flowPlan;
+    }
 }

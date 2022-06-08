@@ -18,10 +18,13 @@
 package org.deltafi.core.domain.services;
 
 import org.deltafi.core.domain.repo.IngressFlowPlanRepo;
+import org.deltafi.core.domain.types.FlowPlanInput;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.deltafi.core.domain.types.IngressFlowPlan;
 import org.deltafi.core.domain.validation.IngressFlowPlanValidator;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 
 @Service
 public class IngressFlowPlanService extends FlowPlanService<IngressFlowPlan, IngressFlow> {
@@ -30,4 +33,14 @@ public class IngressFlowPlanService extends FlowPlanService<IngressFlowPlan, Ing
         super(ingressFlowPlanValidator, flowPlanRepo, flowService, IngressFlowPlan.class);
     }
 
+    @Override
+    IngressFlowPlan mapFromInput(FlowPlanInput flowPlanInput) {
+        IngressFlowPlan flowPlan = OBJECT_MAPPER.convertValue(flowPlanInput, IngressFlowPlan.class);
+
+        if (null == flowPlan.getTransformActions()) {
+            flowPlan.setTransformActions(new ArrayList<>());
+        }
+
+        return flowPlan;
+    }
 }

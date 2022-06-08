@@ -20,8 +20,11 @@ package org.deltafi.core.domain.services;
 import org.deltafi.core.domain.repo.EgressFlowPlanRepo;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EgressFlowPlan;
+import org.deltafi.core.domain.types.FlowPlanInput;
 import org.deltafi.core.domain.validation.EgressFlowPlanValidator;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 
 @Service
 public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlan, EgressFlow> {
@@ -30,4 +33,18 @@ public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlan, Egres
         super(egressFlowPlanValidator, flowPlanRepo, flowService, EgressFlowPlan.class);
     }
 
+    @Override
+    EgressFlowPlan mapFromInput(FlowPlanInput flowPlanInput) {
+        EgressFlowPlan flowPlan = OBJECT_MAPPER.convertValue(flowPlanInput, EgressFlowPlan.class);
+
+        if (null == flowPlan.getExcludeIngressFlows()) {
+            flowPlan.setExcludeIngressFlows(new ArrayList<>());
+        }
+
+        if (null == flowPlan.getValidateActions()) {
+            flowPlan.setValidateActions(new ArrayList<>());
+        }
+
+        return flowPlan;
+    }
 }
