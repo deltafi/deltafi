@@ -3,7 +3,7 @@ image: docker:latest
 services:
   - name: docker:18.09.7-dind
     entrypoint: ["dockerd-entrypoint.sh"]
-    command: ["--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
+    command: ["--tls=false", "--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
 
 stages:
   - build
@@ -54,10 +54,6 @@ trigger_deltafi_stix:
     GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
 
 .docker:
-  services:
-    - name: docker:18.09.7-dind
-      entrypoint: ["dockerd-entrypoint.sh"]
-      command: ["--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
   script:
     - test -n "$PROJECT_NAME"
     - export DOCKER_NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME//\//_}
