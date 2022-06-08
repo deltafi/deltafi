@@ -32,18 +32,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Deprecated
 - DGS gateway deprecated in favor of using GraphiQL UI
+- Common metrics API is deprectated.  A new micrometer API is forthcoming backed by Graphite and Grafana
 
 ### Removed
 - DGS gateway ingress and status checking
 
 ### Fixed
 - Bug in versions API
+- New error DeltaFiles need an empty list of child DIDs
 
 ### Tech-Debt/Refactor
 - Disable TLS for DinD CI builds (performance optimization)
 - Automatically trigger passthrough project on successful builds
-
-### Security
 
 ## [0.95.3] - 2022-06-08
 
@@ -59,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Base docker images updated
 - NGINX Ingress Controller uses DN for auth cache
 - Upgrade to Quarkus platform 2.9.2
+- Errors are linked to their originator DeltaFile via bidirectional parent-child links
 
 ### Removed
 - Zipkin no longer suported
