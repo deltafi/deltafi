@@ -39,3 +39,5 @@ spec:
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-auth
+  strategy:
+    type: Recreate
