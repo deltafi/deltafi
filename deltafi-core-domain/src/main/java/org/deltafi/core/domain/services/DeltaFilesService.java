@@ -308,6 +308,7 @@ public class DeltaFilesService {
         return DeltaFile.newBuilder()
                 .did(did)
                 .parentDids(List.of(deltaFile.getDid()))
+                .childDids(Collections.emptyList())
                 .stage(DeltaFileStage.EGRESS)
                 .actions(new ArrayList<>())
                 .sourceInfo(new SourceInfo(deltaFile.getSourceInfo().getFilename() + ".error",
