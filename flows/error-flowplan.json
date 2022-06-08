@@ -21,5 +21,6 @@
     "requiresDomains": [
       "error"
     ]
-  }
+  },
+  "includeIngressFlows": null
 }
