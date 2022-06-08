@@ -48,6 +48,20 @@ trigger_deltafi_stix:
       yaml_variables: false
       pipeline_variables: false
 
+trigger_passthrough:
+  stage: trigger
+  only:
+    refs:
+      - main
+      - release/*
+      - tags
+  trigger:
+    project: systolic/deltafi/deltafi-passthrough
+    branch: $CI_COMMIT_REF_NAME
+    forward:
+      yaml_variables: false
+      pipeline_variables: false
+
 .gradle:
   image: gradle:7.3.3-jdk11
   variables:
