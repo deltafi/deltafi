@@ -26,10 +26,10 @@
     "type": "org.deltafi.passthrough.action.RoteFormatAction"
   },
   "includeIngressFlows": [
-    "ingressFlow"
+    "${passthrough.includeIngressFlows}"
   ],
   "excludeIngressFlows": [
-    "otherFlow"
+    "${passthrough.excludeIngressFlows}"
   ],
   "validateActions": [
     {

@@ -23,6 +23,7 @@ import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EgressFlowPlan;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -34,8 +35,8 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
         egressFlow.setValidateActions(buildValidateActions(egressFlowPlan.getValidateActions(), flowPlanPropertyHelper));
         egressFlow.setEgressAction(buildEgressAction(egressFlowPlan.getEgressAction(), flowPlanPropertyHelper));
 
-        egressFlow.setIncludeIngressFlows(flowPlanPropertyHelper.replaceListOfPlaceholders(egressFlowPlan.getIncludeIngressFlows(), egressFlow.getName()));
-        egressFlow.setExcludeIngressFlows(flowPlanPropertyHelper.replaceListOfPlaceholders(egressFlowPlan.getExcludeIngressFlows(), egressFlow.getName()));
+        egressFlow.setIncludeIngressFlows(buildFlowList(egressFlowPlan.getIncludeIngressFlows(), flowPlanPropertyHelper, egressFlow.getName()));
+        egressFlow.setExcludeIngressFlows(buildFlowList(egressFlowPlan.getExcludeIngressFlows(), flowPlanPropertyHelper, egressFlow.getName()));
     }
 
     /**
@@ -89,6 +90,26 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(egressActionConfiguration, egressActionTemplate);
 
         return egressActionConfiguration;
+    }
+
+    List<String> buildFlowList(List<String> fromPlan, FlowPlanPropertyHelper flowPlanPropertyHelper, String flowPlanName) {
+        if (null == fromPlan) {
+            return null;
+        }
+
+        List<String> flowList = new ArrayList<>();
+        for (String flow : fromPlan) {
+            String replacement = flowPlanPropertyHelper.replaceValue(flow, flowPlanName);
+            if (null != replacement && !replacement.equals(flow) && replacement.contains(",")) {
+                String[] flows = replacement.split(",");
+                for (String split : flows) {
+                    flowList.add(split.trim());
+                }
+            } else {
+                flowList.add(replacement);
+            }
+        }
+        return flowList;
     }
 
     @Override

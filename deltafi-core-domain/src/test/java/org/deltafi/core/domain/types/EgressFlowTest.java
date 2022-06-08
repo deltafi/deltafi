@@ -51,9 +51,18 @@ class EgressFlowTest {
     @Test
     void testFlowNotExcluded() {
         EgressFlow config = new EgressFlow();
+        config.setIncludeIngressFlows(null);
         config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
 
         Assertions.assertTrue(config.flowMatches("notExcludedFlow"));
+    }
+
+    @Test
+    void testEmptyInclude() {
+        EgressFlow config = new EgressFlow();
+        config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
+
+        Assertions.assertFalse(config.flowMatches("notExcludedFlow"));
     }
 
 }

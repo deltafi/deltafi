@@ -105,7 +105,7 @@ public class EgressFlow extends Flow {
     }
 
     private boolean includesFlow(String flow) {
-        return nullOrEmpty(getIncludeIngressFlows()) || getIncludeIngressFlows().contains(flow);
+        return null == getIncludeIngressFlows() || getIncludeIngressFlows().contains(flow);
     }
 
     private boolean notExcludedFlow(String flow) {

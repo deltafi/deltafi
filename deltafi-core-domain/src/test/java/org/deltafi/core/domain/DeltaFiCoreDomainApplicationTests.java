@@ -2076,6 +2076,7 @@ class DeltaFiCoreDomainApplicationTests {
 		egressFlow.setName(name);
 		egressFlow.setFormatAction(formatAction);
 		egressFlow.setEgressAction(egressAction);
+		egressFlow.setIncludeIngressFlows(null);
 		egressFlow.getFlowStatus().setState(flowState);
 		return egressFlow;
 	}

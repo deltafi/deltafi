@@ -33,6 +33,7 @@ import org.deltafi.core.domain.types.EgressFlowPlan;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +71,35 @@ class EgressFlowPlanConverterTest {
         assertThat(egressFlow.getFlowStatus().getErrors()).hasSize(1).contains(expected);
     }
 
+    @Test
+    void testBuildFlowList_replaceCommaSeperatedList() {
+        List<Variable> variables = new ArrayList<>(variables());
+        variables.add(Variable.newBuilder().name("flows").value("b, c,  d ").build());
+
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, "plan");
+        List<String> input = List.of("${flows}");
+        List<String> output = egressFlowPlanConverter.buildFlowList(input, flowPlanPropertyHelper, "plan");
+        assertThat(output).isEqualTo(List.of("b", "c", "d"));
+    }
+
+    @Test
+    void testBuildFlowList_replaceCommaSeperatedListAndConstant() {
+        List<Variable> variables = new ArrayList<>(variables());
+        variables.add(Variable.newBuilder().name("flows").value("b, c ").build());
+
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, "plan");
+        List<String> input = List.of("a", "${flows}", "d");
+        List<String> output = egressFlowPlanConverter.buildFlowList(input, flowPlanPropertyHelper, "plan");
+        assertThat(output).isEqualTo(List.of("a", "b", "c", "d"));
+    }
+
+    @Test
+    void testBuildFlowList_null() {
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables(), "plan");
+        List<String> output = egressFlowPlanConverter.buildFlowList(null, flowPlanPropertyHelper, "plan");
+        assertThat(output).isNull();
+    }
+
     FormatActionConfiguration expectedFormatAction() {
         FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration();
         formatActionConfiguration.setName("passthrough.PassthroughFormatAction");
@@ -100,6 +130,8 @@ class EgressFlowPlanConverterTest {
                 Variable.newBuilder().name("transform.produces").defaultValue("passthrough-binary").build(),
                 Variable.newBuilder().name("domain.type").defaultValue("binary").build(),
                 Variable.newBuilder().name("enrichment.value").defaultValue("enrichment value").value("customized enrichment value").build(),
-                Variable.newBuilder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").build());
+                Variable.newBuilder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").build(),
+                Variable.newBuilder().name("passthrough.includeIngressFlows").value("ingressFlow").build(),
+                Variable.newBuilder().name("passthrough.excludeIngressFlows").value("otherFlow").build());
     }
 }
