@@ -31,11 +31,11 @@ module Deltafi
 
   def self.graphql(query)
     properties = system_properties
-    gateway_url = ENV['DELTAFI_GATEWAY_URL'] ||
-                  properties['graphql.urls.gateway'] ||
-                  'http://deltafi-gateway-service/graphql'
+    graphql_url = ENV['DELTAFI_GRAPHQL_URL'] ||
+                  properties['graphql.urls.core-domain'] ||
+                  'http://deltafi-core-domain-service/graphql'
 
-    HTTParty.post(gateway_url,
+    HTTParty.post(graphql_url,
                   body: { query: query }.to_json,
                   headers: { 'Content-Type' => 'application/json' })
   end

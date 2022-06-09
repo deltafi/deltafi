@@ -122,7 +122,7 @@ Commands:
   load-variables       load plugin variables
   mongo-cli            launch the mongo CLI
   mongo-migrate        run mongo migrations
-  query                send a query to the gateway
+  query                send a query to graphql
   redis-cli            launch the redis CLI
   redis-latency        monitor redis latency
   redis-stats          monitor redis connection stats
