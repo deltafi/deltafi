@@ -2,8 +2,6 @@
 deltafi:
   config_server:
     image: localhost:5000/deltafi-config-server:latest
-  gateway:
-    image: localhost:5000/deltafi-gateway:latest
   passthrough_actions:
     image: localhost:5000/deltafi-passthrough-actions:latest
   core_actions:

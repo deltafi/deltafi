@@ -42,8 +42,6 @@ deltafi:
     nativeConfigMountPath: /config
     volumes: []
     volumeMounts: []
-  gateway:
-    image: deltafi/deltafi-gateway:0.95.4
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
     image: deltafi/deltafi-core-actions:0.95.4

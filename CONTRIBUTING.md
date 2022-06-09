@@ -61,7 +61,7 @@
 
 13. Add the following localhost aliases to /etc/hosts (or C:\Windows\System32\drivers\etc\hosts):
     ```
-    gateway.local.deltafi.org kibana.local.deltafi.org minio.local.deltafi.org nifi.local.deltafi.org
+    kibana.local.deltafi.org minio.local.deltafi.org nifi.local.deltafi.org
 
 14. Install DeltaFi:
     1. git clone git@gitlab.com:systolic/deltafi/deltafi.git

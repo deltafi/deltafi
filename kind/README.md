@@ -38,7 +38,6 @@ bask passthrough_some_data
 	- http://kind.deltafi.org for the UI
 	  - `http://kind.deltafi.org/api/v1/*` for the API
 	  - http://kind.deltafi.org/api/v1/config
-	- http://gateway.kind.deltafi.org (GraphQL playground)
 	- http://minio.kind.deltafi.org (Minio front end)
 	- http://k8s.kind.deltafi.org (k8s dashboard)
 - When flows can be configured (see below for workaround) end-to-end passthrough dataflow works

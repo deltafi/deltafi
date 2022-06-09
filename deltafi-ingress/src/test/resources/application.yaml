@@ -7,7 +7,6 @@ quarkus:
 # Set these manually since spring-cloud-config is disabled and these are required properties
 graphql:
   urls:
-    gateway: "http://localhost"
     core-domain: "http://localhost"
 minio:
   url: localhost

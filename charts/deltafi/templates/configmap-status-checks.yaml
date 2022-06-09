@@ -11,7 +11,6 @@ data:
     - deltafi-core-actions
     - deltafi-core-domain
     - deltafi-egress-sink
-    - deltafi-gateway
     - deltafi-ingress
     - deltafi-kibana
     - deltafi-kubernetes-dashboard
@@ -33,7 +32,6 @@ data:
     - deltafi-core-domain-service
     - deltafi-egress-sink-service
     - deltafi-fluentd
-    - deltafi-gateway-service
     - deltafi-ingress-service
     - deltafi-kibana
     - deltafi-kubernetes-dashboard

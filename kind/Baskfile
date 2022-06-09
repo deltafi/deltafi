@@ -20,7 +20,6 @@ CLUSTER_NAME=deltafi
 
 FQDNS=( \
   local.deltafi.org \
-  gateway.local.deltafi.org \
   minio.local.deltafi.org \
   k8s.local.deltafi.org \
   egress.local.deltafi.org \
