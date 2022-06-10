@@ -7,22 +7,22 @@
 {{- else if eq .Values.deltafi.auth.mode "cert" }}
 {{- include "certAuthAnnotations" .}}
 {{- end }}
+nginx.ingress.kubernetes.io/auth-cache-duration: 200 5m
+nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID
 {{- end -}}
 
 {{- define "basicAuthAnnotations" -}}
 nginx.ingress.kubernetes.io/auth-realm: "DeltaFi Auth"
-nginx.ingress.kubernetes.io/auth-secret: {{ .Release.Namespace }}/{{ .Values.deltafi.auth.secret }}
-nginx.ingress.kubernetes.io/auth-type: basic
+nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/basic-auth
+nginx.ingress.kubernetes.io/auth-cache-key: $remote_user$http_authorization
 {{- end -}}
 
 {{- define "certAuthAnnotations" -}}
 nginx.ingress.kubernetes.io/auth-tls-verify-client: "yes"
 nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Values.deltafi.auth.secret }}
 nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
-nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/auth
+nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/cert-auth
 nginx.ingress.kubernetes.io/auth-cache-key: $ssl_client_s_dn$http_authorization
-nginx.ingress.kubernetes.io/auth-cache-duration: 200 5m
-nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID
 {{- end -}}
 
 {{- define "defaultStartupProbe" -}}

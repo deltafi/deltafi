@@ -18,15 +18,16 @@
 
 # frozen_string_literal: true
 
-Sequel.migration do
-  change do
-    create_table(:users) do
-      primary_key :id
-      String   :name,       null: false
-      String   :dn,         null: false
-      String   :domains,    null: false
-      DateTime :created_at, null: false
-      DateTime :updated_at, null: false
-    end
+class AuthApi < Sinatra::Application
+  get '/basic-auth/?' do
+    content_type 'text/plain'
+
+    verify_headers(['X_ORIGINAL_URL'])
+    @original_url = request.env['HTTP_X_ORIGINAL_URL']
+
+    basic_auth!
+
+    response.headers['X-User-ID'] = @user.id.to_s
+    return
   end
 end

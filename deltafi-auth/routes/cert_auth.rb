@@ -18,15 +18,18 @@
 
 # frozen_string_literal: true
 
-Sequel.migration do
-  change do
-    create_table(:users) do
-      primary_key :id
-      String   :name,       null: false
-      String   :dn,         null: false
-      String   :domains,    null: false
-      DateTime :created_at, null: false
-      DateTime :updated_at, null: false
-    end
+class AuthApi < Sinatra::Application
+  get '/cert-auth/?' do
+    content_type 'text/plain'
+
+    verify_headers(%w[SSL_CLIENT_SUBJECT_DN X_ORIGINAL_URL])
+    @client_dn = request.env['HTTP_SSL_CLIENT_SUBJECT_DN']
+    @original_url = request.env['HTTP_X_ORIGINAL_URL']
+
+    cert_auth!
+
+    response.headers['X-User-ID'] = @user.id.to_s
+    logger.info "Authorized: '#{@formatted_client_dn}' -> '#{@original_url}'"
+    return
   end
 end

@@ -129,6 +129,7 @@ Commands:
   redis-watch          watch every command issued to redis
   secrets              show k8s secrets
   serviceip            show service IP
+  set-admin-password   set the admin password
   start                (alias for install)
   status               show status of system
   stop                 (alias for uninstall)
@@ -243,6 +244,9 @@ case "$1" in
     ;;
   serviceip)
     "$DELTAFICLI_WORKDIR/commands/serviceip" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/serviceip.log"
+    ;;
+  set-admin-password)
+    "$DELTAFICLI_WORKDIR/commands/set-admin-password" $@
     ;;
   trace)
     "$DELTAFICLI_WORKDIR/commands/trace" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/trace.log"

@@ -18,37 +18,57 @@
 
 # frozen_string_literal: true
 
+require 'bcrypt'
+
 class User < Sequel::Model
+  include BCrypt
   plugin :timestamps, update_on_create: true
   plugin :validation_helpers
 
-  FIELDS = [:name, :dn, :domains]
+  FIELDS = %i[name dn domains username password].freeze
 
   def update(updates)
     updates.each do |field, value|
       raise "Unknown field '#{field}'" unless FIELDS.include?(field)
 
-      self[field] = value
+      send("#{field}=", value)
     end
+  end
+
+  def password
+    @password ||= Password.new(password_hash)
+  end
+
+  def password=(new_password)
+    @password = Password.create(new_password)
+    self.password_hash = @password
   end
 
   def validate
     super
-    begin
-      self.dn = OpenSSL::X509::Name.parse(dn).to_s(OpenSSL::X509::Name::COMPAT)
-    rescue StandardError
-      errors.add(:dn, 'must be a valid Distinguished Name')
+
+    errors.add(:dn, 'or username required') if dn.nil? && username.nil?
+
+    if dn
+      begin
+        self.dn = OpenSSL::X509::Name.parse(dn).to_s(OpenSSL::X509::Name::COMPAT)
+      rescue StandardError
+        errors.add(:dn, 'must be a valid Distinguished Name')
+      end
     end
 
-    validates_presence [:name, :dn, :domains], message: 'cannot be empty'
-    validates_type String, [:name, :dn, :domains]
+    validates_presence %i[name domains], message: 'cannot be empty'
+    validates_type String, %i[name domains]
+    validates_unique %i[dn username], message: 'must be unique'
     validates_unique :dn, message: 'must be unique'
     validates_unique :name, message: 'must be unique'
+    validates_unique :username, message: 'must be unique'
   end
 
-  def can_access?(domain)
+  def can_access?(url)
+    domain = url.split('/')[2].split(':')[0]
     domains.split(',').any? do |dp|
-      escaped = Regexp.escape(dp.lstrip).gsub('\*','.*?')
+      escaped = Regexp.escape(dp.lstrip).gsub('\*', '.*?')
       regexp = Regexp.new("^#{escaped}$", Regexp::IGNORECASE)
       regexp.match?(domain)
     end
@@ -59,9 +79,10 @@ class User < Sequel::Model
       id: id,
       name: name,
       dn: dn,
+      username: username,
       domains: domains,
       created_at: created_at,
-      updated_at: updated_at,
+      updated_at: updated_at
     }
   end
 end

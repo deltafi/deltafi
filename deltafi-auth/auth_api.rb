@@ -26,6 +26,7 @@ require 'openssl'
 
 class AuthApi < Sinatra::Application
   set :show_exceptions, :after_handler
+  set :protection, except: [:json_csrf]
 
   configure :production, :development, :test do
     enable :logging
@@ -43,18 +44,11 @@ class AuthApi < Sinatra::Application
   db_location = File.join(ENV['DATA_DIR'] || 'db', 'auth.sqlite3')
   db = ENV['RACK_ENV'] == 'test' ? Sequel.sqlite : Sequel.connect("sqlite://#{db_location}")
   Sequel.extension :migration
-  Sequel::Migrator.run(db, "db/migrations")
+  Sequel::Migrator.run(db, 'db/migrations')
 
-  %w{models routes}.each {|dir| Dir.glob("./#{dir}/*.rb", &method(:require))}
+  %w[helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
 
-  def read_body
-    request.body.rewind
-    JSON.parse(request.body.read, :symbolize_names => true)
-  end
-
-  def error(e)
-    { error: e }.to_json
-  end
+  User.new(name: 'Admin', username: 'admin', domains: '*').save if User.count.zero?
 
   error JSON::ParserError do
     { error: 'Error parsing JSON' }.to_json
@@ -64,5 +58,5 @@ class AuthApi < Sinatra::Application
     { error: env['sinatra.error'].message }.to_json
   end
 
-  run! if app_file == $0
+  run! if app_file == $PROGRAM_NAME
 end

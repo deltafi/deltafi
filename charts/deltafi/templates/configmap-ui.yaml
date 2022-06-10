@@ -7,6 +7,7 @@ data:
     domain: {{ .Values.ingress.domain }}
     title: {{ default "DeltaFi" .Values.deltafi.ui.title }}
     useUTC: {{ default "false" .Values.deltafi.ui.useUTC | quote }}
+    authMode: {{ .Values.deltafi.auth.mode | quote }}
 {{- if .Values.deltafi.ui.deltaFileLinks }}
     deltaFileLinks:
 {{ .Values.deltafi.ui.deltaFileLinks | toYaml | indent 6 }}

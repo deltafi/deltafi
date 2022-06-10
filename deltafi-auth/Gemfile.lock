@@ -1,6 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    bcrypt (3.1.18)
     coderay (1.1.3)
     diff-lcs (1.4.4)
     eventmachine (1.2.7)
@@ -67,6 +68,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  bcrypt
   eventmachine
   pry
   rack-test

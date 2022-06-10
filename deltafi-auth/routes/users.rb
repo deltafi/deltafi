@@ -19,12 +19,12 @@
 # frozen_string_literal: true
 
 class AuthApi < Sinatra::Application
-  get "/users/?" do
-    User.all.map { |u| u.to_api }.to_json
+  get '/users/?' do
+    User.all.map(&:to_api).to_json
   end
 
-  get "/users/:id" do
-    id = params["id"].to_i
+  get '/users/:id' do
+    id = params['id'].to_i
     user = User[id]
 
     if user.nil?
@@ -48,7 +48,7 @@ class AuthApi < Sinatra::Application
   end
 
   put '/users/:id' do
-    id = params["id"].to_i
+    id = params['id'].to_i
     user = User[id]
 
     if user.nil?
@@ -68,7 +68,12 @@ class AuthApi < Sinatra::Application
   end
 
   delete '/users/:id' do
-    id = params["id"].to_i
+    id = params['id'].to_i
+    if id == 1
+      status 403
+      return error('Unable to delete admin user.')
+    end
+
     user = User[id]
 
     if user.nil?
