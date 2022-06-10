@@ -23,21 +23,23 @@
     </PageHeader>
     <Panel header="Users" class="users-panel table-panel">
       <DataTable :value="users" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines">
+        <template #header>
+          <div style="text-align:left">
+            <MultiSelect :model-value="selectedColumns" :options="columns" option-label="header" placeholder="Select Columns" style="width: 22rem" @update:model-value="onToggle" />
+          </div>
+        </template>
         <template #empty>
           No users to display
         </template>
-        <Column field="id" header="ID" :sortable="true" style="width: 1rem" />
-        <Column field="name" header="Name" :sortable="true" />
-        <Column field="dn" header="Distinguished Name (DN)" :sortable="true" class="dn-column" />
-        <Column field="domains" header="Domains" :sortable="true" />
-        <Column field="created_at" header="Created" :sortable="true" class="timestamp-column">
-          <template #body="{ data }">
-            <Timestamp :timestamp="data.created_at"></Timestamp>
-          </template>
-        </Column>
-        <Column field="updated_at" header="Updated" :sortable="true" class="timestamp-column">
-          <template #body="{ data }">
-            <Timestamp :timestamp="data.updated_at"></Timestamp>
+        <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :field="col.field" :header="col.header" :sortable="col.sortable" :class="col.class">
+          <template #body="{ data, field }">
+            <span v-if="field == 'domains'">
+              <span v-for="domain in data.domains.split(',')" :key="domain" class="badge badge-pill mr-2">{{ domain }}</span>
+            </span>
+            <span v-else-if="['created_at', 'updated_at'].includes(field)">
+              <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss"></Timestamp>
+            </span>
+            <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
         <Column style="width: 5rem; padding: 0;">
@@ -48,22 +50,45 @@
         </Column>
       </DataTable>
     </Panel>
-    <Dialog v-model:visible="userDialog" :style="{ width: '50vw' }" header="User Details" :modal="true" class="p-fluid">
+    <Dialog v-model:visible="userDialog" :style="{ width: '50vw' }" header="User Details" :modal="true" class="p-fluid user-dialog">
       <Message v-if="errors.length" severity="error">
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
+      <h5>Name</h5>
       <div class="field mb-2">
-        <label for="name">Name</label>
         <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" autocomplete="off" placeholder="e.g. Jane Doe" />
       </div>
+      <h5 class="mt-3">Domains</h5>
       <div class="field mb-2">
-        <label for="dn">Distinguished Name (DN)</label>
-        <InputText id="DN" v-model="user.dn" :class="{ 'p-invalid': submitted && !user.dn }" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" />
+        <Chips v-model="domains" :add-on-blur="true" />
       </div>
-      <div class="field mb-2">
-        <label for="domains">Domains</label>
-        <InputText id="name" v-model="user.domains" :class="{ 'p-invalid': submitted && !user.domains }" autocomplete="off" :placeholder="`e.g. *${uiConfig.domain}`" />
-      </div>
+      <h5 class="mt-3">Authentication</h5>
+      <TabView :active-index="activeTabIndex">
+        <TabPanel header="Basic">
+          <Message v-if="uiConfig.authMode != 'basic'" severity="warn">
+            Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
+            This must be set to <strong>basic</strong> before changes to this section will take effect.
+          </Message>
+          <div class="field mb-2">
+            <label for="dn">Username</label>
+            <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" />
+          </div>
+          <div class="field mb-2">
+            <label for="dn">Password</label>
+            <Password v-model="user.password" autocomplete="off" toggle-mask></Password>
+          </div>
+        </TabPanel>
+        <TabPanel header="Certificate">
+          <Message v-if="uiConfig.authMode != 'cert'" severity="warn">
+            Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
+            This must be set to <strong>cert</strong> before changes to this section will take effect.
+          </Message>
+          <div class="field mb-2">
+            <label for="dn">Distinguished Name (DN)</label>
+            <InputText id="DN" v-model="user.dn" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" />
+          </div>
+        </TabPanel>
+      </TabView>
       <template #footer>
         <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
         <Button label="Save" icon="pi pi-check" class="p-button-text" @click="saveUser" />
@@ -83,17 +108,22 @@
 </template>
 
 <script setup>
-import { onMounted, ref, inject } from "vue";
+import { onMounted, ref, inject, watch } from "vue";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
+import Password from "primevue/password";
+import Chips from "primevue/chips";
 import Message from "primevue/message";
 import Button from "primevue/button";
 import PageHeader from "@/components/PageHeader.vue";
 import Panel from "primevue/panel";
 import useUsers from "@/composables/useUsers";
 import Timestamp from "@/components/Timestamp.vue";
+import TabView from 'primevue/tabview';
+import TabPanel from 'primevue/tabpanel';
+import MultiSelect from 'primevue/multiselect'
 
 const submitted = ref(false);
 const user = ref({});
@@ -102,10 +132,22 @@ const deleteUserDialog = ref(false);
 const isNew = ref(false);
 const { data: users, fetch: fetchUsers, create, remove: removeUser, update: updateUser, errors } = useUsers();
 const uiConfig = inject('uiConfig');
+const domains = ref();
+const activeTabIndex = ref(0);
+const selectedColumns = ref([]);
+const columns = ref([
+  { field: "id", header: "ID", sortable: true, class: "id-col" },
+  { field: "name", header: "Name", sortable: true },
+  { field: "dn", header: "DN", sortable: true, class: "dn-col", hideInAuthMode: 'basic' },
+  { field: "username", header: "Username", sortable: true, hideInAuthMode: 'cert' },
+  { field: "domains", header: "Domains", sortable: true, class: "domains-col" },
+  { field: "created_at", header: "Added", sortable: true, class: "timestamp-col" },
+  { field: "updated_at", header: "Updated", sortable: true, class: "timestamp-col" },
+]);
 
-onMounted(() => {
-  fetchUsers();
-});
+const onToggle = (val) => {
+  selectedColumns.value = columns.value.filter(col => val.includes(col));
+};
 
 const hideDialog = () => {
   user.value = {};
@@ -117,6 +159,7 @@ const hideDialog = () => {
 const editUser = (userInfo) => {
   errors.value.splice(0, errors.value.length)
   user.value = { ...userInfo };
+  domains.value = user.value.domains.split(',')
   isNew.value = false;
   userDialog.value = true;
 };
@@ -124,13 +167,15 @@ const editUser = (userInfo) => {
 const newUser = () => {
   errors.value.splice(0, errors.value.length)
   user.value = {};
+  domains.value = [];
   isNew.value = true;
   submitted.value = false
   userDialog.value = true;
 };
 
 const saveUser = async () => {
-  const saveParams = { name: user.value.name, dn: user.value.dn, domains: user.value.domains };
+  user.value.domains = domains.value.join(',');
+  const { id, created_at, updated_at, ...saveParams } = user.value; // eslint-disable-line no-unused-vars
   try {
     isNew.value ? await create(saveParams) : await updateUser(user.value.id, saveParams)
     await fetchUsers();
@@ -147,10 +192,21 @@ const confirmDeleteUser = (userInfo) => {
 };
 
 const deleteUser = async () => {
-  removeUser(user.value);
+  await removeUser(user.value);
   deleteUserDialog.value = false;
   fetchUsers();
 };
+
+onMounted(() => {
+  fetchUsers();
+  selectedColumns.value = columns.value.filter(col => col.hideInAuthMode !== uiConfig.authMode);;
+});
+
+watch(() => userDialog.value, (newValue) => {
+  if (newValue) {
+    activeTabIndex.value = uiConfig.authMode == 'cert' ? 1 : 0
+  }
+})
 </script>
 
 <style lang="scss">

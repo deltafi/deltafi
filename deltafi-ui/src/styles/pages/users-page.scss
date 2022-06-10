@@ -17,12 +17,28 @@
 */
 
 .users-panel {
-  td.dn-column, td.domains-column {
+  td.id-col {
+    width: 1rem;
+  }
+  td.dn-col {
     font-family: monospace;
     font-size: 90%;
   }
-  td.timestamp-column {
+  td.timestamp-col {
     font-size: 90%;
-    width: 14rem;
+    width: 12rem;
+  }
+  td.domains-col {
+    .badge {
+      background-color: #dee2e6;
+      font-size: 90%;
+      font-weight: normal;
+    }
+  }
+}
+
+.user-dialog {
+  .p-tabview .p-tabview-panels {
+    padding: 1rem 0 0 0;
   }
 }

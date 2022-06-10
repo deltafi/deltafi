@@ -41,7 +41,8 @@ export type UiConfig = {
     name: String,
     url: String
   }>
-  useUTC?: Boolean
+  useUTC?: Boolean,
+  authMode?: String
 }
 
 const uiConfig: UiConfig = reactive({
@@ -53,7 +54,8 @@ const uiConfig: UiConfig = reactive({
   topBar: {},
   externalLinks: [],
   deltaFileLinks: [],
-  useUTC: false
+  useUTC: false,
+  authMode: 'disabled',
 })
 
 export default function useUiConfig(): {

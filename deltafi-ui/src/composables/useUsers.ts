@@ -37,8 +37,13 @@ export default function useUsers() {
     }
   }
 
-  const update = async (id: number, userObject: Record<string, string>) => {
+  const update = async (id: number, userObject: Record<string, any>) => {
     const path = `${endpoint}/${id}`;
+
+    for (const property in userObject) {
+      if (userObject[property] === "") userObject[property] = null;
+    }
+
     try {
       await put(path, userObject);
       notify.info("User Updated", userObject.name)
