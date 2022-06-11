@@ -145,6 +145,10 @@ const columns = ref([
   { field: "updated_at", header: "Updated", sortable: true, class: "timestamp-col" },
 ]);
 
+watch(uiConfig, () => {
+  selectedColumns.value = columns.value.filter(col => col.hideInAuthMode !== uiConfig.authMode);
+});
+
 const onToggle = (val) => {
   selectedColumns.value = columns.value.filter(col => val.includes(col));
 };
@@ -167,7 +171,7 @@ const editUser = (userInfo) => {
 const newUser = () => {
   errors.value.splice(0, errors.value.length)
   user.value = {};
-  domains.value = [];
+  domains.value = [uiConfig.domain];
   isNew.value = true;
   submitted.value = false
   userDialog.value = true;

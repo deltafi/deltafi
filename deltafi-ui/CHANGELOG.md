@@ -4,12 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Added support for Basic Authentication on Users page (#191)
+
 ## [0.95.4]
 
 ### Changed
 
-- Added GraphiQL UI
-- Added User Management page
+- Added GraphiQL UI (#181)
+- Added User Management page (#182)
 
 ## [0.95.3]
 
