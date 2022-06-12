@@ -1691,9 +1691,12 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFileRepo.save(deltaFile2);
 		DeltaFile deltaFile3 = Util.buildDeltaFile("3", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile3);
+		DeltaFile deltaFile4 = Util.buildDeltaFile("4", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile4.setErrorAcknowledged(OffsetDateTime.now());
+		deltaFileRepo.save(deltaFile4);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, "policy", false);
-		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 	}
 
 	@Test

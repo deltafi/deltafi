@@ -472,8 +472,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {
         Criteria completed = Criteria.where(STAGE).is(DeltaFileStage.COMPLETE);
+        Criteria acknowledged = new Criteria().andOperator(
+                Criteria.where(STAGE).is(DeltaFileStage.ERROR),
+                Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
+        Criteria completedOrAcknowledged = new Criteria().orOperator(completed, acknowledged);
         Criteria lastModified = Criteria.where(MODIFIED).lt(completedBeforeDate);
-        return new Criteria().andOperator(completed, lastModified);
+        return new Criteria().andOperator(completedOrAcknowledged, lastModified);
     }
 
     private OffsetDateTime requeueThreshold(OffsetDateTime requeueTime, int requeueSeconds) {
