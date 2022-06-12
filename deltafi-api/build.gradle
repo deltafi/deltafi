@@ -1,3 +1,6 @@
+import com.hierynomus.gradle.license.tasks.LicenseCheck
+import com.hierynomus.gradle.license.tasks.LicenseFormat
+
 plugins {
     id 'idea'
     id "com.palantir.docker" version "${palantirDockerVersion}"
@@ -15,11 +18,11 @@ docker {
     tag "local", "${localDockerRegistry}/${project.name}:latest"
 }
 
-task licenseLocal(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
+task licenseLocal(type: LicenseCheck) {
     source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").include("**/*.sh")
 }
 
-task licenseFormatLocal(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+task licenseFormatLocal(type: LicenseFormat) {
     source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").include("**/*.sh")
 }
 licenseFormat.dependsOn licenseFormatLocal

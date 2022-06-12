@@ -1,3 +1,6 @@
+import com.hierynomus.gradle.license.tasks.LicenseCheck
+import com.hierynomus.gradle.license.tasks.LicenseFormat
+
 plugins {
     id 'idea'
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
@@ -8,11 +11,11 @@ license {
     excludes(excludeFromLicense)
 }
 
-task licenseLocal(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
+task licenseLocal(type: LicenseCheck) {
     source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
 }
 
-task licenseFormatLocal(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+task licenseFormatLocal(type: LicenseFormat) {
     source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
 }
 licenseFormat.dependsOn licenseFormatLocal

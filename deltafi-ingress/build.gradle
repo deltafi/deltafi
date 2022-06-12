@@ -44,7 +44,7 @@ dependencies {
     testImplementation "io.quarkus:quarkus-junit5-mockito"
     testImplementation "io.rest-assured:rest-assured"
     testImplementation "org.mockito:mockito-junit-jupiter"
-    testImplementation "org.apache.nifi:nifi-flowfile-packager:1.16.0"
+    testImplementation "org.apache.nifi:nifi-flowfile-packager:1.16.2"
 }
 
 task copyProbe(type: Copy) {
