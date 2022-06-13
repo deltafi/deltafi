@@ -25,6 +25,8 @@ import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLError;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import graphql.scalar.GraphqlStringCoercing;
+import graphql.schema.Coercing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentReference;
@@ -146,8 +148,17 @@ public class DeltaFileService {
     }
 
     private GraphQLQueryRequest toGraphQlRequest(IngressInput ingressInput) {
+        // Workaround for https://github.com/Netflix/dgs-codegen/issues/334. This will properly escape string values
+        // containing special characters.
+        Map<Class<?>, Coercing<?, ?>> scalars = Map.of(String.class, new GraphqlStringCoercing() {
+            @Override
+            public String serialize(Object input) {
+                return net.minidev.json.JSONValue.escape((String) input);
+            }
+        });
+
         IngressGraphQLQuery ingressGraphQLQuery = IngressGraphQLQuery.newRequest().input(ingressInput).build();
-        return new GraphQLQueryRequest(ingressGraphQLQuery, PROJECTION_ROOT);
+        return new GraphQLQueryRequest(ingressGraphQLQuery, PROJECTION_ROOT, scalars);
     }
 
     private void logMetric(String did, String fileName, String flow, String metric, long value) {
