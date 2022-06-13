@@ -495,6 +495,9 @@ public class DeltaFilesService {
                         if (deltaFile == null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
+                        } else if (deltaFile.getContentDeleted() != null) {
+                            result.setSuccess(false);
+                            result.setError("Cannot retry DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
                             List<String> requeueActions = deltaFile.retryErrors();
                             if (requeueActions.isEmpty()) {
@@ -568,6 +571,9 @@ public class DeltaFilesService {
                         } else if (deltaFile.getReplayed() != null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " has already been replayed with child " + deltaFile.getReplayDid());
+                        } else if (deltaFile.getContentDeleted() != null) {
+                            result.setSuccess(false);
+                            result.setError("Cannot replay DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
                             OffsetDateTime now = OffsetDateTime.now();
                             Action action = Action.newBuilder()

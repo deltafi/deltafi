@@ -395,6 +395,24 @@ class DeltaFiCoreDomainApplicationTests {
 		verifyActionEventResults(expected, "SampleLoadAction");
 	}
 
+	@Test
+	void test06RetryContentDeleted() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile contentDeletedDeltaFile = postTransformHadErrorDeltaFile(did);
+		contentDeletedDeltaFile.setContentDeleted(OffsetDateTime.now());
+		contentDeletedDeltaFile.setContentDeletedReason("aged off");
+		deltaFileRepo.save(contentDeletedDeltaFile);
+
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("06.retry"), did),
+				"data." + DgsConstants.MUTATION.Retry,
+				new TypeRef<>() {});
+
+		assertEquals(1, retryResults.size());
+		assertEquals(did, retryResults.get(0).getDid());
+		assertFalse(retryResults.get(0).getSuccess());
+	}
+
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ENRICH);
@@ -777,6 +795,26 @@ class DeltaFiCoreDomainApplicationTests {
 
 		assertEquals(1, secondResults.size());
 		assertFalse(secondResults.get(0).getSuccess());
+	}
+
+	@Test
+	void test23ReplayContentDeleted() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile contentDeletedDeltaFile = postEgressDeltaFile(did);
+		contentDeletedDeltaFile.setContentDeleted(OffsetDateTime.now());
+		contentDeletedDeltaFile.setContentDeletedReason("aged off");
+		deltaFileRepo.save(contentDeletedDeltaFile);
+
+		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("23.replay"), did),
+				"data." + DgsConstants.MUTATION.Replay,
+				new TypeRef<>() {});
+
+		assertEquals(1, results.size());
+		assertFalse(results.get(0).getSuccess());
+
+		DeltaFile parent = deltaFilesService.getDeltaFile(did);
+		assertTrue(parent.getChildDids().isEmpty());
 	}
 
 	@Test
