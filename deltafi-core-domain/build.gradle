@@ -81,7 +81,6 @@ dependencies {
 	implementation "redis.clients:jedis:${jedisVersion}"
 
 	implementation "io.minio:minio:${minioVersion}"
-	implementation "com.squareup.okhttp3:okhttp:${okhttpVersion}"
 
 	implementation "com.networknt:json-schema-validator:1.0.70"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
