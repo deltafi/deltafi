@@ -380,8 +380,8 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFileRepo.save(postTransformHadErrorDeltaFile(did));
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("06.retry"), did),
-				"data." + DgsConstants.MUTATION.Retry,
+				String.format(graphQL("06.resume"), did),
+				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
 		assertEquals(1, retryResults.size());
@@ -396,7 +396,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test06RetryContentDeleted() throws IOException {
+	void test06ResumeContentDeleted() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile contentDeletedDeltaFile = postTransformHadErrorDeltaFile(did);
 		contentDeletedDeltaFile.setContentDeleted(OffsetDateTime.now());
@@ -404,8 +404,8 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFileRepo.save(contentDeletedDeltaFile);
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("06.retry"), did),
-				"data." + DgsConstants.MUTATION.Retry,
+				String.format(graphQL("06.resume"), did),
+				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
 		assertEquals(1, retryResults.size());
@@ -651,7 +651,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@SuppressWarnings("SameParameterValue")
-	DeltaFile postRetryDeltaFile(String did, String retryAction) {
+	DeltaFile postResumeDeltaFile(String did, String retryAction) {
 		DeltaFile deltaFile = postErrorDeltaFile(did);
 		deltaFile.retryErrors();
 		deltaFile.setStage(DeltaFileStage.EGRESS);
@@ -660,13 +660,13 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test18Retry() throws IOException {
+	void test18Resume() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postErrorDeltaFile(did));
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("18.retry"), did),
-				"data." + DgsConstants.MUTATION.Retry,
+				String.format(graphQL("18.resume"), did),
+				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
 		assertEquals(2, retryResults.size());
@@ -674,11 +674,11 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
-		verifyActionEventResults(postRetryDeltaFile(did, "AuthorityValidateAction"), "AuthorityValidateAction");
+		verifyActionEventResults(postResumeDeltaFile(did, "AuthorityValidateAction"), "AuthorityValidateAction");
 	}
 
 	@Test
-	void test19RetryClearsAcknowledged() throws IOException {
+	void test19ResumeClearsAcknowledged() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postErrorDeltaFile = postErrorDeltaFile(did);
 		postErrorDeltaFile.setErrorAcknowledged(OffsetDateTime.now());
@@ -686,8 +686,8 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFileRepo.save(postErrorDeltaFile);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("18.retry"), did),
-				"data." + DgsConstants.MUTATION.Retry,
+				String.format(graphQL("18.resume"), did),
+				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -1351,7 +1351,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void retry() {
+	void resume() {
 		DeltaFile input = deltaFilesService.ingress(INGRESS_INPUT);
 		DeltaFile second = deltaFilesService.ingress(INGRESS_INPUT_2);
 
@@ -1363,15 +1363,15 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(2, erroredFile.getActions().size());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-				new RetryGraphQLQuery.Builder()
+				new ResumeGraphQLQuery.Builder()
 						.dids(List.of(input.getDid(), second.getDid(), "badDid"))
 						.build(),
-				new RetryProjectionRoot().did().success().error()
+				new ResumeProjectionRoot().did().success().error()
 		);
 
 		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQLQueryRequest.serialize(),
-				"data." + DgsConstants.MUTATION.Retry,
+				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {}
 		);
 
@@ -1389,13 +1389,13 @@ class DeltaFiCoreDomainApplicationTests {
 		assertFalse(results.get(2).getSuccess());
 		assertEquals("DeltaFile with did badDid not found", results.get(2).getError());
 
-		DeltaFile afterRetryFile = deltaFilesService.getDeltaFile(input.getDid());
-		assertEquals(3, afterRetryFile.getActions().size());
-		assertEquals(ActionState.COMPLETE, afterRetryFile.getActions().get(0).getState());
-		assertEquals(ActionState.RETRIED, afterRetryFile.getActions().get(1).getState());
-		assertEquals(ActionState.QUEUED, afterRetryFile.getActions().get(2).getState());
+		DeltaFile afterResumeFile = deltaFilesService.getDeltaFile(input.getDid());
+		assertEquals(3, afterResumeFile.getActions().size());
+		assertEquals(ActionState.COMPLETE, afterResumeFile.getActions().get(0).getState());
+		assertEquals(ActionState.RETRIED, afterResumeFile.getActions().get(1).getState());
+		assertEquals(ActionState.QUEUED, afterResumeFile.getActions().get(2).getState());
 		// StateMachine will queue the failed loadAction again leaving the DeltaFile in the INGRESS stage
-		assertEquals(DeltaFileStage.INGRESS, afterRetryFile.getStage());
+		assertEquals(DeltaFileStage.INGRESS, afterResumeFile.getStage());
 	}
 
 	@Test

@@ -481,7 +481,7 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    public List<RetryResult> retry(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
+    public List<RetryResult> resume(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
         return dids.stream()
                 .map(did -> {
                     RetryResult result = RetryResult.newBuilder()
@@ -497,7 +497,7 @@ public class DeltaFilesService {
                             result.setError("DeltaFile with did " + did + " not found");
                         } else if (deltaFile.getContentDeleted() != null) {
                             result.setSuccess(false);
-                            result.setError("Cannot retry DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
+                            result.setError("Cannot resume DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
                             List<String> requeueActions = deltaFile.retryErrors();
                             if (requeueActions.isEmpty()) {

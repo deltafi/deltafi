@@ -117,8 +117,14 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
+  public List<RetryResult> resume(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument(collectionType = String.class) List<String> removeSourceMetadata, @InputArgument(collectionType = KeyValue.class) List<KeyValue> replaceSourceMetadata) {
+    return deltaFilesService.resume(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
+  }
+
+  @DgsMutation
+  @SuppressWarnings("unused")
   public List<RetryResult> retry(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument(collectionType = String.class) List<String> removeSourceMetadata, @InputArgument(collectionType = KeyValue.class) List<KeyValue> replaceSourceMetadata) {
-    return deltaFilesService.retry(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
+    return resume(dids, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
   }
 
   @DgsMutation

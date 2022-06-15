@@ -17,21 +17,8 @@
 #
 
 mutation {
-    retry(
-        dids: ["%1$s"],
-        removeSourceMetadata: [ "removeMe" ]
-        replaceFilename: "newFilename"
-        replaceFlow: "theFlow"
-        replaceSourceMetadata: [
-            {
-                key: "AuthorizedBy"
-                value: "ABC"
-            },
-            {
-                key: "anotherKey"
-                value: "anotherValue"
-            }
-        ]
+    resume(
+        dids: ["%1$s", "fakedid"]
     ) {
         did
         success
