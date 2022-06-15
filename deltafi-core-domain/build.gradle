@@ -94,6 +94,7 @@ dependencies {
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.awaitility:awaitility:4.2.0'
+	testImplementation 'org.hamcrest:hamcrest:2.2'
 	testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 	testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
 	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"

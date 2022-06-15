@@ -19,24 +19,23 @@ package org.deltafi.core.domain.api.converters;
 
 import org.deltafi.core.domain.api.types.KeyValue;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class KeyValueConverter {
 
     public static Map<String, String> convertKeyValues(List<KeyValue> keyValues) {
-        if (Objects.isNull(keyValues)) {
-            return Collections.emptyMap();
+        if (keyValues == null) {
+            return new HashMap<>();
         }
-        return keyValues.stream().collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue));
+        return keyValues.stream().collect(CustomCollector.toMap(KeyValue::getKey, KeyValue::getValue));
     }
 
     public static List<KeyValue> fromMap(Map<String, String> map) {
-        if (Objects.isNull(map)) {
-            return Collections.emptyList();
+        if (map == null) {
+            return new ArrayList<>();
         }
         return map.entrySet().stream().map(KeyValueConverter::fromMapEntry).collect(Collectors.toList());
     }
@@ -45,4 +44,23 @@ public class KeyValueConverter {
         return new KeyValue(entry.getKey(), entry.getValue());
     }
 
+    /**
+     * This custom collector is needed to deal with the possibility that a value could be null.  The standard
+     * collector will NPE.
+     *
+     * Scabbed from teh internets: https://kuros.in/java/streams/handle-nullpointerexception-in-collectors-tomap/
+     */
+    static class CustomCollector {
+        public static <T, K, V> Collector<T, Map<K, V>, Map<K, V>> toMap(final Function<? super T, K> keyMapper, final Function<T, V> valueMapper) {
+            return Collector.of(
+                    HashMap::new,
+                    (kvMap, t) -> kvMap.put(keyMapper.apply(t), valueMapper.apply(t)),
+                    (kvMap, kvMap2) -> {
+                        kvMap.putAll(kvMap2);
+                        return kvMap;
+                    },
+                    Function.identity(),
+                    Collector.Characteristics.IDENTITY_FINISH);
+        }
+    }
 }
