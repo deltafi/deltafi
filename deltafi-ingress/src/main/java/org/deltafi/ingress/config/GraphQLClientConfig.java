@@ -24,6 +24,7 @@ import org.deltafi.common.properties.GraphqlClientProperties;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 
 import javax.enterprise.inject.Produces;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -36,6 +37,7 @@ public class GraphQLClientConfig {
         return GraphQLClient.createCustom(graphqlProperties.getCoreDomain(), (url, headers, body) -> {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
+                    .headers("content-type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
