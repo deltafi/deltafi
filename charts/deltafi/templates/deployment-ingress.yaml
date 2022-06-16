@@ -42,3 +42,5 @@ spec:
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-auth
+      nodeSelector:
+        node-role.deltafi.org/storage: "true"

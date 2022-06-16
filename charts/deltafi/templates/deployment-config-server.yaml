@@ -53,3 +53,5 @@ spec:
             optional: true
       imagePullSecrets:
       - name: docker-secret
+      nodeSelector:
+        node-role.deltafi.org/compute: "true"

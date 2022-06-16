@@ -47,3 +47,5 @@ spec:
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-core-domain
+      nodeSelector:
+        node-role.deltafi.org/compute: "true"

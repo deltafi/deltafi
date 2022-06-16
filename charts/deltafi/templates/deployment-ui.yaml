@@ -32,3 +32,5 @@ spec:
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-api
+      nodeSelector:
+        node-role.deltafi.org/compute: "true"
