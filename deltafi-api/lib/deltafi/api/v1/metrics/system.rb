@@ -37,11 +37,11 @@ module Deltafi
                   resources: {
                     cpu: {
                       limit: normalize_cpu(node.status.capacity.cpu),
-                      usage: normalize_cpu(node_usage.find { |n| n.metadata.name == node.metadata.name }.usage.cpu)
+                      usage: normalize_cpu(node_usage.find { |n| n.metadata.name == node.metadata.name }&.usage&.cpu || 0)
                     },
                     memory: {
                       limit: normalize_bytes(node.status.capacity.memory),
-                      usage: normalize_bytes(node_usage.find { |n| n.metadata.name == node.metadata.name }.usage.memory)
+                      usage: normalize_bytes(node_usage.find { |n| n.metadata.name == node.metadata.name }&.usage&.memory || 0)
                     },
                     disk: {
                       limit: disks[node.metadata.name]&.dig(:limit) || 0,

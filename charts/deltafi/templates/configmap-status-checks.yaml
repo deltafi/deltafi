@@ -43,8 +43,9 @@ data:
     - elasticsearch-master
     - elasticsearch-master-headless
   StorageCheck: |
-    expected_volumes:
+    expected_volume_claims:
+    - deltafi-auth
+    - deltafi-egress-sink
     - deltafi-elasticsearch
     - deltafi-minio
     - deltafi-mongodb
-    - deltafi-egress-sink

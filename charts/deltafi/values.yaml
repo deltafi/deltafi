@@ -223,6 +223,7 @@ redis:
       node-role.deltafi.org/compute: "true"
 # Kubernetes Dashboard config
 kubernetes-dashboard:
+  securityContext: null
   protocolHttp: true
   service:
     externalPort: 80

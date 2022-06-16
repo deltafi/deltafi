@@ -33,7 +33,6 @@ module Deltafi
           end
 
           def run
-            check_pvs
             check_pvcs
             check_usage
 
@@ -46,21 +45,17 @@ module Deltafi
             self
           end
 
-          def check_pvs
-            pvs = DF.k8s_client.api('v1').resource('persistentvolumes').get('').items
-            pv_names = pvs.map { |pv| pv.metadata.name }.sort
-            pv_missing = expected_volumes - pv_names
-            return if pv_missing.empty?
-
-            self.code = 2
-            message_lines << '##### Missing Persistent Volumes'
-            message_lines << pv_missing.map { |n| "- #{n}" }
-          end
-
           def check_pvcs
             pvcs = DF.k8s_client.api('v1').resource('persistentvolumeclaims', namespace: DF::Common::K8S_NAMESPACE).get('').items
+            unbound = pvcs.select { |pvc| pvc.status.phase != 'Bound' }
+            unless unbound.empty?
+              self.code = 2
+              message_lines << '##### Unbound Persistent Volume Claims'
+              message_lines << unbound.map { |pvc| "- #{pvc.metadata.name}"}
+            end
+
             pvc_names = pvcs.map { |pvc| pvc.metadata.name }.sort
-            pvc_missing = expected_volumes - pvc_names
+            pvc_missing = expected_volume_claims - pvc_names
             return if pvc_missing.empty?
 
             self.code = 2
@@ -83,8 +78,8 @@ module Deltafi
 
           private
 
-          def expected_volumes
-            YAML.safe_load(config)['expected_volumes']
+          def expected_volume_claims
+            YAML.safe_load(config)['expected_volume_claims']
           end
         end
       end

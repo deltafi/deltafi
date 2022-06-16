@@ -106,7 +106,7 @@ nodes:
     kind: InitConfiguration
     nodeRegistration:
       kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
+        node-labels: "ingress-ready=true,node-role.deltafi.org/compute=true,node-role.deltafi.org/storage=true"
   extraPortMappings:
   - containerPort: 80
     hostPort: 80
