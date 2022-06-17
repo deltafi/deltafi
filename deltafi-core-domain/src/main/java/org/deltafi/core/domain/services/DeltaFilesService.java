@@ -24,6 +24,7 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -67,6 +68,7 @@ public class DeltaFilesService {
     final EnrichFlowService enrichFlowService;
     final EgressFlowService egressFlowService;
     final DeltaFiProperties properties;
+    final FlowAssignmentService flowAssignmentService;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
     final RedisService redisService;
@@ -115,7 +117,16 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile ingress(IngressInput input, List<String> parentDids) {
-        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(input.getSourceInfo().getFlow());
+        SourceInfo sourceInfo = input.getSourceInfo();
+        if (sourceInfo.getFlow().equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
+            String flow = flowAssignmentService.findFlow(sourceInfo);
+            if (Objects.isNull(flow)) {
+                throw new DgsEntityNotFoundException(
+                        "Unable to resolve flow name based on source metadata and current flow assignment rules");
+            }
+            sourceInfo.setFlow(flow);
+        }
+        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
 
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -132,7 +143,7 @@ public class DeltaFilesService {
                 .childDids(Collections.emptyList())
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
-                .sourceInfo(input.getSourceInfo())
+                .sourceInfo(sourceInfo)
                 .protocolStack(List.of(new ProtocolLayer(ingressFlow.getType(), INGRESS_ACTION, input.getContent(), null)))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())

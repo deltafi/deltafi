@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: load-rules
+
+Usage:
+  load-rules RULES_FILE [OPTIONS]
+
+Options:
+  -h, --help        Show help
+  -v, --verbose     Verbose output of errors"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-load-rules.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
+VERBOSE=0
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    -v|--verbose)
+      VERBOSE=1
+      shift # past argument
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+RULES_FILE=${ARGS[1]}
+
+if [ ! -f "$RULES_FILE" ]; then
+  cli_log "${yellow}${RULES_FILE}: No such file${normal}"
+  exit 1
+fi
+
+BASENAME="$(basename $RULES_FILE)"
+JSON=$(cat "$RULES_FILE")
+
+VARIABLES="{\"rules\": $JSON }"
+
+QUERY="mutation (\$rules: [FlowAssignmentRuleInput!]!) { replaceAllFlowAssignmentRule(rules: \$rules) { success errors } }"
+
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  cli_log "${red}${BASENAME}: Loading rules failed${normal}"
+  echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
+else
+  ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$ERRORS" != "" ]]; then
+    cli_log "${red}${BASENAME}: Loading rules failed${normal}"
+    echo -e "${red}Error: ${ERRORS}${normal}"
+  else
+    ERRORCOUNT=$(cat ${TMPFILE} | jq -r '.data.replaceAllFlowAssignmentRule[].success' | grep -c false)
+    SUCCESSCOUNT=$(cat ${TMPFILE} | jq -r '.data.replaceAllFlowAssignmentRule[].success' | grep -c true)
+      if [[ $ERRORCOUNT == "0" ]]; then
+        cli_log "Successfully loaded all rules from file ${cyan}${BASENAME}${normal}"
+      else
+        if [[ $SUCCESSCOUNT != "0" ]]; then
+          cli_log "Loaded ${SUCCESSCOUNT} rules from file ${cyan}${BASENAME}${normal}"
+        fi
+        cli_log "${red}${BASENAME}: ${ERRORCOUNT} invalid rules not loaded${normal}"
+        if [[ $VERBOSE == "1" ]]; then
+          ALLERRORS=$(cat ${TMPFILE} | jq -r '.data.replaceAllFlowAssignmentRule[].errors | join(",")')
+          echo -e "${red}${ALLERRORS}${normal}"
+        fi
+      fi
+  fi
+fi
+
+cleanup
+

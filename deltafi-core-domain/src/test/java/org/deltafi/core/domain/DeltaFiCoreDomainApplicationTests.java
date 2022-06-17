@@ -50,7 +50,10 @@ import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginRepository;
 import org.deltafi.core.domain.repo.*;
-import org.deltafi.core.domain.services.*;
+import org.deltafi.core.domain.services.DeltaFilesService;
+import org.deltafi.core.domain.services.ErrorService;
+import org.deltafi.core.domain.services.IngressFlowService;
+import org.deltafi.core.domain.services.RedisService;
 import org.deltafi.core.domain.types.PluginVariables;
 import org.deltafi.core.domain.types.*;
 import org.junit.jupiter.api.Assertions;
@@ -90,6 +93,7 @@ import static org.deltafi.core.domain.Util.buildDeltaFile;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
+import static org.deltafi.core.domain.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.plugin.PluginDataFetcherTestHelper.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -125,6 +129,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	ActionSchemaRepo actionSchemaRepo;
+
+	@Autowired
+	FlowAssignmentRuleRepo flowAssignmentRuleRepo;
 
 	@Autowired
 	PluginRepository pluginRepository;
@@ -201,6 +208,7 @@ class DeltaFiCoreDomainApplicationTests {
 		actionSchemaRepo.deleteAll();
 		deltaFileRepo.deleteAll();
 		deltaFiProperties.getDelete().setOnCompletion(false);
+		flowAssignmentRuleRepo.deleteAll();
 		loadConfig();
 
 		Mockito.clearInvocations(redisService);
@@ -1261,6 +1269,75 @@ class DeltaFiCoreDomainApplicationTests {
 		variables.setVariables(List.of(Variable.newBuilder().name("key").value("test").description("description").dataType(DATA_TYPE.STRING).build()));
 		pluginVariableRepo.save(variables);
 		assertTrue(FlowPlanDatafetcherTestHelper.setPluginVariableValues(dgsQueryExecutor));
+	}
+
+	@Test
+	void testSaveFlowAssignmentRules() {
+		Result result = saveFirstRule(dgsQueryExecutor);
+		assertTrue(result.getSuccess());
+		assertTrue(result.getErrors().isEmpty());
+		assertEquals(1, flowAssignmentRuleRepo.count());
+
+		Result badResult = saveBadRule(dgsQueryExecutor);
+		assertFalse(badResult.getSuccess());
+		assertEquals("missing rule name", badResult.getErrors().get(0));
+		assertEquals(1, flowAssignmentRuleRepo.count());
+	}
+
+	@Test
+	void testGetAllFlowAssignmentRules() {
+		assertTrue(saveAllRules(dgsQueryExecutor));
+		assertEquals(4, flowAssignmentRuleRepo.count());
+		List<org.deltafi.core.domain.api.types.FlowAssignmentRule> assignmentList = getAllFlowAssignmentRules(dgsQueryExecutor);
+		assertEquals(4, assignmentList.size());
+		assertEquals(RULE_NAME4, assignmentList.get(0).getName());
+		assertEquals(RULE_NAME2, assignmentList.get(1).getName());
+		assertEquals(RULE_NAME1, assignmentList.get(2).getName());
+		assertEquals(RULE_NAME3, assignmentList.get(3).getName());
+	}
+
+	@Test
+	void testRemoveFlowAssignmentRules() {
+		saveFirstRule(dgsQueryExecutor);
+		saveSecondRuleSet(dgsQueryExecutor);
+		assertEquals(2, flowAssignmentRuleRepo.count());
+		assertTrue(removeFlowAssignment(dgsQueryExecutor, RULE_NAME1));
+		assertEquals(1, flowAssignmentRuleRepo.count());
+		assertFalse(removeFlowAssignment(dgsQueryExecutor, "not-found"));
+		assertEquals(1, flowAssignmentRuleRepo.count());
+	}
+
+	@Test
+	void testGetFlowAssignment() {
+		saveFirstRule(dgsQueryExecutor);
+		saveSecondRuleSet(dgsQueryExecutor);
+
+		org.deltafi.core.domain.api.types.FlowAssignmentRule first =
+				getFlowAssignment(dgsQueryExecutor, RULE_NAME1);
+		org.deltafi.core.domain.api.types.FlowAssignmentRule second =
+				getFlowAssignment(dgsQueryExecutor, RULE_NAME2);
+		org.deltafi.core.domain.api.types.FlowAssignmentRule notFound =
+				getFlowAssignment(dgsQueryExecutor, "notfound");
+
+		assertEquals(RULE_NAME1, first.getName());
+		assertEquals(FLOW_NAME1, first.getFlow());
+		assertEquals(FILENAME_REGEX, first.getFilenameRegex());
+
+		assertEquals(RULE_NAME2, second.getName());
+		assertEquals(FLOW_NAME2, second.getFlow());
+		assertEquals(META_KEY, second.getRequiredMetadata().get(0).getKey());
+		assertEquals(META_VALUE, second.getRequiredMetadata().get(0).getValue());
+
+		assertNull(notFound);
+	}
+
+	@Test
+	void testComputeFlowAssignment() {
+		saveFirstRule(dgsQueryExecutor);
+		assertEquals(FLOW_NAME1, resolveFlowAssignment(dgsQueryExecutor, SourceInfo.builder()
+				.flow("").filename(FILENAME_REGEX).build()));
+		assertNull(resolveFlowAssignment(dgsQueryExecutor, SourceInfo.builder()
+				.flow("").filename("not-found").build()));
 	}
 
 	@Test

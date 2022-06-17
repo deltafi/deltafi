@@ -64,18 +64,19 @@ class DeltaFileRestTest {
         assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
     }
 
-    @Test
+    @Test @SneakyThrows
     void testIngress_missingFlow() {
         RequestSpecification request = RestAssured.given();
         request.body(CONTENT.getBytes(StandardCharsets.UTF_8));
         request.contentType(MediaType.APPLICATION_OCTET_STREAM);
-        request.headers(Map.of("Filename", "incoming.txt"));
+        request.headers(Map.of("Filename", "incoming.txt", "Metadata", "{\"key\": \"value\"}"));
 
         Response response = request.post("/deltafile/ingress");
 
-        assertThat(response.getStatusCode(), equalTo(400));
+        assertThat(response.getStatusCode(), equalTo(200));
 
-        Mockito.verifyNoInteractions(deltaFileService);
+        ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
+        Mockito.verify(deltaFileService).ingressData(is.capture(), Mockito.eq("incoming.txt"), Mockito.isNull(), Mockito.eq("{\"key\": \"value\"}"), Mockito.eq(MediaType.APPLICATION_OCTET_STREAM));
     }
 
     @Test
@@ -181,18 +182,25 @@ class DeltaFileRestTest {
     @Test @SneakyThrows
     void testIngress_flowfile_missingFlow() {
         RequestSpecification request = RestAssured.given();
-        request.body(flowfile(CONTENT, Map.of(
-                "filename", "myFilename",
-                "overwrite", "vim is awesome",
-                "fromFlowfile", "youbetcha")));
+        request.body(flowfile(CONTENT, Map.of("overwrite", "vim is awesome", "fromFlowfile", "youbetcha")));
         request.contentType(DeltaFileRest.FLOWFILE_V1_MEDIA_TYPE);
-        request.headers(Map.of(
-                "metadata", "{\"fromHeader\": \"this is from header\", \"overwrite\": \"emacs is awesome\"}"));
+        request.headers(Map.of("metadata", "{\"fromHeader\": \"this is from header\", \"overwrite\": \"emacs is awesome\"}"));
 
-        Response response = request.post("/deltafile/ingress");
+        Response response = request.post("/deltafile/ingress?filename=myFilename");
 
-        assertThat(response.getStatusCode(), equalTo(400));
-        assertThat(response.getBody().prettyPrint(), equalTo("flow must be passed in as a query parameter, header, or flowfile attribute"));
+        assertThat(response.getStatusCode(), equalTo(200));
+
+        ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
+
+        Mockito.verify(deltaFileService).ingressData(is.capture(),
+                Mockito.eq("myFilename"),
+                Mockito.isNull(),
+                Mockito.eq(Map.of(
+                        "fromHeader", "this is from header",
+                        "overwrite", "vim is awesome",
+                        "fromFlowfile", "youbetcha")),
+                Mockito.eq(MediaType.APPLICATION_OCTET_STREAM));
+        assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
     }
 
     @SneakyThrows

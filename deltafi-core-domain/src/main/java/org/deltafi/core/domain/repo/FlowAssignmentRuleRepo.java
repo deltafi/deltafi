@@ -15,10 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.constant;
+package org.deltafi.core.domain.repo;
 
-public class DeltaFiConstants {
-    public static final String MATCHES_ANY = "any";
-    public static final String INGRESS_ACTION = "IngressAction";
-    public static final String AUTO_RESOLVE_FLOW_NAME = "auto-resolve";
+import org.deltafi.core.domain.api.types.FlowAssignmentRule;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface FlowAssignmentRuleRepo extends MongoRepository<FlowAssignmentRule, String> {
+	List<FlowAssignmentRule> findByOrderByPriorityAscFlowAsc();
 }

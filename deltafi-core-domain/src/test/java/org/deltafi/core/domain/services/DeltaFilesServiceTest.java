@@ -50,6 +50,9 @@ class DeltaFilesServiceTest {
     IngressFlowService flowService;
 
     @Mock
+    FlowAssignmentService flowAssignmentService;
+
+    @Mock
     DeltaFileRepo deltaFileRepo;
 
     @Mock

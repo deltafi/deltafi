@@ -72,6 +72,22 @@ input SourceInfoFilter {
   metadata: [KeyValueInput!]
 }
 
+type FlowAssignmentRule {
+  name: String!
+  flow: String!
+  priority: Int!
+  filenameRegex: String
+  requiredMetadata: [KeyValue!]
+}
+
+input FlowAssignmentRuleInput {
+  name: String!
+  flow: String!
+  priority: Int
+  filenameRegex: String
+  requiredMetadata: [KeyValueInput!]
+}
+
 type Content {
   name: String
   metadata: [KeyValue!]
@@ -331,6 +347,10 @@ type Query {
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
 
+  resolveFlowFromFlowAssignmentRules(sourceInfo: SourceInfoInput!): String
+  getAllFlowAssignmentRules: [FlowAssignmentRule]!
+  getFlowAssignmentRule(name: String!): FlowAssignmentRule
+
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile
   lastCreated(last: Int) : [DeltaFile]!
@@ -346,6 +366,10 @@ type Query {
 }
 
 type Mutation {
+  removeFlowAssignmentRule(name: String!): Boolean!
+  replaceAllFlowAssignmentRule(rules: [FlowAssignmentRuleInput!]!): [Result!]!
+  saveFlowAssignmentRule(flowAssignmentRule: FlowAssignmentRuleInput!): Result!
+
   saveIngressFlowPlan(ingressFlowPlan: IngressFlowPlanInput!) : IngressFlow!
   saveEnrichFlowPlan(enrichFlowPlan: EnrichFlowPlanInput!) : EnrichFlow!
   saveEgressFlowPlan(egressFlowPlan: EgressFlowPlanInput!) : EgressFlow!

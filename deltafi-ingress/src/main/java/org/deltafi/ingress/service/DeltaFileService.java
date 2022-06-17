@@ -29,6 +29,7 @@ import graphql.scalar.GraphqlStringCoercing;
 import graphql.schema.Coercing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.metric.MetricLogger;
@@ -63,6 +64,10 @@ public class DeltaFileService {
     private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
 
     public String ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, List<KeyValue> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
+        if (Objects.isNull(namespacedFlow)) {
+            namespacedFlow = DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME;
+        }
+
         if(Objects.isNull(sourceFileName) || Objects.isNull(namespacedFlow)) throw new DeltafiException("filename and flow are required in source info");
 
         String did = UUID.randomUUID().toString();

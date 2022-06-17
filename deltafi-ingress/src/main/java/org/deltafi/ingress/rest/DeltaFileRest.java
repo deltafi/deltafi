@@ -61,8 +61,10 @@ public class DeltaFileRest {
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.TEXT_PLAIN)
     public Response ingressData(InputStream dataStream, @Context HttpHeaders headers,
-                                @QueryParam("filename") String filenameFromQueryParam, @QueryParam("flow") String flowFromQueryParam,
-                                @HeaderParam("Filename") String filenameFromHeader, @HeaderParam("Flow") String flowFromHeader,
+                                @QueryParam("filename") String filenameFromQueryParam,
+                                @QueryParam("flow") String flowFromQueryParam,
+                                @HeaderParam("Filename") String filenameFromHeader,
+                                @HeaderParam("Flow") String flowFromHeader,
                                 @HeaderParam("Metadata") String metadata) {
         String mediaType = headers.getMediaType().getType() + "/" + headers.getMediaType().getSubtype();
         String flow = Objects.nonNull(flowFromQueryParam) ? flowFromQueryParam : flowFromHeader;
@@ -84,7 +86,6 @@ public class DeltaFileRest {
     }
 
     private String ingressBinary(InputStream dataStream, String mediaType, String metadata, String flow, String filename) throws DeltafiMetadataException, DeltafiException, ObjectStorageException {
-        if(Objects.isNull(flow)) throw new DeltafiMetadataException("flow must be passed in as a query parameter or header");
         if(Objects.isNull(filename)) throw new DeltafiMetadataException("filename must be passed in as a query parameter or header");
         return deltaFileService.ingressData(dataStream, filename, flow, metadata, mediaType);
     }
@@ -98,7 +99,6 @@ public class DeltaFileRest {
         FlowFile flowfile = unarchiveFlowfileV1(dataStream, fromJson(metadataString));
         if (Objects.isNull(flow)) { flow = flowfile.metadata.get("flow"); }
         if (Objects.isNull(filename)) { filename = flowfile.metadata.get("filename"); }
-        if(Objects.isNull(flow)) throw new DeltafiMetadataException("flow must be passed in as a query parameter, header, or flowfile attribute");
         if(Objects.isNull(filename)) throw new DeltafiMetadataException("filename must be passed in as a query parameter, header, or flowfile attribute");
         return deltaFileService.ingressData(new ByteArrayInputStream(flowfile.content), filename, flow, flowfile.metadata, MediaType.APPLICATION_OCTET_STREAM);
     }

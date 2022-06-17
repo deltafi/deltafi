@@ -111,6 +111,7 @@ Commands:
   export-egress-plan   export a single egress flow plan by name as JSON
   export-enrich-plan   export a single enrich flow plan by name as JSON
   export-ingress-plan  export a single ingress flow plan by name as JSON
+  export-rules         export all ingress-flow assignment rules as JSON
   ingress              ingress one or more files to a flow
   ingress-flow         start, stop or validate an ingress flow
   install              install/upgrade the DeltaFi core
@@ -119,6 +120,7 @@ Commands:
   list-flows           list the flows in the system with their status
   list-plans           list all flow plans within deltafi
   load-plan            load a flow plan to deltafi from a JSON file
+  load-rules           load ingress flow assignment rules from a JSON file
   load-variables       load plugin variables
   mongo-cli            launch the mongo CLI
   mongo-migrate        run mongo migrations
@@ -182,6 +184,9 @@ case "$1" in
   export-ingress-plan)
     "$DELTAFICLI_WORKDIR/commands/export-ingress-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-ingress-plan.log"
     ;;
+  export-rules)
+    "$DELTAFICLI_WORKDIR/commands/export-rules" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-rules.log"
+    ;;
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/ingress.log"
     ;;
@@ -205,6 +210,9 @@ case "$1" in
     ;;
   load-plan)
     "$DELTAFICLI_WORKDIR/commands/load-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-plan.log"
+    ;;
+  load-rules)
+    "$DELTAFICLI_WORKDIR/commands/load-rules" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-rules.log"
     ;;
   load-variables)
     "$DELTAFICLI_WORKDIR/commands/load-variables" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-variables.log"

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: export-rules
+
+Usage:
+  export-rules [OPTIONS]
+
+Options:
+  -h, --help     Show help"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+QUERY="query { getAllFlowAssignmentRules { name flow priority filenameRegex requiredMetadata { key value } } }"
+
+RESULT=$(deltafi query $QUERY)
+DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  cli_log "${red}${BASENAME}: Failed to export rules: $PLANNAME${normal}"
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
+else
+  echo "$RESULT" | jq '.data.getAllFlowAssignmentRules'
+fi
+
