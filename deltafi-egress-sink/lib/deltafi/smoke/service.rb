@@ -32,9 +32,9 @@ module Deltafi
       SMOKE_TIMEOUT_MS = 5000
 
       GRAPHQL_URL = 'http://deltafi-core-domain-service/graphql'
-      SMOKE_QUERIES = {"getIngressFlow" => '{"query":"{ getIngressFlow(flowName:\"smoke\") { flowStatus { state } } }"}',
-                       "getEgressFlow" => '{"query":"{ getEgressFlow(flowName:\"smoke\") { flowStatus { state } } }"}'}
+      GET_FLOWS = "query { getAllFlows { ingress { name flowStatus { state } } egress { name flowStatus { state } } } }"
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
+      NOT_INSTALLED = {"name" => "smoke", "flowStatus" => {"state" => "MISSING"}}
       def initialize
         @smoke = {}
         @logger = Deltafi::Logger.new(STDOUT)
@@ -73,16 +73,22 @@ module Deltafi
         end
       end
 
-      def smoke_running?(queryName)
+      def isFlowRunning(flows)
+        smoke = flows.find{ |flow| flow["name"] == "smoke" } || NOT_INSTALLED
+        return smoke["flowStatus"]["state"] == "RUNNING"
+      end
+
+      def smoke_running?
         begin
-          response = HTTParty.post(GRAPHQL_URL, body: SMOKE_QUERIES[queryName], headers: { 'Content-Type' => 'application/json' })
+          response = HTTParty.post(GRAPHQL_URL, body: SMOKE_QUERIES[GET_FLOWS], headers: { 'Content-Type' => 'application/json' })
           @connected_to_graphql = true
         rescue StandardError => e
           @logger.error "Error connecting to graphql:\n#{e.message}\n#{e.backtrace}" if @connected_to_graphql
           @connected_to_graphql = false
           return false
         end
-        return (JSON.parse(response.body).dig('data', queryName, 'flowStatus', 'state') || "") == "RUNNING"
+        flows = JSON.parse(data).dig('data', 'getAllFlows')
+        return isFlowRunning(flows["ingress"]) && isFlowRunning(flows["egress"])
       end
 
       def timeout_smoke
@@ -95,7 +101,7 @@ module Deltafi
       end
 
       def run_smoke
-        unless smoke_running?("getIngressFlow") && smoke_running?("getEgressFlow")
+        unless smoke_running?
           @smoke.clear
           return
         end
