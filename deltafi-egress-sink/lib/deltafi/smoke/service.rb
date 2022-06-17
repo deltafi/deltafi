@@ -32,7 +32,7 @@ module Deltafi
       SMOKE_TIMEOUT_MS = 5000
 
       GRAPHQL_URL = 'http://deltafi-core-domain-service/graphql'
-      GET_FLOWS = "query { getAllFlows { ingress { name flowStatus { state } } egress { name flowStatus { state } } } }"
+      GET_FLOWS = '{"query":"{ getAllFlows { ingress { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
       NOT_INSTALLED = {"name" => "smoke", "flowStatus" => {"state" => "MISSING"}}
       def initialize
@@ -80,14 +80,14 @@ module Deltafi
 
       def smoke_running?
         begin
-          response = HTTParty.post(GRAPHQL_URL, body: SMOKE_QUERIES[GET_FLOWS], headers: { 'Content-Type' => 'application/json' })
+          response = HTTParty.post(GRAPHQL_URL, body: GET_FLOWS, headers: { 'Content-Type' => 'application/json' })
           @connected_to_graphql = true
         rescue StandardError => e
           @logger.error "Error connecting to graphql:\n#{e.message}\n#{e.backtrace}" if @connected_to_graphql
           @connected_to_graphql = false
           return false
         end
-        flows = JSON.parse(data).dig('data', 'getAllFlows')
+        flows = response.parsed_response.dig('data', 'getAllFlows')
         return isFlowRunning(flows["ingress"]) && isFlowRunning(flows["egress"])
       end
 
