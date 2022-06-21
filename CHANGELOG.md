@@ -6,18 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased]
 
 ### Added
+- Disk usage based delete policies
+- Charts updated to support RKE2 Clusters
+- Charts updated to support Longhorn storage
+- Introduced node selector tags to indicate roles.  These roles will be used for RKE2 and Longhorn deployments
+- Acknowledged errors are deleted upon acknowledgement
+- Ingress routing capability
+  - Rules engine for assigning DeltaFiles with unspecified flows
+  - Ingress routing based on regex matches in filename
+  - Ingress routing based on value matches in metadata
+  - Rule validation
+  - CLI and API support
 
 ### Changed
+- Retry of a DeltaFile is now referred to as `resume`
+- Changed default deltafi-auth deployment strategy to `recreate`
+- Migrated to DGS v5.0.3
+- Migraded to Jedis v4.2.3
+- Minor version updates to various support packages
+- Replay and resume of a DeltaFile are prohibited after the DeltaFile content has been deleted
 
 ### Deprecated
+- Fluentd will no longer be used for action queue metrics collection, and will be removed in a future release
+- Elasticsearch will no longer be used for action queue metrics collection and will be removed in a future release
 
 ### Removed
-
-- DGS Gateway
+- DGS Gateway completely removed (replaced by GraphiQL UI)
 
 ### Fixed
+- NPE with null values for metadata fixed
+- Fixed getAllFlows query for smoke/egress-sink to include ingress and egress
 
 ### Tech-Debt/Refactor
+- Rubocop cleanup of deltafi-auth codebase
 
 ### Security
 
@@ -287,6 +308,7 @@ No changes.  UI update only
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
 [Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...main
+[0.95.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...0.95.5
 [0.95.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.3...0.95.4
 [0.95.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.2...0.95.3
 [0.95.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.21.4...0.95.2
