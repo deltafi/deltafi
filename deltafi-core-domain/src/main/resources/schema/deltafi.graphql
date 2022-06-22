@@ -366,9 +366,8 @@ type Query {
 }
 
 type Mutation {
+  loadFlowAssignmentRules(replaceAll: Boolean!, rules: [FlowAssignmentRuleInput!]!): [Result!]!
   removeFlowAssignmentRule(name: String!): Boolean!
-  replaceAllFlowAssignmentRule(rules: [FlowAssignmentRuleInput!]!): [Result!]!
-  saveFlowAssignmentRule(flowAssignmentRule: FlowAssignmentRuleInput!): Result!
 
   saveIngressFlowPlan(ingressFlowPlan: IngressFlowPlanInput!) : IngressFlow!
   saveEnrichFlowPlan(enrichFlowPlan: EnrichFlowPlanInput!) : EnrichFlow!

@@ -90,46 +90,50 @@ public class FlowAssignmentDatafetcherTestHelper {
     }
 
     static public Result saveFirstRule(DgsQueryExecutor dgsQueryExecutor) {
-        return saveRegexRule(dgsQueryExecutor, RULE_NAME1, FLOW_NAME1, 0, FILENAME_REGEX);
+        FlowAssignmentRuleInput input = makeRegexRule(RULE_NAME1, FLOW_NAME1, 0, FILENAME_REGEX);
+        return executeLoadRules(dgsQueryExecutor, true, List.of(input)).get(0);
     }
 
-    static public Result saveRegexRule(
-            DgsQueryExecutor dgsQueryExecutor,
+    static public Result saveBadRule(DgsQueryExecutor dgsQueryExecutor, boolean replaceAll) {
+        return executeLoadRules(dgsQueryExecutor, replaceAll, List.of(makeBadRule())).get(0);
+    }
+
+    static public FlowAssignmentRuleInput makeRegexRule(
             String name,
             String flow,
             int priority,
             String regex) {
         if (priority > 0) {
-            return executeSaveRule(dgsQueryExecutor, FlowAssignmentRuleInput.newBuilder()
+            return FlowAssignmentRuleInput.newBuilder()
                     .name(name)
                     .flow(flow)
                     .priority(priority)
                     .filenameRegex(regex)
-                    .build());
+                    .build();
         } else {
-            return executeSaveRule(dgsQueryExecutor, FlowAssignmentRuleInput.newBuilder()
+            return FlowAssignmentRuleInput.newBuilder()
                     .name(name)
                     .flow(flow)
                     .filenameRegex(regex)
-                    .build());
+                    .build();
         }
-
     }
 
-    static public boolean saveAllRules(DgsQueryExecutor dgs) {
-        boolean result = saveRegexRule(dgs, RULE_NAME1, "b", 500, "x").getSuccess();
-        result |= saveRegexRule(dgs, RULE_NAME2, "a", 500, "x").getSuccess();
-        result |= saveRegexRule(dgs, RULE_NAME3, "d", 501, "x").getSuccess();
-        result |= saveRegexRule(dgs, RULE_NAME4, "c", 499, "x").getSuccess();
-        return result;
+    static public List<Result> saveAllRules(DgsQueryExecutor dgs) {
+        List<FlowAssignmentRuleInput> rules = List.of(
+                makeRegexRule(RULE_NAME1, "b", 500, "x"),
+                makeRegexRule(RULE_NAME2, "a", 500, "x"),
+                makeRegexRule(RULE_NAME3, "d", 501, "x"),
+                makeRegexRule(RULE_NAME4, "c", 499, "x"),
+                makeBadRule());
+        return executeLoadRules(dgs, true, rules);
     }
 
-    static public Result saveBadRule(DgsQueryExecutor dgsQueryExecutor) {
-        FlowAssignmentRuleInput input = FlowAssignmentRuleInput.newBuilder()
+    static public FlowAssignmentRuleInput makeBadRule() {
+        return FlowAssignmentRuleInput.newBuilder()
                 .name("")
                 .flow("")
                 .build();
-        return executeSaveRule(dgsQueryExecutor, input);
     }
 
     static public Result saveSecondRuleSet(DgsQueryExecutor dgsQueryExecutor) {
@@ -140,22 +144,24 @@ public class FlowAssignmentDatafetcherTestHelper {
                 .requiredMetadata(Collections.singletonList(new KeyValue(META_KEY, META_VALUE)))
                 .build();
 
-        return executeSaveRule(dgsQueryExecutor, input);
+        return executeLoadRules(dgsQueryExecutor, false, List.of(input)).get(0);
     }
 
-    static private Result executeSaveRule(DgsQueryExecutor dgsQueryExecutor, FlowAssignmentRuleInput input) {
-        SaveFlowAssignmentRuleGraphQLQuery query = SaveFlowAssignmentRuleGraphQLQuery.newRequest().flowAssignmentRule(input).build();
-        SaveFlowAssignmentRuleProjectionRoot projection = new SaveFlowAssignmentRuleProjectionRoot()
+    static private List<Result> executeLoadRules(DgsQueryExecutor dgsQueryExecutor, boolean replaceAll, List<FlowAssignmentRuleInput> rules) {
+        LoadFlowAssignmentRulesGraphQLQuery query = LoadFlowAssignmentRulesGraphQLQuery.newRequest().replaceAll(replaceAll).rules(rules).build();
+        LoadFlowAssignmentRulesProjectionRoot projection = new LoadFlowAssignmentRulesProjectionRoot()
                 .success()
                 .errors();
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
 
-        Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + query.getOperationName(), Result.class);
+        TypeRef<List<Result>> resultListType = new TypeRef<>() {
+        };
 
-        return result;
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                resultListType);
     }
 
     static public String resolveFlowAssignment(DgsQueryExecutor dgsQueryExecutor, SourceInfo sourceInfo) {

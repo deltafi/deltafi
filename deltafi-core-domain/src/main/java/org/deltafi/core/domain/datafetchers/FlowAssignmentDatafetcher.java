@@ -53,29 +53,23 @@ public class FlowAssignmentDatafetcher {
     }
 
     @DgsMutation
-    public boolean removeFlowAssignmentRule(String name) {
-        return flowAssignmentService.remove(name);
+    public List<Result> loadFlowAssignmentRules(boolean replaceAll, @InputArgument(collectionType = FlowAssignmentRuleInput.class) List<FlowAssignmentRuleInput> rules) {
+        if (replaceAll) {
+            flowAssignmentService.removeAll();
+        }
+        return rules.stream().map(rule -> {
+            return convertAndSave(rule);
+        }).collect(Collectors.toList());
     }
 
     @DgsMutation
-    public List<Result> replaceAllFlowAssignmentRule(@InputArgument(collectionType = FlowAssignmentRuleInput.class) List<FlowAssignmentRuleInput> rules) {
-        flowAssignmentService.removeAll();
-        List<Result> results = rules.stream().map(rule ->
-                {
-                    return convertAndSave(rule);
-                })
-                .collect(Collectors.toList());
-        return results;
+    public boolean removeFlowAssignmentRule(String name) {
+        return flowAssignmentService.remove(name);
     }
 
     @DgsQuery
     public String resolveFlowFromFlowAssignmentRules(SourceInfo sourceInfo) {
         return flowAssignmentService.findFlow(sourceInfo);
-    }
-
-    @DgsMutation
-    public Result saveFlowAssignmentRule(FlowAssignmentRuleInput flowAssignmentRule) {
-        return convertAndSave(flowAssignmentRule);
     }
 
     private Result convertAndSave(FlowAssignmentRuleInput flowAssignmentRule) {

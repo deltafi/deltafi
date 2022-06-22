@@ -7,11 +7,12 @@ cli_help_command() {
 Command: load-rules
 
 Usage:
-  load-rules RULES_FILE [OPTIONS]
+  load-rules [OPTIONS] RULES_FILE
 
 Options:
   -h, --help        Show help
-  -v, --verbose     Verbose output of errors"
+  -q, --quiet       Suppress detailed error messages
+  -r, --replace     Replace rules (delete existing rules first)"
   exit 1
 }
 
@@ -24,7 +25,8 @@ cleanup() {
 
 trap cleanup INT
 
-VERBOSE=0
+SHOWERRORS=1
+REPLACEALL=false
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -34,8 +36,12 @@ while [[ $# -gt 0 ]]; do
       cli_help_command
       shift # past argument
       ;;
-    -v|--verbose)
-      VERBOSE=1
+    -q|--quiet)
+      SHOWERRORS=0
+      shift # past argument
+      ;;
+    -r|--replace)
+      REPLACEALL=true
       shift # past argument
       ;;
     *)    # unknown option
@@ -61,7 +67,7 @@ JSON=$(cat "$RULES_FILE")
 
 VARIABLES="{\"rules\": $JSON }"
 
-QUERY="mutation (\$rules: [FlowAssignmentRuleInput!]!) { replaceAllFlowAssignmentRule(rules: \$rules) { success errors } }"
+QUERY="mutation (\$rules: [FlowAssignmentRuleInput!]!) { loadFlowAssignmentRules(replaceAll: ${REPLACEALL}, rules: \$rules) { success errors } }"
 
 DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
@@ -78,8 +84,8 @@ else
     cli_log "${red}${BASENAME}: Loading rules failed${normal}"
     echo -e "${red}Error: ${ERRORS}${normal}"
   else
-    ERRORCOUNT=$(cat ${TMPFILE} | jq -r '.data.replaceAllFlowAssignmentRule[].success' | grep -c false)
-    SUCCESSCOUNT=$(cat ${TMPFILE} | jq -r '.data.replaceAllFlowAssignmentRule[].success' | grep -c true)
+    ERRORCOUNT=$(cat ${TMPFILE} | jq -r '.data.loadFlowAssignmentRules[].success' | grep -c false)
+    SUCCESSCOUNT=$(cat ${TMPFILE} | jq -r '.data.loadFlowAssignmentRules[].success' | grep -c true)
       if [[ $ERRORCOUNT == "0" ]]; then
         cli_log "Successfully loaded all rules from file ${cyan}${BASENAME}${normal}"
       else
@@ -87,8 +93,8 @@ else
           cli_log "Loaded ${SUCCESSCOUNT} rules from file ${cyan}${BASENAME}${normal}"
         fi
         cli_log "${red}${BASENAME}: ${ERRORCOUNT} invalid rules not loaded${normal}"
-        if [[ $VERBOSE == "1" ]]; then
-          ALLERRORS=$(cat ${TMPFILE} | jq -r '.data.replaceAllFlowAssignmentRule[].errors | join(",")')
+        if [[ $SHOWERRORS == "1" ]]; then
+          ALLERRORS=$(cat ${TMPFILE} | jq -r '.data.loadFlowAssignmentRules[].errors | join(",")')
           echo -e "${red}${ALLERRORS}${normal}"
         fi
       fi
@@ -96,4 +102,3 @@ else
 fi
 
 cleanup
-

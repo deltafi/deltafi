@@ -1272,23 +1272,32 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void testSaveFlowAssignmentRules() {
+	void testLoadFlowAssignmentRules() {
 		Result result = saveFirstRule(dgsQueryExecutor);
 		assertTrue(result.getSuccess());
 		assertTrue(result.getErrors().isEmpty());
 		assertEquals(1, flowAssignmentRuleRepo.count());
 
-		Result badResult = saveBadRule(dgsQueryExecutor);
+		Result badResult = saveBadRule(dgsQueryExecutor, false);
 		assertFalse(badResult.getSuccess());
 		assertEquals("missing rule name", badResult.getErrors().get(0));
+
+		// Verify firstRule still present since replaceAll was false
 		assertEquals(1, flowAssignmentRuleRepo.count());
+
+		// Verify firstRule removed present since replaceAll was true
+		saveBadRule(dgsQueryExecutor, true);
+		assertEquals(0, flowAssignmentRuleRepo.count());
 	}
 
 	@Test
 	void testGetAllFlowAssignmentRules() {
-		assertTrue(saveAllRules(dgsQueryExecutor));
+		List<Result> results = saveAllRules(dgsQueryExecutor);
+		// Verify saved 4, and 5th was invalid
 		assertEquals(4, flowAssignmentRuleRepo.count());
+		assertFalse(results.get(4).getSuccess());
 		List<org.deltafi.core.domain.api.types.FlowAssignmentRule> assignmentList = getAllFlowAssignmentRules(dgsQueryExecutor);
+		// Verify ordered by priority, then flow
 		assertEquals(4, assignmentList.size());
 		assertEquals(RULE_NAME4, assignmentList.get(0).getName());
 		assertEquals(RULE_NAME2, assignmentList.get(1).getName());
@@ -1332,7 +1341,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void testComputeFlowAssignment() {
+	void testResolveFlowAssignment() {
 		saveFirstRule(dgsQueryExecutor);
 		assertEquals(FLOW_NAME1, resolveFlowAssignment(dgsQueryExecutor, SourceInfo.builder()
 				.flow("").filename(FILENAME_REGEX).build()));
