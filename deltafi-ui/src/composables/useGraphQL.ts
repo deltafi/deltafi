@@ -20,11 +20,9 @@ import { ref, Ref } from "vue";
 import { jsonToGraphQLQuery, EnumType } from 'json-to-graphql-query';
 import useNotifications from "./useNotifications";
 
-type GraphQLService = "config" | "core-domain";
-
-export default function useGraphQL(service: GraphQLService = 'core-domain') {
+export default function useGraphQL() {
   const notify = useNotifications();
-  const basePath: RequestInfo = `/graphql-${service}`;
+  const basePath: RequestInfo = "/graphql-core-domain";
   const response: Ref<any> = ref({});
   const loading: Ref<Boolean> = ref(false);
   const loaded: Ref<Boolean> = ref(false);

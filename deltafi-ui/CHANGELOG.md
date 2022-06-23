@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Added support for Basic Authentication on Users page (#191)
+- Changes to support Config Server / Core Domain consolidation (#187)
 - Added refresh button to DeltaFile Viewer page (#183)
 - Added Flow Viewer (#157)
 
