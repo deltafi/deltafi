@@ -27,12 +27,13 @@ import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import graphql.scalar.GraphqlStringCoercing;
 import graphql.schema.Coercing;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.metric.MetricLogger;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.api.types.Content;
@@ -44,6 +45,7 @@ import org.deltafi.core.domain.generated.types.IngressInput;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
+import org.jetbrains.annotations.NotNull;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.InputStream;
@@ -60,6 +62,7 @@ public class DeltaFileService {
     private final GraphQLClient graphQLClient;
     private final ContentStorageService contentStorageService;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
 
@@ -83,8 +86,9 @@ public class DeltaFileService {
             throw e;
         }
 
-        logMetric(did, sourceFileName, namespacedFlow, "files_in", 1);
-        logMetric(did, sourceFileName, namespacedFlow, "bytes_in", contentReference.getSize());
+        List<Tag> taglist = tagsFor(namespacedFlow);
+        meterRegistry.counter("files_in", taglist).increment();
+        meterRegistry.counter("bytes_in", taglist).increment(contentReference.getSize());
 
         return did;
     }
@@ -117,25 +121,34 @@ public class DeltaFileService {
         try {
             response = graphQLClient.executeQuery(toGraphQlRequest(ingressInput).serialize());
         } catch (DeltafiGraphQLException e) {
-            logIngressRequestError(did, sourceFileName, namespacedFlow, e);
+            logIngressRequestError(namespacedFlow, e);
             throw e;
         } catch (Exception e) {
-            logIngressRequestError(did, sourceFileName, namespacedFlow, e);
+            logIngressRequestError(namespacedFlow, e);
             throw new DeltafiException(e.getMessage());
         }
 
         if (response.hasErrors()) {
             String errors = response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining(", "));
             DeltafiGraphQLException e = new DeltafiGraphQLException(errors);
-            logIngressRequestError(did, sourceFileName, namespacedFlow, e);
+            logIngressRequestError(namespacedFlow, e);
             throw e;
         }
     }
 
-    private void logIngressRequestError(String did, String sourceFileName, String namespacedFlow,
+    private void logIngressRequestError(String namespacedFlow,
                                         Throwable throwable) {
         log.error("Unable to execute ingress request", throwable);
-        logMetric(did, sourceFileName, namespacedFlow, "files_dropped", 1);
+
+        meterRegistry.counter("files_dropped", tagsFor(namespacedFlow)).increment();
+    }
+
+    private List<Tag> tagsFor(@NotNull String flow) {
+        return List.of(
+                Tag.of( "action", INGRESS_ACTION),
+                Tag.of("ingressFlow", flow),
+                Tag.of("source", "ingress")
+        );
     }
 
     List<KeyValue> fromMetadataString(String metadata) throws DeltafiMetadataException {
@@ -164,11 +177,6 @@ public class DeltaFileService {
 
         IngressGraphQLQuery ingressGraphQLQuery = IngressGraphQLQuery.newRequest().input(ingressInput).build();
         return new GraphQLQueryRequest(ingressGraphQLQuery, PROJECTION_ROOT, scalars);
-    }
-
-    private void logMetric(String did, String fileName, String flow, String metric, long value) {
-        Map<String, String> tags = Map.of("filename", fileName, "action", INGRESS_ACTION);
-        MetricLogger.logMetric("ingress", did, flow, metric, value, tags);
     }
 
 }

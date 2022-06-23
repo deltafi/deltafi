@@ -19,7 +19,6 @@ package org.deltafi.actionkit.action;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.common.metric.Metric;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionEventType;
@@ -29,7 +28,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Base class for all action results.  Specializations of the Result class are provided for each action type.
@@ -85,21 +83,20 @@ public abstract class Result {
      * @return a collection of default metrics (based on the result event type) and custom metrics
      */
     public Collection<Metric> getMetrics() {
-        List<String> metricCounters = new ArrayList<>();
+        ArrayList<Metric> metrics = new ArrayList<>();
+        metrics.add(new Metric(FILES_IN, 1));
 
         switch (actionEventType()) {
             case ERROR:
-                metricCounters.addAll(List.of(FILES_IN, FILES_ERRORED));
+                metrics.add(new Metric(FILES_ERRORED, 1));
                 break;
             case FILTER:
-                metricCounters.addAll(List.of(FILES_IN, FILES_FILTERED));
+                metrics.add(new Metric(FILES_FILTERED, 1));
                 break;
             default:
-                metricCounters.addAll(List.of(FILES_IN, FILES_COMPLETED));
+                metrics.add(new Metric(FILES_COMPLETED, 1));
         }
 
-        ArrayList<Metric> metrics = new ArrayList<>();
-        metricCounters.forEach(counter -> metrics.add(Metric.builder().name(counter).value(1).build()));
         metrics.addAll(getCustomMetrics());
         return metrics;
     }

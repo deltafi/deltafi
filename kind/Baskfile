@@ -11,6 +11,7 @@ _emit_duration() {
 trap _emit_duration EXIT
 
 BASE_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
 CONFIG_REPO=git@gitlab.com:systolic/deltafi/deltafi-config
 PV_DIR=$BASE_PATH/data/pv
 
@@ -20,10 +21,39 @@ CLUSTER_NAME=deltafi
 
 FQDNS=( \
   local.deltafi.org \
+  graphite.local.deltafi.org \
+  grafana.local.deltafi.org \
   minio.local.deltafi.org \
   k8s.local.deltafi.org \
   egress.local.deltafi.org \
 )
+
+local_cluster() {
+  if [[ $1 == "clean" ]]; then
+    cluster down
+    local BUILD_TARGETS=clean build test
+  else
+    deltafi uninstall
+    local BUILD_TARGETS=assemble
+  fi
+  cluster up
+  cd $ROOT/deltafi
+  git pull || echo "Cannot pull latest"
+  ./gradlew $BUILD_TARGETS publishToMavenLocal docker dockerPushLocal
+  cd $ROOT/deltafi-stix
+  git pull || echo "Cannot pull latest"
+  ./gradlew $BUILD_TARGETS docker dockerPushLocal
+  cd $ROOT/deltafi-passthrough
+  git pull || echo "Cannot pull latest"
+  ./gradlew $BUILD_TARGETS docker dockerPushLocal
+  cd $ROOT/deltafi-ui
+  docker build -t localhost:5000/deltafi-ui:latest .
+  docker push localhost:5000/deltafi-ui:latest
+  cluster up
+  install -f deltafi/charts/deltafi/values-local.yaml
+  kind_deltafi install-plugin deltafi-passthrough -f deltafi-passthrough/charts/values-local.yaml
+  kind_deltafi install-plugin deltafi-stix -f deltafi-stix/charts/values-local.yaml
+}
 
 _initialize_config() {
   if [[ ! -d $BASE_PATH/config/.git ]]; then
@@ -142,6 +172,7 @@ EOF
   _install_node_cli
   _enable_ui
   echo "<< Initializing KinD cluster...complete"
+  echo
 }
 
 _k8s_add_namespace() {
@@ -285,6 +316,8 @@ _deltafi_install() {
   _k8s_add_pv deltafi-mongodb /data/deltafi/pv/mongodb 1G
   _k8s_add_pv deltafi-elasticsearch /data/deltafi/pv/elasticsearch 1G
   _k8s_add_pv deltafi-minio /data/deltafi/pv/minio 1G
+  _k8s_add_pv deltafi-graphite /data/deltafi/pv/graphite 1G
+  _k8s_add_pv deltafi-grafana /data/deltafi/pv/grafana 1G
   _k8s_add_pv deltafi-egress-sink /data/deltafi/pv/egress-sink 1G
   _k8s_add_pv deltafi-auth /data/deltafi/pv/auth 1G
   kind_deltafi install -f deltafi/kind/values-kind.yaml "$@" 2>&1 | grep -v deprecated | while read line; do echo " |  $line"; done

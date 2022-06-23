@@ -17,7 +17,6 @@
 #
 
 # frozen_string_literal: true
-
 module Deltafi
   module API
     module V1
@@ -27,9 +26,8 @@ module Deltafi
             def nodes
               nodes = DF.k8s_client.api('v1').resource('nodes').list
               node_usage = DF.k8s_client.api('metrics.k8s.io/v1beta1').resource('nodes').list
-
               pods = pods_by_node
-              disks = disks_by_node(mount_point: '/data')
+              disks = disks_by_node
 
               nodes.map do |node|
                 {
@@ -44,8 +42,8 @@ module Deltafi
                       usage: normalize_bytes(node_usage.find { |n| n.metadata.name == node.metadata.name }&.usage&.memory || 0)
                     },
                     disk: {
-                      limit: disks[node.metadata.name]&.dig(:limit) || 0,
-                      usage: disks[node.metadata.name]&.dig(:usage, :bytes) || 0
+                      limit: disks[node.metadata.name]&.dig('limit') || 0,
+                      usage: disks[node.metadata.name]&.dig('usage') || 0
                     }
                   },
                   pods: pods[node.metadata.name] || []
@@ -53,64 +51,31 @@ module Deltafi
               end
             end
 
-            def disks_by_node(mount_point:)
-              query = <<-QUERY
-              {
-                "size": 0,
-                "query": {
-                  "bool": {
-                    "must": [
-                      {
-                        "term": {
-                          "system.filesystem.mount_point": "#{mount_point}"
-                        }
-                      }
-                    ]
-                  }
-                },
-                "aggs": {
-                  "nodes": {
-                    "terms": {
-                      "field": "host.name",
-                      "size": 1000
-                    },
-                    "aggs": {
-                      "last_value": {
-                        "top_hits": {
-                          "_source": {
-                            "includes": [
-                              "system.filesystem"
-                            ]
-                          },
-                          "size": 1,
-                          "sort": [
-                            {
-                              "@timestamp": {
-                                "order": "desc"
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+            def disks_by_node
+              usage_query = <<-QUERY
+              keepLastValue(seriesByTag('name=gauge.node.disk.usage'), inf)
               QUERY
 
-              response = DF.elasticsearch('metricbeat-*/_search', query)
-              raise StandardError, "Elasticsearch query failed: #{response.parsed_response['error']['reason']}" if response.code != 200
+              limit_query = <<-QUERY
+              keepLastValue(seriesByTag('name=gauge.node.disk.limit'), inf)
+              QUERY
 
-              response.parsed_response['aggregations']['nodes']['buckets'].each_with_object({}) do |bucket, hash|
-                fs = bucket['last_value']['hits']['hits'][0]['_source']['system']['filesystem']
-                hash[bucket['key']] = {
-                  usage: {
-                    bytes: fs['used']['bytes'],
-                    pct: fs['used']['pct']
-                  },
-                  limit: fs['total']
-                }
+              results = DF::Metrics.graphite({
+                                              target: [usage_query, limit_query],
+                                              from: '-1min',
+                                              until: 'now',
+                                              format: 'json'
+                                            })
+              disks = {}
+
+              results.each do |metric|
+                hostname = metric[:tags][:hostname]
+                measurement = metric[:tags][:name].sub('gauge.node.disk.', '')
+                disks[hostname] ||= {}
+                disks[hostname][measurement] = metric[:datapoints].last.first
               end
+
+              disks
             end
 
             def pods_by_node

@@ -28,148 +28,61 @@ module Deltafi
           class << self
             def queues
               query = <<-QUERY
-              {
-                "size": 0,
-                "query": {
-                  "bool": {
-                    "filter": [
-                      {
-                        "term": {
-                          "metric.name.keyword": "queue_size"
-                        }
-                      },
-                      {
-                        "range": {
-                          "time": {
-                            "gte": "now-5m",
-                            "lte": "now"
-                          }
-                        }
-                      }
-                    ]
-                  }
-                },
-                "aggs": {
-                  "metrics": {
-                    "terms": {
-                      "field": "metric.tags.queue_name.keyword",
-                      "size": 10000
-                    },
-                    "aggs": {
-                      "last_value": {
-                        "top_hits": {
-                          "_source": {
-                            "includes": [
-                              "metric"
-                            ]
-                          },
-                          "size": 1,
-                          "sort": [
-                            {
-                              "time": {
-                                "order": "desc"
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+              sortBy(aliasByTags(groupByTags(seriesByTag('name=gauge.action_queue.queue_size'), 'last', 'queue_name'), 'queue_name'), 'max', true)
               QUERY
-              response = DF.elasticsearch('fluentd/_search', query)
-              raise StandardError, "Elasticsearch query failed: #{response.parsed_response['error']['reason']}" if response.code != 200
 
-              response.parsed_response['aggregations']['metrics']['buckets'].map do |bucket|
-                {
-                  name: bucket['key'],
-                  size: bucket['last_value']['hits']['hits'][0]['_source']['metric']['value'],
-                  timestamp: Time.at(bucket['last_value']['hits']['hits'][0]['_source']['metric']['timestamp'].to_i / 1000)
+              results = DF::Metrics.graphite({
+                                              target: query,
+                                              from: '-20sec',
+                                              until: 'now',
+                                              format: 'json'
+                                            })
+
+              queue_list = []
+
+              results.each do |metric|
+                queue_list << {
+                  name: metric[:target],
+                  size: metric[:datapoints].map(&:first).compact.last, # Use the oldest non-null datapoint for the gauge value
+                  timestamp: metric[:datapoints].last.last.to_i * 1000
                 }
               end
+
+              queue_list
             end
 
-            def metrics_by_action_by_family(last: '5m', flow:)
-              results = flow.nil? ? action_names_by_family : Hash.new { |h, k| h[k] = {} }
+            def metrics_by_action_by_family(flow:, last: '5min')
+              # TECH DEBT: Supporting legacy times like '5m', '3h', '14d'
+              last += 'in' if /^\d*m$/.match?(last)
+              last += 'our' if /^\d*h$/.match?(last)
+              last += 'ay' if /^\d*d$/.match?(last)
 
-              counter_metrics(last: last, flow: flow).each do |family|
-                family_name = family['key']
-                family['actions']['buckets'].map do |action|
-                  action_name = action['key']
-                  results[family_name][action_name] = {}
-                  action['metrics']['buckets'].each do |metric|
-                    metric_name = metric['key']
-                    results[family_name][action_name][metric_name] = metric['sum']['value']
-                  end
-                end
-              end
-              results
-            end
-
-            def counter_metrics(last: '5m', flow:)
-              flow_query = "{ \"term\" : { \"metric.tags.flow\": \"#{flow}\" } }," unless flow.nil?
               query = <<-QUERY
-              {
-                "size": 0,
-                "query": {
-                  "bool": {
-                    "filter": [
-                      {
-                        "term": {
-                          "metric.type.keyword": "COUNTER"
-                        }
-                      },#{flow_query}
-                      {
-                        "range": {
-                          "time": {
-                            "gte": "now-#{last}",
-                            "lte": "now"
-                          }
-                        }
-                      }
-                    ]
-                  }
-                },
-                "aggs": {
-                  "families": {
-                    "terms": {
-                      "field": "metric.source.keyword"
-                    },
-                    "aggs": {
-                      "actions": {
-                        "terms": {
-                          "field": "metric.tags.action.keyword"
-                        },
-                        "aggs": {
-                          "metrics": {
-                            "terms": {
-                              "field": "metric.name.keyword"
-                            },
-                            "aggs": {
-                              "sum": {
-                                "sum": {
-                                  "field": "metric.value"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+              smartSummarize(derivative(groupByTags(seriesByTag('name=~(files_in|files_out|files_completed|bytes_out)','metricattribute=count'#{",'ingressFlow=#{flow}'" if flow}),"sum","name","source","action")), "#{last}")
               QUERY
-              response = DF.elasticsearch('fluentd/_search', query)
-              response.parsed_response['aggregations']['families']['buckets']
+
+              results = DF::Metrics.graphite({
+                                              target: query,
+                                              from: "-#{last}",
+                                              until: 'now',
+                                              format: 'json'
+                                            })
+
+              transform = Hash.new { |hash, key| hash[key] = hash.dup.clear }
+
+              results.each do |metric|
+                tags = metric[:tags]
+                transform[tags[:action]][tags[:source]][tags[:name]] = metric[:datapoints].first.first || 0
+              end
+
+              transform
             end
 
             def action_names_by_family
               action_families = DF.graphql('query { getActionNamesByFamily { family actionNames } }')
                                   .parsed_response['data']['getActionNamesByFamily']
 
-              output = Hash.new { |h, k| h[k] = h.dup.clear }
+              output = Hash.new { |hash, key| hash[key] = hash.dup.clear }
 
               action_families.each_entry do |family_entry|
                 family = family_entry['family']

@@ -34,6 +34,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-spring-boot-properties'
     implementation 'io.quarkus:quarkus-hibernate-validator'
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
+    implementation "io.quarkiverse.micrometer.registry:quarkus-micrometer-registry-graphite:${quarkusMicrometerRegistryGraphiteVersion}"
 
     implementation 'com.netflix.graphql.dgs:graphql-dgs-client'
     implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"

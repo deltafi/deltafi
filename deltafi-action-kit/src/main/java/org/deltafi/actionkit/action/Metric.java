@@ -15,21 +15,37 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.metric;
+package org.deltafi.actionkit.action;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-import java.util.Date;
 import java.util.Map;
 
+/**
+ * Metric object to provide a simple monotonically increasing counter metric
+ */
 @Data
-@Builder
+@Builder(builderMethodName = "hiddenBuilder")
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class Metric {
-    private String source;
-    private String name;
-    private long value;
-    private MetricType type;
-    private Date timestamp;
+    /**
+     * Name of metric
+     */
+    private final String name;
+    /**
+     * Positive value to increment the metric
+     */
+    private final long value;
+    /**
+     * Key value pair tags for the metric to provide additional context
+     */
     private Map<String, String> tags;
+
+    public static class MetricBuilder {}
+
+    public static MetricBuilder builder(String name, long value) {
+        return hiddenBuilder().name(name).value(value);
+    }
+
 }

@@ -50,6 +50,8 @@ GEM
     excon (0.91.0)
     ffi (1.15.5)
     filesize (0.2.0)
+    graphite-api (1.1.1)
+      timers (~> 4.3)
     hashdiff (1.0.1)
     httparty (0.20.0)
       mime-types (~> 3.0)
@@ -143,6 +145,7 @@ DEPENDENCIES
   aws-sdk-s3
   eventmachine
   filesize
+  graphite-api
   httparty
   k8s-ruby
   pry

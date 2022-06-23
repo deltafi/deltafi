@@ -40,6 +40,7 @@ module Deltafi
                   headers: { 'Content-Type' => 'application/json' })
   end
 
+  # TODO: DEPRECATED
   def self.elasticsearch(path, query)
     base_url = ENV['DELTAFI_ES_URL'] ||
                'http://elasticsearch-master:9200'
@@ -81,6 +82,7 @@ module Deltafi
 
     return properties
   end
+
 end
 
 DF = Deltafi

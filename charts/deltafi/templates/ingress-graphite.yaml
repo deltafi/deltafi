@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deltafi-graphite
+  annotations:
+  {{- include "authAnnotations" . | nindent 4 }}
+spec:
+  {{- if eq .Values.ingress.tls.enabled true }}
+  tls:
+  - secretName: {{ coalesce .Values.ingress.tls.secrets.graphite .Values.ingress.tls.secrets.default }}
+  {{- end }}
+  rules:
+  - host: graphite.{{ .Values.ingress.domain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: deltafi-graphite
+            port:
+              number: 8080

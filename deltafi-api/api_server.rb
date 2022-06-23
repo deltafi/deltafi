@@ -72,6 +72,10 @@ class ApiServer < Sinatra::Base
       build_response({ actions: DF::API::V1::Metrics::Action.metrics_by_action_by_family(last: last, flow: flow) })
     end
 
+    get '/metrics/graphite' do
+      DF::Metrics.graphite(params, raw: true)
+    end
+
     get '/status' do
       build_response({ status: DF::API::V1::Status.status })
     end

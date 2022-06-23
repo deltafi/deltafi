@@ -69,21 +69,6 @@ module Deltafi
           end
         end
 
-        def generate_metric(type:, name:, value:, timestamp: DateTime.now.strftime('%Q'), source: 'api', tags: {})
-          metric = {
-            timestamp: DateTime.now.strftime('%Q'),
-            metric: {
-              source: source,
-              name: name,
-              value: value,
-              type: type,
-              timestamp: timestamp,
-              tags: tags
-            }
-          }
-          puts metric.to_json
-        end
-
         def run
           raise "#{self.class} should override the `run` method"
         end

@@ -17,6 +17,7 @@ rules:
   - persistentvolumes
   - pods
   - services
+  - statefulsets
   verbs:
   - get
   - list

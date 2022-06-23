@@ -4,3 +4,10 @@ quarkus:
     url: ${CONFIG_SERVER_URL:http://deltafi-core-domain-service/config}
     fail-fast: ${CONFIG_FAIL_FAST:true}
     label: ${CONFIG_SERVER_LABEL:main}
+  micrometer:
+    binder-enabled-default: false
+    binder:
+      jvm: false
+      system: false
+      process: false
+      http: false

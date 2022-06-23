@@ -20,6 +20,8 @@ package org.deltafi.ingress.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
@@ -60,6 +62,9 @@ class DeltaFileServiceTest {
 
     @Mock
     GraphQLClient graphQLClient;
+
+    @Spy
+    MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     @Spy
     @SuppressWarnings("unused")

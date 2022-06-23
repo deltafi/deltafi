@@ -4,12 +4,17 @@ metadata:
   name: deltafi-status-checks
   namespace: deltafi
 data:
+  StatefulSetCheck: |
+    expected_stateful_sets:
+    - deltafi-graphite
+    - deltafi-redis-master
   DeploymentCheck: |
     expected_deployments:
     - deltafi-api
     - deltafi-core-actions
     - deltafi-core-domain
     - deltafi-egress-sink
+    - deltafi-grafana
     - deltafi-ingress
     - deltafi-kibana
     - deltafi-kubernetes-dashboard
@@ -19,6 +24,8 @@ data:
     - deltafi-ui
   IngressCheck: |
     expected_ingresses:
+    - deltafi-grafana
+    - deltafi-graphite
     - deltafi-ingress
     - deltafi-kibana
     - deltafi-kubernetes-dashboard
@@ -30,6 +37,8 @@ data:
     - deltafi-core-domain-service
     - deltafi-egress-sink-service
     - deltafi-fluentd
+    - deltafi-grafana
+    - deltafi-graphite
     - deltafi-ingress-service
     - deltafi-kibana
     - deltafi-kubernetes-dashboard

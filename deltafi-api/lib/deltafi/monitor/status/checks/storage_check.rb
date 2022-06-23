@@ -26,7 +26,6 @@ module Deltafi
       module Checks
         class StorageCheck < Status::Check
           USAGE_THRESHOLD = 90
-          DATA_MOUNT_POINT = '/data'
 
           def initialize
             super('Kubernetes Storage Check')
@@ -65,9 +64,9 @@ module Deltafi
 
           def check_usage
             nodes_over_threshold = []
-            DF::API::V1::Metrics::System.disks_by_node(mount_point: DATA_MOUNT_POINT).each do |node, metrics|
+            DF::API::V1::Metrics::System.disks_by_node.each do |node, metrics|
               percent = (metrics&.dig(:usage, :pct).to_f * 100).floor
-              nodes_over_threshold << "__#{node}:#{DATA_MOUNT_POINT}__ at __#{percent}%__" if percent >= USAGE_THRESHOLD
+              nodes_over_threshold << "__#{node}:/data__ at __#{percent}%__" if percent >= USAGE_THRESHOLD
             end
             return if nodes_over_threshold.empty?
 

@@ -88,12 +88,12 @@ module Deltafi
           end
 
           def generate_queue_size_metric(queue_name, queue_size)
-            generate_metric(
-              source: 'action_queue_check',
-              type: 'GAUGE',
+            DF::Metrics.record_metric(
+              prefix: 'gauge.action_queue',
               name: 'queue_size',
               value: queue_size,
-              tags: { queue_name: queue_name }
+              tags: { queue_name: queue_name },
+              gauge: true
             )
           end
         end

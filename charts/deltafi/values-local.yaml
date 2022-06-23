@@ -14,5 +14,7 @@ deltafi:
     image: localhost:5000/deltafi-api:latest
   egress_sink:
     image: localhost:5000/deltafi-egress-sink:latest
-  # ui:
-  #   image: localhost:5000/deltafi-ui:latest
+  nodemonitor:
+    image: localhost:5000/deltafi-nodemonitor:latest
+  ui:
+    image: localhost:5000/deltafi-ui:latest

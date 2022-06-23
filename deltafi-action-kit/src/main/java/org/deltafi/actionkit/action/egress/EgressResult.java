@@ -20,8 +20,8 @@ package org.deltafi.actionkit.action.egress;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.deltafi.actionkit.action.Metric;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.common.metric.Metric;
 import org.deltafi.core.domain.api.types.ActionContext;
 import org.deltafi.core.domain.generated.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
@@ -62,8 +62,8 @@ public class EgressResult extends Result {
         ArrayList<Metric> metrics = new ArrayList<>();
 
         Map<String, String> tags = Map.of("endpoint", destination);
-        metrics.add(Metric.builder().name("files_out").value(1).tags(tags).build());
-        metrics.add(Metric.builder().name("bytes_out").value(bytesEgressed).tags(tags).build());
+        metrics.add(Metric.builder("files_out", 1).tags(tags).build());
+        metrics.add(Metric.builder("bytes_out", bytesEgressed).tags(tags).build());
 
         return metrics;
     }

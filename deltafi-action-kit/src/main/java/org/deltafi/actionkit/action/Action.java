@@ -22,12 +22,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.quarkus.arc.Subclass;
 import io.quarkus.runtime.StartupEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.metrics.ActionMetricsLogger;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.actionkit.config.ActionVersionProperty;
@@ -48,11 +49,14 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Base class for all DeltaFi Actions.  No action should directly extend this class, but should use
@@ -84,6 +88,10 @@ public abstract class Action<P extends ActionParameters> {
     @Inject
     @SuppressWarnings("CdiInjectionPointsInspection")
     protected ActionVersionProperty actionVersionProperty;
+
+    @SuppressWarnings("CdiInjectionPointsInspection")
+    @Inject
+    MeterRegistry meterRegistry;
 
     private final ActionType actionType;
     private final Class<P> paramType;
@@ -135,8 +143,6 @@ public abstract class Action<P extends ActionParameters> {
                 DeltaFile deltaFile = actionInput.getDeltaFile();
                 P params = convertToParams(actionInput.getActionParams());
 
-                SourceInfo sourceInfo = deltaFile.getSourceInfo();
-
                 executeAction(deltaFile, context, params);
 
             }
@@ -153,12 +159,27 @@ public abstract class Action<P extends ActionParameters> {
             }
 
             actionEventService.submitResult(result);
-            ActionMetricsLogger.logMetrics(actionType, result);
+            postMetrics(result);
         } catch (Throwable e) {
             ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
             actionEventService.submitResult(errorResult);
+            postMetrics(errorResult);
+        }
+    }
 
-            // TODO: Log metrics on error caused by exception???
+    private void postMetrics(Result result) {
+        String ingressFlow = result.getContext().getIngressFlow();
+        String egressFlow = result.getContext().getEgressFlow();
+        String source = result.getContext().getName();
+        for (Metric metric: result.getMetrics()) {
+            List<Tag> tags = new ArrayList<>();
+            if (metric.getTags() != null)  tags = metric.getTags().entrySet().stream().map(e -> Tag.of(e.getKey(), e.getValue())).collect(Collectors.toList());
+            tags.add(Tag.of("action", actionType.name().toLowerCase()));
+            if (ingressFlow != null) tags.add(Tag.of("ingressFlow", ingressFlow));
+            if (egressFlow != null) tags.add(Tag.of("egressFlow", egressFlow));
+            tags.add(Tag.of("source", source));
+
+            meterRegistry.counter(metric.getName(), tags).increment(metric.getValue());
         }
     }
 
