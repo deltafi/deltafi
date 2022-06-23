@@ -32,6 +32,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation 'io.quarkus:quarkus-spring-cloud-config-client'
     implementation 'io.quarkus:quarkus-spring-boot-properties'
+    implementation 'io.quarkus:quarkus-hibernate-validator'
     implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
 
     implementation 'com.netflix.graphql.dgs:graphql-dgs-client'

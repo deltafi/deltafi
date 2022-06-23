@@ -49,6 +49,13 @@ generateJava {
 	  "KeyValueInput": "org.deltafi.core.domain.api.types.KeyValue",
 	  "PluginCoordinates": "org.deltafi.core.domain.api.types.PluginCoordinates",
 	  "PluginCoordinatesInput": "org.deltafi.core.domain.api.types.PluginCoordinates",
+	  "Property": "org.deltafi.core.domain.api.types.Property",
+	  "PropertyId": "org.deltafi.core.domain.api.types.PropertyId",
+	  "PropertySource": "org.deltafi.core.domain.api.types.PropertySource",
+	  "PropertyUpdate": "org.deltafi.core.domain.api.types.PropertyUpdate",
+	  "PropertyInput": "org.deltafi.core.domain.api.types.Property",
+	  "PropertySet": "org.deltafi.core.domain.api.types.PropertySet",
+	  "PropertySetInput": "org.deltafi.core.domain.api.types.PropertySet",
 	  "ProtocolLayer": "org.deltafi.core.domain.api.types.ProtocolLayer",
 	  "ProtocolLayerInput": "org.deltafi.core.domain.api.types.ProtocolLayer",
 	  "SourceInfo": "org.deltafi.core.domain.api.types.SourceInfo",
@@ -58,7 +65,7 @@ generateJava {
 
 dependencyManagement {
 	imports {
-		mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2021.0.0'
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
 	}
 }
 
@@ -76,7 +83,7 @@ dependencies {
 	implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
 	implementation "org.springframework.boot:spring-boot-starter-aop"
 	implementation "org.springframework.retry:spring-retry"
-	implementation "org.springframework.cloud:spring-cloud-starter-config"
+	implementation "org.springframework.cloud:spring-cloud-config-server"
 
 	implementation "redis.clients:jedis:${jedisVersion}"
 

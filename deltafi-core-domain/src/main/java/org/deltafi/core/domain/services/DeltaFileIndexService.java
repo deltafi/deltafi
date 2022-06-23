@@ -18,10 +18,9 @@
 package org.deltafi.core.domain.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +28,6 @@ import javax.annotation.PostConstruct;
 
 @Service
 @Slf4j
-@RefreshScope
 public class DeltaFileIndexService {
 
     private final DeltaFileRepo deltaFileRepo;
@@ -41,8 +39,10 @@ public class DeltaFileIndexService {
     }
 
     @EventListener
-    public void onRefresh(final RefreshScopeRefreshedEvent event) {
-        this.deltaFileRepo.setExpirationIndex(deltaFiProperties.getDeltaFileTtl());
+    public void onEnvChange(final EnvironmentChangeEvent event) {
+        if (event.getKeys().contains("deltafi.deltaFileTtl")) {
+            this.deltaFileRepo.setExpirationIndex(deltaFiProperties.getDeltaFileTtl());
+        }
     }
 
     @PostConstruct

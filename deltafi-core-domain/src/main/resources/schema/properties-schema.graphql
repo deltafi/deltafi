@@ -57,3 +57,14 @@ input PropertySetInput {
     description: String!
     properties: [PropertyInput]!
 }
+
+input PropertyUpdate {
+    propertySetId: String!
+    key: String!
+    value: String!
+}
+
+input PropertyId {
+    propertySetId: String!
+    key: String!
+}

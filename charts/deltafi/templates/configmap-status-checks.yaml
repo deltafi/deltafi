@@ -7,7 +7,6 @@ data:
   DeploymentCheck: |
     expected_deployments:
     - deltafi-api
-    - deltafi-config-server
     - deltafi-core-actions
     - deltafi-core-domain
     - deltafi-egress-sink
@@ -28,7 +27,6 @@ data:
   ServiceCheck: |
     expected_services:
     - deltafi-api-service
-    - deltafi-config-server
     - deltafi-core-domain-service
     - deltafi-egress-sink-service
     - deltafi-fluentd

@@ -1,1 +1,5 @@
-org.springframework.boot.BootstrapRegistryInitializer = org.deltafi.core.bootstrap.ConfigClientRetryBootstrapper
+# ConfigData Location Resolvers
+org.springframework.boot.context.config.ConfigDataLocationResolver=org.deltafi.core.config.server.loader.DeltaFiConfigDataLocationResolver
+
+# ConfigData Loaders
+org.springframework.boot.context.config.ConfigDataLoader=org.deltafi.core.config.server.loader.DeltaFiConfigDataLoader

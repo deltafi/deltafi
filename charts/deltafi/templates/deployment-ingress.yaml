@@ -17,16 +17,7 @@ spec:
         app: deltafi-ingress
         group: deltafi-core
     spec:
-      initContainers:
-      - name: wait-for-config-server
-        image: busybox:1.34.1
-        command:
-        - 'sh'
-        - '-c'
-        - >
-          until nc -z -w 2 deltafi-config-server 80 && echo config-server ok;
-            do sleep 1;
-          done
+      {{- include "initContainersWaitForCoreDomain" . | nindent 6 }}
       containers:
       - name: deltafi-ingress
         image: {{ .Values.deltafi.ingress.image }}

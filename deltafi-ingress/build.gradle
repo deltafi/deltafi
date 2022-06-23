@@ -31,6 +31,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation 'io.quarkus:quarkus-spring-boot-properties'
     implementation 'io.quarkus:quarkus-spring-cloud-config-client'
+    implementation 'io.quarkus:quarkus-hibernate-validator'
     implementation("io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}") {
         because 'Plugin to allow JSON formatted logging for log scraping'
     }

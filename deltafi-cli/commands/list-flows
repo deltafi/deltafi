@@ -22,7 +22,8 @@ QUERY="query { getAllFlows { ingress $FIELDS enrich $FIELDS egress $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_flows() {
-  echo "$RESULT" | jq -r "([\"${1^} Flow\", \"State\"] | (., map(length*\"=\"))), (.data.getAllFlows.$1[] | [.name, .flowStatus.state]) | @tsv" | column -ts $'\t'
+  FLOW_TYPE=$(tr '[:lower:]' '[:upper:]' <<< ${1:0:1})${1:1}
+  echo "$RESULT" | jq -r "([\"${FLOW_TYPE} Flow\", \"State\"] | (., map(length*\"=\"))), (.data.getAllFlows.$1[] | [.name, .flowStatus.state]) | @tsv" | column -ts $'\t'
 }
 
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")

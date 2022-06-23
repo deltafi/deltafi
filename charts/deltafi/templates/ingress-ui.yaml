@@ -29,13 +29,6 @@ spec:
             name: deltafi-api-service
             port:
               number: 80
-      - path: /(graphql)-config
-        pathType: Prefix
-        backend:
-          service:
-            name: deltafi-config-server
-            port:
-              number: 80
       - path: /(graphql)-core-domain
         pathType: Prefix
         backend:

@@ -22,7 +22,8 @@ QUERY="query { getAllFlowPlans { ingressPlans $FIELDS enrichPlans $FIELDS egress
 RESULT=$(deltafi query "$QUERY")
 
 print_plans() {
-  echo "$RESULT" | jq -r "([\"${1^} Flow Plan\", \"Source Plugin\", \"Description\"] | (., map(length*\"=\"))), (.data.getAllFlowPlans.$1Plans[] | [.name, (.sourcePlugin.groupId + \":\" + .sourcePlugin.artifactId + \":\" + .sourcePlugin.version), .description]) | @tsv" | column -ts $'\t'
+  FLOW_TYPE=$(tr '[:lower:]' '[:upper:]' <<< ${1:0:1})${1:1}
+  echo "$RESULT" | jq -r "([\"${FLOW_TYPE} Flow Plan\", \"Source Plugin\", \"Description\"] | (., map(length*\"=\"))), (.data.getAllFlowPlans.$1Plans[] | [.name, (.sourcePlugin.groupId + \":\" + .sourcePlugin.artifactId + \":\" + .sourcePlugin.version), .description]) | @tsv" | column -ts $'\t'
 }
 
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")

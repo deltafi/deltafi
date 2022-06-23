@@ -23,8 +23,22 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import graphql.ExecutionResult;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.core.config.server.constants.PropertyConstants;
+import org.deltafi.core.domain.api.types.Property;
+import org.deltafi.core.domain.api.types.PropertyId;
+import org.deltafi.core.domain.api.types.PropertySet;
+import org.deltafi.core.domain.api.types.PropertyUpdate;
+import org.deltafi.core.config.server.environment.DeltaFiCompositeEnvironmentRepository;
+import org.deltafi.core.config.server.environment.MongoEnvironmentRepository;
+import org.deltafi.core.config.server.repo.PropertyRepository;
+import org.deltafi.core.config.server.repo.PropertyRepositoryImpl;
+import org.deltafi.core.config.server.repo.StateHolderRepositoryInMemoryImpl;
+import org.deltafi.core.config.server.service.PropertyMetadataLoader;
+import org.deltafi.core.config.server.service.PropertyService;
+import org.deltafi.core.config.server.service.StateHolderService;
 import org.deltafi.core.domain.api.Constants;
 import org.deltafi.core.domain.api.types.DeleteActionSchema;
 import org.deltafi.core.domain.api.types.DeltaFile;
@@ -41,6 +55,7 @@ import org.deltafi.core.domain.configuration.LoadActionConfiguration;
 import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.datafetchers.FlowPlanDatafetcherTestHelper;
+import org.deltafi.core.domain.datafetchers.PropertiesDatafetcherTestHelper;
 import org.deltafi.core.domain.delete.DeleteRunner;
 import org.deltafi.core.domain.generated.DgsConstants;
 import org.deltafi.core.domain.generated.client.*;
@@ -63,9 +78,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.cloud.config.server.config.ConfigServerProperties;
+import org.springframework.cloud.config.server.environment.EnvironmentRepository;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -88,8 +107,8 @@ import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
+import static org.deltafi.core.config.server.constants.PropertyConstants.DELTAFI_PROPERTY_SET;
 import static org.deltafi.core.domain.Util.assertEqualsIgnoringDates;
-import static org.deltafi.core.domain.Util.buildDeltaFile;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
@@ -163,6 +182,9 @@ class DeltaFiCoreDomainApplicationTests {
 	@Autowired
 	ErrorService errorService;
 
+	@Autowired
+	PropertyRepository propertyRepository;
+
 	@Captor
 	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
 
@@ -174,7 +196,13 @@ class DeltaFiCoreDomainApplicationTests {
 	private final OffsetDateTime START_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 183, ZoneOffset.UTC);
 	private final OffsetDateTime STOP_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 184, ZoneOffset.UTC);
 
+	private static final String TEST_PLUGIN = "test-plugin";
+	private static final String EDITABLE = "editable";
+	private static final String NOT_EDITABLE = "not-editable";
+	private static final String ORIGINAL_VALUE = "original";
+
 	@TestConfiguration
+	@EnableConfigurationProperties(ConfigServerProperties.class)
 	public static class Configuration {
 		@Bean
 		public RedisService redisService() {
@@ -187,6 +215,28 @@ class DeltaFiCoreDomainApplicationTests {
 				e.printStackTrace();
 			}
 			return redisService;
+		}
+
+		// Create the property related beans that are normally created in the DeltaFiConfigDataLocationResolver
+		@Bean
+		public StateHolderService stateHolderService() {
+			return new StateHolderService(new StateHolderRepositoryInMemoryImpl());
+		}
+
+		@Bean
+		public PropertyRepository propertyRepository(MongoTemplate mongoTemplate) {
+			return new PropertyRepositoryImpl(mongoTemplate);
+		}
+
+		@Bean
+		public PropertyService propertyService(PropertyRepository propertyRepository, StateHolderService stateHolderService) {
+			return new PropertyService(propertyRepository, new PropertyMetadataLoader(), stateHolderService, null, null);
+		}
+
+		@Bean
+		public EnvironmentRepository envRepo(PropertyService propertiesService, StateHolderService stateHolderService, ConfigServerProperties configServerProperties) {
+			MongoEnvironmentRepository mongoEnvironmentRepository = new MongoEnvironmentRepository(propertiesService, stateHolderService, configServerProperties);
+			return new DeltaFiCompositeEnvironmentRepository(new ArrayList<>(List.of(mongoEnvironmentRepository)), false, stateHolderService);
 		}
 	}
 
@@ -210,6 +260,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFiProperties.getDelete().setOnCompletion(false);
 		flowAssignmentRuleRepo.deleteAll();
 		loadConfig();
+		loadTestProperties();
 
 		Mockito.clearInvocations(redisService);
 	}
@@ -265,6 +316,15 @@ class DeltaFiCoreDomainApplicationTests {
 
 	void loadEnrichConfig() {
 		enrichFlowRepo.save(buildEnrichFlow(FlowState.RUNNING));
+	}
+
+	void loadTestProperties() {
+		propertyRepository.removeAll();
+		PropertySet common = buildPropertySet(DELTAFI_PROPERTY_SET);
+		PropertySet actionKit = buildPropertySet(PropertyConstants.ACTION_KIT_PROPERTY_SET);
+		PropertySet testPlugin = buildPropertySet(TEST_PLUGIN);
+
+		propertyRepository.saveAll(List.of(common, actionKit, testPlugin));
 	}
 
 	@Test
@@ -1187,6 +1247,42 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(getActionNames(actionFamilies, "format")).hasSize(1).contains("sample.SampleFormatAction");
 		assertThat(getActionNames(actionFamilies, "validate")).isEmpty();
 		assertThat(getActionNames(actionFamilies, "egress")).hasSize(1).contains("SampleEgressAction");
+	}
+
+	@Test
+	void testGetPropertySets() {
+		List<PropertySet> propertySets = PropertiesDatafetcherTestHelper.getPropertySets(dgsQueryExecutor);
+		assertThat(propertySets).hasSize(3);
+	}
+
+	@Test
+	void testRemovePluginPropertySet_commonFails() {
+		ExecutionResult result = PropertiesDatafetcherTestHelper.removePluginPropertySet_commonFails(dgsQueryExecutor);
+		assertThat(result.getErrors()).hasSize(1);
+		assertThat(result.getErrors().get(0).getMessage()).isEqualTo("java.lang.IllegalArgumentException: Core PropertySet: deltafi-common cannot be added, replaced or removed");
+	}
+
+	@Test
+	void testUpdateProperties() {
+		Integer result = PropertiesDatafetcherTestHelper.updateProperties(dgsQueryExecutor);
+		assertThat(result).isEqualTo(1);
+	}
+
+	@Test
+	void testRemovePluginPropertySet() {
+		assertThat(PropertiesDatafetcherTestHelper.removePluginPropertySet(dgsQueryExecutor)).isTrue();
+	}
+
+	@Test
+	void testAddPluginPropertySet_commonFails() {
+		ExecutionResult result = PropertiesDatafetcherTestHelper.addPluginPropertySet_commonFails(dgsQueryExecutor);
+		assertThat(result.getErrors()).hasSize(1);
+		assertThat(result.getErrors().get(0).getMessage()).isEqualTo("java.lang.IllegalArgumentException: Core PropertySet: deltafi-common cannot be added, replaced or removed");
+	}
+
+	@Test
+	void testAddPluginPropertySet_valid() {
+		assertThat(PropertiesDatafetcherTestHelper.addPluginPropertySet_valid(dgsQueryExecutor)).isTrue();
 	}
 
 	List<String> getActionNames(List<ActionFamily> actionFamilies, String family) {
@@ -2141,14 +2237,79 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void testReadDidsWithContent() {
-		DeltaFile d1 = buildDeltaFile("1");
-		DeltaFile d2 = buildDeltaFile("2");
-		DeltaFile d3 = buildDeltaFile("3");
-		d3.setContentDeleted(OffsetDateTime.now());
-		deltaFileRepo.saveAll(List.of(d1, d2, d3));
+	void getIds() {
+		Set<String> ids = propertyRepository.getIds();
+		assertThat(ids).hasSizeGreaterThanOrEqualTo(3)
+				.contains(DELTAFI_PROPERTY_SET, PropertyConstants.ACTION_KIT_PROPERTY_SET, TEST_PLUGIN);
+	}
 
-		assertEquals(List.of("1", "2"), deltaFileRepo.readDidsWithContent());
+	@Test
+	void updateProperties() {
+		PropertyUpdate commonUpdate = PropertyUpdate.builder()
+				.propertySetId(DELTAFI_PROPERTY_SET).key(EDITABLE).value("new value").build();
+		PropertyUpdate pluginUpdate = PropertyUpdate.builder()
+				.propertySetId(TEST_PLUGIN).key(EDITABLE).value("new value").build();
+
+		int propertySetsUpdated = propertyRepository.updateProperties(List.of(commonUpdate, pluginUpdate));
+		assertThat(propertySetsUpdated).isEqualTo(2);
+
+		assertThat(getValue(DELTAFI_PROPERTY_SET)).isEqualTo("new value");
+		assertThat(getValue(TEST_PLUGIN)).isEqualTo("new value");
+	}
+
+	@Test
+	void unsetProperties() {
+		PropertyId commonUpdate = PropertyId.builder()
+				.propertySetId(DELTAFI_PROPERTY_SET).key(EDITABLE).build();
+		PropertyId pluginUpdate = PropertyId.builder()
+				.propertySetId(TEST_PLUGIN).key(EDITABLE).build();
+
+		int propertySetsUpdated = propertyRepository.unsetProperties(List.of(commonUpdate, pluginUpdate));
+		assertThat(propertySetsUpdated).isEqualTo(2);
+
+		assertThat(getValue(DELTAFI_PROPERTY_SET)).isNull();
+		assertThat(getValue(TEST_PLUGIN)).isNull();
+	}
+
+	@Test
+	void unsetProperties_notEditable() {
+		PropertyId notEditable = PropertyId.builder()
+				.propertySetId(DELTAFI_PROPERTY_SET).key(NOT_EDITABLE).build();
+
+		int propertySetsUpdated = propertyRepository.unsetProperties(List.of(notEditable));
+		assertThat(propertySetsUpdated).isZero();
+
+		assertThat(getValue(DELTAFI_PROPERTY_SET, NOT_EDITABLE)).isEqualTo(ORIGINAL_VALUE);
+	}
+
+	@Test
+	void updateProperties_notEditable() {
+		PropertyUpdate notEditable = PropertyUpdate.builder()
+				.propertySetId(DELTAFI_PROPERTY_SET).key(NOT_EDITABLE).value("new value").build();
+
+		int propertySetsUpdated = propertyRepository.updateProperties(List.of(notEditable));
+		assertThat(propertySetsUpdated).isZero();
+
+		assertThat(getValue(DELTAFI_PROPERTY_SET, NOT_EDITABLE)).isEqualTo(ORIGINAL_VALUE);
+	}
+
+	@Test
+	void updateProperties_notExists() {
+		PropertyUpdate notExists = PropertyUpdate.builder()
+				.propertySetId(DELTAFI_PROPERTY_SET).key("missing").value("abc").build();
+
+		int propertySetsUpdated = propertyRepository.updateProperties(List.of(notExists));
+		assertThat(propertySetsUpdated).isZero();
+	}
+
+	String getValue(String propertySet) {
+		return getValue(propertySet, EDITABLE);
+	}
+
+	String getValue(String propertySet, String key) {
+		return propertyRepository.findById(propertySet)
+				.map(PropertySet::getProperties).orElse(Collections.emptyList()).stream()
+				.filter(p -> key.equals(p.getKey())).findFirst().map(Property::getValue).orElse(null);
 	}
 
 	private Domain buildErrorDomain(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
@@ -2249,6 +2410,13 @@ class DeltaFiCoreDomainApplicationTests {
 		egressFlow.setIncludeIngressFlows(null);
 		egressFlow.getFlowStatus().setState(flowState);
 		return egressFlow;
+	}
+
+	PropertySet buildPropertySet(String name) {
+		PropertySet propertySet = Util.getPropertySet(name);
+		propertySet.getProperties().add(Util.getProperty(EDITABLE, ORIGINAL_VALUE, true));
+		propertySet.getProperties().add(Util.getProperty(NOT_EDITABLE, ORIGINAL_VALUE, false));
+		return propertySet;
 	}
 
 	void clearForFlowTests() {

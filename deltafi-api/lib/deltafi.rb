@@ -66,8 +66,8 @@ module Deltafi
   end
 
   def self.system_properties
-    base_url = ENV['DELTAFI_CONFIG_URL'] || 'http://deltafi-config-server'
-    config_url = File.join(base_url, 'application/default')
+    base_url = ENV['DELTAFI_CONFIG_URL'] || 'http://deltafi-core-domain-service'
+    config_url = File.join(base_url, 'config/application/default')
     properties = {}
 
     response = HTTParty.get(config_url,

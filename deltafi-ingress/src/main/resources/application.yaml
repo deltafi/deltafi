@@ -4,4 +4,4 @@ quarkus:
   # enable retrieval of configuration from the Config Server - this is off by default
   spring-cloud-config:
     enabled: true
-    url: ${CONFIG_SERVER_URL:http://deltafi-config-server}
+    url: ${CONFIG_SERVER_URL:http://deltafi-core-domain-service/config}

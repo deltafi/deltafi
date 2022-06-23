@@ -18,6 +18,8 @@
 package org.deltafi.core.domain;
 
 import org.assertj.core.api.Assertions;
+import org.deltafi.core.domain.api.types.Property;
+import org.deltafi.core.domain.api.types.PropertySet;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.Action;
@@ -105,5 +107,32 @@ public class Util {
             Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
         }
+    }
+
+    public static PropertySet getPropertySet(String name) {
+        PropertySet propertySet = new PropertySet();
+        propertySet.setId(name);
+        propertySet.setDisplayName(name);
+        propertySet.setDescription("some property set");
+        return propertySet;
+    }
+
+    public static PropertySet getPropertySetWithProperty(String name) {
+        PropertySet propertySet = getPropertySet(name);
+        propertySet.getProperties().add(getProperty());
+        return propertySet;
+    }
+
+    public static Property getProperty() {
+        return getProperty("a", "a-value", true);
+    }
+
+    public static Property getProperty(String name, String value, boolean editable) {
+        return Property.builder()
+                .key(name)
+                .editable(editable)
+                .defaultValue("default it")
+                .description("some property")
+                .value(value).build();
     }
 }

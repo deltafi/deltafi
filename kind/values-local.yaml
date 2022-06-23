@@ -1,7 +1,5 @@
 # DeltaFi config
 deltafi:
-  config_server:
-    image: localhost:5000/deltafi-config-server:latest
   passthrough_actions:
     image: localhost:5000/deltafi-passthrough-actions:latest
   core_actions:

@@ -2,11 +2,11 @@
 deltafi:
   envVars:
     # notation needed spring-boot apps
-    - name: SPRING_CONFIG_IMPORT
-      value: configserver:http://deltafi-config-server
+    - name: DELTAFI_CONFIG_IMPORT
+      value: deltafi:mongodb=true&git=false
     # notation needed for quarkus apps
     - name: CONFIG_SERVER_URL
-      value: http://deltafi-config-server
+      value: http://deltafi-core-domain-service/config
     - name: REDIS_PASSWORD
       valueFrom:
         secretKeyRef:
@@ -26,22 +26,6 @@ deltafi:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-  config_server:
-    image: deltafi/deltafi-config-server:0.95.4
-    envVars:
-      - name: MONGO_HOST
-        value: deltafi-mongodb
-      - name: MONGO_AUTH_DB
-        value: deltafi
-      - name: MONGO_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: mongodb-passwords
-            key: mongodb-password
-    nativeConfigMap: config-server-configmap
-    nativeConfigMountPath: /config
-    volumes: []
-    volumeMounts: []
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
     image: deltafi/deltafi-core-actions:0.95.4
@@ -51,6 +35,9 @@ deltafi:
   core_domain:
     image: deltafi/deltafi-core-domain:0.95.4
     mongo_host: deltafi-mongodb
+    nativeConfigMap: config-server-configmap
+    nativeConfigMountPath: /config
+    # TODO should we allow nested yaml here and automatically create that config-map?
   ingress:
     image: deltafi/deltafi-ingress:0.95.4
     envVar:

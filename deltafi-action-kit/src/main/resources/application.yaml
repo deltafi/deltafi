@@ -1,6 +1,6 @@
 quarkus:
   spring-cloud-config:
     enabled: true
-    url: ${CONFIG_SERVER_URL:http://deltafi-config-server}
+    url: ${CONFIG_SERVER_URL:http://deltafi-core-domain-service/config}
     fail-fast: ${CONFIG_FAIL_FAST:true}
     label: ${CONFIG_SERVER_LABEL:main}

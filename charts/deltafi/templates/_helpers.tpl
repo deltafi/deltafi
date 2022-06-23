@@ -51,3 +51,16 @@ livenessProbe:
   timeoutSeconds: 5
   failureThreshold: 2
 {{- end -}}
+
+{{- define "initContainersWaitForCoreDomain" -}}
+initContainers:
+- name: wait-for-core-domain
+  image: busybox:1.34.1
+  command:
+  - 'sh'
+  - '-c'
+  - >
+    until nc -z -w 2 deltafi-core-domain-service 80 && echo deltafi-core-domain ok;
+      do sleep 1;
+    done
+{{- end -}}

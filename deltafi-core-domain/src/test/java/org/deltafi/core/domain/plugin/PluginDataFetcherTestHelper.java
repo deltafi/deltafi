@@ -94,9 +94,9 @@ public class PluginDataFetcherTestHelper {
         assertEquals("property1", plugin1.getPropertySets().get(0).getProperties().get(0).getKey());
         assertEquals("A description of property 1", plugin1.getPropertySets().get(0).getProperties().get(0).getDescription());
         assertEquals("property1Default", plugin1.getPropertySets().get(0).getProperties().get(0).getDefaultValue());
-        assertTrue(plugin1.getPropertySets().get(0).getProperties().get(0).getRefreshable());
-        assertTrue(plugin1.getPropertySets().get(0).getProperties().get(0).getEditable());
-        assertFalse(plugin1.getPropertySets().get(0).getProperties().get(0).getHidden());
+        assertTrue(plugin1.getPropertySets().get(0).getProperties().get(0).isRefreshable());
+        assertTrue(plugin1.getPropertySets().get(0).getProperties().get(0).isEditable());
+        assertFalse(plugin1.getPropertySets().get(0).getProperties().get(0).isHidden());
         assertEquals("property1Value", plugin1.getPropertySets().get(0).getProperties().get(0).getValue());
         assertEquals("property4Value", plugin1.getPropertySets().get(1).getProperties().get(1).getValue());
         assertEquals("propertySet2", plugin1.getPropertySets().get(1).getId());
