@@ -47,14 +47,12 @@ import QueueMetricsTable from "@/components/QueueMetricsTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlows from "@/composables/useFlows";
-import useUtilFunctions from "@/composables/useUtilFunctions";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import { ref, computed, onUnmounted, onMounted, inject } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
-const { data: actionMetrics, fetch: getActionMetrics, errors, loaded, loading } = useActionMetrics();
+const { data: actionMetrics, fetch: getActionMetrics, errors, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
 const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
-const { sentenceCaseString } = useUtilFunctions();
 const isIdle = inject("isIdle");
 
 fetchIngressFlows();
@@ -72,19 +70,6 @@ const timeRanges = [
 ];
 const ingressFlowNameSelected = ref(null);
 const timeRange = ref(timeRanges[0]);
-
-const actionMetricsUngrouped = computed(() => {
-  const newObject = {};
-  Object.assign(newObject, actionMetrics.value);
-  for (const [familyKey, familyValue] of Object.entries(actionMetrics.value)) {
-    for (const [actionKey] of Object.entries(familyValue)) {
-      newObject[familyKey][actionKey]["family_type"] = sentenceCaseString(familyKey);
-    }
-  }
-  return Object.keys(newObject).reduce((result, family) => {
-    return Object.assign(result, newObject[family]);
-  }, {});
-});
 
 const hasErrors = computed(() => {
   return errors.value.length > 0;

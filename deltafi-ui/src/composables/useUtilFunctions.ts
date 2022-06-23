@@ -32,7 +32,6 @@ export default function useUtilFunctions(): {
   formattedBytes: (bytes: number) => string;
   duration: (milliseconds: number, precision: number) => string;
   pluralize: (count: number, singular: string, plural?: string) => string;
-  sentenceCaseString: (stringValue: string) => string;
 } {
   const formatContextData = (contextData: string) => {
     let formattedString = contextData;
@@ -103,14 +102,6 @@ export default function useUtilFunctions(): {
     return uiConfig.useUTC ? dayjs(date).utc().format(format) : dayjs(date).format(format);
   }
 
-  const sentenceCaseString = (stringValue: string) => {
-    // Metrics names should always be snake case
-    const words = stringValue.split("_").map((word) => {
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    });
-    return words.join(" ");
-  };
-
   return {
     formatTimestamp,
     shortTimezone,
@@ -119,6 +110,5 @@ export default function useUtilFunctions(): {
     formattedBytes,
     duration,
     pluralize,
-    sentenceCaseString
   };
 }

@@ -2,69 +2,71 @@
   "actions": {
     "ingress": {
       "IngressAction": {
-        "bytes_in": 124812.0,
-        "files_in": 3467.0
+        "bytes_in": 10116,
+        "files_in": 281
+      }
+    },
+    "transform": {
+      "decompress-passthrough.DecompressPassthroughTransformAction1": {
+        "files_completed": 100,
+        "files_in": 300
+      },
+      "decompress-passthrough.DecompressPassthroughTransformAction2": {
+        "files_completed": 2500,
+        "files_in": 30000
+      },
+      "passthrough.PassthroughTransformAction": {},
+      "smoke.SmokeTransformAction": {
+        "files_completed": 284,
+        "files_in": 284
+      },
+      "stix1_x.Stix1_xTo2_1TransformAction": {}
+    },
+    "load": {
+      "decompress-passthrough.DecompressPassthroughLoadAction": {},
+      "passthrough.PassthroughLoadAction": {},
+      "smoke.SmokeLoadAction": {
+        "files_completed": 284,
+        "files_in": 284
+      },
+      "stix1_x.Stix2_1LoadAction": {},
+      "stix2_1.Stix2_1LoadAction": {}
+    },
+    "enrich": {
+      "artificial-enrichment.BinaryEnrichAction": {
+        "files_completed": 284,
+        "files_in": 284
+      }
+    },
+    "format": {
+      "error.ErrorFormatAction": {},
+      "passthrough.PassthroughFormatAction": {},
+      "smoke.SmokeFormatAction": {
+        "files_completed": 284,
+        "files_in": 284
+      },
+      "stix1_x.Stix1_xFormatAction": {},
+      "stix2_1.Stix2_1FormatAction": {}
+    },
+    "validate": {
+      "passthrough.PassthroughValidateAction": {},
+      "smoke.SmokeValidateAction": {
+        "files_completed": 284,
+        "files_in": 284
       }
     },
     "egress": {
-      "Stix1_xEgressAction": {},
-      "Stix2_1EgressAction": {},
-      "SmokeEgressAction": {
-        "bytes_out": 124884.0,
-        "files_completed": 3469.0,
-        "files_in": 3469.0,
-        "files_out": 3469.0
+      "error.ErrorEgressAction": {},
+      "passthrough.PassthroughEgressAction": {},
+      "smoke.SmokeEgressAction": {
+        "bytes_out": 10044,
+        "files_completed": 279,
+        "files_in": 279,
+        "files_out": 279
       },
-      "PassthroughEgressAction": {},
-      "ErrorEgressAction": {}
-    },
-    "format": {
-      "Stix1_xFormatAction": {},
-      "Stix2_1FormatAction": {},
-      "SmokeFormatAction": {
-        "files_completed": 3464.0,
-        "files_in": 3464.0
-      },
-      "PassthroughFormatAction": {},
-      "ErrorFormatAction": {}
-    },
-    "load": {
-      "Stix2_1LoadAction": {},
-      "SmokeLoadAction": {
-        "files_completed": 3464.0,
-        "files_in": 3464.0
-      },
-      "PassthroughLoadAction": {}
-    },
-    "transform": {
-      "Stix1_xTo2_1TransformAction": {},
-      "SmokeTransformAction": {
-        "files_completed": 3464.0,
-        "files_in": 3464.0
-      },
-      "PassthroughTransformAction": {}
-    },
-    "validate": {
-      "Stix1_xValidateAction": {},
-      "Stix2_1ValidateAction": {},
-      "SmokeValidateAction": {
-        "files_completed": 3464.0,
-        "files_in": 3464.0
-      },
-      "PassthroughValidateAction": {}
-    },
-    "enrich": {
-      "SmokeEnrichAction": {
-        "files_completed": 3464.0,
-        "files_in": 3464.0
-      }
-    },
-    "delete": {
-      "DeleteAction": {
-        "files_completed": 3443.0,
-        "files_in": 3443.0
-      }
+      "stix1_x.Stix1_xEgressAction": {},
+      "stix2_1.Stix2_1EgressAction": {}
     }
   },
-  "timestamp": "2022-03-01 21:36:43 +0000"
+  "timestamp": "2022-06-23 07:57:51 +0000"
 }

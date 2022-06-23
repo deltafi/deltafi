@@ -18,16 +18,16 @@
 
 <template>
   <div>
-    <DataTable v-model:filters="filters" :value="tableData.value" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines action-metrics-table" :loading="loading" sort-field="action_name" :sort-order="1" filter-display="row">
+    <DataTable v-model:filters="filters" :value="tableData.value" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines action-metrics-table" :loading="loading" sort-field="action_name" :sort-order="1" :filter-display="props.filterType">
       <template #empty>No Action Metrics available.</template>
       <template #loading>Loading Action Metrics data. Please wait.</template>
-      <Column header="Action Name" field="action_name" :sortable="true">
+      <Column header="Action Name" field="action_name" :sortable="true" :hidden="props.hiddenColumn">
         <template #filter="{ filterModel, filterCallback }">
           <InputText v-model="filterModel.value" type="text" class="p-inputtext-sm p-column-filter" placeholder="Filter by Action Name" @focus="pauseTimer(true)" @blur="pauseTimer(false)" @input="filterCallback()" />
         </template>
       </Column>
-      <Column header="Type" field="family_type" :sortable="true" class="type-column">
-        <template #body="{ data }">{{ sentenceCaseString(data.family_type) }}</template>
+      <Column header="Type" field="family_type" :sortable="true" class="type-column" :hidden="props.hiddenColumn">
+        <template #body="{ data }">{{ _.startCase(data.family_type) }}</template>
         <template #filter="{ filterModel, filterCallback }">
           <MultiSelect v-model="filterModel.value" type="text" class="p-inputtext-sm deltafi-input-field p-column-filter" placeholder="Filter by Type" :options="familyTypes" @before-show="pauseTimer(true)" @before-hide="pauseTimer(false)" @change="filterCallback()" />
         </template>
@@ -48,6 +48,8 @@ import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, ref, defineEmits } from "vue";
 
+import _ from "lodash";
+
 const emit = defineEmits(["pauseTimer"]);
 
 const props = defineProps({
@@ -59,12 +61,27 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  filterType: {
+    type: String || null,
+    required: false,
+    default: "row"
+  },
+  filterBy: {
+    type: String || null,
+    required: false,
+    default: null
+  },
+  hiddenColumn: {
+    type: Boolean,
+    required: false,
+    default: false
+  }
 });
 
-const { sentenceCaseString, formattedBytes } = useUtilFunctions();
+const { formattedBytes } = useUtilFunctions();
 
 const filters = ref({
-  action_name: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  action_name: { value: props.filterBy, matchMode: FilterMatchMode.CONTAINS },
   family_type: { value: null, matchMode: FilterMatchMode.IN },
 });
 
@@ -109,7 +126,7 @@ const columns = computed(() => {
     .map((metricName) => {
       return {
         field: metricName,
-        header: sentenceCaseString(metricName),
+        header: _.startCase(metricName),
       };
     });
 });

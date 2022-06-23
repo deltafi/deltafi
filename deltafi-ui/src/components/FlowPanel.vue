@@ -18,15 +18,16 @@
 
 <template>
   <Panel v-show="flowData.visible" :header="flowData.name" class="pb-3 panel-header-layout">
+    <template #header>
+      <DialogTemplate component-name="FlowViewer" :header="dialogHeader(flowData)" :flow-name="flowData.name" :flow-type="flowData.flowType" :variables="flowData.variables">
+        <Button v-tooltip.top.hover="'View Flow information for ' + flowData.name" :label="flowData.name" class="p-button-link pl-0 text-dark p-panel-title" />
+      </DialogTemplate>
+    </template>
     <template #icons>
       <div class="row justify-content-end">
-        <div class="px-1">
-          <template v-if="!_.isEmpty(flowData.variables)">
-            <FlowVariableViewer :header="flowData.name" :variables="flowData.variables">
-              <Button v-tooltip.top.hover="'View Variables for ' + flowData.name" icon="fas fa-table" class="p-button p-button-sm p-button-text p-button-secondary variables-button" />
-            </FlowVariableViewer>
-          </template>
-        </div>
+        <DialogTemplate component-name="FlowViewer" :header="flowData.name" :flow-name="flowData.name" :flow-type="flowData.flowType" :variables="flowData.variables">
+          <Button v-tooltip.top.hover="'View Flow information for ' + flowData.name" icon="fa fa-info-circle" class="p-button p-button-sm p-button-text p-button-secondary variables-button" />
+        </DialogTemplate>
         <div class="pl-1 pr-3">
           <template v-if="!_.isEmpty(flowData.flowStatus.errors)">
             <Button v-tooltip.left="'Rerun validation on ' + flowData.name" icon="fa fa-sync-alt" label="Validate" class="p-button p-button-sm p-button-warning validate-button-padding" @click="validationRetry(flowData.name, flowData.flowType)" />
@@ -56,7 +57,7 @@
 </template>
 
 <script setup>
-import FlowVariableViewer from "@/components/FlowVariableViewer.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { defineProps, nextTick, reactive } from "vue";
 
@@ -115,6 +116,11 @@ const toggleFlowState = async (flowName, newflowState, flowType) => {
     }
   }
 };
+
+const dialogHeader = (flowData) => {
+  const flowType = flowData.flowType.charAt(0).toUpperCase() + flowData.flowType.slice(1);
+  return `${flowType} Flow: ${flowData.name}`;
+}
 </script>
 
 <style lang="scss">

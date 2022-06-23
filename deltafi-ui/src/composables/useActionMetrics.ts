@@ -16,8 +16,10 @@
    limitations under the License.
 */
 
-import { ref, Ref } from 'vue'
+import { computed, ref, Ref } from 'vue'
 import useApi from './useApi'
+
+import _ from "lodash";
 
 export default function useActionMetrics() {
   const { response, get, loading, loaded, errors } = useApi();
@@ -34,5 +36,18 @@ export default function useActionMetrics() {
     }
   }
 
-  return { data, loaded, loading, fetch, errors };
+  const actionMetricsUngrouped = computed(() => {
+    const newObject: any = {};
+    Object.assign(newObject,data.value);
+    for (const [familyKey, familyValue] of Object.entries(data.value)) {
+      for (const [actionKey] of Object.entries(familyValue)) {
+        newObject[familyKey][actionKey]["family_type"] = _.startCase(familyKey);
+      }
+    }
+    return Object.keys(newObject).reduce((result, family) => {
+      return Object.assign(result, newObject[family]);
+    }, {});
+  });
+
+  return { data, loaded, loading, fetch, errors, actionMetricsUngrouped };
 }

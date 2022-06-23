@@ -55,12 +55,14 @@ export default function useFlowQueryBuilder() {
             consumes: true,
             produces: true,
             parameters: true,
+            apiVersion: true,
           },
           loadAction: {
             name: true,
             type: true,
             consumes: true,
             parameters: true,
+            apiVersion: true,
           }
         },
         enrichFlows: {
@@ -84,6 +86,7 @@ export default function useFlowQueryBuilder() {
               value: true,
             },
             parameters: true,
+            apiVersion: true,
           }
         },
         egressFlows: {
@@ -104,17 +107,27 @@ export default function useFlowQueryBuilder() {
             type: true,
             requiresDomains: true,
             requiresEnrichment: true,
-            parameters: true
+            parameters: true,
+            apiVersion: true,
           },
           validateActions: {
             name: true,
             type: true,
-            parameters: true
+            parameters: true,
+            apiVersion: true,
           },
           egressAction: {
             name: true,
             type: true,
-            parameters: true
+            parameters: true,
+            apiVersion: true,
+          },
+          variables: {
+            name: true,
+            value: true,
+            description: true,
+            defaultValue: true,
+            dataType: true,
           }
         }
       }
@@ -149,12 +162,14 @@ export default function useFlowQueryBuilder() {
             consumes: true,
             produces: true,
             parameters: true,
+            apiVersion: true,
           },
           loadAction: {
             name: true,
             type: true,
             consumes: true,
             parameters: true,
+            apiVersion: true,
           },
           variables: {
             name: true,
@@ -190,6 +205,7 @@ export default function useFlowQueryBuilder() {
               value: true,
             },
             parameters: true,
+            apiVersion: true,
           }
         },
         egress: {
@@ -216,16 +232,19 @@ export default function useFlowQueryBuilder() {
             requiresDomains: true,
             requiresEnrichment: true,
             parameters: true,
+            apiVersion: true,
           },
           validateActions: {
             name: true,
             type: true,
             parameters: true,
+            apiVersion: true,
           },
           egressAction: {
             name: true,
             type: true,
             parameters: true,
+            apiVersion: true,
           },
           variables: {
             name: true,
@@ -247,9 +266,46 @@ export default function useFlowQueryBuilder() {
       getIngressFlow: {
         __args: {
           flowName: flowName
+        },
+        name: true,      
+        description: true,
+        type: true,
+        sourcePlugin: {
+          groupId: true,
+          artifactId: true,
+          version: true,
+        },
+        flowStatus: {
+          state: true,
+          errors: {
+            configName: true,
+            message: true,
+            errorType: true,
+          }
+        },
+        transformActions: {
+          name: true,
+          type: true,
+          consumes: true,
+          produces: true,
+          parameters: true,
+          apiVersion: true,
+        },
+        loadAction: {
+          name: true,
+          type: true,
+          consumes: true,
+          parameters: true,
+          apiVersion: true,
+        },
+        variables: {
+          name: true,
+          dataType: true,
+          description: true,
+          defaultValue: true,
+          required: true,
         }
-      },
-      name: true
+      }
     };
     return sendGraphQLQuery(query, "getIngressFlowByName");
   }
@@ -260,9 +316,35 @@ export default function useFlowQueryBuilder() {
       getEnrichFlow: {
         __args: {
           flowName: flowName
+        },
+        name: true,
+        description: true,
+        sourcePlugin: {
+          groupId: true,
+          artifactId: true,
+          version: true,
+        },
+        flowStatus: {
+          state: true,
+          errors: {
+            configName: true,
+            message: true,
+            errorType: true,
+          }
+        },
+        enrichActions: {
+          name: true,
+          type: true,
+          requiresDomains: true,
+          requiresEnrichment: true,
+          requiresMetadataKeyValues: {
+            key: true,
+            value: true,
+          },
+          parameters: true,
+          apiVersion: true,
         }
-      },
-      name: true
+      }
     };
     return sendGraphQLQuery(query, "getEnrichFlowByName");
   };
@@ -273,9 +355,53 @@ export default function useFlowQueryBuilder() {
       getEgressFlow: {
         __args: {
           flowName: flowName
+        },
+        name: true,
+        description: true,
+        sourcePlugin: {
+          groupId: true,
+          artifactId: true,
+          version: true,
+        },
+        flowStatus: {
+          state: true,
+          errors: {
+            configName: true,
+            errorType: true,
+            message: true,
+          }
+        },
+        includeIngressFlows: true,
+        excludeIngressFlows: true,
+        formatAction: {
+          name: true,
+          type: true,
+          requiresDomains: true,
+          requiresEnrichment: true,
+          parameters: true,
+          apiVersion: true,
+        },
+        validateActions: {
+          name: true,
+          type: true,
+          parameters: true,
+          apiVersion: true,
+        },
+        egressAction: {
+          name: true,
+          type: true,
+          parameters: true,
+          apiVersion: true,
+        },
+        variables: {
+          name: true,
+          value: true,
+          dataType: true,
+          description: true,
+          defaultValue: true,
+          required: true,
         }
-      },
-      name: true
+      }
     };
     return sendGraphQLQuery(query, "getEgressFlowByName");
   }
