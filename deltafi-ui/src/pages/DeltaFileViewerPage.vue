@@ -20,7 +20,7 @@
   <div class="deltafile-viewer">
     <PageHeader :heading="pageHeader">
       <div class="btn-toolbar">
-        <Button label="Refresh" icon="fas fa-sync fa-fw" class="mr-3 p-button p-button-outlined" @click="loadDeltaFileData" />
+        <Button v-if="loaded" label="Refresh" :icon="refreshButtonIcon" class="mr-3 p-button p-button-outlined" @click="loadDeltaFileData" />
         <Menu id="config_menu" ref="menu" :model="menuItems" :popup="true" />
         <Button v-if="!showForm" label="Menu" icon="fas fa-ellipsis-v" class="p-button-secondary p-button-outlined" @click="toggleMenu" />
       </div>
@@ -38,6 +38,9 @@
       </div>
     </div>
     <div v-else-if="loaded">
+      <Message v-if="contentDeleted" severity="warn" :closable="false">
+        The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }}
+      </Message>
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileInfoPanel :delta-file-data="deltaFile" />
@@ -102,6 +105,7 @@ import { reactive, ref, computed, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConfirm } from "primevue/useconfirm";
 import ScrollTop from "primevue/scrolltop";
+import Message from 'primevue/message';
 
 const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 const confirm = useConfirm();
@@ -161,6 +165,16 @@ const staticMenuItems = reactive([
     },
   },
 ]);
+
+const refreshButtonIcon = computed(() => {
+  let classes = ["fa", "fa-sync-alt"];
+  if (loading.value) classes.push("fa-spin");
+  return classes.join(" ");
+});
+
+const contentDeleted = computed(() => {
+  return (loaded.value && deltaFile.contentDeleted !== null);
+})
 
 const menuItems = computed(() => {
   let items = staticMenuItems;

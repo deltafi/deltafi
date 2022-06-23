@@ -35,7 +35,7 @@
         <Column field="elapsed" header="Elapsed" class="elapsed-column" :sortable="true">
           <template #body="action">{{ action.data.elapsed }}</template>
         </Column>
-        <Column header="Content" class="content-column">
+        <Column v-if="!contentDeleted" header="Content" class="content-column">
           <template #body="{ data: action }">
             <span v-if="protocolLayersByAction.hasOwnProperty(action.name)">
               <ContentDialog :content="protocolLayersByAction[action.name].content" :action="action.name">
@@ -92,6 +92,10 @@ const errorViewer = reactive({
   visible: false,
   action: {},
 });
+
+const contentDeleted = computed(() => {
+  return (deltaFile.contentDeleted !== null);
+})
 
 const actions = computed(() => {
   return deltaFile.actions.map((action) => {

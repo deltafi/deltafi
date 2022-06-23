@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Changes to support Config Server / Core Domain consolidation (#187)
 - Added refresh button to DeltaFile Viewer page (#183)
 - Added Flow Viewer (#157)
+- Added warning message when viewing a DeltaFile without content (#192)
 
 ### Fixed
 
