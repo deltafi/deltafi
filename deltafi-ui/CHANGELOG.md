@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Added support for Basic Authentication on Users page (#191)
+- Added refresh button to DeltaFile Viewer page (#183)
+- Added Flow Viewer (#157)
+
+### Fixed
+
+- Bug where trace chart on child DeltaFile with no actions shows actions of parent (#184)
 
 ## [0.95.4]
 

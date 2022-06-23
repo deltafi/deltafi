@@ -20,8 +20,9 @@
   <div class="deltafile-viewer">
     <PageHeader :heading="pageHeader">
       <div class="btn-toolbar">
+        <Button label="Refresh" icon="fas fa-sync fa-fw" class="mr-3 p-button p-button-outlined" @click="loadDeltaFileData" />
         <Menu id="config_menu" ref="menu" :model="menuItems" :popup="true" />
-        <Button v-if="!showForm" label="Menu" icon="fas fa-ellipsis-v" class="p-button p-button-outlined" @click="toggleMenu" />
+        <Button v-if="!showForm" label="Menu" icon="fas fa-ellipsis-v" class="p-button-secondary p-button-outlined" @click="toggleMenu" />
       </div>
     </PageHeader>
     <ProgressBar v-if="showProgressBar" mode="indeterminate" style="height: 0.5em" />
@@ -176,7 +177,7 @@ const menuItems = computed(() => {
   if (customLinks.length > 0) {
     customLinks.unshift({
       separator: true,
-    })
+    });
   }
   return items.concat(customLinks);
 });

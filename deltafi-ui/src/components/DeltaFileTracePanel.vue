@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { reactive, defineProps, onMounted, computed } from "vue";
+import { ref, defineProps, onMounted, computed, watch } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import * as d3 from "d3";
@@ -42,10 +42,10 @@ const props = defineProps({
   },
 });
 
-const deltaFile = reactive(JSON.parse(JSON.stringify(props.deltaFileData)));
+const deltaFile = ref(JSON.parse(JSON.stringify(props.deltaFileData)));
 
 const deltaFileActions = computed(() => {
-  let actions = deltaFile.actions.map((action) => {
+  let actions = deltaFile.value.actions.map((action) => {
     if (action.queued !== null) {
       action.created = new Date(action.queued);
       action.createdOrginal = new Date(action.queued);
@@ -56,7 +56,7 @@ const deltaFileActions = computed(() => {
     const timeElapsed = new Date(action.modified) - new Date(action.created);
     action.modified = new Date(action.modified);
     action.modifiedOrginal = new Date(action.modified);
-    action.end = new Date(action.created) - new Date(deltaFile.created) + timeElapsed;
+    action.end = new Date(action.created) - new Date(deltaFile.value.created) + timeElapsed;
     action.stop = new Date(action.stop);
     action.stopOrignal = new Date(action.stop);
     action.start = new Date(action.start);
@@ -64,7 +64,7 @@ const deltaFileActions = computed(() => {
     const startTimeElapsed = new Date(action.stop) - new Date(action.start);
     action.startTimeElapsed = startTimeElapsed > 0 ? startTimeElapsed : 0.1;
     action.startTimeElapsedOrginal = startTimeElapsed;
-    action.startEnd = new Date(action.start) - new Date(deltaFile.created) + action.startTimeElapsed;
+    action.startEnd = new Date(action.start) - new Date(deltaFile.value.created) + action.startTimeElapsed;
     if (action.end === 0) {
       action.end = timeElapsed;
     }
@@ -77,14 +77,14 @@ const deltaFileActions = computed(() => {
   if (actions.some((action) => action.state === "RETRIED")) {
     actions = handleRetried(actions);
   }
-  let total = new Date(Math.max(...actions.map((e) => new Date(e.modified)))) - new Date(deltaFile.created);
+  let total = new Date(Math.max(...actions.map((e) => new Date(e.modified)))) - new Date(deltaFile.value.created);
 
   actions.unshift({
     name: "DeltaFileFlow",
     elapsed: total,
     end: total,
     modified: actions[actions.length - 1].modifiedOrginal,
-    created: deltaFile.createdOrginal,
+    created: deltaFile.value.createdOrginal,
   });
   return actions;
 });
@@ -107,8 +107,8 @@ const handleRetried = (newActions) => {
         newActions[x].stop = new Date(dayjs(newActions[x].stop).subtract(shiftTime, "millisecond")).toISOString();
         newActions[x].created = retriedActions[retriedIndex].modified;
         newActions[x].modified = new Date(dayjs(newActions[x].created).add(newActions[x].elapsed, "millisecond")).toISOString();
-        newActions[x].end = new Date(newActions[x].created) - new Date(deltaFile.created) + newActions[x].elapsed;
-        newActions[x].startEnd = new Date(newActions[x].start) - new Date(deltaFile.created) + newActions[x].startTimeElapsed;
+        newActions[x].end = new Date(newActions[x].created) - new Date(deltaFile.value.created) + newActions[x].elapsed;
+        newActions[x].startEnd = new Date(newActions[x].start) - new Date(deltaFile.value.created) + newActions[x].startTimeElapsed;
         retriedActions.splice(retriedIndex, 1);
       }
       if (newActions[x].state === "RETRIED") {
@@ -119,6 +119,11 @@ const handleRetried = (newActions) => {
   return newActions;
 };
 onMounted(() => {
+  HorizontalWaterfallChart("#traceChart", deltaFileActions.value);
+});
+
+watch(props.deltaFileData, () => {
+  deltaFile.value = JSON.parse(JSON.stringify(props.deltaFileData));
   HorizontalWaterfallChart("#traceChart", deltaFileActions.value);
 });
 
