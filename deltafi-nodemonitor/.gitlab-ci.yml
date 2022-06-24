@@ -1,0 +1,9 @@
+.api:
+  variables:
+    PROJECT_NAME: deltafi-nodemonitor
+
+api:docker:
+  stage: docker
+  extends:
+    - .api
+    - .docker
