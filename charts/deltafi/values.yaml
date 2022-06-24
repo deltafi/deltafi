@@ -276,12 +276,16 @@ graphite:
   persistence:
     enabled: true
     existingClaim: deltafi-graphite
+  nodeSelector:
+    node-role.deltafi.org/compute: "true"
 grafana:
   image:
     tag: 9.0.1
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
+  nodeSelector:
+    node-role.deltafi.org/compute: "true"
   grafana.ini:
     auth.anonymous:
       enabled: true
