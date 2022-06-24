@@ -5,5 +5,5 @@
 nodemonitor:docker:
   stage: docker
   extends:
-    - .api
+    - .nodemonitor
     - .docker
