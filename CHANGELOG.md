@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - Ingress routing based on value matches in metadata
   - Rule validation
   - CLI and API support
+- Metrics redesign
+  - Grafana now installed by default
+  - Graphite metric store added
+  - Nodemonitor daemonset now responsible for monitoring disk usage
+  - Monitor pod pushes queue metrics to graphite
+  - Action kit pushes action and error metrics to graphite
+  - Default dashboards added for flow monitoring
 
 ### Changed
 - Retry of a DeltaFile is now referred to as `resume`
@@ -25,13 +32,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Migraded to Jedis v4.2.3
 - Minor version updates to various support packages
 - Replay and resume of a DeltaFile are prohibited after the DeltaFile content has been deleted
+- Config server functionality merged into deltafi-core-domain
 
 ### Deprecated
 - Fluentd will no longer be used for action queue metrics collection, and will be removed in a future release
 - Elasticsearch will no longer be used for action queue metrics collection and will be removed in a future release
+- Kibana will no longer be used to monitor metrics and will be removed in a future release
 
 ### Removed
 - DGS Gateway completely removed (replaced by GraphiQL UI)
+- Metricbeat removed, replaced by nodemonitor
+- deltafi-config-server removed, functionality migrated to deltafi-core-domain
 
 ### Fixed
 - NPE with null values for metadata fixed
