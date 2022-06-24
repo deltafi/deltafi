@@ -1,4 +1,4 @@
-.api:
+.nodemonitor:
   variables:
     PROJECT_NAME: deltafi-nodemonitor
 
