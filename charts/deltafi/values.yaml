@@ -290,6 +290,8 @@ grafana:
     auth.anonymous:
       enabled: true
       org_role: Admin
+    auth.basic:
+      enabled: false
   sidecar:
     dashboards:
       enabled: true
