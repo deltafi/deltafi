@@ -58,7 +58,7 @@ module Deltafi
               last += 'ay' if /^\d*d$/.match?(last)
 
               query = <<-QUERY
-              smartSummarize(derivative(groupByTags(seriesByTag('name=~(files_in|files_out|files_completed|bytes_out)','metricattribute=count'#{",'ingressFlow=#{flow}'" if flow}),"sum","name","source","action")), "#{last}")
+              smartSummarize(nonNegativeDerivative(groupByTags(seriesByTag('name=~(files_in|files_out|files_completed|bytes_out)','metricattribute=count'#{",'ingressFlow=#{flow}'" if flow}),"sum","name","source","action")), "#{last}")
               QUERY
 
               results = DF::Metrics.graphite({
