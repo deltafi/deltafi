@@ -20,6 +20,8 @@ spec:
       terminationGracePeriodSeconds: 30
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+      - name: docker-secret
       containers:
       - name: nodemonitor
         image: {{ .Values.deltafi.nodemonitor.image }}
