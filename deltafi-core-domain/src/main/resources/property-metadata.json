@@ -172,7 +172,7 @@
       {
         "key": "quarkus.log.console.color",
         "description": "Enable colors in console logs.",
-        "defaultValue": "true",
+        "defaultValue": "false",
         "hidden": true,
         "refreshable": false,
         "editable": false

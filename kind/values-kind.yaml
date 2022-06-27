@@ -1,13 +1,3 @@
-elasticsearch:
-  replicas: 0
-fluentd:
-  kind: None
-  metricsAgeOffJob:
-    suspend: true
-    schedule: "1 5 31 2 *"
-kibana:
-  load_saved_objects: false
-  replicas: 0
 deltafi:
   ui:
     title: DeltaFi (KinD Cluster)

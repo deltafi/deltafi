@@ -16,18 +16,21 @@ data:
       - url: /graphiql/
         name: GraphiQL
         description: GraphQL query interface
-      - url: https://kibana.{{ .Values.ingress.domain }}/app/dashboards#/view/cf08cb00-aeac-11eb-ac19-f330c8b60a55
-        name: Kibana Dashboard
-        description: Action logging and metrics visualization
       - url: https://k8s.{{ .Values.ingress.domain }}/#/workloads?namespace=deltafi
         name: Kubernetes Dashboard
         description: Kubernetes admin interface
       - url: https://minio.{{ .Values.ingress.domain }}/
         name: MinIO
         description: MinIO storage dashboard
-      - url: https://grafana.{{ .Values.ingress.domain }}/
-        name: Grafana
-        description: Metrics visualization
+      - url: https://grafana.{{ .Values.ingress.domain }}/dashboards
+        name: Grafana Dashboards
+        description: Metrics and logging visualization
+      - url: https://grafana.{{ .Values.ingress.domain }}/d/flow_status1
+        name: Flow Status Dashboard
+        description: Grafana dashboard presenting an overview of the flows through the system
+      - url: https://grafana.{{ .Values.ingress.domain }}/d/log_viewer
+        name: Log Viewer Dashboard
+        description: Grafana dashboard for viewing logs from individual microservices
 {{- if .Values.deltafi.ui.externalLinks }}
 {{ .Values.deltafi.ui.externalLinks | toYaml | indent 6 }}
 {{- end }}

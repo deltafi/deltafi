@@ -40,17 +40,6 @@ module Deltafi
                   headers: { 'Content-Type' => 'application/json' })
   end
 
-  # TODO: DEPRECATED
-  def self.elasticsearch(path, query)
-    base_url = ENV['DELTAFI_ES_URL'] ||
-               'http://elasticsearch-master:9200'
-    es_url = File.join(base_url, path)
-
-    HTTParty.post(es_url,
-                  body: query,
-                  headers: { 'Content-Type' => 'application/json' })
-  end
-
   def self.redis_client
     properties = system_properties
     redis_password = ENV['REDIS_PASSWORD']

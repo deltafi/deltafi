@@ -22,7 +22,7 @@ data:
   allowed: YWxsOgogIC0gIkNOPUhhbiBTb2xvLE9VPURldk9wcyxPVT1Db21wYW55IgpraWJhbmE6CiAgLSAiQ049TGFuZG8gQ2Fscmlzc2lhbixPVT1NYW5hZ21lbnQsT1U9Q29tcGFueSIKbmlmaToKICAtICJDTj1MdWtlIFNreXdhbGtlcixPVT1EYXRhZmxvdyxPVT1Db21wYW55Ig==
 ```
 
-The YAML map keys should be subdomains (e.g. kibana, nifi, etc) with values that are arrays of certificate Distinguished Names (DN) that should have access to those subdomains.
+The YAML map keys should be subdomains (e.g. grafana, graphite, etc) with values that are arrays of certificate Distinguished Names (DN) that should have access to those subdomains.
 
 A key of `all` grants access to all subdomains in the system.
 
@@ -31,9 +31,9 @@ For example:
 ```
 all:
   - "CN=Han Solo,OU=DevOps,OU=Company"
-kibana:
+grafana:
   - "CN=Lando Calrissian,OU=Managment,OU=Company"
-nifi:
+graphite:
   - "CN=Luke Skywalker,OU=Dataflow,OU=Company"
 ```
 

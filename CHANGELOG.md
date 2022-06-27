@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - Monitor pod pushes queue metrics to graphite
   - Action kit pushes action and error metrics to graphite
   - Default dashboards added for flow monitoring
+- Log aggregation redesign
+  - Promtail added to collect logs from all Kubernetes pods
+  - Loki added to aggregate and store logs
+  - Dashboards added to Grafana to provide log viewing and summary
 
 ### Changed
 - Retry of a DeltaFile is now referred to as `resume`
@@ -35,14 +39,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Config server functionality merged into deltafi-core-domain
 
 ### Deprecated
-- Fluentd will no longer be used for action queue metrics collection, and will be removed in a future release
-- Elasticsearch will no longer be used for action queue metrics collection and will be removed in a future release
-- Kibana will no longer be used to monitor metrics and will be removed in a future release
 
 ### Removed
 - DGS Gateway completely removed (replaced by GraphiQL UI)
 - Metricbeat removed, replaced by nodemonitor
 - deltafi-config-server removed, functionality migrated to deltafi-core-domain
+- Fluentd removed, replaced by promtail
+- Elasticsearch removed
+- Kibana removed, functionality fully replaced in Grafana and Loki
+- Elasticsearch client removed from deltafi-api
+- Kibana batch job removed
 
 ### Fixed
 - NPE with null values for metadata fixed
@@ -52,6 +58,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Rubocop cleanup of deltafi-auth codebase
 
 ### Security
+
+### Upgrade and Migration
+- New storage and persistent volume claims are required for deltafi-loki, deltafi-graphite, and deltafi-grafana
 
 ## [0.95.4] - 2022-06-08
 

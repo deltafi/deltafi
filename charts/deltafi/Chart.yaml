@@ -31,24 +31,6 @@ dependencies:
     version: "10.12.2"
     repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: enable.mongo
-  - name: elasticsearch
-    version: "7.16.2"
-    repository: "https://helm.elastic.co"
-    condition: enable.elasticsearch
-    tags:
-      - metrics
-  - name: fluentd
-    version: "0.2.6"
-    repository: "https://fluent.github.io/helm-charts"
-    condition: enable.fluentd
-    tags:
-      - metrics
-  - name: kibana
-    version: "7.16.2"
-    repository: "https://helm.elastic.co"
-    condition: enable.kibana
-    tags:
-      - metrics
   - name: redis
     version: "14.6.2"
     repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
@@ -63,9 +45,22 @@ dependencies:
     condition: enable.graphite
     tags:
       - metrics
+  - name: promtail
+    version: 6.0.0
+    repository: https://grafana.github.io/helm-charts
+    condition: enable.promtail
+    tags:
+      - logs
+  - name: loki
+    version: 2.12.2
+    repository: https://grafana.github.io/helm-charts
+    condition: enable.loki
+    tags:
+      - logs
   - name: grafana
     version: 6.29.4
     repository: https://grafana.github.io/helm-charts
     condition: enable.grafana
     tags:
       - metrics
+      - logs
