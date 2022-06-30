@@ -320,7 +320,7 @@ _deltafi_install() {
   _k8s_add_pv deltafi-loki /data/deltafi/pv/loki 1G
   _k8s_add_pv deltafi-egress-sink /data/deltafi/pv/egress-sink 1G
   _k8s_add_pv deltafi-auth /data/deltafi/pv/auth 1G
-  kind_deltafi install -f deltafi/kind/values-kind.yaml "$@" 2>&1 | grep -v deprecated | while read line; do echo " |  $line"; done
+  kind_deltafi install "$@" 2>&1 | grep -v deprecated | while read line; do echo " |  $line"; done
   echo "<< Installing deltafi complete"
 }
 
