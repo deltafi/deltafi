@@ -37,18 +37,20 @@ local_cluster() {
     local BUILD_TARGETS=assemble
   fi
   cluster up
-  cd $ROOT/deltafi
-  git pull || echo "Cannot pull latest"
-  ./gradlew $BUILD_TARGETS publishToMavenLocal docker dockerPushLocal
-  cd $ROOT/deltafi-stix
-  git pull || echo "Cannot pull latest"
-  ./gradlew $BUILD_TARGETS docker dockerPushLocal
-  cd $ROOT/deltafi-passthrough
-  git pull || echo "Cannot pull latest"
-  ./gradlew $BUILD_TARGETS docker dockerPushLocal
-  cd $ROOT/deltafi-ui
-  docker build -t localhost:5000/deltafi-ui:latest .
-  docker push localhost:5000/deltafi-ui:latest
+  if [[ $1 != "restart" ]]; then
+    cd $ROOT/deltafi
+    git pull || echo "Cannot pull latest"
+    ./gradlew $BUILD_TARGETS publishToMavenLocal docker dockerPushLocal
+    cd $ROOT/deltafi-stix
+    git pull || echo "Cannot pull latest"
+    ./gradlew $BUILD_TARGETS docker dockerPushLocal
+    cd $ROOT/deltafi-passthrough
+    git pull || echo "Cannot pull latest"
+    ./gradlew $BUILD_TARGETS docker dockerPushLocal
+    cd $ROOT/deltafi-ui
+    docker build -t localhost:5000/deltafi-ui:latest .
+    docker push localhost:5000/deltafi-ui:latest
+  fi
   cluster up
   install -f deltafi/charts/deltafi/values-local.yaml
   kind_deltafi install-plugin deltafi-passthrough -f deltafi-passthrough/charts/values-local.yaml
