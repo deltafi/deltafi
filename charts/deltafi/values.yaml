@@ -140,6 +140,11 @@ redis:
   auth:
     existingSecret: redis-password
     enabled: true
+  commonConfiguration: |-
+    # Diable AOF https://redis.io/topics/persistence#append-only-file
+    appendonly no
+    # Disable RDB persistence
+    save ""
   master:
     persistence:
       enabled: false
