@@ -36,10 +36,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -110,6 +107,61 @@ class DeltaFilesServiceTest {
     @Test
     void getReturnsNullOnMissingDid() {
         assertNull(deltaFilesService.getDeltaFile("nonsense"));
+    }
+
+    @Test
+    void testSourceMetadataUnion() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(
+                new KeyValue("k1", "1a"),
+                new KeyValue("k2", "val2")));
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(
+                new KeyValue("k1", "1b"),
+                new KeyValue("k3", "val3")));
+        DeltaFile deltaFile3 = Util.buildDeltaFile("3", List.of(
+                new KeyValue("k2", "val2"),
+                new KeyValue("k3", null),
+                new KeyValue("k4", "val4")));
+
+        when(deltaFileRepo.findById("1")).thenReturn(Optional.of(deltaFile1));
+        when(deltaFileRepo.findById("2")).thenReturn(Optional.of(deltaFile2));
+        when(deltaFileRepo.findById("3")).thenReturn(Optional.of(deltaFile3));
+        when(deltaFileRepo.findById("4")).thenReturn(Optional.empty());
+
+        List<UniqueKeyValues> uniqueMetadata = deltaFilesService.sourceMetadataUnion(List.of("1", "2", "3", "4"));
+        assertEquals(4, uniqueMetadata.size());
+
+        boolean foundKey1 = false;
+        boolean foundKey2 = false;
+        boolean foundKey3 = false;
+        boolean foundKey4 = false;
+
+        for (UniqueKeyValues u : uniqueMetadata) {
+            if (u.getKey().equals("k1")) {
+                assertEquals(2, u.getValues().size());
+                assertTrue(u.getValues().containsAll(List.of("1a", "1b")));
+                foundKey1 = true;
+            } else if (u.getKey().equals("k2")) {
+                assertEquals(1, u.getValues().size());
+                assertTrue(u.getValues().contains("val2"));
+                foundKey2 = true;
+            } else if (u.getKey().equals("k3")) {
+                assertEquals(2, u.getValues().size());
+                List<String> listWithNull = new ArrayList<>();
+                listWithNull.add("val3");
+                listWithNull.add(null);
+                assertTrue(u.getValues().containsAll(listWithNull));
+                foundKey3 = true;
+            } else if (u.getKey().equals("k4")) {
+                assertEquals(1, u.getValues().size());
+                assertTrue(u.getValues().contains("val4"));
+                foundKey4 = true;
+            }
+        }
+
+        assertTrue(foundKey1);
+        assertTrue(foundKey2);
+        assertTrue(foundKey3);
+        assertTrue(foundKey4);
     }
 
     @Test

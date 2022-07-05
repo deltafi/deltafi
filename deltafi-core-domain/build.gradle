@@ -59,7 +59,8 @@ generateJava {
 	  "ProtocolLayer": "org.deltafi.core.domain.api.types.ProtocolLayer",
 	  "ProtocolLayerInput": "org.deltafi.core.domain.api.types.ProtocolLayer",
 	  "SourceInfo": "org.deltafi.core.domain.api.types.SourceInfo",
-	  "SourceInfoInput": "org.deltafi.core.domain.api.types.SourceInfo"
+	  "SourceInfoInput": "org.deltafi.core.domain.api.types.SourceInfo",
+	  "UniqueKeyValues": "org.deltafi.core.domain.api.types.UniqueKeyValues"
 	]
 }
 

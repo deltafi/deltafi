@@ -30,6 +30,11 @@ input KeyValueInput {
   value: String
 }
 
+type UniqueKeyValues {
+  key: String!
+  values: [String]!
+}
+
 type Domain {
   name: String!
   value: String
@@ -359,6 +364,8 @@ type Query {
   lastModified(last: Int) : [DeltaFile]!
   lastErrored(last: Int) : [DeltaFile]!
   lastWithFilename(filename: String!) : DeltaFile
+
+  sourceMetadataUnion(dids: [String!]!) : [UniqueKeyValues!]!
 
   deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
   actionSchemas: [ActionSchema!]!

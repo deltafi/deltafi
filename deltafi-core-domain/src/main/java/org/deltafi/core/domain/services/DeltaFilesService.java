@@ -682,6 +682,31 @@ public class DeltaFilesService {
         return results;
     }
 
+    public List<UniqueKeyValues> sourceMetadataUnion(List<String> dids) {
+        List<UniqueKeyValues> uniqueMetadata = new ArrayList<>();
+        Map<String, Set<String>> uniqueMap = new HashMap<>();
+        for (String did : dids) {
+            DeltaFile deltaFile = getDeltaFile(did);
+            if (null != deltaFile) {
+                List<KeyValue> deltaFileMeta = deltaFile.getSourceInfo().getMetadata();
+                for (KeyValue meta : deltaFileMeta) {
+                    if (!uniqueMap.containsKey(meta.getKey())) {
+                        uniqueMap.put(meta.getKey(), new HashSet<>());
+                    }
+                    uniqueMap.get(meta.getKey()).add(meta.getValue());
+                }
+            }
+        }
+
+        for (String key : uniqueMap.keySet()) {
+            List<String> values = uniqueMap.get(key).stream().collect(Collectors.toList());
+            uniqueMetadata.add(new UniqueKeyValues(key, values));
+        }
+
+
+        return uniqueMetadata;
+    }
+
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
         List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
         if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {

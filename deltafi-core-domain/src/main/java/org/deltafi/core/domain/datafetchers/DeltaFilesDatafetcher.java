@@ -30,6 +30,7 @@ import graphql.schema.SelectedField;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.UniqueKeyValues;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFilesService;
 
@@ -138,4 +139,11 @@ public class DeltaFilesDatafetcher {
   public List<AcknowledgeResult> acknowledge(@InputArgument List<String> dids, @InputArgument String reason) {
     return deltaFilesService.acknowledge(dids, reason);
   }
+
+  @DgsQuery
+  @SuppressWarnings("unused")
+  public List<UniqueKeyValues> sourceMetadataUnion(@InputArgument List<String> dids) {
+    return deltaFilesService.sourceMetadataUnion(dids);
+  }
+
 }

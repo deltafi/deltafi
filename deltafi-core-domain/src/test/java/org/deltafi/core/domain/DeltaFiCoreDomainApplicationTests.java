@@ -109,6 +109,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.core.config.server.constants.PropertyConstants.DELTAFI_PROPERTY_SET;
 import static org.deltafi.core.domain.Util.assertEqualsIgnoringDates;
+import static org.deltafi.core.domain.Util.buildDeltaFile;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
@@ -883,6 +884,24 @@ class DeltaFiCoreDomainApplicationTests {
 
 		DeltaFile parent = deltaFilesService.getDeltaFile(did);
 		assertTrue(parent.getChildDids().isEmpty());
+	}
+
+	@Test
+	void testSourceMetadataUnion() throws IOException {
+		DeltaFile deltaFile1 = buildDeltaFile("did1", List.of(
+				new KeyValue("key", "val1")));
+		DeltaFile deltaFile2 = buildDeltaFile("did2", List.of(
+				new KeyValue("key", "val2")));
+		List<DeltaFile> deltaFiles = List.of(deltaFile1, deltaFile2);
+		deltaFileRepo.saveAll(deltaFiles);
+
+		List<UniqueKeyValues> metadataUnion = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("24.source"), "did1", "did2"),
+				"data." + DgsConstants.QUERY.SourceMetadataUnion,
+				new TypeRef<>() {});
+
+		assertEquals(1, metadataUnion.size());
+		assertEquals(2, metadataUnion.get(0).getValues().size());
 	}
 
 	@Test

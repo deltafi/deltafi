@@ -18,10 +18,7 @@
 package org.deltafi.core.domain;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.domain.api.types.Property;
-import org.deltafi.core.domain.api.types.PropertySet;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
@@ -39,6 +36,11 @@ public class Util {
         return emptyDeltaFile(did, null);
     }
 
+    public static DeltaFile buildDeltaFile(String did, List<KeyValue> metadata) {
+        OffsetDateTime now = OffsetDateTime.now();
+        return buildDeltaFile(did, null, DeltaFileStage.INGRESS, now, now, metadata);
+    }
+
     public static DeltaFile emptyDeltaFile(String did, String flow) {
         OffsetDateTime now = OffsetDateTime.now();
         return buildDeltaFile(did, flow, DeltaFileStage.INGRESS, now, now);
@@ -46,6 +48,12 @@ public class Util {
 
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified) {
+        return buildDeltaFile(did, flow, stage, created, modified, new ArrayList<>());
+
+    }
+
+    public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
+                                           OffsetDateTime modified, List<KeyValue> metadata) {
         Action ingressAction = Action.newBuilder()
                 .name(INGRESS_ACTION)
                 .state(ActionState.COMPLETE)
@@ -57,7 +65,7 @@ public class Util {
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
-                .sourceInfo(new SourceInfo(null, flow, new ArrayList<>()))
+                .sourceInfo(new SourceInfo(null, flow, metadata))
                 .stage(stage)
                 .created(created)
                 .modified(modified)
