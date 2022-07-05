@@ -31,3 +31,11 @@
     }
   }
 }
+
+.p-confirm-popup:before {
+  border-bottom-color: #c3c3c3 !important;
+}
+
+.p-confirm-popup.p-confirm-popup-flipped:before {
+   border-top-color: #c3c3c3 !important;
+}

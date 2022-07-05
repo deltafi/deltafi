@@ -33,7 +33,16 @@
             <Button v-tooltip.left="'Rerun validation on ' + flowData.name" icon="fa fa-sync-alt" label="Validate" class="p-button p-button-sm p-button-warning validate-button-padding" @click="validationRetry(flowData.name, flowData.flowType)" />
           </template>
           <template v-else>
-            <InputSwitch v-model="flowData.flowStatus.state" v-tooltip.top="flowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="toggleFlowState(flowData.name, flowData.flowStatus.state, flowData.flowType)" />
+            <ConfirmPopup></ConfirmPopup>
+            <ConfirmPopup group="stopFlow">
+              <template #message="slotProps">
+                <div class="flex p-4">
+                  <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+                  <p class="pl-2">{{ slotProps.message.message }}</p>
+                </div>
+              </template>
+            </ConfirmPopup>
+            <InputSwitch v-tooltip.top="checked" :model-value="checked" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, flowData.name, checked, flowData.flowType)" />
           </template>
         </div>
       </div>
@@ -59,16 +68,22 @@
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { defineProps, nextTick, reactive } from "vue";
+import { defineProps, nextTick, reactive, ref } from "vue";
 
 import Button from "primevue/button";
+import ConfirmPopup from "primevue/confirmpopup";
 import Divider from "primevue/divider";
 import InputSwitch from "primevue/inputswitch";
 import Message from "primevue/message";
 import Panel from "primevue/panel";
+import { useConfirm } from "primevue/useconfirm";
+import { useToast } from "primevue/usetoast";
 import _ from "lodash";
 
 const { startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName, validateIngressFlow, validateEnrichFlow, validateEgressFlow } = useFlowQueryBuilder();
+
+const confirm = useConfirm();
+const toast = useToast();
 
 const props = defineProps({
   flowDataProp: {
@@ -77,7 +92,27 @@ const props = defineProps({
   },
 });
 
+const confirmationPopup = (event, name, state, flowType) => {
+  if (_.isEqual(state, "RUNNING")) {
+    confirm.require({
+      target: event.currentTarget,
+      message: `Are you sure?`,
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        toast.add({ severity: 'info', summary: 'Stopping Flow', detail: `Stopping ${flowType} flow ${name}.`, life: 3000 });
+        toggleFlowState(name, state, flowType);
+      },
+      reject: () => {
+      }
+    });
+  } else {
+    toggleFlowState(name, state, flowType);
+  }
+}
+
 const flowData = reactive(props.flowDataProp);
+
+const checked = ref(props.flowDataProp.flowStatus.state)
 
 const validationRetry = async (flowName, flowType) => {
   let validatedFlowStatus = {};
@@ -115,6 +150,8 @@ const toggleFlowState = async (flowName, newflowState, flowType) => {
       await stopEgressFlowByName(flowName);
     }
   }
+
+  checked.value = _.isEqual(checked.value, "RUNNING") ? "STOPPED" : "RUNNING";
 };
 
 const dialogHeader = (flowData) => {
