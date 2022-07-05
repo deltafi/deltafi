@@ -78,6 +78,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     public static final String ACTIONS = "actions";
     public static final String ACTIONS_NAME = "actions.name";
+    public static final String ACTIONS_STATE = "actions.state";
+    public static final String ACTIONS_MODIFIED = "actions.modified";
 
     public static final String ACTION_MODIFIED = "action.modified";
     public static final String ACTION_STATE = "action.state";
@@ -92,7 +94,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             "action_search", new Index().named("action_search").on(ACTIONS_NAME, Sort.Direction.ASC),
             "completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
-            "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
+            "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
+            "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC));
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
