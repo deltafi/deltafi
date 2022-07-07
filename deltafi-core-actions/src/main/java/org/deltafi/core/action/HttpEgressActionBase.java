@@ -55,7 +55,7 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
                 if (tries > params.getRetryCount()) {
                     return result;
                 } else {
-                    log.error("Retrying HTTP POST after error: " + ((ErrorResult) result).getErrorCause());
+                    log.error("Retrying HTTP POST after error: " + ((ErrorResult) result).getErrorSummary());
                     try {
                         Thread.sleep(params.getRetryDelayMs());
                     } catch (InterruptedException ignored) {}

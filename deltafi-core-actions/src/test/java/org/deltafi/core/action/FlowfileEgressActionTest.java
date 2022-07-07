@@ -36,6 +36,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 
 import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
@@ -47,10 +48,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -112,7 +110,7 @@ class FlowfileEgressActionTest {
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
-        Result result = runTest(200, "good job", METADATA, 1);
+        Result result = runTest(200, METADATA, 1);
 
         assertThat(result, instanceOf(EgressResult.class));
         assertThat(result.toEvent().getDid(), equalTo(DID));
@@ -120,68 +118,54 @@ class FlowfileEgressActionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private Result runTest(int statusCode, String responseBody, Map<String, String> expectedMetadata, int numTries) throws IOException {
+    private Result runTest(int statusCode, Map<String, String> expectedMetadata, int numTries) throws IOException {
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
-            @Override
-            public int statusCode() {
-                return statusCode;
-            }
 
-            @Override
-            public HttpRequest request() {
-                return null;
-            }
-
-            @Override
-            public Optional<HttpResponse<InputStream>> previousResponse() {
-                return Optional.empty();
-            }
-
-            @Override
-            public HttpHeaders headers() {
-                return null;
-            }
-
-            @Override
-            public InputStream body() {
-                return new ByteArrayInputStream(responseBody.getBytes());
-            }
-
-            @Override
-            public Optional<SSLSession> sslSession() {
-                return Optional.empty();
-            }
-
-            @Override
-            public URI uri() {
-                return null;
-            }
-
-            @Override
-            public HttpClient.Version version() {
-                return null;
-            }
-        };
-
-        when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
+        final List<byte[]> posts = new ArrayList<>();
+        when(httpService.post(any(), any(), any(), any())).thenAnswer(
+                (Answer<HttpResponse>) invocation -> {
+                    InputStream is = invocation.getArgument(2);
+                    posts.add(is.readAllBytes());
+                    is.close();
+                    HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
+                        @Override public int statusCode() {
+                            return statusCode;
+                        }
+                        @Override public HttpRequest request() {
+                            return null;
+                        }
+                        @Override public Optional<HttpResponse<InputStream>> previousResponse() { return Optional.empty(); }
+                        @Override public HttpHeaders headers() {
+                            return null;
+                        }
+                        @Override public InputStream body() { return new ByteArrayInputStream("Hello there.".getBytes()); }
+                        @Override public Optional<SSLSession> sslSession() {
+                            return Optional.empty();
+                        }
+                        @Override public URI uri() {
+                            return null;
+                        }
+                        @Override public HttpClient.Version version() {
+                            return null;
+                        }
+                    };
+                    return httpResponse;
+                }
+        );
         Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
-        ArgumentCaptor<InputStream> bodyCaptor = ArgumentCaptor.forClass(InputStream.class);
-        verify(httpService, times(numTries)).post(eq(URL), headersCaptor.capture(), bodyCaptor.capture(), eq(CONTENT_TYPE));
+        verify(httpService, times(numTries)).post(eq(URL), headersCaptor.capture(), any(), eq(CONTENT_TYPE));
 
-        byte[] body = bodyCaptor.getValue().readAllBytes();
         FlowFileUnpackagerV1 unpackager = new FlowFileUnpackagerV1();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Map<String, String> metadata = unpackager.unpackageFlowFile(new ByteArrayInputStream(body), out);
-        byte[] content = out.toByteArray();
 
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Map<String, String> metadata = unpackager.unpackageFlowFile(new ByteArrayInputStream(posts.get(0)), out);
         // Expected metadata + ADDITIONAL_METADATA should be in the flowfile attributes
         assertThat(metadata, equalTo(Stream.of(expectedMetadata, ADDITIONAL_METADATA).flatMap(m -> m.entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
-
+        byte[] content = out.toByteArray();
         assertThat(content, equalTo(CONTENT));
 
         return result;
@@ -208,24 +192,24 @@ class FlowfileEgressActionTest {
 
         @Override
         public void close() throws IOException {
-            throw new IOException();
+            throw new IOException("This is a contrived exception.");
         }
     }
 
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new TestInputStream(CONTENT));
-        Result result = runTest(200, "boom", METADATA,1);
+        Result result = runTest(200, METADATA,1);
         assertThat(result, instanceOf(EgressResult.class));
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
-        Result result = runTest(500, "uh oh", METADATA, 4);
+        Result result = runTest(505, METADATA, 4);
 
         assertThat(result, instanceOf(ErrorResult.class));
-        assertThat(((ErrorResult) result).getErrorCause(), containsString("500"));
-        assertThat(((ErrorResult) result).getErrorCause(), containsString("uh oh"));
+        assertThat(((ErrorResult) result).getErrorCause(), containsString("505"));
+        assertThat(((ErrorResult) result).getErrorCause(), containsString("Hello there"));
     }
 }

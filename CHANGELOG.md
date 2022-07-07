@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased]
+## [0.96.0]
 
 ### Added
 - Disk usage based delete policies
@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - Promtail added to collect logs from all Kubernetes pods
   - Loki added to aggregate and store logs
   - Dashboards added to Grafana to provide log viewing and summary
+- Added `sourceMetadataUnion` DGS query to return a unified set of source metadata for a set of DeltaFiles
+- Removed noisy logging for several core support pods
 
 ### Changed
 - Retry of a DeltaFile is now referred to as `resume`
@@ -37,6 +39,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Minor version updates to various support packages
 - Replay and resume of a DeltaFile are prohibited after the DeltaFile content has been deleted
 - Config server functionality merged into deltafi-core-domain
+- Updated base Spring and Quarkus docker images
+- Disabled Redis journaling
 
 ### Deprecated
 
@@ -53,9 +57,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - NPE with null values for metadata fixed
 - Fixed getAllFlows query for smoke/egress-sink to include ingress and egress
+- Optimized data copy overhead in FlowfileEgressAction with piped streams
 
 ### Tech-Debt/Refactor
 - Rubocop cleanup of deltafi-auth codebase
+- KinD command line refactored
 
 ### Security
 
@@ -327,8 +333,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...main
-[0.95.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...0.95.5
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.0...main
+[0.96.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...0.96.0
 [0.95.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.3...0.95.4
 [0.95.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.2...0.95.3
 [0.95.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.21.4...0.95.2
