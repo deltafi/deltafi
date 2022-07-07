@@ -119,7 +119,9 @@ Commands:
   list-actions         list the actions registered with deltafi
   list-flows           list the flows in the system with their status
   list-plans           list all flow plans within deltafi
+  list-policies        list delete policies
   load-plan            load a flow plan to deltafi from a JSON file
+  load-policies        load delete policies from a JSON file
   load-rules           load ingress flow assignment rules from a JSON file
   load-variables       load plugin variables
   mongo-cli            launch the mongo CLI
@@ -208,8 +210,14 @@ case "$1" in
   list-plans)
     "$DELTAFICLI_WORKDIR/commands/list-plans" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-plans.log"
     ;;
+  list-policies)
+    "$DELTAFICLI_WORKDIR/commands/list-policies" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-policies.log"
+    ;;
   load-plan)
     "$DELTAFICLI_WORKDIR/commands/load-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-plan.log"
+    ;;
+  load-policies)
+    "$DELTAFICLI_WORKDIR/commands/load-policies" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-policies.log"
     ;;
   load-rules)
     "$DELTAFICLI_WORKDIR/commands/load-rules" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-rules.log"

@@ -38,6 +38,7 @@ generateJava {
 	  "ContentInput": "org.deltafi.core.domain.api.types.Content",
 	  "ContentReference": "org.deltafi.common.content.ContentReference",
 	  "ContentReferenceInput": "org.deltafi.common.content.ContentReference",
+	  "DeletePolicy": "org.deltafi.core.domain.api.types.DeletePolicy",
 	  "DeltaFiles": "org.deltafi.core.domain.api.types.DeltaFiles",
 	  "EgressFlow": "org.deltafi.core.domain.types.EgressFlow",
 	  "EgressFlowPlan": "org.deltafi.core.domain.types.EgressFlowPlan",

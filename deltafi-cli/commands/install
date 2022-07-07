@@ -20,6 +20,12 @@ load_plan() {
   fi
 }
 
+load_policies() {
+  if [[ ! "${1}" =~ "default.json" ]]; then
+    deltafi load-policies $1
+  fi
+}
+
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -60,7 +66,19 @@ else
   if [[ -f $FLOWS_DIRECTORY/variables.json ]]; then
     deltafi load-variables "${FLOWS_DIRECTORY}/variables.json"
   fi
-  find $FLOWS_DIRECTORY -name *.json -exec bash -c "load_plan \"{}\"" \;
+  find $FLOWS_DIRECTORY -name "*.json" -exec bash -c "load_plan \"{}\"" \;
+fi
+
+POLICIES_DIRECTORY="${DELTAFI_DIR}/policies"
+if [ ! -d "$POLICIES_DIRECTORY" ]; then
+  cli_log "${yellow}Deltafi directory does not include a ${bold}policies${normal}${yellow} subdirectory${normal}"
+else
+  cli_log "Loading delete policies"
+  export -f load_policies
+  if [[ -f $POLICIES_DIRECTORY/default.json ]]; then
+    deltafi load-policies -r "${POLICIES_DIRECTORY}/default.json"
+  fi
+  find $POLICIES_DIRECTORY -name "*.json" -exec bash -c "load_policies \"{}\"" \;
 fi
 
 cli_log "DeltaFi install complete"

@@ -17,16 +17,13 @@
  */
 package org.deltafi.core.domain.delete;
 
+import org.deltafi.core.domain.api.types.TimedDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -35,23 +32,18 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class TimedDeleteTest {
+    final String policyName = "policyName";
+    final String flow = "the flow";
     @Mock
     DeltaFilesService deltaFilesService;
 
-    final Map<String, String> parameters = new HashMap<>();
-    final String policyName = "policyName";
-    final String flow = "the flow";
-
-    @BeforeEach
-    void setup() {
-        parameters.clear();
-    }
-
     @Test
     void testConstructorAfterCreate() {
-        parameters.put("afterCreate", "PT50M");
-        parameters.put("flow", flow);
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
+        TimedDeletePolicy policy = new TimedDeletePolicy();
+        policy.setId(policyName);
+        policy.setAfterCreate("PT50M");
+        policy.setFlow(flow);
+        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         assertThat(timedDelete.getName()).isEqualTo(policyName);
         assertThat(timedDelete.getAfterCreate().toMinutes()).isEqualTo(50);
         assertNull(timedDelete.getAfterComplete());
@@ -60,8 +52,10 @@ public class TimedDeleteTest {
 
     @Test
     void testConstructorAfterComplete() {
-        parameters.put("afterComplete", "PT50M");
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
+        TimedDeletePolicy policy = new TimedDeletePolicy();
+        policy.setId(policyName);
+        policy.setAfterComplete("PT50M");
+        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         assertThat(timedDelete.getName()).isEqualTo(policyName);
         assertThat(timedDelete.getAfterComplete().toMinutes()).isEqualTo(50);
         assertNull(timedDelete.getAfterCreate());
@@ -70,20 +64,26 @@ public class TimedDeleteTest {
 
     @Test
     void testConstructorThrowsWithNoParams() {
-        assertThrows(IllegalArgumentException.class,() -> new TimedDelete(deltaFilesService, policyName, parameters));
+        TimedDeletePolicy policy = new TimedDeletePolicy();
+        policy.setId(policyName);
+        assertThrows(IllegalArgumentException.class, () -> new TimedDelete(deltaFilesService, policy));
     }
 
     @Test
     void testConstructorThrowsWithTooManyParams() {
-        parameters.put("afterCreate", "PT50M");
-        parameters.put("afterComplete", "PT50M");
-        assertThrows(IllegalArgumentException.class,() -> new TimedDelete(deltaFilesService, policyName, parameters));
+        TimedDeletePolicy policy = new TimedDeletePolicy();
+        policy.setId(policyName);
+        policy.setAfterComplete("PT50M");
+        policy.setAfterCreate("PT50M");
+        assertThrows(IllegalArgumentException.class, () -> new TimedDelete(deltaFilesService, policy));
     }
 
     @Test
     void runsAfterCreate() {
-        parameters.put("afterCreate", "PT50M");
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
+        TimedDeletePolicy policy = new TimedDeletePolicy();
+        policy.setId(policyName);
+        policy.setAfterCreate("PT50M");
+        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         timedDelete.run();
 
         verify(deltaFilesService).delete(ArgumentMatchers.any(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(0L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
@@ -91,9 +91,11 @@ public class TimedDeleteTest {
 
     @Test
     void runsAfterComplete() {
-        parameters.put("afterComplete", "PT50M");
-        parameters.put("flow", flow);
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
+        TimedDeletePolicy policy = new TimedDeletePolicy();
+        policy.setId(policyName);
+        policy.setAfterComplete("PT50M");
+        policy.setFlow(flow);
+        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         timedDelete.run();
 
         verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.any(), ArgumentMatchers.eq(0L), ArgumentMatchers.eq(flow), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
@@ -101,8 +103,11 @@ public class TimedDeleteTest {
 
     @Test
     void runsWithMinByes() {
-        parameters.put("minBytes", "234");
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policyName, parameters);
+        TimedDeletePolicy policy = new TimedDeletePolicy();
+        policy.setId(policyName);
+        policy.setMinBytes(new Long(234));
+
+        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         timedDelete.run();
 
         verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(234L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));

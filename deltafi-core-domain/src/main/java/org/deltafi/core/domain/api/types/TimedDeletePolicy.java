@@ -15,15 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.configuration;
+package org.deltafi.core.domain.api.types;
 
-import lombok.Data;
-
-import java.util.HashMap;
-import java.util.Map;
-
-@Data
-public class DeletePolicyConfiguration {
-    private String type;
-    private Map<String, String> parameters = new HashMap<>();
+public class TimedDeletePolicy extends org.deltafi.core.domain.generated.types.TimedDeletePolicy {
 }

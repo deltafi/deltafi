@@ -27,10 +27,6 @@ import graphql.ExecutionResult;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.core.config.server.constants.PropertyConstants;
-import org.deltafi.core.domain.api.types.Property;
-import org.deltafi.core.domain.api.types.PropertyId;
-import org.deltafi.core.domain.api.types.PropertySet;
-import org.deltafi.core.domain.api.types.PropertyUpdate;
 import org.deltafi.core.config.server.environment.DeltaFiCompositeEnvironmentRepository;
 import org.deltafi.core.config.server.environment.MongoEnvironmentRepository;
 import org.deltafi.core.config.server.repo.PropertyRepository;
@@ -42,10 +38,12 @@ import org.deltafi.core.config.server.service.StateHolderService;
 import org.deltafi.core.domain.api.Constants;
 import org.deltafi.core.domain.api.types.DeleteActionSchema;
 import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.api.types.EgressActionSchema;
 import org.deltafi.core.domain.api.types.EnrichActionSchema;
 import org.deltafi.core.domain.api.types.FormatActionSchema;
 import org.deltafi.core.domain.api.types.LoadActionSchema;
+import org.deltafi.core.domain.api.types.TimedDeletePolicy;
 import org.deltafi.core.domain.api.types.TransformActionSchema;
 import org.deltafi.core.domain.api.types.ValidateActionSchema;
 import org.deltafi.core.domain.api.types.*;
@@ -56,6 +54,7 @@ import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.domain.datafetchers.PropertiesDatafetcherTestHelper;
+import org.deltafi.core.domain.delete.DeletePolicyWorker;
 import org.deltafi.core.domain.delete.DeleteRunner;
 import org.deltafi.core.domain.generated.DgsConstants;
 import org.deltafi.core.domain.generated.client.*;
@@ -65,10 +64,7 @@ import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginRepository;
 import org.deltafi.core.domain.repo.*;
-import org.deltafi.core.domain.services.DeltaFilesService;
-import org.deltafi.core.domain.services.ErrorService;
-import org.deltafi.core.domain.services.IngressFlowService;
-import org.deltafi.core.domain.services.RedisService;
+import org.deltafi.core.domain.services.*;
 import org.deltafi.core.domain.types.PluginVariables;
 import org.deltafi.core.domain.types.*;
 import org.junit.jupiter.api.Assertions;
@@ -112,6 +108,7 @@ import static org.deltafi.core.domain.Util.assertEqualsIgnoringDates;
 import static org.deltafi.core.domain.Util.buildDeltaFile;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
+import static org.deltafi.core.domain.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.plugin.PluginDataFetcherTestHelper.*;
@@ -142,6 +139,9 @@ class DeltaFiCoreDomainApplicationTests {
     DeltaFiProperties deltaFiProperties;
 
 	@Autowired
+	DeletePolicyService deletePolicyService;
+
+	@Autowired
     DeleteRunner deleteRunner;
 
 	@Autowired
@@ -149,6 +149,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	ActionSchemaRepo actionSchemaRepo;
+
+	@Autowired
+	DeletePolicyRepo deletePolicyRepo;
 
 	@Autowired
 	FlowAssignmentRuleRepo flowAssignmentRuleRepo;
@@ -259,6 +262,7 @@ class DeltaFiCoreDomainApplicationTests {
 		actionSchemaRepo.deleteAll();
 		deltaFileRepo.deleteAll();
 		deltaFiProperties.getDelete().setOnCompletion(false);
+		deltaFileRepo.deleteAll();
 		flowAssignmentRuleRepo.deleteAll();
 		loadConfig();
 		loadTestProperties();
@@ -336,10 +340,82 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void deletePoliciesScheduled() {
-		assertThat(deleteRunner.getDeletePolicies().size()).isEqualTo(2);
-		assertThat(deleteRunner.getDeletePolicies().get(0).getName()).isEqualTo("twoSecondsAfterComplete");
-		assertThat(deleteRunner.getDeletePolicies().get(1).getName()).isEqualTo("diskSpacePercent");
+	void testReplaceAllDeletePolicies() {
+		Result result = replaceAllDeletePolicies(dgsQueryExecutor);
+		assertTrue(result.getSuccess());
+		assertTrue(result.getErrors().isEmpty());
+		assertEquals(3, deletePolicyRepo.count());
+	}
+
+	@Test
+	void testRemoveDeletePolicy() {
+		replaceAllDeletePolicies(dgsQueryExecutor);
+		assertEquals(3, deletePolicyRepo.count());
+		assertTrue(removeDeletePolicy(dgsQueryExecutor, AFTER_COMPLETE_LOCKED_POLICY));
+		assertEquals(2, deletePolicyRepo.count());
+		assertFalse(removeDeletePolicy(dgsQueryExecutor, AFTER_COMPLETE_LOCKED_POLICY));
+	}
+
+	@Test
+	void testEnablePolicy() {
+		replaceAllDeletePolicies(dgsQueryExecutor);
+		assertTrue(enablePolicy(dgsQueryExecutor, OFFLINE_POLICY, true));
+		assertFalse(enablePolicy(dgsQueryExecutor, AFTER_COMPLETE_LOCKED_POLICY, false));
+	}
+
+	@Test
+	void testGetDeletePolicies() {
+		replaceAllDeletePolicies(dgsQueryExecutor);
+		List<org.deltafi.core.domain.api.types.DeletePolicy> policyList = getDeletePolicies(dgsQueryExecutor);
+		assertEquals(3, policyList.size());
+
+		boolean foundAfterCompleteLockedPolicy = false;
+		boolean foundOfflinePolicy = false;
+		boolean foundDiskSpacePercent = false;
+
+		for (org.deltafi.core.domain.api.types.DeletePolicy policy : policyList) {
+			if (policy instanceof DiskSpaceDeletePolicy) {
+				DiskSpaceDeletePolicy diskPolicy = (DiskSpaceDeletePolicy) policy;
+				if (diskPolicy.getId().equals(DISK_SPACE_PERCENT_POLICY)) {
+					assertTrue(diskPolicy.getEnabled());
+					assertFalse(diskPolicy.getLocked());
+					foundDiskSpacePercent = true;
+				}
+			} else if (policy instanceof TimedDeletePolicy) {
+				TimedDeletePolicy timedPolicy = (TimedDeletePolicy) policy;
+				if (timedPolicy.getId().equals(AFTER_COMPLETE_LOCKED_POLICY)) {
+					assertTrue(timedPolicy.getEnabled());
+					assertTrue(timedPolicy.getLocked());
+					assertEquals("PT2S", timedPolicy.getAfterComplete());
+					assertNull(timedPolicy.getAfterCreate());
+					assertNull(timedPolicy.getMinBytes());
+					foundAfterCompleteLockedPolicy = true;
+
+				} else if (timedPolicy.getId().equals(OFFLINE_POLICY)) {
+					assertFalse(timedPolicy.getEnabled());
+					assertFalse(timedPolicy.getLocked());
+					assertEquals("PT2S", timedPolicy.getAfterCreate());
+					assertNull(timedPolicy.getAfterComplete());
+					assertEquals(1000, timedPolicy.getMinBytes());
+					foundOfflinePolicy = true;
+				}
+			}
+		}
+
+		assertTrue(foundAfterCompleteLockedPolicy);
+		assertTrue(foundOfflinePolicy);
+		assertTrue(foundDiskSpacePercent);
+	}
+
+	@Test
+	void testDeleteRunnerPoliciesScheduled() {
+		replaceAllDeletePolicies(dgsQueryExecutor);
+		assertThat(deletePolicyRepo.count()).isEqualTo(3);
+		List<DeletePolicyWorker> policiesScheduled = deleteRunner.refreshPolicies();
+		assertThat(policiesScheduled.size()).isEqualTo(2); // only 2 of 3 are enabled
+		List<String> ids = List.of(policiesScheduled.get(0).getName(),
+				policiesScheduled.get(1).getName());
+		assertTrue(ids.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_LOCKED_POLICY)));
 	}
 
 	@Test

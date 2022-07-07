@@ -17,8 +17,11 @@
  */
 package org.deltafi.core.domain.delete;
 
-import lombok.Getter;
-import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import lombok.AllArgsConstructor;
+import org.deltafi.core.domain.api.types.DeletePolicy;
+import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.api.types.TimedDeletePolicy;
+import org.deltafi.core.domain.services.DeletePolicyService;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.DiskSpaceService;
 import org.springframework.stereotype.Service;
@@ -27,26 +30,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class DeleteRunner {
-    @Getter
-    private final List<DeletePolicy> deletePolicies = new ArrayList<>();
-
-    public DeleteRunner(DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DeltaFiProperties deltaFiProperties) {
-        deltaFiProperties.getDelete().getPolicies().forEach((name, config) -> {
-            switch(config.getType()) {
-                case DiskSpaceDelete.TYPE:
-                      deletePolicies.add(new DiskSpaceDelete(deltaFilesService, diskSpaceService, name, config.getParameters()));
-                    break;
-                case TimedDelete.TYPE:
-                    deletePolicies.add(new TimedDelete(deltaFilesService, name, config.getParameters()));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown delete policy type " + config.getType() + " configured in policy " + name);
-            }
-        });
-    }
+    private final DeltaFilesService deltaFilesService;
+    private final DiskSpaceService diskSpaceService;
+    private final DeletePolicyService deletePolicyService;
 
     public void runDeletes() {
-        deletePolicies.forEach(DeletePolicy::run);
+        List<DeletePolicyWorker> policiesScheduled = refreshPolicies();
+        policiesScheduled.forEach(DeletePolicyWorker::run);
     }
+
+    public List<DeletePolicyWorker> refreshPolicies() {
+        List<DeletePolicyWorker> policies = new ArrayList<>();
+        for (DeletePolicy policy : deletePolicyService.getEnabledPolicies()) {
+            if (policy instanceof DiskSpaceDeletePolicy) {
+                policies.add(new DiskSpaceDelete(deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
+            } else if (policy instanceof TimedDeletePolicy) {
+                policies.add(new TimedDelete(deltaFilesService, (TimedDeletePolicy) policy));
+            } else {
+                throw new IllegalArgumentException("Unknown delete policy type " + policy.getClass().getSimpleName());
+            }
+
+        }
+        return policies;
+    }
+
 }

@@ -18,31 +18,23 @@
 package org.deltafi.core.domain.delete;
 
 import lombok.Getter;
+import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.DiskSpaceService;
 import org.deltafi.core.domain.services.api.model.DiskMetrics;
 
-import java.util.Map;
-
 @Getter
-public class DiskSpaceDelete extends DeletePolicy {
+public class DiskSpaceDelete extends DeletePolicyWorker {
     private final Integer maxPercent;
     private final String flow;
     private final DiskSpaceService diskSpaceService;
 
-    final static String TYPE = "diskSpace";
-
-    public DiskSpaceDelete(DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, String name, Map<String, String> parameters) {
-        super(deltaFilesService, name, parameters);
+    public DiskSpaceDelete(DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DiskSpaceDeletePolicy policy) {
+        super(deltaFilesService, policy.getId());
 
         this.diskSpaceService = diskSpaceService;
-        this.maxPercent = getParameters().containsKey("maxPercent") ? Integer.parseInt(getParameters().get("maxPercent")) : null;
-
-        if (maxPercent == null) {
-            throw new IllegalArgumentException("Disk space delete policy " + name + " must specify maxPercent");
-        }
-
-        this.flow = getParameters().get("flow");
+        this.maxPercent = policy.getMaxPercent();
+        this.flow = policy.getFlow();
     }
 
     public void run() {

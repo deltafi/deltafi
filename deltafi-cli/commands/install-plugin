@@ -111,7 +111,7 @@ else
     deltafi load-variables "${FLOWS_DIRECTORY}/variables.json" "$TMP_SOURCE_PLUGIN_FILE"
   fi
 
-  find $FLOWS_DIRECTORY -name *.json -exec bash -c "load_plan \"{}\" \"$TMP_SOURCE_PLUGIN_FILE\"" \;
+  find $FLOWS_DIRECTORY -name "*.json" -exec bash -c "load_plan \"{}\" \"$TMP_SOURCE_PLUGIN_FILE\"" \;
 fi
 
 cli_log "${bold}$PLUGIN_NAME${normal}: Plugin install complete."

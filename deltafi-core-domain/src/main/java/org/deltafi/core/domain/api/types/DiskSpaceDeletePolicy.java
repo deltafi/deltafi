@@ -15,14 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.configuration;
+package org.deltafi.core.domain.api.types;
 
-import lombok.Data;
-
-import java.time.Duration;
-
-@Data
-public class DeleteConfiguration {
-    private Duration frequency = Duration.ofMinutes(10);
-    private boolean onCompletion = false;
+public class DiskSpaceDeletePolicy extends org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicy {
 }

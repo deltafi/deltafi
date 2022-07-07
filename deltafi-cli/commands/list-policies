@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: list-policies
+
+Usage:
+  list-policies"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+QUERY="query {
+  getDeletePolicies {
+    id
+    __typename
+    enabled
+    locked
+    ... on DiskSpaceDeletePolicy {
+      maxPercent
+      flow
+    }
+    ... on TimedDeletePolicy {
+      afterCreate
+      afterComplete
+      flow
+      minBytes
+      deleteMetadata
+    }
+  }
+}"
+
+RESULT=$(deltafi query $QUERY)
+DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
+else
+  echo "$RESULT" | jq '.data.getDeletePolicies'
+fi

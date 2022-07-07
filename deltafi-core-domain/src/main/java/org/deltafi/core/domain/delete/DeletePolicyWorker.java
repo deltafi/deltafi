@@ -15,14 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.configuration;
+package org.deltafi.core.domain.delete;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.deltafi.core.domain.services.DeltaFilesService;
 
-import java.time.Duration;
+@AllArgsConstructor
+@Getter
+public abstract class DeletePolicyWorker {
+    protected final DeltaFilesService deltaFilesService;
+    protected final String name;
 
-@Data
-public class DeleteConfiguration {
-    private Duration frequency = Duration.ofMinutes(10);
-    private boolean onCompletion = false;
+    public abstract void run();
 }

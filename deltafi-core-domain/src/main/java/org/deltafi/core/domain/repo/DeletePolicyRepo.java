@@ -15,20 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.delete;
+package org.deltafi.core.domain.repo;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import org.deltafi.core.domain.services.DeltaFilesService;
+import org.deltafi.core.domain.api.types.DeletePolicy;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.Map;
+import java.util.List;
 
-@AllArgsConstructor
-@Getter
-public abstract class DeletePolicy {
-    protected final DeltaFilesService deltaFilesService;
-    protected final String name;
-    protected final Map<String, String> parameters;
-
-    public abstract void run();
+@Repository
+public interface DeletePolicyRepo extends MongoRepository<DeletePolicy, String> {
+    List<DeletePolicy> findByEnabledIsTrue();
 }
