@@ -28,7 +28,7 @@
                 <Timestamp :timestamp="value" />
               </span>
               <span v-else-if="['Original File Size', 'Total File Size'].includes(key)">
-                <FormattedBytes :bytes="originalFileSize" />
+                <FormattedBytes :bytes="value" />
               </span>
               <span v-else>{{ value }}</span>
               <span v-if="key === 'Stage'">
