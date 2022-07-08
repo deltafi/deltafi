@@ -974,10 +974,13 @@ class DeltaFiCoreDomainApplicationTests {
 		List<UniqueKeyValues> metadataUnion = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("24.source"), "did1", "did2"),
 				"data." + DgsConstants.QUERY.SourceMetadataUnion,
-				new TypeRef<>() {});
+				new TypeRef<>() {
+				});
 
 		assertEquals(1, metadataUnion.size());
+		assertEquals("key", metadataUnion.get(0).getKey());
 		assertEquals(2, metadataUnion.get(0).getValues().size());
+		assertTrue(metadataUnion.get(0).getValues().containsAll(List.of("val1", "val2")));
 	}
 
 	@Test

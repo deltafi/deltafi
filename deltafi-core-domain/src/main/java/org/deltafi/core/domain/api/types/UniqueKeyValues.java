@@ -17,16 +17,41 @@
  */
 package org.deltafi.core.domain.api.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-@Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class UniqueKeyValues {
+    @JsonIgnore
+    private final Set<String> valuesSet = new HashSet<>();
+
+    @Getter
     private String key;
-    private List<String> values;
+
+    public UniqueKeyValues(String key) {
+        this.key = key;
+    }
+
+    public UniqueKeyValues(String key, List<String> values) {
+        this.key = key;
+        setValues(values);
+    }
+
+    public List<String> getValues() {
+        return valuesSet.stream().collect(Collectors.toList());
+    }
+
+    public void setValues(List<String> values) {
+        valuesSet.addAll(values);
+    }
+
+    public void addValue(String value) {
+        valuesSet.add(value);
+    }
 }

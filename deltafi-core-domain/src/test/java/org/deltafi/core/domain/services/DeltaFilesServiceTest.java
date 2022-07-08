@@ -38,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import static org.deltafi.core.domain.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -122,12 +123,16 @@ class DeltaFilesServiceTest {
                 new KeyValue("k3", null),
                 new KeyValue("k4", "val4")));
 
-        when(deltaFileRepo.findById("1")).thenReturn(Optional.of(deltaFile1));
-        when(deltaFileRepo.findById("2")).thenReturn(Optional.of(deltaFile2));
-        when(deltaFileRepo.findById("3")).thenReturn(Optional.of(deltaFile3));
-        when(deltaFileRepo.findById("4")).thenReturn(Optional.empty());
+        List<String> dids = List.of("1", "2", "3", "4");
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        filter.setDids(dids);
 
-        List<UniqueKeyValues> uniqueMetadata = deltaFilesService.sourceMetadataUnion(List.of("1", "2", "3", "4"));
+
+        DeltaFiles deltaFiles = new DeltaFiles(0, 3, 3, List.of(deltaFile1, deltaFile2, deltaFile3));
+        when(deltaFileRepo.deltaFiles(0, dids.size(), filter, null,
+                List.of(SOURCE_INFO_METADATA))).thenReturn(deltaFiles);
+
+        List<UniqueKeyValues> uniqueMetadata = deltaFilesService.sourceMetadataUnion(dids);
         assertEquals(4, uniqueMetadata.size());
 
         boolean foundKey1 = false;

@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
+import static org.deltafi.core.domain.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
 @Service
 @RequiredArgsConstructor
@@ -683,28 +684,21 @@ public class DeltaFilesService {
     }
 
     public List<UniqueKeyValues> sourceMetadataUnion(List<String> dids) {
-        List<UniqueKeyValues> uniqueMetadata = new ArrayList<>();
-        Map<String, Set<String>> uniqueMap = new HashMap<>();
-        for (String did : dids) {
-            DeltaFile deltaFile = getDeltaFile(did);
-            if (null != deltaFile) {
-                List<KeyValue> deltaFileMeta = deltaFile.getSourceInfo().getMetadata();
-                for (KeyValue meta : deltaFileMeta) {
-                    if (!uniqueMap.containsKey(meta.getKey())) {
-                        uniqueMap.put(meta.getKey(), new HashSet<>());
-                    }
-                    uniqueMap.get(meta.getKey()).add(meta.getValue());
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        filter.setDids(dids);
+        DeltaFiles deltaFiles = getDeltaFiles(0, dids.size(), filter, null, List.of(SOURCE_INFO_METADATA));
+
+        Map<String, UniqueKeyValues> keyValues = new HashMap<>();
+        deltaFiles.getDeltaFiles().stream().forEach(deltaFile -> {
+            List<KeyValue> deltaFileMeta = deltaFile.getSourceInfo().getMetadata();
+            for (KeyValue meta : deltaFileMeta) {
+                if (!keyValues.containsKey(meta.getKey())) {
+                    keyValues.put(meta.getKey(), new UniqueKeyValues(meta.getKey()));
                 }
+                keyValues.get(meta.getKey()).addValue(meta.getValue());
             }
-        }
-
-        for (String key : uniqueMap.keySet()) {
-            List<String> values = uniqueMap.get(key).stream().collect(Collectors.toList());
-            uniqueMetadata.add(new UniqueKeyValues(key, values));
-        }
-
-
-        return uniqueMetadata;
+        });
+        return keyValues.values().stream().collect(Collectors.toList());
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
