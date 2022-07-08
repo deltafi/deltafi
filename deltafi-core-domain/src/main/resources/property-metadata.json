@@ -234,14 +234,6 @@
         "editable": true
       },
       {
-        "key": "deltafi.delete.policies.oneHourAfterComplete.parameters.afterComplete",
-        "description": "Parameters for the OneHourAfterComplete ageoff policy",
-        "defaultValue": "PT1H",
-        "hidden": false,
-        "refreshable": true,
-        "editable": true
-      },
-      {
         "key": "deltafi.housekeeping.minio.initialDelaySeconds",
         "description": "Initial delay before starting the housekeeping job.",
         "defaultValue": "60",
