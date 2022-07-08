@@ -226,14 +226,6 @@
         "editable": true
       },
       {
-        "key": "deltafi.delete.policies.oneHourAfterComplete.type",
-        "description": "OneHourAfterComplete policy type.",
-        "defaultValue": "ageOff",
-        "hidden": false,
-        "refreshable": true,
-        "editable": true
-      },
-      {
         "key": "deltafi.housekeeping.minio.initialDelaySeconds",
         "description": "Initial delay before starting the housekeeping job.",
         "defaultValue": "60",
