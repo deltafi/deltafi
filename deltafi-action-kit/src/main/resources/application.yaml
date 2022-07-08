@@ -5,9 +5,10 @@ quarkus:
     fail-fast: ${CONFIG_FAIL_FAST:true}
     label: ${CONFIG_SERVER_LABEL:main}
   micrometer:
+    export:
+      graphite:
+        enabled: true
     binder-enabled-default: false
     binder:
       jvm: false
       system: false
-      process: false
-      http: false

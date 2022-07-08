@@ -69,46 +69,6 @@
         "editable": false
       },
       {
-        "key": "quarkus.micrometer.binder-enabled-default",
-        "description": "Send auto bound metrics to Graphite",
-        "defaultValue": false,
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.binder.jvm",
-        "description": "Send JVM metrics to Graphite",
-        "defaultValue": false,
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.binder.system",
-        "description": "Send system metrics to Graphite",
-        "defaultValue": false,
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.binder.process",
-        "description": "Send process metrics to Graphite",
-        "defaultValue": false,
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.binder.http",
-        "description": "Send HTTP metrics to Graphite",
-        "defaultValue": false,
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
         "key": "spring.data.mongodb.host",
         "description": "Mongo server host. Cannot be set with URI.",
         "defaultValue": "deltafi-mongodb"

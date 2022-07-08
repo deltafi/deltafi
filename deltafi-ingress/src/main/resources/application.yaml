@@ -6,9 +6,10 @@ quarkus:
     enabled: true
     url: ${CONFIG_SERVER_URL:http://deltafi-core-domain-service/config}
   micrometer:
+    export:
+      graphite:
+        enabled: true
     binder-enabled-default: false
     binder:
       jvm: false
       system: false
-      process: false
-      http: false
