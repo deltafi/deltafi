@@ -2,6 +2,7 @@
 deltafi:
   ui:
     title: DeltaFi (LOCAL)
+    image: localhost:5000/deltafi-ui:latest
   passthrough_actions:
     image: localhost:5000/deltafi-passthrough-actions:latest
   core_actions:
@@ -12,11 +13,10 @@ deltafi:
     image: localhost:5000/deltafi-ingress:latest
   auth:
     image: localhost:5000/deltafi-auth:latest
+    mode: disabled
   api:
     image: localhost:5000/deltafi-api:latest
   egress_sink:
     image: localhost:5000/deltafi-egress-sink:latest
   nodemonitor:
     image: localhost:5000/deltafi-nodemonitor:latest
-  ui:
-    image: localhost:5000/deltafi-ui:latest

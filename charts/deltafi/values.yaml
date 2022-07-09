@@ -44,7 +44,7 @@ deltafi:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
     image: deltafi/deltafi-auth:0.96.0
-    mode: disabled # basic, cert, or disabled
+    mode: basic # basic, cert, or disabled
     secret: auth-secret
   api:
     image: deltafi/deltafi-api:0.96.0
