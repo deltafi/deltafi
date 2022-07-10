@@ -21,6 +21,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Upgrade and Migration
 
+## [0.96.1] - 2022-07-10
+
+### Added
+- Implemented delete configuration interface
+- Added index for the requeue query
+
+### Changed
+- Default authentication mode is now `basic`
+
+### Fixed
+- Fixed configuration related warnings on startup of ingress and action pods
+- Implemented workaround for configmap duplication errors during `deltafi install`
+
 ## [0.96.0] - 2022-07-07
 
 ### Added
@@ -351,7 +364,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.0...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.1...main
+[0.96.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.0...0.96.1
 [0.96.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...0.96.0
 [0.95.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.3...0.95.4
 [0.95.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.2...0.95.3
