@@ -89,8 +89,27 @@ _readlink() {
   fi
 }
 
+_exit_1() {
+  {
+    printf "%s " "$(tput setaf 1)!$(tput sgr0)"
+    "${@}"
+  } 1>&2
+  exit 1
+}
+
+_command_check() {
+  command -v $1 &> /dev/null || _exit_1 echo "Command '$@' is not installed. DeltaFi CLI cannot execute."
+}
+
 export DELTAFICLI_WORKDIR=$(cd $(dirname $(_readlink -f $0)) && pwd)
 export DELTAFI_DIR=$(dirname "$DELTAFICLI_WORKDIR")
+
+
+_command_check jq
+_command_check curl
+_command_check sed
+_command_check kubectl
+_command_check ruby
 
 # shellcheck source=common
 . "$DELTAFICLI_WORKDIR/common"
