@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - DeltaFi CLI checks for dependencies (`jq`, `kubectl`, etc.)
+- Nodemonitor fix for long filesystem names
 
 ### Tech-Debt/Refactor
 

@@ -26,8 +26,8 @@ PERIOD=${PERIOD:-9}
 
 # Post usage and limit of /data to graphite roughly every $PERIOD seconds
 while true; do
-    LIMIT=`df /data -B 1 | grep /data | xargs echo | cut -d' ' -f2`
-    USAGE=`df /data -B 1 | grep /data | xargs echo | cut -d' ' -f3`
+    LIMIT=`df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f2`
+    USAGE=`df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f3`
     TIMESTAMP=`date +%s`
     echo "gauge.node.disk.usage;hostname=$HOSTNAME $USAGE $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
     echo "gauge.node.disk.limit;hostname=$HOSTNAME $LIMIT $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
