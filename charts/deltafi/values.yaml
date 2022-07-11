@@ -118,6 +118,9 @@ minio:
     node-role.deltafi.org/storage: "true"
 # Values for the MongoDB dependency
 mongodb:
+  image:
+    repository: bitnami/mongodb
+    tag: 4.4.12-debian-10-r0
   architecture: standalone
   useStatefulSet: false
   auth:
@@ -136,6 +139,9 @@ mongodb:
     node-role.deltafi.org/storage: "true"
 # Redis config
 redis:
+  image:
+    repository: bitnami/redis
+    tag: 6.2.6-debian-10-r0
   architecture: standalone
   auth:
     existingSecret: redis-password

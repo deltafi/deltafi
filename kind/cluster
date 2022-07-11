@@ -394,11 +394,23 @@ _check_local_fqdns() {
   done
 }
 
+# Detect arm processor
+_is_arm() {
+  if [[ $(uname -p) == 'arm' ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 describe install "Initialize a KinD cluster and install core DeltaFi"
 install() {
   _k8s_init
   echo ">> Installing deltafi"
-  _kind_deltafi install "$@" 2>&1 | grep -v deprecated | while read line; do echo " |  $line"; done
+  # Detect ARM processor and load arm64 overrides
+  local EXTRA=
+  _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
+  _kind_deltafi install "$@" $EXTRA 2>&1 | grep -v deprecated | while read line; do echo " |  $line"; done
   echo "<< Installing deltafi complete"
 }
 

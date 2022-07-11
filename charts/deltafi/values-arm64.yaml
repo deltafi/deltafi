@@ -1,0 +1,8 @@
+mongodb:
+  image:
+    registry: ghcr.io
+    repository: zcube/bitnami-compat/mongodb
+redis:
+  image:
+    registry: ghcr.io
+    repository: zcube/bitnami-compat/redis
