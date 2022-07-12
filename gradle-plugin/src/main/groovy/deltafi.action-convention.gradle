@@ -42,7 +42,10 @@ springBoot {
     }
 }
 
-bootJar.dependsOn(checkDeltafiPlugin)
+bootJar {
+    dependsOn checkDeltafiPlugin
+    archiveName "deltafi-plugin.jar"
+}
 
 // Copy the standard plugin Dockerfile from the gradle-plugin jar resources to the build directory after the bootJar is
 // built. Here it will be available to both the gradle docker plugin and the CI docker job.
