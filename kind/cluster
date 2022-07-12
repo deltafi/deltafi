@@ -160,19 +160,21 @@ _are_you_sure() {
 
 _check_deltafi_cli() {
   if ! which deltafi >/dev/null; then
-    echo ">> Installing DeltaFi CLI"
+    _debug ">> Installing DeltaFi CLI"
     pushd $DELTAFI_PATH/deltafi-cli > /dev/null
     ./install.sh
     popd > /dev/null
+    echo "   $(_green "OK") Local CLI"
   fi
 }
 
 _install_node_cli() {
-  echo ">> Installing DeltaFi CLI in cluster node"
-  docker exec -i ${CLUSTER_NAME}-control-plane bash <<"EOF"
+  _debug ">> Installing DeltaFi CLI in cluster node"
+  docker exec -i ${CLUSTER_NAME}-control-plane bash > /dev/null <<"EOF"
 cd /usr/dev/deltafi/deltafi-cli
 ./install.sh
 EOF
+  echo "   $(_green "OK") Cluster CLI"
 }
 
 _create_proxy() {
@@ -192,6 +194,7 @@ _create_proxy() {
             -e REGISTRY_PROXY_REMOTEURL=${PROXY_REMOTE} \
             -p "127.0.0.1:${PROXY_PORT}:5000" \
             registry:2
+      echo "   $(_green "OK") Local container proxy: $PROXY_NAME"
   fi
 }
 
@@ -210,12 +213,13 @@ _create_registry() {
             --mount source=${REGISTRY_NAME},destination=/var/lib/registry \
             -p "127.0.0.1:${REGISTRY_PORT}:5000" \
             registry:2
+      echo "   $(_green "OK") Docker registry: $REGISTRY_NAME"
   fi
 }
 
 describe up "Turn up a KinD cluster (or re-apply cluster settings)"
 up() {
-  echo ">> Initializing KinD cluster..."
+  _attention "Initializing KinD cluster"
   _check_deltafi_cli
   mkdir -p $PV_DIR
   pushd $BASE_PATH > /dev/null
@@ -262,18 +266,17 @@ EOF
 
   _k8s_add_namespace deltafi
 
-  kubectl apply -f $BASE_PATH/files/kind-metrics-server-deployment.yaml
+  kubectl apply -f $BASE_PATH/files/kind-metrics-server-deployment.yaml | while read line; do _debug " |  $line"; done
   kubens deltafi
   _install_node_cli
   _enable_ui
-  echo "<< Initializing KinD cluster...complete"
+  echo "   $(_green "OK") KinD cluster"
   echo
 }
 
 _k8s_add_namespace() {
   local ns=$1
   if ! kubectl get namespace $ns 2>&1 > /dev/null; then
-    echo "  Creating namespace: $ns"
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Namespace
@@ -281,6 +284,7 @@ metadata:
   name: $ns
 EOF
   fi
+  echo "   $(_green "OK") Namespace: $ns"
 }
 
 _k8s_add_pv() {
@@ -289,7 +293,6 @@ _k8s_add_pv() {
   local size=${3:-1G}
   local namespace=${4:-deltafi}
   if ! kubectl get persistentvolumeclaim $name 2>&1 > /dev/null; then
-    echo "  Installing persistent volume: $name ($path)"
     cat <<EOF | kubectl apply -f -
 ---
 apiVersion: v1
@@ -332,6 +335,7 @@ spec:
 ---
 EOF
   fi
+    echo "   $(_green "OK") Persistent volume: $name ($path)"
 }
 
 _k8s_add_secret() {
@@ -355,6 +359,7 @@ shift 2
 done)
 EOF
   fi
+  echo "   $(_green "OK") Secret: $name"
 }
 
 _random_password() {
@@ -366,22 +371,22 @@ _enable_ui() {
   echo ">> Installing KinD ingress controller..."
   _check_local_fqdns
   echo " >  Installing ingress-nginx..."
-  kubectl apply -f $BASE_PATH/files/ingress-nginx.yaml | while read line; do echo " |  $line"; done
+  kubectl apply -f $BASE_PATH/files/ingress-nginx.yaml | while read line; do _debug " |  $line"; done
   echo " >  Waiting for ingress-nginx..."
   kubectl wait --namespace ingress-nginx \
       --for=condition=ready pod \
       --selector=app.kubernetes.io/component=controller \
       --timeout=90s | while read line; do echo " |  $line"; done
-  echo "<< Installing KinD ingress controller...complete"
+  echo "   $(_green "OK") KinD ingress controller"
 }
 
 _verify_or_replace_fqdn() {
   local FQDN=$1
   if grep -qxF "127.0.0.1 $FQDN" /etc/hosts; then
-    echo "   OK     $FQDN"
+    echo "   $(_green "OK")     $FQDN"
   else
     echo "127.0.0.1 $FQDN" | ${SUDO} tee -a /etc/hosts > /dev/null
-    echo "   ADDED  $FQDN"
+    echo "   $(_red "ADDED")  $FQDN"
   fi
 }
 
@@ -406,16 +411,16 @@ _is_arm() {
 describe install "Initialize a KinD cluster and install core DeltaFi"
 install() {
   _k8s_init
-  echo ">> Installing deltafi"
+  echo ">> Starting deltafi"
   # Detect ARM processor and load arm64 overrides
   local EXTRA=
   _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
-  _kind_deltafi install "$@" $EXTRA 2>&1 | grep -v deprecated | while read line; do echo " |  $line"; done
-  echo "<< Installing deltafi complete"
+  _kind_deltafi install "$@" $EXTRA 2>&1 | while read line; do [[ "$line" =~ "deprecated" ]] || echo " |  $line"; done
+  echo "   $(_green "OK") DeltaFi core"
 }
 
 _k8s_init() {
-  echo ">> Initializing k8s prerequisites"
+  _debug ">> Initializing k8s prerequisites"
   _k8s_add_namespace deltafi
   _k8s_add_secret mongodb-passwords mongodb-password $(_random_password 20) mongodb-root-password $(_random_password 20)
   _k8s_add_secret minio-keys accesskey $(_random_password 20) secretkey $(_random_password 40)
@@ -428,15 +433,17 @@ _k8s_init() {
   _k8s_add_pv deltafi-loki /data/deltafi/loki 1G
   _k8s_add_pv deltafi-egress-sink /data/deltafi/egress-sink 1G
   _k8s_add_pv deltafi-auth /data/deltafi/auth 1G
-  echo "<< Initializing k8s prerequisites"
+  echo "   $(_green "OK") Kubernetes prerequisites"
 }
 
 describe down "Shut down the KinD cluster"
 down() {
+  _attention "Shutting down KinD cluster"
   if kind get clusters 2>/dev/null | grep "^${CLUSTER_NAME}$" > /dev/null; then
     [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure
     kind delete cluster --name ${CLUSTER_NAME}
     rm -rf $PV_DIR/mongodb
+    echo "   $(_red "XX") KinD cluster"
   else
     echo "No deltafi cluster instantiated"
   fi
@@ -502,6 +509,7 @@ EOF
 
 describe uninstall "Uninstall the DeltaFi instance, leaving cluster intact"
 uninstall() {
+  _attention "Uninstalling DeltaFi"
   deltafi uninstall
 }
 
@@ -596,12 +604,16 @@ loc() {
   [[ -n "$RESTART" || -n "$REINSTALL" || -n "$BOUNCE" || -n "$INSTALL" ]] && _local_push
 
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
+    _attention "Installing DeltaFi core"
     install -f deltafi/charts/deltafi/values-local.yaml
-    run deltafi install-plugin deltafi-passthrough -f deltafi-passthrough/charts/values-local.yaml
-    run deltafi install-plugin deltafi-stix -f deltafi-stix/charts/values-local.yaml
+    for plugin in deltafi-passthrough deltafi-stix; do
+      _attention "Installing $plugin"
+      run deltafi install-plugin $plugin -f $plugin/charts/values-local.yaml
+    done
   fi
 
   if [[ -n "$BOUNCE" ]]; then
+    _attention "Bouncing $BOUNCE"
     kubectl get pods | cut -d' ' -f1 | grep $BOUNCE | xargs kubectl delete pod
   fi
 }
@@ -609,8 +621,10 @@ loc() {
 _local_build() {
   if [[ $# -gt 0 && $1 == "clean" ]]; then
     local BUILD_TARGETS=clean build test
+    _attention "Building local images (clean)"
   else
     local BUILD_TARGETS=assemble
+    _attention "Building local images"
   fi
 
   cd $ROOT/deltafi
@@ -641,6 +655,20 @@ _local_cluster() {
   install -f deltafi/charts/deltafi/values-local.yaml
   run deltafi install-plugin deltafi-passthrough -f deltafi-passthrough/charts/values-local.yaml
   run deltafi install-plugin deltafi-stix -f deltafi-stix/charts/values-local.yaml
+}
+
+_green() {
+  printf "%s" "$(tput setaf 2)${@}$(tput sgr0)"
+}
+
+_red() {
+  printf "%s" "$(tput setaf 1)${@}$(tput sgr0)"
+}
+
+_attention() {
+  {
+    printf "\n%s\n\n" "$(tput setaf 3)>  $(tput setaf 2)${@}$(tput sgr0)"
+  } 1>&2
 }
 
 _init
