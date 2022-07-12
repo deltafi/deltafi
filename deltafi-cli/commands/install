@@ -51,9 +51,9 @@ fi
 cli_log "Installing DeltaFi"
 
 # This is a temporary workaround for issue #257
-kubectl create configmap deltafi-graphite-configmap > /dev/null 2>&1
-kubectl label --overwrite=true configmap deltafi-graphite-configmap app.kubernetes.io/managed-by=Helm > /dev/null
-kubectl annotate --overwrite=true configmap deltafi-graphite-configmap meta.helm.sh/release-name=deltafi meta.helm.sh/release-namespace=deltafi > /dev/null
+kubectl create configmap --namespace deltafi deltafi-graphite-configmap > /dev/null 2>&1
+kubectl label --namespace deltafi --overwrite=true configmap deltafi-graphite-configmap app.kubernetes.io/managed-by=Helm app=graphite > /dev/null
+kubectl annotate --namespace deltafi --overwrite=true configmap deltafi-graphite-configmap meta.helm.sh/release-name=deltafi meta.helm.sh/release-namespace=deltafi > /dev/null
 
 helm upgrade --install --wait \
   --values $DELTAFICLI_CHART_PATH/values.yaml \
