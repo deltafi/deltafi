@@ -113,10 +113,10 @@ DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
 ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
 
 source $BASE_PATH/files/bask
-command -v deltafi &> /dev/null || _exit_1 "DeltaFi cli command 'deltafi' must be installed"
-command -v kubectl &> /dev/null || _exit_1 "'kubectl' must be installed"
-command -v docker &> /dev/null || _exit_1 "'docker' must be installed"
-command -v kind &> /dev/null || _exit_1 "'kind' must be installed"
+command -v deltafi &> /dev/null || _exit_1 echo "DeltaFi cli command 'deltafi' must be installed"
+command -v kubectl &> /dev/null || _exit_1 echo "'kubectl' must be installed"
+command -v docker &> /dev/null || _exit_1 echo "'docker' must be installed"
+command -v kind &> /dev/null || _exit_1 echo "'kind' must be installed"
 
 ___start=$(date +%s)
 
@@ -164,7 +164,7 @@ _check_deltafi_cli() {
     pushd $DELTAFI_PATH/deltafi-cli > /dev/null
     ./install.sh
     popd > /dev/null
-    echo "   $(_green "OK") Local CLI"
+    _ok "Local CLI"
   fi
 }
 
@@ -174,7 +174,7 @@ _install_node_cli() {
 cd /usr/dev/deltafi/deltafi-cli
 ./install.sh
 EOF
-  echo "   $(_green "OK") Cluster CLI"
+  _ok "Cluster CLI"
 }
 
 _create_proxy() {
@@ -194,7 +194,7 @@ _create_proxy() {
             -e REGISTRY_PROXY_REMOTEURL=${PROXY_REMOTE} \
             -p "127.0.0.1:${PROXY_PORT}:5000" \
             registry:2
-      echo "   $(_green "OK") Local container proxy: $PROXY_NAME"
+      _ok "Local container proxy: $PROXY_NAME"
   fi
 }
 
@@ -213,7 +213,7 @@ _create_registry() {
             --mount source=${REGISTRY_NAME},destination=/var/lib/registry \
             -p "127.0.0.1:${REGISTRY_PORT}:5000" \
             registry:2
-      echo "   $(_green "OK") Docker registry: $REGISTRY_NAME"
+      _ok "Docker registry: $REGISTRY_NAME"
   fi
 }
 
@@ -270,8 +270,7 @@ EOF
   kubens deltafi
   _install_node_cli
   _enable_ui
-  echo "   $(_green "OK") KinD cluster"
-  echo
+  _ok "KinD cluster"
 }
 
 _k8s_add_namespace() {
@@ -284,7 +283,7 @@ metadata:
   name: $ns
 EOF
   fi
-  echo "   $(_green "OK") Namespace: $ns"
+  _ok "Namespace: $ns"
 }
 
 _k8s_add_pv() {
@@ -335,7 +334,7 @@ spec:
 ---
 EOF
   fi
-    echo "   $(_green "OK") Persistent volume: $name ($path)"
+    _ok "Persistent volume: $name ($path)"
 }
 
 _k8s_add_secret() {
@@ -343,7 +342,6 @@ _k8s_add_secret() {
   shift
 
   if ! kubectl get secret $name 2>&1 > /dev/null; then
-    echo "  Installing secret: $name"
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Secret
@@ -359,7 +357,7 @@ shift 2
 done)
 EOF
   fi
-  echo "   $(_green "OK") Secret: $name"
+  _ok " Secret: $name"
 }
 
 _random_password() {
@@ -370,23 +368,23 @@ _random_password() {
 _enable_ui() {
   echo ">> Installing KinD ingress controller..."
   _check_local_fqdns
-  echo " >  Installing ingress-nginx..."
+  echo " > Installing ingress-nginx..."
   kubectl apply -f $BASE_PATH/files/ingress-nginx.yaml | while read line; do _debug " |  $line"; done
-  echo " >  Waiting for ingress-nginx..."
+  echo " > Waiting for ingress-nginx..."
   kubectl wait --namespace ingress-nginx \
       --for=condition=ready pod \
       --selector=app.kubernetes.io/component=controller \
       --timeout=90s | while read line; do echo " |  $line"; done
-  echo "   $(_green "OK") KinD ingress controller"
+  _ok "KinD ingress controller"
 }
 
 _verify_or_replace_fqdn() {
   local FQDN=$1
   if grep -qxF "127.0.0.1 $FQDN" /etc/hosts; then
-    echo "   $(_green "OK")     $FQDN"
+    _ok "Active: $FQDN"
   else
     echo "127.0.0.1 $FQDN" | ${SUDO} tee -a /etc/hosts > /dev/null
-    echo "   $(_red "ADDED")  $FQDN"
+    _ok "Added: $FQDN"
   fi
 }
 
@@ -416,7 +414,7 @@ install() {
   local EXTRA=
   _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
   _kind_deltafi install "$@" $EXTRA 2>&1 | while read line; do [[ "$line" =~ "deprecated" ]] || echo " |  $line"; done
-  echo "   $(_green "OK") DeltaFi core"
+  _ok "DeltaFi core"
 }
 
 _k8s_init() {
@@ -433,7 +431,7 @@ _k8s_init() {
   _k8s_add_pv deltafi-loki /data/deltafi/loki 1G
   _k8s_add_pv deltafi-egress-sink /data/deltafi/egress-sink 1G
   _k8s_add_pv deltafi-auth /data/deltafi/auth 1G
-  echo "   $(_green "OK") Kubernetes prerequisites"
+  _ok "Kubernetes prerequisites"
 }
 
 describe down "Shut down the KinD cluster"
@@ -443,9 +441,9 @@ down() {
     [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure
     kind delete cluster --name ${CLUSTER_NAME}
     rm -rf $PV_DIR/mongodb
-    echo "   $(_red "XX") KinD cluster"
+    _down "KinD Cluster"
   else
-    echo "No deltafi cluster instantiated"
+    _fail "No deltafi cluster instantiated"
   fi
 }
 
@@ -643,9 +641,9 @@ _local_build() {
 
 _local_push() {
   for img in `docker images | grep localhost.*latest | cut -f1 -d' '`; do
-    echo "> Pushing to cluster: $img"
     docker push $img 1>/dev/null
     run crictl pull $img 1>/dev/null
+    _ok "Push to cluster: $img"
   done
 }
 
@@ -669,6 +667,18 @@ _attention() {
   {
     printf "\n%s\n\n" "$(tput setaf 3)>  $(tput setaf 2)${@}$(tput sgr0)"
   } 1>&2
+}
+
+_ok() {
+  printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 2)" " OK" "$(tput sgr0)" "$@"
+}
+
+_down() {
+  printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 3)" "DOWN" "$(tput sgr0)" "$@"
+}
+
+_fail() {
+  printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 1)" "FAIL" "$(tput sgr0)" "$@"
 }
 
 _init
