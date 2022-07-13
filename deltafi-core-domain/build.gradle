@@ -46,6 +46,7 @@ generateJava {
 	  "EnrichFlowPlan": "org.deltafi.core.domain.types.EnrichFlowPlan",
 	  "IngressFlow": "org.deltafi.core.domain.types.IngressFlow",
 	  "IngressFlowPlan": "org.deltafi.core.domain.types.IngressFlowPlan",
+	  "DataType": "org.deltafi.core.domain.api.types.VariableDataType",
 	  "KeyValue": "org.deltafi.core.domain.api.types.KeyValue",
 	  "KeyValueInput": "org.deltafi.core.domain.api.types.KeyValue",
 	  "PluginCoordinates": "org.deltafi.core.domain.api.types.PluginCoordinates",

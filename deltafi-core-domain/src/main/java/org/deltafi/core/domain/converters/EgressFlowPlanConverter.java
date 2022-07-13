@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.domain.converters;
 
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
@@ -24,8 +25,9 @@ import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EgressFlowPlan;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, EgressFlow> {
@@ -60,7 +62,7 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
     }
 
     List<ValidateActionConfiguration> buildValidateActions(List<ValidateActionConfiguration> validateActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        return Objects.nonNull(validateActionTemplates) ? validateActionTemplates.stream()
+        return null != validateActionTemplates ? validateActionTemplates.stream()
                 .map(validateTemplate -> buildValidateAction(validateTemplate, flowPlanPropertyHelper))
                 .collect(Collectors.toList()) : List.of();
     }
@@ -92,24 +94,53 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
         return egressActionConfiguration;
     }
 
-    List<String> buildFlowList(List<String> fromPlan, FlowPlanPropertyHelper flowPlanPropertyHelper, String flowPlanName) {
-        if (null == fromPlan) {
+    List<String> buildFlowList(List<String> ingressFlowNames, FlowPlanPropertyHelper flowPlanPropertyHelper, String inEgressPlanNamed) {
+        if (null == ingressFlowNames) {
             return null;
         }
 
-        List<String> flowList = new ArrayList<>();
-        for (String flow : fromPlan) {
-            String replacement = flowPlanPropertyHelper.replaceValue(flow, flowPlanName);
-            if (null != replacement && !replacement.equals(flow) && replacement.contains(",")) {
-                String[] flows = replacement.split(",");
-                for (String split : flows) {
-                    flowList.add(split.trim());
+        return 1 == ingressFlowNames.size() ?
+                handleValue(ingressFlowNames.get(0), flowPlanPropertyHelper, inEgressPlanNamed) :
+                handleValues(ingressFlowNames, flowPlanPropertyHelper, inEgressPlanNamed);
+    }
+
+    /*
+     * If the replacement value is null or blank the entire list will be null
+     * If the replacement is wrapped as an array string split it up
+     */
+    private List<String> handleValue(String inputValue, FlowPlanPropertyHelper flowPlanPropertyHelper, String inEgressPlanNamed) {
+        String replacement = flowPlanPropertyHelper.replaceValue(inputValue, inEgressPlanNamed);
+        if (StringUtils.isBlank(replacement)) {
+            return null;
+        } else if (replacement.equals(inputValue)) {
+            return List.of(inputValue);
+        } else if(FlowPlanPropertyHelper.isArrayString(replacement)) {
+            return FlowPlanPropertyHelper.readStringAsList(replacement);
+        } else {
+            return List.of(replacement);
+        }
+    }
+
+    // If there were multiple values in the incoming flow plan list then process each one and add the replacement if it is not blank
+    private List<String> handleValues(List<String> inputValues, FlowPlanPropertyHelper flowPlanPropertyHelper, String inEgressPlanNamed) {
+        Set<String> flowList = new HashSet<>();
+        for (String inputValue : inputValues) {
+            if (StringUtils.isBlank(inputValue)) {
+                continue;
+            }
+
+            String replacement = flowPlanPropertyHelper.replaceValue(inputValue, inEgressPlanNamed);
+            if (StringUtils.isNotBlank(replacement) && !replacement.equals(inputValue)) {
+                if (FlowPlanPropertyHelper.isArrayString(replacement)) {
+                    flowList.addAll(FlowPlanPropertyHelper.readStringAsList(replacement));
+                } else {
+                    flowList.add(replacement);
                 }
-            } else {
-                flowList.add(replacement);
+            } else if (inputValue.equals(replacement)) {
+                flowList.add(inputValue);
             }
         }
-        return flowList;
+        return new ArrayList<>(flowList);
     }
 
     @Override

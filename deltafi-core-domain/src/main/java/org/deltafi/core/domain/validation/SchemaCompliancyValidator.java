@@ -19,10 +19,7 @@ package org.deltafi.core.domain.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.*;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
@@ -32,7 +29,6 @@ import org.deltafi.core.domain.generated.types.FlowErrorType;
 import org.deltafi.core.domain.services.ActionSchemaService;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,12 +39,15 @@ public class SchemaCompliancyValidator {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
 
-    private final Duration actionInactivityThreshold;
+    private final DeltaFiProperties properties;
     private final ActionSchemaService actionSchemaService;
+    private final SchemaValidatorsConfig validatorsConfig;
 
     public SchemaCompliancyValidator(ActionSchemaService actionSchemaService, DeltaFiProperties properties) {
         this.actionSchemaService = actionSchemaService;
-        this.actionInactivityThreshold = properties.getActionInactivityThreshold();
+        this.properties = properties;
+        validatorsConfig = new SchemaValidatorsConfig();
+        validatorsConfig.setTypeLoose(true);
     }
 
     public List<FlowConfigError> validate(ActionConfiguration actionConfiguration) {
@@ -73,7 +72,7 @@ public class SchemaCompliancyValidator {
                 .orElseGet(() -> Collections.singletonList(notRegisteredError(actionConfiguration)));
     }
 
-    List<FlowConfigError> validateAgainstSchema(ActionSchema actionSchema, ActionConfiguration actionConfiguration) {
+    public List<FlowConfigError> validateAgainstSchema(ActionSchema actionSchema, ActionConfiguration actionConfiguration) {
         List<FlowConfigError> errors = new ArrayList<>();
         if (isInactive(actionSchema)) {
             errors.add(inactiveActionError(actionConfiguration, actionSchema.getLastHeard()));
@@ -94,7 +93,7 @@ public class SchemaCompliancyValidator {
         Map<String, Object> paramMap = Objects.nonNull(actionConfig.getParameters()) ? actionConfig.getParameters() : new HashMap<>();
         JsonNode params = OBJECT_MAPPER.convertValue(paramMap, JsonNode.class);
 
-        final JsonSchema schema = factory.getSchema(schemaNode);
+        final JsonSchema schema = factory.getSchema(schemaNode, validatorsConfig);
 
         schema.initializeValidators();
 
@@ -140,7 +139,7 @@ public class SchemaCompliancyValidator {
     }
 
     boolean isInactive(ActionSchema schema) {
-        return Objects.isNull(schema.getLastHeard()) || schema.getLastHeard().isBefore(OffsetDateTime.now().minus(actionInactivityThreshold));
+        return Objects.isNull(schema.getLastHeard()) || schema.getLastHeard().isBefore(OffsetDateTime.now().minus(properties.getActionInactivityThreshold()));
     }
 
 }

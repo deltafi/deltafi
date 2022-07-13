@@ -17,10 +17,9 @@
  */
 package org.deltafi.core.domain.converters;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.core.domain.api.types.VariableDataType;
 import org.deltafi.core.domain.generated.types.ActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
@@ -33,8 +32,6 @@ import java.util.stream.Collectors;
 import static java.util.Objects.nonNull;
 
 public class FlowPlanPropertyHelper {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final String PLACEHOLDER_PREFIX = "${";
     private static final String PLACEHOLDER_SUFFIX = "}";
@@ -59,7 +56,7 @@ public class FlowPlanPropertyHelper {
         String actionName = actionNamePrefix + "." + replaceValue(actionTemplate.getName(), actionTemplate.getName());
         actionConfiguration.setName(actionName);
         actionConfiguration.setType(actionTemplate.getType()); // type should never be templated
-        actionConfiguration.setParameters(replaceParameterPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
+        actionConfiguration.setParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
     }
 
     public List<String> replaceListOfPlaceholders(List<String> values, String inActionNamed) {
@@ -85,12 +82,26 @@ public class FlowPlanPropertyHelper {
         return resolvedKeyValue;
     }
 
-    public Map<String, Object> replaceParameterPlaceholders(Map<String, Object> params, String inActionNamed) {
+    public Map<String, Object> replaceMapPlaceholders(Map<String, Object> params, String inActionNamed) {
+        if (null == params || params.isEmpty()) {
+            return params;
+        }
+
         try {
-            String paramString = OBJECT_MAPPER.writeValueAsString(params);
-            String resolvedParams = replaceValue(paramString, inActionNamed);
-            return OBJECT_MAPPER.readValue(resolvedParams, new TypeReference<>() {});
-        } catch (JsonProcessingException e) {
+            Map<String, Object> resolvedMap = new HashMap<>();
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                if (null == entry.getKey() || null == entry.getValue()) {
+                    continue;
+                }
+
+                String resolvedKey = replaceValue(entry.getKey(), inActionNamed);
+                Object resolvedObject = resolveObject(entry.getValue(), inActionNamed);
+                if (null != resolvedObject) {
+                    resolvedMap.put(resolvedKey, resolvedObject);
+                }
+            }
+            return resolvedMap;
+        } catch (Exception e) {
             FlowConfigError configError = new FlowConfigError();
             configError.setMessage("Failed to resolve parameters: " + e.getMessage());
             configError.setErrorType(FlowErrorType.UNRESOLVED_VARIABLE);
@@ -98,6 +109,56 @@ public class FlowPlanPropertyHelper {
             errors.add(configError);
             return params;
         }
+    }
+
+    Object resolveObject(Object object, String actionNamed) {
+        if (null == object) {
+            return null;
+        }
+
+        if (object instanceof Collection) {
+            return replaceListPlaceholders((Collection) object, actionNamed);
+        } else if (object instanceof Map) {
+            return replaceMapPlaceholders((Map<String, Object>) object, actionNamed);
+        }
+
+        return resolvePrimitive(object, actionNamed);
+    }
+
+    Collection<Object> replaceListPlaceholders(Collection<Object> objects, String actionNamed) {
+        if (null == objects || objects.isEmpty()) {
+            return objects;
+        }
+
+        Collection<Object> processed = new ArrayList();
+        for (Object object : objects) {
+            Object resolved = resolveObject(object, actionNamed);
+            if (null != resolved) {
+                processed.add(resolved);
+            }
+        }
+        return processed;
+    }
+
+    /**
+     * At this point the object is known to be a string or primitive wrapper whose value
+     * can be replaced directly.
+     * @param object that has a string value that should be resolved
+     * @param inActionNamed action that this value is being resolved for
+     * @return replaced value if it was templated, original value if not or null if there was no value
+     */
+    Object resolvePrimitive(Object object, String inActionNamed) {
+        String resolvedValue = replaceValue(object.toString(), inActionNamed);
+        if (null != resolvedValue && !resolvedValue.isBlank()) {
+            if (isArrayString(resolvedValue)) {
+                return readStringAsList(resolvedValue);
+            } else if (isMapString(resolvedValue)) {
+                return VariableDataType.readStringAsMap(stripWrappers(resolvedValue));
+            } else {
+                return resolvedValue;
+            }
+        }
+        return null;
     }
 
     public String replaceValue(String value, String inActionNamed) {
@@ -115,6 +176,38 @@ public class FlowPlanPropertyHelper {
 
     public Set<Variable> getAppliedVariables() {
         return flowPlanPlaceholderResolver.getAppliedVariables();
+    }
+
+    public static boolean isArrayString(String value) {
+        return value.startsWith("[") && value.endsWith("]");
+    }
+
+    public static boolean isMapString(String value) {
+        return value.startsWith("{") && value.endsWith("}");
+    }
+
+    /**
+     * Takes in a comma seperated list in a string and splits it into a list of strings.
+     * Each value will be trimmed
+     * @param value string containing a comma separated list that is wrapped in brackets
+     * @return value split into a list
+     */
+    public static List<String> readStringAsList(String value) {
+        if (value == null || StringUtils.isBlank(value) || "[]".equals(value)) {
+            return List.of();
+        }
+
+        String[] splitValues = stripWrappers(value).split(",");
+        List<String> results = new ArrayList<>();
+        for (String splitValue: splitValues) {
+            results.add(splitValue.trim());
+        }
+
+        return results;
+    }
+
+    public static String stripWrappers(String value) {
+        return value.substring(1, value.length() - 1);
     }
 
 }

@@ -33,10 +33,7 @@ import org.deltafi.core.domain.repo.PluginVariableRepo;
 import org.deltafi.core.domain.types.PluginVariables;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,6 +69,12 @@ public class PluginVariableService implements PluginCleaner {
      * @param pluginVariablesInput variables to insert or update
      */
     public void saveVariables(PluginVariablesInput pluginVariablesInput) {
+        String errors = checkNewDefaultValues(pluginVariablesInput);
+
+        if (null != errors) {
+            throw new IllegalArgumentException(errors);
+        }
+
         findExisting(pluginVariablesInput.getSourcePlugin())
                 .ifPresentOrElse(existingVariables -> replaceVariables(existingVariables, pluginVariablesInput),
                         () -> insertVariables(pluginVariablesInput));
@@ -163,6 +166,13 @@ public class PluginVariableService implements PluginCleaner {
         Variable variable = pluginVariables.getVariables().stream()
                 .filter(v1 -> nameMatches(v1, keyValue))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Variable name: " + keyValue.getKey() + " was not found in the variables for plugin: " + pluginVariables.getSourcePlugin()));
+
+        String errorMsg = variable.getDataType().validateValue(keyValue.getValue());
+
+        if (null != errorMsg) {
+            throw new IllegalArgumentException("Variable named: " + keyValue.getKey() + " has an invalid value for the given type: " + errorMsg);
+        }
+
         variable.setValue(keyValue.getValue());
     }
 
@@ -172,6 +182,22 @@ public class PluginVariableService implements PluginCleaner {
 
     private PluginVariables mapFromInput(PluginVariablesInput pluginVariablesInput) {
         return OBJECT_MAPPER.convertValue(pluginVariablesInput, PluginVariables.class);
+    }
+
+    private String checkNewDefaultValues(PluginVariablesInput pluginVariablesInput) {
+        if (null == pluginVariablesInput || null == pluginVariablesInput.getVariables()) {
+            return null;
+        }
+
+        List<String> errors = new ArrayList<>();
+        for (VariableInput variable : pluginVariablesInput.getVariables()) {
+            String errMsg = variable.getDataType().validateValue(variable.getDefaultValue());
+            if (null != errMsg) {
+                errors.add("Variable named: " + variable.getName() + " has an invalid default value: " + errMsg);
+            }
+        }
+
+        return errors.isEmpty() ? null : String.join(",", errors);
     }
 
     @Override

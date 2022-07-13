@@ -1460,7 +1460,7 @@ class DeltaFiCoreDomainApplicationTests {
 	void testSetPluginVariableValues() {
 		PluginVariables variables = new PluginVariables();
 		variables.setSourcePlugin(FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES);
-		variables.setVariables(List.of(Variable.newBuilder().name("key").value("test").description("description").dataType(DATA_TYPE.STRING).build()));
+		variables.setVariables(List.of(Variable.newBuilder().name("key").value("test").description("description").dataType(VariableDataType.STRING).build()));
 		pluginVariableRepo.save(variables);
 		assertTrue(FlowPlanDatafetcherTestHelper.setPluginVariableValues(dgsQueryExecutor));
 	}

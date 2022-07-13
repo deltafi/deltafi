@@ -17,9 +17,6 @@
  */
 package org.deltafi.core.domain.validation;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.*;
@@ -27,7 +24,6 @@ import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
 import org.deltafi.core.domain.services.ActionSchemaService;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,12 +33,12 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.core.domain.Util.egressSchema;
 
 @ExtendWith(MockitoExtension.class)
 class SchemaCompliancyValidatorTest {
@@ -54,8 +50,6 @@ class SchemaCompliancyValidatorTest {
     public static final String PRODUCES_VALUE = "producesValue";
     public static final String DOMAIN_VALUE = "domainValue";
     public static final String ENRICHMENT_VALUE = "enrichmentValue";
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @InjectMocks
     SchemaCompliancyValidator schemaCompliancyValidator;
@@ -240,18 +234,6 @@ class SchemaCompliancyValidatorTest {
 
     Optional<ActionSchema> egressSchemaOptional() {
         return Optional.of(egressSchema());
-    }
-
-    ActionSchema egressSchema() {
-        try {
-            EgressActionSchema actionSchema = OBJECT_MAPPER.readValue(getClass().getClassLoader().getResource("config-test/rest-egress-schema.json"), new TypeReference<>() {
-            });
-            actionSchema.setLastHeard(OffsetDateTime.now());
-            return actionSchema;
-        } catch (IOException e) {
-            Assertions.fail("Could not read sample action schema");
-        }
-        return null;
     }
 
     private EgressActionConfiguration egressConfig(Map<String, Object> params) {

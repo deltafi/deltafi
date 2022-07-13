@@ -22,6 +22,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.core.domain.api.types.VariableDataType;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
 import org.deltafi.core.domain.configuration.TransformActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
@@ -100,10 +101,10 @@ class IngressFlowPlanConverterTest {
 
     List<Variable> variables() {
         return List.of(
-                Variable.newBuilder().name("incoming.type").defaultValue("binary").build(),
-                Variable.newBuilder().name("transform.produces").defaultValue("passthrough-binary").build(),
-                Variable.newBuilder().name("domain.type").defaultValue("binary").build(),
-                Variable.newBuilder().name("enrichment.value").defaultValue("enrichment value").value("customized enrichment value").build(),
-                Variable.newBuilder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").build());
+                Variable.newBuilder().name("incoming.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.newBuilder().name("transform.produces").defaultValue("passthrough-binary").dataType(VariableDataType.STRING).build(),
+                Variable.newBuilder().name("domain.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.newBuilder().name("enrichment.value").defaultValue("enrichment value").dataType(VariableDataType.STRING).value("customized enrichment value").build(),
+                Variable.newBuilder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").dataType(VariableDataType.STRING).build());
     }
 }

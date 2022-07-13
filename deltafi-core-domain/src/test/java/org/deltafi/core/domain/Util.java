@@ -17,12 +17,16 @@
  */
 package org.deltafi.core.domain;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.Assertions;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.generated.types.Action;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +36,8 @@ import java.util.stream.Stream;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 
 public class Util {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
     public static DeltaFile buildDeltaFile(String did) {
         return emptyDeltaFile(did, null);
     }
@@ -142,5 +148,24 @@ public class Util {
                 .defaultValue("default it")
                 .description("some property")
                 .value(value).build();
+    }
+
+    public static ActionSchema egressSchema() {
+        return egressSchema("config-test/rest-egress-schema.json");
+    }
+
+    public static ActionSchema egressSchema(String schemaPath) {
+        EgressActionSchema actionSchema = readResource(schemaPath, EgressActionSchema.class);
+        actionSchema.setLastHeard(OffsetDateTime.now());
+        return actionSchema;
+    }
+
+    public static <T> T readResource(String resourcePath, Class<T> clazz) {
+        try {
+            return OBJECT_MAPPER.readValue(Util.class.getClassLoader().getResource(resourcePath), clazz);
+        } catch (IOException e) {
+            org.junit.jupiter.api.Assertions.fail(e);
+        }
+        return null;
     }
 }

@@ -16,16 +16,18 @@
 #    limitations under the License.
 #
 
-enum DATA_TYPE {
+enum DataType {
   STRING
   BOOLEAN
   NUMBER
+  LIST
+  MAP
 }
 
 type Variable {
   name: String!
   description: String!
-  dataType: DATA_TYPE!
+  dataType: DataType!
   required: Boolean!
   defaultValue: String
   value: String
@@ -34,7 +36,7 @@ type Variable {
 input VariableInput {
   name: String!
   description: String!
-  dataType: DATA_TYPE!
+  dataType: DataType!
   required: Boolean!
   defaultValue: String
   value: String

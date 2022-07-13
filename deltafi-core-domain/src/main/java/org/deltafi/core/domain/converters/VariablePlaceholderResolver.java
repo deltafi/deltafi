@@ -38,7 +38,7 @@ public class VariablePlaceholderResolver implements PropertyPlaceholderHelper.Pl
     public String resolvePlaceholder(@NotNull String placeholderName) {
         Variable variable = matchingVariable(placeholderName);
 
-        if (Objects.nonNull(variable)) {
+        if (null != variable) {
             appliedVariables.add(variable);
             return valueFromVariable(variable);
         }
@@ -57,6 +57,13 @@ public class VariablePlaceholderResolver implements PropertyPlaceholderHelper.Pl
     }
 
     private String valueFromVariable(Variable variable) {
-        return Objects.isNull(variable.getValue()) ? variable.getDefaultValue() : variable.getValue();
+        String value = Objects.isNull(variable.getValue()) ? variable.getDefaultValue() : variable.getValue();
+
+        if (null == value) {
+            // Return null to trigger an exception for a missing required value otherwise return an empty string that will be pruned
+            return variable.getRequired() ? null : "";
+        }
+
+        return variable.getDataType().formatString(value);
     }
 }

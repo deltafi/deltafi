@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.core.domain.api.types.VariableDataType;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
@@ -77,10 +78,10 @@ class EnrichFlowPlanConverterTest {
 
     List<Variable> variables() {
         return List.of(
-                Variable.newBuilder().name("incoming.type").defaultValue("binary").build(),
-                Variable.newBuilder().name("transform.produces").defaultValue("passthrough-binary").build(),
-                Variable.newBuilder().name("domain.type").defaultValue("binary").build(),
-                Variable.newBuilder().name("enrichment.value").defaultValue("enrichment value").value("customized enrichment value").build(),
-                Variable.newBuilder().name("enrichUrl").defaultValue("http://deltafi-enrich-sink-service").build());
+                Variable.newBuilder().name("incoming.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.newBuilder().name("transform.produces").defaultValue("passthrough-binary").dataType(VariableDataType.STRING).build(),
+                Variable.newBuilder().name("domain.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.newBuilder().name("enrichment.value").defaultValue("enrichment value").value("customized enrichment value").dataType(VariableDataType.STRING).build(),
+                Variable.newBuilder().name("enrichUrl").defaultValue("http://deltafi-enrich-sink-service").dataType(VariableDataType.STRING).build());
     }
 }

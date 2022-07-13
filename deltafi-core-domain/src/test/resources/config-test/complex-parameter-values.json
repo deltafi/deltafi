@@ -1,0 +1,23 @@
+{
+  "egressFlow": "egressFlow",
+  "metadataKey": "deltafiMetadata",
+  "enrichments": "${enrichments}",
+  "someOptionalList": "${some.optional.list}",
+  "someRequiredList": "${some.required.list}",
+  "url": "${egressUrl}",
+  "retryCount": "${retryCount}",
+  "retryDelayMs": 15,
+  "enableFeature": "${boolVal}",
+  "complex": {
+    "subKey": "${subKeyValue}",
+    "subList": "${listValue}"
+  },
+  "complexList": [
+    {
+      "a": "a"
+    },
+    {
+      "b": "two"
+    }
+  ]
+}

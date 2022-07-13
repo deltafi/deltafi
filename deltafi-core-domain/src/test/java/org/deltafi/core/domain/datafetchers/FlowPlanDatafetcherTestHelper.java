@@ -24,6 +24,7 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.domain.api.types.KeyValue;
 import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.core.domain.api.types.VariableDataType;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.types.EgressFlow;
@@ -129,7 +130,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static boolean savePluginVariables(DgsQueryExecutor dgsQueryExecutor) {
-        List<VariableInput> variableInputs = List.of(VariableInput.newBuilder().name("var").defaultValue("default").required(false).description("description").dataType(DATA_TYPE.STRING).build());
+        List<VariableInput> variableInputs = List.of(VariableInput.newBuilder().name("var").defaultValue("default").required(false).description("description").dataType(VariableDataType.STRING).build());
         PluginVariablesInput pluginVariablesInput = PluginVariablesInput.newBuilder().sourcePlugin(PLUGIN_COORDINATES).variables(variableInputs).build();
         return executeQuery(dgsQueryExecutor, SavePluginVariablesGraphQLQuery.newRequest().pluginVariablesInput(pluginVariablesInput).build());
     }
