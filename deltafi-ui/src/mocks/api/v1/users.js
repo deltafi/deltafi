@@ -16,39 +16,21 @@
    limitations under the License.
 */
 
-.sidebar {
-  transition: all 0.3s;
-}
+import { faker } from '@faker-js/faker';
+faker.seed(123);
 
-.sidebar {
-  -ms-flex: 0 0 300px;
-  flex: 0 0 300px;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar.hidden {
-  margin-left: -300px;
-}
-
-.wrapper {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-}
-
-.wrapper .content-wrapper {
-  overflow-x: hidden;
-  width: 100%;
-  padding: 0.25rem 1rem 3rem 1rem;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    -ms-flex: 0 0 150px !important;
-    flex: 0 0 150px !important;
-  }
-  .sidebar.hidden {
-    margin-left: -150px !important;
-  }
-}
+const generateData = (count) => {
+   return Array.from(Array(count)).map(() => {
+     return {
+           "id":faker.random.numeric(),
+           "name":faker.name.findName(),
+           "dn":null,
+           "username":faker.internet.userName(),
+           "domains":"*",
+           "created_at":"2022-06-16 03:16:08 +0000",
+           "updated_at":"2022-06-16 03:18:15 +0000"
+        }
+   })
+ };
+ 
+ export default generateData(100);

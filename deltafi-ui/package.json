@@ -25,7 +25,7 @@
     "debug": "~2.6.9",
     "dotenv": "^16.0.0",
     "express": "~4.16.0",
-    "faker": "^5.5.3",
+    "@faker-js/faker": "^6.3.1",
     "filesize": "^8.0.7",
     "graphql": "^15.7.1",
     "hexy": "^0.3.4",
