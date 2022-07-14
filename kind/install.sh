@@ -114,3 +114,5 @@ export WORKDIR=$(cd $(dirname $(_readlink -f $0)) && pwd)
 export CLUSTER=${WORKDIR}/cluster
 [[ -L /usr/local/bin/cluster ]] && echo "Replacing existing cluster CLI installation $(ls -la /usr/local/bin/cluster)"
 ${SUDO} ln -fs ${CLUSTER} /usr/local/bin || ln -fs ${CLUSTER} /usr/local/bin
+[[ -L /usr/local/bin/deltafi ]] && echo "Replacing existing cluster CLI installation $(ls -la /usr/local/bin/cluster)"
+${SUDO} ln -fs ${CLUSTER} /usr/local/bin/deltafi || ln -fs ${CLUSTER} /usr/local/bin/deltafi

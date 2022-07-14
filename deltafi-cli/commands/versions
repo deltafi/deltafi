@@ -26,8 +26,7 @@ ${@}
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
-KUBECTL_BIN="kubectl"
-KUBECTL_CMD="${KUBECTL_BIN} get pods --namespace ${DELTAFICLI_K8S_NAMESPACE}"
+KUBECTL_CMD="${KUBECTL_BIN} get pods"
 
 ${KUBECTL_CMD} -o json \
   | jq -r '.items[] | [(.metadata.labels."app.kubernetes.io/name", .metadata.labels.app | select(. != null) )][0] as $app | .spec.containers[] | [$app, .name, .image | gsub(":"; "#") | gsub("localhost#"; "localhost:") | split("#")] | flatten | @csv' \

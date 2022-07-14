@@ -11,7 +11,6 @@ Usage:
   exit 1
 }
 
-KUBECTL_BIN="kubectl"
 POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")
 
 ARGS=($@)

@@ -111,8 +111,33 @@ _readlink() {
 export BASE_PATH="$( cd "$( dirname $(_readlink -f "${BASH_SOURCE[0]}"))" &> /dev/null && pwd )"
 DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
 ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
+CLUSTER_NAME=deltafi
+
+if [[ "$(basename $0)" == "deltafi" ]]; then
+  # Deltafi wrapper mode
+
+  if [[ $# -gt 0 ]]; then
+
+    case $1 in
+      install|update|upgrade|start|shell|loc)
+        cluster $@
+        ;;
+      cluster)
+        shift
+        cluster $@
+        ;;
+      *)
+        docker exec -it -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi $@
+        ;;
+    esac
+    exit 0
+  fi
+  docker exec -it -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi
+  exit 0
+fi
 
 source $BASE_PATH/files/bask
+
 command -v deltafi &> /dev/null || _exit_1 echo "DeltaFi cli command 'deltafi' must be installed"
 command -v kubectl &> /dev/null || _exit_1 echo "'kubectl' must be installed"
 command -v docker &> /dev/null || _exit_1 echo "'docker' must be installed"
@@ -134,8 +159,6 @@ trap _emit_duration EXIT
 PV_DIR=$BASE_PATH/data
 
 SUDO=$(which sudo)
-
-CLUSTER_NAME=deltafi
 
 FQDNS=( \
   local.deltafi.org \
@@ -223,6 +246,13 @@ up() {
   _check_deltafi_cli
   mkdir -p $PV_DIR
   pushd $BASE_PATH > /dev/null
+
+  _create_registry kind-registry 5000
+  _create_proxy dockerio-proxy "https://registry-1.docker.io" 5001
+  _create_proxy k8s-proxy "https://k8s.gcr.io" 5002
+  _create_proxy ghcr-proxy "https://ghcr.io" 5003
+  _create_proxy quay-proxy "https://quay.io" 5004
+
   if kind get clusters | grep "^${CLUSTER_NAME}$" > /dev/null; then
     echo "${CLUSTER_NAME} cluster already instantiated"
   else
@@ -256,13 +286,14 @@ containerdConfigPatches:
     endpoint = ["http://dockerio-proxy:5000"]
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."k8s.gcr.io"]
     endpoint = ["http://k8s-proxy:5000"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."ghcr.io"]
+    endpoint = ["http://ghcr-proxy:5000"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."quay.io"]
+    endpoint = ["http://quay-proxy:5000"]
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]
     endpoint = ["http://kind-registry:5000"]
 EOF
   fi
-  _create_registry kind-registry 5000
-  _create_proxy dockerio-proxy "https://registry-1.docker.io" 5001
-  _create_proxy k8s-proxy "https://k8s.gcr.io" 5002
 
   _k8s_add_namespace deltafi
 
@@ -681,4 +712,5 @@ _fail() {
   printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 1)" "FAIL" "$(tput sgr0)" "$@"
 }
 
+# Initialize bask framework
 _init

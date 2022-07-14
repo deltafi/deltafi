@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+KUBECTL_BIN="kubectl --namespace ${DELTAFICLI_K8S_NAMESPACE}"
+
 cli_log() {
   timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   echo ">> $timestamp $1"

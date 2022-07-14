@@ -15,7 +15,7 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -gt 1 ]] && cli_help_command
 
-ICONS=('\u2714' '\u26A0' '\u2715')
+ICONS=('✔' '⚠' '✕')
 COLORS=($green $yellow $red)
 
 API_HOST=$(deltafi serviceip deltafi-api-service)

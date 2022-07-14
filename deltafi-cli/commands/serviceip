@@ -11,14 +11,12 @@ Usage:
   exit 1
 }
 
-KUBECTL_BIN="kubectl"
-
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
 SERVICE=${ARGS[@]:1}
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
-KUBECTL_CMD="${KUBECTL_BIN} get services --namespace ${DELTAFICLI_K8S_NAMESPACE} -o wide"
+KUBECTL_CMD="${KUBECTL_BIN} get services -o wide"
 IP=$($KUBECTL_CMD | grep $SERVICE | tail -n 1 | awk '{print $3}')
 echo $IP
