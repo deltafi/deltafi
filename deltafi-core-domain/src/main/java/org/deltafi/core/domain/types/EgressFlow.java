@@ -36,8 +36,8 @@ public class EgressFlow extends Flow {
     private EgressActionConfiguration egressAction;
     private FormatActionConfiguration formatAction;
     private List<ValidateActionConfiguration> validateActions = new ArrayList<>();
-    private List<String> includeIngressFlows = new ArrayList<>();
-    private List<String> excludeIngressFlows = new ArrayList<>();
+    private List<String> includeIngressFlows;
+    private List<String> excludeIngressFlows;
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {

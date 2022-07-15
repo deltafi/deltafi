@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
 
 class EgressFlowTest {
 
@@ -60,6 +61,7 @@ class EgressFlowTest {
     @Test
     void testEmptyInclude() {
         EgressFlow config = new EgressFlow();
+        config.setIncludeIngressFlows(List.of());
         config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
 
         Assertions.assertFalse(config.flowMatches("notExcludedFlow"));

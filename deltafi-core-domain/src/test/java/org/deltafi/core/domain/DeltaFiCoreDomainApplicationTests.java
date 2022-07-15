@@ -65,6 +65,7 @@ import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginRepository;
 import org.deltafi.core.domain.repo.*;
 import org.deltafi.core.domain.services.*;
+import org.deltafi.core.domain.types.EgressFlowPlanInput;
 import org.deltafi.core.domain.types.PluginVariables;
 import org.deltafi.core.domain.types.*;
 import org.junit.jupiter.api.Assertions;
@@ -188,6 +189,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	PropertyRepository propertyRepository;
+
+	@Autowired
+	EgressFlowPlanService egressFlowPlanService;
 
 	@Captor
 	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
@@ -1325,6 +1329,25 @@ class DeltaFiCoreDomainApplicationTests {
 		EgressFlow foundFlow = FlowPlanDatafetcherTestHelper.getEgressFlow(dgsQueryExecutor);
 		assertThat(foundFlow).isNotNull();
 		assertThat(foundFlow.getName()).isEqualTo("egressFlow");
+	}
+
+	@Test
+	void testNullIncludeIngress() {
+		clearForFlowTests();
+		PluginCoordinates coords = PluginCoordinates.builder().artifactId("test-actions").groupId("org.deltafi").version("1.0").build();
+		EgressFlowPlanInput egressFlowPlanInput = new EgressFlowPlanInput();
+		egressFlowPlanInput.setSourcePlugin(coords);
+		egressFlowPlanInput.setName("withNullInclude");
+		egressFlowPlanInput.setIncludeIngressFlows(null);
+		egressFlowPlanInput.setExcludeIngressFlows(List.of());
+        egressFlowPlanInput.setFormatAction(FormatActionConfigurationInput.newBuilder().name("format").type("org.deltafi.actions.Formatter").requiresDomains(List.of("domain")).build());
+		egressFlowPlanInput.setEgressAction(EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build());
+
+		egressFlowPlanService.saveFlowPlan(egressFlowPlanInput);
+
+		EgressFlowPlan egressFlowPlan = egressFlowPlanService.getPlanByName("withNullInclude");
+		assertThat(egressFlowPlan.getIncludeIngressFlows()).isNull();
+		assertThat(egressFlowPlan.getExcludeIngressFlows()).isEmpty();
 	}
 
 	@Test

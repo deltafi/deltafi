@@ -17,5 +17,12 @@
  */
 package org.deltafi.core.domain.types;
 
+import java.util.ArrayList;
+
 public class EgressFlowPlanInput extends org.deltafi.core.domain.generated.types.EgressFlowPlanInput implements FlowPlanInput {
+
+    public EgressFlowPlanInput() {
+        setIncludeIngressFlows(new ArrayList<>());
+    }
+
 }
