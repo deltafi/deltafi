@@ -18,5 +18,5 @@
 package org.deltafi.common.test;
 
 public class TestConstants {
-    public static final String MONGODB_CONTAINER = "mongo:4.4.5";
+    public static final String MONGODB_CONTAINER = "mongo:5.0.6";
 }

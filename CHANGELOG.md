@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
-- Upgraded MongoDB to 4.4.12-debian-10-r0
+- Upgraded MongoDB to 5.0.6-debian-10-r0
 - Upgraded Redis to 6.2.6-debian-10-r0
 
 ## [0.96.1] - 2022-07-10
