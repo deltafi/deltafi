@@ -6,4 +6,4 @@ RUN apk -U add \
   netcat-openbsd
 WORKDIR /app
 COPY . /app
-CMD /app/doit.sh
+CMD [ "/bin/bash", "-c", "/app/doit.sh" ]

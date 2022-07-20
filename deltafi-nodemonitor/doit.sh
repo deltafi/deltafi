@@ -17,12 +17,40 @@
 #    limitations under the License.
 #
 
-echo "Volume metrics running"
-
 HOSTNAME=`hostname`
 GRAPHITE_HOST=${GRAPHITE_HOST:-deltafi-graphite}
 GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
 PERIOD=${PERIOD:-9}
+
+_log() {
+    local log_level=$1
+    local message=$2
+    timestamp=$(date "+%Y-%m-%dT%H:%M:%SZ") 
+    echo "{\"timestamp\":\"$timestamp\",\"level\":\"$log_level\",\"$message\"}"
+}
+
+_debug() {
+    [[ -z $DEBUG ]] || _log "DEBUG" "$1"
+}
+
+_warn() {
+    _log "WARN" "$1"
+}
+
+_info() {
+    _log "INFO" "$1"
+}
+
+_info "Starting up on ${HOSTNAME}"
+_info "Graphite: ${GRAPHITE_HOST}:${GRAPHITE_PORT}"
+_info "Reporting period: ${PERIOD} seconds"
+
+exterminate() {
+    _warn "Terminating the nodemonitor.."
+    exit
+}
+
+trap exterminate SIGTERM
 
 # Post usage and limit of /data to graphite roughly every $PERIOD seconds
 while true; do
@@ -32,6 +60,6 @@ while true; do
     echo "gauge.node.disk.usage;hostname=$HOSTNAME $USAGE $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
     echo "gauge.node.disk.limit;hostname=$HOSTNAME $LIMIT $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
 
-    echo "$HOSTNAME $TIMESTAMP $USAGE of $LIMIT"
+    _debug "$HOSTNAME: Using $USAGE of $LIMIT"
     sleep $PERIOD
 done
