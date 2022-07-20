@@ -30,8 +30,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
-- Upgraded MongoDB to 5.0.6-debian-10-r0
-- Upgraded Redis to 6.2.6-debian-10-r0
+- Upgraded MongoDB to `5.0.6-debian-10-r0`
+- Upgraded Redis to `6.2.6-debian-10-r0`
+- Upgraded Minio to `RELEASE.2022-07-17T15-43-14Z`
 
 ## [0.96.1] - 2022-07-10
 
