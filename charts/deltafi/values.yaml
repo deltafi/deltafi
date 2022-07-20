@@ -252,6 +252,10 @@ loki:
       retention_enabled: true
     query_scheduler:
       max_outstanding_requests_per_tenant: 500
+  livenessProbe:
+   initialDelaySeconds: 5
+  readinessProbe:
+   initialDelaySeconds: 5
 
 # Graphite Configuration
 graphite:
