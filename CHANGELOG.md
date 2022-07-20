@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: Detect arm/Apple Silicon and load overrides for arm64 compatible Bitnami images
 - KinD: `deltafi` CLI wrapper that allows CLI to be used natively with KinD
 - KinD: `cluster` command output cleaned up and streamlined
+- Pod memory and CPU metrics enabled in the kubernetes dashboard
 
 ### Changed
 - `deltafi` CLI checks for required tool installation on execution

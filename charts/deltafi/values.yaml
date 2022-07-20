@@ -161,6 +161,8 @@ redis:
 # Kubernetes Dashboard config
 kubernetes-dashboard:
   securityContext: null
+  metricsScraper:
+    enabled: true
   protocolHttp: true
   service:
     externalPort: 80
