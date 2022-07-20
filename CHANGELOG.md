@@ -7,16 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - KinD: Detect arm/Apple Silicon and load overrides for arm64 compatible Bitnami images
+- KinD: `deltafi` CLI wrapper that allows CLI to be used natively with KinD
+- KinD: `cluster` command output cleaned up and streamlined
 
 ### Changed
+- `deltafi` CLI checks for required tool installation on execution
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- Parameter schemas will now properly validate with list and map variable values
 - DeltaFi CLI checks for dependencies (`jq`, `kubectl`, etc.)
 - Nodemonitor fix for long filesystem names
+- Null/empty array issue with includeIngressFlows
+- Warnings on Quarkus app startup resolved
+- KinD: Fix for starting cluster with a redundant config map
 
 ### Tech-Debt/Refactor
 
