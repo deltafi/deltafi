@@ -10,11 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: `deltafi` CLI wrapper that allows CLI to be used natively with KinD
 - KinD: `cluster` command output cleaned up and streamlined
 - Pod memory and CPU metrics enabled in the kubernetes dashboard
+- `deltafi mongo-eval` command added
 
 ### Changed
 - `deltafi uninstall` command removes collections from the deltafi db in mongo
 - `deltafi` CLI checks for required tool installation on execution
-- Nodemonitor logging cleaned up, converted to JSON
 
 ### Deprecated
 
@@ -25,10 +25,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - DeltaFi CLI checks for dependencies (`jq`, `kubectl`, etc.)
 - Nodemonitor fix for long filesystem names
 - Null/empty array issue with includeIngressFlows
-- Warnings on Quarkus app startup resolved
+- Mount the keyStore and trustStore directly (RKE compatability)
 - KinD: Fix for starting cluster with a redundant config map
 
 ### Tech-Debt/Refactor
+- Nodemonitor logging cleaned up, converted to structured logs
+- Warnings on Quarkus app startup resolved
+- Reduced Loki probe time
 
 ### Security
 
