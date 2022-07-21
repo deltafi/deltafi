@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Pod memory and CPU metrics enabled in the kubernetes dashboard
 
 ### Changed
+- `deltafi uninstall` command removes collections from the deltafi db in mongo
 - `deltafi` CLI checks for required tool installation on execution
 - Nodemonitor logging cleaned up, converted to JSON
 

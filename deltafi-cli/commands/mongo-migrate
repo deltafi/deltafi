@@ -20,5 +20,5 @@ MONGODB_PASSWORD_ENV='$MONGODB_PASSWORD'
 ${KUBECTL_BIN} exec -it ${POD} -- sh -c "rm -rf /opt/migrations && mkdir /opt/migrations"
 for i in ${DELTAFI_DIR}/migrations/*.js; do
   ${KUBECTL_BIN} cp ${i} ${POD}:/opt/migrations
-  ${KUBECTL_BIN} exec -it ${POD} -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} deltafi < /opt/migrations/$(basename ${i})"
+  ${KUBECTL_BIN} exec -it ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} deltafi < /opt/migrations/$(basename ${i})"
 done

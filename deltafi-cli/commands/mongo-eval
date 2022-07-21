@@ -4,10 +4,12 @@
 
 cli_help_command() {
   echo "
-Command: mongo-cli
+Command: mongo-eval
 
 Usage:
-  mongo-cli"
+  mongo-eval COMMAND
+
+The COMMAND should be quoted and not contain any single quotes"
   exit 1
 }
 
@@ -15,6 +17,9 @@ POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.it
 
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+EVAL=${ARGS[1]}
 MONGODB_USERNAME_ENV='$MONGODB_USERNAME'
 MONGODB_PASSWORD_ENV='$MONGODB_PASSWORD'
-${KUBECTL_BIN} exec -it ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} deltafi"
+${KUBECTL_BIN} exec -it ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"

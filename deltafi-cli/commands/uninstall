@@ -18,7 +18,22 @@ read -r -p "Are you sure? [y/N] " response
 case "$response" in
   [yY][eE][sS]|[yY])
     cli_log "Uninstalling DeltaFi"
+    # remove the core first so that mongo collections are not recreated
+    $KUBECTL_BIN delete deployment deltafi-core-domain 2>/dev/null || :
+
+    # drop all collections in the deltafi database
+    CMDS=$(deltafi mongo-eval "db.getCollectionNames()" 2>/dev/null | tail -n +5 | jq '.[]' | sed 's/"/db./' | sed 's/"/.drop();/')
+
+    for CMD in $CMDS
+    do
+      echo "  $CMD"
+      deltafi mongo-eval "$CMD" >/dev/null 2>&1
+    done
+
+    # perform a helm uninstall
     helm uninstall $DELTAFICLI_PROJECT_NAME
+
+    # sweep up whatever helm missed
     $KUBECTL_BIN delete all --all
     ;;
   *)

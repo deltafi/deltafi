@@ -144,6 +144,7 @@ Commands:
   load-rules           load ingress flow assignment rules from a JSON file
   load-variables       load plugin variables
   mongo-cli            launch the mongo CLI
+  mongo-eval           eval a command in mongo
   mongo-migrate        run mongo migrations
   query                send a query to graphql
   redis-cli            launch the redis CLI
@@ -247,6 +248,9 @@ case "$1" in
   mongo-cli)
     "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@
     ;;
+  mongo-eval)
+      "$DELTAFICLI_WORKDIR/commands/mongo-eval" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/mongo-eval.log"
+      ;;
   mongo-migrate)
     "$DELTAFICLI_WORKDIR/commands/mongo-migrate" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/mongo-migrate.log"
     ;;
