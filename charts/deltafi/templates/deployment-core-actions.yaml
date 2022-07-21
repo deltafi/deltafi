@@ -27,19 +27,24 @@ spec:
         {{- end }}
         envFrom:
         - secretRef:
-            name: {{ .Values.deltafi.core_actions.keyStorePasswordSecret }}
+            name: {{ .Values.deltafi.core_actions.keyStore.passwordSecret }}
             optional: true
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
         volumeMounts:
-          - mountPath: {{ .Values.deltafi.core_actions.keyStoreMountPath }}
+          - mountPath: "{{ .Values.deltafi.core_actions.keyStore.mountPath }}/{{ .Values.deltafi.core_actions.keyStore.keyStoreName }}"
             name: keystore
             readOnly: true
+            subPath: {{ .Values.deltafi.core_actions.keyStore.keyStoreName }}
+          - mountPath: "{{ .Values.deltafi.core_actions.keyStore.mountPath }}/{{ .Values.deltafi.core_actions.keyStore.trustStoreName }}"
+            name: keystore
+            readOnly: true
+            subPath: {{ .Values.deltafi.core_actions.keyStore.trustStoreName }}
       volumes:
         - name: keystore
           secret:
-            secretName: {{ .Values.deltafi.core_actions.keyStoreSecret }}
+            secretName: {{ .Values.deltafi.core_actions.keyStore.secret }}
             optional: true
       imagePullSecrets:
       - name: docker-secret

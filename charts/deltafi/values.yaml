@@ -29,9 +29,12 @@ deltafi:
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
     image: deltafi/deltafi-core-actions:0.96.1
-    keyStoreSecret: keystore-secret
-    keyStorePasswordSecret: keystore-password-secret
-    keyStoreMountPath: /etc/pki
+    keyStore:
+      secret: keystore-secret
+      passwordSecret: keystore-password-secret
+      mountPath: /etc/pki
+      keyStoreName: keyStore.p12
+      trustStoreName: trustStore.jks
   core_domain:
     image: deltafi/deltafi-core-domain:0.96.1
     mongo_host: deltafi-mongodb
