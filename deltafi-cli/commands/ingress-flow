@@ -89,14 +89,11 @@ case "$SUBCOMMAND" in
                transformActions {
                  name
                  type
-                 consumes
-                 produces
                  parameters
                }
                loadAction {
                  name
                  type
-                 consumes
                  parameters
                }
                variables {

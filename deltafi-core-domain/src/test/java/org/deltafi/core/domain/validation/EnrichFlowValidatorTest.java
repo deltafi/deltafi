@@ -38,7 +38,7 @@ class EnrichFlowValidatorTest {
     EnrichFlowValidator enrichFlowValidator;
 
     @Mock
-    SchemaCompliancyValidator schemaCompliancyValidator;
+    SchemaComplianceValidator schemaComplianceValidator;
 
     @Captor
     ArgumentCaptor<ActionConfiguration> actionConfigCaptor;
@@ -60,7 +60,7 @@ class EnrichFlowValidatorTest {
 
         List<FlowConfigError> errors = enrichFlowValidator.validate(enrichFlow);
 
-        Mockito.verify(schemaCompliancyValidator, Mockito.times(2)).validate(actionConfigCaptor.capture());
+        Mockito.verify(schemaComplianceValidator, Mockito.times(2)).validate(actionConfigCaptor.capture());
 
         List<ActionConfiguration> validatedActions = actionConfigCaptor.getAllValues();
         assertThat(validatedActions).hasSize(2)
@@ -81,7 +81,7 @@ class EnrichFlowValidatorTest {
         enrichFlow.setEnrichActions(List.of(enrich));
 
         FlowConfigError expected = expectedError();
-        Mockito.when(schemaCompliancyValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
+        Mockito.when(schemaComplianceValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
                         .thenReturn(List.of(expected));
 
         List<FlowConfigError> errors = enrichFlowValidator.validate(enrichFlow);

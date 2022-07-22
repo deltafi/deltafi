@@ -28,7 +28,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Action {
-    String consumes() default "";
-    String produces() default "";
+    String description() default "";
     String[] requiresDomains() default {};
 }

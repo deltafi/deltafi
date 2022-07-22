@@ -30,12 +30,6 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Set;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.List.of;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 class IngressFlowValidatorTest {
@@ -44,7 +38,7 @@ class IngressFlowValidatorTest {
     IngressFlowValidator ingressFlowValidator;
 
     @Mock
-    SchemaCompliancyValidator schemaCompliancyValidator;
+    SchemaComplianceValidator schemaComplianceValidator;
 
     @Captor
     ArgumentCaptor<ActionConfiguration> actionConfigCaptor;
@@ -60,12 +54,11 @@ class IngressFlowValidatorTest {
         LoadActionConfiguration load = new LoadActionConfiguration();
         load.setName("load");
 
-        ingressFlow.setType("json");
         ingressFlow.setTransformActions(List.of(transform1, transform2));
         ingressFlow.setLoadAction(load);
 
         List<FlowConfigError> errors = ingressFlowValidator.validate(ingressFlow);
-        Mockito.verify(schemaCompliancyValidator, Mockito.times(3)).validate(actionConfigCaptor.capture());
+        Mockito.verify(schemaComplianceValidator, Mockito.times(3)).validate(actionConfigCaptor.capture());
 
         List<ActionConfiguration> validatedActions = actionConfigCaptor.getAllValues();
         Assertions.assertThat(validatedActions).hasSize(3)
@@ -77,106 +70,20 @@ class IngressFlowValidatorTest {
     }
 
     @Test
-    void blankNameAndTypeError() {
-        IngressFlow ingressFlow = new IngressFlow();
-        ingressFlow.setName("  ");
-        ingressFlow.setType("  ");
-
-        LoadActionConfiguration load = new LoadActionConfiguration();
-        load.setName("load");
-        ingressFlow.setLoadAction(load);
-
-        List<FlowConfigError> errors = ingressFlowValidator.validate(ingressFlow);
-
-        Assertions.assertThat(errors)
-                .hasSize(1)
-                .contains(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG).configName("  ").message("The ingress flow type cannot be blank").build());
-    }
-
-    @Test
     void validate_createErrors() {
         IngressFlow ingressFlow = new IngressFlow();
         ingressFlow.setName("ingress");
         LoadActionConfiguration load = new LoadActionConfiguration();
         load.setName("fail");
-        ingressFlow.setType("json");
         ingressFlow.setLoadAction(load);
 
         FlowConfigError expected = expectedError();
-        Mockito.when(schemaCompliancyValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
+        Mockito.when(schemaComplianceValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
                 .thenReturn(List.of(expected));
 
         List<FlowConfigError> errors = ingressFlowValidator.validate(ingressFlow);
 
         Assertions.assertThat(errors).hasSize(1).contains(expected);
-    }
-
-
-    @Test
-    void validateTransformsAreReachable_valid() {
-        Set<String> producedTypes = Set.of("b");
-        TransformActionConfiguration flowHandler = new TransformActionConfiguration();
-        flowHandler.setConsumes("flowType");
-        flowHandler.setProduces("b");
-
-        List<TransformActionConfiguration> transformActionConfigurations = of(flowHandler);
-        List<String> errors = ingressFlowValidator.validateTransformsAreReachable(transformActionConfigurations, producedTypes, "flowType");
-        assertThat(errors).isEmpty();
-    }
-
-    @Test
-    void validateTransformsAreReachable_noTransforms() {
-        assertThat(ingressFlowValidator.validateTransformsAreReachable(emptyList(), emptySet(), "flowType")).isEmpty();
-    }
-
-    @Test
-    void validateTransformsAreReachable_flowTypeNotHandled() {
-        Set<String> producedTypes = Set.of("b", "c");
-        TransformActionConfiguration flowHandler = new TransformActionConfiguration();
-        flowHandler.setConsumes("b");
-        flowHandler.setProduces("c");
-
-        List<TransformActionConfiguration> transformActionConfigurations = of(flowHandler);
-        List<String> errors = ingressFlowValidator.validateTransformsAreReachable(transformActionConfigurations, producedTypes, "flowType");
-        assertThat(errors).hasSize(1).contains("None of the configured TransformActions in this flow consume the ingress flow type: flowType");
-    }
-
-    @Test
-    void validateTransformsAreReachable_unreachableTransform() {
-        Set<String> producedTypes = Set.of("c");
-        TransformActionConfiguration flowHandler = new TransformActionConfiguration();
-        flowHandler.setConsumes("flowType");
-        flowHandler.setProduces("c");
-
-        TransformActionConfiguration unreachable = new TransformActionConfiguration();
-        unreachable.setName("unreachable");
-        unreachable.setConsumes("a");
-        unreachable.setProduces("d");
-
-        List<TransformActionConfiguration> transformActionConfigurations = of(flowHandler, unreachable);
-        List<String> errors = ingressFlowValidator.validateTransformsAreReachable(transformActionConfigurations, producedTypes, "flowType");
-        assertThat(errors).hasSize(1).contains("Transform Action named: unreachable consumes: a which is not produced in this flow");
-    }
-
-    @Test
-    void validateLoadActionIsReachable_valid() {
-        LoadActionConfiguration config = new LoadActionConfiguration();
-        config.setConsumes("flowType");
-
-        List<String> errors = ingressFlowValidator.validateLoadActionIsReachable(config, emptySet(), "flowType");
-        assertThat(errors).isEmpty();
-    }
-
-    @Test
-    void validateLoadActionIsReachable_flowTypeNotConsumed() {
-        LoadActionConfiguration config = new LoadActionConfiguration();
-        config.setConsumes("other");
-        config.setName("loader");
-
-        List<String> errors = ingressFlowValidator.validateLoadActionIsReachable(config, emptySet(), "flowType");
-        assertThat(errors).hasSize(2)
-                .contains("Load Action named: loader consumes: other which isn't produced in this flow")
-                .contains("None of the configured Load Actions in this flow consume the ingress flow type: flowType");
     }
 
     FlowConfigError expectedError() {

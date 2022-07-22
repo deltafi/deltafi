@@ -55,16 +55,7 @@ import java.util.Map;
 
 public class DecompressionTransformAction extends MultipartTransformAction<DecompressionTransformParameters> {
 
-    private static final String CONSUMES = "compressedBinary";
-    private static final String PRODUCES = "binary";
-
     public DecompressionTransformAction() { super(DecompressionTransformParameters.class); }
-
-    @Override
-    public String getConsumes() { return CONSUMES; }
-
-    @Override
-    public String getProduces() { return PRODUCES; }
 
     @Override
     public Result transform(@NotNull ActionContext context,
@@ -72,7 +63,7 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
                             @NotNull SourceInfo sourceInfo,
                             @NotNull List<Content> contentList,
                             @NotNull Map<String, String> metadata) {
-        TransformResult result = new TransformResult(context, PRODUCES);
+        TransformResult result = new TransformResult(context);
         String decompressionType = params.getDecompressionType().getValue();
 
         try(InputStream content = loadContentAsInputStream(contentList.get(0).getContentReference())) {

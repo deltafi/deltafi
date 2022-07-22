@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - `deltafi` CLI checks for required tool installation on execution
 
 ### Deprecated
+- Consumes/produces configuration for Transform and Load Actions
 
 ### Removed
 

@@ -55,8 +55,7 @@ public class ActionProcessor extends AbstractProcessor {
                     Action actionAnnotation = type.getAnnotation(Action.class);
                     return ActionDescriptor.newBuilder()
                             .name(type.getQualifiedName().toString())
-                            .consumes(actionAnnotation.consumes())
-                            .produces(actionAnnotation.produces())
+                            .description(actionAnnotation.description())
                             .requiresDomains(Arrays.asList(actionAnnotation.requiresDomains()))
                             .build();
                 })

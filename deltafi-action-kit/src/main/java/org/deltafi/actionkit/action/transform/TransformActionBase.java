@@ -37,26 +37,12 @@ public abstract class TransformActionBase<P extends ActionParameters> extends Ac
         super(ActionType.TRANSFORM, actionParametersClass);
     }
 
-    /**
-     * Declares a consumer type for this action
-     * @return consumer type string
-     */
-    public abstract String getConsumes();
-
-    /**
-     * Declares a producer type for this action
-     * @return producer type string
-     */
-    public abstract String getProduces();
-
     @Override
     public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
         TransformActionSchemaInput input = TransformActionSchemaInput.newBuilder()
                 .id(getClassCanonicalName())
                 .paramClass(getParamClass())
                 .schema(getDefinition())
-                .consumes(getConsumes())
-                .produces(getProduces())
                 .build();
         actionRegistrationInput.getTransformActions().add(input);
     }

@@ -6,16 +6,14 @@
       {
          "name": "stix2_1",
          "loadAction": "Stix2_1LoadAction",
-         "transformActions": [],
-         "type": "stix2_1"
+         "transformActions": []
       },
       {
          "name": "stix1_x",
          "loadAction": "Stix2_1LoadAction",
          "transformActions": [
             "Stix1_xTo2_1TransformAction"
-         ],
-         "type": "stix1_x"
+         ]
       }
    ],
    "egressFlowConfigurations": [
@@ -43,15 +41,12 @@
    "transformActionConfigurations": [
       {
          "name": "Stix1_xTo2_1TransformAction",
-         "consumes": "stix1_x",
-         "produces": "stix2_1",
          "type": "org.deltafi.stix.actions.StixTransformAction"
       }
    ],
    "loadActionConfigurations": [
       {
          "name": "Stix2_1LoadAction",
-         "consumes": "stix2_1",
          "type": "org.deltafi.stix.actions.StixLoadAction"
       }
    ],

@@ -85,12 +85,11 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static IngressFlow saveIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").consumes("json").type("org.deltafi.action.Loader").build();
+        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").type("org.deltafi.action.Loader").build();
         IngressFlowPlanInput input = IngressFlowPlanInput.newBuilder()
                 .sourcePlugin(PLUGIN_COORDINATES)
                 .name("flowPlan")
                 .description("description")
-                .type("json")
                 .loadAction(loadActionConfigurationInput)
                 .build();
 

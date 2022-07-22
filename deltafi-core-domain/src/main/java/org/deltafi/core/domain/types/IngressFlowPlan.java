@@ -31,8 +31,9 @@ import java.util.List;
 @Document("ingressFlowPlan")
 @EqualsAndHashCode(callSuper = true)
 public class IngressFlowPlan extends FlowPlan {
-
+    // deprecated - remove when corresponding graphql entry is removed
     private String type;
+
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
 

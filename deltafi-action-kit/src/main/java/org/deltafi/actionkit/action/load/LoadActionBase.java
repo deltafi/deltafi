@@ -38,19 +38,12 @@ public abstract class LoadActionBase<P extends ActionParameters> extends Action<
         super(ActionType.LOAD, actionParametersClass);
     }
 
-    /**
-     * Declares a consumer type for this action
-     * @return consumer type string
-     */
-    public abstract String getConsumes();
-
     @Override
     public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
         LoadActionSchemaInput input = LoadActionSchemaInput.newBuilder()
                 .id(getClassCanonicalName())
                 .paramClass(getParamClass())
                 .schema(getDefinition())
-                .consumes(getConsumes())
                 .build();
         actionRegistrationInput.getLoadActions().add(input);
     }

@@ -33,12 +33,7 @@ public class LoadActionConfiguration extends org.deltafi.core.domain.generated.t
     public List<String> validate(ActionSchema actionSchema) {
         List<String> errors = new ArrayList<>();
 
-        if (actionSchema instanceof LoadActionSchema) {
-            LoadActionSchema schema = (LoadActionSchema) actionSchema;
-            if (!ActionConfiguration.equalOrAny(schema.getConsumes(), this.getConsumes())) {
-                errors.add("The action configuration consumes value must be: " + schema.getConsumes());
-            }
-        } else {
+        if (!(actionSchema instanceof LoadActionSchema)) {
             errors.add("Action: " + getType() + " is not registered as a LoadAction");
         }
 

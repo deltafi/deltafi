@@ -105,7 +105,7 @@ public class TimedDeleteTest {
     void runsWithMinByes() {
         TimedDeletePolicy policy = new TimedDeletePolicy();
         policy.setId(policyName);
-        policy.setMinBytes(new Long(234));
+        policy.setMinBytes(234L);
 
         TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         timedDelete.run();

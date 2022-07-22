@@ -8,7 +8,6 @@
   },
   "loadAction": {
     "name": "PassthroughLoadAction",
-    "consumes": "passthrough-binary",
     "type": "org.deltafi.passthrough.action.RoteLoadAction",
     "parameters": {
       "domains": [
@@ -19,13 +18,10 @@
   "transformActions": [
     {
       "name": "PassthroughTransformAction",
-      "consumes": "binary",
-      "produces": "passthrough-binary",
       "type": "org.deltafi.passthrough.action.RoteTransformAction",
       "parameters": {
         "resultType": "${transform.produces}"
       }
     }
-  ],
-  "type": "binary"
+  ]
 }

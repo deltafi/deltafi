@@ -34,15 +34,7 @@ public class TransformActionConfiguration extends org.deltafi.core.domain.genera
     public List<String> validate(ActionSchema actionSchema) {
         List<String> errors = new ArrayList<>();
 
-        if (actionSchema instanceof TransformActionSchema) {
-            TransformActionSchema schema = (TransformActionSchema) actionSchema;
-            if (!ActionConfiguration.equalOrAny(schema.getConsumes(), this.getConsumes())) {
-                errors.add("The action configuration consumes value must be: " + schema.getConsumes());
-            }
-            if (!ActionConfiguration.equalOrAny(schema.getProduces(), this.getProduces())) {
-                errors.add("The action configuration produces value must be: " + schema.getProduces());
-            }
-        } else {
+        if (!(actionSchema instanceof TransformActionSchema)) {
             errors.add("Action: " + getType() + " is not registered as a TransformAction") ;
         }
 

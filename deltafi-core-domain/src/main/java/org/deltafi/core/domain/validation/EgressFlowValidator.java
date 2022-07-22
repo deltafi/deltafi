@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 @Service
 public class EgressFlowValidator extends FlowValidator<EgressFlow> {
 
-    public EgressFlowValidator(SchemaCompliancyValidator schemaCompliancyValidator) {
-        super(schemaCompliancyValidator);
+    public EgressFlowValidator(SchemaComplianceValidator schemaComplianceValidator) {
+        super(schemaComplianceValidator);
     }
 
     @Override

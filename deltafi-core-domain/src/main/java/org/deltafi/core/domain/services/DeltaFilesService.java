@@ -37,7 +37,6 @@ import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.retry.MongoRetryable;
 import org.deltafi.core.domain.types.EgressFlow;
-import org.deltafi.core.domain.types.IngressFlow;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -127,7 +126,9 @@ public class DeltaFilesService {
             }
             sourceInfo.setFlow(flow);
         }
-        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
+
+        // ensure flow is running before excepting ingress
+        ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
 
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -145,7 +146,7 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
-                .protocolStack(List.of(new ProtocolLayer(ingressFlow.getType(), INGRESS_ACTION, input.getContent(), null)))
+                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, input.getContent(), null)))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())
@@ -371,7 +372,6 @@ public class DeltaFilesService {
                     .build();
 
             childDeltaFiles = splits.stream().map(split -> {
-                String ingressType = ingressFlowService.getRunningFlowByName(split.getSourceInfo().getFlow()).getType();
                 DeltaFile child = DeltaFile.newBuilder()
                         .did(UUID.randomUUID().toString())
                         .parentDids(List.of(deltaFile.getDid()))
@@ -379,7 +379,7 @@ public class DeltaFilesService {
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
                         .sourceInfo(split.getSourceInfo())
-                        .protocolStack(List.of(new ProtocolLayer(ingressType, INGRESS_ACTION, split.getContent(), Collections.emptyList())))
+                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, split.getContent(), Collections.emptyList())))
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())
                         .formattedData(Collections.emptyList())
@@ -595,9 +595,6 @@ public class DeltaFilesService {
                                     .modified(now)
                                     .build();
 
-                            String flow = replaceFlow == null ? deltaFile.getSourceInfo().getFlow() : replaceFlow;
-                            String ingressType = ingressFlowService.getRunningFlowByName(flow).getType();
-
                             DeltaFile child = DeltaFile.newBuilder()
                                     .did(UUID.randomUUID().toString())
                                     .parentDids(List.of(deltaFile.getDid()))
@@ -605,7 +602,7 @@ public class DeltaFilesService {
                                     .stage(DeltaFileStage.INGRESS)
                                     .actions(new ArrayList<>(List.of(action)))
                                     .sourceInfo(deltaFile.getSourceInfo())
-                                    .protocolStack(List.of(new ProtocolLayer(ingressType, INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), null)))
+                                    .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), null)))
                                     .domains(Collections.emptyList())
                                     .enrichment(Collections.emptyList())
                                     .formattedData(Collections.emptyList())
@@ -689,7 +686,7 @@ public class DeltaFilesService {
         DeltaFiles deltaFiles = getDeltaFiles(0, dids.size(), filter, null, List.of(SOURCE_INFO_METADATA));
 
         Map<String, UniqueKeyValues> keyValues = new HashMap<>();
-        deltaFiles.getDeltaFiles().stream().forEach(deltaFile -> {
+        deltaFiles.getDeltaFiles().forEach(deltaFile -> {
             List<KeyValue> deltaFileMeta = deltaFile.getSourceInfo().getMetadata();
             for (KeyValue meta : deltaFileMeta) {
                 if (!keyValues.containsKey(meta.getKey())) {
@@ -698,7 +695,7 @@ public class DeltaFilesService {
                 keyValues.get(meta.getKey()).addValue(meta.getValue());
             }
         });
-        return keyValues.values().stream().collect(Collectors.toList());
+        return new ArrayList<>(keyValues.values());
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {

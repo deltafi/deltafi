@@ -39,7 +39,6 @@ class IngressFlowPlanValidatorTest {
     void duplicateActionNameErrors() {
         IngressFlowPlan ingressFlow = new IngressFlowPlan();
         ingressFlow.setName("flow");
-        ingressFlow.setType("json");
 
         LoadActionConfiguration load = new LoadActionConfiguration();
         load.setName("action");

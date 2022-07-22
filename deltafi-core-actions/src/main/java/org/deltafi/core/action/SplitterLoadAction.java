@@ -33,8 +33,6 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParameters> {
 
-    final public String CONSUMES = "binary";
-
     public SplitterLoadAction() {
         super(SplitterLoadParameters.class);
     }
@@ -55,10 +53,5 @@ public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParamete
         }
 
         return result;
-    }
-
-    @Override
-    public String getConsumes() {
-        return CONSUMES;
     }
 }

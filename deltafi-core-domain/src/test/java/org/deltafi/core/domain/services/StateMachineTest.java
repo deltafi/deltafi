@@ -467,7 +467,7 @@ class StateMachineTest {
 
         if (withProtocolStack) {
             Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, "did", "" + "application/octet-stream")).build();
-            deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION,
+            deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION,
                     List.of(content),
                     Collections.singletonList(new KeyValue(PROTOCOL_LAYER_KEY, "value"))));
         }

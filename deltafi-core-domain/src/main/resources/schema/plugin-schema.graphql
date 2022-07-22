@@ -72,14 +72,20 @@ input PluginCoordinatesInput {
 
 type ActionDescriptor {
     name: String!
+    description: String
+    # deprecated - remove in future release
     consumes: String
+    # deprecated - remove in future release
     produces: String
     requiresDomains: [String]
 }
 
 input ActionDescriptorInput {
     name: String!
+    description: String
+    # deprecated - remove in future release
     consumes: String
+    # deprecated - remove in future release
     produces: String
     requiresDomains: [String]
 }

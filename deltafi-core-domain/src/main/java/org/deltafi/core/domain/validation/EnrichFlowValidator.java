@@ -26,8 +26,8 @@ import java.util.List;
 @Service
 public class EnrichFlowValidator extends FlowValidator<EnrichFlow> {
 
-    public EnrichFlowValidator(SchemaCompliancyValidator schemaCompliancyValidator) {
-        super(schemaCompliancyValidator);
+    public EnrichFlowValidator(SchemaComplianceValidator schemaComplianceValidator) {
+        super(schemaComplianceValidator);
     }
 
     @Override

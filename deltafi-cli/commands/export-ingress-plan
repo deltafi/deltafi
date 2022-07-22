@@ -35,12 +35,9 @@ QUERY="fragment ActionFields on ActionConfiguration {
             type
             transformActions {
               ... ActionFields
-              consumes
-              produces
             }
             loadAction {
               ... ActionFields
-              consumes
             }
           }
         }

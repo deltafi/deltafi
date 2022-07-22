@@ -19,8 +19,6 @@ package org.deltafi.core.domain.datafetchers;
 
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.domain.api.types.ActionSchema;
 import org.deltafi.core.domain.generated.client.ActionSchemasGraphQLQuery;
@@ -40,18 +38,8 @@ public class ActionSchemaDatafetcherTestHelper {
     public static final String LOAD_ACTION = "org.deltafi.LoadAction";
     public static final String TRANSFORM_ACTION = "org.deltafi.TransformAction";
     public static final String VALIDATE_ACTION = "org.deltafi.ValidatreAction";
-    public static final String CONSUMES = "consumes";
-    public static final String PRODUCES = "produces";
     public static final String PARAM_CLASS = "paramClass";
     public static final String DOMAIN = "domain";
-
-    static public <C extends ActionSchema> C executeRequest(GraphQLQuery query, BaseProjectionNode projection, Class<C> clazz, DgsQueryExecutor dgsQueryExecutor) {
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + query.getOperationName(),
-                clazz);
-    }
 
     static public List<ActionSchema> getSchemas(DgsQueryExecutor dgsQueryExecutor) {
         ActionSchemasProjectionRoot projection = new ActionSchemasProjectionRoot()
@@ -77,12 +65,9 @@ public class ActionSchemaDatafetcherTestHelper {
                 .parent()
 
                 .onLoadActionSchema()
-                .consumes()
                 .parent()
 
                 .onTransformActionSchema()
-                .consumes()
-                .produces()
                 .parent()
 
                 .onValidateActionSchema()
@@ -216,7 +201,6 @@ public class ActionSchemaDatafetcherTestHelper {
         return LoadActionSchemaInput.newBuilder()
                 .id(LOAD_ACTION)
                 .paramClass(PARAM_CLASS)
-                .consumes(CONSUMES)
                 .build();
     }
 
@@ -238,8 +222,6 @@ public class ActionSchemaDatafetcherTestHelper {
         return TransformActionSchemaInput.newBuilder()
                 .id(TRANSFORM_ACTION)
                 .paramClass(PARAM_CLASS)
-                .consumes(CONSUMES)
-                .produces(PRODUCES)
                 .build();
     }
 

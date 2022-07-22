@@ -28,10 +28,11 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public abstract class FlowValidator<T extends Flow> {
 
-    private final SchemaCompliancyValidator schemaCompliancyValidator;
+    private final SchemaComplianceValidator schemaComplianceValidator;
 
     public List<FlowConfigError> validate(T flow) {
         List<FlowConfigError> errors = new ArrayList<>();
+
         errors.addAll(validateActions(flow.allActionConfigurations()));
         errors.addAll(flowSpecificValidation(flow));
 
@@ -57,6 +58,6 @@ public abstract class FlowValidator<T extends Flow> {
     }
 
     List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
-        return schemaCompliancyValidator.validate(actionConfiguration);
+        return schemaComplianceValidator.validate(actionConfiguration);
     }
 }

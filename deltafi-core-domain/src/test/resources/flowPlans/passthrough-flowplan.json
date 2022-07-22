@@ -13,8 +13,7 @@
       "loadAction": "PassthroughLoadAction",
       "transformActions": [
         "PassthroughTransformAction"
-      ],
-      "type": "${incoming.type}"
+      ]
     }
   ],
   "egressFlowConfigurations": [

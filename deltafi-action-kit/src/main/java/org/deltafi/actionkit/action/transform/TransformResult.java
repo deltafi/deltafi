@@ -33,16 +33,11 @@ import org.jetbrains.annotations.NotNull;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class TransformResult extends DataAmendedResult {
-    private final String type;
-
     /**
      * @param context Context of executing action
-     * @param type Content type of resulting content
      */
-    public TransformResult(@NotNull ActionContext context, @NotNull String type) {
+    public TransformResult(@NotNull ActionContext context) {
         super(context);
-
-        this.type = type;
     }
 
     @Override
@@ -54,7 +49,7 @@ public class TransformResult extends DataAmendedResult {
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
         event.setTransform(TransformInput.newBuilder()
-                .protocolLayer(new ProtocolLayer(type, context.getName(), content, metadata))
+                .protocolLayer(new ProtocolLayer(context.getName(), content, metadata))
                 .build());
         return event;
     }

@@ -88,14 +88,16 @@ type LoadActionSchema implements ActionSchema {
     paramClass: String!
     schema: JSON
     lastHeard: DateTime!
-    consumes: String!
+    # deprecated - remove in future release
+    consumes: String
 }
 
 input LoadActionSchemaInput {
     id: String!
     paramClass: String!
     schema: JSON
-    consumes: String!
+    # deprecated - remove in future release
+    consumes: String
 }
 
 type TransformActionSchema implements ActionSchema {
@@ -103,16 +105,16 @@ type TransformActionSchema implements ActionSchema {
     paramClass: String!
     schema: JSON
     lastHeard: DateTime!
-    consumes: String!
-    produces: String!
+    # deprecated - remove in future release
+    consumes: String
+    # deprecated - remove in future release
+    produces: String
 }
 
 input TransformActionSchemaInput {
     id: String!
     paramClass: String!
     schema: JSON
-    consumes: String!
-    produces: String!
 }
 
 type ValidateActionSchema implements ActionSchema {

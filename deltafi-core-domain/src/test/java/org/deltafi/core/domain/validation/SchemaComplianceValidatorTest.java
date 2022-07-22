@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.core.domain.Util.egressSchema;
 
 @ExtendWith(MockitoExtension.class)
-class SchemaCompliancyValidatorTest {
+class SchemaComplianceValidatorTest {
 
     public static final String EGRESS_ACTION = "org.deltafi.core.action.RestPostEgressAction";
     public static final String ENRICH_ACTION = "org.deltafi.passthrough.action.RoteEnrichAction";
@@ -52,7 +52,7 @@ class SchemaCompliancyValidatorTest {
     public static final String ENRICHMENT_VALUE = "enrichmentValue";
 
     @InjectMocks
-    SchemaCompliancyValidator schemaCompliancyValidator;
+    SchemaComplianceValidator schemaComplianceValidator;
 
     @Mock
     ActionSchemaService actionSchemaService;
@@ -68,7 +68,7 @@ class SchemaCompliancyValidatorTest {
     @Test
     void runValidate() {
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(egressSchemaOptional());
-        assertThat(schemaCompliancyValidator.validate(egressConfig(getRequiredEgressParams()))).isEmpty();
+        assertThat(schemaComplianceValidator.validate(egressConfig(getRequiredEgressParams()))).isEmpty();
     }
 
     @Test
@@ -81,7 +81,7 @@ class SchemaCompliancyValidatorTest {
         config.setName("egressName");
 
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(egressSchemaOptional());
-        List<FlowConfigError> errors = schemaCompliancyValidator.validate(config);
+        List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
 
         assertThat(errors).hasSize(1);
         FlowConfigError error = errors.get(0);
@@ -96,7 +96,7 @@ class SchemaCompliancyValidatorTest {
         config.setName("egressName");
         config.setType("   ");
 
-        List<FlowConfigError> errors = schemaCompliancyValidator.validate(config);
+        List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
         Mockito.verifyNoInteractions(actionSchemaService);
         FlowConfigError error = errors.get(0);
         assertThat(error.getConfigName()).isEqualTo("egressName");
@@ -113,7 +113,7 @@ class SchemaCompliancyValidatorTest {
         FormatActionSchema formatActionSchema = new FormatActionSchema();
         formatActionSchema.setLastHeard(OffsetDateTime.now());
 
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(formatActionSchema, config);
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(formatActionSchema, config);
         FlowConfigError error = errors.get(0);
         assertThat(error.getConfigName()).isEqualTo("egressAction");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
@@ -123,7 +123,7 @@ class SchemaCompliancyValidatorTest {
     @Test
     void validateAgainstSchema_actionNotRegistered() {
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.empty());
-        List<FlowConfigError> errors = schemaCompliancyValidator.validate(egressConfig(null));
+        List<FlowConfigError> errors = schemaComplianceValidator.validate(egressConfig(null));
         FlowConfigError error = errors.get(0);
         assertThat(error.getConfigName()).isEqualTo("RestEgress");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.UNREGISTERED_ACTION);
@@ -135,7 +135,7 @@ class SchemaCompliancyValidatorTest {
         EgressActionSchema schema = new EgressActionSchema();
         schema.setLastHeard(OffsetDateTime.parse("2021-12-31T00:00:00+00:00"));
         Mockito.when(actionSchemaService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.of(schema));
-        List<FlowConfigError> errors = schemaCompliancyValidator.validate(egressConfig(null));
+        List<FlowConfigError> errors = schemaComplianceValidator.validate(egressConfig(null));
         assertThat(errors).hasSize(1);
         FlowConfigError error = errors.get(0);
         assertThat(error.getConfigName()).isEqualTo("RestEgress");
@@ -145,34 +145,17 @@ class SchemaCompliancyValidatorTest {
 
     @Test
     void validateAgainstSchema_goodTransform() {
-        assertThat(schemaCompliancyValidator.validateAgainstSchema(transformSchema(), transformConfig())).isEmpty();
-    }
-
-    @Test
-    void validateAgainstSchema_invalidTransform1() {
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(transformSchema(), invalidTransform1());
-
-        assertThat(errors).hasSize(2)
-                .contains(FlowConfigError.newBuilder().configName("MyTransform").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration consumes value must be: any").build())
-                .contains(FlowConfigError.newBuilder().configName("MyTransform").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration produces value must be: producesValue").build());
-    }
-
-    @Test
-    void validateAgainstSchema_invalidTransform2() {
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(transformSchema(), invalidTransform2());
-
-        assertThat(errors).hasSize(1)
-                .contains(FlowConfigError.newBuilder().configName("MyTransform").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration produces value must be: producesValue").build());
+        assertThat(schemaComplianceValidator.validateAgainstSchema(transformSchema(), transformConfig())).isEmpty();
     }
 
     @Test
     void validateAgainstSchema_goodEnrich() {
-        assertThat(schemaCompliancyValidator.validateAgainstSchema(enrichSchema(), enrichConfig())).isEmpty();
+        assertThat(schemaComplianceValidator.validateAgainstSchema(enrichSchema(), enrichConfig())).isEmpty();
     }
 
     @Test
     void validateAgainstSchema_invalidEnrich() {
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(enrichSchema(), invalidEnrich());
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(enrichSchema(), invalidEnrich());
 
         assertThat(errors).hasSize(2)
                 .contains(FlowConfigError.newBuilder().configName("MyEnrich").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration requiresDomain value must be: [domainValue]").build())
@@ -181,12 +164,12 @@ class SchemaCompliancyValidatorTest {
 
     @Test
     void validateAgainstSchema_goodFormat() {
-        assertThat(schemaCompliancyValidator.validateAgainstSchema(formatSchema(), formatConfig())).isEmpty();
+        assertThat(schemaComplianceValidator.validateAgainstSchema(formatSchema(), formatConfig())).isEmpty();
     }
 
     @Test
     void validateAgainstSchema_invalidFormat() {
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(formatSchema(), invalidFormat());
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(formatSchema(), invalidFormat());
         assertThat(errors).hasSize(1).contains(FlowConfigError.newBuilder().configName("MyFormat").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration requiresDomains value must be: [domainValue]").build());
     }
 
@@ -195,7 +178,7 @@ class SchemaCompliancyValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.remove("url");
 
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.url: is missing but it is required").build());
     }
@@ -205,7 +188,7 @@ class SchemaCompliancyValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.put("url", true);
 
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.url: boolean found, string expected").build());
     }
@@ -215,7 +198,7 @@ class SchemaCompliancyValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.put("unknownField", "not needed");
 
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.unknownField: is not defined in the schema and the schema does not allow additional properties").build());
     }
@@ -226,7 +209,7 @@ class SchemaCompliancyValidatorTest {
         params.remove("url");
         params.put("urlTypo", "http://egress");
 
-        List<FlowConfigError> errors = schemaCompliancyValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(egressSchema(), egressConfig(params));
 
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.url: is missing but it is required; $.urlTypo: is not defined in the schema and the schema does not allow additional properties").build());
@@ -320,8 +303,6 @@ class SchemaCompliancyValidatorTest {
         schema.setId(TRANSFORM_ACTION);
         schema.setParamClass("paramClass");
         schema.setLastHeard(OffsetDateTime.now());
-        schema.setConsumes(DeltaFiConstants.MATCHES_ANY);
-        schema.setProduces(PRODUCES_VALUE);
         return schema;
     }
 
@@ -330,31 +311,6 @@ class SchemaCompliancyValidatorTest {
         config.setName("MyTransform");
         config.setApiVersion("0.19.0");
         config.setType(TRANSFORM_ACTION);
-        config.setConsumes("data");
-        config.setProduces(PRODUCES_VALUE);
         return config;
     }
-
-    private TransformActionConfiguration invalidTransform1() {
-        TransformActionConfiguration config = new TransformActionConfiguration();
-        config.setName("MyTransform");
-        config.setApiVersion("0.19.0");
-        config.setType(TRANSFORM_ACTION);
-        // consumes is null
-        // produces is blank:
-        config.setProduces("   ");
-        return config;
-    }
-
-    private TransformActionConfiguration invalidTransform2() {
-        TransformActionConfiguration config = new TransformActionConfiguration();
-        config.setName("MyTransform");
-        config.setApiVersion("0.19.0");
-        config.setType(TRANSFORM_ACTION);
-        config.setConsumes("data");
-        // wrong produces:
-        config.setProduces("bogusValue");
-        return config;
-    }
-
 }

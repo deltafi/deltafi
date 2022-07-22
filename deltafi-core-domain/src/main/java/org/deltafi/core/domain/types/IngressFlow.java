@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 @Document("ingressFlow")
 @EqualsAndHashCode(callSuper = true)
 public class IngressFlow extends Flow {
-
-    private String type;
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
 
@@ -73,7 +71,6 @@ public class IngressFlow extends Flow {
     public DeltaFiConfiguration asFlowConfiguration() {
         IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
         ingressFlowConfiguration.setName(this.getName());
-        ingressFlowConfiguration.setType(this.type);
         ingressFlowConfiguration.setLoadAction(this.loadAction.getName());
         ingressFlowConfiguration.setTransformActions(this.transformActions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()));
         return ingressFlowConfiguration;

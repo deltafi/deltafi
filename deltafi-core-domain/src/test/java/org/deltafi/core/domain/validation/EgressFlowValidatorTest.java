@@ -39,7 +39,7 @@ class EgressFlowValidatorTest {
     EgressFlowValidator egressFlowValidator;
 
     @Mock
-    SchemaCompliancyValidator schemaCompliancyValidator;
+    SchemaComplianceValidator schemaComplianceValidator;
 
     @Captor
     ArgumentCaptor<ActionConfiguration> actionConfigCaptor;
@@ -67,7 +67,7 @@ class EgressFlowValidatorTest {
 
         List<FlowConfigError> errors = egressFlowValidator.validate(egressFlow);
 
-        Mockito.verify(schemaCompliancyValidator, Mockito.times(4)).validate(actionConfigCaptor.capture());
+        Mockito.verify(schemaComplianceValidator, Mockito.times(4)).validate(actionConfigCaptor.capture());
 
         List<ActionConfiguration> validatedActions = actionConfigCaptor.getAllValues();
         Assertions.assertThat(validatedActions).hasSize(4)
@@ -90,7 +90,7 @@ class EgressFlowValidatorTest {
         egressFlow.setEgressAction(new EgressActionConfiguration());
 
         FlowConfigError expected = expectedError();
-        Mockito.when(schemaCompliancyValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
+        Mockito.when(schemaComplianceValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))
                         .thenReturn(List.of(expected));
 
         List<FlowConfigError> errors = egressFlowValidator.validate(egressFlow);

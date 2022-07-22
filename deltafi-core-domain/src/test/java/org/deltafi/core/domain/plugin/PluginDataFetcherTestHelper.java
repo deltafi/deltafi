@@ -35,8 +35,7 @@ public class PluginDataFetcherTestHelper {
             .actionKitVersion()
             .actions()
             .name()
-            .consumes()
-            .produces()
+            .description()
             .requiresDomains().parent()
             .dependencies()
             .groupId()
@@ -75,8 +74,7 @@ public class PluginDataFetcherTestHelper {
         assertEquals(2, plugin1.getActions().size());
         assertEquals("org.deltafi.test.actions.TestAction1", plugin1.getActions().get(0).getName());
         assertEquals("org.deltafi.test.actions.TestAction2", plugin1.getActions().get(1).getName());
-        assertEquals("dataFormat1", plugin1.getActions().get(1).getConsumes());
-        assertEquals("dataFormat2", plugin1.getActions().get(1).getProduces());
+        assertEquals("TestAction2", plugin1.getActions().get(1).getDescription());
         assertEquals(1, plugin1.getActions().get(1).getRequiresDomains().size());
         assertEquals("test", plugin1.getActions().get(1).getRequiresDomains().get(0));
 

@@ -42,7 +42,8 @@ input ConfigQueryInput {
 type IngressFlowConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    type: String!
+    # deprecated - remove in future release
+    type: String
     transformActions: [String]
     loadAction: String!
 }

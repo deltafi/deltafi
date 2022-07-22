@@ -28,13 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 public interface ActionConfiguration extends DeltaFiConfiguration {
-    static boolean equalOrAny(String expected, String actual) {
-        return !isBlank(actual) && (expected.equals(DeltaFiConstants.MATCHES_ANY) || actual.equals(expected));
-    }
-
     static boolean equalOrAny(List<String> schemaList, List<String> configList) {
         List<String> expected = Objects.isNull(schemaList) ? Collections.emptyList() : schemaList;
         List<String> actual = Objects.isNull(configList) ? Collections.emptyList() : configList;

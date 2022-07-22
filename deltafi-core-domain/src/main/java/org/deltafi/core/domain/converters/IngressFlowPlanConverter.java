@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan, IngressFlow> {
 
     public void populateFlowSpecificFields(IngressFlowPlan ingressFlowPlan, IngressFlow ingressFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        ingressFlow.setType(flowPlanPropertyHelper.replaceValue(ingressFlowPlan.getType(), ingressFlow.getName()));
         ingressFlow.setLoadAction(buildLoadAction(ingressFlowPlan.getLoadAction(), flowPlanPropertyHelper));
         ingressFlow.setTransformActions(buildTransformActions(ingressFlowPlan.getTransformActions(), flowPlanPropertyHelper));
     }
@@ -43,7 +42,6 @@ public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan,
     LoadActionConfiguration buildLoadAction(LoadActionConfiguration loadActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration();
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(loadActionConfiguration, loadActionTemplate);
-        loadActionConfiguration.setConsumes(loadActionTemplate.getConsumes());
         return loadActionConfiguration;
     }
 
@@ -63,8 +61,6 @@ public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan,
         TransformActionConfiguration transformActionConfiguration = new TransformActionConfiguration();
 
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(transformActionConfiguration, transformActionTemplate);
-        transformActionConfiguration.setConsumes(transformActionTemplate.getConsumes());
-        transformActionConfiguration.setProduces(transformActionTemplate.getProduces());
 
         return transformActionConfiguration;
     }

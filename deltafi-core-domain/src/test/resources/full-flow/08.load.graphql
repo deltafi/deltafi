@@ -27,7 +27,6 @@ mutation {
             load: {
                 domains: [ { name: "sample", value: "sampleDomain", mediaType: "application/octet-stream" } ]
                 protocolLayer: {
-                    type: "json-utf8-sample-load"
                     action: "SampleLoadAction"
                     content: [
                         {

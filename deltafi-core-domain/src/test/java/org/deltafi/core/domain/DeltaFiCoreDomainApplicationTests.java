@@ -283,7 +283,6 @@ class DeltaFiCoreDomainApplicationTests {
 	void loadIngressConfig() {
 		org.deltafi.core.domain.configuration.LoadActionConfiguration lc = new org.deltafi.core.domain.configuration.LoadActionConfiguration();
 		lc.setName("SampleLoadAction");
-		lc.setConsumes("json-utf8-sample");
 		org.deltafi.core.domain.configuration.TransformActionConfiguration tc = new org.deltafi.core.domain.configuration.TransformActionConfiguration();
 		tc.setName("Utf8TransformAction");
 		TransformActionConfiguration tc2 = new TransformActionConfiguration();
@@ -436,7 +435,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.queueAction("Utf8TransformAction");
 		deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", new ArrayList<>(List.of(new KeyValue("AuthorizedBy", "XYZ"), new KeyValue("removeMe", "whatever")))));
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json", INGRESS_ACTION, List.of(content), null));
+		deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION, List.of(content), null));
 		return deltaFile;
 	}
 
@@ -459,7 +458,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.completeAction("Utf8TransformAction", START_TIME, STOP_TIME);
 		deltaFile.queueAction("SampleTransformAction");
 		Content content = Content.newBuilder().name("file.json").contentReference(new ContentReference("utf8ObjectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8", "Utf8TransformAction", List.of(content), null));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("Utf8TransformAction", List.of(content), null));
 		return deltaFile;
 	}
 
@@ -482,7 +481,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.completeAction("SampleTransformAction", START_TIME, STOP_TIME);
 		deltaFile.queueAction("SampleLoadAction");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", List.of(content), transformSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleTransformAction", List.of(content), transformSampleMetadata));
 		return deltaFile;
 	}
 
@@ -510,7 +509,7 @@ class DeltaFiCoreDomainApplicationTests {
 		 * and not attempt to queue the Load action, too.
 		 */
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample", "SampleTransformAction", List.of(content), transformSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleTransformAction", List.of(content), transformSampleMetadata));
 		return deltaFile;
 	}
 
@@ -569,7 +568,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", List.of(content), loadSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleLoadAction", List.of(content), loadSampleMetadata));
 		return deltaFile;
 	}
 
@@ -593,7 +592,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("json-utf8-sample-load", "SampleLoadAction", List.of(content), loadWrongMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleLoadAction", List.of(content), loadWrongMetadata));
 		return deltaFile;
 	}
 
@@ -1155,7 +1154,6 @@ class DeltaFiCoreDomainApplicationTests {
 	private void checkLoadSchema(LoadActionSchema schema) {
 		checkActionCommonFields(schema);
 		assertEquals(LOAD_ACTION, schema.getId());
-		assertEquals(CONSUMES, schema.getConsumes());
 	}
 
 	@Test
@@ -1169,8 +1167,6 @@ class DeltaFiCoreDomainApplicationTests {
 	private void checkTransformSchema(TransformActionSchema schema) {
 		checkActionCommonFields(schema);
 		assertEquals(TRANSFORM_ACTION, schema.getId());
-		assertEquals(CONSUMES, schema.getConsumes());
-		assertEquals(PRODUCES, schema.getProduces());
 	}
 
 	@Test
@@ -1196,7 +1192,6 @@ class DeltaFiCoreDomainApplicationTests {
 				.name()
 				.apiVersion()
 				.onLoadActionConfiguration()
-				.consumes()
 				.parent();
 
 		DeltaFiConfigsGraphQLQuery findConfig = DeltaFiConfigsGraphQLQuery.newRequest().configQuery(configQueryInput).build();
@@ -1213,7 +1208,6 @@ class DeltaFiCoreDomainApplicationTests {
 
 		org.deltafi.core.domain.generated.types.LoadActionConfiguration loadActionConfiguration = (org.deltafi.core.domain.generated.types.LoadActionConfiguration) configs.get(0);
 		assertEquals(name, loadActionConfiguration.getName());
-		assertEquals("json-utf8-sample", loadActionConfiguration.getConsumes());
 		Assertions.assertNull(loadActionConfiguration.getType()); // not in the projection should be null
 	}
 
@@ -2492,7 +2486,6 @@ class DeltaFiCoreDomainApplicationTests {
 	private IngressFlow buildIngressFlow(FlowState flowState) {
 		org.deltafi.core.domain.configuration.LoadActionConfiguration lc = new org.deltafi.core.domain.configuration.LoadActionConfiguration();
 		lc.setName("SampleLoadAction");
-		lc.setConsumes("json-utf8-sample");
 		org.deltafi.core.domain.configuration.TransformActionConfiguration tc = new org.deltafi.core.domain.configuration.TransformActionConfiguration();
 		tc.setName("Utf8TransformAction");
 		TransformActionConfiguration tc2 = new TransformActionConfiguration();
@@ -2509,7 +2502,6 @@ class DeltaFiCoreDomainApplicationTests {
 		IngressFlow ingressFlow = new IngressFlow();
 		ingressFlow.setName(name);
 		ingressFlow.getFlowStatus().setState(flowState);
-		ingressFlow.setType("json");
 		ingressFlow.setLoadAction(loadActionConfiguration);
 		ingressFlow.setTransformActions(transforms);
 		return ingressFlow;

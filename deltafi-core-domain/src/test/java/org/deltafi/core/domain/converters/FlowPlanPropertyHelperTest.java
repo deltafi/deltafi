@@ -25,7 +25,7 @@ import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.Variable;
-import org.deltafi.core.domain.validation.SchemaCompliancyValidator;
+import org.deltafi.core.domain.validation.SchemaComplianceValidator;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -236,7 +236,7 @@ class FlowPlanPropertyHelperTest {
 
     @Test
     void testValidParameterSubstitution() throws IOException {
-        SchemaCompliancyValidator validator = new SchemaCompliancyValidator(null, new DeltaFiProperties());
+        SchemaComplianceValidator validator = new SchemaComplianceValidator(null, new DeltaFiProperties());
 
         Map<String, Object> parameters = Util.readResource("config-test/complex-parameter-values.json", Map.class);
 

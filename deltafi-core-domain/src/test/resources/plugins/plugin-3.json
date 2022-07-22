@@ -11,8 +11,7 @@
     "name" : "org.deltafi.test.actions.TestAction1"
   }, {
     "name" : "org.deltafi.test.actions.TestAction2",
-    "consumes" : "dataFormat1",
-    "produces" : "dataFormat2",
+    "description": "TestAction2",
     "requiresDomains" : [ "test" ]
   } ]
 }

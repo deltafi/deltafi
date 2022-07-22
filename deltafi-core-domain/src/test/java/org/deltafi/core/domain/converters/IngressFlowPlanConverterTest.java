@@ -51,7 +51,6 @@ class IngressFlowPlanConverterTest {
         IngressFlow ingressFlow = ingressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(ingressFlow.getName()).isEqualTo("passthrough");
-        assertThat(ingressFlow.getType()).isEqualTo("binary");
         assertThat(ingressFlow.getDescription()).isEqualTo("Flow that passes data through unchanged");
         assertThat(ingressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
         assertThat(ingressFlow.getFlowStatus().getErrors()).isEmpty();
@@ -80,8 +79,6 @@ class IngressFlowPlanConverterTest {
         TransformActionConfiguration expected = new TransformActionConfiguration();
         expected.setName("passthrough.PassthroughTransformAction");
         expected.setType("org.deltafi.passthrough.action.RoteTransformAction");
-        expected.setConsumes("binary");
-        expected.setProduces("passthrough-binary");
         expected.setParameters(Map.of("resultType", "passthrough-binary"));
         return expected;
     }
@@ -89,7 +86,6 @@ class IngressFlowPlanConverterTest {
     LoadActionConfiguration expectedLoadAction() {
         LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration();
         loadActionConfiguration.setName("passthrough.PassthroughLoadAction");
-        loadActionConfiguration.setConsumes("passthrough-binary");
         loadActionConfiguration.setType("org.deltafi.passthrough.action.RoteLoadAction");
         loadActionConfiguration.setParameters(Map.of("domains", List.of("binary")));
         return loadActionConfiguration;

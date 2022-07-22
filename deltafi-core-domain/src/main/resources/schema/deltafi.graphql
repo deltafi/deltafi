@@ -129,8 +129,8 @@ Ingress and transform actions create contentReferences and express additional me
 Followon actions get the latest "state" of the transformed object from the top of the ProtocolLayer stack
 """
 type ProtocolLayer {
-  "The type of ProtocolLayer"
-  type: String!
+  # deprecated - remove in a future release
+  type: String
   "The action that produced this ProtocolLayer"
   action: String!
   "Content produced by the action"
@@ -140,7 +140,8 @@ type ProtocolLayer {
 }
 
 input ProtocolLayerInput {
-  type: String!
+  # deprecated - remove in a future release
+  type: String
   action: String!
   content: [ContentInput!]!
   metadata: [KeyValueInput!]

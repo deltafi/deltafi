@@ -29,7 +29,6 @@ import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
-import org.deltafi.core.domain.types.IngressFlow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -46,9 +45,6 @@ import static org.mockito.Mockito.*;
 class DeltaFilesServiceTest {
     @Mock
     IngressFlowService flowService;
-
-    @Mock
-    FlowAssignmentService flowAssignmentService;
 
     @Mock
     DeltaFileRepo deltaFileRepo;
@@ -81,7 +77,6 @@ class DeltaFilesServiceTest {
         final String flow = "theFlow";
         SourceInfo sourceInfo = new SourceInfo(null, flow, List.of());
 
-        when(flowService.getRunningFlowByName(sourceInfo.getFlow())).thenReturn(new IngressFlow());
         String did = UUID.randomUUID().toString();
 
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference()).build());
@@ -141,25 +136,30 @@ class DeltaFilesServiceTest {
         boolean foundKey4 = false;
 
         for (UniqueKeyValues u : uniqueMetadata) {
-            if (u.getKey().equals("k1")) {
-                assertEquals(2, u.getValues().size());
-                assertTrue(u.getValues().containsAll(List.of("1a", "1b")));
-                foundKey1 = true;
-            } else if (u.getKey().equals("k2")) {
-                assertEquals(1, u.getValues().size());
-                assertTrue(u.getValues().contains("val2"));
-                foundKey2 = true;
-            } else if (u.getKey().equals("k3")) {
-                assertEquals(2, u.getValues().size());
-                List<String> listWithNull = new ArrayList<>();
-                listWithNull.add("val3");
-                listWithNull.add(null);
-                assertTrue(u.getValues().containsAll(listWithNull));
-                foundKey3 = true;
-            } else if (u.getKey().equals("k4")) {
-                assertEquals(1, u.getValues().size());
-                assertTrue(u.getValues().contains("val4"));
-                foundKey4 = true;
+            switch (u.getKey()) {
+                case "k1":
+                    assertEquals(2, u.getValues().size());
+                    assertTrue(u.getValues().containsAll(List.of("1a", "1b")));
+                    foundKey1 = true;
+                    break;
+                case "k2":
+                    assertEquals(1, u.getValues().size());
+                    assertTrue(u.getValues().contains("val2"));
+                    foundKey2 = true;
+                    break;
+                case "k3":
+                    assertEquals(2, u.getValues().size());
+                    List<String> listWithNull = new ArrayList<>();
+                    listWithNull.add("val3");
+                    listWithNull.add(null);
+                    assertTrue(u.getValues().containsAll(listWithNull));
+                    foundKey3 = true;
+                    break;
+                case "k4":
+                    assertEquals(1, u.getValues().size());
+                    assertTrue(u.getValues().contains("val4"));
+                    foundKey4 = true;
+                    break;
             }
         }
 
@@ -247,10 +247,10 @@ class DeltaFilesServiceTest {
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .protocolStack(List.of(
-                        new ProtocolLayer("type", "action", List.of(
+                        new ProtocolLayer("action", List.of(
                                 new Content("name", Collections.emptyList(), contentReference1),
                                 new Content("name2", Collections.emptyList(), contentReference2)), Collections.emptyList()),
-                        new ProtocolLayer("type2", "action2", List.of(
+                        new ProtocolLayer("action2", List.of(
                                 new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
                 ))
                 .formattedData(List.of(

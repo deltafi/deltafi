@@ -26,7 +26,6 @@ mutation {
             type: TRANSFORM
             transform: {
                 protocolLayer: {
-                    type: "json-utf8-sample"
                     action: "SampleTransformAction"
                     content: [
                         {

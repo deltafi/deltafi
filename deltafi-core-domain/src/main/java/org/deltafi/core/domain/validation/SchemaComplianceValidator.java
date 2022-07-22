@@ -34,7 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class SchemaCompliancyValidator {
+public class SchemaComplianceValidator {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
@@ -43,7 +43,7 @@ public class SchemaCompliancyValidator {
     private final ActionSchemaService actionSchemaService;
     private final SchemaValidatorsConfig validatorsConfig;
 
-    public SchemaCompliancyValidator(ActionSchemaService actionSchemaService, DeltaFiProperties properties) {
+    public SchemaComplianceValidator(ActionSchemaService actionSchemaService, DeltaFiProperties properties) {
         this.actionSchemaService = actionSchemaService;
         this.properties = properties;
         validatorsConfig = new SchemaValidatorsConfig();

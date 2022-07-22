@@ -492,8 +492,6 @@ public class DecompressionTransformActionTest {
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
 
-        assertThat(tr.getType(), equalTo("binary"));
-
         assertThat(tr.getMetadata(), hasItem(new KeyValue("decompressionType", expectedDecompressionType)));
 
         assertThat(tr.getContent().size(), equalTo(expectedFiles.size()));
