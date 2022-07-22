@@ -32,9 +32,8 @@ module Deltafi
       SMOKE_TIMEOUT_MS = 5000
 
       GRAPHQL_URL = 'http://deltafi-core-domain-service/graphql'
-      GET_FLOWS = '{"query":"{ getAllFlows { ingress { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
+      GET_FLOWS = '{"query":"{ getRunningFlows { ingress { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
-      NOT_INSTALLED = {"name" => "smoke", "flowStatus" => {"state" => "MISSING"}}
       def initialize
         @smoke = {}
         @logger = Deltafi::Logger.new(STDOUT)
@@ -74,8 +73,7 @@ module Deltafi
       end
 
       def isFlowRunning(flows)
-        smoke = flows.find{ |flow| flow["name"] == "smoke" } || NOT_INSTALLED
-        return smoke["flowStatus"]["state"] == "RUNNING"
+        return flows.find{ |flow| flow["name"] == "smoke" }
       end
 
       def smoke_running?
@@ -87,7 +85,7 @@ module Deltafi
           @connected_to_graphql = false
           return false
         end
-        flows = response.parsed_response.dig('data', 'getAllFlows')
+        flows = response.parsed_response.dig('data', 'getRunningFlows')
         return isFlowRunning(flows["ingress"]) && isFlowRunning(flows["egress"])
       end
 

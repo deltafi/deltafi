@@ -59,6 +59,11 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().ingressFlows().name().parent().egressFlows().name().root(), typeRef);
     }
 
+    public static SystemFlows getRunningFlows(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetRunningFlowsGraphQLQuery.newRequest().build(),
+                new GetRunningFlowsProjectionRoot().ingress().name().parent().enrich().name().parent().egress().name().root(), SystemFlows.class);
+    }
+
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
                 new GetAllFlowsProjectionRoot().ingress().name().parent().egress().name().root(), SystemFlows.class);

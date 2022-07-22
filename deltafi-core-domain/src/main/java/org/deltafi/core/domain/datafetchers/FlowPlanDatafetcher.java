@@ -200,6 +200,14 @@ public class FlowPlanDatafetcher {
     }
 
     @DgsQuery
+    public SystemFlows getRunningFlows() {
+        return SystemFlows.newBuilder()
+                .ingress(ingressFlowService.getRunningFlows())
+                .enrich(enrichFlowService.getRunningFlows())
+                .egress(egressFlowService.getRunningFlows()).build();
+    }
+
+    @DgsQuery
     public SystemFlows getAllFlows() {
         return SystemFlows.newBuilder()
                 .ingress(ingressFlowService.getAll())

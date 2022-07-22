@@ -203,12 +203,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * Get all flows in a running state
      * @return all running flows
      */
-    public Collection<FlowT> getRunningFlows() {
+    public List<FlowT> getRunningFlows() {
         if (flowCache.isEmpty()) {
             refreshCache();
         }
 
-        return flowCache.values();
+        return flowCache.values().stream().collect(Collectors.toList());
     }
 
     /**

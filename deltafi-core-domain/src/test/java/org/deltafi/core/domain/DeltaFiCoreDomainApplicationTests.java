@@ -134,16 +134,16 @@ class DeltaFiCoreDomainApplicationTests {
 	DgsQueryExecutor dgsQueryExecutor;
 
 	@Autowired
-    DeltaFilesService deltaFilesService;
+	DeltaFilesService deltaFilesService;
 
 	@Autowired
-    DeltaFiProperties deltaFiProperties;
+	DeltaFiProperties deltaFiProperties;
 
 	@Autowired
 	DeletePolicyService deletePolicyService;
 
 	@Autowired
-    DeleteRunner deleteRunner;
+	DeleteRunner deleteRunner;
 
 	@Autowired
 	DeltaFileRepo deltaFileRepo;
@@ -160,8 +160,8 @@ class DeltaFiCoreDomainApplicationTests {
 	@Autowired
 	PluginRepository pluginRepository;
 
-    @Autowired
-    IngressFlowService ingressFlowService;
+	@Autowired
+	IngressFlowService ingressFlowService;
 
 	@Autowired
 	IngressFlowRepo ingressFlowRepo;
@@ -1289,6 +1289,28 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
 		assertThat(pluginFlows.getIngressFlows().get(0).getName()).isEqualTo("ingress");
 		assertThat(pluginFlows.getEgressFlows().get(0).getName()).isEqualTo("egress");
+	}
+
+	@Test
+	void getRunningFlows() {
+		clearForFlowTests();
+
+		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
+		assertTrue(FlowPlanDatafetcherTestHelper.startIngressFlow(dgsQueryExecutor));
+
+		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
+
+		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
+		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> "ingressFlow".equals(ingressFlows.get(0).getName()));
+		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> "egressFlow".equals(egressFlows.get(0).getName()));
+		assertThat(flows.getEnrich()).hasSize(0);
+
+		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
+		SystemFlows updatedFlows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
+		assertThat(updatedFlows.getIngress()).hasSize(1);
+		assertThat(updatedFlows.getEgress()).hasSize(0);
+		assertThat(updatedFlows.getEnrich()).hasSize(0);
 	}
 
 	@Test
