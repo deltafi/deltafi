@@ -77,7 +77,7 @@ public class RegistrationService {
 
         actions.forEach(action -> action.registerSchema(input));
         query = RegisterActionsGraphQLQuery.newRequest().actionRegistration(input).build();
-        scheduler.scheduleWithFixedDelay(this::registerActions, actionsProperties.getActionRegistrationInitialDelayMs(),
+        scheduler.scheduleWithFixedDelay(this::registerActions, 0,
                 actionsProperties.getActionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
     }
 

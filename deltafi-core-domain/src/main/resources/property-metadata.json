@@ -276,11 +276,6 @@
         "defaultValue": "100"
       },
       {
-        "key": "actions.action-registration-initial-delay-ms",
-        "description": "Initial delay in milliseconds before actions attempt to register.",
-        "defaultValue": "1000"
-      },
-      {
         "key": "actions.action-registration-period-ms",
         "description": "Frequency that the actions register with the core system.",
         "defaultValue": "10000"

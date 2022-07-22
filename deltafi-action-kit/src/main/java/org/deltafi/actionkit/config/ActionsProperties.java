@@ -26,7 +26,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ActionsProperties {
     private long actionPollingInitialDelayMs = 3000L;
     private long actionPollingPeriodMs = 100L;
-    private long actionRegistrationInitialDelayMs = 1000L;
     private long actionRegistrationPeriodMs = 10000L;
 
     private String hostname;

@@ -21,10 +21,7 @@ import lombok.AllArgsConstructor;
 import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.Flows;
 import org.deltafi.core.domain.generated.types.Result;
-import org.deltafi.core.domain.services.EgressFlowService;
-import org.deltafi.core.domain.services.EnrichFlowService;
-import org.deltafi.core.domain.services.IngressFlowService;
-import org.deltafi.core.domain.services.PluginVariableService;
+import org.deltafi.core.domain.services.*;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.IngressFlow;
@@ -43,6 +40,7 @@ public class PluginRegistryService {
     private final PluginVariableService pluginVariableService;
     private final PluginRepository pluginRepository;
     private final PluginValidator pluginValidator;
+    private final ActionSchemaService actionSchemaService;
 
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
@@ -85,6 +83,16 @@ public class PluginRegistryService {
         return getPluginsWithVariables().stream()
                 .map(plugin -> toPluginFlows(plugin, ingressFlows, enrichFlows, egressFlows))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Verify that all the actions listed in the plugin have registered themselves.
+     * @param pluginCoordinates whose actions will be checked for registration
+     * @return true if all the actions are registered
+     */
+    public boolean verifyActionsAreRegistered(PluginCoordinates pluginCoordinates) {
+        Plugin plugin = getPlugin(pluginCoordinates).orElseThrow(() -> new IllegalArgumentException("No plugin is registered with coordinates of " + pluginCoordinates.toString()));
+        return actionSchemaService.verifyActionsExist(plugin.actionNames());
     }
 
     private Flows toPluginFlows(Plugin plugin, Map<PluginCoordinates, List<IngressFlow>> ingressFlows, Map<PluginCoordinates, List<EnrichFlow>> enrichFlows, Map<PluginCoordinates, List<EgressFlow>> egressFlows) {

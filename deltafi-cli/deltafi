@@ -139,10 +139,9 @@ Commands:
   list-flows           list the flows in the system with their status
   list-plans           list all flow plans within deltafi
   list-policies        list delete policies
-  load-plan            load a flow plan to deltafi from a JSON file
+  load-plans           load the flow plans and variables for the given plugin
   load-policies        load delete policies from a JSON file
   load-rules           load ingress flow assignment rules from a JSON file
-  load-variables       load plugin variables
   mongo-cli            launch the mongo CLI
   mongo-eval           eval a command in mongo
   mongo-migrate        run mongo migrations
@@ -233,17 +232,14 @@ case "$1" in
   list-policies)
     "$DELTAFICLI_WORKDIR/commands/list-policies" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-policies.log"
     ;;
-  load-plan)
-    "$DELTAFICLI_WORKDIR/commands/load-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-plan.log"
+  load-plans)
+    "$DELTAFICLI_WORKDIR/commands/load-plans" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-plans.log"
     ;;
   load-policies)
     "$DELTAFICLI_WORKDIR/commands/load-policies" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-policies.log"
     ;;
   load-rules)
     "$DELTAFICLI_WORKDIR/commands/load-rules" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-rules.log"
-    ;;
-  load-variables)
-    "$DELTAFICLI_WORKDIR/commands/load-variables" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-variables.log"
     ;;
   mongo-cli)
     "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@

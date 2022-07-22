@@ -16,11 +16,9 @@ Options:
 }
 
 TMP_SOURCE_PLUGIN_FILE="/tmp/.deltafi-source-plugin.$$"
-TMPFILE="/tmp/.deltafi-register-plugin-manifest.$$"
 
 cleanup() {
   rm -f $TMP_SOURCE_PLUGIN_FILE
-  rm -f $TMPFILE
   exit
 }
 
@@ -75,18 +73,6 @@ if [ ! -f "$PLUGIN_MANIFEST" ]; then
   exit 1
 fi
 
-load_plan() {
-  if [[ ! "${1}" =~ "variables.json" ]]; then
-    deltafi load-plan $1 $2
-  fi
-}
-
-fail() {
-  cli_log "${red}$PLUGIN_DIRECTORY: $1${normal}"
-  echo -e "${red}Error: $2${normal}"
-  cleanup
-}
-
 cli_log "${bold}$PLUGIN_NAME${normal}: Installing plugin"
 helm upgrade --install --wait \
   --values $CHARTS_DIRECTORY/values.yaml \
@@ -100,18 +86,7 @@ FLOWS_DIRECTORY="$PLUGIN_DIRECTORY/flows"
 if [ ! -d "$FLOWS_DIRECTORY" ]; then
   cli_log "${yellow}$PLUGIN_NAME: Plugin directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
 else
-  cli_log "${bold}$PLUGIN_NAME${normal}: Loading plugin flow plans ... waiting for action registration"
-  sleep 15
-
-  JSON=$(cat "$PLUGIN_MANIFEST")
-  echo $JSON | jq -r '.pluginCoordinates' > $TMP_SOURCE_PLUGIN_FILE
-  export -f load_plan
-
-  if [[ -f $FLOWS_DIRECTORY/variables.json ]]; then
-    deltafi load-variables "${FLOWS_DIRECTORY}/variables.json" "$TMP_SOURCE_PLUGIN_FILE"
-  fi
-
-  find $FLOWS_DIRECTORY -name "*.json" -exec bash -c "load_plan \"{}\" \"$TMP_SOURCE_PLUGIN_FILE\"" \;
+  deltafi load-plans "$PLUGIN_DIRECTORY"
 fi
 
 cli_log "${bold}$PLUGIN_NAME${normal}: Plugin install complete."

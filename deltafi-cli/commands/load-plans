@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: load-plans
+
+Usage:
+  load-plans PLUGIN_DIRECTORY
+  
+Options:
+  -h, --help  Show help"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-load-plans.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+PLUGIN_DIRECTORY=${ARGS[1]}
+if [ ! -d "$PLUGIN_DIRECTORY" ]; then
+  cli_log "${red}$PLUGIN_DIRECTORY: Plugin directory not found${normal}"
+  exit 1
+fi
+PLUGIN_DIRECTORY=$(cd $PLUGIN_DIRECTORY && pwd)
+
+FLOWS_DIRECTORY="$PLUGIN_DIRECTORY/flows"
+if [ ! -d "$FLOWS_DIRECTORY" ]; then
+  cli_log "${yellow}$PLUGIN_NAME: Plugin directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
+  exit 1
+fi
+
+PLUGIN_MANIFEST="$PLUGIN_DIRECTORY/charts/files/plugin.json"
+if [ ! -f "$PLUGIN_MANIFEST" ]; then
+  cli_log "${red}$PLUGIN_DIRECTORY: Plugin manifest (plugin.json) not found in ${bold}charts/files${normal}${red} subdirectory. Make sure the project uses the generate-plugin-manifest gradle plugin.${normal}"
+  exit 1
+fi
+
+PLUGIN_ID=$(cat "$PLUGIN_MANIFEST" | jq -r '.pluginCoordinates')
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+
+read_file() {
+  FLOW_PLAN_FILE="$@"
+  if [ ! -f "$FLOW_PLAN_FILE" ]; then
+    cli_log "${yellow}${FLOW_PLAN_FILE}: No such file${normal}"
+    return 1
+  fi
+
+  JSON=$(cat "$FLOW_PLAN_FILE")
+
+  # add the source plugin info into the JSON if it does not already exist
+  if [ "$( jq 'has("sourcePlugin")' <<< $JSON )" == "false" ]; then
+    JSON=$(echo "$JSON" | jq --argjson json "$PLUGIN_ID" '. + {sourcePlugin: $json}')
+  fi
+
+  echo "$JSON"
+}
+
+execute_graphql() {
+  truncate --size 0 ${TMPFILE}
+
+  local POST_QUERY="$@"
+
+  local RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+  if [[ "$RESPONSE_CODE" != "200" ]]; then
+    echo -e "$RESPONSE_CODE Error: $(cat ${TMPFILE})"
+    return 1
+  else
+    ERRORS=$(cat ${TMPFILE} | jq "select(.errors) | .errors[] | .message")
+    if [[ "$ERRORS" != "" ]]; then
+      echo -e "$ERRORS"
+      return 1
+    else
+      cat "$TMPFILE"
+      return 0
+    fi
+  fi
+}
+
+load_variables() {
+  local VARIABLES_FILE="$@"
+  local BASENAME="$(basename "$VARIABLES_FILE")"
+  local JSON=$(read_file "$VARIABLES_FILE")
+
+  local VARIABLES="{\"variables\": $JSON }"
+  local QUERY="mutation(\$variables: PluginVariablesInput!) { savePluginVariables(pluginVariablesInput: \$variables)}"
+  local POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+  MUTATION_RESPONSE=$(execute_graphql "$POST_QUERY")
+  MUTATION_RETURN_CODE=$?
+
+  if [[ "$MUTATION_RETURN_CODE" == "0" ]]; then
+    cli_log "Successfully loaded variables from file ${cyan}${BASENAME}${normal}"
+  else
+    cli_log "${red}${BASENAME}: Loading variables failed${normal}"
+    echo -e "${red}$MUTATION_RESPONSE${normal}"
+    # if the variables can't be loaded do not load the flow plans
+    exit 1
+  fi
+}
+
+load_plan() {
+  local FLOW_PLAN_FILE="$@"
+  local BASENAME="$(basename $FLOW_PLAN_FILE)"
+  local JSON=$(read_file "$FLOW_PLAN_FILE")
+
+  local VARIABLES="{\"flowPlan\": $JSON }"
+
+  if [[ "$JSON" == *"loadAction"* ]]; then
+    local LOAD_TYPE="ingress flow plan"
+    local OPERATION_NAME="saveIngressFlowPlan"
+    local QUERY="mutation(\$flowPlan: IngressFlowPlanInput!) {saveIngressFlowPlan(ingressFlowPlan: \$flowPlan) { name }}"
+  elif [[ "$JSON" == *"egressAction"* ]]; then
+    local LOAD_TYPE="egress flow plan"
+    local OPERATION_NAME="saveEgressFlowPlan"
+    local QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
+  elif [[ "$JSON" == *"enrichActions"* ]]; then
+    local LOAD_TYPE="enrich flow plan"
+    local OPERATION_NAME="saveEnrichFlowPlan"
+    local QUERY="mutation(\$flowPlan: EnrichFlowPlanInput!) {saveEnrichFlowPlan(enrichFlowPlan: \$flowPlan) { name }}"
+  else
+    cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must contain a load action, enrich actions or an egress action${normal}"
+    echo -e "${red}Loading flow plan failed, plan must contain a load action, enrich actions or an egress action${normal}"
+    return 0
+  fi
+
+  local POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+  MUTATION_RESPONSE=$(execute_graphql "$POST_QUERY")
+  MUTATION_RETURN_CODE=$?
+
+  if [[ "$MUTATION_RETURN_CODE" == "0" ]]; then
+    local FLOW_PLAN_NAME=$(echo "$MUTATION_RESPONSE" | jq -r ".data.${OPERATION_NAME}.name")
+    cli_log "Successfully loaded $LOAD_TYPE ${FLOW_PLAN_NAME} from file ${cyan}${BASENAME}${normal}"
+  else
+    cli_log "${red}${BASENAME}: Loading $LOAD_TYPE failed${normal}"
+    echo -e "${red}$MUTATION_RESPONSE${normal}"
+  fi
+}
+
+are_actions_registered() {
+  local VARIABLES=$(echo "{}" |  jq --argjson pluginId "$PLUGIN_ID" '. + {pluginCoordinates: $pluginId}')
+  local QUERY="query(\$pluginCoordinates: PluginCoordinatesInput!) {verifyActionsAreRegistered(pluginCoordinates: \$pluginCoordinates)}"
+  local POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+  QUERY_RESPONSE=$(execute_graphql "$POST_QUERY")
+  QUERY_RETURN_CODE=$?
+
+  if [[ "$QUERY_RETURN_CODE" == "0" ]]; then
+    local REGISTERED=$(echo -e "${QUERY_RESPONSE}" | jq -r ".data.verifyActionsAreRegistered")
+    if [[ "$REGISTERED" == "true" ]]; then
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+wait_for_action_registration() {
+  SECONDS=0
+  until are_actions_registered
+  do
+    if (( SECONDS > 60 )); then
+       PRETTY_PLUGIN_ID=$(jq "(.groupId + \":\" + .artifactId + \":\" + .version)" <<< "$PLUGIN_ID")
+       cli_log "${yellow}One or more required action schemas are missing for plugin: ${PRETTY_PLUGIN_ID}${normal}"
+       echo -e "${yellow}Warning: This may result in flow errors${normal}"
+       return 1
+    fi
+
+    sleep 1
+  done
+}
+
+cli_log "${bold}$PLUGIN_NAME${normal}: Loading plugin variables and flow plans ... waiting for required actions to register"
+wait_for_action_registration
+
+if [[ -f $FLOWS_DIRECTORY/variables.json ]]; then
+  load_variables "${FLOWS_DIRECTORY}/variables.json"
+fi
+
+for flowFile in "$FLOWS_DIRECTORY"/*.json; do
+  if [[ ! "${flowFile}" =~ "variables.json" ]]; then
+    load_plan "$flowFile"
+  fi
+done
+
+cleanup

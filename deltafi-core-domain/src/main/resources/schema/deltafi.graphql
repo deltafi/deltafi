@@ -374,6 +374,7 @@ type Query {
   exportConfigAsYaml: String!
 
   plugins:  [Plugin!]!
+  verifyActionsAreRegistered(pluginCoordinates: PluginCoordinatesInput!) : Boolean
 }
 
 type Mutation {

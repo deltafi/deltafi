@@ -2439,6 +2439,32 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(propertySetsUpdated).isZero();
 	}
 
+	@Test
+	void testActionRegisteredQuery() {
+		actionSchemaRepo.deleteAll();
+		OffsetDateTime threshold = OffsetDateTime.now();
+
+		// name will match and time matches
+		TransformActionSchema transformActionSchema = new TransformActionSchema();
+		transformActionSchema.setId("transformAction");
+		transformActionSchema.setLastHeard(threshold.plusSeconds(1));
+
+		// name will match but time is too old
+		LoadActionSchema loadActionSchema = new LoadActionSchema();
+		loadActionSchema.setId("loadAction");
+		loadActionSchema.setLastHeard(threshold.minusSeconds(1));
+
+		// time matches but name does not match
+		FormatActionSchema formatActionSchema = new FormatActionSchema();
+		formatActionSchema.setId("otherFormatAction");
+		formatActionSchema.setLastHeard(threshold.plusMinutes(1));
+
+		actionSchemaRepo.saveAll(List.of(transformActionSchema, loadActionSchema, formatActionSchema));
+
+		assertThat(actionSchemaRepo.countAllByIdInAndLastHeardGreaterThanEqual(List.of("transformAction", "loadAction", "formatAction"), threshold)).isEqualTo(1);
+		assertThat(actionSchemaRepo.count()).isEqualTo(3);
+	}
+
 	String getValue(String propertySet) {
 		return getValue(propertySet, EDITABLE);
 	}

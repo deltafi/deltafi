@@ -79,7 +79,7 @@ class PluginRegistryServiceTest {
         MockitoAnnotations.openMocks(this);
         List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, pluginVariableService, actionSchemaService, redisService);
         List<PluginUninstallCheck> checkers = List.of(ingressFlowService, enrichFlowService, egressFlowService);
-        pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService, pluginVariableService, pluginRepository, pluginValidator, checkers, cleaners);
+        pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService, pluginVariableService, pluginRepository, pluginValidator, actionSchemaService, checkers, cleaners);
     }
 
     @Test

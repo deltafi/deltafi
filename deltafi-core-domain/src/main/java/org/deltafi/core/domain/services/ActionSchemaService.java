@@ -27,6 +27,7 @@ import org.deltafi.core.domain.api.types.LoadActionSchema;
 import org.deltafi.core.domain.api.types.TransformActionSchema;
 import org.deltafi.core.domain.api.types.ValidateActionSchema;
 import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginCleaner;
@@ -43,13 +44,20 @@ public class ActionSchemaService implements PluginCleaner {
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final ActionSchemaRepo actionSchemaRepo;
+    private final DeltaFiProperties deltaFiProperties;
 
-    public ActionSchemaService(ActionSchemaRepo actionSchemaRepo) {
+    public ActionSchemaService(ActionSchemaRepo actionSchemaRepo, DeltaFiProperties deltaFiProperties) {
         this.actionSchemaRepo = actionSchemaRepo;
+        this.deltaFiProperties = deltaFiProperties;
     }
 
     public List<ActionSchema> getAll() {
         return actionSchemaRepo.findAll();
+    }
+
+    public boolean verifyActionsExist(List<String> actionNames) {
+        OffsetDateTime threshold = OffsetDateTime.now().minus(deltaFiProperties.getActionInactivityThreshold());
+        return actionNames.size() == actionSchemaRepo.countAllByIdInAndLastHeardGreaterThanEqual(actionNames, threshold);
     }
 
     public Optional<ActionSchema> getByActionClass(String id) {

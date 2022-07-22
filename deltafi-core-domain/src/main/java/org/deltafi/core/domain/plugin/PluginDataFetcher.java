@@ -32,13 +32,18 @@ import java.util.Collection;
 @DgsComponent
 @RequiredArgsConstructor
 public class PluginDataFetcher {
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final PluginRegistryService pluginRegistryService;
 
     @DgsQuery
     public Collection<Plugin> plugins() {
         return pluginRegistryService.getPluginsWithVariables();
+    }
+
+    @DgsQuery
+    public boolean verifyActionsAreRegistered(PluginCoordinates pluginCoordinates) {
+        return pluginRegistryService.verifyActionsAreRegistered(pluginCoordinates);
     }
 
     @DgsMutation
