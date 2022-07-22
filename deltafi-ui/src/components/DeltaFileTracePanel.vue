@@ -331,7 +331,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .attr("y", function (d, i) {
       return i * rowWidth + rowWidth * 0.8;
     })
-    .attr("dx", -2) // padding-right
+    .attr("dx", -5) // padding-right
     .attr("dy", 13) // vertical-align: middle
     .attr("text-anchor", "end") // text-align: right
     .text(function (d) {

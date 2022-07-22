@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added support for Resuming Errors with metadata updates (#186)
 - Added support for Replaying DeltaFiles with metadata updates (#195)
 
+### Fixed
+
+- Bug where trace chart action names would sometimes clash with time labels (#201)
+
 ## [0.96.1]
 
 ### Fixed
