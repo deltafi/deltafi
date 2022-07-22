@@ -18,14 +18,15 @@
 
 import useGraphQL from './useGraphQL'
 
-export default function useErrorRetry() {
+export default function useErrorResume() {
   const { response, queryGraphQL } = useGraphQL();
-
-  const buildRetryQuery = (dids: Array<string>) => {
+  const buildRetryQuery = (dids: Array<string>, removeSourceMetadata: Array<string>, replaceSourceMetadata: Array<Object>) => {
     return {
       retry: {
         __args: {
-          dids: dids
+          dids: dids,
+          removeSourceMetadata: removeSourceMetadata,
+          replaceSourceMetadata: replaceSourceMetadata
         },
         did: true,
         success: true,
@@ -34,12 +35,12 @@ export default function useErrorRetry() {
     };
   };
 
-  const retry = async (dids: Array<string>) => {
-    await queryGraphQL(buildRetryQuery(dids), "useErrorsRetry", "mutation");
+  const resume = async (dids: Array<string>,removeSourceMetadata: Array<string>,replaceSourceMetadata: Array<Object>) => {
+    await queryGraphQL(buildRetryQuery(dids,removeSourceMetadata,replaceSourceMetadata), "useErrorsResume", "mutation");
     return Promise.resolve(response);
   };
 
   return {
-    retry,
+    resume,
   };
 }

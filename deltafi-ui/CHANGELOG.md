@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed Retry to Resume (#193)
+- Added support for Resuming Errors with metadata updates (#186)
+- Added support for Replaying DeltaFiles with metadata updates (#195)
+
+## [0.96.1]
+
 ### Fixed
 
 - Bug where `Total File Size` field on DeltaFile viewer was showing wrong value (#199)
@@ -282,7 +290,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.0...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.1...main
+[0.96.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.0...0.96.1
 [0.96.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.4...0.96.0
 [0.95.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.3...0.95.4
 [0.95.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.2...0.95.3

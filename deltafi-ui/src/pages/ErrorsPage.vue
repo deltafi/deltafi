@@ -91,6 +91,7 @@
     </Panel>
     <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
+    <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" />
   </div>
 </template>
 
@@ -103,7 +104,6 @@ import Panel from "primevue/panel";
 import Menu from "primevue/menu";
 import ConfirmDialog from "primevue/confirmdialog";
 import ContextMenu from "primevue/contextmenu";
-import { useConfirm } from "primevue/useconfirm";
 import ErrorViewer from "@/components/ErrorViewer.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
@@ -112,21 +112,19 @@ import Paginator from "primevue/paginator";
 import Timestamp from "@/components/Timestamp.vue";
 import useErrors from "@/composables/useErrors";
 import useErrorCount from "@/composables/useErrorCount";
-import useErrorRetry from "@/composables/useErrorRetry";
+import MetadataDialog from "@/components/MetadataDialog.vue";
 import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref, computed, onUnmounted, onMounted, inject } from "vue";
 
-const maxRetrySuccessDisplay = 10;
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
+const metadataDialog = ref();
 
 const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount, fetchErrorCountSince } = useErrorCount();
-const { retry } = useErrorRetry();
-const confirm = useConfirm();
 const notify = useNotifications();
 const loading = ref(true);
 const menu = ref();
@@ -179,10 +177,10 @@ const menuItems = ref([
     },
   },
   {
-    label: "Retry Selected",
+    label: "Resume Selected",
     icon: "fas fa-redo fa-fw",
     command: () => {
-      RetryClickConfirm();
+      metadataDialog.value.showConfirmDialog("Resume");
     },
     disabled: () => {
       return selectedErrors.value.length == 0;
@@ -266,58 +264,13 @@ const onAcknowledged = (dids, reason) => {
   fetchErrorCount();
   fetchErrors();
 };
-const RetryClickConfirm = () => {
+
+const filterSelectedDids = computed(() => {
   let dids = selectedErrors.value.map((selectedError) => {
     return selectedError.did;
   });
-  let pluralized = pluralize(dids.length, "DeltaFile");
-  let pluralizedErrors = pluralize(dids.length, "Error");
-  confirm.require({
-    header: `Retry ${pluralizedErrors}`,
-    message: `Are you sure you want to retry ${pluralized}?`,
-    accept: () => {
-      RetryClickAction(dids);
-    },
-  });
-};
-const RetryClickAction = async (dids) => {
-  loading.value = true;
-  try {
-    const response = await retry(dids);
-    const result = response.value.data.retry.find((r) => {
-      return r.did == dids.value;
-    });
-    if (response.value.data !== undefined && response.value.data !== null) {
-      let successRetry = new Array();
-      for (const retryStatus of response.value.data.retry) {
-        if (retryStatus.success) {
-          successRetry.push(retryStatus);
-        } else {
-          notify.error(`Retry request failed for ${retryStatus.did}`, retryStatus.error);
-        }
-      }
-      if (successRetry.length > 0) {
-        let successfulDids = successRetry.map((retryStatus) => {
-          return retryStatus.did;
-        });
-        if (successfulDids.length > maxRetrySuccessDisplay) {
-          successfulDids = successfulDids.slice(0, maxRetrySuccessDisplay);
-          successfulDids.push("...");
-        }
-        let pluralized = pluralize(dids.length, "DeltaFile");
-        notify.success(`Retry request sent successfully for ${pluralized}`, successfulDids.join(", "));
-      }
-      fetchErrors();
-      selectedErrors.value = [];
-      fetchErrorCount();
-      loading.value = false;
-    } else {
-      throw Error(result.error);
-    }
-  } catch (error) {
-    notify.error("Retry request failed", error);
-  }
-};
+  return dids;
+});
 
 const filterErrors = (actions) => {
   return actions.filter((action) => {

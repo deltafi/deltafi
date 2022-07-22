@@ -109,6 +109,7 @@ export default function useDeltaFiles() {
         contentDeletedReason: true,
         errorAcknowledged: true,
         errorAcknowledgedReason: true,
+        replayed: true,
       }
     }
   };

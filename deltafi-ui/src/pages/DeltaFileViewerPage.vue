@@ -38,9 +38,7 @@
       </div>
     </div>
     <div v-else-if="loaded">
-      <Message v-if="contentDeleted" severity="warn" :closable="false">
-        The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }}
-      </Message>
+      <Message v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileInfoPanel :delta-file-data="deltaFile" />
@@ -77,6 +75,7 @@
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataViewer ref="metadataViewer" :metadata-references="allMetadata" />
+    <MetadataDialog ref="metadataDialog" :did="[did]" />
   </div>
 </template>
 
@@ -88,6 +87,7 @@ import ConfirmDialog from "primevue/confirmdialog";
 import Menu from "primevue/menu";
 import ProgressBar from "primevue/progressbar";
 import MetadataViewer from "@/components/MetadataViewer.vue";
+import MetadataDialog from "@/components/MetadataDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";
@@ -98,23 +98,19 @@ import HighlightedCode from "@/components/HighlightedCode.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useErrorCount from "@/composables/useErrorCount";
-import useErrorRetry from "@/composables/useErrorRetry";
 import useNotifications from "@/composables/useNotifications";
 import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import { reactive, ref, computed, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useConfirm } from "primevue/useconfirm";
 import ScrollTop from "primevue/scrolltop";
-import Message from 'primevue/message';
+import Message from "primevue/message";
 
 const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
-const confirm = useConfirm();
 const route = useRoute();
 const router = useRouter();
 const uiConfig = inject("uiConfig");
 const { data: deltaFile, getDeltaFile, loaded, loading } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
-const { retry } = useErrorRetry();
 const notify = useNotifications();
 const showForm = ref(true);
 const did = ref(null);
@@ -127,6 +123,7 @@ const rawJSONDialog = reactive({
   body: null,
 });
 const metadataViewer = ref();
+const metadataDialog = ref();
 const menu = ref();
 const staticMenuItems = reactive([
   {
@@ -145,6 +142,14 @@ const staticMenuItems = reactive([
     },
   },
   {
+    label: "Replay",
+    icon: "fas fa-sync fa-fw",
+    visible: () => !beenReplayed.value,
+    command: () => {
+      metadataDialog.value.showConfirmDialog("Replay");
+    },
+  },
+  {
     separator: true,
     visible: () => isError.value,
   },
@@ -157,11 +162,11 @@ const staticMenuItems = reactive([
     },
   },
   {
-    label: "Retry Failed Actions",
+    label: "Resume",
     icon: "fas fa-redo fa-fw",
     visible: () => isError.value,
     command: () => {
-      retryConfirm();
+      metadataDialog.value.showConfirmDialog("Resume");
     },
   },
 ]);
@@ -173,8 +178,8 @@ const refreshButtonIcon = computed(() => {
 });
 
 const contentDeleted = computed(() => {
-  return (loaded.value && deltaFile.contentDeleted !== null);
-})
+  return loaded.value && deltaFile.contentDeleted !== null;
+});
 
 const menuItems = computed(() => {
   let items = staticMenuItems;
@@ -217,6 +222,10 @@ const validDID = computed(() => {
 
 const isError = computed(() => {
   return deltaFile.stage === "ERROR";
+});
+
+const beenReplayed = computed(() => {
+  return deltaFile.replayed === null ? false : true;
 });
 
 const hasMetadata = computed(() => {
@@ -272,31 +281,6 @@ const onAcknowledged = (_, reason) => {
   notify.success("Successfully Acknowledged Error", reason);
   fetchErrorCount();
   loadDeltaFileData();
-};
-
-const retryConfirm = () => {
-  confirm.require({
-    message: "Are you sure you want to retry this DeltaFile?",
-    accept: () => {
-      requestRetry();
-    },
-  });
-};
-
-const requestRetry = async () => {
-  try {
-    const response = await retry([did.value]);
-    const result = response.value.data.retry.find((r) => {
-      return r.did == did.value;
-    });
-    if (result.success) {
-      notify.success("Retry request sent successfully", did.value);
-    } else {
-      throw Error(result.error);
-    }
-  } catch (error) {
-    notify.error("Retry request failed", error);
-  }
 };
 
 watch(
