@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.96.2] - 2022-07-22
+
+### Added
 - KinD: Detect arm/Apple Silicon and load overrides for arm64 compatible Bitnami images
 - KinD: `deltafi` CLI wrapper that allows CLI to be used natively with KinD
 - KinD: `cluster` command output cleaned up and streamlined
@@ -19,8 +37,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Deprecated
 - Consumes/produces configuration for Transform and Load Actions
 
-### Removed
-
 ### Fixed
 - Parameter schemas will now properly validate with list and map variable values
 - DeltaFi CLI checks for dependencies (`jq`, `kubectl`, etc.)
@@ -28,13 +44,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Null/empty array issue with includeIngressFlows
 - Mount the keyStore and trustStore directly (RKE compatability)
 - KinD: Fix for starting cluster with a redundant config map
+- New base images to deal with FIPS issues
 
 ### Tech-Debt/Refactor
 - Nodemonitor logging cleaned up, converted to structured logs
 - Warnings on Quarkus app startup resolved
 - Reduced Loki probe time
-
-### Security
 
 ### Upgrade and Migration
 - Upgraded MongoDB to `5.0.6-debian-10-r0`
@@ -384,7 +399,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.1...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.2...main
+[0.96.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.1...0.96.2
 [0.96.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.0...0.96.1
 [0.96.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...0.96.0
 [0.95.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.3...0.95.4
