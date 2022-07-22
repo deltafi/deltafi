@@ -115,6 +115,10 @@ input TransformActionSchemaInput {
     id: String!
     paramClass: String!
     schema: JSON
+    # deprecated - remove in future release
+    consumes: String
+    # deprecated - remove in future release
+    produces: String
 }
 
 type ValidateActionSchema implements ActionSchema {
