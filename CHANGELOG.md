@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: `cluster` command output cleaned up and streamlined
 - Pod memory and CPU metrics enabled in the kubernetes dashboard
 - `deltafi mongo-eval` command added
+- `deltafi` CLI `load-plans` command now consolidates the behavior of 'load-plan' and 'load-variables'
 
 ### Changed
 - `deltafi uninstall` command removes collections from the deltafi db in mongo
@@ -36,6 +37,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Deprecated
 - Consumes/produces configuration for Transform and Load Actions
+
+### Removed
+- 'deltafi` CLI: Removed `load-plan` and `load-variables` commands
 
 ### Fixed
 - Parameter schemas will now properly validate with list and map variable values
