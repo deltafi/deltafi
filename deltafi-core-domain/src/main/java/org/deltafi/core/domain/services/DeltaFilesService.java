@@ -31,6 +31,7 @@ import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
 import org.deltafi.core.domain.exceptions.UnexpectedActionException;
 import org.deltafi.core.domain.exceptions.UnknownTypeException;
 import org.deltafi.core.domain.generated.types.*;
@@ -61,6 +62,9 @@ import static org.deltafi.core.domain.repo.DeltaFileRepoImpl.SOURCE_INFO_METADAT
 @Slf4j
 public class DeltaFilesService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
+    public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
+
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
@@ -278,29 +282,33 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+        if (deltaFile.hasErrorDomain()) {
+            return processErrorEvent(deltaFile, event);
+        } else {
+            return advanceAndSave(processErrorEvent(deltaFile, event));
+        }
+    }
+
+    @MongoRetryable
+    public DeltaFile processErrorEvent(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
         if (deltaFile.noPendingAction(event.getAction())) {
             throw new UnexpectedActionException(event.getAction(), deltaFile.getDid(), deltaFile.queuedActions());
         }
 
-        ErrorInput errorInput = event.getError();
-
+        deltaFile.errorAction(event);
         if (deltaFile.hasErrorDomain()) {
+            ErrorInput errorInput = event.getError();
             log.error("DeltaFile with error domain has thrown an error:\n" +
                     "Error DID: " + deltaFile.getDid() + "\n" +
                     "Errored in action : " + event.getAction() + "\n" +
                     "Inception Error cause: " + errorInput.getCause() + "\n" +
                     "Inception Error context: " + errorInput.getContext() + "\n");
-            deltaFile.errorAction(event, errorInput.getCause(), errorInput.getContext());
-
-            return deltaFile;
+        } else {
+            DeltaFile errorDeltaFile = buildErrorDeltaFile(deltaFile, event);
+            advanceAndSave(errorDeltaFile);
         }
 
-        deltaFile.errorAction(event, errorInput.getCause(), errorInput.getContext());
-
-        DeltaFile errorDeltaFile = buildErrorDeltaFile(deltaFile, event);
-        advanceAndSave(errorDeltaFile);
-
-        return advanceAndSave(deltaFile);
+        return deltaFile;
     }
 
     private static DeltaFile buildErrorDeltaFile(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
@@ -346,8 +354,23 @@ public class DeltaFilesService {
         return new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), MediaType.APPLICATION_JSON_VALUE);
     }
 
+    public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile) {
+        OffsetDateTime now = OffsetDateTime.now();
+        ActionEventInput noEgressFlowError = ActionEventInput.newBuilder()
+                .did(deltaFile.getDid())
+                .action(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION)
+                .start(now)
+                .stop(now)
+                .error(ErrorInput.newBuilder()
+                        .cause(NO_EGRESS_CONFIGURED_CAUSE)
+                        .context(NO_EGRESS_CONFIGURED_CONTEXT)
+                        .build())
+                .build();
+        return noEgressFlowError;
+    }
+
     @MongoRetryable
-    public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) {
+    public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
         List<SplitInput> splits = event.getSplit();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
@@ -389,7 +412,7 @@ public class DeltaFilesService {
                         .filtered(false)
                         .build();
 
-                enqueueActions.addAll(stateMachine.advance(child));
+                enqueueActions.addAll(advanceOnly(child));
 
                 calculateTotalBytes(child);
 
@@ -401,7 +424,7 @@ public class DeltaFilesService {
             deltaFile.splitAction(event);
         }
 
-        stateMachine.advance(deltaFile);
+        advanceOnly(deltaFile);
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileRepo.save(deltaFile);
@@ -432,7 +455,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile formatMany(DeltaFile deltaFile, ActionEventInput event) {
+    public DeltaFile formatMany(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
         List<FormatInput> formatInputs = event.getFormatMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
@@ -470,7 +493,7 @@ public class DeltaFilesService {
 
                 child.setFormattedData(List.of(formattedData));
 
-                enqueueActions.addAll(stateMachine.advance(child));
+                enqueueActions.addAll(advanceOnly(child));
 
                 calculateTotalBytes(child);
 
@@ -482,7 +505,7 @@ public class DeltaFilesService {
             deltaFile.splitAction(event);
         }
 
-        stateMachine.advance(deltaFile);
+        advanceOnly(deltaFile);
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileRepo.save(deltaFile);
@@ -562,7 +585,7 @@ public class DeltaFilesService {
         }
     }
 
-    public List<RetryResult> replay(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
+    public List<RetryResult> replay(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata)  {
         List<DeltaFile> parentDeltaFiles = new ArrayList<>();
         List<DeltaFile> childDeltaFiles = new ArrayList<>();
         List<ActionInput> enqueueActions = new ArrayList<>();
@@ -614,7 +637,7 @@ public class DeltaFilesService {
 
                             applyRetryOverrides(child, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
 
-                            enqueueActions.addAll(stateMachine.advance(child));
+                            enqueueActions.addAll(advanceOnly(child));
 
                             if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
                                 delete(Collections.singletonList(deltaFile), "on completion", false);
@@ -698,17 +721,46 @@ public class DeltaFilesService {
         return new ArrayList<>(keyValues.values());
     }
 
+    /**
+     * Advance the DeltaFile to the next step using the state machine.
+     *
+     * @param deltaFile the DeltaFile to advance through the state machine
+     * @return list of next pending action(s)
+     * @throws MissingEgressFlowException if state machine would advance DeltaFile into EGRESS stage but no EgressFlow was configured.
+     */
+    private List<ActionInput> advanceOnly(DeltaFile deltaFile) throws MissingEgressFlowException {
+        // MissingEgressFlowException is not expected when a DeltaFile is entering the INGRESS stage
+        // such as from replay or split, since an ingress flow requires at least the Load action to
+        // be queued, nor when handling an event for any egress flow action, e.g. format.
+        return stateMachine.advance(deltaFile);
+    }
+
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
-        List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
-        if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
-            delete(Collections.singletonList(deltaFile), "on completion", false);
-        } else {
-            deltaFileRepo.save(deltaFile);
-            if (!enqueueActions.isEmpty()) {
-                enqueueActions(enqueueActions);
+        try {
+            List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
+            if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
+                delete(Collections.singletonList(deltaFile), "on completion", false);
+            } else {
+                deltaFileRepo.save(deltaFile);
+                if (!enqueueActions.isEmpty()) {
+                    enqueueActions(enqueueActions);
+                }
             }
+        } catch (MissingEgressFlowException e) {
+            handleMissingEgressFlow(deltaFile);
         }
         return deltaFile;
+    }
+
+    private void handleMissingEgressFlow(DeltaFile deltaFile) {
+        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
+        try {
+            processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile));
+        } catch (JsonProcessingException e) {
+            log.error("Unable to create error file: " + e.getMessage());
+        }
+        deltaFile.setStage(DeltaFileStage.ERROR);
+        deltaFileRepo.save(deltaFile);
     }
 
     public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {

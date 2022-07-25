@@ -27,6 +27,7 @@ import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
+import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Test;
@@ -217,7 +218,7 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testRequeue_actionNotFound() {
+    void testRequeue_actionNotFound() throws MissingEgressFlowException {
         OffsetDateTime modified = OffsetDateTime.now();
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.getActions().add(Action.newBuilder().name("action").state(ActionState.QUEUED).modified(modified).build());

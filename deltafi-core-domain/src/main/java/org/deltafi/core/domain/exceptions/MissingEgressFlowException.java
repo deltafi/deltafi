@@ -15,11 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.constant;
+package org.deltafi.core.domain.exceptions;
 
-public class DeltaFiConstants {
-    public static final String MATCHES_ANY = "any";
-    public static final String INGRESS_ACTION = "IngressAction";
-    public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
-    public static final String AUTO_RESOLVE_FLOW_NAME = "auto-resolve";
+public class MissingEgressFlowException extends RuntimeException {
+    public MissingEgressFlowException(String did) {
+        super("No egress flow configured for DeltaFile " + did);
+    }
 }

@@ -26,7 +26,9 @@ import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
+import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
 import org.deltafi.core.domain.generated.types.Action;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.types.EgressFlow;
@@ -47,6 +49,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class StateMachineTest {
@@ -58,6 +61,9 @@ class StateMachineTest {
 
     @InjectMocks
     StateMachine stateMachine;
+
+    @Mock
+    EnrichFlowService enrichFlowService;
 
     @Mock
     EgressFlowService egressFlowService;
@@ -263,7 +269,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceToMultipleValidateAction() {
+    void testAdvanceToMultipleValidateAction() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.EGRESS);
         addCompletedActions(deltaFile, "EnrichAction", "FormatAction");
@@ -279,7 +285,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceCompleteValidateAction_onePending() {
+    void testAdvanceCompleteValidateAction_onePending() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
@@ -302,7 +308,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceCompleteValidateAction_allComplete() {
+    void testAdvanceCompleteValidateAction_allComplete() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
@@ -325,7 +331,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceMultipleEgressFlows() {
+    void testAdvanceMultipleEgressFlows() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
@@ -354,7 +360,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceToEgressAction() {
+    void testAdvanceToEgressAction() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
@@ -385,7 +391,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceCompleteEgressAction_onePending() {
+    void testAdvanceCompleteEgressAction_onePending() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
@@ -414,7 +420,7 @@ class StateMachineTest {
     }
 
     @Test
-    void testAdvanceCompleteEgressAction_allComplete() {
+    void testAdvanceCompleteEgressAction_allComplete() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
@@ -439,6 +445,33 @@ class StateMachineTest {
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
         assertThat(deltaFile.actionNamed("EgressAction1")).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
         assertThat(deltaFile.actionNamed("EgressAction2")).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
+    }
+
+    @Test
+    void testNoEgressFlowConfiguredIsAnError() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
+        deltaFile.setStage(DeltaFileStage.ENRICH);
+
+        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(Collections.emptyList());
+        Mockito.when(egressFlowService.getMatchingFlows("flow")).thenReturn(Collections.emptyList());
+
+        assertThrows(MissingEgressFlowException.class, () -> stateMachine.advance(deltaFile));
+    }
+
+    @Test
+    void testNoEgressFlowRequiredForSplitLoadActions() throws MissingEgressFlowException {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
+        deltaFile.setStage(DeltaFileStage.ENRICH);
+        deltaFile.queueNewAction("SplitLoadAction");
+        deltaFile.splitAction(ActionEventInput.newBuilder()
+                .did(deltaFile.getDid())
+                .action("SplitLoadAction")
+                .build());
+
+        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(Collections.emptyList());
+        Mockito.when(egressFlowService.getMatchingFlows("flow")).thenReturn(Collections.emptyList());
+        assertThat(stateMachine.advance(deltaFile)).isEmpty();
+        assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
     }
 
     private void addCompletedActions(DeltaFile deltaFile, String ... actions) {

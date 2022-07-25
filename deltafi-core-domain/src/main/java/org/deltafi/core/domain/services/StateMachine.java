@@ -22,6 +22,7 @@ import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.api.types.ActionInput;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.*;
+import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EnrichFlow;
@@ -44,15 +45,16 @@ public class StateMachine {
      *
      * @param deltaFile The deltaFile to advance
      * @return a list of actions that should receive this DeltaFile next
+     * @throws MissingEgressFlowException when a DeltaFile advances into the EGRESS stage, but does not have an egress flow configured.
      */
-    public List<ActionInput> advance(DeltaFile deltaFile) {
+    public List<ActionInput> advance(DeltaFile deltaFile) throws MissingEgressFlowException {
+        boolean firstEgressAttempt = false;
         List<ActionInput> enqueueActions = new ArrayList<>();
         switch (deltaFile.getStage()) {
             case INGRESS:
                 if (deltaFile.hasErroredAction()) {
                     break;
                 }
-
                 IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
 
                 // transform
@@ -87,14 +89,20 @@ public class StateMachine {
 
                 // if all enrich actions are complete, move to egress stage
                 deltaFile.setStage(DeltaFileStage.EGRESS);
+                // Make sure when moving into EGRESS stage the first time we find
+                // at least one action, unless there was a Split Load action on ingress.
+                firstEgressAttempt = !deltaFile.hasSplitAction();
             case EGRESS:
                 List<ActionInput> egressActions = egressFlowService.getMatchingFlows(deltaFile.getSourceInfo().getFlow()).stream()
                         .map(egressFlow -> advanceEgress(egressFlow, deltaFile))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
 
-                egressActions.forEach(actionInput -> deltaFile.queueNewAction(actionInput.getActionContext().getName()));
+                if (firstEgressAttempt && egressActions.isEmpty()) {
+                    throw new MissingEgressFlowException(deltaFile.getDid());
+                }
 
+                egressActions.forEach(actionInput -> deltaFile.queueNewAction(actionInput.getActionContext().getName()));
                 enqueueActions.addAll(egressActions);
 
                 break;
@@ -190,7 +198,7 @@ public class StateMachine {
     List<ActionConfiguration> getValidateActions(EgressFlow egressFlow, DeltaFile deltaFile) {
         if (Objects.isNull(egressFlow.getValidateActions()) || !validateActionsReady(egressFlow, deltaFile)) {
             return Collections.emptyList();
-    }
+        }
 
         return egressFlow.getValidateActions().stream()
                 .filter(v -> !deltaFile.hasTerminalAction(v.getName())).collect(Collectors.toList());

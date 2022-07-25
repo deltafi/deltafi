@@ -24,6 +24,7 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import graphql.ExecutionResult;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.core.config.server.constants.PropertyConstants;
@@ -586,10 +587,13 @@ class DeltaFiCoreDomainApplicationTests {
 		verifyActionEventResults(postLoadDeltaFile(did), "SampleEnrichAction");
 	}
 
-	DeltaFile post09LoadDeltaFile(String did) {
+	DeltaFile post09LoadDeltaFile(String did, String childDid) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
-		deltaFile.setStage(DeltaFileStage.COMPLETE);
+		deltaFile.setChildDids(List.of(childDid));
+		deltaFile.setStage(DeltaFileStage.ERROR);
 		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
+		deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
+		deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile));
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleLoadAction", List.of(content), loadWrongMetadata));
@@ -610,7 +614,12 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertEqualsIgnoringDates(post09LoadDeltaFile(did), deltaFile);
+		DeltaFile errorFile = deltaFilesService.getDeltaFile(deltaFile.getChildDids().get(0));
+		assertEqualsIgnoringDates(post09LoadDeltaFile(did, errorFile.getDid()), deltaFile);
+		assertTrue(errorFile.hasDomains(List.of("error")));
+		assertTrue(errorFile.getDomain("error").getValue().contains(DeltaFilesService.NO_EGRESS_CONFIGURED_CAUSE));
+		assertTrue(errorFile.getDomain("error").getValue().contains(DeltaFilesService.NO_EGRESS_CONFIGURED_CONTEXT));
+		assertTrue(errorFile.getDomain("error").getValue().contains(did));
 	}
 
 	@Test

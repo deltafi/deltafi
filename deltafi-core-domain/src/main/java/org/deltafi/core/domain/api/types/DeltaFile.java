@@ -18,7 +18,9 @@
 package org.deltafi.core.domain.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.deltafi.core.domain.api.converters.KeyValueConverter;
 import org.deltafi.core.domain.generated.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +57,6 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         } else {
             queueNewAction(name);
         }
-
     }
 
     public void queueNewAction(String name) {
@@ -98,6 +99,10 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         getActions().stream()
                 .filter(action -> action.getName().equals(event.getAction()) && !terminalState(action.getState()))
                 .forEach(action -> setActionState(action, ActionState.SPLIT, event.getStart(), event.getStop()));
+    }
+
+    public void errorAction(ActionEventInput event) {
+        errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(), event.getError().getContext());
     }
 
     public void errorAction(ActionEventInput event, String errorCause, String errorContext) {
@@ -210,6 +215,10 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return !actionState.equals(ActionState.QUEUED);
     }
 
+    public boolean hasSplitAction() {
+        return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.SPLIT));
+    }
+
     private boolean retried(Action action) {
         return action.getState().equals(ActionState.RETRIED);
     }
@@ -245,7 +254,7 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
     }
 
     public String sourceMetadata(String key, String defaultValue) {
-        return getSourceInfo().getMetadata().stream().filter(k-> k.getKey().equals(key)).findFirst().map(KeyValue::getValue).orElse(defaultValue);
+        return getSourceInfo().getMetadata().stream().filter(k -> k.getKey().equals(key)).findFirst().map(KeyValue::getValue).orElse(defaultValue);
     }
 
     @JsonIgnore
