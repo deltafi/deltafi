@@ -451,7 +451,7 @@ install() {
 _k8s_init() {
   _debug ">> Initializing k8s prerequisites"
   _k8s_add_namespace deltafi
-  _k8s_add_secret mongodb-passwords mongodb-password $(_random_password 20) mongodb-root-password $(_random_password 20)
+  _k8s_add_secret mongodb-passwords mongodb-password "bekindbekindbekindbe" mongodb-root-password $(_random_password 20)
   _k8s_add_secret minio-keys accesskey $(_random_password 20) secretkey $(_random_password 40)
   _k8s_add_secret redis-password redis-password $(_random_password 16)
   _k8s_add_secret config-repo-secret config-token $(_random_password 16)
