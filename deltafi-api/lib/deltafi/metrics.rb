@@ -27,8 +27,7 @@ module Deltafi
     extend self
 
     def self.graphite(query, raw: false)
-      properties = DF.system_properties
-      graphite_url = "#{ENV['DELTAFI_GRAPHITE_URL'] || properties['graphite.url'] || 'http://deltafi-graphite:8080'}/render"
+      graphite_url = "#{ENV['DELTAFI_GRAPHITE_URL'] || DF.cached_system_properties['graphite.url'] || 'http://deltafi-graphite:8080'}/render"
 
       if raw
         HTTParty.post(graphite_url, query: query).to_s
@@ -43,7 +42,7 @@ module Deltafi
       end
     end
 
-    GRAPHITE_METRIC_URL = ENV['DELTAFI_GRAPHITE_METRIC_URL'] || DF.system_properties['graphite.metric-url'] || 'tcp://deltafi-graphite:2003'
+    GRAPHITE_METRIC_URL = ENV['DELTAFI_GRAPHITE_METRIC_URL'] || DF.cached_system_properties['graphite.metric-url'] || 'tcp://deltafi-graphite:2003'
     @@graphite_client = GraphiteAPI.new graphite: GRAPHITE_METRIC_URL, slice: 10
 
     def self.record_metric(name:, value:, tags: {}, prefix: nil, gauge: false)

@@ -24,15 +24,15 @@ require 'redis'
 
 module Deltafi
   REDIS_RECONNECT_ATTEMPTS = 1_000_000_000
+  @@system_properties = nil
 
   def self.k8s_client
     ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
   end
 
   def self.graphql(query)
-    properties = system_properties
     graphql_url = ENV['DELTAFI_GRAPHQL_URL'] ||
-                  properties['graphql.urls.core-domain'] ||
+                  cached_system_properties['graphql.urls.core-domain'] ||
                   'http://deltafi-core-domain-service/graphql'
 
     HTTParty.post(graphql_url,
@@ -41,10 +41,9 @@ module Deltafi
   end
 
   def self.redis_client
-    properties = system_properties
     redis_password = ENV['REDIS_PASSWORD']
     redis_url = ENV['REDIS_URL'] ||
-                properties['redis.url']&.gsub(/^http/, 'redis') ||
+                cached_system_properties['redis.url']&.gsub(/^http/, 'redis') ||
                 'http://deltafi-redis-master:6379'
     Redis.new(
       url: redis_url,
@@ -55,23 +54,30 @@ module Deltafi
     )
   end
 
+  def self.cached_system_properties
+    @@system_properties || system_properties
+  end
+
   def self.system_properties
     base_url = ENV['DELTAFI_CONFIG_URL'] || 'http://deltafi-core-domain-service'
     config_url = File.join(base_url, 'config/application/default')
-    properties = {}
+    @@system_properties ||= {}
 
-    response = HTTParty.get(config_url,
-                            headers: { 'Content-Type' => 'application/json' })
+    begin
+      response = HTTParty.get(config_url,
+                              headers: { 'Content-Type' => 'application/json' })
 
-    response.parsed_response['propertySources'].reverse_each do |property_source|
-      property_source['source'].each do |name, value|
-        properties[name] = value.to_s.start_with?('$') ? ENV[value.gsub(/[${}]/, '')] : value
+      response.parsed_response['propertySources'].reverse_each do |property_source|
+        property_source['source'].each do |name, value|
+          @@system_properties[name] = value.to_s.start_with?('$') ? ENV[value.gsub(/[${}]/, '')] : value
+        end
       end
+    rescue StandardError => e
+      puts e
     end
 
-    return properties
+    return @@system_properties
   end
-
 end
 
 DF = Deltafi
