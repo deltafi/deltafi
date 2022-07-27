@@ -71,6 +71,7 @@ deltafi:
     #   - name: "View in HTTPBin"
     #     url: "https://httpbin.org/anything/${DID}"
   egress_sink:
+    enabled: true
     image: deltafi/deltafi-egress-sink:0.96.2
   nodemonitor:
     image: deltafi/deltafi-nodemonitor:0.96.2

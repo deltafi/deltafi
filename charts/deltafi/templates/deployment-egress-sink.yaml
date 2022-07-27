@@ -1,3 +1,4 @@
+{{- if .Values.deltafi.egress_sink.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,3 +44,4 @@ spec:
         runAsUser: 1000
   strategy:
     type: Recreate
+{{- end -}}
