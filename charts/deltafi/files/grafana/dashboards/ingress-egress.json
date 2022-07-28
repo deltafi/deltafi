@@ -85,7 +85,7 @@
             "type": "graphite"
           },
           "refId": "A",
-          "target": "perSecond(aggregate(groupByTags(seriesByTag('name=bytes_in', 'action=IngressAction', 'source=ingress', 'metricattribute=count'), 'sum', 'ingressFlow'), 'sum'))"
+          "target": "perSecond(aggregate(groupByTags(scale(seriesByTag('name=bytes_in', 'action=IngressAction', 'source=ingress', 'metricattribute=count'),8), 'sum', 'ingressFlow'), 'sum'))"
         }
       ],
       "title": "Ingress bps",
@@ -281,7 +281,7 @@
             "type": "graphite"
           },
           "refId": "A",
-          "target": "perSecond(aggregate(groupByTags(seriesByTag('name=bytes_out', 'metricattribute=count'), 'sum', 'ingressFlow'), 'sum'))"
+          "target": "perSecond(aggregate(groupByTags(scale(seriesByTag('name=bytes_out', 'metricattribute=count'),8), 'sum', 'ingressFlow'), 'sum'))"
         }
       ],
       "title": "Egress bps",
@@ -347,7 +347,7 @@
           "target": "perSecond(aggregate(groupByTags(seriesByTag('name=files_out', 'metricattribute=count'), 'sum', 'ingressFlow'), 'sum'))"
         }
       ],
-      "title": "Ingress Files",
+      "title": "Egress Files",
       "type": "gauge"
     },
     {
