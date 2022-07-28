@@ -123,7 +123,7 @@ class FlowfileEgressActionTest {
 
         final List<byte[]> posts = new ArrayList<>();
         when(httpService.post(any(), any(), any(), any())).thenAnswer(
-                (Answer<HttpResponse>) invocation -> {
+                (Answer<HttpResponse<InputStream>>) invocation -> {
                     InputStream is = invocation.getArgument(2);
                     posts.add(is.readAllBytes());
                     is.close();

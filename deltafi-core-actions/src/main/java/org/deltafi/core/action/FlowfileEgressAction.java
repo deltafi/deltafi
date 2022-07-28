@@ -46,6 +46,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
 
     public FlowfileEgressAction() {
         super(HttpEgressParameters.class);
+        log.info("constructing: {}", this.getClass().getName());
     }
 
     protected Result doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
@@ -56,41 +57,17 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
                         buildHeadersMap(context.getDid(), sourceInfo, formattedData, params),
                         formattedData.getContentReference().getSize());
                 HttpResponse<InputStream> response;
-
-                // In order to avoid multiple copies of the stream in memory to convert from an output stream to an input
-                // stream, the Piped*Stream pattern is used.
-                PipedOutputStream pipedOutput = new PipedOutputStream();
-                try (PipedInputStream pipedInput = new PipedInputStream(pipedOutput)) {
-                    Thread pump = new Thread(() -> {
-                        try {
-                            out.writeTo(pipedOutput);
-                            pipedOutput.close();
-                        } catch (Throwable e) {
-                            // An unclosed pipe will result in an exception on the other side, which will
-                            // be responsible for propagating the appropriate error response
-                            log.error("Unable to push flowfile through pipe", e);
-                        }
-                    });
-                    pump.start();
-                    try {
-                        response = httpPostService.post(params.getUrl(), Map.of(), pipedInput, FLOWFILE_V1_CONTENT_TYPE);
-                    } catch (Throwable e) {
-                        return new ErrorResult(context, "Unable to process flowfile stream", e);
-                    }
-                    pump.join();
+                try (ByteArrayInputStream flowfile = new ByteArrayInputStream(out.toByteArray())) {
+                    response = httpPostService.post(params.getUrl(), Map.of(), flowfile, FLOWFILE_V1_CONTENT_TYPE);
+                } catch (IOException e) {
+                    return new ErrorResult(context, "Unable to process flowfile stream", e);
                 }
                 Response.Status status = Response.Status.fromStatusCode(response.statusCode());
                 if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-                    String body;
-                    try (InputStream is = response.body()) {
-                        body = new String(is.readAllBytes());
-                    }
-                    return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode() + " " + body).logErrorTo(log);
+                    return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode() + " " + new String(response.body().readAllBytes())).logErrorTo(log);
                 }
             } catch (IOException e) {
                 return new ErrorResult(context, "Unable to extract flowfile content");
-            } catch (InterruptedException e) {
-                return new ErrorResult(context, "Unable to extract flowfile content due to threading issue");
             }
         } catch (ObjectStorageException e) {
             return new ErrorResult(context, "Unable to get object from content storage", e);

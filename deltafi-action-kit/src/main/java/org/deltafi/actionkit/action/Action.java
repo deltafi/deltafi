@@ -53,9 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -68,6 +66,8 @@ import java.util.stream.Collectors;
 public abstract class Action<P extends ActionParameters> {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+
+    private static final ConcurrentMap<String, Object> schedulers = new ConcurrentHashMap<>();
 
     @Inject
     protected ContentStorageService contentStorageService;
@@ -124,10 +124,16 @@ public abstract class Action<P extends ActionParameters> {
      */
     @PostConstruct
     public void startAction() {
-        log.info("Starting action: {}", getFeedString());
-        startListeningExecutor.scheduleWithFixedDelay(this::startListening,
-                actionsProperties.getActionPollingInitialDelayMs(), actionsProperties.getActionPollingPeriodMs(),
-                TimeUnit.MILLISECONDS);
+        // Make sure we aren't starting threads more than once!
+        schedulers.putIfAbsent(getFeedString(), this);
+        if (schedulers.get(getFeedString()).equals(this)) {
+            log.info("Starting action: {}", getFeedString());
+            startListeningExecutor.scheduleWithFixedDelay(this::startListening,
+                    actionsProperties.getActionPollingInitialDelayMs(), actionsProperties.getActionPollingPeriodMs(),
+                    TimeUnit.MILLISECONDS);
+        } else {
+            log.warn("Will not start second thread scheduler for: {}", getFeedString());
+        }
     }
 
     private void startListening() {
