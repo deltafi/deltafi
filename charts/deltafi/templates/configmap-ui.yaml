@@ -19,9 +19,6 @@ data:
       - url: https://k8s.{{ .Values.ingress.domain }}/#/workloads?namespace=deltafi
         name: Kubernetes Dashboard
         description: Kubernetes admin interface
-      - url: https://minio.{{ .Values.ingress.domain }}/
-        name: MinIO
-        description: MinIO storage dashboard
       - url: https://grafana.{{ .Values.ingress.domain }}/dashboards
         name: Grafana Dashboards
         description: Metrics and logging visualization
