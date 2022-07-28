@@ -43,7 +43,7 @@ public class TimedDeleteTest {
         policy.setId(policyName);
         policy.setAfterCreate("PT50M");
         policy.setFlow(flow);
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
+        TimedDelete timedDelete = new TimedDelete(1000, deltaFilesService, policy);
         assertThat(timedDelete.getName()).isEqualTo(policyName);
         assertThat(timedDelete.getAfterCreate().toMinutes()).isEqualTo(50);
         assertNull(timedDelete.getAfterComplete());
@@ -55,7 +55,7 @@ public class TimedDeleteTest {
         TimedDeletePolicy policy = new TimedDeletePolicy();
         policy.setId(policyName);
         policy.setAfterComplete("PT50M");
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
+        TimedDelete timedDelete = new TimedDelete(1000, deltaFilesService, policy);
         assertThat(timedDelete.getName()).isEqualTo(policyName);
         assertThat(timedDelete.getAfterComplete().toMinutes()).isEqualTo(50);
         assertNull(timedDelete.getAfterCreate());
@@ -66,7 +66,7 @@ public class TimedDeleteTest {
     void testConstructorThrowsWithNoParams() {
         TimedDeletePolicy policy = new TimedDeletePolicy();
         policy.setId(policyName);
-        assertThrows(IllegalArgumentException.class, () -> new TimedDelete(deltaFilesService, policy));
+        assertThrows(IllegalArgumentException.class, () -> new TimedDelete(1000, deltaFilesService, policy));
     }
 
     @Test
@@ -75,7 +75,7 @@ public class TimedDeleteTest {
         policy.setId(policyName);
         policy.setAfterComplete("PT50M");
         policy.setAfterCreate("PT50M");
-        assertThrows(IllegalArgumentException.class, () -> new TimedDelete(deltaFilesService, policy));
+        assertThrows(IllegalArgumentException.class, () -> new TimedDelete(1000, deltaFilesService, policy));
     }
 
     @Test
@@ -83,10 +83,10 @@ public class TimedDeleteTest {
         TimedDeletePolicy policy = new TimedDeletePolicy();
         policy.setId(policyName);
         policy.setAfterCreate("PT50M");
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
+        TimedDelete timedDelete = new TimedDelete(1000, deltaFilesService, policy);
         timedDelete.run();
 
-        verify(deltaFilesService).delete(ArgumentMatchers.any(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(0L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
+        verify(deltaFilesService).delete(ArgumentMatchers.any(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(0L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false), ArgumentMatchers.eq(1000));
     }
 
     @Test
@@ -95,10 +95,10 @@ public class TimedDeleteTest {
         policy.setId(policyName);
         policy.setAfterComplete("PT50M");
         policy.setFlow(flow);
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
+        TimedDelete timedDelete = new TimedDelete(1000, deltaFilesService, policy);
         timedDelete.run();
 
-        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.any(), ArgumentMatchers.eq(0L), ArgumentMatchers.eq(flow), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
+        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.any(), ArgumentMatchers.eq(0L), ArgumentMatchers.eq(flow), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false), ArgumentMatchers.eq(1000));
     }
 
     @Test
@@ -107,9 +107,9 @@ public class TimedDeleteTest {
         policy.setId(policyName);
         policy.setMinBytes(234L);
 
-        TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
+        TimedDelete timedDelete = new TimedDelete(1000, deltaFilesService, policy);
         timedDelete.run();
 
-        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(234L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false));
+        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(234L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(policyName), ArgumentMatchers.eq(false), ArgumentMatchers.eq(1000));
     }
 }

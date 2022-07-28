@@ -159,19 +159,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFile> findForDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                         long minBytes, String flowName, String policy, boolean deleteMetadata) {
+                                         long minBytes, String flowName, String policy, boolean deleteMetadata,
+                                         int batchSize) {
         // one of these must be set for any matches to occur
         if (isNull(createdBeforeDate) && isNull(completedBeforeDate)) {
             return Collections.emptyList();
         }
 
         Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata));
+        query.limit(batchSize);
 
         return mongoTemplate.find(query, DeltaFile.class);
     }
 
     @Override
-    public List<DeltaFile> findForDelete(long bytesToDelete, String flow, String policy) {
+    public List<DeltaFile> findForDelete(long bytesToDelete, String flow, String policy, int batchSize) {
         if (bytesToDelete < 1) {
             throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
         }
@@ -180,6 +182,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         // TODO: move to mongo 5 and use $setWindowFields to push this work to the database (see https://stackoverflow.com/questions/27995085/how-to-calculate-the-running-total-using-aggregate/70135796#70135796)
         Query query = new Query();
         query.fields().include(TOTAL_BYTES, CREATED);
+        query.limit(batchSize);
 
         query.addCriteria(Criteria.where(CONTENT_DELETED).isNull());
         query.addCriteria(Criteria.where(TOTAL_BYTES).gt(0L));
@@ -205,7 +208,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         // add a millisecond to include the last DeltaFile we found
         createdDate = createdDate.plus(1, ChronoField.MILLI_OF_DAY.getBaseUnit());
 
-        return findForDelete(createdDate, null, 0, flow, policy, false);
+        return findForDelete(createdDate, null, 0, flow, policy, false, batchSize);
     }
 
     @Override

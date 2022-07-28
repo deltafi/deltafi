@@ -25,4 +25,5 @@ import java.time.Duration;
 public class DeleteConfiguration {
     private Duration frequency = Duration.ofMinutes(10);
     private boolean onCompletion = false;
+    private int policyBatchSize = 1000;
 }

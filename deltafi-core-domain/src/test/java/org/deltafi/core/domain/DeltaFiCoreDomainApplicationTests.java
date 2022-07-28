@@ -1997,8 +1997,24 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile4.setContentDeleted(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+	}
+
+	@Test
+	void testFindForDeleteCreatedBeforeBatchLimit() {
+		DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFileRepo.save(deltaFile1);
+		DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFileRepo.save(deltaFile2);
+		DeltaFile deltaFile3 = Util.buildDeltaFile("3", null, DeltaFileStage.INGRESS, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now().plusSeconds(2));
+		deltaFileRepo.save(deltaFile3);
+		DeltaFile deltaFile4 = Util.buildDeltaFile("2", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile4.setContentDeleted(OffsetDateTime.now());
+		deltaFileRepo.save(deltaFile3);
+
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 1);
+		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 	}
 
 	@Test
@@ -2007,7 +2023,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile1.setContentDeleted(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile1);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", true);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", true, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 	}
 
@@ -2023,7 +2039,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile4.setErrorAcknowledged(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile4);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, "policy", false);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 	}
 
@@ -2034,7 +2050,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile2 = Util.buildDeltaFile("2", "b", DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile2);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", "policy", false);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 	}
 
@@ -2046,7 +2062,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile1.setContentDeleted(oneSecondAgo);
 		deltaFileRepo.save(deltaFile1);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now(), null, 0, null, "policy", false);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now(), null, 0, null, "policy", false, 10);
 		assertTrue(deltaFiles.isEmpty());
 	}
 
@@ -2062,7 +2078,7 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(250L, null, "policy");
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(250L, null, "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 	}
 
@@ -2078,8 +2094,24 @@ class DeltaFiCoreDomainApplicationTests {
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy");
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+	}
+
+	@Test
+	void testFindForDeleteDiskSpaceBatchSizeLimited() {
+		DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile1.setTotalBytes(100L);
+		deltaFileRepo.save(deltaFile1);
+		DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(2));
+		deltaFile2.setTotalBytes(300L);
+		deltaFileRepo.save(deltaFile2);
+		DeltaFile deltaFile3 = Util.buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile3.setTotalBytes(500L);
+		deltaFileRepo.save(deltaFile3);
+
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 2);
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
 	}
 
 	@Test

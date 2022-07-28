@@ -16,6 +16,7 @@ spring:
 deltafi:
   delete:
     onCompletion: false
+    policyBatchSize: 1000
     frequency: PT1S
   housekeeping:
     minio:

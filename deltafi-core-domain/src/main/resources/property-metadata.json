@@ -178,6 +178,14 @@
         "editable": true
       },
       {
+        "key": "deltafi.delete.policyBatchSize",
+        "description": "Maximum deletes per policy iteration loop",
+        "defaultValue": "1000",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
         "key": "deltafi.delete.frequency",
         "description": "Frequency that the delete action is triggered.",
         "defaultValue": "PT1M",

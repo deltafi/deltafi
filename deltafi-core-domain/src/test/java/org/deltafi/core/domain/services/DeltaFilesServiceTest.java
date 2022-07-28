@@ -174,9 +174,9 @@ class DeltaFilesServiceTest {
     void testDelete() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1");
         DeltaFile deltaFile2 = Util.buildDeltaFile("2");
-        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
+        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false, 10);
 
         verify(contentStorageService).deleteAll(stringListCaptor.capture());
         assertEquals(List.of("1", "2"), stringListCaptor.getValue());
@@ -191,9 +191,9 @@ class DeltaFilesServiceTest {
     void testDeleteMetadata() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1");
         DeltaFile deltaFile2 = Util.buildDeltaFile("2");
-        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
+        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true, 10);
 
         verify(contentStorageService).deleteAll(stringListCaptor.capture());
         assertEquals(List.of("1", "2"), stringListCaptor.getValue());

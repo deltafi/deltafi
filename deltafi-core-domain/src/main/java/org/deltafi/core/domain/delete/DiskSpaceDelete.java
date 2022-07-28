@@ -29,8 +29,8 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
     private final String flow;
     private final DiskSpaceService diskSpaceService;
 
-    public DiskSpaceDelete(DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DiskSpaceDeletePolicy policy) {
-        super(deltaFilesService, policy.getId());
+    public DiskSpaceDelete(int batchSize, DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DiskSpaceDeletePolicy policy) {
+        super(deltaFilesService, policy.getId(), batchSize);
 
         this.diskSpaceService = diskSpaceService;
         this.maxPercent = policy.getMaxPercent();
@@ -39,9 +39,10 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
 
     public void run() {
         DiskMetrics contentMetrics = diskSpaceService.contentMetrics();
-        if (contentMetrics != null && contentMetrics.percentUsed() > maxPercent) {
+        while (contentMetrics != null && contentMetrics.percentUsed() > maxPercent) {
             long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
-            deltaFilesService.delete(bytesToDelete, flow, name, false);
+            deltaFilesService.delete(bytesToDelete, flow, name, false, getBatchSize());
+            contentMetrics = diskSpaceService.contentMetrics();
         }
     }
 }
