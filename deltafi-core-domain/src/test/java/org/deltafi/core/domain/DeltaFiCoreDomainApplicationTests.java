@@ -2415,6 +2415,357 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
+	void testGetErrorSummaryByFlowDatafetcher() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusOne = OffsetDateTime.now().plusMinutes(1);
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadDeltaFilesWithActionErrors(now, plusOne);
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
+				new ErrorSummaryByFlowGraphQLQuery.Builder()
+						.limit(5)
+						.filter(ErrorSummaryFilter.newBuilder().modifiedBefore(plusTwo).build())
+						.orderBy(DeltaFileOrder.newBuilder().field("flow").direction(DeltaFileDirection.DESC).build())
+						.build(),
+				ERRORS_BY_FLOW_PROJECTION_ROOT
+		);
+
+		ErrorsByFlow actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.ErrorSummaryByFlow,
+				ErrorsByFlow.class
+		);
+
+		assertEquals(3, actual.getCount());
+		assertEquals(0, actual.getOffset());
+		assertEquals(3, actual.getTotalCount());
+		assertEquals(3, actual.getCountPerFlow().size());
+	}
+
+	@Test
+	void testGetErrorSummaryByFlow() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		OffsetDateTime minusTwo = OffsetDateTime.now().minusDays(2);
+
+		DeltaFile deltaFile1 = Util.buildDeltaFile("1", "flow1", DeltaFileStage.ERROR, now, plusTwo);
+		deltaFileRepo.save(deltaFile1);
+
+		DeltaFile deltaFile2 = Util.buildDeltaFile("2", "flow1", DeltaFileStage.COMPLETE, now, now);
+		deltaFileRepo.save(deltaFile2);
+
+		DeltaFile deltaFile3 = Util.buildDeltaFile("3", "flow2", DeltaFileStage.ERROR, now, minusTwo);
+		deltaFileRepo.save(deltaFile3);
+
+		DeltaFile deltaFile4 = Util.buildDeltaFile("4", "flow1", DeltaFileStage.ERROR, now, now);
+		deltaFileRepo.save(deltaFile4);
+
+		DeltaFile deltaFile5 = Util.buildDeltaFile("5", "flow3", DeltaFileStage.ERROR, now, now);
+		deltaFileRepo.save(deltaFile5);
+
+		ErrorsByFlow firstPage = deltaFilesService.getErrorSummaryByFlow(
+				0, 2, null, null);
+
+		assertEquals(2, firstPage.getCount());
+		assertEquals(0, firstPage.getOffset());
+		assertEquals(3, firstPage.getTotalCount());
+		assertEquals(2, firstPage.getCountPerFlow().size());
+
+		assertEquals("flow1", firstPage.getCountPerFlow().get(0).getFlow());
+		assertEquals("flow2", firstPage.getCountPerFlow().get(1).getFlow());
+
+		assertEquals(2, firstPage.getCountPerFlow().get(0).getCount());
+		assertEquals(1, firstPage.getCountPerFlow().get(1).getCount());
+
+		assertTrue(firstPage.getCountPerFlow().get(0).getDids().containsAll(List.of("1", "4")));
+		assertTrue(firstPage.getCountPerFlow().get(1).getDids().contains("3"));
+
+		ErrorsByFlow secondPage = deltaFilesService.getErrorSummaryByFlow(
+				2, 2, null, null);
+
+		assertEquals(1, secondPage.getCount());
+		assertEquals(2, secondPage.getOffset());
+		assertEquals(3, secondPage.getTotalCount());
+		assertEquals(1, secondPage.getCountPerFlow().size());
+
+		assertEquals("flow3", secondPage.getCountPerFlow().get(0).getFlow());
+		assertEquals(1, secondPage.getCountPerFlow().get(0).getCount());
+		assertTrue(secondPage.getCountPerFlow().get(0).getDids().contains("5"));
+
+		DeltaFile deltaFile6 = Util.buildDeltaFile("6", "flow3", DeltaFileStage.ERROR, now, minusTwo);
+		deltaFileRepo.save(deltaFile6);
+
+		DeltaFile deltaFile7 = Util.buildDeltaFile("7", "flow3", DeltaFileStage.ERROR, now, minusTwo);
+		deltaFileRepo.save(deltaFile7);
+
+		ErrorsByFlow filterByTime = deltaFilesService.getErrorSummaryByFlow(
+				0, 99, ErrorSummaryFilter.newBuilder()
+						.modifiedBefore(now)
+						.build(),
+				DeltaFileOrder.newBuilder()
+						.field("Count")
+						.direction(DeltaFileDirection.DESC)
+						.build());
+
+		assertEquals(2, filterByTime.getCount());
+		assertEquals(0, filterByTime.getOffset());
+		assertEquals(2, filterByTime.getTotalCount());
+		assertEquals(2, filterByTime.getCountPerFlow().size());
+
+		assertEquals(2, filterByTime.getCountPerFlow().get(0).getCount());
+		assertEquals(1, filterByTime.getCountPerFlow().get(1).getCount());
+
+		assertEquals("flow3", filterByTime.getCountPerFlow().get(0).getFlow());
+		assertEquals("flow2", filterByTime.getCountPerFlow().get(1).getFlow());
+
+		ErrorsByFlow filterByFlow = deltaFilesService.getErrorSummaryByFlow(
+				0, 99, ErrorSummaryFilter.newBuilder()
+						.flow("flow3")
+						.modifiedBefore(now)
+						.build(),
+				DeltaFileOrder.newBuilder()
+						.field("Flow")
+						.direction(DeltaFileDirection.ASC)
+						.build());
+
+		assertEquals(1, filterByFlow.getCount());
+		assertEquals(0, filterByFlow.getOffset());
+		assertEquals(1, filterByFlow.getTotalCount());
+		assertEquals(1, filterByFlow.getCountPerFlow().size());
+		assertEquals(2, filterByFlow.getCountPerFlow().get(0).getCount());
+		assertEquals("flow3", filterByFlow.getCountPerFlow().get(0).getFlow());
+
+		ErrorsByFlow noneFound = deltaFilesService.getErrorSummaryByFlow(
+				0, 99, ErrorSummaryFilter.newBuilder()
+						.flow("flowNotFound")
+						.modifiedBefore(now)
+						.build(), null);
+
+		assertEquals(0, noneFound.getCount());
+		assertEquals(0, noneFound.getOffset());
+		assertEquals(0, noneFound.getTotalCount());
+		assertEquals(0, noneFound.getCountPerFlow().size());
+	}
+
+	@Test
+	void testGetErrorSummaryByMessageDatafetcher() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusOne = OffsetDateTime.now().plusMinutes(1);
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadDeltaFilesWithActionErrors(now, plusOne);
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
+				new ErrorSummaryByMessageGraphQLQuery.Builder()
+						.limit(5)
+						.filter(ErrorSummaryFilter.newBuilder().modifiedBefore(plusTwo).build())
+						.orderBy(DeltaFileOrder.newBuilder().field("flow").direction(DeltaFileDirection.DESC).build())
+						.build(),
+				ERRORS_BY_MESSAGE_PROJECTION_ROOT
+		);
+
+		ErrorsByMessage actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.ErrorSummaryByMessage,
+				ErrorsByMessage.class
+		);
+
+		assertEquals(5, actual.getCount());
+		assertEquals(0, actual.getOffset());
+		assertEquals(7, actual.getTotalCount());
+		assertEquals(5, actual.getCountPerMessage().size());
+	}
+
+	@Test
+	void testGetErrorSummaryByMessage() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		ErrorsByMessage fullSummary = deltaFilesService.getErrorSummaryByMessage(
+				0, 99, null, null);
+
+		assertEquals(0, fullSummary.getOffset());
+		assertEquals(7, fullSummary.getCount());
+		assertEquals(7, fullSummary.getTotalCount());
+		assertEquals(7, fullSummary.getCountPerMessage().size());
+
+		matchesCounterPerMessage(fullSummary, 0, "causeA", "f1", List.of("4", "5"));
+		matchesCounterPerMessage(fullSummary, 1, "causeX", "f1", List.of("2"));
+		matchesCounterPerMessage(fullSummary, 2, "causeX", "f2", List.of("1", "3"));
+		matchesCounterPerMessage(fullSummary, 3, "causeY", "f2", List.of("3"));
+		matchesCounterPerMessage(fullSummary, 4, "causeZ", "f1", List.of("9"));
+		matchesCounterPerMessage(fullSummary, 5, "causeZ", "f2", List.of("10"));
+		matchesCounterPerMessage(fullSummary, 6, "causeZ", "f3", List.of("6", "7", "8"));
+	}
+
+	@Test
+	void testGetErrorSummaryByMessageOrdering() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		ErrorsByMessage orderByFlow = deltaFilesService.getErrorSummaryByMessage(
+				0, 4, null,
+				DeltaFileOrder.newBuilder()
+						.direction(DeltaFileDirection.ASC)
+						.field("Flow").build());
+
+		assertEquals(0, orderByFlow.getOffset());
+		assertEquals(4, orderByFlow.getCount());
+		assertEquals(7, orderByFlow.getTotalCount());
+		assertEquals(4, orderByFlow.getCountPerMessage().size());
+
+		matchesCounterPerMessage(orderByFlow, 0, "causeA", "f1", List.of("4", "5"));
+		matchesCounterPerMessage(orderByFlow, 1, "causeX", "f1", List.of("2"));
+		matchesCounterPerMessage(orderByFlow, 2, "causeZ", "f1", List.of("9"));
+		matchesCounterPerMessage(orderByFlow, 3, "causeX", "f2", List.of("1", "3"));
+	}
+
+	@Test
+	void testGetErrorSummaryByMessageFiltering() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusOne = OffsetDateTime.now().plusMinutes(1);
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		ErrorSummaryFilter filterBefore = ErrorSummaryFilter.newBuilder()
+				.modifiedBefore(plusOne).build();
+
+		ErrorsByMessage resultsBefore = deltaFilesService.getErrorSummaryByMessage(
+				0, 99, filterBefore, null);
+
+		assertEquals(0, resultsBefore.getOffset());
+		assertEquals(6, resultsBefore.getCount());
+		assertEquals(6, resultsBefore.getTotalCount());
+		assertEquals(6, resultsBefore.getCountPerMessage().size());
+
+		// no 'causeA' entry
+		matchesCounterPerMessage(resultsBefore, 0, "causeX", "f1", List.of("2"));
+		matchesCounterPerMessage(resultsBefore, 1, "causeX", "f2", List.of("1", "3"));
+		matchesCounterPerMessage(resultsBefore, 2, "causeY", "f2", List.of("3"));
+		matchesCounterPerMessage(resultsBefore, 3, "causeZ", "f1", List.of("9"));
+		matchesCounterPerMessage(resultsBefore, 4, "causeZ", "f2", List.of("10"));
+		matchesCounterPerMessage(resultsBefore, 5, "causeZ", "f3", List.of("6", "7", "8"));
+
+		ErrorSummaryFilter filterAfter = ErrorSummaryFilter.newBuilder()
+				.modifiedAfter(plusOne).build();
+
+		ErrorsByMessage resultAfter = deltaFilesService.getErrorSummaryByMessage(
+				0, 99, filterAfter, null);
+
+		assertEquals(0, resultAfter.getOffset());
+		assertEquals(1, resultAfter.getCount());
+		assertEquals(1, resultAfter.getTotalCount());
+		assertEquals(1, resultAfter.getCountPerMessage().size());
+		matchesCounterPerMessage(resultAfter, 0, "causeA", "f1", List.of("4", "5"));
+	}
+
+	@Test
+	void testGetErrorSummaryByMessagePaging() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		ErrorSummaryFilter filter = ErrorSummaryFilter.newBuilder()
+				.flow("f2").build();
+		DeltaFileOrder order = DeltaFileOrder.newBuilder()
+				.direction(DeltaFileDirection.DESC)
+				.field("Count").build();
+
+		ErrorsByMessage firstPage = deltaFilesService.getErrorSummaryByMessage(
+				0, 2, filter, order);
+
+		assertEquals(0, firstPage.getOffset());
+		assertEquals(2, firstPage.getCount());
+		assertEquals(3, firstPage.getTotalCount());
+		assertEquals(2, firstPage.getCountPerMessage().size());
+		matchesCounterPerMessage(firstPage, 0, "causeX", "f2", List.of("1", "3"));
+		matchesCounterPerMessage(firstPage, 1, "causeZ", "f2", List.of("10"));
+
+		ErrorsByMessage pageTwo = deltaFilesService.getErrorSummaryByMessage(
+				2, 2, filter, order);
+
+		assertEquals(2, pageTwo.getOffset());
+		assertEquals(1, pageTwo.getCount());
+		assertEquals(3, pageTwo.getTotalCount());
+		assertEquals(1, pageTwo.getCountPerMessage().size());
+		matchesCounterPerMessage(pageTwo, 0, "causeY", "f2", List.of("3"));
+
+		ErrorsByMessage invalidPage = deltaFilesService.getErrorSummaryByMessage(
+				4, 2, filter, order);
+
+		// there was only enough data for two pages
+		assertEquals(4, invalidPage.getOffset());
+		assertEquals(0, invalidPage.getCount());
+		assertEquals(3, invalidPage.getTotalCount());
+		assertEquals(0, invalidPage.getCountPerMessage().size());
+	}
+
+	@Test
+	void testGetErrorSummaryByMessageNoeFound() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		ErrorsByMessage noneFound = deltaFilesService.getErrorSummaryByMessage(
+				0, 99, ErrorSummaryFilter.newBuilder()
+						.flow("flowNotFound").build(), null);
+
+		assertEquals(0, noneFound.getOffset());
+		assertEquals(0, noneFound.getCount());
+		assertEquals(0, noneFound.getTotalCount());
+		assertEquals(0, noneFound.getCountPerMessage().size());
+	}
+
+	private void loadDeltaFilesWithActionErrors(OffsetDateTime now, OffsetDateTime later) {
+		// causeX, f1: 1, f2: 2
+		// _AND_ causeY, f2: 1
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"1", "f2", "causeX", "x", now, now, false, true, null));
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"2", "f1", "causeX", "x", now));
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"3", "f2", "causeX", "x", now, now, true, true, "causeY"));
+
+		// causeA, f1: 2
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"4", "f1", "causeA", "x", now, later, false, false, null));
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"5", "f1", "causeA", "x", now, later, true, true, null));
+
+		// causeZ, f2: 1, f3: 3. f1: 1 (which is not the last action)
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"6", "f3", "causeZ", "x", now));
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"7", "f3", "causeZ", "x", now));
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"8", "f3", "causeZ", "x", now));
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"9", "f1", "causeZ", "x", now, now, true, false, null));
+		deltaFileRepo.save(Util.buildErrorDeltaFile(
+				"10", "f2", "causeZ", "x", now, now, false, true, null));
+
+		// these have no errors
+		deltaFileRepo.save(Util.buildDeltaFile(
+				"11", "f1", DeltaFileStage.COMPLETE, now, now));
+		deltaFileRepo.save(Util.buildDeltaFile(
+				"12", "f4", DeltaFileStage.COMPLETE, now, now));
+	}
+
+	private void matchesCounterPerMessage(ErrorsByMessage result, int index, String cause, String flow, List<String> dids) {
+		assertEquals(cause, result.getCountPerMessage().get(index).getMessage());
+		assertEquals(flow, result.getCountPerMessage().get(index).getFlow());
+		assertEquals(dids.size(), result.getCountPerMessage().get(index).getCount());
+		assertEquals(dids.size(), result.getCountPerMessage().get(index).getDids().size());
+		assertTrue(result.getCountPerMessage().get(index).getDids().containsAll(dids));
+	}
+
+	@Test
 	void getIds() {
 		Set<String> ids = propertyRepository.getIds();
 		assertThat(ids).hasSizeGreaterThanOrEqualTo(3)

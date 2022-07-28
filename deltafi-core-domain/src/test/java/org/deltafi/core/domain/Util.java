@@ -17,12 +17,12 @@
  */
 package org.deltafi.core.domain;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.Assertions;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.generated.types.Action;
+import org.deltafi.core.domain.generated.types.ActionEventInput;
 import org.deltafi.core.domain.generated.types.ActionState;
 import org.deltafi.core.domain.generated.types.DeltaFileStage;
 
@@ -56,6 +56,45 @@ public class Util {
                                            OffsetDateTime modified) {
         return buildDeltaFile(did, flow, stage, created, modified, new ArrayList<>());
 
+    }
+
+    public static DeltaFile buildErrorDeltaFile(
+            String did, String flow, String cause, String context,
+            OffsetDateTime created) {
+        return buildErrorDeltaFile(did, flow, cause, context, created, created, true, true, null);
+    }
+
+    public static DeltaFile buildErrorDeltaFile(
+            String did, String flow, String cause, String context,
+            OffsetDateTime created, OffsetDateTime modified,
+            boolean extraAction, boolean errorIsLast, String extraError) {
+
+        DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified);
+        if (extraAction) {
+            if (!errorIsLast) {
+                deltaFile.queueNewAction("ErrorAction");
+                deltaFile.errorAction("ErrorAction", modified, modified, cause, context);
+            }
+            deltaFile.queueNewAction("OtherAction");
+            deltaFile.completeAction(ActionEventInput.newBuilder()
+                    .action("OtherAction")
+                    .start(modified)
+                    .stop(modified)
+                    .build());
+        }
+
+        if (errorIsLast || !extraAction) {
+            deltaFile.queueNewAction("ErrorAction");
+            deltaFile.errorAction("ErrorAction", modified, modified, cause, context);
+        }
+
+        if (extraError != null) {
+            deltaFile.queueNewAction("AnotherErrorAction");
+            deltaFile.errorAction("AnotherErrorAction", modified, modified, extraError, context);
+        }
+        deltaFile.setModified(modified);
+
+        return deltaFile;
     }
 
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,

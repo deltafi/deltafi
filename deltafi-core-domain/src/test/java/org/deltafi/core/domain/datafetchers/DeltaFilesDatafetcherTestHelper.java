@@ -189,4 +189,28 @@ public class DeltaFilesDatafetcherTestHelper {
                 .parent()
             .egressed()
             .filtered();
+
+    public static final ErrorSummaryByFlowProjectionRoot ERRORS_BY_FLOW_PROJECTION_ROOT =
+            new ErrorSummaryByFlowProjectionRoot()
+                    .count()
+                    .offset()
+                    .totalCount()
+                    .countPerFlow()
+                    .flow()
+                    .count()
+                    .dids()
+                    .parent();
+
+    public static final ErrorSummaryByMessageProjectionRoot ERRORS_BY_MESSAGE_PROJECTION_ROOT =
+            new ErrorSummaryByMessageProjectionRoot()
+                    .count()
+                    .offset()
+                    .totalCount()
+                    .countPerMessage()
+                    .message()
+                    .flow()
+                    .count()
+                    .dids()
+                    .parent();
+
 }

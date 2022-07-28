@@ -20,12 +20,14 @@ package org.deltafi.core.domain.repo;
 import com.mongodb.MongoException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.index.IndexOperations;
@@ -42,14 +44,12 @@ import java.util.*;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
-    private static final String COLLECTION = "deltaFile";
-    private static final String TTL_INDEX_NAME = "ttl_index";
-
     public static final String ID = "_id";
     public static final String VERSION = "version";
     public static final String PARENT_DIDS = "parentDids";
@@ -66,21 +66,18 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String EGRESSED = "egressed";
     public static final String FILTERED = "filtered";
     public static final String TOTAL_BYTES = "totalBytes";
-
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
-
     public static final String FORMATTED_DATA_FILENAME = "formattedData.filename";
     public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
     public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
     public static final String FORMATTED_DATA_EGRESS_ACTIONS = "formattedData.egressActions";
-
     public static final String ACTIONS = "actions";
+    public static final String ACTIONS_ERROR_CAUSE = "actions.errorCause";
     public static final String ACTIONS_NAME = "actions.name";
     public static final String ACTIONS_STATE = "actions.state";
     public static final String ACTIONS_MODIFIED = "actions.modified";
-
     public static final String ACTION_MODIFIED = "action.modified";
     public static final String ACTION_STATE = "action.state";
     public static final String ACTIONS_UPDATE_STATE = "actions.$[action].state";
@@ -89,6 +86,40 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_ERROR = "actions.$[action].errorCause";
     public static final String ACTIONS_UPDATE_ERROR_CONTEXT = "actions.$[action].errorContext";
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
+    private static final String COLLECTION = "deltaFile";
+    private static final String TTL_INDEX_NAME = "ttl_index";
+    // Aggregation variables
+    private static final String COUNT_FOR_PAGING = "countForPaging";
+    private static final String COUNT_LOWER_CASE = "count";
+    private static final String DID = "did";
+    private static final String DIDS = "dids";
+    private static final String ERROR_MESSAGE = "errorMessage";
+    private static final String FLOW_LOWER_CASE = "flow";
+    private static final String GROUP_COUNT = "groupCount";
+    private static final String ID_ERROR_MESSAGE = ID + "." + ERROR_MESSAGE;
+    private static final String ID_FLOW = ID + "." + FLOW_LOWER_CASE;
+    private static final String UNWIND_STATE = "unwindState";
+
+    class FlowCountAndDids {
+        TempSourceInfo sourceInfo;
+        int groupCount;
+        List<String> dids;
+
+        class TempSourceInfo {
+            String flow;
+        }
+    }
+
+    class MessageFlowGroup {
+        TempGroupId id;
+        int groupCount;
+        List<String> dids;
+
+        class TempGroupId {
+            String errorMessage;
+            String flow;
+        }
+    }
 
     private static final Map<String, Index> INDICES = Map.of(
             "action_search", new Index().named("action_search").on(ACTIONS_NAME, Sort.Direction.ASC),
@@ -531,5 +562,184 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private boolean indexExists(String name, List<IndexInfo> existingIndexes) {
         return existingIndexes.stream()
                 .anyMatch(indexInfo -> ObjectUtils.nullSafeEquals(name, indexInfo.getName()));
+    }
+
+    @Override
+    public ErrorsByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+
+        long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
+
+        MatchOperation matchesErrorStage = Aggregation.match(buildErrorSummaryCriteria(filter));
+
+        Aggregation countAggregation = Aggregation.newAggregation(
+                matchesErrorStage,
+                group(SOURCE_INFO_FLOW).count().as(GROUP_COUNT),
+                count().as(COUNT_FOR_PAGING));
+
+        final Long countForPaging = Optional
+                .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
+                        Document.class).getUniqueMappedResult())
+                .map(doc -> ((Integer) doc.get(COUNT_FOR_PAGING)).longValue())
+                .orElse(0L);
+
+        List<CountPerFlow> countPerFlow = new ArrayList<>();
+        if (countForPaging > 0) {
+            Aggregation pagingAggregation = Aggregation.newAggregation(
+                    matchesErrorStage,
+                    group(SOURCE_INFO_FLOW).count().as(GROUP_COUNT).push(ID).as(DIDS),
+                    project(DIDS, GROUP_COUNT).and(SOURCE_INFO_FLOW).previousOperation(),
+                    errorSummaryByFlowSort(orderBy),
+                    skip(elementsToSkip),
+                    limit(limit)
+            );
+
+            AggregationResults<FlowCountAndDids> aggResults = mongoTemplate.aggregate(
+                    pagingAggregation, COLLECTION, FlowCountAndDids.class);
+
+            for (FlowCountAndDids r : aggResults.getMappedResults()) {
+                countPerFlow.add(CountPerFlow.newBuilder()
+                        .flow(r.sourceInfo.flow)
+                        .count(r.groupCount)
+                        .dids(r.dids)
+                        .build()
+                );
+            }
+        }
+
+        ErrorsByFlow errorsByFlow = ErrorsByFlow.newBuilder()
+                .count(countPerFlow.size())
+                .countPerFlow(countPerFlow)
+                .offset((int) elementsToSkip)
+                .totalCount(countForPaging.intValue())
+                .build();
+
+        return errorsByFlow;
+    }
+
+    public ErrorsByMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+
+        long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
+
+        MatchOperation matchesErrorStage = Aggregation.match(buildErrorSummaryCriteria(filter));
+
+        GroupOperation groupByCauseAndFlow = Aggregation.group(ERROR_MESSAGE, FLOW_LOWER_CASE)
+                .count().as(GROUP_COUNT)
+                .push(DID).as(DIDS);
+
+        List<AggregationOperation> mainStages = Arrays.asList(
+                matchesErrorStage,
+                unwind(ACTIONS),
+                project()
+                        .and(SOURCE_INFO_FLOW).as(FLOW_LOWER_CASE)
+                        .and(ID).as(DID)
+                        .and(ACTIONS_ERROR_CAUSE).as(ERROR_MESSAGE)
+                        .and(ACTIONS_STATE).as(UNWIND_STATE),
+                match(Criteria.where(UNWIND_STATE).is(ActionState.ERROR)),
+                groupByCauseAndFlow
+        );
+
+        List<AggregationOperation> aggregationWithCount = new ArrayList<>(mainStages);
+        aggregationWithCount.add(count().as(COUNT_FOR_PAGING));
+        Aggregation countAggregation = Aggregation.newAggregation(aggregationWithCount);
+
+        final Long countForPaging = Optional
+                .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
+                        Document.class).getUniqueMappedResult())
+                .map(doc -> ((Integer) doc.get(COUNT_FOR_PAGING)).longValue())
+                .orElse(0L);
+
+        List<CountPerMessage> messageList = new ArrayList<>();
+        if (countForPaging > 0) {
+            List<AggregationOperation> stagesWithPaging = new ArrayList<>(mainStages);
+            stagesWithPaging.add(errorSummaryByMessageSort(orderBy));
+            stagesWithPaging.add(skip(elementsToSkip));
+            stagesWithPaging.add(limit(limit));
+            Aggregation pagingAggregation = Aggregation.newAggregation(stagesWithPaging);
+
+            AggregationResults<MessageFlowGroup> aggResults = mongoTemplate.aggregate(
+                    pagingAggregation, COLLECTION, MessageFlowGroup.class);
+
+            for (MessageFlowGroup groupResult : aggResults.getMappedResults()) {
+                messageList.add(CountPerMessage.newBuilder()
+                        .message(groupResult.id.errorMessage)
+                        .flow(groupResult.id.flow)
+                        .count(groupResult.dids.size())
+                        .dids(groupResult.dids)
+                        .build());
+            }
+        }
+
+        ErrorsByMessage errorsByMessage = ErrorsByMessage.newBuilder()
+                .count(messageList.size())
+                .offset((int) elementsToSkip)
+                .totalCount(countForPaging.intValue())
+                .countPerMessage(messageList)
+                .build();
+
+        return errorsByMessage;
+    }
+
+    private SortOperation errorSummaryByFlowSort(DeltaFileOrder orderBy) {
+        String sortField = SOURCE_INFO_FLOW;
+        Sort.Direction direction = Sort.Direction.ASC;
+
+        if (orderBy != null) {
+            direction = Sort.Direction.fromString(orderBy.getDirection().name());
+            if (orderBy.getField().toLowerCase(Locale.ROOT).contains(COUNT_LOWER_CASE)) {
+                sortField = GROUP_COUNT;
+            }
+        }
+
+        return Aggregation.sort(direction, sortField);
+    }
+
+    private SortOperation errorSummaryByMessageSort(DeltaFileOrder orderBy) {
+        String sortField = ID_ERROR_MESSAGE;
+        String secondaryField = ID_FLOW;
+        Sort.Direction direction = Sort.Direction.ASC;
+
+        if (orderBy != null) {
+            direction = Sort.Direction.fromString(orderBy.getDirection().name());
+
+            String requestedField = orderBy.getField().toLowerCase(Locale.ROOT);
+            if (requestedField.contains(FLOW_LOWER_CASE)) {
+                sortField = ID_FLOW;
+                secondaryField = ID_ERROR_MESSAGE;
+            } else if (requestedField.contains(COUNT_LOWER_CASE)) {
+                sortField = GROUP_COUNT;
+                secondaryField = ID_ERROR_MESSAGE;
+            }
+        }
+
+        return Aggregation.sort(direction, sortField).and(direction, secondaryField);
+    }
+
+    private Criteria buildErrorSummaryCriteria(ErrorSummaryFilter filter) {
+        Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR);
+
+        if (isNull(filter)) {
+            return criteria;
+        }
+
+        List<Criteria> andCriteria = new ArrayList<>();
+        andCriteria.add(criteria);
+
+        if (nonNull(filter.getModifiedAfter())) {
+            andCriteria.add(Criteria.where(MODIFIED).gt(filter.getModifiedAfter()));
+        }
+
+        if (nonNull(filter.getModifiedBefore())) {
+            andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
+        }
+
+        if (nonNull(filter.getFlow())) {
+            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getFlow()));
+        }
+
+        if (andCriteria.size() > 1) {
+            criteria.andOperator(andCriteria.toArray(new Criteria[0]));
+        }
+
+        return criteria;
     }
 }

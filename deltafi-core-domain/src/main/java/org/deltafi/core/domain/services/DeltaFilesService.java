@@ -875,4 +875,17 @@ public class DeltaFilesService {
     private void deleteMetadata(List<DeltaFile> deltaFiles) {
         deltaFileRepo.deleteAll(deltaFiles);
     }
+
+    public ErrorsByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+        return deltaFileRepo.getErrorSummaryByFlow(offset,
+                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                filter, orderBy);
+    }
+
+    public ErrorsByMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+        return deltaFileRepo.getErrorSummaryByMessage(offset,
+                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                filter, orderBy);
+    }
+
 }

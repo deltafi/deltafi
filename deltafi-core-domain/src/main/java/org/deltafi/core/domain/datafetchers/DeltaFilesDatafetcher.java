@@ -104,6 +104,26 @@ public class DeltaFilesDatafetcher {
     return deltaFilesService.getLastWithFilename(filename);
   }
 
+  @DgsQuery
+  @SuppressWarnings("unused")
+  public ErrorsByFlow errorSummaryByFlow(
+          @InputArgument Integer offset,
+          @InputArgument Integer limit,
+          @InputArgument ErrorSummaryFilter filter,
+          @InputArgument DeltaFileOrder orderBy) {
+    return deltaFilesService.getErrorSummaryByFlow(offset, limit, filter, orderBy);
+  }
+
+  @DgsQuery
+  @SuppressWarnings("unused")
+  public ErrorsByMessage errorSummaryByMessage(
+          @InputArgument Integer offset,
+          @InputArgument Integer limit,
+          @InputArgument ErrorSummaryFilter filter,
+          @InputArgument DeltaFileOrder orderBy) {
+    return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, orderBy);
+  }
+
   @DgsMutation
   @SuppressWarnings("unused")
   public DeltaFile ingress(@InputArgument IngressInput input) {

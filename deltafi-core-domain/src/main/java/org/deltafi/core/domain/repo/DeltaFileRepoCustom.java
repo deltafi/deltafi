@@ -19,8 +19,7 @@ package org.deltafi.core.domain.repo;
 
 import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.DeltaFiles;
-import org.deltafi.core.domain.generated.types.DeltaFileOrder;
-import org.deltafi.core.domain.generated.types.DeltaFilesFilter;
+import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 
 import java.time.Duration;
@@ -113,4 +112,29 @@ public interface DeltaFileRepoCustom {
      * @return the list of DeltaFiles
      */
     DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields);
+
+    /**
+     * Count the number of errors per flow using the optional filter parameters, and return the requested
+     * page of data based on offset and limit. All associated DeltaFile dids within each flow are included.
+     *
+     * @param offset  Offset to use for pagination (defaults to 0)
+     * @param limit   Maximum number of flows to return
+     * @param filter  Filters are used to constrain which DeltaFiles are used in computation
+     * @param orderBy Determines what fields the returned records will be sorted by
+     * @return the ErrorsByFlow
+     */
+    ErrorsByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy);
+
+    /**
+     * Count the number of errors per errorMessage + flow using the optional filter parameters, and return the requested
+     * page of data based on offset and limit. All associated DeltaFile dids within each errorMessage + flow grouping are included.
+     *
+     * @param offset  Offset to use for pagination (defaults to 0)
+     * @param limit   Maximum number of flows to return
+     * @param filter  Filters are used to constrain which DeltaFiles are used in computation
+     * @param orderBy Determines what fields the returned records will be sorted by
+     * @return the ErrorsByMessage
+     */
+    ErrorsByMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy);
+
 }
