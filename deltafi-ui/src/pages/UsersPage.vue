@@ -37,7 +37,7 @@
               <span v-for="domain in data.domains.split(',')" :key="domain" class="badge badge-pill mr-2">{{ domain }}</span>
             </span>
             <span v-else-if="['created_at', 'updated_at'].includes(field)">
-              <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss"></Timestamp>
+              <Timestamp :timestamp="sanitizeDate(data[field])" format="YYYY-MM-DD HH:mm:ss"></Timestamp>
             </span>
             <span v-else>{{ data[field] }}</span>
           </template>
@@ -211,6 +211,10 @@ watch(() => userDialog.value, (newValue) => {
     activeTabIndex.value = uiConfig.authMode == 'cert' ? 1 : 0
   }
 })
+
+const sanitizeDate = (date) => {
+  return date.split(' ').splice(0, 2).join(' ');
+}
 </script>
 
 <style lang="scss">

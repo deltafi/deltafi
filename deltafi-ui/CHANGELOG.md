@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.96.3]
+
+### Fixed
+
+- Bug where "Show Acknowledged" button text would wrap in Firefox (#205)
+- Bug where dates on Users page would display "Invalid Date" in Firefox (#205)
+
+## [0.96.2]
 
 ### Changed
 
@@ -294,7 +301,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.1...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.3...main
+[0.96.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.2...0.96.3
+[0.96.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.1...0.96.2
 [0.96.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.0...0.96.1
 [0.96.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.4...0.96.0
 [0.95.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.95.3...0.95.4
