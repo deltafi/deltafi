@@ -64,7 +64,8 @@ public class DeltaFileService {
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
-    private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().did();
+    private static final IngressProjectionRoot PROJECTION_ROOT = new IngressProjectionRoot().sourceInfo().flow().parent();
+    private static final String FLOW_FIELD_PATH = "ingress.sourceInfo.flow";
 
     public String ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, List<KeyValue> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
         if (Objects.isNull(namespacedFlow)) {
@@ -80,7 +81,7 @@ public class DeltaFileService {
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(contentReference).name(sourceFileName).build());
 
         try {
-            sendToIngressGraphQl(did, sourceFileName, namespacedFlow, metadata, content, created);
+            namespacedFlow = sendToIngressGraphQl(did, sourceFileName, namespacedFlow, metadata, content, created);
         } catch (Exception e) {
             contentStorageService.delete(contentReference);
             throw e;
@@ -108,7 +109,7 @@ public class DeltaFileService {
         return new KeyValue(entry.getKey(), value);
     }
 
-    private void sendToIngressGraphQl(String did, String sourceFileName, String namespacedFlow, List<KeyValue> metadata,
+    private String sendToIngressGraphQl(String did, String sourceFileName, String namespacedFlow, List<KeyValue> metadata,
                                       List<Content> content, OffsetDateTime created) throws DeltafiException {
         IngressInput ingressInput = IngressInput.newBuilder()
                 .did(did)
@@ -134,6 +135,7 @@ public class DeltaFileService {
             logIngressRequestError(namespacedFlow, e);
             throw e;
         }
+        return response.extractValueAsObject(FLOW_FIELD_PATH, String.class);
     }
 
     private void logIngressRequestError(String namespacedFlow,

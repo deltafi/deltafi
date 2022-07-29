@@ -75,7 +75,7 @@ class DeltaFileServiceTest {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
-        GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": []}");
+        GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {\"ingress\": {\"sourceInfo\": {\"flow\": \"namespace.flow\"}}} , \"errors\": []}");
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
 
         String did = deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON);
