@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - "black hole" HTTP server that returns 200 responses for any post added.  To enable this
   pod, set the enabled flag in values.yaml.  This is intended as an alternative to filtered
   egress, and allows the full egress path to be exercised
+- Debug logging in ingress for all posted DeltaFiles
+- Error logging in ingress for all endpoint errors
 
 ### Changed
 - CLI: `deltafi install` loads variables and flows
@@ -43,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - API: System property requests are cached to reduce load against core-domain
 - Scheduled deletes are performed in batches to avoid overwhelming the core
 - Metrics for flows using the auto resolution of flows now report on the resolved flow instead of 'null'
+- `dropped_file` metrics will be incremented for every 400 and 500 error
 
 ## [0.96.2] - 2022-07-22
 

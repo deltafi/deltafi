@@ -20,8 +20,6 @@ package org.deltafi.ingress.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
@@ -64,9 +62,6 @@ class DeltaFileServiceTest {
     GraphQLClient graphQLClient;
 
     @Spy
-    MeterRegistry meterRegistry = new SimpleMeterRegistry();
-
-    @Spy
     @SuppressWarnings("unused")
     ObjectMapper objectMapper = new ObjectMapper();
 
@@ -78,11 +73,11 @@ class DeltaFileServiceTest {
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {\"ingress\": {\"sourceInfo\": {\"flow\": \"namespace.flow\"}}} , \"errors\": []}");
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
 
-        String did = deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON);
+        DeltaFileService.IngressResult created = deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON);
 
-        Mockito.verify(contentStorageService).save(eq(did), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
+        Mockito.verify(contentStorageService).save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
         Mockito.verify(graphQLClient).executeQuery(any());
-        Assertions.assertNotNull(did);
+        Assertions.assertNotNull(created.getContentReference().getDid());
     }
 
     @Test @SneakyThrows
