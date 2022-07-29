@@ -21,6 +21,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Upgrade and Migration
 
+## [0.96.3] - 2022-07-29
+
+### Added
+- "black hole" HTTP server that returns 200 responses for any post added.  To enable this
+  pod, set the enabled flag in values.yaml.  This is intended as an alternative to filtered
+  egress, and allows the full egress path to be exercised
+
+### Changed
+- CLI: `deltafi install` loads variables and flows
+- If no egress is configured for a flow, DeltaFiles will be errored instead of completed
+- KinD: MongoDB uses a fixed password to allow preservation of the database between clusters
+- Egress sink can be disabled in values.yaml
+
+### Removed
+- MinIO dashboard link removed
+
+### Fixed
+- Flowfile egress deadlock fixed.  The fix is memory inefficient, but will work until a better solution is developed
+- Fixed scale factor for bps gauges on Grafana dashboards
+- API: System property requests are cached to reduce load against core-domain
+- Scheduled deletes are performed in batches to avoid overwhelming the core
+- Metrics for flows using the auto resolution of flows now report on the resolved flow instead of 'null'
+
 ## [0.96.2] - 2022-07-22
 
 ### Added
@@ -403,7 +426,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.2...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.3...main
+[0.96.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.2...0.96.3
 [0.96.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.1...0.96.2
 [0.96.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.0...0.96.1
 [0.96.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.95.4...0.96.0

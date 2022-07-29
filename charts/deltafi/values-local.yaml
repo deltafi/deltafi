@@ -1,7 +1,7 @@
 # DeltaFi config
 deltafi:
   ui:
-    title: DeltaFi (LOCAL)
+    title: DeltaFi (DinK)
     image: localhost:5000/deltafi-ui:latest
   passthrough_actions:
     image: localhost:5000/deltafi-passthrough-actions:latest
