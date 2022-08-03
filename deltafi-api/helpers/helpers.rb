@@ -31,5 +31,9 @@ class ApiServer < Sinatra::Base
       }.to_json
       puts audit_message
     end
+
+    def auth_mode
+      ENV.fetch('AUTH_MODE')
+    end
   end
 end

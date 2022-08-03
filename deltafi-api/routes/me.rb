@@ -22,10 +22,13 @@ class ApiServer < Sinatra::Base
   register Sinatra::Namespace
 
   namespace '/api/v1' do
-    get    '/users/?',   &DF::Auth.proxy
-    get    '/users/:id', &DF::Auth.proxy
-    post   '/users',     &DF::Auth.proxy
-    put    '/users/:id', &DF::Auth.proxy
-    delete '/users/:id', &DF::Auth.proxy
+    get '/me' do
+      return { name: 'Anonymous' }.to_json if auth_mode == 'disabled'
+
+      id = request.env['HTTP_X_USER_ID'].to_i
+      response = DF::Auth.get_user(id)
+      status response.code
+      response.body
+    end
   end
 end

@@ -49,6 +49,8 @@ spec:
               key: secretkey
         - name: WORKERS
           value: {{ default "2" .Values.deltafi.api.workers | quote }}
+        - name: AUTH_MODE
+          value: {{ .Values.deltafi.auth.mode | quote }}
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}

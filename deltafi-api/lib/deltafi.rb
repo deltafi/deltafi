@@ -59,9 +59,11 @@ module Deltafi
   end
 
   def self.system_properties
+    @@system_properties ||= {}
+    return @@system_properties unless running_in_cluster?
+
     base_url = ENV['DELTAFI_CONFIG_URL'] || 'http://deltafi-core-domain-service'
     config_url = File.join(base_url, 'config/application/default')
-    @@system_properties ||= {}
 
     begin
       response = HTTParty.get(config_url,
@@ -77,6 +79,10 @@ module Deltafi
     end
 
     return @@system_properties
+  end
+
+  def self.running_in_cluster?
+    ENV['RUNNING_IN_CLUSTER'] == 'true'
   end
 end
 
