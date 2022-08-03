@@ -16,58 +16,81 @@
    limitations under the License.
 */
 
+const errors = [
+  {
+    configName: "passthroughv2",
+    errorType: "UNRESOLVED_VARIABLE",
+    message: "Could not resolve placeholder 'notFound' in value \"${notFound}\"",
+  },
+  {
+    configName: "PassthroughLoadAction",
+    errorType: "INVALID_ACTION_PARAMETERS",
+    message: "$.unexpected: is not defined in the schema and the schema does not allow additional properties",
+  },
+  {
+    configName: "PassthroughTransformAction",
+    errorType: "UNREGISTERED_ACTION",
+    message: "Action: org.deltafi.passthrough.action.MissingRoteTransformAction has not been registered with the system",
+  },
+  {
+    configName: "NotReallyTranformAction",
+    errorType: "INVALID_ACTION_CONFIG",
+    message: "Action: org.deltafi.passthrough.action.RoteLoadAction is not registered as a TransformAction",
+  },
+];
+
+const flowStatus = ["STOPPED", "ERRORS"];
+const flowStatusMap = new Map([
+  ["STOPPED", { state: "STOPPED", errors: [] }],
+  ["ERRORS", { state: "STOPPED", errors: errors }],
+]);
+
 const generateData = () => {
   return {
-    "name": "decompress-passthrough",
-    "description": "Flow that passes data through unchanged",
-    "type": "compressedBinary",
-    "sourcePlugin": {
-      "groupId": "org.deltafi.passthrough",
-      "artifactId": "deltafi-passthrough",
-      "version": "0.95.4"
+    name: "decompress-passthrough",
+    description: "Flow that passes data through unchanged",
+    type: "compressedBinary",
+    sourcePlugin: {
+      groupId: "org.deltafi.passthrough",
+      artifactId: "deltafi-passthrough",
+      version: "0.95.4",
     },
-    "flowStatus": {
-      "state": "RUNNING",
-      "errors": []
-    },
-    "transformActions": [
+    flowStatus: flowStatusMap.get(flowStatus[Math.floor(Math.random() * flowStatus.length)]),
+    transformActions: [
       {
-        "name": "decompress-passthrough.DecompressPassthroughTransformAction1",
-        "consumes": "compressedBinary",
-        "produces": "binary",
-        "parameters": {
-          "decompressionType": "auto"
+        name: "decompress-passthrough.DecompressPassthroughTransformAction1",
+        consumes: "compressedBinary",
+        produces: "binary",
+        parameters: {
+          decompressionType: "auto",
         },
-        "requiresDomains": [
-          "binary",
-          "non-binary"
-        ],
-        "type": "org.deltafi.core.action.DecompressionTransformAction",
-        "apiVersion": null
+        requiresDomains: ["binary", "non-binary"],
+        type: "org.deltafi.core.action.DecompressionTransformAction",
+        apiVersion: null,
       },
       {
-        "name": "decompress-passthrough.DecompressPassthroughTransformAction2",
-        "consumes": "compressedBinary",
-        "produces": "binary",
-        "parameters": {
-          "decompressionType": "auto"
+        name: "decompress-passthrough.DecompressPassthroughTransformAction2",
+        consumes: "compressedBinary",
+        produces: "binary",
+        parameters: {
+          decompressionType: "auto",
         },
-        "type": "org.deltafi.core.action.DecompressionTransformAction",
-        "apiVersion": null
-      }
+        type: "org.deltafi.core.action.DecompressionTransformAction",
+        apiVersion: null,
+      },
     ],
-    "loadAction": {
-      "name": "decompress-passthrough.DecompressPassthroughLoadAction",
-      "consumes": "binary",
-      "apiVersion": null,
-      "parameters": {
-        "reinjectFlow": "passthrough"
-      }
+    loadAction: {
+      name: "decompress-passthrough.DecompressPassthroughLoadAction",
+      consumes: "binary",
+      apiVersion: null,
+      parameters: {
+        reinjectFlow: "passthrough",
+      },
     },
-    "variables": []
-  }
+    variables: [],
+  };
 };
 
 export default {
-  "getIngressFlow": generateData()
-}
+  getIngressFlow: generateData(),
+};

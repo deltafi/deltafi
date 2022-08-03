@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Added live metrics to Flow Viewer bit rate to Flows page (#196)
+- Flow Page update (#198)
+
 ## [0.96.3]
 
 ### Fixed

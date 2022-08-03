@@ -19,130 +19,50 @@
 <template>
   <PageHeader heading="Flows">
     <div class="btn-toolbar mb-2 mb-md-0">
-      <Button type="button" class="p-button-sm p-button-secondary p-button-outlined ml-3" @click="showFlowConfigData">Flow Configuration</Button>
-      <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3 mr-3" @change="pluginNameChange" />
+      <DialogTemplate component-name="FlowConfiguration" header="Flow Configuration">
+        <Button v-tooltip.top.hover="'View Flow Configuration'" label="Flow Configuration" class="p-button-sm p-button-secondary p-button-outlined ml-3" />
+      </DialogTemplate>
+      <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3 mr-3" />
       <span class="p-input-icon-left">
         <i class="pi pi-search" />
         <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt" />
       </span>
     </div>
   </PageHeader>
-  <div class="row pb-2">
-    <div class="col pb-3">
-      <h3>Ingress</h3>
-      <template v-if="checkFlowsVisible(flowData['ingress'])">
-        <Message severity="info" :closable="false">No Ingress flows found</Message>
-      </template>
-      <template v-for="(ingressFlowValue, ingressFlowKey) in flowData['ingress']" :key="ingressFlowKey">
-        <FlowPanel :flow-data-prop="ingressFlowValue" />
-      </template>
-    </div>
-    <template v-if="!_.isEmpty(flowData['enrich'])">
-      <Divider layout="vertical" class="mx-0 flow-divider-color" />
-      <div class="col pb-3">
-        <h3>Enrich</h3>
-        <template v-if="checkFlowsVisible(flowData['enrich'])">
-          <Message severity="info" :closable="false">No Enrich flows found</Message>
-        </template>
-        <template v-for="(enrichFlowValue, enrichFlowKey) in flowData['enrich']" :key="enrichFlowKey">
-          <FlowPanel :flow-data-prop="enrichFlowValue" />
-        </template>
-      </div>
-    </template>
-    <Divider layout="vertical" class="mx-0 flow-divider-color" />
-    <div class="col pb-3">
-      <h3>Egress</h3>
-      <template v-if="checkFlowsVisible(flowData['egress'])">
-        <Message severity="info" :closable="false">No Egress flows found</Message>
-      </template>
-      <template v-for="(egressFlowValue, egressFlowKey) in flowData['egress']" :key="egressFlowKey">
-        <FlowPanel :flow-data-prop="egressFlowValue" />
-      </template>
-    </div>
-  </div>
-  <div>
-    <Dialog v-model:visible="flowConfigDataVisable" header="Flow Configuration" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
-      <span v-if="hasErrors">
-        <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
-      </span>
-      <HighlightedCode v-else-if="flowConfigData" language="yaml" :code="flowConfigData" />
-      <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
-    </Dialog>
-  </div>
+  <FlowDataTable flow-type-prop="ingress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText"></FlowDataTable>
+  <FlowDataTable flow-type-prop="enrich" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText"></FlowDataTable>
+  <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText"></FlowDataTable>
 </template>
 
 <script setup>
-import FlowPanel from "@/components/FlowPanel.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
+import FlowDataTable from "@/components/FlowDataTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import Dialog from "primevue/dialog";
-import HighlightedCode from "@/components/HighlightedCode.vue";
-import Button from "primevue/button";
-import ScrollTop from "primevue/scrolltop";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import useFlowConfiguration from "@/composables/useFlowConfiguration";
-import { nextTick, onBeforeMount, ref, watch, computed } from "vue";
+import { onBeforeMount, ref } from "vue";
 
-import Divider from "primevue/divider";
+import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
-import Message from "primevue/message";
 import _ from "lodash";
 
 const { getAllFlows } = useFlowQueryBuilder();
-const flowConfigDataVisable = ref(false);
+
 const allFlowData = ref("");
-const flowData = ref("");
+const flowData = ref({});
 const filterFlowsText = ref("");
 const pluginNames = ref([]);
 const pluginNameSelected = ref(null);
-const { data: flowConfigData, fetch: fetchFlowConfiguration, errors } = useFlowConfiguration();
 
 onBeforeMount(async () => {
-  fetchFlows();
-  fetchFlowConfiguration();
+  await fetchFlows();
 });
 
-watch(
-  () => filterFlowsText.value,
-  () => {
-    applyFilters();
-  }
-);
-const hasErrors = computed(() => {
-  return errors.value.length > 0;
-});
-const applyFilters = async () => {
-  flowData.value = [];
-  await nextTick();
-  flowData.value = formatData(allFlowData.value);
-};
-
-const showFlowConfigData = () => {
-  flowConfigDataVisable.value = true;
-};
 const fetchFlows = async () => {
   let response = await getAllFlows();
-
   allFlowData.value = response.data.getAllFlows;
   pluginNames.value = pluginNamesList(allFlowData.value);
-  applyFilters();
-};
-
-const checkFlowsVisible = (flowsList) => {
-  if (_.isEmpty(flowsList)) {
-    return false;
-  }
-  return flowsList.every((el) => el.visible === false);
-};
-
-const foundTextInObject = (flow) => {
-  if (!_.isEmpty(filterFlowsText.value) && !_.isEmpty(pluginNameSelected.value)) {
-    return flow["searchField"].toLowerCase().includes(pluginNameSelected.value.name.toLowerCase()) && flow["searchField"].toLowerCase().includes(filterFlowsText.value.toLowerCase());
-  } else if (!_.isEmpty(pluginNameSelected.value)) {
-    return flow["searchField"].toLowerCase().includes(pluginNameSelected.value.name.toLowerCase());
-  } else {
-    return flow["searchField"].toLowerCase().includes(filterFlowsText.value.toLowerCase());
-  }
+  flowData.value = formatData(allFlowData.value);
 };
 
 const pluginNamesList = (allFlowData) => {
@@ -156,11 +76,6 @@ const pluginNamesList = (allFlowData) => {
   });
   return _.uniqBy(mvnCoordinatesArray, "name");
 };
-
-const pluginNameChange = () => {
-  applyFilters();
-};
-
 const formatData = (allFlowData) => {
   let formattedFlowData = JSON.parse(JSON.stringify(allFlowData));
   const flowTypes = ["ingress", "enrich", "egress"];
@@ -168,18 +83,10 @@ const formatData = (allFlowData) => {
   for (const flowType of flowTypes) {
     formattedFlowData[flowType.toString()].forEach((flow) => {
       flow["flowType"] = flowType;
-      flow["visible"] = false;
       let mvnCoordinates = "";
       flow["mvnCoordinates"] = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
       let searchableFlowKeys = (({ name, description, mvnCoordinates }) => ({ name, description, mvnCoordinates }))(flow);
       flow["searchField"] = Object.values(searchableFlowKeys).toString();
-      if (!_.isEmpty(filterFlowsText.value) || !_.isEmpty(pluginNameSelected.value)) {
-        if (foundTextInObject(flow)) {
-          flow["visible"] = true;
-        }
-      } else {
-        flow["visible"] = true;
-      }
     });
   }
   return formattedFlowData;

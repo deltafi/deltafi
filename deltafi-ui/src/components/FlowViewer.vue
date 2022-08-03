@@ -18,6 +18,15 @@
 <template>
   <TabView ref="tabview1" class="flow-viewer">
     <TabPanel header="Flow Actions">
+      <div v-if="!_.isEmpty(_.get(flowData, 'flowStatus.errors'))" class="pt-2">
+        <Message severity="error" :closable="false" class="mb-2 mt-0">
+          <ul>
+            <div v-for="(error, errorKey) in flowData.flowStatus.errors" :key="errorKey">
+              <li class="text-wrap text-break">{{ error.message }}</li>
+            </div>
+          </ul>
+        </Message>
+      </div>
       <div class="flow-viewer">
         <template v-for="(flowAction, key, index) of flowActions" :key="key">
           <template v-if="!_.isEmpty(flowAction)">
@@ -31,7 +40,7 @@
                           <dl>
                             <dt>{{ _.startCase(actionInfoKey) }}</dt>
                             <dd>
-                              <span>{{ _.isArray(value) ? Array.from(value).join(', ') : value }}</span>
+                              <span>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</span>
                             </dd>
                           </dl>
                         </div>
@@ -59,7 +68,7 @@
                         <dl>
                           <dt>{{ _.startCase(actionInfoKey) }}</dt>
                           <dd>
-                            <span>{{ _.isArray(value) ? Array.from(value).join(', ') : value }}</span>
+                            <span>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</span>
                           </dd>
                         </dl>
                       </div>
@@ -101,13 +110,15 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FlowVariableViewer from "@/components/FlowVariableViewer.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { defineExpose, defineProps, computed, onBeforeMount, reactive, ref } from "vue";
+import { defineExpose, defineProps, computed, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";
 
 import Divider from "primevue/divider";
+import Message from "primevue/message";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 
 import _ from "lodash";
+const isIdle = inject("isIdle");
 
 const { fetch: getActionMetrics, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
 
@@ -129,7 +140,7 @@ const props = defineProps({
   variables: {
     type: Object,
     required: false,
-    default: null
+    default: null,
   },
 });
 
@@ -137,10 +148,22 @@ const { header, flowName, flowType, variables } = reactive(props);
 
 const actionsList = ["transformActions", "loadAction", "deleteActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
 
+const refreshInterval = 5000; // 5 seconds
 const flowData = ref("");
 const dialogVisible = ref(false);
 const ingressFlowNameSelected = ref(null);
 
+let autoRefresh = null;
+
+onUnmounted(() => {
+  clearInterval(autoRefresh);
+});
+
+onBeforeMount(async () => {
+  fetchFlows(flowName, flowType);
+  await fetchActionMetrics();
+  autoRefresh = setInterval(fetchActionMetrics, refreshInterval);
+});
 const showDialog = () => {
   dialogVisible.value = true;
 };
@@ -149,13 +172,8 @@ defineExpose({
   showDialog,
 });
 
-onBeforeMount(async () => {
-  fetchFlows(flowName, flowType);
-  await fetchActionMetrics();
-});
-
 const fetchActionMetrics = async () => {
-  if (!loading.value) {
+  if (!isIdle.value && !loading.value) {
     let actionMetricsParams = { last: "5m" };
     if (ingressFlowNameSelected.value) {
       actionMetricsParams["flowName"] = ingressFlowNameSelected.value.name;
@@ -185,7 +203,7 @@ const flowActions = computed(() => {
 const panelHeader = (actionType) => {
   const words = actionType.replace(/([A-Z])/g, " $1");
   return words.charAt(0).toUpperCase() + words.slice(1);
-}
+};
 </script>
 
 <style lang="scss">

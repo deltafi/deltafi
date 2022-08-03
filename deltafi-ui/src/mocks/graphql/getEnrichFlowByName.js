@@ -16,38 +16,62 @@
    limitations under the License.
 */
 
+const errors = [
+  {
+    configName: "passthroughv2",
+    errorType: "UNRESOLVED_VARIABLE",
+    message: "Could not resolve placeholder 'notFound' in value \"${notFound}\"",
+  },
+  {
+    configName: "PassthroughLoadAction",
+    errorType: "INVALID_ACTION_PARAMETERS",
+    message: "$.unexpected: is not defined in the schema and the schema does not allow additional properties",
+  },
+  {
+    configName: "PassthroughTransformAction",
+    errorType: "UNREGISTERED_ACTION",
+    message: "Action: org.deltafi.passthrough.action.MissingRoteTransformAction has not been registered with the system",
+  },
+  {
+    configName: "NotReallyTranformAction",
+    errorType: "INVALID_ACTION_CONFIG",
+    message: "Action: org.deltafi.passthrough.action.RoteLoadAction is not registered as a TransformAction",
+  },
+];
+
+const flowStatus = ["STOPPED", "ERRORS"];
+const flowStatusMap = new Map([
+  ["STOPPED", { state: "STOPPED", errors: [] }],
+  ["ERRORS", { state: "STOPPED", errors: errors }],
+]);
+
 const generateData = () => {
   return {
-    "name": "artificial-enrichment",
-    "description": "A synthetic enrichment that acts on binary domain objects",
-    "sourcePlugin": {
-      "groupId": "org.deltafi.passthrough",
-      "artifactId": "deltafi-passthrough",
-      "version": "0.95.4"
+    name: "artificial-enrichment",
+    description: "A synthetic enrichment that acts on binary domain objects",
+    sourcePlugin: {
+      groupId: "org.deltafi.passthrough",
+      artifactId: "deltafi-passthrough",
+      version: "0.95.4",
     },
-    "flowStatus": {
-      "state": "RUNNING",
-      "errors": []
-    },
-    "enrichActions": [
+    flowStatus: flowStatusMap.get(flowStatus[Math.floor(Math.random() * flowStatus.length)]),
+    enrichActions: [
       {
-        "name": "artificial-enrichment.BinaryEnrichAction",
-        "type": "org.deltafi.passthrough.action.RoteEnrichAction",
-        "requiresDomains": [
-          "binary"
-        ],
-        "requiresEnrichment": [],
-        "requiresMetadataKeyValues": [],
-        "parameters": {
-          "enrichments": {
-            "binaryEnrichment": "binary enrichment value"
-          }
-        }
-      }
-    ]
-  }
+        name: "artificial-enrichment.BinaryEnrichAction",
+        type: "org.deltafi.passthrough.action.RoteEnrichAction",
+        requiresDomains: ["binary"],
+        requiresEnrichment: [],
+        requiresMetadataKeyValues: [],
+        parameters: {
+          enrichments: {
+            binaryEnrichment: "binary enrichment value",
+          },
+        },
+      },
+    ],
+  };
 };
 
 export default {
-  "getEnrichFlow": generateData()
-}
+  getEnrichFlow: generateData(),
+};
