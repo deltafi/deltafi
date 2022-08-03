@@ -90,8 +90,10 @@ public class StateMachine {
                 // if all enrich actions are complete, move to egress stage
                 deltaFile.setStage(DeltaFileStage.EGRESS);
                 // Make sure when moving into EGRESS stage the first time we find
-                // at least one action, unless there was a Split Load action on ingress.
-                firstEgressAttempt = !deltaFile.hasSplitAction();
+                // at least one action, unless there was a FILTERED or SPLIT result
+                // from the ingress load action. Do not expect egress actions if the
+                // ENRICH stage encountered an error either.
+                firstEgressAttempt = !(deltaFile.hasSplitAction() || deltaFile.hasFilteredAction() || deltaFile.hasErroredAction());
             case EGRESS:
                 List<ActionInput> egressActions = egressFlowService.getMatchingFlows(deltaFile.getSourceInfo().getFlow()).stream()
                         .map(egressFlow -> advanceEgress(egressFlow, deltaFile))

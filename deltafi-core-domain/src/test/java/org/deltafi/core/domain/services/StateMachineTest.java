@@ -21,16 +21,14 @@ import lombok.Builder;
 import lombok.Singular;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.core.domain.Util;
+import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
 import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
-import org.deltafi.core.domain.generated.types.Action;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
+import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.junit.jupiter.api.Test;
@@ -459,6 +457,26 @@ class StateMachineTest {
     }
 
     @Test
+    void testNoEgressFlowCheckSkippedForErrorActions() throws MissingEgressFlowException {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
+        deltaFile.setStage(DeltaFileStage.ENRICH);
+        deltaFile.queueNewAction("ErrorEnrichAction");
+        deltaFile.errorAction(ActionEventInput.newBuilder()
+                .did(deltaFile.getDid())
+                .action("ErrorEnrichAction")
+                .error(ErrorInput.newBuilder()
+                        .context("context")
+                        .cause("cause")
+                        .build())
+                .build());
+
+        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(Collections.emptyList());
+        Mockito.when(egressFlowService.getMatchingFlows("flow")).thenReturn(Collections.emptyList());
+        assertThat(stateMachine.advance(deltaFile)).isEmpty();
+        assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.ERROR);
+    }
+
+    @Test
     void testNoEgressFlowRequiredForSplitLoadActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
         deltaFile.setStage(DeltaFileStage.ENRICH);
@@ -474,7 +492,23 @@ class StateMachineTest {
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
     }
 
-    private void addCompletedActions(DeltaFile deltaFile, String ... actions) {
+    @Test
+    void testNoEgressFlowRequiredForFilteredLoadActions() throws MissingEgressFlowException {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", "flow");
+        deltaFile.setStage(DeltaFileStage.ENRICH);
+        deltaFile.queueNewAction("FilteredLoadAction");
+        deltaFile.filterAction(ActionEventInput.newBuilder()
+                .did(deltaFile.getDid())
+                .action("FilteredLoadAction")
+                .build(), "filterd");
+
+        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(Collections.emptyList());
+        Mockito.when(egressFlowService.getMatchingFlows("flow")).thenReturn(Collections.emptyList());
+        assertThat(stateMachine.advance(deltaFile)).isEmpty();
+        assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
+    }
+
+    private void addCompletedActions(DeltaFile deltaFile, String... actions) {
         for (String action : actions) {
             deltaFile.queueAction(action);
             deltaFile.completeAction(action, null, null);
@@ -482,7 +516,7 @@ class StateMachineTest {
     }
 
     private DeltaFile makeDomainAndEnrichFile() {
-        return makeCustomFile(false,  false);
+        return makeCustomFile(false, false);
     }
 
     private DeltaFile makeDeltaFile() {
@@ -516,7 +550,7 @@ class StateMachineTest {
         @Builder.Default
         String formatActionName = "FormatAction";
         @Builder.Default
-        List<String> validateActions= List.of("ValidateAction");
+        List<String> validateActions = List.of("ValidateAction");
         @Builder.Default
         String egressActionName = "TheEgressAction";
 

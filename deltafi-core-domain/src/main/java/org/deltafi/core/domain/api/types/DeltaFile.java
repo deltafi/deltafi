@@ -215,6 +215,10 @@ public class DeltaFile extends org.deltafi.core.domain.generated.types.DeltaFile
         return !actionState.equals(ActionState.QUEUED);
     }
 
+    public boolean hasFilteredAction() {
+        return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.FILTERED));
+    }
+
     public boolean hasSplitAction() {
         return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.SPLIT));
     }
