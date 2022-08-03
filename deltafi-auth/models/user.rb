@@ -44,6 +44,12 @@ class User < Sequel::Model
     self.password_hash = @password
   end
 
+  def common_name
+    return nil if dn.nil?
+
+    OpenSSL::X509::Name.parse(dn).to_a.find { |p| p[0] == 'CN' }[1]
+  end
+
   def validate
     super
 
@@ -81,8 +87,8 @@ class User < Sequel::Model
       dn: dn,
       username: username,
       domains: domains,
-      created_at: created_at,
-      updated_at: updated_at
+      created_at: created_at.utc.strftime("%FT%T.%3NZ"),
+      updated_at: updated_at.utc.strftime("%FT%T.%3NZ")
     }
   end
 end

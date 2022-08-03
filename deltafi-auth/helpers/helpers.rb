@@ -84,5 +84,18 @@ class AuthApi < Sinatra::Application
     def error(e)
       { error: e }.to_json
     end
+
+    def audit(verb, target)
+      user = request.env["HTTP_X_USER_NAME"] || 'system'
+      message = "#{verb} user #{target.common_name}"
+      audit_message = {
+        timestamp: Time.now.utc.strftime("%FT%T.%3NZ"),
+        loggerName: "AUDIT",
+        level: "INFO",
+        user: user,
+        message: message
+      }.to_json
+      puts audit_message
+    end
   end
 end

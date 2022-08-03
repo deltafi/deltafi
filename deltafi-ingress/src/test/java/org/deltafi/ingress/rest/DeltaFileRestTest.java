@@ -61,12 +61,13 @@ class DeltaFileRestTest {
     static final String FILENAME = "incoming.txt";
     static final String FLOW = "flow";
     static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
+    static final String USERNAME = "system";
     ContentReference CONTENT_REFERENCE = new ContentReference(FILENAME, "did", MEDIA_TYPE);
     DeltaFileService.IngressResult INGRESS_RESULT = new DeltaFileService.IngressResult(CONTENT_REFERENCE, FLOW);
 
     @Test @SneakyThrows
     void testIngress() {
-        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE), eq(USERNAME))).thenReturn(INGRESS_RESULT);
         RequestSpecification request = RestAssured.given();
         request.body(CONTENT.getBytes(StandardCharsets.UTF_8));
         request.contentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -77,13 +78,13 @@ class DeltaFileRestTest {
         assertThat(response.getStatusCode(), equalTo(200));
 
         ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
-        Mockito.verify(deltaFileService).ingressData(is.capture(), Mockito.eq(FILENAME), Mockito.eq(FLOW), Mockito.eq(METADATA), Mockito.eq(MEDIA_TYPE));
+        Mockito.verify(deltaFileService).ingressData(is.capture(), Mockito.eq(FILENAME), Mockito.eq(FLOW), Mockito.eq(METADATA), Mockito.eq(MEDIA_TYPE), eq(USERNAME));
         assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
     }
 
     @Test @SneakyThrows
     void testIngress_missingFlow() {
-        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), isNull(), eq(METADATA), eq(MediaType.APPLICATION_OCTET_STREAM))).thenReturn(INGRESS_RESULT);
+        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), isNull(), eq(METADATA), eq(MediaType.APPLICATION_OCTET_STREAM), eq(USERNAME))).thenReturn(INGRESS_RESULT);
         RequestSpecification request = RestAssured.given();
         request.body(CONTENT.getBytes(StandardCharsets.UTF_8));
         request.contentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -95,7 +96,7 @@ class DeltaFileRestTest {
         assertThat(response.getStatusCode(), equalTo(200));
 
         ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
-        Mockito.verify(deltaFileService).ingressData(is.capture(), eq(FILENAME), isNull(), eq(METADATA), eq(MEDIA_TYPE));
+        Mockito.verify(deltaFileService).ingressData(is.capture(), eq(FILENAME), isNull(), eq(METADATA), eq(MEDIA_TYPE), eq(USERNAME));
     }
 
     @Test
@@ -114,7 +115,7 @@ class DeltaFileRestTest {
 
     @Test @SneakyThrows
     void testIngress_queryParams() {
-        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), (String) isNull(), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), (String) isNull(), eq(MEDIA_TYPE), eq(USERNAME))).thenReturn(INGRESS_RESULT);
         RequestSpecification request = RestAssured.given();
         request.body(CONTENT.getBytes(StandardCharsets.UTF_8));
         request.contentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -124,12 +125,12 @@ class DeltaFileRestTest {
 
         assertThat(response.getStatusCode(), equalTo(200));
 
-        Mockito.verify(deltaFileService).ingressData(any(), eq(FILENAME), eq(FLOW), (String)isNull(), eq(MEDIA_TYPE));
+        Mockito.verify(deltaFileService).ingressData(any(), eq(FILENAME), eq(FLOW), (String)isNull(), eq(MEDIA_TYPE), eq(USERNAME));
     }
 
     @Test @SneakyThrows
     void testIngress_flowfile() {
-        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), (Map<String, String>) any(), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), (Map<String, String>) any(), eq(MEDIA_TYPE), eq(USERNAME))).thenReturn(INGRESS_RESULT);
         RequestSpecification request = RestAssured.given();
         request.body(flowfile(CONTENT, Map.of("overwrite", "vim is awesome", "fromFlowfile", "youbetcha")));
         request.contentType(DeltaFileRest.FLOWFILE_V1_MEDIA_TYPE);
@@ -148,13 +149,14 @@ class DeltaFileRestTest {
                         "fromHeader", "this is from header",
                         "overwrite", "vim is awesome",
                         "fromFlowfile", "youbetcha")),
-                Mockito.eq(MediaType.APPLICATION_OCTET_STREAM));
+                Mockito.eq(MediaType.APPLICATION_OCTET_STREAM),
+                eq(USERNAME));
         assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
     }
 
     @Test @SneakyThrows
     void testIngress_flowfile_noParamsOrHeaders() {
-        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), (Map<String, String>) any(), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), (Map<String, String>) any(), eq(MEDIA_TYPE), eq(USERNAME))).thenReturn(INGRESS_RESULT);
         RequestSpecification request = RestAssured.given();
         request.body(flowfile(CONTENT, Map.of(
                 "flow", FLOW,
@@ -180,13 +182,14 @@ class DeltaFileRestTest {
                         "fromHeader", "this is from header",
                         "overwrite", "vim is awesome",
                         "fromFlowfile", "youbetcha")),
-                eq(MEDIA_TYPE));
+                eq(MEDIA_TYPE),
+                eq(USERNAME));
         assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
     }
 
     @Test @SneakyThrows
     void testIngress_flowfile_missingFilename() {
-        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE), eq(USERNAME))).thenReturn(INGRESS_RESULT);
         RequestSpecification request = RestAssured.given();
         request.body(flowfile(CONTENT, Map.of(
                 "flow", FLOW,
@@ -204,7 +207,7 @@ class DeltaFileRestTest {
 
     @Test @SneakyThrows
     void testIngress_flowfile_missingFlow() {
-        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), isNull(), (Map<String, String>) any(), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+        Mockito.when(deltaFileService.ingressData(any(),eq(FILENAME), isNull(), (Map<String, String>) any(), eq(MEDIA_TYPE), eq(USERNAME))).thenReturn(INGRESS_RESULT);
         RequestSpecification request = RestAssured.given();
         request.body(flowfile(CONTENT, Map.of("overwrite", "vim is awesome", "fromFlowfile", "youbetcha")));
         request.contentType(DeltaFileRest.FLOWFILE_V1_MEDIA_TYPE);
@@ -223,7 +226,7 @@ class DeltaFileRestTest {
                         "fromHeader", "this is from header",
                         "overwrite", "vim is awesome",
                         "fromFlowfile", "youbetcha")),
-                eq(MEDIA_TYPE));
+                eq(MEDIA_TYPE), eq(USERNAME));
         assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
     }
 

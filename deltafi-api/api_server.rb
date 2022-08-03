@@ -25,11 +25,12 @@ require 'sinatra/base'
 require 'sinatra/streaming'
 require 'sinatra/quiet_logger'
 require 'sinatra/namespace'
-require './routes/users'
 
 $sse_service = DF::API::V1::ServerSentEvents::Service.new
 
 class ApiServer < Sinatra::Base
+  %w[helpers routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
+
   helpers Sinatra::Streaming
 
   configure :production, :development, :test do
@@ -117,6 +118,8 @@ class ApiServer < Sinatra::Base
     %i[did uuid size offset].each do |key|
       raise "Invalid content reference: #{key} required" unless content_reference[key]
     end
+
+    audit("viewed content for DID #{content_reference['did']}")
 
     head = DF::API::V1::Content.head(content_reference)
 

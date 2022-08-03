@@ -38,3 +38,13 @@ metadata:
 data:
   log-overview.json: |-
 {{ .Files.Get "files/grafana/dashboards/log-overview.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-audit-logs
+  labels:
+    grafana_dashboard: "1"
+data:
+  audit-logs.json: |-
+{{ .Files.Get "files/grafana/dashboards/audit-logs.json" | indent 4 }}

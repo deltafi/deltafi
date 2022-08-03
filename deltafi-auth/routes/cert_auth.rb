@@ -29,6 +29,7 @@ class AuthApi < Sinatra::Application
     cert_auth!
 
     response.headers['X-User-ID'] = @user.id.to_s
+    response.headers['X-User-Name'] = @user.common_name
     logger.info "Authorized: '#{@formatted_client_dn}' -> '#{@original_url}'"
     return
   end

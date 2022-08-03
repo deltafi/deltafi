@@ -26,7 +26,9 @@ class ApiServer < Sinatra::Base
   proxy_to_auth = lambda do
     path = request.path.gsub('/api/v1', '')
     url = File.join(AUTH_URL, path)
-    options = {}
+    options = {
+      headers: { "X-User-Name": request.env["HTTP_X_USER_NAME"] }
+    }
     options[:body] = request.body.read if %w[POST PUT].include?(request.request_method)
     response = HTTParty.send(request.request_method.downcase, url, options)
     status response.code

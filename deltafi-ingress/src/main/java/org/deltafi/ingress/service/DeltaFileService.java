@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLError;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
@@ -55,7 +54,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileService {
-    private final GraphQLClient graphQLClient;
+    private final GraphQLClientService graphQLClientService;
     private final ContentStorageService contentStorageService;
     private final ObjectMapper objectMapper;
 
@@ -69,7 +68,7 @@ public class DeltaFileService {
         public final String flow;
     }
 
-    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, List<KeyValue> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
+    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, List<KeyValue> metadata, String mediaType, String username) throws ObjectStorageException, DeltafiException {
         String flow = (namespacedFlow == null) ? DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME : namespacedFlow;
 
         if (sourceFileName == null) throw new DeltafiException("filename required in source info");
@@ -81,7 +80,7 @@ public class DeltaFileService {
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(contentReference).name(sourceFileName).build());
 
         try {
-            flow = sendToIngressGraphQl(did, sourceFileName, flow, metadata, content, created);
+            flow = sendToIngressGraphQl(did, sourceFileName, flow, metadata, content, created, username);
         } catch (Exception e) {
             contentStorageService.delete(contentReference);
             throw e;
@@ -90,13 +89,13 @@ public class DeltaFileService {
         return new IngressResult(contentReference, flow);
     }
 
-    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String flow, Map<String, String> metadata, String mediaType) throws ObjectStorageException, DeltafiException {
-        return ingressData(inputStream, sourceFileName, flow, KeyValueConverter.fromMap(metadata), mediaType);
+    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String flow, Map<String, String> metadata, String mediaType, String username) throws ObjectStorageException, DeltafiException {
+        return ingressData(inputStream, sourceFileName, flow, KeyValueConverter.fromMap(metadata), mediaType, username);
     }
 
-    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString, String mediaType)
+    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString, String mediaType, String username)
             throws ObjectStorageException, DeltafiException, DeltafiMetadataException {
-        return ingressData(inputStream, sourceFileName, flow, fromMetadataString(metadataString), mediaType);
+        return ingressData(inputStream, sourceFileName, flow, fromMetadataString(metadataString), mediaType, username);
     }
 
     private KeyValue toKeyValueInput(Map.Entry<String, JsonNode> entry) {
@@ -106,7 +105,7 @@ public class DeltaFileService {
     }
 
     private String sendToIngressGraphQl(String did, String sourceFileName, String namespacedFlow, List<KeyValue> metadata,
-                                      List<Content> content, OffsetDateTime created) throws DeltafiException {
+                                      List<Content> content, OffsetDateTime created, String username) throws DeltafiException {
         IngressInput ingressInput = IngressInput.newBuilder()
                 .did(did)
                 .sourceInfo(new SourceInfo(sourceFileName, namespacedFlow, metadata))
@@ -116,7 +115,7 @@ public class DeltaFileService {
 
         GraphQLResponse response;
         try {
-            response = graphQLClient.executeQuery(toGraphQlRequest(ingressInput).serialize());
+            response = graphQLClientService.graphQLClient(username).executeQuery(toGraphQlRequest(ingressInput).serialize());
         } catch (DeltafiGraphQLException e) {
             throw e;
         } catch (Exception e) {

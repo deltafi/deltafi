@@ -8,7 +8,7 @@
 {{- include "certAuthAnnotations" .}}
 {{- end }}
 nginx.ingress.kubernetes.io/auth-cache-duration: 200 5m
-nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID
+nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name
 {{- end -}}
 
 {{- define "basicAuthAnnotations" -}}

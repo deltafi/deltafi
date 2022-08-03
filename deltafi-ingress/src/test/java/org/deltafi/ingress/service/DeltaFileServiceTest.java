@@ -51,12 +51,16 @@ class DeltaFileServiceTest {
     public static final String FLOW_PLAN = "namespace";
     public static final String FULL_FLOW = FLOW_PLAN + "." + FLOW;
     public static final String FULL_FLOW_NAME = FLOW_PLAN + "." + FLOW;
+    public static final String USERNAME = "username";
 
     @InjectMocks
     DeltaFileService deltaFileService;
 
     @Mock
     ContentStorageService contentStorageService;
+
+    @Mock
+    GraphQLClientService graphQLClientService;
 
     @Mock
     GraphQLClient graphQLClient;
@@ -69,11 +73,12 @@ class DeltaFileServiceTest {
     void ingressData() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
+        Mockito.when(graphQLClientService.graphQLClient(USERNAME)).thenReturn(graphQLClient);
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {\"ingress\": {\"sourceInfo\": {\"flow\": \"namespace.flow\"}}} , \"errors\": []}");
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
 
-        DeltaFileService.IngressResult created = deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON);
+        DeltaFileService.IngressResult created = deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON, USERNAME);
 
         Mockito.verify(contentStorageService).save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
         Mockito.verify(graphQLClient).executeQuery(any());
@@ -84,11 +89,12 @@ class DeltaFileServiceTest {
     void ingressData_graphqlErrors() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
+        Mockito.when(graphQLClientService.graphQLClient(USERNAME)).thenReturn(graphQLClient);
 
         GraphQLResponse dgsResponse = new GraphQLResponse("{\"data\": {}, \"errors\": [{\"message\": \"Bad graphql mutation\"}]}");
         Mockito.when(graphQLClient.executeQuery(any())).thenReturn(dgsResponse);
 
-        Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON));
+        Assertions.assertThrows(DeltafiGraphQLException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON, USERNAME));
 
         Mockito.verify(contentStorageService).delete(any());
     }
@@ -97,11 +103,12 @@ class DeltaFileServiceTest {
     void ingressData_dgsFail() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
+        Mockito.when(graphQLClientService.graphQLClient(USERNAME)).thenReturn(graphQLClient);
 
         Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new DeltafiGraphQLException("failed to send to dgs"));
 
         DeltafiGraphQLException e = Assertions.assertThrows(DeltafiGraphQLException.class,
-                () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON));
+                () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON, USERNAME));
         Assertions.assertEquals("failed to send to dgs", e.getMessage());
 
         Mockito.verify(contentStorageService).delete(any());
@@ -111,10 +118,11 @@ class DeltaFileServiceTest {
     void ingressData_unexpectedException() {
         ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
+        Mockito.when(graphQLClientService.graphQLClient(USERNAME)).thenReturn(graphQLClient);
 
         Mockito.when(graphQLClient.executeQuery(any())).thenThrow(new RuntimeException("failed to send to dgs"));
 
-        Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON));
+        Assertions.assertThrows(DeltafiException.class, () -> deltaFileService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON, USERNAME));
 
         Mockito.verify(contentStorageService).delete(any());
     }

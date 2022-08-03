@@ -15,15 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.config;
+package org.deltafi.ingress.service;
 
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.HttpResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.properties.GraphqlClientProperties;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 
-import javax.enterprise.inject.Produces;
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URI;
@@ -31,13 +32,22 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 
 @Slf4j
-public class GraphQLClientConfig {
-    @Produces
-    public GraphQLClient graphQLClient(GraphqlClientProperties graphqlProperties, HttpClient httpClient) {
+@ApplicationScoped
+public class GraphQLClientService {
+
+    HttpClient httpClient;
+    GraphqlClientProperties graphqlProperties;
+
+    public GraphQLClientService(HttpClient httpClient, GraphqlClientProperties graphqlProperties) {
+        this.httpClient = httpClient;
+        this.graphqlProperties = graphqlProperties;
+    }
+
+    public GraphQLClient graphQLClient(final String username) {
         return GraphQLClient.createCustom(graphqlProperties.getCoreDomain(), (url, headers, body) -> {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    .headers("content-type", MediaType.APPLICATION_JSON)
+                    .headers("content-type", MediaType.APPLICATION_JSON, DeltaFiConstants.USER_HEADER, username)
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 

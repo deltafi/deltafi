@@ -18,6 +18,8 @@
 package org.deltafi.common.constant;
 
 public class DeltaFiConstants {
+
+    public static final String USER_HEADER = "X-User-ID";
     public static final String MATCHES_ANY = "any";
     public static final String INGRESS_ACTION = "IngressAction";
     public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";

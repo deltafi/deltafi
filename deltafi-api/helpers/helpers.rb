@@ -18,18 +18,18 @@
 
 # frozen_string_literal: true
 
-class AuthApi < Sinatra::Application
-  get '/basic-auth/?' do
-    content_type 'text/plain'
-
-    verify_headers(['X_ORIGINAL_URL'])
-    @original_url = request.env['HTTP_X_ORIGINAL_URL']
-
-    basic_auth!
-
-    response.headers['X-User-ID'] = @user.id.to_s
-    response.headers['X-User-Name'] = @user.username
-    logger.info "Authorized: '#{@user.username}' -> '#{@original_url}'"
-    return
+class ApiServer < Sinatra::Base
+  helpers do
+    def audit(message)
+      user = request.env["HTTP_X_USER_NAME"] || 'system'
+      audit_message = {
+        timestamp: Time.now.utc.strftime("%FT%T.%3NZ"),
+        loggerName: "AUDIT",
+        level: "INFO",
+        user: user,
+        message: message
+      }.to_json
+      puts audit_message
+    end
   end
 end
