@@ -222,8 +222,6 @@ promtail:
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
-  nodeSelector:
-    node-role.deltafi.org/storage: "true"
   config:
     clients:
       - url: http://deltafi-loki:3100/loki/api/v1/push

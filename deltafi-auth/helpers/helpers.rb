@@ -87,7 +87,7 @@ class AuthApi < Sinatra::Application
 
     def audit(verb, target)
       user = request.env["HTTP_X_USER_NAME"] || 'system'
-      message = "#{verb} user #{target.common_name}"
+      message = "#{verb} user #{target.common_name || target.username}"
       audit_message = {
         timestamp: Time.now.utc.strftime("%FT%T.%3NZ"),
         loggerName: "AUDIT",
