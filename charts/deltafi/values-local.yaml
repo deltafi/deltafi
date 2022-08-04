@@ -13,9 +13,12 @@ deltafi:
     image: localhost:5000/deltafi-ingress:latest
   auth:
     image: localhost:5000/deltafi-auth:latest
+    mode: disabled
   api:
     image: localhost:5000/deltafi-api:latest
   egress_sink:
     image: localhost:5000/deltafi-egress-sink:latest
   nodemonitor:
     image: localhost:5000/deltafi-nodemonitor:latest
+blackhole:
+  enabled: true
