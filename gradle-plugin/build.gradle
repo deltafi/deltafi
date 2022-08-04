@@ -37,3 +37,17 @@ gradlePlugin {
         }
     }
 }
+
+task generateResources {
+    ext {
+        propFile = file("$buildDir/generated/plugin.properties")
+    }
+    outputs.file propFile
+    doLast {
+        mkdir propFile.parentFile
+        propFile.text = "version=$project.version"
+    }
+}
+processResources {
+    from files(generateResources)
+}

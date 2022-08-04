@@ -20,6 +20,7 @@ package org.deltafi.gradle.plugin;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import groovy.lang.Closure;
 import org.deltafi.core.domain.api.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.ActionDescriptor;
@@ -32,17 +33,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * A Gradle plugin for building Deltafi plugins.
  * <p></p>
- * This plugin should be added to the build.gradle file at the root of a multi-module project that is a Deltafi plugin.
+ * This plugin should be added to the build.gradle file at the root of a project that is a Deltafi plugin.
  * It should be added to the plugins section as follows:
  * <p></p>
  * <pre>
@@ -50,17 +48,17 @@ import java.util.stream.Collectors;
  *     id "org.deltafi.plugin" version "${deltafiVersion}"
  * }
  * </pre>
- * The plugin will generate files in the root project's "charts" directory for automatically registering the plugin when
- * it's installed by Helm. The plugin registration is configured by adding the following:
+ * The plugin registration is configured by adding the following:
  * <p></p>
  * <pre>
  * deltafiPlugin {
  *   displayName = "Deltafi STIX"
  *   description = "Provides conversions to/from STIX 1.X and 2.1 formats"
- *   actionKitVersion = "${deltafiVersion}"
  *   // Dependencies on other Deltafi plugins may be specified as follows:
  *   //   dependencies = [{ group = "a"; artifact = "b"; version = "c" }, { group = "d"; artifact = "e"; version = "f" }]
  *   dependencies = []
+ *   helmDir = "build/helm" (optional, defaults to "rootDir/charts")
+ *   manifestDir = "build/plugin" (optional, defaults to "helmDir/files")
  * }
  * </pre>
  */
@@ -68,8 +66,9 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
     public static class DeltafiPluginExtension {
         String displayName;
         String description;
-        String actionKitVersion;
         List<Coordinates> dependencies = new ArrayList<>();
+        String helmDir;
+        String manifestDir;
 
         public void setDependencies(List<Closure<?>> dependencyClosures) {
             dependencyClosures.forEach(dependencyClosure -> {
@@ -89,65 +88,70 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
     }
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+            .enable(SerializationFeature.INDENT_OUTPUT);
 
     @Override
     public void apply(Project project) {
         DeltafiPluginExtension extension =
                 project.getExtensions().create("deltafiPlugin", DeltafiPluginExtension.class);
 
-        project.getGradle().buildFinished(buildResult -> installHelmFiles(project, extension));
-    }
-
-    private void installHelmFiles(Project project, DeltafiPluginExtension extension) {
-        installRegisterJob(project);
-        installPluginManifest(project, extension);
-    }
-
-    private void installRegisterJob(Project project) {
-        File chartsTemplatesDirectory = new File(project.getRootDir(), "charts/templates");
-        if (!chartsTemplatesDirectory.exists() && !chartsTemplatesDirectory.mkdirs()) {
-            System.out.println("Unable to create charts/templates directory!");
+        if (extension.helmDir == null) {
+            extension.helmDir = project.getRootDir() + "/charts";
+        }
+        if (extension.manifestDir == null) {
+            extension.manifestDir = extension.helmDir + "/files";
         }
 
-        InputStream registerJobInputStream = getClass().getResourceAsStream("/job-register-plugin.yaml");
-        try {
-            Files.copy(registerJobInputStream, new File(chartsTemplatesDirectory, "job-register-plugin.yaml").toPath(),
-                    StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            System.out.println("Unable to copy job to charts/templates directory!");
-        }
+        project.getGradle().buildFinished(buildResult -> generateFiles(project, extension));
     }
 
-    private void installPluginManifest(Project project, DeltafiPluginExtension extension) {
-        File chartsFilesDirectory = new File(project.getRootDir(), "charts/files");
-        if (!chartsFilesDirectory.exists() && !chartsFilesDirectory.mkdirs()) {
-            System.out.println("Unable to create charts/files directory!");
+    private void generateFiles(Project project, DeltafiPluginExtension extension) {
+        generatePluginManifest(project, extension);
+        generateHelmFiles(project, extension);
+    }
+
+    private void generatePluginManifest(Project project, DeltafiPluginExtension extension) {
+        File manifestDirectory = new File(extension.manifestDir);
+        if (!manifestDirectory.exists() && !manifestDirectory.mkdirs()) {
+            System.out.println("Unable to create manifest directory: " + manifestDirectory);
+            return;
         }
 
-        Map<Project, List<ActionDescriptor>> subProjectActionDescriptorsMap =
-                buildSubprojectActionDescriptorsMap(project);
+        Map<Project, List<ActionDescriptor>> projectActionDescriptorsMap = new HashMap<>();
+        projectActionDescriptorsMap.put(project, readActionDescriptors(project));
+        projectActionDescriptorsMap.putAll(buildSubprojectActionDescriptorsMap(project));
 
         List<PluginCoordinates> dependencies = new ArrayList<>();
         extension.dependencies.forEach(dependency -> dependencies.add(
                 new PluginCoordinates(dependency.group, dependency.artifact, dependency.version)));
+
+        String version = null;
+        try {
+            Properties properties = new Properties();
+            properties.load(getClass().getResourceAsStream("/plugin.properties"));
+            version = properties.getProperty("version");
+        } catch (IOException e) {
+            System.out.println("Unable to load plugin.properties: " + e.getMessage());
+            return;
+        }
 
         Plugin plugin = Plugin.newBuilder()
                 .pluginCoordinates(new PluginCoordinates(project.getGroup().toString(), project.getName(),
                         project.getVersion().toString()))
                 .displayName(extension.displayName)
                 .description(extension.description)
-                .actionKitVersion(extension.actionKitVersion)
-                .actions(subProjectActionDescriptorsMap.values().stream()
+                .actionKitVersion(version)
+                .actions(projectActionDescriptorsMap.values().stream()
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList()))
                 .dependencies(dependencies)
                 .build();
 
-        try (FileWriter fileWriter = new FileWriter(new File(chartsFilesDirectory, "plugin.json"))) {
+        try (FileWriter fileWriter = new FileWriter(new File(manifestDirectory, "plugin.json"))) {
             fileWriter.write(OBJECT_MAPPER.writeValueAsString(plugin));
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Unable to write plugin.json: " + e.getMessage());
         }
     }
 
@@ -156,8 +160,8 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
                 .collect(Collectors.toMap(Function.identity(), this::readActionDescriptors));
     }
 
-    private List<ActionDescriptor> readActionDescriptors(Project subProject) {
-        File actionsFile = new File(subProject.getBuildDir(), "actions.json");
+    private List<ActionDescriptor> readActionDescriptors(Project project) {
+        File actionsFile = new File(project.getBuildDir(), "actions.json");
 
         if (!actionsFile.exists()) {
             return List.of();
@@ -168,6 +172,23 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
         } catch (IOException e) {
             System.out.println("actions.json file couldn't be read: " + e.getMessage());
             return List.of();
+        }
+    }
+
+    private void generateHelmFiles(Project project, DeltafiPluginExtension extension) {
+        File helmDirectory = new File(extension.helmDir);
+        File helmTemplatesDirectory = new File(helmDirectory, "templates");
+        if (!helmTemplatesDirectory.exists() && !helmTemplatesDirectory.mkdirs()) {
+            System.out.println("Unable to create helm templates directory: " + helmTemplatesDirectory);
+            return;
+        }
+
+        InputStream registerJobInputStream = getClass().getResourceAsStream("/job-register-plugin.yaml");
+        try {
+            Files.copy(registerJobInputStream, new File(helmTemplatesDirectory, "job-register-plugin.yaml").toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            System.out.println("Unable to copy register plugin job to helm templates directory: " + e.getMessage());
         }
     }
 }
