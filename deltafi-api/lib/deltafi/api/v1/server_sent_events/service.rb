@@ -18,11 +18,15 @@
 
 # frozen_string_literal: true
 
+require 'deltafi/logger'
+
 module Deltafi
   module API
     module V1
       module ServerSentEvents
         class Service
+          include Deltafi::Logger
+
           attr_accessor :subscribers
 
           def initialize
@@ -32,9 +36,14 @@ module Deltafi
             Thread.new do
               channel_prefix = DF::Common::SSE_REDIS_CHANNEL_PREFIX
               @redis.psubscribe("#{channel_prefix}.*") do |on|
+                debug "Subscribed to Redis channel(s) #{channel_prefix}.*"
+
                 on.pmessage do |_match, channel, message|
+                  debug "Received message from Redis channel #{channel}: #{message}"
+
                   channel = channel.sub("#{channel_prefix}.", '')
 
+                  debug "Sending to #{subscribers.size} subscriber(s)" unless subscribers.empty?
                   subscribers.each do |conn|
                     conn << "event: #{channel}\n"
                     conn << "data: #{message}\n\n"
