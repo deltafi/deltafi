@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added live metrics to Flow Viewer bit rate to Flows page (#196)
 - Flow Page update (#198)
 - Removed unnecessary code related to bug #205
+- Added current user badge in top right corner (#206)
 
 ## [0.96.3]
 

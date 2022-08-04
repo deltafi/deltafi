@@ -18,7 +18,7 @@
 
 <template>
   <span>
-    <Tag v-tooltip.left="'Click for more info'" class="p-mr-3 mr-3 status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" @click="openStatusDialog()" />
+    <Tag v-tooltip.bottom="'Click for more info'" class="status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" @click="openStatusDialog()" />
     <Dialog v-model:visible="showStatusDialog" icon header="System Status" :style="{ width: '50vw' }" :maximizable="true" :modal="true" position :dismissable-mask="true">
       <span v-for="check in status.checks" :key="check.description">
         <Message :severity="messageSeverity(check.code)" :closable="false">{{ check.description }}</Message>

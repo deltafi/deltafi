@@ -30,7 +30,8 @@
     </div>
     <span>
       <Clock class="mr-3" />
-      <StatusBadge />
+      <StatusBadge class="mr-3" />
+      <UserBadge class="mr-3" />
     </span>
   </nav>
 </template>
@@ -38,6 +39,7 @@
 <script setup>
 import Clock from "@/components/Clock";
 import StatusBadge from "@/components/StatusBadge";
+import UserBadge from "@/components/UserBadge.vue";
 import { computed, inject } from "vue";
 
 const uiConfig = inject('uiConfig');

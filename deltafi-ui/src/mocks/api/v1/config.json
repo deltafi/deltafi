@@ -9,20 +9,11 @@
         "text": "Mocked Data",
         "textColor": "#FFFFFF"
       },
-      "topBar": {
-        "backgroundColor": "#003559",
-        "textColor": "#DDDDDD"
-      },
       "externalLinks": [
         {
-          "url": "https://gateway.dev.deltafi.org/",
-          "name": "GraphQL Gateway",
+          "url": "/graphiql/",
+          "name": "GraphiQL",
           "description": "GraphQL query interface"
-        },
-        {
-          "url": "https://kibana.dev.deltafi.org/app/dashboards#/view/cf08cb00-aeac-11eb-ac19-f330c8b60a55",
-          "name": "Kibana Dashboard",
-          "description": "Action logging and metrics visualization"
         },
         {
           "url": "https://k8s.dev.deltafi.org/#/workloads?namespace=deltafi",
@@ -30,22 +21,22 @@
           "description": "Kubernetes admin interface"
         },
         {
-          "url": "https://minio.dev.deltafi.org/",
-          "name": "MinIO",
-          "description": "MinIO storage dashboard"
+          "url": "https://grafana.dev.deltafi.org/dashboards",
+          "name": "Grafana Dashboards",
+          "description": "Metrics and logging visualization"
         },
         {
-          "url": "https://zipkin.dev.deltafi.org/zipkin/",
-          "name": "Zipkin",
-          "description": "DeltaFile tracing dashboard"
-        }
-      ],
-      "deltaFileLinks": [
+          "url": "https://grafana.dev.deltafi.org/d/flow_status1",
+          "name": "Flow Status Dashboard",
+          "description": "Grafana dashboard presenting an overview of the flows through the system"
+        },
         {
-          "name": "HTTPBin",
-          "url": "https://httpbin.org/anything/example?did=${DID}"
+          "url": "https://grafana.dev.deltafi.org/d/log_viewer",
+          "name": "Log Viewer Dashboard",
+          "description": "Grafana dashboard for viewing logs from individual microservices"
         }
       ]
     }
-  }
+  },
+  "timestamp": "2022-08-04 17:42:10 +0000"
 }
