@@ -26,7 +26,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 12611,
   "graphTooltip": 0,
-  "iteration": 1659538241426,
+  "iteration": 1659626074676,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -75,8 +75,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
-        "w": 24,
+        "h": 7,
+        "w": 8,
         "x": 0,
         "y": 0
       },
@@ -112,6 +112,103 @@
       ],
       "title": "Total Count of Audit Logs",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 31,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "string"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by(user) (count_over_time({type=\"AUDIT\", user=~\"$user\"} |~ `(?i)$searchable_pattern` !~ `(?i)$exclude_pattern|null` [1m]))",
+          "legendFormat": "{{user}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "User Activity",
+      "transformations": [],
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -175,7 +272,7 @@
         "h": 20,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 7
       },
       "id": 2,
       "options": {
@@ -382,6 +479,6 @@
   "timezone": "",
   "title": "Audit Log Viewer",
   "uid": "audit_log1",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }
