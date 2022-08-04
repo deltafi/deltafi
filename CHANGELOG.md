@@ -21,6 +21,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Upgrade and Migration
 
+## [0.96.4] - 2022-08-04
+
+### Added
+- Audit logging capability
+- Audit logging dashboard
+
+### Fixed
+- Bug resulting in filtered deltafiles being marked as errors
+
 ## [0.96.3] - 2022-07-29
 
 ### Added
