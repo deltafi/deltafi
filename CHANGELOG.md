@@ -25,7 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Audit logging capability
-- Audit logging dashboard
+- `Audit Logging` dashboard
+- `Flow Summary` dashboard
 
 ### Fixed
 - Bug resulting in filtered deltafiles being marked as errors
