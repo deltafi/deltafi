@@ -27,9 +27,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Audit logging capability
 - `Audit Logging` dashboard
 - `Flow Summary` dashboard
+- API: `/me` endpoint to support UI self-identification
 
 ### Fixed
 - Bug resulting in filtered deltafiles being marked as errors
+
+### Tech-Debt/Refactor
+- Removed `actionKitVersion` parameter from plugin
+- Added optional output directory to plugin
+
+### Upgrade and Migration
+- Updated KinD base image
 
 ## [0.96.3] - 2022-07-29
 
@@ -439,7 +447,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.3...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.4...main
+[0.96.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.3...0.96.4
 [0.96.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.2...0.96.3
 [0.96.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.1...0.96.2
 [0.96.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.0...0.96.1
