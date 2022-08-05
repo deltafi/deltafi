@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased]
+## [Unreleased] - Next release 0.96.5
 
 ### Added
 
@@ -32,8 +32,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - Bug resulting in filtered deltafiles being marked as errors
 
-### Tech-Debt/Refactor
+### Removed
 - Removed `actionKitVersion` parameter from plugin
+
+### Tech-Debt/Refactor
 - Added optional output directory to plugin
 
 ### Upgrade and Migration
