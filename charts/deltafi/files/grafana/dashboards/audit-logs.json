@@ -478,7 +478,7 @@
   },
   "timezone": "",
   "title": "Audit Log Viewer",
-  "uid": "audit_log1",
+  "uid": "audit-log",
   "version": 6,
   "weekStart": ""
 }

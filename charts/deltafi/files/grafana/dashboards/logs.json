@@ -947,7 +947,7 @@
   },
   "timezone": "",
   "title": "Application Log Viewer",
-  "uid": "log_viewer",
+  "uid": "log-viewer",
   "version": 4,
   "weekStart": ""
 }

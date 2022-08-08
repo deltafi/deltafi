@@ -1087,7 +1087,7 @@
   },
   "timezone": "",
   "title": "Flow Status",
-  "uid": "flow_status1",
+  "uid": "flow-status",
   "version": 28,
   "weekStart": ""
 }

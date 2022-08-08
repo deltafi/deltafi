@@ -22,12 +22,6 @@ data:
       - url: https://metrics.{{ .Values.ingress.domain }}/dashboards
         name: Grafana Dashboards
         description: Metrics and logging visualization
-      - url: https://metrics.{{ .Values.ingress.domain }}/d/flow_summary
-        name: Flow Summary Dashboard
-        description: Grafana dashboard presenting an overview of the flows through the system
-      - url: https://metrics.{{ .Values.ingress.domain }}/d/log_viewer
-        name: Log Viewer Dashboard
-        description: Grafana dashboard for viewing logs from individual microservices
 {{- if .Values.deltafi.ui.externalLinks }}
 {{ .Values.deltafi.ui.externalLinks | toYaml | indent 6 }}
 {{- end }}

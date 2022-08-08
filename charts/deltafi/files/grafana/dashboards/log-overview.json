@@ -701,7 +701,7 @@
   },
   "timezone": "",
   "title": "Log Overview",
-  "uid": "log_overview",
+  "uid": "log-overview",
   "version": 15,
   "weekStart": ""
 }
