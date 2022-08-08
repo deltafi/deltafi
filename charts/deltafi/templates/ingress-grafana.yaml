@@ -10,7 +10,7 @@ spec:
   - secretName: {{ coalesce .Values.ingress.tls.secrets.grafana .Values.ingress.tls.secrets.default }}
   {{- end }}
   rules:
-  - host: grafana.{{ .Values.ingress.domain }}
+  - host: metrics.{{ .Values.ingress.domain }}
     http:
       paths:
       - path: /

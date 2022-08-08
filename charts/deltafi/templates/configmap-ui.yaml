@@ -19,13 +19,13 @@ data:
       - url: https://k8s.{{ .Values.ingress.domain }}/#/workloads?namespace=deltafi
         name: Kubernetes Dashboard
         description: Kubernetes admin interface
-      - url: https://grafana.{{ .Values.ingress.domain }}/dashboards
+      - url: https://metrics.{{ .Values.ingress.domain }}/dashboards
         name: Grafana Dashboards
         description: Metrics and logging visualization
-      - url: https://grafana.{{ .Values.ingress.domain }}/d/flow_status1
-        name: Flow Status Dashboard
+      - url: https://metrics.{{ .Values.ingress.domain }}/d/flow_summary
+        name: Flow Summary Dashboard
         description: Grafana dashboard presenting an overview of the flows through the system
-      - url: https://grafana.{{ .Values.ingress.domain }}/d/log_viewer
+      - url: https://metrics.{{ .Values.ingress.domain }}/d/log_viewer
         name: Log Viewer Dashboard
         description: Grafana dashboard for viewing logs from individual microservices
 {{- if .Values.deltafi.ui.externalLinks }}
