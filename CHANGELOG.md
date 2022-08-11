@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.96.5
 
 ### Added
+- KinD: `cluster prerequisites` command will help get KinD prereqs installed on MacOS
+- KinD: Checks for a proper JDK 11 installation and errors appropriately
+- KinD: Checks for `docker` and errors appropriately
+- KinD: `cluster loc build` will clone plugin and UI repositories automatically if not present
 
 ### Changed
 - Moved `grafana.*` FQDN to `metrics.*`
@@ -15,6 +19,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- KinD: Creates docker kind network automatically if not present on `cluster up`
+- KinD: `cluster install` does not require `cluster up` before executing the first time
+- KinD: Added missing dependencies to Brewfile
 
 ### Tech-Debt/Refactor
 

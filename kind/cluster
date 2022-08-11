@@ -191,6 +191,23 @@ _check_deltafi_cli() {
   fi
 }
 
+_check_docker() {
+  type -p docker 2>/dev/null 1>/dev/null || _exit_1 echo "You must install docker (or Docker Desktop) first"
+  if ! docker network inspect kind 2>/dev/null 1>/dev/null; then
+    docker network create kind > /dev/null && _ok "Docker network 'kind' created"
+  fi
+  _ok "Docker"
+}
+
+_check_java() {
+  type -p java 2>/dev/null 1>/dev/null || _exit_1 echo "You must install Java OpenJDK 11 first"
+  local javaversion=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+  if [[ "$javaversion" > "11.999" || "$javaversion" < "11.0" ]]; then
+    _exit_1 echo "JDK 11 required, you have $javaversion"
+  fi
+  _ok "Java JDK: $javaversion"
+}
+
 _install_node_cli() {
   _debug ">> Installing DeltaFi CLI in cluster node"
   docker exec -i ${CLUSTER_NAME}-control-plane bash > /dev/null <<"EOF"
@@ -240,10 +257,30 @@ _create_registry() {
   fi
 }
 
+describe prerequisites "Install prerequisites for the KinD cluster.  MacOS only."
+prerequisites() {
+  _check_docker
+  if ! type -p brew > /dev/null; then
+    _attention "Installing homebrew"
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
+  _ok "Homebrew"
+  brew bundle install --file $BASE_PATH/Brewfile
+  _attention "Setting up JDK (may require your system password)"
+  sudo ln -sfn /opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk
+  _ok "OpenJDK 11"
+  _warn echo "In order to use JDK 11, you may need to update your path like this:"
+  echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@11/bin:\$PATH\"' >> ~/.zshrc"
+  echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@11/bin:\$PATH\"' >> ~/.bashrc"
+  _check_java
+}
+
+
 describe up "Turn up a KinD cluster (or re-apply cluster settings)"
 up() {
   _attention "Initializing KinD cluster"
   _check_deltafi_cli
+  _check_docker
   mkdir -p $PV_DIR
   pushd $BASE_PATH > /dev/null
 
@@ -254,7 +291,7 @@ up() {
   _create_proxy quay-proxy "https://quay.io" 5004
 
   if kind get clusters | grep "^${CLUSTER_NAME}$" > /dev/null; then
-    echo "${CLUSTER_NAME} cluster already instantiated"
+    _ok "${CLUSTER_NAME} cluster already instantiated"
   else
     cat <<EOF | kind create cluster --wait 10m --name ${CLUSTER_NAME} --config=-
 kind: Cluster
@@ -293,6 +330,7 @@ containerdConfigPatches:
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]
     endpoint = ["http://kind-registry:5000"]
 EOF
+    _ok "${CLUSTER_NAME} cluster instantiated"
   fi
 
   _k8s_add_namespace deltafi
@@ -301,6 +339,7 @@ EOF
   kubens deltafi
   _install_node_cli
   _enable_ui
+  _k8s_init
   _ok "KinD cluster"
 }
 
@@ -439,7 +478,7 @@ _is_arm() {
 
 describe install "Initialize a KinD cluster and install core DeltaFi"
 install() {
-  _k8s_init
+  up
   echo ">> Starting deltafi"
   # Detect ARM processor and load arm64 overrides
   local EXTRA=
@@ -619,6 +658,8 @@ loc() {
     esac
   done
 
+  _check_java
+
   # Down the cluster for clean, uninstall DeltaFi for restart
   if [[ -n "$RESTART" ]]; then
     down $FORCE
@@ -659,12 +700,24 @@ _local_build() {
   cd $ROOT/deltafi
   git pull || echo "Cannot pull latest"
   ./gradlew $BUILD_TARGETS publishToMavenLocal docker dockerPushLocal
+
+  if [[ ! -d $ROOT/deltafi-stix ]]; then
+    git clone git@gitlab.com:systolic/deltafi/deltafi-stix $ROOT/deltafi-stix
+  fi
   cd $ROOT/deltafi-stix
   git pull || echo "Cannot pull latest"
   ./gradlew $BUILD_TARGETS docker dockerPushLocal
+
+  if [[ ! -d $ROOT/deltafi-passthrough ]]; then
+    git clone git@gitlab.com:systolic/deltafi/deltafi-passthrough $ROOT/deltafi-passthrough
+  fi
   cd $ROOT/deltafi-passthrough
   git pull || echo "Cannot pull latest"
   ./gradlew $BUILD_TARGETS docker dockerPushLocal
+
+  if [[ ! -d $ROOT/deltafi-ui ]]; then
+    git clone git@gitlab.com:systolic/deltafi/deltafi-ui $ROOT/deltafi-ui
+  fi
   cd $ROOT/deltafi-ui
   docker build -t localhost:5000/deltafi-ui:latest .
   docker push localhost:5000/deltafi-ui:latest

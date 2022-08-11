@@ -41,13 +41,17 @@ At a bare minimum, you will need to have the following tools installed:
 For a quick install of all dependencies, in the `deltafi` repository:
 
 ```bash
-brew bundle --file kind/Brewfile
+kind/install.sh && cluster prerequisites
 ```
+For local builds (`cluster loc build`) you must have JDK 11 installed.  `cluster prerequisites` will install
+OpenJDK@11 via brew, but you may need to add it to your path in order to properly build.  The `cluster` script
+will tell you if your Java JDK version is incorrect.
 
 #### Check out your code
 
 You should have a single subdirectory where you checkout `deltafi`, `deltafi-ui`, `deltafi-stix`, `deltafi-passthrough`, and any other
-plugins that you will be testing.  When the cluster is created, the cluster node will mount the directory above `deltafi` into
+plugins that you will be testing.  The `cluster` script will automatically check out the UI, stix, and passthrough repos for you if
+you have not done it ahead of time.  When the cluster is created, the cluster node will mount the directory above `deltafi` into
 the node.  Only repositories in this tree will be accessable to the cluster.
 
 #### Install the CLI tools
@@ -76,11 +80,15 @@ cluster install
 deltafi install
 ```
 
+When this command completes, you will have a fully functional core DeltaFi cluster running in KinD.
+
 To install a locally built version of DeltaFi (from docker images built locally):
 
 ```bash
 cluster loc build install
 ```
+
+This command will build and install the local versions of DeltaFi core, stix, passthrough and UI.
 
 After you install DeltaFi on the cluster, you will be able to point your browser at [local.deltafi.org](https://local.deltafi.org)
 and interact with the DeltaFi UI.  You can install plugins, enable flows, upload data, check metrics, etc.
@@ -89,6 +97,7 @@ and interact with the DeltaFi UI.  You can install plugins, enable flows, upload
 
 The following are some of the commands available in the `cluster` command line tool.  Use `cluster help` for more info.
 
+- `cluster prerequisites` - Install prerequisites for running a KinD cluster.  __MacOS only.__
 - `cluster up` - Start a KinD cluster on your local box.  You can poke at this cluster whichever way with `kubectl` and whatnot.  It is just a cluster running in a docker container.
 - `cluster down` - Stop the kind cluster (and anything running in it).
 - `cluster destroy` - Stop the kind cluster and nuke persistent volumes, for that clean, fresh feeling.
@@ -130,6 +139,10 @@ Persistent volumes are all mounted in the `<deltafi repo>/kind/data` directory.
 ## Pro Tips
 
 `helm` and `kubectl` will work with your KinD cluster just like a native cluster installation.
+
+If you are using the Chrome browser (preferred) to interact with the UI, you may get certificate errors.  If the
+browser prevents navigation to the page, type `thisisunsafe` in the browser to circumvent the certificate nanny.  
+Crazy, but it works.
 
 It is helpful to run a [tmux](https://github.com/tmux/tmux/wiki) session when you are interacting with a cluster.  The
 default kubernetes namespace is set to `deltafi`, and it is helpful to always run a k8s pod watcher in a terminal pane.
