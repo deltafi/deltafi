@@ -23,19 +23,6 @@ interface ActionSchema {
     lastHeard: DateTime!
 }
 
-type DeleteActionSchema implements ActionSchema {
-    id: String!
-    paramClass: String!
-    schema: JSON
-    lastHeard: DateTime!
-}
-
-input DeleteActionSchemaInput {
-    id: String!
-    paramClass: String!
-    schema: JSON
-}
-
 type EgressActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
@@ -141,5 +128,4 @@ input ActionRegistrationInput {
     formatActions: [FormatActionSchemaInput!]
     validateActions: [ValidateActionSchemaInput!]
     egressActions: [EgressActionSchemaInput!]
-    deleteActions: [DeleteActionSchemaInput!]
 }

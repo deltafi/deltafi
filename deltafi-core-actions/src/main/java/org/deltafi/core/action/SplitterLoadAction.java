@@ -20,9 +20,9 @@ package org.deltafi.core.action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.load.MultipartLoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.api.types.Content;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.Content;
 import org.deltafi.core.parameters.SplitterLoadParameters;
 import org.jetbrains.annotations.NotNull;
 

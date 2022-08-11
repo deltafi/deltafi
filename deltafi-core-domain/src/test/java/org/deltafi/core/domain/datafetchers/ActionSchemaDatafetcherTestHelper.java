@@ -20,18 +20,17 @@ package org.deltafi.core.domain.datafetchers;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import org.deltafi.core.domain.api.types.ActionSchema;
+import org.deltafi.common.types.*;
+import org.deltafi.core.domain.types.ActionSchema;
 import org.deltafi.core.domain.generated.client.ActionSchemasGraphQLQuery;
 import org.deltafi.core.domain.generated.client.ActionSchemasProjectionRoot;
 import org.deltafi.core.domain.generated.client.RegisterActionsGraphQLQuery;
-import org.deltafi.core.domain.generated.types.*;
 
 import java.util.Collections;
 import java.util.List;
 
 public class ActionSchemaDatafetcherTestHelper {
 
-    public static final String DELETE_ACTION = "org.deltafi.DeleteAction";
     public static final String EGRESS_ACTION = "org.deltafi.EgressAction";
     public static final String ENRICH_ACTION = "org.deltafi.EnrichAction";
     public static final String FORMAT_ACTION = "org.deltafi.FormatAction";
@@ -47,9 +46,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .lastHeard()
                 .paramClass()
                 .schema()
-
-                .onDeleteActionSchema()
-                .parent()
 
                 .onEgressActionSchema()
                 .parent()
@@ -105,28 +101,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .formatActions(Collections.singletonList(getFormatInput()))
                 .validateActions(Collections.singletonList(getValidateInput()))
                 .egressActions(Collections.singletonList(getEgressInput()))
-                .deleteActions(Collections.singletonList(getDeleteInput()))
-                .build();
-
-        return executeRegister(dgsQueryExecutor, input);
-    }
-
-    static private DeleteActionSchemaInput getDeleteInput() {
-        return DeleteActionSchemaInput.newBuilder()
-                .id(DELETE_ACTION)
-                .paramClass(PARAM_CLASS)
-                .build();
-    }
-
-    static public int saveDelete(DgsQueryExecutor dgsQueryExecutor) {
-        ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
-                .transformActions(Collections.emptyList())
-                .loadActions(Collections.emptyList())
-                .enrichActions(Collections.emptyList())
-                .formatActions(Collections.emptyList())
-                .validateActions(Collections.emptyList())
-                .egressActions(Collections.emptyList())
-                .deleteActions(Collections.singletonList(getDeleteInput()))
                 .build();
 
         return executeRegister(dgsQueryExecutor, input);
@@ -147,7 +121,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .formatActions(Collections.emptyList())
                 .validateActions(Collections.emptyList())
                 .egressActions(Collections.singletonList(getEgressInput()))
-                .deleteActions(Collections.emptyList())
                 .build();
 
         return executeRegister(dgsQueryExecutor, input);
@@ -169,7 +142,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .formatActions(Collections.emptyList())
                 .validateActions(Collections.emptyList())
                 .egressActions(Collections.emptyList())
-                .deleteActions(Collections.emptyList())
                 .build();
 
         return executeRegister(dgsQueryExecutor, input);
@@ -191,7 +163,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .formatActions(Collections.singletonList(getFormatInput()))
                 .validateActions(Collections.emptyList())
                 .egressActions(Collections.emptyList())
-                .deleteActions(Collections.emptyList())
                 .build();
 
         return executeRegister(dgsQueryExecutor, input);
@@ -212,7 +183,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .formatActions(Collections.emptyList())
                 .validateActions(Collections.emptyList())
                 .egressActions(Collections.emptyList())
-                .deleteActions(Collections.emptyList())
                 .build();
 
         return executeRegister(dgsQueryExecutor, input);
@@ -233,7 +203,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .formatActions(Collections.emptyList())
                 .validateActions(Collections.emptyList())
                 .egressActions(Collections.emptyList())
-                .deleteActions(Collections.emptyList())
                 .build();
 
         return executeRegister(dgsQueryExecutor, input);
@@ -254,7 +223,6 @@ public class ActionSchemaDatafetcherTestHelper {
                 .formatActions(Collections.emptyList())
                 .validateActions(Collections.singletonList(getValidateInput()))
                 .egressActions(Collections.emptyList())
-                .deleteActions(Collections.emptyList())
                 .build();
 
         return executeRegister(dgsQueryExecutor, input);

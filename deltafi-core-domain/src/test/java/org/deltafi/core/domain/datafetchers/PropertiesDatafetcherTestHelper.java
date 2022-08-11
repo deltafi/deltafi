@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import graphql.ExecutionResult;
 import org.deltafi.core.config.server.constants.PropertyConstants;
-import org.deltafi.core.domain.api.types.PropertySet;
+import org.deltafi.common.types.PropertySet;
 
 import java.util.List;
 import java.util.Map;

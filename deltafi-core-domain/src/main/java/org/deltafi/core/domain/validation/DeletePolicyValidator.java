@@ -18,9 +18,9 @@
 package org.deltafi.core.domain.validation;
 
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.core.domain.api.types.DeletePolicy;
-import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.domain.api.types.TimedDeletePolicy;
+import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
 
 import java.time.DateTimeException;
 import java.time.Duration;

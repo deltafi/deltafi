@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.plugin;
 
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.PluginCoordinates;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

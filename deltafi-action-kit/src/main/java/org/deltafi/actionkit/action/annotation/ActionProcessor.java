@@ -20,7 +20,7 @@ package org.deltafi.actionkit.action.annotation;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.deltafi.core.domain.generated.types.ActionDescriptor;
+import org.deltafi.common.types.ActionDescriptor;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;

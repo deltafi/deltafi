@@ -21,9 +21,9 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
-import org.deltafi.core.domain.api.types.PropertyId;
-import org.deltafi.core.domain.api.types.PropertySet;
-import org.deltafi.core.domain.api.types.PropertyUpdate;
+import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.domain.types.PropertyId;
+import org.deltafi.core.domain.types.PropertyUpdate;
 import org.deltafi.core.config.server.constants.PropertyConstants;
 import org.deltafi.core.config.server.service.PropertyService;
 

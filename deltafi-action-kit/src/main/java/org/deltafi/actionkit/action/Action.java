@@ -39,8 +39,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.properties.DeltaFiSystemProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.core.domain.api.types.*;
-import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.PostConstruct;

@@ -18,14 +18,14 @@
 package org.deltafi.core.domain.services;
 
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.types.Action;
+import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.ActionState;
+import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.domain.Util;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
-import org.deltafi.core.domain.api.types.DeltaFile;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
-import org.deltafi.core.domain.generated.types.Action;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.ActionState;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

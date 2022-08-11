@@ -22,9 +22,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import groovy.lang.Closure;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
-import org.deltafi.core.domain.generated.types.ActionDescriptor;
-import org.deltafi.core.domain.generated.types.Plugin;
+import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.common.types.Plugin;
 import org.gradle.api.Project;
 
 import java.io.File;

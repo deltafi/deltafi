@@ -23,7 +23,7 @@ import com.netflix.graphql.dgs.client.GraphQLResponse;
 import lombok.SneakyThrows;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
@@ -49,7 +49,6 @@ class DeltaFileServiceTest {
     public static final String OBJECT_NAME = "in.txt";
     public static final String FLOW = "flow";
     public static final String FLOW_PLAN = "namespace";
-    public static final String FULL_FLOW = FLOW_PLAN + "." + FLOW;
     public static final String FULL_FLOW_NAME = FLOW_PLAN + "." + FLOW;
     public static final String USERNAME = "username";
 

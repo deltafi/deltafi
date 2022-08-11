@@ -23,7 +23,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.PluginInput;
 import org.deltafi.core.domain.generated.types.Result;
 

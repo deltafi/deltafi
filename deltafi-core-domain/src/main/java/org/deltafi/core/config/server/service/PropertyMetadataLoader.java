@@ -20,8 +20,8 @@ package org.deltafi.core.config.server.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.types.Property;
-import org.deltafi.core.domain.api.types.PropertySet;
+import org.deltafi.common.types.Property;
+import org.deltafi.common.types.PropertySet;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 

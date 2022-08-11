@@ -20,11 +20,11 @@ package org.deltafi.actionkit.action.transform;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.DataAmendedResult;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.ProtocolLayer;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.TransformInput;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ProtocolLayer;
+import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.TransformInput;
 import org.jetbrains.annotations.NotNull;
 
 /**

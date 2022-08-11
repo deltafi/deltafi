@@ -27,10 +27,12 @@ import com.netflix.graphql.dgs.InputArgument;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.DeltaFiles;
-import org.deltafi.core.domain.api.types.KeyValue;
-import org.deltafi.core.domain.api.types.UniqueKeyValues;
+import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.IngressInput;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.core.domain.types.DeltaFiles;
+import org.deltafi.core.domain.types.UniqueKeyValues;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFilesService;
 

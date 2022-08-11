@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.config.server.environment;
 
-import org.deltafi.core.domain.api.types.PropertySet;
+import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.config.server.service.PropertyService;
 import org.deltafi.core.config.server.service.StateHolderService;
 import org.springframework.cloud.config.environment.PropertySource;

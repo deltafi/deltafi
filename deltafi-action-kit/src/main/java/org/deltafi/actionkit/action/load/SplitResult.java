@@ -20,9 +20,8 @@ package org.deltafi.actionkit.action.load;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.core.domain.api.types.*;
-import org.deltafi.core.domain.api.converters.KeyValueConverter;
-import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.common.types.*;
+import org.deltafi.common.converters.KeyValueConverter;
 
 import java.util.ArrayList;
 import java.util.List;

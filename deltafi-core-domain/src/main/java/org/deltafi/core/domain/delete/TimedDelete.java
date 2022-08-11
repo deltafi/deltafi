@@ -18,7 +18,7 @@
 package org.deltafi.core.domain.delete;
 
 import lombok.Getter;
-import org.deltafi.core.domain.api.types.TimedDeletePolicy;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
 
 import java.time.Duration;

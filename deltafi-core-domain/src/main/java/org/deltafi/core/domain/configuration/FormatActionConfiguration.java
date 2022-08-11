@@ -18,8 +18,8 @@
 package org.deltafi.core.domain.configuration;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.api.types.FormatActionSchema;
+import org.deltafi.core.domain.types.ActionSchema;
+import org.deltafi.core.domain.types.FormatActionSchema;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -18,7 +18,7 @@
 package org.deltafi.core.domain.plugin;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.Flows;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.*;

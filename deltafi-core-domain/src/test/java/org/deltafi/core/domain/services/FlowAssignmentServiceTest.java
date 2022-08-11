@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.domain.services;
 
-import org.deltafi.core.domain.api.types.FlowAssignmentRule;
-import org.deltafi.core.domain.api.types.KeyValue;
-import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.SourceInfo;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.deltafi.core.domain.repo.FlowAssignmentRuleRepo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

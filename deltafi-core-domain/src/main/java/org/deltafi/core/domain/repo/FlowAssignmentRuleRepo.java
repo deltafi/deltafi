@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.repo;
 
-import org.deltafi.core.domain.api.types.FlowAssignmentRule;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

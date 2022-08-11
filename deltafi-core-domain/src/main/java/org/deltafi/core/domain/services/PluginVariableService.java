@@ -22,11 +22,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
-import org.deltafi.core.domain.api.types.KeyValue;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.Variable;
 import org.deltafi.core.domain.generated.types.PluginVariablesInput;
-import org.deltafi.core.domain.generated.types.Variable;
-import org.deltafi.core.domain.generated.types.VariableInput;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.deltafi.core.domain.repo.PluginVariableRepo;
@@ -136,12 +135,12 @@ public class PluginVariableService implements PluginCleaner {
         pluginVariableRepo.save(incoming);
     }
 
-    Variable preserveValue(VariableInput incoming, List<Variable> existingValues) {
+    Variable preserveValue(Variable incoming, List<Variable> existingValues) {
         Variable variable = Variable.newBuilder()
                 .name(incoming.getName())
                 .defaultValue(incoming.getDefaultValue())
                 .dataType(incoming.getDataType())
-                .required(incoming.getRequired())
+                .required(incoming.isRequired())
                 .description(incoming.getDescription())
                 .build();
 
@@ -190,7 +189,7 @@ public class PluginVariableService implements PluginCleaner {
         }
 
         List<String> errors = new ArrayList<>();
-        for (VariableInput variable : pluginVariablesInput.getVariables()) {
+        for (Variable variable : pluginVariablesInput.getVariables()) {
             String errMsg = variable.getDataType().validateValue(variable.getDefaultValue());
             if (null != errMsg) {
                 errors.add("Variable named: " + variable.getName() + " has an invalid default value: " + errMsg);

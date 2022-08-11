@@ -18,7 +18,7 @@
 package org.deltafi.core.domain.delete;
 
 import lombok.Getter;
-import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.DiskSpaceService;
 import org.deltafi.core.domain.services.api.model.DiskMetrics;

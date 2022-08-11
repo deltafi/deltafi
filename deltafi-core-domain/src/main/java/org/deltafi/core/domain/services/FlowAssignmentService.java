@@ -19,8 +19,8 @@ package org.deltafi.core.domain.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.types.FlowAssignmentRule;
-import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
+import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.repo.FlowAssignmentRuleRepo;
 import org.springframework.stereotype.Service;

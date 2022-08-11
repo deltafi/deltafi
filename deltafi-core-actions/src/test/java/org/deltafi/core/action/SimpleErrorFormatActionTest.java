@@ -24,12 +24,12 @@ import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.api.types.Content;
-import org.deltafi.core.domain.generated.types.Domain;
-import org.deltafi.core.domain.generated.types.ErrorDomain;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.Domain;
+import org.deltafi.common.types.ErrorDomain;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
+import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)

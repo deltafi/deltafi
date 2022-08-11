@@ -27,13 +27,12 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.format.SimpleFormatAction;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.core.domain.api.Constants;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.api.types.Content;
-import org.deltafi.core.domain.generated.types.Domain;
-import org.deltafi.core.domain.generated.types.Enrichment;
-import org.deltafi.core.domain.generated.types.ErrorDomain;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.Domain;
+import org.deltafi.common.types.Enrichment;
+import org.deltafi.common.types.ErrorDomain;
 import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.core.MediaType;
@@ -41,7 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
+import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 
 @Slf4j
 public class SimpleErrorFormatAction extends SimpleFormatAction {
@@ -52,7 +51,7 @@ public class SimpleErrorFormatAction extends SimpleFormatAction {
 
     @Override
     public List<String> getRequiresDomains() {
-        return List.of(Constants.ERROR_DOMAIN);
+        return List.of(ERROR_DOMAIN);
     }
 
     @Override

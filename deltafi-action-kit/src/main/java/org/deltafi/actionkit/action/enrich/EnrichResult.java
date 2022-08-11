@@ -20,11 +20,11 @@ package org.deltafi.actionkit.action.enrich;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.EnrichInput;
-import org.deltafi.core.domain.generated.types.EnrichmentInput;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.EnrichInput;
+import org.deltafi.common.types.Enrichment;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ import java.util.List;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result {
-    private final List<EnrichmentInput> enrichments = new ArrayList<>();
+    private final List<Enrichment> enrichments = new ArrayList<>();
 
     /**
      * @param context Context of the executed action
@@ -54,7 +54,7 @@ public class EnrichResult extends Result {
      * @param mediaType Media type of the applied enrichment
      */
     public void addEnrichment(@NotNull String enrichmentName, String value, @NotNull String mediaType) {
-        enrichments.add(new EnrichmentInput(enrichmentName, value, mediaType));
+        enrichments.add(new Enrichment(enrichmentName, value, mediaType));
     }
 
     @Override

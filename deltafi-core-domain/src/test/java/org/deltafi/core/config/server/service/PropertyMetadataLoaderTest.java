@@ -18,8 +18,8 @@
 package org.deltafi.core.config.server.service;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.domain.api.types.Property;
-import org.deltafi.core.domain.api.types.PropertySet;
+import org.deltafi.common.types.Property;
+import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.domain.Util;
 import org.junit.jupiter.api.Test;
 

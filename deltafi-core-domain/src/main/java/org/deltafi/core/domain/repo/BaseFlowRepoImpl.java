@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.repo;
 
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.FlowState;
 import org.deltafi.core.domain.types.Flow;
 import org.springframework.data.mongodb.core.MongoTemplate;

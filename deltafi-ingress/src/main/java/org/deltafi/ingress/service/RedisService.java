@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.common.types.ActionEventInput;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
@@ -32,7 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 
-import static org.deltafi.core.domain.api.Constants.DGS_QUEUE;
+import static org.deltafi.common.constant.DeltaFiConstants.DGS_QUEUE;
 
 public class RedisService {
     private final JedisPool jedisPool;

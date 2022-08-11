@@ -18,10 +18,14 @@
 package org.deltafi.common.constant;
 
 public class DeltaFiConstants {
-
-    public static final String USER_HEADER = "X-User-Name";
-    public static final String MATCHES_ANY = "any";
-    public static final String INGRESS_ACTION = "IngressAction";
-    public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
     public static final String AUTO_RESOLVE_FLOW_NAME = "auto-resolve";
+    public static final String DGS_QUEUE = "dgs";
+    public static final String ERROR_DOMAIN = "error";
+    public static final String INGRESS_ACTION = "IngressAction";
+    public static final String MATCHES_ANY = "any";
+    public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
+    public static final String USER_HEADER = "X-User-Name";
+
+
+
 }

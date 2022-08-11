@@ -27,6 +27,7 @@ import graphql.ExecutionResult;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.common.types.*;
 import org.deltafi.core.config.server.constants.PropertyConstants;
 import org.deltafi.core.config.server.environment.DeltaFiCompositeEnvironmentRepository;
 import org.deltafi.core.config.server.environment.MongoEnvironmentRepository;
@@ -36,18 +37,14 @@ import org.deltafi.core.config.server.repo.StateHolderRepositoryInMemoryImpl;
 import org.deltafi.core.config.server.service.PropertyMetadataLoader;
 import org.deltafi.core.config.server.service.PropertyService;
 import org.deltafi.core.config.server.service.StateHolderService;
-import org.deltafi.core.domain.api.Constants;
-import org.deltafi.core.domain.api.types.DeleteActionSchema;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.domain.api.types.EgressActionSchema;
-import org.deltafi.core.domain.api.types.EnrichActionSchema;
-import org.deltafi.core.domain.api.types.FormatActionSchema;
-import org.deltafi.core.domain.api.types.LoadActionSchema;
-import org.deltafi.core.domain.api.types.TimedDeletePolicy;
-import org.deltafi.core.domain.api.types.TransformActionSchema;
-import org.deltafi.core.domain.api.types.ValidateActionSchema;
-import org.deltafi.core.domain.api.types.*;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.EgressActionSchema;
+import org.deltafi.core.domain.types.EnrichActionSchema;
+import org.deltafi.core.domain.types.FormatActionSchema;
+import org.deltafi.core.domain.types.LoadActionSchema;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
+import org.deltafi.core.domain.types.TransformActionSchema;
+import org.deltafi.core.domain.types.ValidateActionSchema;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
@@ -67,6 +64,7 @@ import org.deltafi.core.domain.plugin.PluginRepository;
 import org.deltafi.core.domain.repo.*;
 import org.deltafi.core.domain.services.*;
 import org.deltafi.core.domain.types.EgressFlowPlanInput;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.deltafi.core.domain.types.PluginVariables;
 import org.deltafi.core.domain.types.*;
 import org.junit.jupiter.api.Assertions;
@@ -103,12 +101,12 @@ import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.core.config.server.constants.PropertyConstants.DELTAFI_PROPERTY_SET;
 import static org.deltafi.core.domain.Util.assertEqualsIgnoringDates;
 import static org.deltafi.core.domain.Util.buildDeltaFile;
-import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.domain.datafetchers.DeltaFilesDatafetcherTestHelper.*;
@@ -315,7 +313,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 		FormatActionConfiguration errorFormat = new FormatActionConfiguration();
 		errorFormat.setName("ErrorFormatAction");
-		errorFormat.setRequiresDomains(List.of(Constants.ERROR_DOMAIN));
+		errorFormat.setRequiresDomains(List.of(ERROR_DOMAIN));
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration();
 		errorEgress.setName("ErrorEgressAction");
 		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress);
@@ -370,14 +368,14 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void testGetDeletePolicies() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
-		List<org.deltafi.core.domain.api.types.DeletePolicy> policyList = getDeletePolicies(dgsQueryExecutor);
+		List<DeletePolicy> policyList = getDeletePolicies(dgsQueryExecutor);
 		assertEquals(3, policyList.size());
 
 		boolean foundAfterCompleteLockedPolicy = false;
 		boolean foundOfflinePolicy = false;
 		boolean foundDiskSpacePercent = false;
 
-		for (org.deltafi.core.domain.api.types.DeletePolicy policy : policyList) {
+		for (DeletePolicy policy : policyList) {
 			if (policy instanceof DiskSpaceDeletePolicy) {
 				DiskSpaceDeletePolicy diskPolicy = (DiskSpaceDeletePolicy) policy;
 				if (diskPolicy.getId().equals(DISK_SPACE_PERCENT_POLICY)) {
@@ -1040,12 +1038,11 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void testRegisterAll() {
 		int count = saveAll(dgsQueryExecutor);
-		assertEquals(7, count);
+		assertEquals(6, count);
 
 		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
-		assertEquals(7, schemas.size());
+		assertEquals(6, schemas.size());
 
-		boolean foundDelete = false;
 		boolean foundEgress = false;
 		boolean foundEnrich = false;
 		boolean foundFormat = false;
@@ -1054,11 +1051,7 @@ class DeltaFiCoreDomainApplicationTests {
 		boolean foundValidate = false;
 
 		for (ActionSchema schema : schemas) {
-			if (schema instanceof DeleteActionSchema) {
-				checkDeleteSchema((DeleteActionSchema) schema);
-				foundDelete = true;
-
-			} else if (schema instanceof EgressActionSchema) {
+			if (schema instanceof EgressActionSchema) {
 				checkEgressSchema((EgressActionSchema) schema);
 				foundEgress = true;
 
@@ -1084,7 +1077,6 @@ class DeltaFiCoreDomainApplicationTests {
 			}
 		}
 
-		assertTrue(foundDelete);
 		assertTrue(foundEgress);
 		assertTrue(foundEnrich);
 		assertTrue(foundFormat);
@@ -1096,19 +1088,6 @@ class DeltaFiCoreDomainApplicationTests {
 	private void checkActionCommonFields(ActionSchema schema) {
 		assertEquals(PARAM_CLASS, schema.getParamClass());
 		assertNotNull(schema.getLastHeard());
-	}
-
-	@Test
-	void testRegisterDelete() {
-		assertEquals(1, saveDelete(dgsQueryExecutor));
-		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
-		assertEquals(1, schemas.size());
-		checkDeleteSchema((DeleteActionSchema) schemas.get(0));
-	}
-
-	private void checkDeleteSchema(DeleteActionSchema schema) {
-		checkActionCommonFields(schema);
-		assertEquals(DELETE_ACTION, schema.getId());
 	}
 
 	@Test
@@ -1538,7 +1517,7 @@ class DeltaFiCoreDomainApplicationTests {
 		// Verify saved 4, and 5th was invalid
 		assertEquals(4, flowAssignmentRuleRepo.count());
 		assertFalse(results.get(4).getSuccess());
-		List<org.deltafi.core.domain.api.types.FlowAssignmentRule> assignmentList = getAllFlowAssignmentRules(dgsQueryExecutor);
+		List<FlowAssignmentRule> assignmentList = getAllFlowAssignmentRules(dgsQueryExecutor);
 		// Verify ordered by priority, then flow
 		assertEquals(4, assignmentList.size());
 		assertEquals(RULE_NAME4, assignmentList.get(0).getName());
@@ -1563,11 +1542,11 @@ class DeltaFiCoreDomainApplicationTests {
 		saveFirstRule(dgsQueryExecutor);
 		saveSecondRuleSet(dgsQueryExecutor);
 
-		org.deltafi.core.domain.api.types.FlowAssignmentRule first =
+		FlowAssignmentRule first =
 				getFlowAssignment(dgsQueryExecutor, RULE_NAME1);
-		org.deltafi.core.domain.api.types.FlowAssignmentRule second =
+		FlowAssignmentRule second =
 				getFlowAssignment(dgsQueryExecutor, RULE_NAME2);
-		org.deltafi.core.domain.api.types.FlowAssignmentRule notFound =
+		FlowAssignmentRule notFound =
 				getFlowAssignment(dgsQueryExecutor, "notfound");
 
 		assertEquals(RULE_NAME1, first.getName());

@@ -19,9 +19,9 @@ package org.deltafi.core.domain.delete;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.types.DeletePolicy;
-import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.domain.api.types.TimedDeletePolicy;
+import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.services.DeletePolicyService;
 import org.deltafi.core.domain.services.DeltaFilesService;

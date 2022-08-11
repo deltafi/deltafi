@@ -24,8 +24,8 @@ import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.config.ActionsProperties;
-import org.deltafi.core.domain.generated.client.RegisterActionsGraphQLQuery;
-import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
+import org.deltafi.common.types.ActionRegistrationInput;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -72,11 +72,18 @@ public class RegistrationService {
                 .formatActions(new ArrayList<>())
                 .validateActions(new ArrayList<>())
                 .egressActions(new ArrayList<>())
-                .deleteActions(new ArrayList<>())
                 .build();
 
         actions.forEach(action -> action.registerSchema(input));
-        query = RegisterActionsGraphQLQuery.newRequest().actionRegistration(input).build();
+        query = new GraphQLQuery("mutation") {
+            @NotNull
+            @Override
+            public String getOperationName() {
+                return "registerActions";
+            }
+        };
+        query.getInput().put("actionRegistration", input);
+
         scheduler.scheduleWithFixedDelay(this::registerActions, 0,
                 actionsProperties.getActionRegistrationPeriodMs(), TimeUnit.MILLISECONDS);
     }

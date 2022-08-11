@@ -19,11 +19,7 @@ package org.deltafi.actionkit.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-
-import java.util.Collections;
-import java.util.List;
+import org.deltafi.common.types.ActionInput;
 
 /**
  * Service interface for publishing and retrieving action events

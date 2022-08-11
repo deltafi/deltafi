@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.config.server.service;
 
-import org.deltafi.core.domain.api.types.Property;
-import org.deltafi.core.domain.api.types.PropertyId;
-import org.deltafi.core.domain.api.types.PropertySet;
-import org.deltafi.core.domain.api.types.PropertyUpdate;
+import org.deltafi.common.types.Property;
+import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.domain.types.PropertyId;
+import org.deltafi.core.domain.types.PropertyUpdate;
 import org.deltafi.core.config.server.environment.DeltaFiNativeEnvironmentRepository;
 import org.deltafi.core.config.server.environment.GitEnvironmentRepository;
 import org.deltafi.core.config.server.repo.PropertyRepository;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.deltafi.core.domain.api.types.PropertySource.*;
+import static org.deltafi.common.types.PropertySource.*;
 
 public class PropertyService {
 

@@ -22,9 +22,9 @@ import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.MultipartEgressAction;
 import org.deltafi.actionkit.action.egress.SimpleEgressAction;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.FormattedData;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.FormattedData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

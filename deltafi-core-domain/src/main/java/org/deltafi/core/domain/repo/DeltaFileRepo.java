@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.domain.repo;
 
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileStage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.*;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.core.domain.api.types.ActionSchema;
+import org.deltafi.core.domain.types.ActionSchema;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.generated.types.FlowConfigError;

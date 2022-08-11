@@ -27,8 +27,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.*;
+import org.deltafi.common.types.*;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
@@ -37,7 +36,9 @@ import org.deltafi.core.domain.exceptions.UnknownTypeException;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.retry.MongoRetryable;
+import org.deltafi.core.domain.types.DeltaFiles;
 import org.deltafi.core.domain.types.EgressFlow;
+import org.deltafi.core.domain.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -53,8 +54,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
-import static org.deltafi.core.domain.api.Constants.ERROR_DOMAIN;
 import static org.deltafi.core.domain.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
 @Service
@@ -218,7 +219,7 @@ public class DeltaFilesService {
                 deltaFile.getProtocolStack().add(event.getLoad().getProtocolLayer());
             }
             if (event.getLoad().getDomains() != null) {
-                for (DomainInput domain : event.getLoad().getDomains()) {
+                for (Domain domain : event.getLoad().getDomains()) {
                     deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
                 }
             }
@@ -231,7 +232,7 @@ public class DeltaFilesService {
         deltaFile.completeAction(event);
 
         if (event.getEnrich() != null && event.getEnrich().getEnrichments() != null) {
-            for (EnrichmentInput enrichment : event.getEnrich().getEnrichments()) {
+            for (Enrichment enrichment : event.getEnrich().getEnrichments()) {
                 deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
             }
         }

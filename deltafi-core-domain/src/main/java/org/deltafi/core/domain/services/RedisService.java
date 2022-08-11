@@ -22,9 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
-import org.deltafi.core.domain.api.Constants;
-import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
+import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.springframework.stereotype.Service;
@@ -32,6 +31,8 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.deltafi.common.constant.DeltaFiConstants.DGS_QUEUE;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +54,7 @@ public class RedisService implements PluginCleaner {
     }
 
     public ActionEventInput dgsFeed() throws JsonProcessingException {
-        return jedisKeyedBlockingQueue.take(Constants.DGS_QUEUE, ActionEventInput.class);
+        return jedisKeyedBlockingQueue.take(DGS_QUEUE, ActionEventInput.class);
     }
 
     @Override

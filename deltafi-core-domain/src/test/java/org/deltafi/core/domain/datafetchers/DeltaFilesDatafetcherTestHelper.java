@@ -18,11 +18,11 @@
 package org.deltafi.core.domain.datafetchers;
 
 import org.deltafi.common.content.ContentReference;
-import org.deltafi.core.domain.api.types.Content;
-import org.deltafi.core.domain.api.types.KeyValue;
-import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.IngressInput;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.*;
-import org.deltafi.core.domain.generated.types.*;
 
 import java.time.OffsetDateTime;
 import java.util.*;

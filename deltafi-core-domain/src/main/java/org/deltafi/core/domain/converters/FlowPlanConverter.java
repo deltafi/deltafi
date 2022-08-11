@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.domain.converters;
 
+import org.deltafi.common.types.Variable;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowState;
-import org.deltafi.core.domain.generated.types.Variable;
 import org.deltafi.core.domain.types.Flow;
 import org.deltafi.core.domain.types.FlowPlan;
 

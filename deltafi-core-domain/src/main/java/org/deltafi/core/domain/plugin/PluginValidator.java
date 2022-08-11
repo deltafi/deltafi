@@ -19,7 +19,7 @@ package org.deltafi.core.domain.plugin;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.maven.VersionMatcher;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.PluginCoordinates;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.domain.services;
 
-import org.deltafi.core.domain.api.types.DeletePolicy;
-import org.deltafi.core.domain.api.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
 import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
 import org.deltafi.core.domain.generated.types.Result;

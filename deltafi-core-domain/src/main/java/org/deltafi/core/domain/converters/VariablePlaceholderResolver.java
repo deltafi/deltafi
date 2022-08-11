@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.converters;
 
-import org.deltafi.core.domain.generated.types.Variable;
+import org.deltafi.common.types.Variable;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.util.PropertyPlaceholderHelper;
 
@@ -61,7 +61,7 @@ public class VariablePlaceholderResolver implements PropertyPlaceholderHelper.Pl
 
         if (null == value) {
             // Return null to trigger an exception for a missing required value otherwise return an empty string that will be pruned
-            return variable.getRequired() ? null : "";
+            return variable.isRequired() ? null : "";
         }
 
         return variable.getDataType().formatString(value);

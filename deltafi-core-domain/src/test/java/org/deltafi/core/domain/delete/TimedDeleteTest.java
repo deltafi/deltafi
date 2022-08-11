@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.delete;
 
-import org.deltafi.core.domain.api.types.TimedDeletePolicy;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

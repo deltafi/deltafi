@@ -19,8 +19,9 @@ package org.deltafi.core.domain.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.api.types.ConfigType;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.Variable;
+import org.deltafi.core.domain.types.ConfigType;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
 import org.deltafi.core.domain.converters.FlowPlanConverter;

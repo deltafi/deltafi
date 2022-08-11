@@ -20,11 +20,9 @@ package org.deltafi.core.domain;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.domain.api.types.*;
-import org.deltafi.core.domain.generated.types.Action;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.ActionState;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
+import org.deltafi.common.types.*;
+import org.deltafi.core.domain.types.ActionSchema;
+import org.deltafi.core.domain.types.EgressActionSchema;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;

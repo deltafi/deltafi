@@ -20,12 +20,13 @@ package org.deltafi.core.domain.datafetchers;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import org.deltafi.core.domain.api.types.KeyValue;
-import org.deltafi.core.domain.api.types.SourceInfo;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.FlowAssignmentRuleInput;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.FlowAssignmentService;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +43,7 @@ public class FlowAssignmentDatafetcherTestHelper {
     public static final String META_KEY = "key";
     public static final String META_VALUE = "value";
 
-    static public List<org.deltafi.core.domain.api.types.FlowAssignmentRule> getAllFlowAssignmentRules(DgsQueryExecutor dgsQueryExecutor) {
+    static public List<FlowAssignmentRule> getAllFlowAssignmentRules(DgsQueryExecutor dgsQueryExecutor) {
         GetAllFlowAssignmentRulesProjectionRoot projection = new GetAllFlowAssignmentRulesProjectionRoot()
                 .name()
                 .flow()
@@ -58,7 +59,7 @@ public class FlowAssignmentDatafetcherTestHelper {
         GraphQLQueryRequest graphQLQueryRequest =
                 new GraphQLQueryRequest(query, projection);
 
-        TypeRef<List<org.deltafi.core.domain.api.types.FlowAssignmentRule>> ruleListType = new TypeRef<>() {
+        TypeRef<List<FlowAssignmentRule>> ruleListType = new TypeRef<>() {
         };
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -67,7 +68,7 @@ public class FlowAssignmentDatafetcherTestHelper {
                 ruleListType);
     }
 
-    static public org.deltafi.core.domain.api.types.FlowAssignmentRule getFlowAssignment(DgsQueryExecutor dgsQueryExecutor, String name) {
+    static public FlowAssignmentRule getFlowAssignment(DgsQueryExecutor dgsQueryExecutor, String name) {
         GetFlowAssignmentRuleProjectionRoot projection = new GetFlowAssignmentRuleProjectionRoot()
                 .name()
                 .flow()
@@ -86,7 +87,7 @@ public class FlowAssignmentDatafetcherTestHelper {
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(),
-                org.deltafi.core.domain.api.types.FlowAssignmentRule.class);
+                FlowAssignmentRule.class);
     }
 
     static public Result saveFirstRule(DgsQueryExecutor dgsQueryExecutor) {

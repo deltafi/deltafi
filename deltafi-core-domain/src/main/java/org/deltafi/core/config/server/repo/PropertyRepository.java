@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.config.server.repo;
 
-import org.deltafi.core.domain.api.types.PropertyId;
-import org.deltafi.core.domain.api.types.PropertySet;
-import org.deltafi.core.domain.api.types.PropertyUpdate;
+import org.deltafi.core.domain.types.PropertyId;
+import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.domain.types.PropertyUpdate;
 
 import java.util.Collection;
 import java.util.List;
@@ -51,7 +51,7 @@ public interface PropertyRepository {
 
     /**
      * Find all the stored property sets
-     * @return
+     * @return all the stored property sets
      */
     List<PropertySet> findAll();
 

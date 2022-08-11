@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.types;
 
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.PluginCoordinates;
 
 public interface FlowPlanInput {
 

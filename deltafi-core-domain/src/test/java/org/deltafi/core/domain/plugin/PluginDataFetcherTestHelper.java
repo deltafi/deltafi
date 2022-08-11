@@ -62,7 +62,7 @@ public class PluginDataFetcherTestHelper {
             .success()
             .errors();
 
-    public static void validatePlugin1(org.deltafi.core.domain.generated.types.Plugin plugin1) {
+    public static void validatePlugin1(org.deltafi.common.types.Plugin plugin1) {
         assertEquals("org.deltafi", plugin1.getPluginCoordinates().getGroupId());
         assertEquals("plugin-1", plugin1.getPluginCoordinates().getArtifactId());
         assertEquals("1.0.0", plugin1.getPluginCoordinates().getVersion());

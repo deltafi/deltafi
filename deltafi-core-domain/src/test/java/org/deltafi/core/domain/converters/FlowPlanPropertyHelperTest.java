@@ -17,14 +17,14 @@
  */
 package org.deltafi.core.domain.converters;
 
+import org.deltafi.common.types.Variable;
+import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.api.types.VariableDataType;
+import org.deltafi.core.domain.types.ActionSchema;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
-import org.deltafi.core.domain.generated.types.Variable;
 import org.deltafi.core.domain.validation.SchemaComplianceValidator;
 import org.junit.jupiter.api.Test;
 

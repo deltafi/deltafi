@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.repo;
 
-import org.deltafi.core.domain.api.types.DeletePolicy;
+import org.deltafi.core.domain.types.DeletePolicy;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

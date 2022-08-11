@@ -19,9 +19,9 @@ package org.deltafi.actionkit.action.format;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.ActionType;
-import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
-import org.deltafi.core.domain.generated.types.FormatActionSchemaInput;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.ActionRegistrationInput;
+import org.deltafi.common.types.FormatActionSchemaInput;
 
 import java.util.Collections;
 import java.util.List;

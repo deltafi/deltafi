@@ -21,9 +21,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.common.content.ContentReference;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.Content;
-import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.KeyValue;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

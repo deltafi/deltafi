@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.domain.configuration;
 
-import org.deltafi.core.domain.api.converters.OffsetDateTimeReadConverter;
-import org.deltafi.core.domain.api.converters.OffsetDateTimeWriteConverter;
+import org.deltafi.core.domain.converters.OffsetDateTimeReadConverter;
+import org.deltafi.core.domain.converters.OffsetDateTimeWriteConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;

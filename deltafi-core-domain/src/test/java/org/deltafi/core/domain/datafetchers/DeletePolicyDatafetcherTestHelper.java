@@ -25,6 +25,7 @@ import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
 import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
+import org.deltafi.core.domain.types.DeletePolicy;
 
 import java.util.List;
 
@@ -72,14 +73,14 @@ public class DeletePolicyDatafetcherTestHelper {
             .minBytes()
             .parent();
 
-    static public List<org.deltafi.core.domain.api.types.DeletePolicy> getDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
+    static public List<DeletePolicy> getDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
 
         GetDeletePoliciesGraphQLQuery query =
                 GetDeletePoliciesGraphQLQuery.newRequest().build();
         GraphQLQueryRequest graphQLQueryRequest =
                 new GraphQLQueryRequest(query, projection);
 
-        TypeRef<List<org.deltafi.core.domain.api.types.DeletePolicy>> policiesListType = new TypeRef<>() {
+        TypeRef<List<DeletePolicy>> policiesListType = new TypeRef<>() {
         };
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(

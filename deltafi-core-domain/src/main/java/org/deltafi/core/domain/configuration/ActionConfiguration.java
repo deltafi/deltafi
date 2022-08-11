@@ -18,10 +18,10 @@
 package org.deltafi.core.domain.configuration;
 
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.api.types.ActionSchema;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.domain.types.ActionSchema;
 
 import java.util.Collections;
 import java.util.List;

@@ -21,8 +21,10 @@ import com.mongodb.MongoException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.common.types.ActionState;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileStage;
+import org.deltafi.core.domain.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
@@ -100,22 +102,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String ID_FLOW = ID + "." + FLOW_LOWER_CASE;
     private static final String UNWIND_STATE = "unwindState";
 
-    class FlowCountAndDids {
+    static class FlowCountAndDids {
         TempSourceInfo sourceInfo;
         int groupCount;
         List<String> dids;
 
-        class TempSourceInfo {
+        static class TempSourceInfo {
             String flow;
         }
     }
 
-    class MessageFlowGroup {
+    static class MessageFlowGroup {
         TempGroupId id;
         int groupCount;
         List<String> dids;
 
-        class TempGroupId {
+        static class TempGroupId {
             String errorMessage;
             String flow;
         }
@@ -606,14 +608,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        ErrorsByFlow errorsByFlow = ErrorsByFlow.newBuilder()
+        return ErrorsByFlow.newBuilder()
                 .count(countPerFlow.size())
                 .countPerFlow(countPerFlow)
                 .offset((int) elementsToSkip)
                 .totalCount(countForPaging.intValue())
                 .build();
-
-        return errorsByFlow;
     }
 
     public ErrorsByMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
@@ -669,14 +669,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        ErrorsByMessage errorsByMessage = ErrorsByMessage.newBuilder()
+        return ErrorsByMessage.newBuilder()
                 .count(messageList.size())
                 .offset((int) elementsToSkip)
                 .totalCount(countForPaging.intValue())
                 .countPerMessage(messageList)
                 .build();
-
-        return errorsByMessage;
     }
 
     private SortOperation errorSummaryByFlowSort(DeltaFileOrder orderBy) {

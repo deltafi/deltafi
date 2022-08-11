@@ -18,7 +18,7 @@
 package org.deltafi.core.domain.types;
 
 import lombok.Data;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.springframework.data.annotation.Id;
 

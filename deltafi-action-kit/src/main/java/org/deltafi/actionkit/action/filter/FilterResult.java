@@ -20,10 +20,10 @@ package org.deltafi.actionkit.action.filter;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.core.domain.api.types.ActionContext;
-import org.deltafi.core.domain.generated.types.ActionEventInput;
-import org.deltafi.core.domain.generated.types.ActionEventType;
-import org.deltafi.core.domain.generated.types.FilterInput;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.FilterInput;
 import org.jetbrains.annotations.NotNull;
 
 /**

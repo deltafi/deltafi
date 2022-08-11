@@ -21,8 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.generated.types.Domain;
-import org.deltafi.core.domain.generated.types.ErrorDomain;
+import org.deltafi.common.types.Domain;
+import org.deltafi.common.types.ErrorDomain;
 
 @Slf4j
 public class ErrorConverter {

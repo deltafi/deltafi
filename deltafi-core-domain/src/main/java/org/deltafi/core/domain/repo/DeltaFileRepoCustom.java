@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.domain.repo;
 
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.types.DeltaFiles;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 
 import java.time.Duration;

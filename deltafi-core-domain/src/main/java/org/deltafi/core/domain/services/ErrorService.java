@@ -18,18 +18,19 @@
 package org.deltafi.core.domain.services;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.domain.api.Constants;
-import org.deltafi.core.domain.api.types.DeltaFile;
-import org.deltafi.core.domain.api.types.DeltaFiles;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.ErrorDomain;
+import org.deltafi.core.domain.types.DeltaFiles;
 import org.deltafi.core.domain.converters.ErrorConverter;
 import org.deltafi.core.domain.generated.types.DeltaFilesFilter;
-import org.deltafi.core.domain.generated.types.ErrorDomain;
 import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +42,7 @@ public class ErrorService {
         if (deltaFile.isEmpty()) {
             return null;
         }
-        return ErrorConverter.convert(deltaFile.get().getDomain(Constants.ERROR_DOMAIN));
+        return ErrorConverter.convert(deltaFile.get().getDomain(ERROR_DOMAIN));
     }
 
     /**
@@ -52,13 +53,13 @@ public class ErrorService {
      */
     public List<ErrorDomain> getErrorsFor(String did) {
         DeltaFilesFilter filter = new DeltaFilesFilter();
-        filter.setDomains(List.of(Constants.ERROR_DOMAIN));
+        filter.setDomains(List.of(ERROR_DOMAIN));
         filter.setParentDid(did);
 
         DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, Integer.MAX_VALUE, filter, null);
 
         return deltaFiles.getDeltaFiles().stream()
-                .map(deltaFile -> ErrorConverter.convert(deltaFile.getDomain(Constants.ERROR_DOMAIN)))
+                .map(deltaFile -> ErrorConverter.convert(deltaFile.getDomain(ERROR_DOMAIN)))
                 .collect(Collectors.toList());
     }
 }

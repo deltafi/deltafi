@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.config.server.service;
 
-import org.deltafi.core.domain.api.types.Property;
-import org.deltafi.core.domain.api.types.PropertySet;
-import org.deltafi.core.domain.api.types.PropertyUpdate;
+import org.deltafi.common.types.Property;
+import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.domain.types.PropertyUpdate;
 import org.deltafi.core.config.server.environment.GitEnvironmentRepository;
 import org.deltafi.core.config.server.repo.PropertyRepository;
 import org.deltafi.core.domain.Util;

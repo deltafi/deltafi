@@ -13,7 +13,7 @@ license {
 }
 
 dependencies {
-    implementation project(':deltafi-core-domain')
+    implementation project(':deltafi-common')
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 }
 

@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.converters;
 
-import org.deltafi.core.domain.api.types.KeyValue;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.EnrichFlowPlan;

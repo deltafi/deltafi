@@ -19,9 +19,9 @@ package org.deltafi.actionkit.action.enrich;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.ActionType;
-import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
-import org.deltafi.core.domain.generated.types.EnrichActionSchemaInput;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.ActionRegistrationInput;
+import org.deltafi.common.types.EnrichActionSchemaInput;
 
 import java.util.Collections;
 import java.util.List;

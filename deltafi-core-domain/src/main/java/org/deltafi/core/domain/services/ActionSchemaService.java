@@ -19,16 +19,9 @@ package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.core.domain.api.types.DeleteActionSchema;
-import org.deltafi.core.domain.api.types.EgressActionSchema;
-import org.deltafi.core.domain.api.types.EnrichActionSchema;
-import org.deltafi.core.domain.api.types.FormatActionSchema;
-import org.deltafi.core.domain.api.types.LoadActionSchema;
-import org.deltafi.core.domain.api.types.TransformActionSchema;
-import org.deltafi.core.domain.api.types.ValidateActionSchema;
-import org.deltafi.core.domain.api.types.*;
+import org.deltafi.common.types.*;
+import org.deltafi.core.domain.types.*;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
-import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.deltafi.core.domain.repo.ActionSchemaRepo;
@@ -91,53 +84,43 @@ public class ActionSchemaService implements PluginCleaner {
             input.getEgressActions().forEach(a -> savedRegistrations.add(convert(a)));
         }
 
-        if (input.getDeleteActions() != null) {
-            input.getDeleteActions().forEach(a -> savedRegistrations.add(convert(a)));
-        }
-
         actionSchemaRepo.saveAll(savedRegistrations);
 
         return savedRegistrations.size();
     }
 
-    private org.deltafi.core.domain.generated.types.DeleteActionSchema convert(DeleteActionSchemaInput actionSchemaInput) {
-        DeleteActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, DeleteActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
-    }
-
     private org.deltafi.core.domain.generated.types.EgressActionSchema convert(EgressActionSchemaInput actionSchemaInput) {
-        EgressActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, EgressActionSchema.class);
+        org.deltafi.core.domain.types.EgressActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.EgressActionSchema.class);
         actionSchema.setLastHeard(OffsetDateTime.now());
         return actionSchema;
     }
 
     private org.deltafi.core.domain.generated.types.EnrichActionSchema convert(EnrichActionSchemaInput actionSchemaInput) {
-        EnrichActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, EnrichActionSchema.class);
+        org.deltafi.core.domain.types.EnrichActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.EnrichActionSchema.class);
         actionSchema.setLastHeard(OffsetDateTime.now());
         return actionSchema;
     }
 
     private org.deltafi.core.domain.generated.types.FormatActionSchema convert(FormatActionSchemaInput actionSchemaInput) {
-        FormatActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, FormatActionSchema.class);
+        org.deltafi.core.domain.types.FormatActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.FormatActionSchema.class);
         actionSchema.setLastHeard(OffsetDateTime.now());
         return actionSchema;
     }
 
     private org.deltafi.core.domain.generated.types.LoadActionSchema convert(LoadActionSchemaInput actionSchemaInput) {
-        LoadActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, LoadActionSchema.class);
+        org.deltafi.core.domain.types.LoadActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.LoadActionSchema.class);
         actionSchema.setLastHeard(OffsetDateTime.now());
         return actionSchema;
     }
 
     private org.deltafi.core.domain.generated.types.TransformActionSchema convert(TransformActionSchemaInput actionSchemaInput) {
-        TransformActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, TransformActionSchema.class);
+        org.deltafi.core.domain.types.TransformActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.TransformActionSchema.class);
         actionSchema.setLastHeard(OffsetDateTime.now());
         return actionSchema;
     }
 
     private org.deltafi.core.domain.generated.types.ValidateActionSchema convert(ValidateActionSchemaInput actionSchemaInput) {
-        ValidateActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, ValidateActionSchema.class);
+        org.deltafi.core.domain.types.ValidateActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.ValidateActionSchema.class);
         actionSchema.setLastHeard(OffsetDateTime.now());
         return actionSchema;
     }

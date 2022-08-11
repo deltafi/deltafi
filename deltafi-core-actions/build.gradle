@@ -21,7 +21,6 @@ dependencies {
 
     implementation project(':deltafi-common')
     implementation project(':deltafi-action-kit')
-    implementation project(':deltafi-core-domain')
 
     implementation "redis.clients:jedis:${jedisVersion}"
 

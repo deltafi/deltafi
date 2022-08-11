@@ -20,11 +20,12 @@ package org.deltafi.actionkit.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
-import org.deltafi.core.domain.api.Constants;
-import org.deltafi.core.domain.api.types.ActionInput;
+import org.deltafi.common.types.ActionInput;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.URISyntaxException;
+
+import static org.deltafi.common.constant.DeltaFiConstants.DGS_QUEUE;
 
 /**
  * Specialization of ActionEventService.  Service for pushing and popping action events to a redis queue.
@@ -44,6 +45,6 @@ public class RedisActionEventService implements ActionEventService {
 
     @Override
     public void submitResult(Result result) throws JsonProcessingException, JedisConnectionException {
-        jedisKeyedBlockingQueue.put(Constants.DGS_QUEUE, result.toEvent());
+        jedisKeyedBlockingQueue.put(DGS_QUEUE, result.toEvent());
     }
 }

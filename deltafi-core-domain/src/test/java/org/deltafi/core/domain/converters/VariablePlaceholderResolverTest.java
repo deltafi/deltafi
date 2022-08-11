@@ -18,8 +18,8 @@
 package org.deltafi.core.domain.converters;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.domain.api.types.VariableDataType;
-import org.deltafi.core.domain.generated.types.Variable;
+import org.deltafi.common.types.VariableDataType;
+import org.deltafi.common.types.Variable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;

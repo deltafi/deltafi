@@ -19,8 +19,7 @@ package org.deltafi.core.domain.types;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.core.domain.api.types.ActionType;
-import org.deltafi.core.domain.api.types.ConfigType;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;

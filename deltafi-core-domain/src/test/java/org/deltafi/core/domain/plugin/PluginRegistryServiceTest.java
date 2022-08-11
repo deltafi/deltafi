@@ -18,8 +18,8 @@
 package org.deltafi.core.domain.plugin;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.domain.api.types.PluginCoordinates;
-import org.deltafi.core.domain.generated.types.ActionDescriptor;
+import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.*;
 import org.junit.jupiter.api.BeforeEach;

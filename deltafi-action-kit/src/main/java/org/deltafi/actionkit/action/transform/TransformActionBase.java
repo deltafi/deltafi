@@ -19,9 +19,9 @@ package org.deltafi.actionkit.action.transform;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.core.domain.api.types.ActionType;
-import org.deltafi.core.domain.generated.types.ActionRegistrationInput;
-import org.deltafi.core.domain.generated.types.TransformActionSchemaInput;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.ActionRegistrationInput;
+import org.deltafi.common.types.TransformActionSchemaInput;
 
 /**
  * Specialization class for TRANSFORM actions.  This class should not be used directly, but instead use one of

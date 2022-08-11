@@ -19,9 +19,9 @@ package org.deltafi.core.config.server.repo;
 
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.result.DeleteResult;
-import org.deltafi.core.domain.api.types.PropertyId;
-import org.deltafi.core.domain.api.types.PropertySet;
-import org.deltafi.core.domain.api.types.PropertyUpdate;
+import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.domain.types.PropertyId;
+import org.deltafi.core.domain.types.PropertyUpdate;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;

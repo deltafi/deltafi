@@ -21,7 +21,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.domain.generated.types.ErrorDomain;
+import org.deltafi.common.types.ErrorDomain;
 import org.deltafi.core.domain.services.ErrorService;
 
 import java.util.List;

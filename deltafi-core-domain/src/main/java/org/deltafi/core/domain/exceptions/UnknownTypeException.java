@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.exceptions;
 
-import org.deltafi.core.domain.generated.types.ActionEventType;
+import org.deltafi.common.types.ActionEventType;
 
 public class UnknownTypeException extends RuntimeException {
     public UnknownTypeException(String actionName, String did, ActionEventType type) {

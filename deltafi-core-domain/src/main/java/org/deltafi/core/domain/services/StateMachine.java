@@ -18,12 +18,12 @@
 package org.deltafi.core.domain.services;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.core.domain.api.converters.KeyValueConverter;
-import org.deltafi.core.domain.api.types.ActionInput;
-import org.deltafi.core.domain.api.types.DeltaFile;
+import org.deltafi.common.converters.KeyValueConverter;
+import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
-import org.deltafi.core.domain.generated.types.DeltaFileStage;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.IngressFlow;

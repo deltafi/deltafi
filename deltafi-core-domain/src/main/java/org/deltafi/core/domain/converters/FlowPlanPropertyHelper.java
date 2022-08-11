@@ -18,12 +18,12 @@
 package org.deltafi.core.domain.converters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.core.domain.api.types.KeyValue;
-import org.deltafi.core.domain.api.types.VariableDataType;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.VariableDataType;
+import org.deltafi.common.types.Variable;
 import org.deltafi.core.domain.generated.types.ActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
-import org.deltafi.core.domain.generated.types.Variable;
 import org.springframework.util.PropertyPlaceholderHelper;
 
 import java.util.*;

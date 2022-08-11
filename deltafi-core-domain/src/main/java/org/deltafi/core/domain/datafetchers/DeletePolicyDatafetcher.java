@@ -21,7 +21,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.domain.api.types.DeletePolicy;
+import org.deltafi.core.domain.types.DeletePolicy;
 import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.DeletePolicyService;

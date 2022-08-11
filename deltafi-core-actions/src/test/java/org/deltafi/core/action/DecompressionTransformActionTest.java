@@ -26,7 +26,7 @@ import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.core.domain.api.types.*;
+import org.deltafi.common.types.*;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.deltafi.core.parameters.DecompressionType;
 import org.junit.jupiter.api.Test;

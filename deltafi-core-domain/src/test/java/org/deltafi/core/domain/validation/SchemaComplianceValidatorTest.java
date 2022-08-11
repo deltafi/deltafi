@@ -18,11 +18,11 @@
 package org.deltafi.core.domain.validation;
 
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.core.domain.api.types.*;
 import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.generated.types.FlowErrorType;
 import org.deltafi.core.domain.services.ActionSchemaService;
+import org.deltafi.core.domain.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
