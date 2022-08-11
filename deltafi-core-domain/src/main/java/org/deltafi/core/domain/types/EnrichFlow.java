@@ -53,7 +53,7 @@ public class EnrichFlow extends Flow {
             case ENRICH_FLOW:
                 return List.of(asFlowConfiguration());
             case ENRICH_ACTION:
-                return allConfigurations();
+                return null != enrichActions ? new ArrayList<>(enrichActions) : Collections.emptyList();
             default:
                 return Collections.emptyList();
         }
