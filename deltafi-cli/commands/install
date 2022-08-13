@@ -177,4 +177,7 @@ else
   find $POLICIES_DIRECTORY -name "*.json" -exec bash -c "load_policies \"{}\"" \;
 fi
 
+cli_log "Running migrations"
+deltafi mongo-migrate
+
 cli_log "DeltaFi install complete"
