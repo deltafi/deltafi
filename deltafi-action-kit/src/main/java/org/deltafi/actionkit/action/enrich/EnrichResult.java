@@ -20,15 +20,13 @@ package org.deltafi.actionkit.action.enrich;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
-import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.EnrichInput;
-import org.deltafi.common.types.Enrichment;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Specialized result class for ENRICH actions
@@ -37,6 +35,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result {
     private final List<Enrichment> enrichments = new ArrayList<>();
+    private Map<String, String> indexedMetadata;
 
     /**
      * @param context Context of the executed action
@@ -57,6 +56,14 @@ public class EnrichResult extends Result {
         enrichments.add(new Enrichment(enrichmentName, value, mediaType));
     }
 
+    public void addIndexedMetadata(String key, String value) {
+        getOrCreateIndexedMetadata().put(key, value);
+    }
+
+    public void addIndexedMetadata(Map<String, String> metadata) {
+        getOrCreateIndexedMetadata().putAll(metadata);
+    }
+
     @Override
     public final ActionEventType actionEventType() {
         return ActionEventType.ENRICH;
@@ -65,7 +72,15 @@ public class EnrichResult extends Result {
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setEnrich(EnrichInput.newBuilder().enrichments(enrichments).build());
+        event.setEnrich(EnrichInput.newBuilder().enrichments(enrichments).indexedMetadata(indexedMetadata).build());
         return event;
+    }
+
+    private Map<String, String> getOrCreateIndexedMetadata() {
+        if (null == indexedMetadata) {
+            indexedMetadata = new HashMap<>();
+        }
+
+        return indexedMetadata;
     }
 }

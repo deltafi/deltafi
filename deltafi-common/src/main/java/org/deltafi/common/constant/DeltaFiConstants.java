@@ -23,6 +23,7 @@ public class DeltaFiConstants {
     public static final String ERROR_DOMAIN = "error";
     public static final String INGRESS_ACTION = "IngressAction";
     public static final String MATCHES_ANY = "any";
+    public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
     public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
     public static final String USER_HEADER = "X-User-Name";
 

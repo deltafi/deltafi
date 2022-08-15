@@ -49,6 +49,8 @@ public class DeltaFile {
   private SourceInfo sourceInfo;
   private List<ProtocolLayer> protocolStack;
   private List<Domain> domains;
+  @Builder.Default
+  private Map<String, String> indexedMetadata = new HashMap<>();
   private List<Enrichment> enrichment;
   private List<FormattedData> formattedData;
   private OffsetDateTime created;
@@ -193,6 +195,14 @@ public class DeltaFile {
 
   public boolean hasDomains(List<String> domains) {
     return domains.stream().allMatch(domain -> getDomains().stream().anyMatch(d -> d.getName().equals(domain)));
+  }
+
+  public void addIndexedMetadata(Map<String, String> metadata) {
+    if (null == metadata) {
+      return;
+    }
+
+    this.indexedMetadata.putAll(metadata);
   }
 
   @SuppressWarnings("unused")

@@ -131,6 +131,7 @@ public class Util {
         Assertions.assertThat(actual.getSourceInfo()).isEqualTo(expected.getSourceInfo());
         Assertions.assertThat(actual.getProtocolStack()).isEqualTo(expected.getProtocolStack());
         Assertions.assertThat(actual.getDomains()).isEqualTo(expected.getDomains());
+        Assertions.assertThat(actual.getIndexedMetadata()).isEqualTo(expected.getIndexedMetadata());
         Assertions.assertThat(actual.getEnrichment()).isEqualTo(expected.getEnrichment());
         Assertions.assertThat(actual.getFormattedData()).isEqualTo(expected.getFormattedData());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());

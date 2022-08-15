@@ -231,10 +231,14 @@ public class DeltaFilesService {
     public DeltaFile enrich(DeltaFile deltaFile, ActionEventInput event) {
         deltaFile.completeAction(event);
 
-        if (event.getEnrich() != null && event.getEnrich().getEnrichments() != null) {
-            for (Enrichment enrichment : event.getEnrich().getEnrichments()) {
-                deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
+        if (event.getEnrich() != null) {
+            if (null != event.getEnrich().getEnrichments()) {
+                for (Enrichment enrichment : event.getEnrich().getEnrichments()) {
+                    deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
+                }
             }
+
+            deltaFile.addIndexedMetadata(event.getEnrich().getIndexedMetadata());
         }
 
         return advanceAndSave(deltaFile);

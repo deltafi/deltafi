@@ -15,21 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.domain.configuration;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.deltafi.common.constant.DeltaFiConstants;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 
-import java.util.List;
-import java.util.Map;
+@Configuration
+public class MongoDotReplacementConfiguration {
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class EnrichInput {
-  private List<Enrichment> enrichments;
-  private Map<String, String> indexedMetadata;
+    // This has to be outside MongoConfiguration to avoid a circular reference
+    @Autowired
+    public void setMapKeyDotReplacement(MappingMongoConverter mappingMongoConverter) {
+        mappingMongoConverter.setMapKeyDotReplacement(DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
+    }
+
 }

@@ -26,6 +26,10 @@ mutation {
             type: ENRICH
             enrich: {
                 enrichments: [ { name: "sampleEnrichment", value: "enrichmentData", mediaType: "application/octet-stream" } ]
+                indexedMetadata: {
+                    first: "one"
+                    second: "two"
+                }
             }
         }
     ) {
@@ -37,5 +41,6 @@ mutation {
             errorCause
             errorContext
         }
+        indexedMetadata
     }
 }

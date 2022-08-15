@@ -76,6 +76,7 @@ generateJava {
 	  "LoadActionSchemaInput": "org.deltafi.common.types.LoadActionSchemaInput",
 	  "LoadInput": "org.deltafi.common.types.LoadInput",
 	  "Plugin": "org.deltafi.common.types.Plugin",
+	  "Metadata": "java.util.Map<String, String>",
 	  "PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
 	  "PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
 	  "Property": "org.deltafi.common.types.Property",

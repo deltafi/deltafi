@@ -19,6 +19,7 @@
 scalar DateTime
 scalar JSON
 scalar Long
+scalar Metadata
 
 type KeyValue {
   key: String!
@@ -234,6 +235,7 @@ type DeltaFile {
   sourceInfo: SourceInfo!
   protocolStack: [ProtocolLayer!]!
   domains: [Domain!]!
+  indexedMetadata: Metadata
   enrichment: [Enrichment!]!
   formattedData: [FormattedData!]!
   created: DateTime!
@@ -266,6 +268,7 @@ input LoadInput {
 
 input EnrichInput {
   enrichments: [EnrichmentInput!]!
+  indexedMetadata: Metadata
 }
 
 input FormatInput {
@@ -341,6 +344,7 @@ input DeltaFilesFilter {
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]
+  indexedMetadata: [KeyValueInput]
   enrichment: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime

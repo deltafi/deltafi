@@ -21,9 +21,11 @@ import com.mongodb.MongoException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.domain.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
 import org.springframework.data.domain.Sort;
@@ -38,11 +40,13 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.util.MongoDbErrorCodes;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -101,6 +105,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String ID_ERROR_MESSAGE = ID + "." + ERROR_MESSAGE;
     private static final String ID_FLOW = ID + "." + FLOW_LOWER_CASE;
     private static final String UNWIND_STATE = "unwindState";
+    public static final String INDEXED_METADATA = "indexedMetadata.";
 
     static class FlowCountAndDids {
         TempSourceInfo sourceInfo;
@@ -128,7 +133,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             "completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
-            "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC));
+            "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC),
+            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA+"$**", Sort.Direction.ASC));
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
@@ -399,6 +405,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             andCriteria.add(Criteria.where(ENRICHMENT_NAME).all(filter.getEnrichment()));
         }
 
+        if (nonNull(filter.getIndexedMetadata())) {
+            List<Criteria> metadataCriteria = filter.getIndexedMetadata().stream()
+                    .map(this::fromIndexedMetadata).filter(Objects::nonNull).collect(Collectors.toList());
+            andCriteria.addAll(metadataCriteria);
+        }
+
         if (nonNull(filter.getContentDeleted())) {
             if (filter.getContentDeleted()) {
                 andCriteria.add(Criteria.where(CONTENT_DELETED).ne(null));
@@ -480,6 +492,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return criteria;
+    }
+
+    private Criteria fromIndexedMetadata(KeyValue keyValue) {
+        String key = keyValue.getKey();
+        String value = keyValue.getValue();
+
+        if (null == key || null == value) {
+            return null;
+        }
+
+        if (key.contains(".")) {
+            key = StringUtils.replace(key, ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
+        }
+
+        return Criteria.where(INDEXED_METADATA + key).is(value);
     }
 
     private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
