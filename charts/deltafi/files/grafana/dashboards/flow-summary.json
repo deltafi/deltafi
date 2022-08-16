@@ -26,9 +26,8 @@
   "description": "",
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 85,
-  "iteration": 1659636756235,
+  "graphTooltip": 1,
+  "iteration": 1660161836395,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -53,247 +52,17 @@
       "type": "text"
     },
     {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "bps"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ingress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Egress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
+      "collapsed": false,
       "gridPos": {
-        "h": 8,
-        "w": 3,
+        "h": 1,
+        "w": 24,
         "x": 0,
         "y": 2
       },
-      "id": 24,
-      "maxDataPoints": 10,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "pluginVersion": "9.0.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(scale(perSecond(sum(seriesByTag('name=bytes_in', 'metricattribute=count', 'source=ingress', 'ingressFlow=~${flow:regex}'))), 8), 'Ingress')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(scale(perSecond(sum(seriesByTag('name=bytes_out', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 8), 'Egress')"
-        }
-      ],
-      "transparent": true,
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic",
-            "seriesBy": "last"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 50,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "bps"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ingress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Egress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 21,
-        "x": 3,
-        "y": 2
-      },
-      "id": 15,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "hidden",
-          "placement": "right"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(scale(perSecond(sum(seriesByTag('name=bytes_in', 'metricattribute=count', 'source=ingress', 'ingressFlow=~${flow:regex}'))), 8), 'Ingress')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(scale(perSecond(sum(seriesByTag('name=bytes_out', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 8), 'Egress')"
-        }
-      ],
-      "title": "Throughput (bps)",
-      "type": "timeseries"
+      "id": 72,
+      "panels": [],
+      "title": "Aggregate summary",
+      "type": "row"
     },
     {
       "datasource": {
@@ -359,14 +128,15 @@
         "h": 8,
         "w": 3,
         "x": 0,
-        "y": 10
+        "y": 3
       },
       "id": 25,
-      "maxDataPoints": 5000,
+      "interval": "10s",
+      "maxDataPoints": 9999,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
@@ -375,7 +145,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "pluginVersion": "9.0.1",
       "targets": [
@@ -386,7 +156,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=bytes_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=bytes_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -396,9 +166,10 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=bytes_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}'))), 'Egress')"
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=bytes_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Egress')"
         }
       ],
+      "title": "Total Bytes",
       "transparent": true,
       "type": "stat"
     },
@@ -417,8 +188,8 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
+            "fillOpacity": 51,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -494,16 +265,15 @@
         "h": 8,
         "w": 21,
         "x": 3,
-        "y": 10
+        "y": 3
       },
       "id": 3,
+      "interval": "10s",
       "options": {
         "legend": {
-          "calcs": [
-            "sum"
-          ],
-          "displayMode": "hidden",
-          "placement": "right"
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -518,7 +288,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(nonNegativeDerivative(seriesByTag('name=bytes_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=bytes_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
         },
         {
           "datasource": {
@@ -628,15 +398,16 @@
         "h": 8,
         "w": 3,
         "x": 0,
-        "y": 18
+        "y": 11
       },
       "id": 26,
-      "maxDataPoints": 5000,
+      "interval": "10s",
+      "maxDataPoints": 9999,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
+        "justifyMode": "center",
+        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "sum"
@@ -644,7 +415,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "pluginVersion": "9.0.1",
       "targets": [
@@ -655,7 +426,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -665,7 +436,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}'))), 'Egress')"
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -675,7 +446,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_dropped', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 'Dropped')"
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_dropped', 'metricattribute=count', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Dropped')"
         },
         {
           "datasource": {
@@ -685,7 +456,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_errored', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 'Errored')"
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_errored', 'metricattribute=count', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Errored')"
         },
         {
           "datasource": {
@@ -695,9 +466,10 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_filtered', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 'Filtered')"
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_filtered', 'metricattribute=count', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Filtered')"
         }
       ],
+      "title": "Total Files",
       "transparent": true,
       "type": "stat"
     },
@@ -739,6 +511,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -823,16 +596,714 @@
         "h": 8,
         "w": 21,
         "x": 3,
-        "y": 18
+        "y": 11
       },
       "id": 23,
+      "interval": "10s",
       "options": {
         "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "refCount": 0,
+          "refId": "Ingress",
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Egress",
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}'))), 'Egress')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Dropped",
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_dropped', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 'Dropped')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Errored",
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_errored', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 'Errored')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Filtered",
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_filtered', 'metricattribute=count', 'ingressFlow=~${flow:regex}'))), 'Filtered')"
+        }
+      ],
+      "title": "Files",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 73,
+      "interval": "10s",
+      "maxDataPoints": 50,
+      "options": {
+        "calculate": false,
+        "calculation": {},
+        "cellGap": 0,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "scale": "exponential",
+          "scheme": "RdYlBu",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "show": true,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "min": 0,
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "refCount": 0,
+          "refId": "Ingress",
+          "target": "aliasByTags(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), 'ingressFlow')"
+        }
+      ],
+      "title": "Activity by flow",
+      "transformations": [],
+      "transparent": true,
+      "type": "heatmap-new"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 30,
+      "panels": [],
+      "repeat": "flow",
+      "repeatDirection": "h",
+      "title": "${flow} summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ingress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Egress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 3,
+        "x": 0,
+        "y": 27
+      },
+      "id": 35,
+      "interval": "10s",
+      "maxDataPoints": 9999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
           "calcs": [
             "sum"
           ],
-          "displayMode": "hidden",
-          "placement": "right"
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "refCount": 0,
+          "refId": "Ingress",
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=bytes_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Ingress')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Egress",
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=bytes_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Egress')"
+        }
+      ],
+      "title": "Total Bytes",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 51,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ingress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Egress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 21,
+        "x": 3,
+        "y": 27
+      },
+      "id": 38,
+      "interval": "10s",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "refCount": 0,
+          "refId": "Ingress",
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=bytes_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Egress",
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=bytes_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}'))), 'Egress')"
+        }
+      ],
+      "title": "Total Bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ingress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Egress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Dropped"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Errored"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 3,
+        "x": 0,
+        "y": 35
+      },
+      "id": 40,
+      "interval": "10s",
+      "maxDataPoints": 9999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "refCount": 0,
+          "refId": "Ingress",
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Ingress')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Egress",
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_out', 'metricattribute=count', 'action=egress', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Egress')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Dropped",
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_dropped', 'metricattribute=count', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Dropped')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Errored",
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_errored', 'metricattribute=count', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Errored')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Filtered",
+          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_filtered', 'metricattribute=count', 'ingressFlow=~${flow:regex}')), '1d', 'sum', false)), 'Filtered')"
+        }
+      ],
+      "title": "Total Files",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ingress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Egress"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Dropped"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Errored"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 21,
+        "x": 3,
+        "y": 35
+      },
+      "id": 41,
+      "interval": "10s",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -894,7 +1365,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "1m",
   "schemaVersion": 36,
   "style": "dark",
   "tags": [
@@ -926,10 +1397,8 @@
         "current": {
           "selected": true,
           "text": [
-            "smoke"
           ],
           "value": [
-            "smoke"
           ]
         },
         "datasource": {
@@ -953,8 +1422,8 @@
     ]
   },
   "time": {
-    "from": "2022-07-27T20:31:12.832Z",
-    "to": "2022-08-04T18:34:44.597Z"
+    "from": "now-1h",
+    "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -972,6 +1441,6 @@
   "timezone": "",
   "title": "Flow Summary",
   "uid": "flow-summary",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

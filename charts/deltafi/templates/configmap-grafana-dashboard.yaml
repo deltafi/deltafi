@@ -2,22 +2,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dashboard-ingress-egress
+  name: dashboard-system-overview
   labels:
     grafana_dashboard: "1"
 data:
-  ingress-egress.json: |-
-{{ .Files.Get "files/grafana/dashboards/ingress-egress.json" | indent 4 }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: dashboard-flow-status
-  labels:
-    grafana_dashboard: "1"
-data:
-  flow-status.json: |-
-{{ .Files.Get "files/grafana/dashboards/flow-status.json" | indent 4 }}
+  system-overview.json: |-
+{{ .Files.Get "files/grafana/dashboards/system-overview.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -58,3 +48,13 @@ metadata:
 data:
   audit-logs.json: |-
 {{ .Files.Get "files/grafana/dashboards/audit-logs.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: processing-report
+  labels:
+    grafana_dashboard: "1"
+data:
+  processing-report.json: |-
+{{ .Files.Get "files/grafana/dashboards/processing-report.json" | indent 4 }}
