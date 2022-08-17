@@ -94,6 +94,10 @@
         "mediaType": "application/xml"
       }
     ],
+    "indexedMetadata": {
+      "a": "b",
+      "c": "d"
+    },
     "enrichment": [
       {
         "name": "mockEnrichment",

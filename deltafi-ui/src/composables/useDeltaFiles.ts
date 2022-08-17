@@ -61,6 +61,7 @@ export default function useDeltaFiles() {
           value: true,
           mediaType: true,
         },
+	indexedMetadata: true,
         egressed: true,
         enrichment: {
           name: true,
