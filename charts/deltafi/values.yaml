@@ -114,7 +114,7 @@ minio:
       ilm:
         Rules:
           - Expiration:
-              Days: 1
+              Days: 13
             ID: AgeOff
             Status: Enabled
   makeBucketJob:
