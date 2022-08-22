@@ -308,6 +308,7 @@ enum DeltaFileDirection {
 input ErrorSummaryFilter {
   modifiedAfter: DateTime
   modifiedBefore: DateTime
+  errorAcknowledged: Boolean
   flow: String
 }
 

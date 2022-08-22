@@ -26,8 +26,8 @@ import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.core.domain.types.DeltaFiles;
 import org.deltafi.core.domain.generated.types.*;
+import org.deltafi.core.domain.types.DeltaFiles;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -755,6 +755,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (nonNull(filter.getModifiedBefore())) {
             andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
+        }
+
+        if (nonNull(filter.getErrorAcknowledged())) {
+            if (filter.getErrorAcknowledged()) {
+                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
+            } else {
+                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).is(null));
+            }
         }
 
         if (nonNull(filter.getFlow())) {

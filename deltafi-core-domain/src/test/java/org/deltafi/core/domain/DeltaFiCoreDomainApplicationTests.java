@@ -37,14 +37,6 @@ import org.deltafi.core.config.server.repo.StateHolderRepositoryInMemoryImpl;
 import org.deltafi.core.config.server.service.PropertyMetadataLoader;
 import org.deltafi.core.config.server.service.PropertyService;
 import org.deltafi.core.config.server.service.StateHolderService;
-import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.domain.types.EgressActionSchema;
-import org.deltafi.core.domain.types.EnrichActionSchema;
-import org.deltafi.core.domain.types.FormatActionSchema;
-import org.deltafi.core.domain.types.LoadActionSchema;
-import org.deltafi.core.domain.types.TimedDeletePolicy;
-import org.deltafi.core.domain.types.TransformActionSchema;
-import org.deltafi.core.domain.types.ValidateActionSchema;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
@@ -63,9 +55,17 @@ import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginRepository;
 import org.deltafi.core.domain.repo.*;
 import org.deltafi.core.domain.services.*;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.EgressActionSchema;
 import org.deltafi.core.domain.types.EgressFlowPlanInput;
+import org.deltafi.core.domain.types.EnrichActionSchema;
 import org.deltafi.core.domain.types.FlowAssignmentRule;
+import org.deltafi.core.domain.types.FormatActionSchema;
+import org.deltafi.core.domain.types.LoadActionSchema;
 import org.deltafi.core.domain.types.PluginVariables;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
+import org.deltafi.core.domain.types.TransformActionSchema;
+import org.deltafi.core.domain.types.ValidateActionSchema;
 import org.deltafi.core.domain.types.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -2535,6 +2535,54 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
+	void testGetErrorSummaryByFlowFilterAcknowledged() {
+		OffsetDateTime now = OffsetDateTime.now();
+		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
+		loadDeltaFilesWithActionErrors(now, plusTwo);
+
+		ErrorSummaryFilter filterAck = ErrorSummaryFilter.newBuilder()
+				.errorAcknowledged(true)
+				.flow("f3")
+				.build();
+
+		ErrorsByFlow resultsAck = deltaFilesService.getErrorSummaryByFlow(
+				0, 99, filterAck, null);
+
+		assertEquals(1, resultsAck.getCount());
+		assertEquals(1, resultsAck.getCountPerFlow().size());
+		assertEquals(1, resultsAck.getCountPerFlow().get(0).getCount());
+		assertEquals("f3", resultsAck.getCountPerFlow().get(0).getFlow());
+		assertTrue(resultsAck.getCountPerFlow().get(0).getDids().contains("6"));
+
+		ErrorSummaryFilter filterNoAck = ErrorSummaryFilter.newBuilder()
+				.errorAcknowledged(false)
+				.flow("f3")
+				.build();
+
+		ErrorsByFlow resultsNoAck = deltaFilesService.getErrorSummaryByFlow(
+				0, 99, filterNoAck, null);
+
+		assertEquals(1, resultsNoAck.getCount());
+		assertEquals(1, resultsNoAck.getCountPerFlow().size());
+		assertEquals(2, resultsNoAck.getCountPerFlow().get(0).getCount());
+		assertEquals("f3", resultsNoAck.getCountPerFlow().get(0).getFlow());
+		assertTrue(resultsNoAck.getCountPerFlow().get(0).getDids().containsAll(List.of("7", "8")));
+
+		ErrorSummaryFilter filterFlowOnly = ErrorSummaryFilter.newBuilder()
+				.flow("f3")
+				.build();
+
+		ErrorsByFlow resultsForFlow = deltaFilesService.getErrorSummaryByFlow(
+				0, 99, filterFlowOnly, null);
+
+		assertEquals(1, resultsForFlow.getCount());
+		assertEquals(1, resultsForFlow.getCountPerFlow().size());
+		assertEquals(3, resultsForFlow.getCountPerFlow().get(0).getCount());
+		assertEquals("f3", resultsForFlow.getCountPerFlow().get(0).getFlow());
+		assertTrue(resultsForFlow.getCountPerFlow().get(0).getDids().containsAll(List.of("6", "7", "8")));
+	}
+
+	@Test
 	void testGetErrorSummaryByMessageDatafetcher() {
 		OffsetDateTime now = OffsetDateTime.now();
 		OffsetDateTime plusOne = OffsetDateTime.now().plusMinutes(1);
@@ -2658,6 +2706,7 @@ class DeltaFiCoreDomainApplicationTests {
 		loadDeltaFilesWithActionErrors(now, plusTwo);
 
 		ErrorSummaryFilter filter = ErrorSummaryFilter.newBuilder()
+				.errorAcknowledged(false)
 				.flow("f2").build();
 		DeltaFileOrder order = DeltaFileOrder.newBuilder()
 				.direction(DeltaFileDirection.DESC)
@@ -2726,8 +2775,10 @@ class DeltaFiCoreDomainApplicationTests {
 				"5", "f1", "causeA", "x", now, later, true, true, null));
 
 		// causeZ, f2: 1, f3: 3. f1: 1 (which is not the last action)
-		deltaFileRepo.save(Util.buildErrorDeltaFile(
-				"6", "f3", "causeZ", "x", now));
+		DeltaFile deltaFileWithAck = Util.buildErrorDeltaFile(
+				"6", "f3", "causeZ", "x", now);
+		deltaFileWithAck.setErrorAcknowledged(now);
+		deltaFileRepo.save(deltaFileWithAck);
 		deltaFileRepo.save(Util.buildErrorDeltaFile(
 				"7", "f3", "causeZ", "x", now));
 		deltaFileRepo.save(Util.buildErrorDeltaFile(
