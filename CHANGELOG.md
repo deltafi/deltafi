@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: Creates docker kind network automatically if not present on `cluster up`
 - KinD: `cluster install` does not require `cluster up` before executing the first time
 - KinD: Added missing dependencies to Brewfile
+- Turned off a performance optimization that caused issues with Graphite on MacOS
 
 ### Tech-Debt/Refactor
 - Plugins no longer depend on deltafi-core-domain
