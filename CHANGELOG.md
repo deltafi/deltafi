@@ -3,16 +3,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.96.5
+## [Unreleased] - Next release 0.97.0
 
 ### Added
 - KinD: `cluster prerequisites` command will help get KinD prereqs installed on MacOS
 - KinD: Checks for a proper JDK 11 installation and errors appropriately
 - KinD: Checks for `docker` and errors appropriately
 - KinD: `cluster loc build` will clone plugin and UI repositories automatically if not present
+- Added new processing report dashboard
+- Migration for delete policies added
+- Indexed metadata added to DeltaFiles.  This metadata can be set by EnrichActions
 
 ### Changed
 - Moved `grafana.*` FQDN to `metrics.*`
+- Default MinIO age-off changed from 1 day to 13 days
+- Migrations run with `deltafi install`
 
 ### Deprecated
 
@@ -25,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Tech-Debt/Refactor
 - Plugins no longer depend on deltafi-core-domain
+- Removed core domain dependencies from action kit.  This is a breaking change for plugins.
 
 ### Security
 
