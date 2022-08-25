@@ -23,22 +23,22 @@ import com.netflix.graphql.dgs.client.RequestExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.DgsPostException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.Collections;
 
 /**
  * Implementation of the DomainGatewayService utilizing a GraphQLClient to post to a remote server
  */
-@ApplicationScoped
+@Service
 @Slf4j
 public class HttpDomainGatewayService implements DomainGatewayService{
 
-    @Inject
+    @Autowired
     GraphQLClient graphQLClient;
 
-    @Inject
+    @Autowired
     RequestExecutor requestExecutor;
 
     HttpDomainGatewayService() {

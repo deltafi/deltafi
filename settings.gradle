@@ -14,9 +14,6 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    plugins {
-        id "${quarkusPluginId}" version "${quarkusPluginVersion}"
-    }
 }
 
 dependencyResolutionManagement {

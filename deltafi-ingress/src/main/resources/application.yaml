@@ -1,3 +1,8 @@
+management:
+  metrics:
+    export:
+      graphite:
+        enabled: true
 quarkus:
   application:
     name: deltafi-ingress

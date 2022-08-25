@@ -15,13 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.config;
+package org.deltafi.core;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-@Data
-@ConfigurationProperties(prefix = "quarkus.application")
-public class ActionVersionProperty {
-    private String version = "missing-value";
+@SpringBootApplication(scanBasePackages = "org.deltafi")
+@EnableConfigurationProperties
+public class CoreActionsApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(CoreActionsApplication.class, args);
+    }
 }

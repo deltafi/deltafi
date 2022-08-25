@@ -23,9 +23,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.DgsPostException;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Service;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -36,7 +35,7 @@ import java.util.Map;
 /**
  * Helper service that wraps an HTTP client for use by the DomainGatewayService
  */
-@ApplicationScoped
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class DgsPostService implements RequestExecutor {
@@ -50,7 +49,7 @@ public class DgsPostService implements RequestExecutor {
     public HttpResponse execute(@NotNull String url, @NotNull Map<String, ? extends List<String>> headers, @NotNull String body) throws DgsPostException {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url))
                 .POST(HttpRequest.BodyPublishers.ofString(body))
-                .headers("content-type", MediaType.APPLICATION_JSON).build();
+                .headers("content-type", "application/json").build();
 
         try {
             java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());

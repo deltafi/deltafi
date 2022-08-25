@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.properties;
+package org.deltafi.actionkit.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -23,10 +23,7 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "minio")
-public class MinioProperties {
-    String url;
-    String accessKey;
-    String secretKey;
-    long partSize;
+@ConfigurationProperties(prefix = "deltafi")
+public class DeltaFiSystemProperties {
+    private String systemName = "deltafi";
 }

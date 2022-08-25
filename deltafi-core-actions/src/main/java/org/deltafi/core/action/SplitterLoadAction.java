@@ -18,6 +18,7 @@
 package org.deltafi.core.action;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.load.MultipartLoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.common.types.ActionContext;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
+@Action
 public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParameters> {
 
     public SplitterLoadAction() {

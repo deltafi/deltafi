@@ -20,11 +20,12 @@ package org.deltafi.actionkit.config;
 import com.netflix.graphql.dgs.client.DefaultGraphQLClient;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import org.deltafi.common.properties.GraphqlClientProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import javax.enterprise.inject.Produces;
-
+@Configuration
 public class GraphQLClientConfig {
-    @Produces
+    @Bean
     public GraphQLClient graphQLClient(GraphqlClientProperties graphqlProperties) {
         return new DefaultGraphQLClient(graphqlProperties.getCoreDomain());
     }

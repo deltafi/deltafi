@@ -31,6 +31,7 @@ import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.MultipartTransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
@@ -53,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@Action
 public class DecompressionTransformAction extends MultipartTransformAction<DecompressionTransformParameters> {
 
     public DecompressionTransformAction() { super(DecompressionTransformParameters.class); }

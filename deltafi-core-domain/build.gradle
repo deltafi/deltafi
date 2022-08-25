@@ -8,8 +8,6 @@ plugins {
 
 description = 'Core domain for DeltaFi'
 
-apply plugin: 'maven-publish'
-
 license {
 	mapping("graphql", "SCRIPT_STYLE")
 	header(rootProject.file('HEADER'))

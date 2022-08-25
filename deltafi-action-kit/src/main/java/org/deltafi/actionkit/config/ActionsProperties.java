@@ -20,8 +20,10 @@ package org.deltafi.actionkit.config;
 import lombok.Data;
 import org.deltafi.common.ssl.SslProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 @Data
+@Component
 @ConfigurationProperties(prefix = "actions")
 public class ActionsProperties {
     private long actionPollingInitialDelayMs = 3000L;

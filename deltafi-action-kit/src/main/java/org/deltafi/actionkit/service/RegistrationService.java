@@ -20,19 +20,17 @@ package org.deltafi.actionkit.service;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import io.quarkus.runtime.StartupEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.config.ActionsProperties;
 import org.deltafi.common.types.ActionRegistrationInput;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,28 +38,23 @@ import java.util.concurrent.TimeUnit;
 /**
  * Service that gathers up all the extant actions and registers them with the domain
  */
-@ApplicationScoped
+@Service
 @Slf4j
 public class RegistrationService {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    @Inject
+    @Autowired
     ActionsProperties actionsProperties;
 
-    @Inject
+    @Autowired
     DomainGatewayService domainGatewayService;
 
-    @Inject
-    Instance<Action<?>> actions;
+    @Autowired
+    List<Action<?>> actions;
 
     private GraphQLQuery query;
     private boolean firstTime = true;
-
-    @SuppressWarnings({"unused", "EmptyMethod"})
-    public void start(@Observes StartupEvent start) {
-        // Needed for quarkus instantiation.
-    }
 
     @PostConstruct
     public void buildRegistration() {

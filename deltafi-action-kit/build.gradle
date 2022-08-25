@@ -1,12 +1,11 @@
 plugins {
-    id 'io.quarkus'
-    id 'org.kordamp.gradle.jandex' version '0.11.0'
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'java-library'
+    id 'maven-publish'
+    id 'org.kordamp.gradle.jandex' version '0.11.0'
 }
 
 description = 'DeltaFi Action Kit - Action implementation SDK for DeltaFi actions'
-
-apply plugin: 'maven-publish'
 
 license {
     header(rootProject.file('HEADER'))
@@ -14,40 +13,38 @@ license {
 }
 
 dependencies {
-    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    api project(':deltafi-common')
 
-    implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
-        because 'DGS BOM to automatically define versions of other packages below'
-    }
+    api "redis.clients:jedis:${jedisVersion}"
+    api "io.minio:minio:${minioVersion}"
 
-    implementation project(':deltafi-common')
+    api 'io.micrometer:micrometer-registry-graphite:1.9.3'
+    api 'io.micrometer:micrometer-spring-legacy:1.3.20'
 
-    implementation "redis.clients:jedis:${jedisVersion}"
+    api 'net.logstash.logback:logstash-logback-encoder:7.2'
+    api 'ch.qos.logback:logback-classic:1.2.11'
 
-    implementation "io.minio:minio:${minioVersion}"
+    api "org.springframework.boot:spring-boot-starter:${springBootVersion}"
+    api 'org.springframework.cloud:spring-cloud-starter-config:3.1.3'
 
-    implementation 'io.quarkus:quarkus-config-yaml'
-    implementation 'io.quarkus:quarkus-resteasy-reactive'
-    implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
-    implementation 'io.quarkus:quarkus-spring-cloud-config-client'
-    implementation 'io.quarkus:quarkus-spring-boot-properties'
-    implementation 'io.quarkus:quarkus-hibernate-validator'
-    implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
-    implementation "io.quarkiverse.micrometer.registry:quarkus-micrometer-registry-graphite:${quarkusMicrometerRegistryGraphiteVersion}"
+    api "com.netflix.graphql.dgs:graphql-dgs-client:${dgsVersion}"
+    api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
 
-    implementation 'com.netflix.graphql.dgs:graphql-dgs-client'
-    implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
+    api 'javax.validation:validation-api:2.0.1.Final'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3'
+
+    api 'com.fasterxml.jackson.core:jackson-annotations:2.13.3'
+    api 'javax.ws.rs:javax.ws.rs-api:2.1.1'
+    api 'org.jetbrains:annotations:23.0.0'
 
     implementation "com.graphql-java:graphql-java:${graphqlJavaVersion}"
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     implementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
-    testImplementation 'io.quarkus:quarkus-junit5'
-    testImplementation 'io.quarkus:quarkus-junit5-mockito'
-    testImplementation 'io.rest-assured:rest-assured'
-    testImplementation 'org.mockito:mockito-junit-jupiter'
-    testImplementation 'org.mockito:mockito-inline'
-    implementation 'org.mock-server:mockserver-netty:5.13.2'
-    implementation 'org.mock-server:mockserver-junit-jupiter:5.13.2'
+    testImplementation 'io.rest-assured:rest-assured:5.1.1'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.7.0'
+    testImplementation 'org.mockito:mockito-inline:4.7.0'
+    testImplementation 'org.mock-server:mockserver-netty:5.13.2'
+    testImplementation 'org.mock-server:mockserver-junit-jupiter:5.13.2'
 }

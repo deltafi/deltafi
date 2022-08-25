@@ -19,15 +19,17 @@ package org.deltafi.actionkit.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.ssl.SslContextFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
 import java.net.http.HttpClient;
 
 @Slf4j
+@Configuration
+@Component
 public class HttpClientConfig {
-    @Produces
-    @ApplicationScoped
+    @Bean
     public HttpClient httpClient(ActionsProperties config) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
         if (config.getSsl() != null) {

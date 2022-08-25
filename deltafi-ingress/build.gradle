@@ -1,5 +1,5 @@
 plugins {
-    id 'io.quarkus'
+    id "io.quarkus" version "${quarkusPluginVersion}"
     id "com.palantir.docker" version "${palantirDockerVersion}"
     id 'org.kordamp.gradle.jandex' version '0.11.0'
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"

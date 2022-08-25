@@ -17,17 +17,19 @@
  */
 package org.deltafi.actionkit.config;
 
-import io.quarkus.arc.profile.IfBuildProfile;
 import org.deltafi.actionkit.service.RedisActionEventService;
 import org.deltafi.common.properties.RedisProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import javax.enterprise.inject.Produces;
 import java.net.URISyntaxException;
 
+@Configuration
+@EnableConfigurationProperties(RedisProperties.class)
 public class RedisConfig {
 
-    @IfBuildProfile("prod")
-    @Produces
+    @Bean
     public RedisActionEventService redisActionEventService(RedisProperties redisProperties) throws URISyntaxException {
         return new RedisActionEventService(redisProperties.getUrl(), redisProperties.getPassword().orElse(""));
     }

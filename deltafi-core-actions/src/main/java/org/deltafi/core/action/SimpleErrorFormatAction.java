@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.format.SimpleFormatAction;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -43,6 +44,7 @@ import java.util.Map;
 import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 
 @Slf4j
+@Action
 public class SimpleErrorFormatAction extends SimpleFormatAction {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

@@ -50,7 +50,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.eq;
 
-
 @ExtendWith(MockitoExtension.class)
 public class DecompressionTransformActionTest {
     private static final String CONTENT_TYPE = "application/octet-stream";

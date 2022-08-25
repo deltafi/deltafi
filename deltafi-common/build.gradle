@@ -29,7 +29,6 @@ dependencies {
     implementation "org.slf4j:slf4j-api:1.7.36"
     implementation "org.springframework.boot:spring-boot"
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
-    implementation "io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}"
     implementation 'org.springframework.data:spring-data-mongodb'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'

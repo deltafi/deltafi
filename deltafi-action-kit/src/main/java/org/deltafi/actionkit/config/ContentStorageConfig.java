@@ -17,13 +17,14 @@
  */
 package org.deltafi.actionkit.config;
 
-import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import javax.enterprise.inject.Produces;
-
+@Configuration
 public class ContentStorageConfig {
-    @Produces
+    @Bean
     public ContentStorageService contentStorageService(ObjectStorageService objectStorageService) {
         return new ContentStorageService(objectStorageService);
     }

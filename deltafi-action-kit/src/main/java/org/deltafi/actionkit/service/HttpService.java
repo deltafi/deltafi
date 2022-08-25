@@ -17,14 +17,12 @@
  */
 package org.deltafi.actionkit.service;
 
-import io.quarkus.runtime.StartupEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.HttpPostException;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -37,16 +35,11 @@ import java.util.stream.Stream;
 /**
  * General purpose HTTP client service
  */
-@ApplicationScoped
+@Component
 @RequiredArgsConstructor
 @Slf4j
 public class HttpService {
     private final HttpClient httpClient;
-
-    // Guarantee instantiation if not injected...
-    @SuppressWarnings("EmptyMethod")
-    void startup(@Observes StartupEvent event) {
-    }
 
     /**
      * Post data to an HTTP endpoint

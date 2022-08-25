@@ -15,13 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.properties;
+package org.deltafi.actionkit.config;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.graphite.GraphiteConfig;
+import io.micrometer.graphite.GraphiteMeterRegistry;
 
-@Data
-@ConfigurationProperties(prefix = "deltafi")
-public class DeltaFiSystemProperties {
-    private String systemName = "deltafi";
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class MetricsConfig {
+    @Bean
+    public GraphiteMeterRegistry meterRegistry(GraphiteConfig graphiteConfig, Clock clock) {
+        return new GraphiteMeterRegistry(graphiteConfig, clock);
+    }
 }

@@ -17,43 +17,29 @@
  */
 package org.deltafi.actionkit.action;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.quarkus.arc.Subclass;
-import io.quarkus.runtime.StartupEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
-import org.deltafi.actionkit.config.ActionVersionProperty;
-import org.deltafi.actionkit.config.ActionsProperties;
-import org.deltafi.actionkit.service.ActionEventService;
-import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.properties.DeltaFiSystemProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.types.*;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionRegistrationInput;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.DeltaFile;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
+import javax.validation.constraints.NotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 /**
  * Base class for all DeltaFi Actions.  No action should directly extend this class, but should use
@@ -66,45 +52,12 @@ public abstract class Action<P extends ActionParameters> {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-    private static final ConcurrentMap<String, Object> schedulers = new ConcurrentHashMap<>();
-
-    @Inject
+    @Autowired
     protected ContentStorageService contentStorageService;
-
-    @Inject
-    protected ActionEventService actionEventService;
-
-    @Inject
-    protected ActionsProperties actionsProperties;
-
-    @Inject
-    protected HostnameService hostnameService;
-
-    @Inject
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    protected DeltaFiSystemProperties deltaFiSystemProperties;
-
-    @Inject
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    protected ActionVersionProperty actionVersionProperty;
-
-    @SuppressWarnings("CdiInjectionPointsInspection")
-    @Inject
-    MeterRegistry meterRegistry;
 
     private final ActionType actionType;
     private final Class<P> paramType;
-
-    private final ScheduledExecutorService startListeningExecutor = Executors.newSingleThreadScheduledExecutor();
-
-    /**
-     * Empty method that prevents Quarkus engine from pruning action classes at startup
-     * @param start Event that is generated at startup
-     */
-    @SuppressWarnings({"unused", "EmptyMethod"})
-    public void start(@Observes StartupEvent start) {
-        // quarkus will prune the actions if this is not included
-    }
+    private Map<String, Object> definition = null;
 
     /**
      * This is the action entry point where all specific action functionality is implemented.  This abstract method
@@ -117,109 +70,8 @@ public abstract class Action<P extends ActionParameters> {
      * @see ErrorResult
      */
     protected abstract Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params);
-
-    /**
-     * Automatically called after construction to initiate polling for inbound actions to be executed
-     */
-    @PostConstruct
-    public void startAction() {
-        // Make sure we aren't starting threads more than once!
-        schedulers.putIfAbsent(getFeedString(), this);
-        if (schedulers.get(getFeedString()).equals(this)) {
-            log.info("Starting action: {}", getFeedString());
-            startListeningExecutor.scheduleWithFixedDelay(this::startListening,
-                    actionsProperties.getActionPollingInitialDelayMs(), actionsProperties.getActionPollingPeriodMs(),
-                    TimeUnit.MILLISECONDS);
-        } else {
-            log.warn("Will not start second thread scheduler for: {}", getFeedString());
-        }
-    }
-
-    private void startListening() {
-        try {
-            while (!Thread.currentThread().isInterrupted()) {
-                ActionInput actionInput = actionEventService.getAction(getFeedString());
-                ActionContext context = actionInput.getActionContext();
-                context.setActionVersion(getVersion());
-                context.setHostname(getHostname());
-                context.setStartTime(OffsetDateTime.now());
-
-                log.trace("Running action with input {}", actionInput);
-                DeltaFile deltaFile = actionInput.getDeltaFile();
-                P params = convertToParams(actionInput.getActionParams());
-
-                executeAction(deltaFile, context, params);
-
-            }
-        } catch (Throwable e) {
-            log.error("Unexpected exception caught at Action thread execution level: " + e.getMessage());
-        }
-    }
-
-    private void executeAction(DeltaFile deltaFile, ActionContext context, P params) throws JsonProcessingException {
-        try {
-            Result result = execute(deltaFile, context, params);
-            if (Objects.isNull(result)) {
-                throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
-            }
-
-            actionEventService.submitResult(result);
-            postMetrics(result);
-        } catch (Throwable e) {
-            ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
-            actionEventService.submitResult(errorResult);
-            postMetrics(errorResult);
-        }
-    }
-
-    private void postMetrics(Result result) {
-        String ingressFlow = result.getContext().getIngressFlow();
-        String egressFlow = result.getContext().getEgressFlow();
-        String source = result.getContext().getName();
-        for (Metric metric: result.getMetrics()) {
-            List<Tag> tags = new ArrayList<>();
-            if (metric.getTags() != null)  tags = metric.getTags().entrySet().stream().map(e -> Tag.of(e.getKey(), e.getValue())).collect(Collectors.toList());
-            tags.add(Tag.of("action", actionType.name().toLowerCase()));
-            if (ingressFlow != null) tags.add(Tag.of("ingressFlow", ingressFlow));
-            if (egressFlow != null) tags.add(Tag.of("egressFlow", egressFlow));
-            tags.add(Tag.of("source", source));
-
-            meterRegistry.counter(metric.getName(), tags).increment(metric.getValue());
-        }
-    }
-
-    private String getFeedString() {
-        if (this instanceof Subclass) {
-            return this.getClass().getSuperclass().getCanonicalName();
-        }
-
-        return this.getClass().getCanonicalName();
-    }
-
-    /**
-     * @return the version of this action
-     */
-    public final String getVersion() {
-        if (Objects.nonNull(actionVersionProperty)) {
-            return actionVersionProperty.getVersion();
-        }
-
-        return "UNKNOWN";
-    }
-
-    /**
-     * @return hostname of the host where this action is running
-     */
-    public final String getHostname() {
-        return hostnameService.getHostname();
-    }
-
-    /**
-     * @return system name for the current DeltaFi system
-     */
-    @SuppressWarnings("unused")
-    public final String getSystemName() {
-        return deltaFiSystemProperties.getSystemName();
+    public Result executeAction(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull Map<String, Object> params) {
+        return execute(deltaFile, context, convertToParams(params));
     }
 
     /**
@@ -235,9 +87,11 @@ public abstract class Action<P extends ActionParameters> {
      * @return Map of parameter class used to configure this action
      */
     protected Map<String, Object> getDefinition() {
-        JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
-        Map<String, Object> definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>(){});
-        log.trace("Action schema: {}", schemaJson.toPrettyString());
+        if (definition == null) {
+            JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
+            definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>() {});
+            log.trace("Action schema: {}", schemaJson.toPrettyString());
+        }
         return definition;
     }
 
@@ -255,16 +109,7 @@ public abstract class Action<P extends ActionParameters> {
      * @return the canonical name of the action class as a string
      */
     protected String getClassCanonicalName() {
-        return this instanceof Subclass ? this.getClass().getSuperclass().getCanonicalName() : this.getClass().getCanonicalName();
-    }
-
-    /**
-     * Convert a map of key/values to a parameter object for the Action
-     * @param params Key-value map representing the values in the paraameter object
-     * @return a parameter object initialized by the params map
-     */
-    public P convertToParams(Map<String, Object> params) {
-        return OBJECT_MAPPER.convertValue(params, paramType);
+        return this.getClass().getCanonicalName();
     }
 
     /**
@@ -273,7 +118,6 @@ public abstract class Action<P extends ActionParameters> {
      * @return a byte array for the loaded content
      * @throws ObjectStorageException when the load from the content storage service fails
      */
-
     @SuppressWarnings("unused")
     protected byte[] loadContent(ContentReference contentReference) throws ObjectStorageException {
         byte[] content = null;
@@ -318,5 +162,18 @@ public abstract class Action<P extends ActionParameters> {
      */
     protected ContentReference saveContent(String did, InputStream content, String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
+    }
+
+    public ActionType getActionType() {
+        return actionType;
+    }
+
+    /**
+     * Convert a map of key/values to a parameter object for the Action
+     * @param params Key-value map representing the values in the paraameter object
+     * @return a parameter object initialized by the params map
+     */
+    public P convertToParams(Map<String, Object> params) {
+        return OBJECT_MAPPER.convertValue(params, paramType);
     }
 }

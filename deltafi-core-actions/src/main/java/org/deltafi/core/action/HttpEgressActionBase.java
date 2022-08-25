@@ -19,6 +19,7 @@ package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressActionParameters;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -28,15 +29,16 @@ import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.FormattedData;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
+@Action
 public abstract class HttpEgressActionBase<P extends HttpEgressParameters> extends EgressAction<P> {
 
-    @Inject
+    @Autowired
     protected HttpService httpPostService;
 
     public HttpEgressActionBase(Class<P> actionParametersClass) {

@@ -1,3 +1,5 @@
+import java.util.regex.Matcher
+
 plugins {
   id 'test-summary' // Local plugin
   id 'version-reckoning' // Local plugin
@@ -15,17 +17,6 @@ allprojects { project ->
     task version {
         doLast {
             println "Version is reckoned to " + "$version"
-        }
-    }
-
-    afterEvaluate {
-        configurations.all {
-            resolutionStrategy.eachDependency { details ->
-                if (details.requested.group == "org.apache.logging.log4j" && details.requested.version <= "${log4jVersion}") {
-                    details.useVersion("${log4jVersion}")
-                    details.because('CVE-2021-44228: Log4j vulnerable to remote code execution')
-                }
-            }
         }
     }
 }
@@ -117,9 +108,9 @@ subprojects {
                 if (project.name != 'gradle-plugin') {
                     publications {
                         Public(MavenPublication) {
+                            from components.java
                             artifact sourcesJar
                             artifact javadocJar
-                            artifact jar
                             pom {
                                 name = project.name
                                 description = project.description
