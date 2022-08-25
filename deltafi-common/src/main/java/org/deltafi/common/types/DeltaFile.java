@@ -43,6 +43,7 @@ public class DeltaFile {
   private String did;
   private List<String> parentDids;
   private List<String> childDids;
+  private Long ingressBytes;
   private Long totalBytes;
   private DeltaFileStage stage;
   private List<Action> actions;

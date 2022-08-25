@@ -72,6 +72,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String EGRESSED = "egressed";
     public static final String FILTERED = "filtered";
     public static final String TOTAL_BYTES = "totalBytes";
+    public static final String INGRESS_BYTES = "ingressBytes";
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
@@ -465,6 +466,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             if (nonNull(filter.getFormattedData().getEgressActions()) && !filter.getFormattedData().getEgressActions().isEmpty()) {
                 andCriteria.add(Criteria.where(FORMATTED_DATA_EGRESS_ACTIONS).all(filter.getFormattedData().getEgressActions()));
             }
+        }
+
+        if (nonNull(filter.getIngressBytesMin())) {
+            andCriteria.add(Criteria.where(INGRESS_BYTES).gte(filter.getIngressBytesMin()));
+        }
+
+        if (nonNull(filter.getIngressBytesMax())) {
+            andCriteria.add(Criteria.where(INGRESS_BYTES).lte(filter.getIngressBytesMax()));
         }
 
         if (nonNull(filter.getErrorAcknowledged())) {

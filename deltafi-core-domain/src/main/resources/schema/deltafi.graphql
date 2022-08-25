@@ -229,6 +229,8 @@ type DeltaFile {
   parentDids: [String!]!
   childDids: [String!]!
   # TODO: Make this a required field in a future release.  Optional for now for backward compatibility.
+  ingressBytes: Long
+  # TODO: Make this a required field in a future release.  Optional for now for backward compatibility.
   totalBytes: Long
   stage: DeltaFileStage!
   actions: [Action!]!
@@ -342,6 +344,8 @@ type ErrorsByMessage {
 input DeltaFilesFilter {
   dids: [String!]
   parentDid: String
+  ingressBytesMin: Long
+  ingressBytesMax: Long
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]

@@ -148,6 +148,7 @@ public class DeltaFilesService {
                 .did(input.getDid())
                 .parentDids(parentDids)
                 .childDids(Collections.emptyList())
+                .ingressBytes(computeContentSize(input.getContent()))
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
@@ -162,6 +163,15 @@ public class DeltaFilesService {
                 .build();
 
         return advanceAndSave(deltaFile);
+    }
+
+    private Long computeContentSize(List<Content> content) {
+        if (content == null || content.isEmpty()) {
+            return 0L;
+        }
+        return content.stream()
+                .map(c -> c.getContentReference().getSize())
+                .reduce(0L, Long::sum);
     }
 
     @MongoRetryable
@@ -333,6 +343,7 @@ public class DeltaFilesService {
                 .did(did)
                 .parentDids(List.of(deltaFile.getDid()))
                 .childDids(Collections.emptyList())
+                .ingressBytes(deltaFile.getIngressBytes())
                 .stage(DeltaFileStage.EGRESS)
                 .actions(new ArrayList<>())
                 .sourceInfo(new SourceInfo(deltaFile.getSourceInfo().getFilename() + ".error",
@@ -404,6 +415,7 @@ public class DeltaFilesService {
                         .did(UUID.randomUUID().toString())
                         .parentDids(List.of(deltaFile.getDid()))
                         .childDids(Collections.emptyList())
+                        .ingressBytes(computeContentSize(split.getContent()))
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
                         .sourceInfo(split.getSourceInfo())
@@ -627,6 +639,7 @@ public class DeltaFilesService {
                                     .did(UUID.randomUUID().toString())
                                     .parentDids(List.of(deltaFile.getDid()))
                                     .childDids(Collections.emptyList())
+                                    .ingressBytes(deltaFile.getIngressBytes())
                                     .stage(DeltaFileStage.INGRESS)
                                     .actions(new ArrayList<>(List.of(action)))
                                     .sourceInfo(deltaFile.getSourceInfo())

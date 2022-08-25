@@ -108,6 +108,7 @@ public class Util {
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
+                .ingressBytes(0L)
                 .sourceInfo(new SourceInfo(null, flow, metadata))
                 .stage(stage)
                 .created(created)
@@ -127,6 +128,7 @@ public class Util {
         Assertions.assertThat(actual.getStage()).isEqualTo(expected.getStage());
         Assertions.assertThat(actual.getChildDids()).isEqualTo(expected.getChildDids());
         Assertions.assertThat(actual.getParentDids()).isEqualTo(expected.getParentDids());
+        Assertions.assertThat(actual.getIngressBytes()).isEqualTo(expected.getIngressBytes());
         assertActionsEqualIgnoringDates(expected.getActions(), actual.getActions());
         Assertions.assertThat(actual.getSourceInfo()).isEqualTo(expected.getSourceInfo());
         Assertions.assertThat(actual.getProtocolStack()).isEqualTo(expected.getProtocolStack());
