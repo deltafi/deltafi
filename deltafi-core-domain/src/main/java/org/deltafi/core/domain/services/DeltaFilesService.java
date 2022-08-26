@@ -66,7 +66,6 @@ public class DeltaFilesService {
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
 
-
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
     final IngressFlowService ingressFlowService;
@@ -372,7 +371,7 @@ public class DeltaFilesService {
 
     public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile) {
         OffsetDateTime now = OffsetDateTime.now();
-        ActionEventInput noEgressFlowError = ActionEventInput.newBuilder()
+        return ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())
                 .action(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION)
                 .start(now)
@@ -382,7 +381,6 @@ public class DeltaFilesService {
                         .context(NO_EGRESS_CONFIGURED_CONTEXT)
                         .build())
                 .build();
-        return noEgressFlowError;
     }
 
     @MongoRetryable
@@ -806,7 +804,14 @@ public class DeltaFilesService {
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now();
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, properties.getRequeueSeconds());
-        requeuedDeltaFiles.forEach(deltaFile -> enqueueActions(requeuedActionInput(deltaFile, modified)));
+        List <ActionInput> actions = requeuedDeltaFiles.stream()
+                .map(deltaFile -> requeuedActionInput(deltaFile, modified))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        if (!actions.isEmpty()) {
+            log.warn(actions.size() + " actions exceeded requeue threshold of " + properties.getRequeueSeconds() + " seconds, requeuing now");
+            enqueueActions(actions);
+        }
     }
 
     List<ActionInput> requeuedActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
@@ -858,6 +863,8 @@ public class DeltaFilesService {
                         } catch (OptimisticLockingFailureException e) {
                             if (count > 9) {
                                 throw e;
+                            } else {
+                                log.warn("Retrying after OptimisticLockingFailureException caught processing " + event.getAction() + " for " + event.getDid());
                             }
                         } catch (Throwable e) {
                             StringWriter stackWriter = new StringWriter();
