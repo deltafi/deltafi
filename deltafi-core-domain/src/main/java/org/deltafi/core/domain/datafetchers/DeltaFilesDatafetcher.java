@@ -27,25 +27,29 @@ import com.netflix.graphql.dgs.InputArgument;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
-import org.deltafi.common.types.ActionEventInput;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.IngressInput;
-import org.deltafi.common.types.KeyValue;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.*;
 import org.deltafi.core.domain.types.DeltaFiles;
 import org.deltafi.core.domain.types.UniqueKeyValues;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFilesService;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.time.OffsetDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @DgsComponent
+@Slf4j
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+  @Autowired
+  ContentStorageService contentStorageService;
 
   DeltaFilesDatafetcher(DeltaFilesService deltaFilesService) {
     this.deltaFilesService = deltaFilesService;
@@ -140,19 +144,19 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public List<RetryResult> resume(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument(collectionType = String.class) List<String> removeSourceMetadata, @InputArgument(collectionType = KeyValue.class) List<KeyValue> replaceSourceMetadata) {
+  public List<RetryResult> resume(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     return deltaFilesService.resume(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public List<RetryResult> retry(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument(collectionType = String.class) List<String> removeSourceMetadata, @InputArgument(collectionType = KeyValue.class) List<KeyValue> replaceSourceMetadata) {
+  public List<RetryResult> retry(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     return resume(dids, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
   }
 
   @DgsMutation
   @SuppressWarnings("unused")
-  public List<RetryResult> replay(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument(collectionType = String.class) List<String> removeSourceMetadata, @InputArgument(collectionType = KeyValue.class) List<KeyValue> replaceSourceMetadata) {
+  public List<RetryResult> replay(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     return deltaFilesService.replay(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
@@ -168,4 +172,24 @@ public class DeltaFilesDatafetcher {
     return deltaFilesService.sourceMetadataUnion(dids);
   }
 
+  @DgsMutation
+  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles) throws ObjectStorageException {
+    Random random = new Random();
+    SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, new ArrayList<>());
+    Content c = new Content("stressTestContent", Collections.emptyList(), null);
+
+    for (int i = 0; i < numFiles; i++) {
+      String did = UUID.randomUUID().toString();
+      log.info("Saving content for " + did);
+      byte[] contentBytes = new byte[contentSize];
+      random.nextBytes(contentBytes);
+      ContentReference cr = contentStorageService.save(did, contentBytes, "application/octet-stream");
+      c.setContentReference(cr);
+      IngressInput ingressInput = new IngressInput(did, sourceInfo, List.of(c), OffsetDateTime.now());
+      log.info("Ingressing " + did);
+      ingress(ingressInput);
+    }
+
+    return numFiles;
+  }
 }

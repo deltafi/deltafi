@@ -457,11 +457,12 @@ type Mutation {
   registerPlugin(pluginInput: PluginInput!): Result!
   uninstallPlugin(dryRun: Boolean!, pluginCoordinatesInput: PluginCoordinatesInput!): Result!
 
-
   updateProperties(updates: [PropertyUpdate]!): Int!
   removePropertyOverrides(propertyIds: [PropertyId]!): Int!
 
   # use when adding or removing a plugin
   addPluginPropertySet(propertySet: PropertySetInput!) : Boolean!
   removePluginPropertySet(propertySetId: String!): Boolean!
+
+  stressTest(flow: String!, contentSize: Int!, numFiles: Int!) : Int!
 }
