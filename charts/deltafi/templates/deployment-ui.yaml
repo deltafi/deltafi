@@ -17,6 +17,16 @@ spec:
         app: deltafi-ui
         group: deltafi-core
     spec:
+      initContainers:
+      - name: wait-for-api
+        image: busybox:1.34.1
+        command:
+        - 'sh'
+        - '-c'
+        - >
+          until nc -z -w 2 deltafi-api-service 80 && echo deltafi-api ok;
+            do sleep 1;
+          done
       containers:
       - name: deltafi-ui
         image: {{ .Values.deltafi.ui.image }}

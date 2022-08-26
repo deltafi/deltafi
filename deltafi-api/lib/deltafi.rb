@@ -44,7 +44,7 @@ module Deltafi
     redis_password = ENV['REDIS_PASSWORD']
     redis_url = ENV['REDIS_URL'] ||
                 cached_system_properties['redis.url']&.gsub(/^http/, 'redis') ||
-                'http://deltafi-redis-master:6379'
+                'redis://deltafi-redis-master:6379'
     Redis.new(
       url: redis_url,
       password: redis_password,
@@ -55,7 +55,11 @@ module Deltafi
   end
 
   def self.cached_system_properties
-    @@system_properties || system_properties
+    unless @@system_properties.nil? || @@system_properties.keys.empty?
+      @@system_properties
+    else
+      system_properties
+    end
   end
 
   def self.system_properties
