@@ -52,15 +52,12 @@ export default function useFlowQueryBuilder() {
           transformActions: {
             name: true,
             type: true,
-            consumes: true,
-            produces: true,
             parameters: true,
             apiVersion: true,
           },
           loadAction: {
             name: true,
             type: true,
-            consumes: true,
             parameters: true,
             apiVersion: true,
           }
@@ -159,15 +156,12 @@ export default function useFlowQueryBuilder() {
           transformActions: {
             name: true,
             type: true,
-            consumes: true,
-            produces: true,
             parameters: true,
             apiVersion: true,
           },
           loadAction: {
             name: true,
             type: true,
-            consumes: true,
             parameters: true,
             apiVersion: true,
           },
@@ -178,7 +172,7 @@ export default function useFlowQueryBuilder() {
             defaultValue: true,
             dataType: true,
           }
-        },    
+        },
         enrich: {
           name: true,
           description: true,
@@ -267,7 +261,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName
         },
-        name: true,      
+        name: true,
         description: true,
         type: true,
         sourcePlugin: {
@@ -286,15 +280,12 @@ export default function useFlowQueryBuilder() {
         transformActions: {
           name: true,
           type: true,
-          consumes: true,
-          produces: true,
           parameters: true,
           apiVersion: true,
         },
         loadAction: {
           name: true,
           type: true,
-          consumes: true,
           parameters: true,
           apiVersion: true,
         },
@@ -412,7 +403,7 @@ export default function useFlowQueryBuilder() {
       validateIngressFlow: {
         __args: {
           flowName: flowName,
-        },      
+        },
         flowStatus: {
           state: true,
           errors: {
@@ -432,7 +423,7 @@ export default function useFlowQueryBuilder() {
       validateEnrichFlow: {
         __args: {
           flowName: flowName,
-        },      
+        },
         flowStatus: {
           state: true,
           errors: {
@@ -452,7 +443,7 @@ export default function useFlowQueryBuilder() {
       validateEgressFlow: {
         __args: {
           flowName: flowName,
-        }, 
+        },
         flowStatus: {
           state: true,
           errors: {

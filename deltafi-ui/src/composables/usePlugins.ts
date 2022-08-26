@@ -36,8 +36,6 @@ export default function usePlugins() {
         },
         actions: {
           name: true,
-          consumes: true,
-          produces: true,
           requiresDomains: true,
         },
         variables: {
@@ -66,22 +64,15 @@ export default function usePlugins() {
     data.value = response.value.data;
   };
 
-  const update = async (updates: any) => {
+  const setPluginVariableValues = async (update: Object) => {
     const query = {
       setPluginVariableValues: {
-        __args: {
-          pluginCoordinates: updates.pluginCoordinates,
-          variables: updates.variables
-        },
+        __args: update,
       }
     };
-    try {
-      await queryGraphQL(query, "updatePluginVariable", "mutation");
-      data.value = response.value.data;
-    } catch {
-      // Continue regardless of error
-    }
+    await queryGraphQL(query, "updatePluginVariable", "mutation");
+    return;
   }
 
-  return { data, loading, loaded, fetch,update, response };
+  return { data, loading, loaded, fetch, setPluginVariableValues, response };
 }

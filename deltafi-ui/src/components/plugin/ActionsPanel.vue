@@ -17,32 +17,26 @@
 -->
 
 <template>
-  <CollapsiblePanel header="Info" style="min-width: 85%">
-    <div class="row">
-      <div class="col-6">
-        <p><b>Name: </b>{{ props.info.displayName }}</p>
-      </div>
-      <div class="col-6">
-        <p><b>Version: </b>{{ props.info.pluginCoordinates.version }}</p>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col">
-        <p><b>Description: </b>{{ props.info.description }}</p>
-      </div>
-      <div class="col">
-        <p><b>Action Kit Version: </b>{{ props.info.actionKitVersion }}</p>
-      </div>
-    </div>
+  <CollapsiblePanel header="Actions" class="table-panel">
+    <DataTable :value="props.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines">
+      <Column field="name" header="Name"></Column>
+      <Column field="requiresDomains" header="Requires Domains">
+        <template #body="{ data }">
+          <span v-if="data.requiresDomains !== null">{{ data.requiresDomains.join(', ') }}</span>
+        </template>
+      </Column>
+    </DataTable>
   </CollapsiblePanel>
 </template>
 
 <script setup>
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import { defineProps } from "vue";
 
 const props = defineProps({
-  info: {
+  actions: {
     type: Object,
     required: true,
   },

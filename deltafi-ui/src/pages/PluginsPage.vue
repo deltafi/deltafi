@@ -18,19 +18,18 @@
 
 <template>
   <div class="plugins-page">
-    <div>
-      <PageHeader heading="Plugins" />
-    </div>
-    <div class="plugin-container">
+    <PageHeader heading="Plugins" />
+    <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
+    <div v-else class="plugin-container">
       <div class="plugin-row">
         <div class="plugin-column plugin-column-left">
-          <Listbox v-model="selectedPlugin" :options="listItems" option-label="label" />
+          <Listbox v-model="selectedPlugin" :options="listItems" option-label="label" empty-message="No plugins found" />
         </div>
         <div class="plugin-column plugin-column-right">
           <div v-if="selectedPlugin !== null && selectedPlugin !== undefined" class="col ml-0 pl-0">
             <PluginInfoPanel :info="selectedPlugin" class="mb-3" />
-            <PluginActionTable :actions="selectedPlugin.actions" class="mb-3" />
-            <PluginVariablesTable :variables="selectedPlugin.variables" :plugin-coordinates="selectedPlugin.pluginCoordinates" class="mb-3" />
+            <PluginActionsPanel :actions="selectedPlugin.actions" class="mb-3" />
+            <PluginVariablesPanel :variables="selectedPlugin.variables" class="mb-3" @updated="loadPlugins" />
           </div>
         </div>
       </div>
@@ -40,21 +39,26 @@
 
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
-import { onMounted, ref, computed, watch } from "vue";
+import { onMounted, ref, computed, watch, provide } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import usePlugins from "@/composables/usePlugins";
 import Listbox from "primevue/listbox";
+import ProgressBar from "primevue/progressbar";
 import useNotifications from "@/composables/useNotifications";
-import PluginActionTable from "@/components/PluginActionTable.vue";
-import PluginInfoPanel from "@/components/PluginInfoPanel.vue";
-import PluginVariablesTable from "@/components/PluginVariablesTable.vue";
+import PluginActionsPanel from "@/components/plugin/ActionsPanel.vue";
+import PluginInfoPanel from "@/components/plugin/InfoPanel.vue";
+import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
 import _ from "lodash";
 
 const selectedPlugin = ref(null);
+provide('selectedPlugin', selectedPlugin);
+
 const route = useRoute();
 const router = useRouter();
 const notify = useNotifications();
-const { data: plugins, fetch: fetchPlugins } = usePlugins();
+const { data: plugins, fetch: fetchPlugins, loading, loaded } = usePlugins();
+
+const showLoading = computed(() => !loaded.value && loading.value);
 
 const listItems = computed(() => {
   let items = [];
@@ -70,9 +74,13 @@ const listItems = computed(() => {
   return _.orderBy(items, ["label"], ["asc"]);
 });
 
-onMounted(async () => {
+const loadPlugins = async () => {
   await fetchPlugins();
   selectedPlugin.value = route.params.pluginCordinates ? listItems.value.find((e) => e.id == route.params.pluginCordinates) : null;
+}
+
+onMounted(async () => {
+  loadPlugins()
 });
 
 watch(route, () => {

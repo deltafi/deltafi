@@ -17,29 +17,37 @@
 -->
 
 <template>
-  <CollapsiblePanel header="Actions" class="table-panel">
-    <DataTable :value="props.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines">
-      <Column field="name" header="Name"></Column>
-      <Column field="consumes" header="Consumes"></Column>
-      <Column field="produces" header="Produces"></Column>
-      <Column field="requiresDomains" header="Requires Domains">
-        <template #body="{ data }">
-          <span v-if="data.requiresDomains !== null">{{ data.requiresDomains.join(', ') }}</span>
-        </template>
-      </Column>
-    </DataTable>
+  <CollapsiblePanel header="Info" style="min-width: 85%">
+    <div class="row">
+      <div v-for="(value, key) in infoFields" :key="key" class="col-6">
+        <dl>
+          <dt>{{ key }}</dt>
+          <dd>
+            {{ value }}
+          </dd>
+        </dl>
+      </div>
+    </div>
   </CollapsiblePanel>
 </template>
+
 <script setup>
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
-import { defineProps } from "vue";
+import { defineProps, computed } from "vue";
 
 const props = defineProps({
-  actions: {
+  info: {
     type: Object,
     required: true,
   },
 });
+
+const infoFields = computed(() => {
+  return {
+    "Name": props.info.displayName,
+    "Version": props.info.pluginCoordinates.version,
+    "Description": props.info.description,
+    "Action Kit Version": props.info.actionKitVersion
+  }
+})
 </script>
