@@ -147,7 +147,7 @@ mongodb:
 redis:
   image:
     repository: bitnami/redis
-    tag: 6.2.6-debian-10-r0
+    tag: 7.0.4
   architecture: standalone
   auth:
     existingSecret: redis-password

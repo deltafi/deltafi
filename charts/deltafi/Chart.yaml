@@ -32,8 +32,8 @@ dependencies:
     repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: enable.mongo
   - name: redis
-    version: "14.6.2"
-    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+    repository: https://charts.bitnami.com/bitnami
+    version: 17.1.2
     condition: enable.redis
   - name: kubernetes-dashboard
     version: "5.7.0"
