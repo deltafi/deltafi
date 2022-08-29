@@ -59,14 +59,11 @@ public class ContentStorageService {
         objectStorageService.removeObject(buildObjectReference(contentReference));
     }
 
-    public boolean deleteAll(List<String> dids) {
-        return objectStorageService.removeObjects(CONTENT_BUCKET, dids);
-    }
-
-    public Set<String> findDidsLastModifiedBefore(ZonedDateTime lastModifiedBefore) {
-       return objectStorageService.getObjectNames(CONTENT_BUCKET, Collections.singletonList(""), lastModifiedBefore).stream()
-                .map(objectName -> objectName.substring(0, objectName.indexOf('/')))
-                .collect(Collectors.toSet());
+    public void deleteAll(List<ContentReference> contentReferences) {
+        objectStorageService.removeObjects(CONTENT_BUCKET, contentReferences.stream()
+                .map(ContentReference::objectName)
+                .distinct()
+                .collect(Collectors.toList()));
     }
 
     private ObjectReference buildObjectReference(ContentReference contentReference) {

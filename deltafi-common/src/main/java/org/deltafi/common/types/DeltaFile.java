@@ -19,6 +19,7 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
@@ -344,4 +345,15 @@ public class DeltaFile {
     return builder.build();
   }
 
+  public List<ContentReference> storedContentReferences() {
+    List<ContentReference> contentReferences = getProtocolStack().stream()
+            .flatMap(p -> p.getContent().stream()).map(Content::getContentReference)
+            .filter(c -> c.getDid().equals(getDid()))
+            .collect(Collectors.toList());
+    contentReferences.addAll(getFormattedData().stream()
+            .map(FormattedData::getContentReference)
+            .filter(c -> c.getDid().equals(getDid()))
+            .collect(Collectors.toList()));
+    return contentReferences;
+  }
 }

@@ -56,7 +56,7 @@ public class DeletePolicyDatafetcherTestHelper {
                     .enabled(false)
                     .locked(false)
                     .afterCreate("PT2S")
-                    .minBytes(new Long(1000))
+                    .minBytes(1000L)
                     .build());
 
     private static final GetDeletePoliciesProjectionRoot projection = new GetDeletePoliciesProjectionRoot()

@@ -18,12 +18,17 @@
 package org.deltafi.core.domain.delete;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.DiskSpaceService;
 import org.deltafi.core.domain.services.api.model.DiskMetrics;
 
+import java.util.List;
+
 @Getter
+@Slf4j
 public class DiskSpaceDelete extends DeletePolicyWorker {
     private final Integer maxPercent;
     private final String flow;
@@ -39,9 +44,19 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
 
     public void run() {
         DiskMetrics contentMetrics = diskSpaceService.contentMetrics();
+        if (contentMetrics == null) {
+            log.error("No content metrics found! Is the deltafi-api running?");
+        }
+
         while (contentMetrics != null && contentMetrics.percentUsed() > maxPercent) {
+            log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + contentMetrics.percentUsed() + "%, maximum = " + maxPercent + "%");
             long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
-            deltaFilesService.delete(bytesToDelete, flow, name, false, getBatchSize());
+            log.info("Deleting up to " + bytesToDelete + " bytes");
+            List<DeltaFile> deleted = deltaFilesService.delete(bytesToDelete, flow, name, false, getBatchSize());
+            if (deleted.isEmpty()) {
+                log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
+                break;
+            }
             contentMetrics = diskSpaceService.contentMetrics();
         }
     }

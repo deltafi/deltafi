@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Moved `grafana.*` FQDN to `metrics.*`
 - Default MinIO age-off changed from 1 day to 13 days
 - Migrations run with `deltafi install`
+- Remove minio housekeeping routine due to scaling issues. Depend on minio ttl instead.
+- Improve performance of deletes
 
 ### Deprecated
 

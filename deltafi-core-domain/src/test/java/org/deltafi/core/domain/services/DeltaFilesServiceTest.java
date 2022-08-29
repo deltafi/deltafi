@@ -55,7 +55,7 @@ class DeltaFilesServiceTest {
     ContentStorageService contentStorageService;
 
     @Captor
-    ArgumentCaptor<List<String>> stringListCaptor;
+    ArgumentCaptor<List<ContentReference>> contentReferenceCaptor;
 
     @Captor
     ArgumentCaptor<List<DeltaFile>> deltaFileListCaptor;
@@ -174,13 +174,17 @@ class DeltaFilesServiceTest {
     @Test
     void testDelete() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1");
+        ContentReference cr1 = new ContentReference("a", "1", "mediaType");
+        deltaFile1.getProtocolStack().add(ProtocolLayer.builder().content(List.of(Content.newBuilder().contentReference(cr1).build())).build());
+        ContentReference cr2 = new ContentReference("b", "2", "mediaType");
         DeltaFile deltaFile2 = Util.buildDeltaFile("2");
+        deltaFile2.getFormattedData().add(FormattedData.newBuilder().contentReference(cr2).build());
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false, 10);
 
-        verify(contentStorageService).deleteAll(stringListCaptor.capture());
-        assertEquals(List.of("1", "2"), stringListCaptor.getValue());
+        verify(contentStorageService).deleteAll(contentReferenceCaptor.capture());
+        assertEquals(List.of(cr1, cr2), contentReferenceCaptor.getValue());
         verify(deltaFileRepo).saveAll(deltaFileListCaptor.capture());
         assertEquals(List.of(deltaFile1, deltaFile2), deltaFileListCaptor.getValue());
         assertNotNull(deltaFile1.getContentDeleted());
@@ -191,13 +195,17 @@ class DeltaFilesServiceTest {
     @Test
     void testDeleteMetadata() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1");
+        ContentReference cr1 = new ContentReference("a", "1", "mediaType");
+        deltaFile1.getProtocolStack().add(ProtocolLayer.builder().content(List.of(Content.newBuilder().contentReference(cr1).build())).build());
+        ContentReference cr2 = new ContentReference("b", "2", "mediaType");
         DeltaFile deltaFile2 = Util.buildDeltaFile("2");
+        deltaFile2.getFormattedData().add(FormattedData.newBuilder().contentReference(cr2).build());
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true, 10);
 
-        verify(contentStorageService).deleteAll(stringListCaptor.capture());
-        assertEquals(List.of("1", "2"), stringListCaptor.getValue());
+        verify(contentStorageService).deleteAll(contentReferenceCaptor.capture());
+        assertEquals(List.of(cr1, cr2), contentReferenceCaptor.getValue());
         verify(deltaFileRepo, never()).saveAll(any());
         verify(deltaFileRepo).deleteAll(deltaFileListCaptor.capture());
         assertEquals(List.of(deltaFile1, deltaFile2), deltaFileListCaptor.getValue());
@@ -246,6 +254,7 @@ class DeltaFilesServiceTest {
         ContentReference contentReference2 = new ContentReference("uuid1", 400, 200, "did1", "*/*");
         ContentReference contentReference3 = new ContentReference("uuid1", 200, 200, "did1", "*/*");
         ContentReference contentReference4 = new ContentReference("uuid2", 5, 200, "did1", "*/*");
+        ContentReference contentReference5 = new ContentReference("uuid3", 5, 200, "did2", "*/*");
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .protocolStack(List.of(
@@ -256,8 +265,10 @@ class DeltaFilesServiceTest {
                                 new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
                 ))
                 .formattedData(List.of(
-                        FormattedData.newBuilder().contentReference(contentReference4).build()
+                        FormattedData.newBuilder().contentReference(contentReference4).build(),
+                        FormattedData.newBuilder().contentReference(contentReference5).build()
                 ))
+                .did("did1")
                 .build();
 
         DeltaFilesService.calculateTotalBytes(deltaFile);

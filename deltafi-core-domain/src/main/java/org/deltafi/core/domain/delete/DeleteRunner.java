@@ -58,7 +58,7 @@ public class DeleteRunner {
             }
 
         }
-        log.debug("Preparing to execute " + policies.size() + " policies using a batch size of " + batchSize);
+        log.info("Preparing to execute " + policies.size() + " policies using a batch size of " + batchSize);
         return policies;
     }
 

@@ -18,11 +18,6 @@ deltafi:
     onCompletion: false
     policyBatchSize: 1000
     frequency: PT1S
-  housekeeping:
-    minio:
-      initialDelaySeconds: 0
-      delaySeconds: 1
-      objectMinimumAgeForRemovalSeconds: 5
 
 minio:
   url: http://localhost

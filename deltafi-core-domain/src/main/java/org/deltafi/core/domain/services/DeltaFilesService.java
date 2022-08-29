@@ -451,18 +451,17 @@ public class DeltaFilesService {
     }
 
     public static void calculateTotalBytes(DeltaFile deltaFile) {
-        List<ContentReference> contentReferences = deltaFile.getProtocolStack().stream().flatMap(p -> p.getContent().stream()).map(Content::getContentReference).collect(Collectors.toList());
-        contentReferences.addAll(deltaFile.getFormattedData().stream().map(FormattedData::getContentReference).collect(Collectors.toList()));
+        List<ContentReference> contentReferences = deltaFile.storedContentReferences();
 
-        // keep track of the first and last offset for each unique did + uuid contentReference
+        // keep track of the first and last offset for each unique uuid contentReference
         // make an assumption that we won't have disjoint segments
         Map<String, Pair<Long, Long>> segments = new HashMap<>();
         contentReferences.forEach(c -> {
-            if (segments.containsKey(c.getDid() + c.getUuid())) {
-                Pair<Long, Long> segment = segments.get(c.getDid() + c.getUuid());
-                segments.put(c.getDid() + c.getUuid(), Pair.of(Math.min(segment.getLeft(), c.getOffset()), Math.max(segment.getRight(), c.getOffset() + c.getSize())));
+            if (segments.containsKey(c.getUuid())) {
+                Pair<Long, Long> segment = segments.get(c.getUuid());
+                segments.put(c.getUuid(), Pair.of(Math.min(segment.getLeft(), c.getOffset()), Math.max(segment.getRight(), c.getOffset() + c.getSize())));
             } else {
-                segments.put(c.getDid() + c.getUuid(), Pair.of(c.getOffset(), c.getOffset() + c.getSize()));
+                segments.put(c.getUuid(), Pair.of(c.getOffset(), c.getOffset() + c.getSize()));
             }
         });
 
@@ -788,17 +787,21 @@ public class DeltaFilesService {
         } while (found == batchSize);
     }
 
-    public void delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata, int batchSize) {
-        delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
+    public List<DeltaFile> delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata, int batchSize) {
+        return delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
     }
 
-    public void delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
+    public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
+        log.info("Deleting " + deltaFiles.size() + " files for policy " + policy);
         deleteContent(deltaFiles, policy);
         if (deleteMetadata) {
             deleteMetadata(deltaFiles);
         } else {
             deltaFileRepo.saveAll(deltaFiles);
         }
+        log.info("Finished deleting " + deltaFiles.size() + " files for policy " + policy);
+
+        return deltaFiles;
     }
 
     public void requeue() {
@@ -894,7 +897,10 @@ public class DeltaFilesService {
         for (DeltaFile deltaFile : deltaFiles) {
             deltaFile.markForDelete(policy);
         }
-        contentStorageService.deleteAll(deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+        contentStorageService.deleteAll(deltaFiles.stream()
+                .map(DeltaFile::storedContentReferences)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList()));
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {

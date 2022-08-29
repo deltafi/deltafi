@@ -35,4 +35,8 @@ public class ContentReference {
     public ContentReference(String uuid, String did, String mediaType) {
         this(uuid, 0, ObjectReference.UNKNOWN_SIZE, did, mediaType);
     }
+
+    public String objectName() {
+        return did + "/" + uuid;
+    }
 }

@@ -268,7 +268,7 @@
       {
         "key": "deltafi.delete.policyBatchSize",
         "description": "Maximum deletes per policy iteration loop",
-        "defaultValue": "1000",
+        "defaultValue": "10000",
         "hidden": false,
         "refreshable": true,
         "editable": true
@@ -277,30 +277,6 @@
         "key": "deltafi.delete.frequency",
         "description": "Frequency that the delete action is triggered.",
         "defaultValue": "PT1M",
-        "hidden": false,
-        "refreshable": true,
-        "editable": true
-      },
-      {
-        "key": "deltafi.housekeeping.minio.initialDelaySeconds",
-        "description": "Initial delay before starting the housekeeping job.",
-        "defaultValue": "60",
-        "hidden": false,
-        "refreshable": true,
-        "editable": true
-      },
-      {
-        "key": "deltafi.housekeeping.minio.delaySeconds",
-        "description": "Frequency that the housekeeping job should run.",
-        "defaultValue": "3600",
-        "hidden": false,
-        "refreshable": true,
-        "editable": true
-      },
-      {
-        "key": "deltafi.housekeeping.minio.objectMinimumAgeForRemovalSeconds",
-        "description": "Objects that have existed longer than this threshold will be removed.",
-        "defaultValue": "900",
         "hidden": false,
         "refreshable": true,
         "editable": true

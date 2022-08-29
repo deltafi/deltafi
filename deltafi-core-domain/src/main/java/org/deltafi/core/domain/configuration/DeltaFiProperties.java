@@ -20,7 +20,6 @@ package org.deltafi.core.domain.configuration;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.core.domain.housekeeping.HousekeepingConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,6 +35,5 @@ public class DeltaFiProperties {
     private Duration deltaFileTtl= Duration.ofDays(14);
     private DeleteConfiguration delete = new DeleteConfiguration();
     private Duration actionInactivityThreshold = Duration.ofMinutes(5);
-    private HousekeepingConfiguration housekeeping = new HousekeepingConfiguration();
     private String apiUrl;
 }

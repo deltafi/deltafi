@@ -22,7 +22,6 @@ import io.minio.errors.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
-import okhttp3.Headers;
 import org.deltafi.common.properties.MinioProperties;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -38,7 +37,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -62,45 +60,6 @@ public class MinioObjectStorageServiceTest {
         public boolean isDir() {
             return isDir;
         }
-    }
-
-    @Test
-    void testGetObjectNames() throws ServerException, InsufficientDataException, ErrorResponseException, IOException,
-            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException,
-            InternalException {
-        MinioClient minioClient = Mockito.mock(MinioClient.class);
-
-        ZonedDateTime testTime = ZonedDateTime.now();
-
-        ArrayList<Result<Item>> objects = new ArrayList<>();
-        objects.add(new Result<>(new TestItem("objectName1", testTime, false)));
-        objects.add(new Result<>(new TestItem("objectName2", testTime.minusSeconds(10), false)));
-        objects.add(new Result<>(new TestItem("objectName3", testTime, true)));
-        @SuppressWarnings("unchecked")
-        Result<Item> mockResult = Mockito.mock(Result.class);
-        Mockito.when(mockResult.get()).thenThrow(IOException.class);
-        objects.add(mockResult);
-        Mockito.when(minioClient.listObjects(
-                Mockito.eq(ListObjectsArgs.builder().bucket(BUCKET).prefix("did-1").recursive(true).build())))
-                .thenReturn(objects);
-
-        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
-                new MinioProperties());
-
-        List<String> objectNames = minioObjectStorageService.getObjectNames(BUCKET, Collections.singletonList("did-1"));
-        assertEquals(2, objectNames.size());
-        assertEquals("objectName1", objectNames.get(0));
-        assertEquals("objectName2", objectNames.get(1));
-
-        objectNames = minioObjectStorageService.getObjectNames(BUCKET, Collections.singletonList("did-1"), testTime.minusSeconds(5));
-        assertEquals(1, objectNames.size());
-        assertEquals("objectName2", objectNames.get(0));
-
-        objectNames = minioObjectStorageService.getObjectNames(BUCKET, Collections.singletonList("did-2"));
-        assertTrue(objectNames.isEmpty());
-
-        objectNames = minioObjectStorageService.getObjectNames("unused", Collections.singletonList("did-1"));
-        assertTrue(objectNames.isEmpty());
     }
 
     @Test
@@ -197,15 +156,6 @@ public class MinioObjectStorageServiceTest {
     void testRemoveObjects() {
         MinioClient minioClient = Mockito.mock(MinioClient.class);
 
-        ZonedDateTime testTime = ZonedDateTime.now();
-
-        ArrayList<Result<Item>> objects = new ArrayList<>();
-        objects.add(new Result<>(new TestItem("objectName1", testTime, false)));
-        objects.add(new Result<>(new TestItem("objectName2", testTime, false)));
-        Mockito.when(minioClient.listObjects(
-                Mockito.eq(ListObjectsArgs.builder().bucket(BUCKET).prefix("did-1").recursive(true).build())))
-                .thenReturn(objects);
-
         MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
                 new MinioProperties());
 
@@ -218,28 +168,6 @@ public class MinioObjectStorageServiceTest {
                         .thenReturn(results);
 
         assertTrue(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
-
         assertFalse(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
-    }
-
-    @Test
-    void testGetObjectSize() throws ServerException, InsufficientDataException, ErrorResponseException, IOException,
-            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException,
-            InternalException {
-        MinioClient minioClient = Mockito.mock(MinioClient.class);
-
-        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient, new MinioProperties());
-
-        StatObjectResponse statObjectResponse = new StatObjectResponse(
-                Headers.of("Content-Length", "123", "Last-Modified", "Mon, 06 Dec 2021 00:00:00 GMT"), BUCKET,
-                null, "objectName");
-        Mockito.when(minioClient.statObject(
-                Mockito.eq(StatObjectArgs.builder().bucket(BUCKET).object("objectName").build())))
-                .thenReturn(statObjectResponse)
-                .thenThrow(IOException.class);
-
-        assertEquals(123, minioObjectStorageService.getObjectSize(BUCKET, "objectName"));
-
-        assertEquals(0, minioObjectStorageService.getObjectSize(BUCKET, "objectName"));
     }
 }

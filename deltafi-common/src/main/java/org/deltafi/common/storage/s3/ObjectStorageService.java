@@ -20,16 +20,9 @@ package org.deltafi.common.storage.s3;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface ObjectStorageService {
-    default List<String> getObjectNames(String bucket, List<String> prefixes) {
-        return getObjectNames(bucket, prefixes, null);
-    }
-
-    List<String> getObjectNames(String bucket, List<String> prefixes, ZonedDateTime lastModifiedBefore);
-
     InputStream getObject(ObjectReference objectReference) throws ObjectStorageException;
 
     default byte[] getObjectAsByteArray(ObjectReference objectReference) throws ObjectStorageException, IOException {
@@ -44,7 +37,5 @@ public interface ObjectStorageService {
 
     void removeObject(ObjectReference objectReference);
 
-    boolean removeObjects(String bucket, List<String> prefixes);
-
-    long getObjectSize(String bucket, String name);
+    boolean removeObjects(String bucket, List<String> objectNames);
 }

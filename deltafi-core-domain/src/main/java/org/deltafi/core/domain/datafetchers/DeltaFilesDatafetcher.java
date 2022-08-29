@@ -36,7 +36,6 @@ import org.deltafi.core.domain.types.DeltaFiles;
 import org.deltafi.core.domain.types.UniqueKeyValues;
 import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.services.DeltaFilesService;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -48,11 +47,11 @@ public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-  @Autowired
   ContentStorageService contentStorageService;
 
-  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService) {
+  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService) {
     this.deltaFilesService = deltaFilesService;
+    this.contentStorageService = contentStorageService;
   }
 
   @DgsQuery
@@ -177,16 +176,19 @@ public class DeltaFilesDatafetcher {
     Random random = new Random();
     SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, new ArrayList<>());
     Content c = new Content("stressTestContent", Collections.emptyList(), null);
+    List<ContentReference> crs = new ArrayList<>();
 
     for (int i = 0; i < numFiles; i++) {
       String did = UUID.randomUUID().toString();
       log.info("Saving content for " + did);
       byte[] contentBytes = new byte[contentSize];
       random.nextBytes(contentBytes);
-      ContentReference cr = contentStorageService.save(did, contentBytes, "application/octet-stream");
+      crs.add(contentStorageService.save(did, contentBytes, "application/octet-stream"));
+    }
+    for (ContentReference cr : crs) {
       c.setContentReference(cr);
-      IngressInput ingressInput = new IngressInput(did, sourceInfo, List.of(c), OffsetDateTime.now());
-      log.info("Ingressing " + did);
+      IngressInput ingressInput = new IngressInput(cr.getDid(), sourceInfo, List.of(c), OffsetDateTime.now());
+      log.info("Ingressing " + cr.getDid());
       ingress(ingressInput);
     }
 

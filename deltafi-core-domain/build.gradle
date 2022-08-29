@@ -123,8 +123,9 @@ dependencies {
 	implementation "redis.clients:jedis:${jedisVersion}"
 
 	implementation "io.minio:minio:${minioVersion}"
+	implementation 'com.squareup.okhttp3:okhttp:4.10.0'
 
-	implementation "com.networknt:json-schema-validator:1.0.70"
+	implementation "com.networknt:json-schema-validator:1.0.72"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter:${dgsVersion}"
 	implementation "org.springframework.boot:spring-boot-starter-web"

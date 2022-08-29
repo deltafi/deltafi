@@ -21,7 +21,6 @@ import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
-import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.CountingInputStream;
@@ -34,8 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,35 +41,6 @@ import java.util.stream.Collectors;
 public class MinioObjectStorageService implements ObjectStorageService {
     protected final MinioClient minioClient;
     protected final MinioProperties minioProperties;
-
-    @Override
-    public List<String> getObjectNames(String bucket, List<String> prefixes, ZonedDateTime lastModifiedBefore) {
-        List<String> names = new ArrayList<>();
-        for (String prefix : prefixes) {
-            // TODO: this only returns a maximum of 1000 objects. When calling to delete, we need to keep calling this until < 1000 objects are returned
-            Iterable<Result<Item>> objects = minioClient.listObjects(ListObjectsArgs.builder().bucket(bucket).prefix(prefix).recursive(true).build());
-            for (Result<Item> itemResult : objects) {
-                Item item;
-                try {
-                    item = itemResult.get();
-                } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException |
-                         InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
-                         XmlParserException | IllegalArgumentException e) {
-                    log.error("Failed to retrieve minio object for did {}", prefix, e);
-                    continue;
-                }
-
-                if (item.isDir()) {
-                    continue;
-                }
-
-                if ((lastModifiedBefore == null) || (item.lastModified().isBefore(lastModifiedBefore))) {
-                    names.add(item.objectName());
-                }
-            }
-        }
-        return names;
-    }
 
     @Override
     public InputStream getObject(ObjectReference objectReference) throws ObjectStorageException {
@@ -125,33 +93,24 @@ public class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public boolean removeObjects(String bucket, List<String> prefixes) {
-        List<DeleteObject> objectsInStorage = getObjectNames(bucket, prefixes).stream().map(DeleteObject::new).collect(Collectors.toList());
+    public boolean removeObjects(String bucket, List<String> objectNames) {
+        List<DeleteObject> objectsInStorage = objectNames.stream().map(DeleteObject::new).collect(Collectors.toList());
 
+        log.info("Sending command to delete " + objectsInStorage.size() + " objects in storage from minio");
         Iterable<Result<DeleteError>> removeResults =
                 minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucket).objects(objectsInStorage).build());
 
+        boolean hasError = false;
         for (Result<DeleteError> removeResult : removeResults) {
+            hasError = true;
             try {
                 DeleteError error = removeResult.get();
                 log.error("Failed to remove object {} with an error of {}", error.objectName(), error.message());
             } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | XmlParserException e) {
                 log.error("Failed to remove object: {}", e.getMessage());
             }
-            return false;
         }
-        return true;
-    }
 
-    @Override
-    public long getObjectSize(String bucket, String name) {
-        try {
-            return minioClient.statObject(StatObjectArgs.builder().bucket(bucket).object(name).build()).size();
-        } catch (ErrorResponseException | InsufficientDataException | InternalException |
-                InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
-                ServerException | XmlParserException e) {
-            log.error("Failed to retrieve object stats for {}/{}", bucket, name, e);
-        }
-        return 0L;
+        return !hasError;
     }
 }
