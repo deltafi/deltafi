@@ -32,7 +32,7 @@
             </div>
             <div class="col-5">
               <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-              <Dropdown v-model="selectedFlow" :options="ingressFlows" option-label="name" :placeholder="selectedFlow ? selectedFlow.name + ' ' : 'Select an Ingress Flow'" :class="{ 'p-invalid': flowSelectInvalid }" />
+              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" option-label="name" :placeholder="selectedFlow ? selectedFlow.name + ' ' : 'Select an Ingress Flow'" :class="{ 'p-invalid': flowSelectInvalid }" />
               <InlineMessage v-if="flowSelectInvalid" class="ml-3">Ingress Flow is required</InlineMessage>
             </div>
           </div>
@@ -76,9 +76,7 @@
                 <span v-if="file.data.loading">
                   <ProgressBar :value="file.data.percentComplete" />
                 </span>
-                <span v-else-if="file.data.error">
-                  <i class="fas fa-times" /> Error
-                </span>
+                <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
                 <router-link v-else class="monospace" :to="{ path: '/deltafile/viewer/' + file.data.did }">{{ file.data.did }}</router-link>
               </template>
             </Column>
@@ -134,7 +132,7 @@ const flowSelectError = ref(false);
 const metadata = ref([]);
 const fileUploader = ref();
 const deltaFiles = ref([]);
-const { ingressFlows, fetchIngressFlows } = useFlows();
+const { fetchActiveIngressFlows, activeIngressFlows } = useFlows();
 const { ingressFile } = useIngress();
 
 const deltaFilesMenuItems = ref([
@@ -277,7 +275,7 @@ const uploadsRowClass = (data) => {
 };
 
 // Created
-fetchIngressFlows();
+fetchActiveIngressFlows();
 
 const formatMetadataforViewer = (filename, uploadedMetadata) => {
   let metaDataObject = {};

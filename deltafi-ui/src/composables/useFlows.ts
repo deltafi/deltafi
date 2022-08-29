@@ -24,6 +24,7 @@ import _ from "lodash";
 export default function useFlows() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const ingressFlows: Ref<Array<Record<string, string>>> = ref([]);
+  const activeIngressFlows: Ref<Array<Record<string, string>>> = ref([]);
   const egressFlows: Ref<Array<Record<string, string>>> = ref([]);
 
   const buildQuery = (configType: EnumType) => {
@@ -49,5 +50,17 @@ export default function useFlows() {
     egressFlows.value = _.sortBy(response.value.data.deltaFiConfigs, ["name"]);
   }
 
-  return { ingressFlows, egressFlows, fetchIngressFlows, fetchEgressFlows, loading, loaded, errors };
+  const fetchActiveIngressFlows = async () => {
+    const buildQueryActive = {
+      getRunningFlows: {
+        ingress: {
+          name: true,
+        }
+      }
+    }
+    await queryGraphQL(buildQueryActive, "getRunningFlows");
+    activeIngressFlows.value = _.sortBy(response.value.data.getRunningFlows.ingress, ["name"]);
+  }
+
+  return { ingressFlows, egressFlows, fetchIngressFlows, fetchEgressFlows, loading, loaded, errors,fetchActiveIngressFlows,activeIngressFlows };
 }
