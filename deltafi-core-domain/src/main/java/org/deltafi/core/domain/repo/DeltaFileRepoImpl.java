@@ -69,6 +69,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String CONTENT_DELETED = "contentDeleted";
     public static final String KEY = "key";
     public static final String VALUE = "value";
+    public static final String ERROR_CAUSE = "errorCause";
     public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
     public static final String FILTERED = "filtered";
@@ -450,6 +451,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (nonNull(filter.getActions()) && !filter.getActions().isEmpty()) {
             andCriteria.add(Criteria.where(ACTIONS_NAME).all(filter.getActions()));
+        }
+
+        if (nonNull(filter.getErrorCause())) {
+            Criteria errorState = Criteria.where(STATE).is(ActionState.ERROR.name());
+            Criteria errorCauseRegex = Criteria.where(ERROR_CAUSE).regex(filter.getErrorCause());
+            Criteria actionElemMatch = new Criteria().andOperator(errorState, errorCauseRegex);
+            andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
         }
 
         if (nonNull(filter.getFormattedData())) {
