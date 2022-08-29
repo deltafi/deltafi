@@ -19,7 +19,7 @@
 <template>
   <span>
     <ConfirmPopup></ConfirmPopup>
-    <ConfirmPopup group="stopFlow">
+    <ConfirmPopup group="stopPolicy">
       <template #message="slotProps">
         <div class="flex p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
@@ -29,14 +29,14 @@
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="checked" :model-value="checked" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, checked, rowData.flowType)" />
+    <InputSwitch v-tooltip.top="deletePolicyToolTip" :model-value="checked" class="p-button-sm" @click="confirmationPopup($event, rowData.id, checked)" />
   </span>
 </template>
 
 <script setup>
-import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
+import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { defineProps, reactive, ref } from "vue";
+import { computed, defineEmits, defineProps, reactive, ref } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
 import InputSwitch from "primevue/inputswitch";
@@ -44,7 +44,8 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
+const emit = defineEmits(["reloadDeletePolicies"]);
+const { enablePolicy } = useDeletePolicyQueryBuilder();
 const notify = useNotifications();
 
 const props = defineProps({
@@ -56,47 +57,34 @@ const props = defineProps({
 
 const { rowDataProp: rowData } = reactive(props);
 
-const checked = ref(props.rowDataProp.flowStatus.state);
+const checked = ref(rowData.enabled);
 
-const confirmationPopup = (event, name, state, flowType) => {
-  if (_.isEqual(state, "RUNNING")) {
+const deletePolicyToolTip = computed(() => {
+  return _.isEqual(checked.value, true) ? "Enabled" : "Disabled";
+});
+
+const confirmationPopup = (event, policyName, state) => {
+  if (_.isEqual(state, true)) {
     confirm.require({
       target: event.currentTarget,
-      message: `Stop the ${name} flow?`,
-      acceptLabel: "Stop",
+      message: `Disable the ${policyName} Delete Policy?`,
+      acceptLabel: "Disable",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
       accept: () => {
-        notify.info("Stopping Flow", `Stopping ${flowType} flow ${name}.`, 3000);
-        toggleFlowState(name, state, flowType);
+        notify.info("Disabling Delete Policy", `Disabling policy ${policyName}.`, 3000);
+        toggleDeletePolicyState(policyName, !state);
       },
       reject: () => {},
     });
   } else {
-    toggleFlowState(name, state, flowType);
+    toggleDeletePolicyState(policyName, !state);
   }
 };
 
-const toggleFlowState = async (flowName, newflowState, flowType) => {
-  if (_.isEqual(flowType, "ingress")) {
-    if (_.isEqual(newflowState, "STOPPED")) {
-      await startIngressFlowByName(flowName);
-    } else {
-      await stopIngressFlowByName(flowName);
-    }
-  } else if (_.isEqual(flowType, "enrich")) {
-    if (_.isEqual(newflowState, "STOPPED")) {
-      await startEnrichFlowByName(flowName);
-    } else {
-      await stopEnrichFlowByName(flowName);
-    }
-  } else if (_.isEqual(flowType, "egress")) {
-    if (_.isEqual(newflowState, "STOPPED")) {
-      await startEgressFlowByName(flowName);
-    } else {
-      await stopEgressFlowByName(flowName);
-    }
-  }
-  checked.value = _.isEqual(checked.value, "RUNNING") ? "STOPPED" : "RUNNING";
+const toggleDeletePolicyState = async (policyName, newDeletePolicyState) => {
+  await enablePolicy(policyName, newDeletePolicyState);
+  checked.value = newDeletePolicyState;
+  emit("reloadDeletePolicies");
 };
 </script>

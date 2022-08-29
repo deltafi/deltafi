@@ -16,6 +16,7 @@
    limitations under the License.
 */
 
+import _ from 'lodash';
 import { rest, graphql } from 'msw'
 
 export default [
@@ -29,6 +30,23 @@ export default [
       ctx.status(200, 'Mocked status'),
       ctx.body(`event: errorCount\ndata: ${errorCount}\n\nevent: status\ndata: ${JSON.stringify(status)}\n\n`),
     );
+  }),
+
+  rest.get("/api/v1/metrics/graphite", (req, res, ctx) => {
+    try {
+      const url= new URL(req.url.href);
+      const params = new URLSearchParams(url.search);
+      const mockModule = require(`.${req.url.pathname}/${params.get('title')}`);
+      const responseJson = ('default' in mockModule) ? mockModule.default : mockModule
+      return res(
+        ctx.delay(500),
+        ctx.status(200, 'Mocked status'),
+        ctx.body(JSON.stringify(responseJson, null, 2))
+      );
+    } catch (e) {
+      console.error(e)
+      return
+    }
   }),
 
   rest.get("/api/v1/*", (req, res, ctx) => {

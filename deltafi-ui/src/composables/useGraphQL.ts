@@ -57,11 +57,13 @@ export default function useGraphQL() {
     }
   };
 
-  const queryGraphQL = async (query: string | object, queryName: string, queryType: string = "query") => {
-    if (typeof query === 'object') {
+  const queryGraphQL = async (query: string | object, queryName: string, queryType: string = "query", bypass: boolean = false) => {
+    if (typeof query === 'object' && !bypass ) {
       const cleanedQuery = removeEmptyKeyValues(query);
       clearEmptyObjects(cleanedQuery);
       query = jsonToGraphQLQuery(cleanedQuery, { pretty: false });
+    } else if (bypass) {
+      query = jsonToGraphQLQuery(query, { pretty: false });
     }
     query = JSON.stringify({ "query": `${queryType} ${queryName} { ${query} }`, "operationName": queryName });
     loading.value = true;

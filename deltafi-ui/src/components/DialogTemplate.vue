@@ -21,8 +21,8 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" :header="$attrs['header']" position="top" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
-      <Component :is="loadComponent" v-bind="$attrs" />
+    <Dialog v-model:visible="dialogVisible" :header="$attrs['header']" position="top" :style="{ width: dialogSize }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
+      <Component :is="loadComponent" v-bind="$attrs" :close-dialog-command="closeDialogCommand" />
     </Dialog>
   </div>
 </template>
@@ -30,20 +30,33 @@
 <script setup>
 import { computed, defineAsyncComponent, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
-
+import _ from "lodash";
 //View dynamic props being sent down
-const attrs = useAttrs()
+const attrs = useAttrs();
 //console.log(attrs);
 
+const closeDialogCommand = ref({
+  command: () => {
+    closeDialog();
+  },
+});
+
 const loadComponent = computed(() => {
-  return defineAsyncComponent(() => import(`./${attrs['component-name']}.vue`));
+  return defineAsyncComponent(() => import(`./${attrs["component-name"]}.vue`));
+});
+
+const dialogSize = computed(() => {
+  return _.isEmpty(_.get(attrs, "dialog-width")) ? "75vw" : attrs["dialog-width"];
 });
 
 const dialogVisible = ref(false);
 const showDialog = () => {
   dialogVisible.value = true;
 };
+
+const closeDialog = () => {
+  dialogVisible.value = false;
+};
 </script>
 
-<style lang="scss">
-</style>
+<style lang="scss"></style>

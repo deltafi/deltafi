@@ -22,18 +22,18 @@ import _ from "lodash";
 export default function useGraphiteQueryBuilder() {
   const { data, fetch } = useGraphiteApi();
 
-  const buildByteRateQuery = (byteType: string) => {
+  const buildByteRateQuery = (byteType: string, operationName: string) => {
     const queryString = `sortByName(aliasByTags(groupByTags(nonNegativeDerivative(seriesByTag('name=${byteType}', 'metricattribute=count')), 'averageSeries', 'ingressFlow'), 'ingressFlow'), true, false)`;
-    const queryEncoded = `target=` + encodeURIComponent(queryString) + "&from=-30s&until=now&format=json";
+    const queryEncoded = `target=` + encodeURIComponent(queryString) + `&from=-30s&until=now&format=json&title=${operationName}`;
     return queryEncoded;
   };
 
   const fetchIngressFlowsByteRate = async () => {
-    await fetch(buildByteRateQuery("bytes_in"));
+    await fetch(buildByteRateQuery("bytes_in", "fetchIngressFlowsByteRate"));
   };
 
   const fetchEgressFlowsByteRate = async () => {
-    await fetch(buildByteRateQuery("bytes_out"));
+    await fetch(buildByteRateQuery("bytes_out", "fetchEgressFlowsByteRate"));
   };
 
   return { data, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate };

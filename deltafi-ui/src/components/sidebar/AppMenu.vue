@@ -113,6 +113,11 @@ const staticMenuItems = ref([
         icon: "fas fa-plug fa-rotate-90 fa-fw",
         path: "/config/plugins",
       },
+      {
+        name: "Delete Policies",
+        icon: "fas fa-landmark fa-fw",
+        path: "/config/delete-policies",
+      },
     ],
   },
   {

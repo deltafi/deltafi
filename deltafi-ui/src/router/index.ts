@@ -76,6 +76,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/PluginsPage.vue'),
   },
   {
+    path: "/config/delete-policies",
+    name: "Delete Policies",
+    component: () => import('@/pages/DeletePoliciesPage.vue'),
+  },
+  {
     path: '/config/flows',
     name: 'Flows',
     component: () => import('@/pages/FlowPlansPage.vue'),

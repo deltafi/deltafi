@@ -1,0 +1,238 @@
+<!--
+   DeltaFi - Data transformation and enrichment platform
+
+   Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<template>
+  <div class="delete-policy-body">
+    <div class="row information-panel">
+      <div class="col-12 pb-0">
+        <div v-if="!_.isEmpty(errorsList)" class="pt-2">
+          <Message severity="error" :sticky="true" class="mb-2 mt-0">
+            <ul>
+              <div v-for="(error, key) in errorsList" :key="key">
+                <li class="text-wrap text-break">{{ error }}</li>
+              </div>
+            </ul>
+          </Message>
+        </div>
+        <dl>
+          <dt>{{ deletePolicyConfigurationMap.get("id").header }}</dt>
+          <dd>
+            <InputText v-model="selectedDeleteId" :placeholder="deletePolicyConfigurationMap.get('id').placeholder" :disabled="deletePolicyConfigurationMap.get('id').disabled" class="inputWidth" />
+          </dd>
+          <dt>{{ deletePolicyConfigurationMap.get("flow").header }}</dt>
+          <dd>
+            <Dropdown v-model="selectedDeleteflow" :options="ingressFlowNames.map((a) => a.name)" :placeholder="deletePolicyConfigurationMap.get('flow').placeholder" :disabled="deletePolicyConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
+          </dd>
+          <dt>{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
+          <dd>
+            <Dropdown v-model="selectedDeleteType" :options="deletePolicyTypes" :placeholder="deletePolicyConfigurationMap.get('__typename').placeholder" :disabled="deletePolicyConfigurationMap.get('__typename').disabled" class="inputWidth" />
+          </dd>
+          <dt>{{ deletePolicyConfigurationMap.get("locked").header }}</dt>
+          <dd>
+            <InputSwitch v-model="selectedLockedBoolean" :disabled="deletePolicyConfigurationMap.get('locked').disabled" />
+          </dd>
+          <dt>{{ deletePolicyConfigurationMap.get("enabled").header }}</dt>
+          <dd>
+            <InputSwitch v-model="selectedEnabledBoolean" :disabled="deletePolicyConfigurationMap.get('enabled').disabled" />
+          </dd>
+          <div v-if="selectedDeleteType">
+            <template v-if="_.isEqual(selectedDeleteType, 'TimedDeletePolicy')">
+              <Divider align="left">
+                <div class="inline-flex align-items-center">
+                  <i class="far fa-clock text-muted ml-1"></i>
+                  <b> Time Delete Policy Options</b>
+                </div>
+              </Divider>
+              <template v-if="_.isEmpty(selectedAfterComplete)">
+                <dt>{{ deletePolicyConfigurationMap.get("afterCreate").header }}</dt>
+                <dd>
+                  <InputText v-model="selectedAfterCreate" :placeholder="deletePolicyConfigurationMap.get('afterCreate').placeholder" :disabled="deletePolicyConfigurationMap.get('afterCreate').disabled" class="inputWidth" />
+                </dd>
+              </template>
+              <template v-if="_.isEmpty(selectedAfterCreate)">
+                <dt>{{ deletePolicyConfigurationMap.get("afterComplete").header }}</dt>
+                <dd>
+                  <InputText v-model="selectedAfterComplete" :placeholder="deletePolicyConfigurationMap.get('afterComplete').placeholder" :disabled="deletePolicyConfigurationMap.get('afterComplete').disabled" class="inputWidth" />
+                </dd>
+              </template>
+              <dt>{{ deletePolicyConfigurationMap.get("minBytes").header }}</dt>
+              <dd>
+                <InputNumber v-model="selectedMinBytes" show-buttons :min="deletePolicyConfigurationMap.get('minBytes').min" :max="deletePolicyConfigurationMap.get('minBytes').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('minBytes').disabled" />
+              </dd>
+              <dt>{{ deletePolicyConfigurationMap.get("deleteMetadata").header }}</dt>
+              <dd>
+                <InputSwitch v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
+              </dd>
+            </template>
+            <template v-else>
+              <Divider align="left">
+                <div class="inline-flex align-items-center">
+                  <i class="fas fa-hdd text-muted ml-1"></i>
+                  <b> Disk Space Delete Policy Options</b>
+                </div>
+              </Divider>
+              <dt>{{ deletePolicyConfigurationMap.get("maxPercent").header }}</dt>
+              <dd>
+                <InputNumber v-model="selectedMaxPercent" show-buttons :min="deletePolicyConfigurationMap.get('maxPercent').min" :max="deletePolicyConfigurationMap.get('maxPercent').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('maxPercent').disabled" />
+              </dd>
+            </template>
+          </div>
+        </dl>
+      </div>
+    </div>
+    <template v-if="!viewDeletePolicy">
+      <Divider />
+      <div class="row float-right">
+        <div class="col">
+          <Button label="Submit" @click="submit()" />
+        </div>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import useDeletePolicyConfiguration from "@/composables/useDeletePolicyConfiguration";
+import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
+import useFlows from "@/composables/useFlows";
+import useNotifications from "@/composables/useNotifications";
+import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
+
+import Button from "primevue/button";
+import Divider from "primevue/divider";
+import Dropdown from "primevue/dropdown";
+import InputNumber from "primevue/inputnumber";
+import InputSwitch from "primevue/inputswitch";
+import InputText from "primevue/inputtext";
+import Message from "primevue/message";
+import _ from "lodash";
+
+const props = defineProps({
+  rowDataProp: {
+    type: Object,
+    required: false,
+    default: Object,
+  },
+  editDeletePolicy: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
+  viewDeletePolicy: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
+  closeDialogCommand: {
+    type: Object,
+    default: null,
+  },
+});
+
+const { rowDataProp: rowdata, editDeletePolicy, viewDeletePolicy, closeDialogCommand } = reactive(props);
+const emit = defineEmits(["reloadDeletePolicies"]);
+const { validateDeletePolicyFile } = useDeletePolicyConfiguration();
+const { loadDeletePolicies } = useDeletePolicyQueryBuilder();
+const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
+const notify = useNotifications();
+
+const deletePolicyTypes = ref(["TimedDeletePolicy", "DiskSpaceDeletePolicy"]);
+
+const newDeletePolicyUpload = ref({});
+
+const errorsList = ref([]);
+
+const deletePolicyConfigurationMap = new Map([
+  ["id", { header: "Name", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy || editDeletePolicy }],
+  ["__typename", { header: "Type", placeholder: "e.g. TimedDeletePolicy, DiskSpaceDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
+  ["flow", { header: "Flow", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
+  ["locked", { header: "Locked", type: "boolean", disabled: viewDeletePolicy }],
+  ["enabled", { header: "Enabled", type: "boolean", disabled: viewDeletePolicy }],
+  ["afterCreate", { header: "After Create", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
+  ["afterComplete", { header: "After Complete", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
+  ["minBytes", { header: "Min Bytes", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "number", min: null, max: null, disabled: viewDeletePolicy }],
+  ["deleteMetadata", { header: "Delete Metadata", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "boolean", disabled: viewDeletePolicy }],
+  ["maxPercent", { header: "Max Percent", placeholder: "A number between 0 and 100", type: "number", min: 0, max: 100, disabled: viewDeletePolicy }],
+]);
+
+const selectedDeleteId = ref(_.isEmpty(_.get(rowdata, "id")) ? null : rowdata["id"]);
+const selectedDeleteflow = ref(_.isEmpty(_.get(rowdata, "flow")) || _.isEqual(_.get(rowdata, "flow"), "All") ? null : rowdata["flow"]);
+const selectedDeleteType = ref(_.isEmpty(_.get(rowdata, "__typename")) ? null : rowdata["__typename"]);
+const selectedLockedBoolean = ref(_.isEmpty(_.get(rowdata, "id")) ? false : rowdata["locked"]);
+const selectedEnabledBoolean = ref(_.isEmpty(_.get(rowdata, "id")) ? false : rowdata["enabled"]);
+const selectedAfterCreate = ref(_.isEmpty(_.get(rowdata, "afterCreate")) ? null : rowdata["afterCreate"]);
+const selectedAfterComplete = ref(_.isEmpty(_.get(rowdata, "afterComplete")) ? null : rowdata["afterComplete"]);
+const selectedMinBytes = ref(!_.isEmpty(_.get(rowdata, "minBytes")) ? null : rowdata["minBytes"]);
+const selectedDeleteMetadata = ref(_.isEmpty(_.get(rowdata, "id")) ? false : rowdata["deleteMetadata"]);
+const selectedMaxPercent = ref(!_.isEmpty(_.get(rowdata, "maxPercent")) ? null : rowdata["maxPercent"]);
+
+onMounted(async () => {
+  await fetchIngressFlows();
+});
+
+const createNewPolicy = () => {
+  let newDeletePolicy = {};
+  newDeletePolicyUpload.value = {};
+  newDeletePolicyUpload.value["timedPolicies"] = [];
+  newDeletePolicyUpload.value["diskSpacePolicies"] = [];
+
+  newDeletePolicy["id"] = selectedDeleteId.value;
+  if (_.isEqual(selectedDeleteflow.value, "All")) {
+    newDeletePolicy["flow"] = null;
+  } else {
+    newDeletePolicy["flow"] = selectedDeleteflow.value;
+  }
+
+  newDeletePolicy["locked"] = selectedLockedBoolean.value;
+  newDeletePolicy["enabled"] = selectedEnabledBoolean.value;
+
+  if (_.isEqual(selectedDeleteType.value, "TimedDeletePolicy")) {
+    newDeletePolicy["afterCreate"] = selectedAfterCreate.value;
+    newDeletePolicy["afterComplete"] = selectedAfterComplete.value;
+    newDeletePolicy["minBytes"] = selectedMinBytes.value;
+    newDeletePolicy["deleteMetadata"] = selectedDeleteMetadata.value;
+    newDeletePolicyUpload.value["timedPolicies"].push(newDeletePolicy);
+  }
+
+  if (_.isEqual(selectedDeleteType.value, "DiskSpaceDeletePolicy")) {
+    newDeletePolicy["maxPercent"] = selectedMaxPercent.value;
+    newDeletePolicyUpload.value["diskSpacePolicies"].push(newDeletePolicy);
+  }
+};
+
+const submit = async () => {
+  createNewPolicy();
+
+  let uploadNotValid = validateDeletePolicyFile(JSON.stringify(newDeletePolicyUpload.value));
+  errorsList.value = [];
+  if (uploadNotValid) {
+    for (let errorMessages of uploadNotValid) {
+      errorsList.value.push(errorMessages.message);
+    }
+    notify.error(`Delete Policy Validation Errors`, `Unable to upload Delete Policy `, 4000);
+  } else {
+    await loadDeletePolicies(newDeletePolicyUpload.value);
+    closeDialogCommand.command();
+    emit("reloadDeletePolicies");
+  }
+};
+</script>
+
+<style lang="scss">
+@import "@/styles/components/delete-policy-configuration-dialog.scss";
+</style>
