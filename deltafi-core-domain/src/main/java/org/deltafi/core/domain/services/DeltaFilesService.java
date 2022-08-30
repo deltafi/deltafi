@@ -42,7 +42,6 @@ import org.deltafi.core.domain.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
@@ -54,7 +53,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.core.domain.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
@@ -296,11 +294,7 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
-        if (deltaFile.hasErrorDomain()) {
-            return processErrorEvent(deltaFile, event);
-        } else {
-            return advanceAndSave(processErrorEvent(deltaFile, event));
-        }
+        return advanceAndSave(processErrorEvent(deltaFile, event));
     }
 
     @MongoRetryable
@@ -310,63 +304,8 @@ public class DeltaFilesService {
         }
 
         deltaFile.errorAction(event);
-        if (deltaFile.hasErrorDomain()) {
-            ErrorInput errorInput = event.getError();
-            log.error("DeltaFile with error domain has thrown an error:\n" +
-                    "Error DID: " + deltaFile.getDid() + "\n" +
-                    "Errored in action : " + event.getAction() + "\n" +
-                    "Inception Error cause: " + errorInput.getCause() + "\n" +
-                    "Inception Error context: " + errorInput.getContext() + "\n");
-        } else {
-            DeltaFile errorDeltaFile = buildErrorDeltaFile(deltaFile, event);
-            advanceAndSave(errorDeltaFile);
-        }
 
         return deltaFile;
-    }
-
-    private static DeltaFile buildErrorDeltaFile(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
-        String did = UUID.randomUUID().toString();
-
-        if (deltaFile.getChildDids() == null) {
-            deltaFile.setChildDids(List.of(did));
-        } else {
-            deltaFile.getChildDids().add(did);
-        }
-
-        Domain errorDomain = buildErrorDomain(deltaFile, event);
-
-        OffsetDateTime now = OffsetDateTime.now();
-
-        return DeltaFile.newBuilder()
-                .did(did)
-                .parentDids(List.of(deltaFile.getDid()))
-                .childDids(Collections.emptyList())
-                .ingressBytes(deltaFile.getIngressBytes())
-                .stage(DeltaFileStage.EGRESS)
-                .actions(new ArrayList<>())
-                .sourceInfo(new SourceInfo(deltaFile.getSourceInfo().getFilename() + ".error",
-                        deltaFile.getSourceInfo().getFlow(), deltaFile.getSourceInfo().getMetadata()))
-                .protocolStack(deltaFile.getProtocolStack())
-                .domains(List.of(errorDomain))
-                .enrichment(new ArrayList<>())
-                .formattedData(Collections.emptyList())
-                .created(now)
-                .modified(now)
-                .egressed(false)
-                .filtered(false)
-                .build();
-    }
-
-    private static Domain buildErrorDomain(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
-        ErrorDomain errorDomain = ErrorDomain.newBuilder()
-                .cause(event.getError().getCause())
-                .context(event.getError().getContext())
-                .fromAction(event.getAction())
-                .originatorDid(event.getDid())
-                .originator(deltaFile)
-                .build();
-        return new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), MediaType.APPLICATION_JSON_VALUE);
     }
 
     public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile) {

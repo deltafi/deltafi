@@ -82,7 +82,6 @@ import org.springframework.cloud.config.server.environment.EnvironmentRepository
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexInfo;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -101,7 +100,6 @@ import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.core.config.server.constants.PropertyConstants.DELTAFI_PROPERTY_SET;
@@ -182,9 +180,6 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	PluginVariableRepo pluginVariableRepo;
-
-	@Autowired
-	ErrorService errorService;
 
 	@Autowired
 	PropertyRepository propertyRepository;
@@ -313,7 +308,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 		FormatActionConfiguration errorFormat = new FormatActionConfiguration();
 		errorFormat.setName("ErrorFormatAction");
-		errorFormat.setRequiresDomains(List.of(ERROR_DOMAIN));
+		errorFormat.setRequiresDomains(List.of("error"));
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration();
 		errorEgress.setName("ErrorEgressAction");
 		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress);
@@ -585,9 +580,8 @@ class DeltaFiCoreDomainApplicationTests {
 		verifyActionEventResults(postLoadDeltaFile(did), "SampleEnrichAction");
 	}
 
-	DeltaFile post09LoadDeltaFile(String did, String childDid) {
+	DeltaFile postWrongMetadataLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
-		deltaFile.setChildDids(List.of(childDid));
 		deltaFile.setStage(DeltaFileStage.ERROR);
 		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
@@ -612,12 +606,7 @@ class DeltaFiCoreDomainApplicationTests {
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		DeltaFile errorFile = deltaFilesService.getDeltaFile(deltaFile.getChildDids().get(0));
-		assertEqualsIgnoringDates(post09LoadDeltaFile(did, errorFile.getDid()), deltaFile);
-		assertTrue(errorFile.hasDomains(List.of("error")));
-		assertTrue(errorFile.getDomain("error").getValue().contains(DeltaFilesService.NO_EGRESS_CONFIGURED_CAUSE));
-		assertTrue(errorFile.getDomain("error").getValue().contains(DeltaFilesService.NO_EGRESS_CONFIGURED_CONTEXT));
-		assertTrue(errorFile.getDomain("error").getValue().contains(did));
+		assertEqualsIgnoringDates(postWrongMetadataLoadDeltaFile(did), deltaFile);
 	}
 
 	@Test
@@ -795,15 +784,8 @@ class DeltaFiCoreDomainApplicationTests {
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
 
-		// ensure an error deltaFile was created
-		DeltaFile errorDeltaFile = deltaFilesService.getLastCreatedDeltaFiles(1).get(0);
-		assertNotEquals(actual, errorDeltaFile);
-
 		DeltaFile expected = postErrorDeltaFile(did);
-		expected.getChildDids().add(errorDeltaFile.getDid());
 		assertEqualsIgnoringDates(expected, actual);
-
-		Mockito.verify(redisService).enqueue(Mockito.argThat((input) -> 1 == input.size() && nameMatches(input.get(0), "ErrorFormatAction")));
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -2385,32 +2367,6 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void testGetsErrorsFor() throws JsonProcessingException {
-		DeltaFile deltaFile1 = Util.buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
-		deltaFileRepo.save(deltaFile1);
-		DeltaFile deltaFile2 = Util.buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
-		deltaFileRepo.save(deltaFile2);
-
-		DeltaFile errorDeltaFileA = Util.buildDeltaFile("A", null, DeltaFileStage.EGRESS, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
-		errorDeltaFileA.setParentDids(List.of("1"));
-		ActionEventInput errorEventA = ActionEventInput.newBuilder().error(ErrorInput.newBuilder().cause("cause A").build()).build();
-		errorDeltaFileA.setDomains(List.of(buildErrorDomain(deltaFile1, errorEventA)));
-		deltaFileRepo.save(errorDeltaFileA);
-
-		DeltaFile errorDeltaFileB = Util.buildDeltaFile("B", null, DeltaFileStage.EGRESS, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
-		errorDeltaFileB.setParentDids(List.of("1"));
-		ActionEventInput errorEventB = ActionEventInput.newBuilder().error(ErrorInput.newBuilder().cause("cause B").build()).build();
-		errorDeltaFileB.setDomains(List.of(buildErrorDomain(deltaFile1, errorEventB)));
-		deltaFileRepo.save(errorDeltaFileB);
-
-		List<ErrorDomain> errorDomains = errorService.getErrorsFor("1");
-
-		assertEquals(2, errorDomains.size());
-		assertEquals("cause B", errorDomains.get(0).getCause());
-		assertEquals("cause A", errorDomains.get(1).getCause());
-	}
-
-	@Test
 	void testGetErrorSummaryByFlowDatafetcher() {
 		OffsetDateTime now = OffsetDateTime.now();
 		OffsetDateTime plusOne = OffsetDateTime.now().plusMinutes(1);
@@ -2914,17 +2870,6 @@ class DeltaFiCoreDomainApplicationTests {
 				.filter(p -> key.equals(p.getKey())).findFirst().map(Property::getValue).orElse(null);
 	}
 
-	private Domain buildErrorDomain(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
-		ErrorDomain errorDomain = ErrorDomain.newBuilder()
-				.cause(event.getError().getCause())
-				.context(event.getError().getContext())
-				.fromAction(event.getAction())
-				.originatorDid(event.getDid())
-				.originator(deltaFile)
-				.build();
-		return new Domain(ERROR_DOMAIN, OBJECT_MAPPER.writeValueAsString(errorDomain), MediaType.APPLICATION_JSON_VALUE);
-	}
-
 	private DeltaFile loadDeltaFile(String did) {
 		return deltaFileRepo.findById(did).orElse(null);
 	}
@@ -2942,11 +2887,6 @@ class DeltaFiCoreDomainApplicationTests {
 			assertEqualsIgnoringDates(expected.forQueue(forActions[i]), actionInput.getDeltaFile());
 		}
 	}
-
-	@SuppressWarnings("SameParameterValue")
-    private boolean nameMatches(ActionInput actionInput, String wantedName) {
-        return Objects.nonNull(actionInput.getActionContext()) && wantedName.equals(actionInput.getActionContext().getName());
-    }
 
 	private IngressFlow buildIngressFlow(FlowState flowState) {
 		org.deltafi.core.domain.configuration.LoadActionConfiguration lc = new org.deltafi.core.domain.configuration.LoadActionConfiguration();

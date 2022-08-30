@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.deltafi.common.constant.DeltaFiConstants.ERROR_DOMAIN;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 
 @Data
@@ -168,10 +167,6 @@ public class DeltaFile {
 
   public List<String> queuedActions() {
     return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).collect(Collectors.toList());
-  }
-
-  public boolean hasErrorDomain() {
-    return getDomains().stream().anyMatch(d -> d.getName().equals(ERROR_DOMAIN));
   }
 
   public Domain getDomain(String domain) {

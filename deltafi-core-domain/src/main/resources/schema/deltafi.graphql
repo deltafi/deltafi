@@ -273,6 +273,11 @@ input EnrichInput {
   indexedMetadata: Metadata
 }
 
+input ErrorInput {
+  cause: String!
+  context: String
+}
+
 input FormatInput {
   filename: String!
   contentReference: ContentReferenceInput!

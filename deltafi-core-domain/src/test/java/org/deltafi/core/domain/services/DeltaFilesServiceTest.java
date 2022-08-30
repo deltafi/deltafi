@@ -236,11 +236,11 @@ class DeltaFilesServiceTest {
         Assertions.assertThat(toQueue).isEmpty();
 
         ArgumentCaptor<DeltaFile> deltaFileCaptor = ArgumentCaptor.forClass(DeltaFile.class);
-        Mockito.verify(stateMachine, times(2)).advance(deltaFileCaptor.capture());
+        Mockito.verify(stateMachine).advance(deltaFileCaptor.capture());
 
         List<DeltaFile> captured = deltaFileCaptor.getAllValues();
 
-        DeltaFile erroredDeltaFile = captured.get(1);
+        DeltaFile erroredDeltaFile = captured.get(0);
         Optional<Action> maybeAction = erroredDeltaFile.actionNamed("action");
         Assertions.assertThat(maybeAction).isPresent();
         Action action = maybeAction.get();

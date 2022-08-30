@@ -20,7 +20,6 @@ package org.deltafi.common.constant;
 public class DeltaFiConstants {
     public static final String AUTO_RESOLVE_FLOW_NAME = "auto-resolve";
     public static final String DGS_QUEUE = "dgs";
-    public static final String ERROR_DOMAIN = "error";
     public static final String INGRESS_ACTION = "IngressAction";
     public static final String MATCHES_ANY = "any";
     public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
