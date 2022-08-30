@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.97.0
+## [Unreleased] - Next release 0.97.1
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.97.0] - 2022-08-29
 
 ### Added
 - KinD: `cluster prerequisites` command will help get KinD prereqs installed on MacOS
@@ -13,18 +31,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added new processing report dashboard
 - Migration for delete policies added
 - Indexed metadata added to DeltaFiles.  This metadata can be set by EnrichActions
+- Added `getErrorSummaryByFlow` and `getErrorSummaryByMessage` DGS queries
+- Added `errorAcknowledged` to error summary filter
+- Added `ingressBytes` to DeltaFile and made the field searchable
+- Added `stressTest` DGS mutation to facilitate load testing
+- Added `errorCause` regex searching to deltaFiles DGS queries
 
 ### Changed
 - Moved `grafana.*` FQDN to `metrics.*`
 - Default MinIO age-off changed from 1 day to 13 days
 - Migrations run with `deltafi install`
 - DeltaFiles with errors no longer produce child DeltaFiles with the error domain
-- Remove minio housekeeping routine due to scaling issues. Depend on minio ttl instead.
 - Improve performance of deletes
+- Changed Graphite performance settings that were causing issues on MacOS
+- KinD: Tests are no longer run as part of a `cluster loc build`
 
 ### Deprecated
+- Use of monotonic counters in graphite metrics is deprecated and will be replaced with delta counters in the next release
+- Use of Quarkus is deprecated.  Ingress is the last remaining Quarkus application and will be migrated to Spring Boot in the next release
 
 ### Removed
+- Error children are no longer created on errored Deltafiles
+- Remove minio housekeeping routine due to scaling issues. Depend on minio ttl instead.
 
 ### Fixed
 - KinD: Creates docker kind network automatically if not present on `cluster up`
@@ -32,16 +60,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: Added missing dependencies to Brewfile
 - Turned off a performance optimization that caused issues with Graphite on MacOS
 - Requeue would sometimes pick up a file for requeue prematurely, resulting in potential double processing by an Action
+- Fixed problem where enrich flow name was being included when searching for enrich action names
+- Fixed `deltafi-monitor` cache issue that was causing intermittent API disconnect issues in the UI
 
 ### Tech-Debt/Refactor
 - Plugins no longer depend on deltafi-core-domain
 - Removed core domain dependencies from action kit.  This is a breaking change for plugins.
+- KinD updated to have a simpler initial user experience
 
 ### Security
 
 ### Upgrade and Migration
 - Refactored common and core domain to remove deltafi-core-domain dependencies will require refactoring of all plugins to move to the new common dependencies.
 - Upgraded Redis to `7.0.4`
+- Upgraded Minio to `RELEASE.2022-08-25T07-17-05Z`
 
 ## [0.96.4] - 2022-08-04
 
@@ -471,7 +503,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.4...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.97.0...main
+[0.97.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.4...0.97.0
 [0.96.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.3...0.96.4
 [0.96.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.2...0.96.3
 [0.96.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.96.1...0.96.2
