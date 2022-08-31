@@ -5,154 +5,34 @@
     "description": "Properties used across all parts of the system.",
     "properties": [
       {
-        "key": "management.metrics.enable.system",
-        "description": "JVM metrics enable",
-        "defaultValue": false,
-        "hidden": true,
+        "key": "metrics.enabled",
+        "description": "Enable reporting of metrics to statsd/graphite",
+        "defaultValue": "true",
+        "hidden": false,
+        "refreshable": false,
+        "editable": true
+      },
+      {
+        "key": "metrics.periodSeconds",
+        "description": "Enable reporting of metrics to statsd/graphite",
+        "defaultValue": "10",
+        "hidden": false,
         "refreshable": false,
         "editable": false
       },
       {
-        "key": "management.metrics.enable.jvm",
-        "description": "JVM metrics enable",
-        "defaultValue": false,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.enable.process",
-        "description": "JVM metrics enable",
-        "defaultValue": false,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.export.graphite.enabled",
-        "description": "Enable micrometer metrics export to Graphite",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.export.graphite.default-registry",
-        "description": "Micrometer metrics default export to Graphite",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.export.graphite.graphiteTagsEnabled",
-        "description": "Enable tagged metrics for Graphite",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.export.graphite.host",
-        "description": "Graphite host for micrometer metrics",
+        "key": "metrics.statsd.hostname",
+        "description": "Host name for statsd collector endpoint",
         "defaultValue": "deltafi-graphite",
-        "hidden": true,
+        "hidden": false,
         "refreshable": false,
         "editable": false
       },
       {
-        "key": "management.metrics.export.graphite.port",
-        "description": "Graphite host port for micrometer metrics",
-        "defaultValue": 2004,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.export.graphite.protocol",
-        "description": "Graphite protocol used by micrometer metrics",
-        "defaultValue": "PICKLED",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.export.graphite.publish",
-        "description": "Micrometer publishing for Graphite enabled",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "management.metrics.export.graphite.step",
-        "description": "Publishing frequency for Graphite metrics",
-        "defaultValue": "10s",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.enabled",
-        "description": "Enable micrometer metrics export to Graphite",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.default-registry",
-        "description": "Micrometer metrics default export to Graphite",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.graphiteTagsEnabled",
-        "description": "Enable tagged metrics for Graphite",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.host",
-        "description": "Graphite host for micrometer metrics",
-        "defaultValue": "deltafi-graphite",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.port",
-        "description": "Graphite host port for micrometer metrics",
-        "defaultValue": 2004,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.protocol",
-        "description": "Graphite protocol used by micrometer metrics",
-        "defaultValue": "PICKLED",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.publish",
-        "description": "Micrometer publishing for Graphite enabled",
-        "defaultValue": true,
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.micrometer.export.graphite.step",
-        "description": "Publishing frequency for Graphite metrics",
-        "defaultValue": "10s",
-        "hidden": true,
+        "key": "metrics.statsd.port",
+        "description": "Port for statsd collector endpoint",
+        "defaultValue": "8125",
+        "hidden": false,
         "refreshable": false,
         "editable": false
       },

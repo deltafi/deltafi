@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.deltafi.common.metrics.Metric;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;

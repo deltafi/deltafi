@@ -55,7 +55,7 @@ livenessProbe:
 {{- define "initContainersWaitForCoreDomain" -}}
 initContainers:
 - name: wait-for-core-domain
-  image: busybox:1.34.1
+  image: busybox:1.35.0
   command:
   - 'sh'
   - '-c'

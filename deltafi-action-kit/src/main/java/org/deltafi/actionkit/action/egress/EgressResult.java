@@ -20,7 +20,7 @@ package org.deltafi.actionkit.action.egress;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.Metric;
+import org.deltafi.common.metrics.Metric;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
@@ -28,7 +28,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Specialized result class for EGRESS actions
@@ -61,9 +60,8 @@ public class EgressResult extends Result {
     public Collection<Metric> getCustomMetrics() {
         ArrayList<Metric> metrics = new ArrayList<>();
 
-        Map<String, String> tags = Map.of("endpoint", destination);
-        metrics.add(Metric.builder("files_out", 1).tags(tags).build());
-        metrics.add(Metric.builder("bytes_out", bytesEgressed).tags(tags).build());
+        metrics.add(new Metric("files_out", 1).addTag("endpoint", destination));
+        metrics.add(new Metric("bytes_out", bytesEgressed).addTag("endpoint", destination));
 
         return metrics;
     }

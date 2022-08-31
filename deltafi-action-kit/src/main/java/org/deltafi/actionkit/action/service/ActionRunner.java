@@ -17,18 +17,17 @@
  */
 package org.deltafi.actionkit.action.service;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.Metric;
+import org.deltafi.common.metrics.Metric;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.config.ActionsProperties;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.actionkit.config.DeltaFiSystemProperties;
+import org.deltafi.actionkit.service.MetricService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
 import org.deltafi.common.types.ActionType;
@@ -39,13 +38,9 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 /**
  * Base class for all DeltaFi Actions.  No action should directly extend this class, but should use
@@ -71,10 +66,10 @@ public class ActionRunner {
     private List<Action<?>> actions;
 
     @Autowired
-    private MeterRegistry meterRegistry;
+    BuildProperties buildProperties;
 
     @Autowired
-    BuildProperties buildProperties;
+    MetricService metricService;
 
     private ExecutorService executor;
 
@@ -137,14 +132,12 @@ public class ActionRunner {
         String egressFlow = result.getContext().getEgressFlow();
         String source = result.getContext().getName();
         for (Metric metric: result.getMetrics()) {
-            List<Tag> tags = new ArrayList<>();
-            if (metric.getTags() != null)  tags = metric.getTags().entrySet().stream().map(e -> Tag.of(e.getKey(), e.getValue())).collect(Collectors.toList());
-            tags.add(Tag.of("action", actionType.name().toLowerCase()));
-            if (ingressFlow != null) tags.add(Tag.of("ingressFlow", ingressFlow));
-            if (egressFlow != null) tags.add(Tag.of("egressFlow", egressFlow));
-            tags.add(Tag.of("source", source));
+            metric.addTag("action", actionType.name().toLowerCase())
+                    .addTag("source", source);
+            if (ingressFlow != null) metric.addTag("ingressFlow", ingressFlow);
+            if (egressFlow != null) metric.addTag("egressFlow", egressFlow);
 
-            meterRegistry.counter(metric.getName(), tags).increment(metric.getValue());
+            metricService.increment(metric);
         }
     }
 

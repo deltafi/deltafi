@@ -27,8 +27,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 162,
-  "iteration": 1660147414990,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -48,7 +46,7 @@
         "content": "<center>\n  <h2>DeltaFi System Processing Report</h2>\n  <div style=\"margin-top:-10px\">${__from:date:YYYY-MM-DD} to ${__to:date:YYYY-MM-DD}</div>\n</center>\n",
         "mode": "html"
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "transparent": true,
       "type": "text"
     },
@@ -104,7 +102,7 @@
         },
         "textMode": "value"
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "targets": [
         {
           "datasource": {
@@ -204,7 +202,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "targets": [
         {
           "datasource": {
@@ -213,7 +211,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=bytes_in', 'metricattribute=count', 'action=IngressAction')), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -223,7 +221,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=bytes_out', 'metricattribute=count', 'action=egress')), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -313,7 +311,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "targets": [
         {
           "datasource": {
@@ -322,7 +320,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction')), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -332,7 +330,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(nonNegativeDerivative(seriesByTag('name=files_out', 'metricattribute=count', 'action=egress')), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Files",
@@ -350,6 +348,8 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -440,7 +440,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
@@ -455,7 +456,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction'))), 'Ingress')"
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'))), 'Ingress')"
         },
         {
           "datasource": {
@@ -465,7 +466,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_out', 'metricattribute=count', 'action=egress'))), 'Egress')"
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=stats_counts.files_out', 'action=egress'))), 'Egress')"
         }
       ],
       "title": "Aggregate Processed Files",
@@ -482,6 +483,8 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -572,7 +575,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
@@ -587,7 +591,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction')), 'ingressFlow')"
+          "target": "aliasByTags(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), 'ingressFlow')"
         }
       ],
       "title": "Processed Files by Flow",
@@ -643,7 +647,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "targets": [
         {
           "datasource": {
@@ -651,7 +655,7 @@
             "uid": "P1D261A8554D2DA69"
           },
           "refId": "A",
-          "target": "aliasByTags(summarize(nonNegativeDerivative(seriesByTag('name=bytes_in', 'action=IngressAction', 'metricattribute=count')), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction'), '1d', 'sum'), 'ingressFlow')"
         }
       ],
       "title": "Ingressed Bytes by Flow",
@@ -746,7 +750,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "targets": [
         {
           "datasource": {
@@ -754,7 +758,7 @@
             "uid": "P1D261A8554D2DA69"
           },
           "refId": "A",
-          "target": "aliasByTags(summarize(nonNegativeDerivative(seriesByTag('name=files_in', 'action=IngressAction', 'metricattribute=count')), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), '1d', 'sum'), 'ingressFlow')"
         }
       ],
       "title": "Ingressed Files by Flow",
@@ -792,12 +796,11 @@
           }
         }
       ],
-      "transparent": false,
       "type": "table"
     }
   ],
   "refresh": "1d",
-  "schemaVersion": 36,
+  "schemaVersion": 37,
   "style": "dark",
   "tags": [
     "DeltaFi"
@@ -837,6 +840,6 @@
   "timezone": "",
   "title": "Processing Report",
   "uid": "processing-report",
-  "version": 8,
+  "version": 2,
   "weekStart": ""
 }

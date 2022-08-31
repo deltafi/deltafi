@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,37 +15,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action;
 
-import lombok.*;
+package org.deltafi.common.properties;
 
-import java.util.Map;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-/**
- * Metric object to provide a simple monotonically increasing counter metric
- */
 @Data
-@Builder(builderMethodName = "hiddenBuilder")
-@RequiredArgsConstructor
-@AllArgsConstructor
-public class Metric {
-    /**
-     * Name of metric
-     */
-    private final String name;
-    /**
-     * Positive value to increment the metric
-     */
-    private final long value;
-    /**
-     * Key value pair tags for the metric to provide additional context
-     */
-    private Map<String, String> tags;
+@Component
+@ConfigurationProperties(prefix = "metrics")
+public class MetricsProperties {
+    boolean enabled = true;
+    Integer periodSeconds = 10;
 
-    public static class MetricBuilder {}
-
-    public static MetricBuilder builder(String name, long value) {
-        return hiddenBuilder().name(name).value(value);
+    @Data
+    public static class StatsdProperties {
+        String hostname = "deltafi-graphite";
+        Integer port = 8125;
     }
 
+    StatsdProperties statsd = new StatsdProperties();
 }

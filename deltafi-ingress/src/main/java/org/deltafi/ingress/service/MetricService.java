@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,19 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.config;
 
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.graphite.GraphiteConfig;
-import io.micrometer.graphite.GraphiteMeterRegistry;
+package org.deltafi.ingress.service;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.common.properties.MetricsProperties;
 
-@Configuration
-public class MetricsConfig {
-    @Bean
-    public GraphiteMeterRegistry meterRegistry(GraphiteConfig graphiteConfig, Clock clock) {
-        return new GraphiteMeterRegistry(graphiteConfig, clock);
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class MetricService extends MetricRepository {
+
+    MetricService() {
+        super(new MetricsProperties());
     }
+
 }

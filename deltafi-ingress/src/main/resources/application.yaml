@@ -1,8 +1,3 @@
-management:
-  metrics:
-    export:
-      graphite:
-        enabled: true
 quarkus:
   application:
     name: deltafi-ingress
@@ -10,11 +5,3 @@ quarkus:
   spring-cloud-config:
     enabled: true
     url: ${CONFIG_SERVER_URL:http://deltafi-core-domain-service/config}
-  micrometer:
-    export:
-      graphite:
-        enabled: true
-    binder-enabled-default: false
-    binder:
-      jvm: false
-      system: false

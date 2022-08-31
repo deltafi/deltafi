@@ -1,19 +1,6 @@
 logging:
   level:
     org.springframework.data.convert.CustomConversions: ERROR
-management:
-  metrics:
-    export:
-      graphite:
-        host: deltafi-graphite
-        port: 2003
-micrometer:
-  binder-enabled-default: false
-  binder:
-    jvm: false
-    system: false
-    process: false
-    http: false
 spring:
   application:
     name: deltafi-core-actions

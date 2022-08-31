@@ -17,8 +17,6 @@
  */
 package org.deltafi.ingress.rest;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
@@ -32,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
@@ -51,13 +48,9 @@ class DeltaFileRestTest {
     @InjectMock
     DeltaFileService deltaFileService;
 
-    @Spy
-    MeterRegistry meterRegistry = new SimpleMeterRegistry();
-
     static final String CONTENT = "STARLORD was here";
     static final String METADATA = "{\"key\": \"value\"}";
     static final String FLOWFILE_METADATA = "{\"fromHeader\": \"this is from header\", \"overwrite\": \"emacs is awesome\"}";
-    static final String FLOWFILE_FINAL_METADATA = "{\"fromHeader\": \"this is from header\", \"overwrite\": \"vim is awesome\", \"fromFlowfile\": \"youbetcha\"}";
     static final String FILENAME = "incoming.txt";
     static final String FLOW = "flow";
     static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;

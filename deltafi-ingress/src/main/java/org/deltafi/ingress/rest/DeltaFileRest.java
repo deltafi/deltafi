@@ -20,9 +20,6 @@ package org.deltafi.ingress.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -35,6 +32,7 @@ import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
 import org.deltafi.ingress.service.DeltaFileService;
+import org.deltafi.ingress.service.MetricService;
 import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.*;
@@ -55,7 +53,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 @RequiredArgsConstructor
 public class DeltaFileRest {
     private final DeltaFileService deltaFileService;
-    private final MeterRegistry meterRegistry;
+    private final MetricService metricService;
 
     ObjectMapper objectMapper = new ObjectMapper();
 
@@ -78,7 +76,7 @@ public class DeltaFileRest {
         String filename = Objects.nonNull(filenameFromQueryParam) ? filenameFromQueryParam : filenameFromHeader;
 
         String username = headers.getHeaderString(DeltaFiConstants.USER_HEADER);
-        username = StringUtils.isNotBlank(username) ? username : "system";
+        username = (username != null && !username.isBlank()) ? username : "system";
 
         log.debug("Ingressing: flow={} filename={} mediaType={}",
                 flow,
@@ -93,23 +91,22 @@ public class DeltaFileRest {
                 ingressResult = ingressBinary(dataStream, mediaType, metadata, flow, filename, username);
             }
 
-            List<Tag> tags = tagsFor(ingressResult.getFlow());
-            meterRegistry.counter("files_in", tags).increment();
-            meterRegistry.counter("bytes_in", tags).increment(ingressResult.getContentReference().getSize());
-            meterRegistry.counter("files_dropped", tags).increment(0);
+            Map<String, String> tags = tagsFor(ingressResult.getFlow());
+            metricService.increment("files_in", tags, 1);
+            metricService.increment("bytes_in", tags, ingressResult.getContentReference().getSize());
 
             return Response.ok(ingressResult.getContentReference().getDid()).build();
         } catch (ObjectStorageException | DeltafiGraphQLException | DeltafiException exception) {
             log.error("500 error", exception);
-            meterRegistry.counter("files_dropped", tagsFor(flow)).increment();
+            metricService.increment("files_dropped", tagsFor(flow), 1);
             return Response.status(500).entity(exception.getMessage()).build();
         } catch (DeltafiMetadataException exception) {
             log.error("400 error", exception);
-            meterRegistry.counter("files_dropped", tagsFor(flow)).increment();
+            metricService.increment("files_dropped", tagsFor(flow), 1);
             return Response.status(400).entity(exception.getMessage()).build();
         } catch (Throwable exception) {
             log.error("Unexpected error", exception);
-            meterRegistry.counter("files_dropped", tagsFor(flow)).increment();
+            metricService.increment("files_dropped", tagsFor(flow), 1);
             return Response.status(500).entity(exception.getMessage()).build();
         }
     }
@@ -195,13 +192,11 @@ public class DeltaFileRest {
         return result;
     }
 
-    private List<Tag> tagsFor(String flow) {
+    private Map<String, String> tagsFor(String flow) {
         if (flow == null) flow = "unknown";
-        return List.of(
-                Tag.of( "action", INGRESS_ACTION),
-                Tag.of("ingressFlow", flow),
-                Tag.of("source", "ingress")
-        );
+        return Map.of("action", INGRESS_ACTION,
+                "ingressFlow", flow,
+                "source", "ingress");
     }
 
 

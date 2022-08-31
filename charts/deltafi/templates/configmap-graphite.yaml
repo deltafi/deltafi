@@ -28,7 +28,7 @@ data:
     [default]
     pattern = .*
     xFilesFactor = 0
-    aggregationMethod = last
+    aggregationMethod = sum
   storage-schemas.conf: |-
     # Schema definitions for Whisper files. Entries are scanned in order,
     # and first match wins. This file is scanned for changes every 60 seconds.

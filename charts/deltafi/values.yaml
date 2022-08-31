@@ -183,7 +183,7 @@ kubernetes-dashboard:
 
 grafana:
   image:
-    tag: 9.0.1
+    tag: 9.1.1
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -195,9 +195,18 @@ grafana:
       org_role: Admin
     auth.basic:
       enabled: false
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+      check_for_plugin_updates: false
+      enable_feedback_links: false
+    dashboards:
+      min_refresh_interval: "10s"
   sidecar:
     dashboards:
       enabled: true
+      provider:
+        folder: "DeltaFi"
   datasources:
     datasources.yaml:
       apiVersion: 1
@@ -218,7 +227,7 @@ grafana:
         version: 1
 promtail:
   image:
-    tag: 2.5.0
+    tag: 2.6.1
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
@@ -255,7 +264,7 @@ promtail:
 
 loki:
   image:
-    tag: 2.5.0
+    tag: 2.6.1
   persistence:
     enabled: true
     existingClaim: deltafi-loki
@@ -276,7 +285,7 @@ loki:
 # Graphite Configuration
 graphite:
   image:
-    tag: 1.1.10-1
+    tag: 1.1.10-3
   persistence:
     enabled: true
     existingClaim: deltafi-graphite
