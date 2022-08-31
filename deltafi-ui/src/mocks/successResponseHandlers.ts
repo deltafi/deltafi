@@ -21,7 +21,7 @@ import { rest, graphql } from 'msw'
 
 export default [
   rest.get("/api/v1/events", (req, res, ctx) => {
-    const status = require(`./api/v1/status.json`);
+    const status = require(`./api/v1/status.ts`);
     const errorCount = 2;
 
     return res(
