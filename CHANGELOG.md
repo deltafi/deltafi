@@ -68,8 +68,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Removed core domain dependencies from action kit.  This is a breaking change for plugins.
 - KinD updated to have a simpler initial user experience
 
-### Security
-
 ### Upgrade and Migration
 - Refactored common and core domain to remove deltafi-core-domain dependencies will require refactoring of all plugins to move to the new common dependencies.
 - Upgraded Redis to `7.0.4`
