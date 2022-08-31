@@ -46,7 +46,7 @@
 import { computed, reactive, defineProps } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
-import ErrorAcknowledgedBadge from "@/components/ErrorAcknowledgedBadge.vue";
+import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
 
 const props = defineProps({

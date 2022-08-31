@@ -157,7 +157,7 @@ const staticMenuItems = ref([
         name: "Audit Log",
         icon: "fas fa-file-alt fa-fw",
         path: "/admin/audit",
-        hidden: true
+        hidden: true,
       },
       {
         name: "Users",

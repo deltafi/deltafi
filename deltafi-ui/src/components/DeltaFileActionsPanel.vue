@@ -60,7 +60,7 @@
         </Column>
       </DataTable>
     </CollapsiblePanel>
-    <ErrorViewer v-model:visible="errorViewer.visible" :action="errorViewer.action" />
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
   </div>
 </template>
 
@@ -74,7 +74,7 @@ import Button from "primevue/button";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ContentDialog from "@/components/ContentDialog.vue";
 import MetadataViewer from "@/components/MetadataViewer.vue";
-import ErrorViewer from "@/components/ErrorViewer.vue";
+import ErrorViewerDialog from "@/components/errors/ViewerDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 
 import useUtilFunctions from "@/composables/useUtilFunctions";

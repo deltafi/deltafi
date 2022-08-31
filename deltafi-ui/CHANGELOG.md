@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Move all used Mocks to ts files (#213)
+- Added Errors summary views (#202)
 
 ## [0.97.0]
 
