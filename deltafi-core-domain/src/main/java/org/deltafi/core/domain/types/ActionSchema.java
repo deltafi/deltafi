@@ -34,6 +34,7 @@ import java.util.Map;
         property = "__typename"
 )
 @JsonSubTypes({
+        @JsonSubTypes.Type(value = DomainActionSchema.class, name = "DomainActionSchema"),
         @JsonSubTypes.Type(value = EgressActionSchema.class, name = "EgressActionSchema"),
         @JsonSubTypes.Type(value = EnrichActionSchema.class, name = "EnrichActionSchema"),
         @JsonSubTypes.Type(value = FormatActionSchema.class, name = "FormatActionSchema"),
@@ -50,4 +51,6 @@ public interface ActionSchema {
     Map<String, Object> getSchema();
 
     OffsetDateTime getLastHeard();
+
+    void setLastHeard(OffsetDateTime lastHeard);
 }

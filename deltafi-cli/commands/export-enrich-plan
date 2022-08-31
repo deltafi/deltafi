@@ -32,6 +32,10 @@ QUERY="fragment ActionFields on ActionConfiguration {
               groupId
               version
             }
+            domainActions {
+              ... ActionFields
+              requiresDomains
+            }
             enrichActions {
               ... ActionFields
               requiresDomains

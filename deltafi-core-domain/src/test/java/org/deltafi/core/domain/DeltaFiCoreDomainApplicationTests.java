@@ -37,6 +37,15 @@ import org.deltafi.core.config.server.repo.StateHolderRepositoryInMemoryImpl;
 import org.deltafi.core.config.server.service.PropertyMetadataLoader;
 import org.deltafi.core.config.server.service.PropertyService;
 import org.deltafi.core.config.server.service.StateHolderService;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.DomainActionSchema;
+import org.deltafi.core.domain.types.EgressActionSchema;
+import org.deltafi.core.domain.types.EnrichActionSchema;
+import org.deltafi.core.domain.types.FormatActionSchema;
+import org.deltafi.core.domain.types.LoadActionSchema;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
+import org.deltafi.core.domain.types.TransformActionSchema;
+import org.deltafi.core.domain.types.ValidateActionSchema;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
@@ -558,7 +567,7 @@ class DeltaFiCoreDomainApplicationTests {
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ENRICH);
-		deltaFile.queueAction("SampleEnrichAction");
+		deltaFile.queueAction("SampleDomainAction");
 		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
@@ -577,36 +586,41 @@ class DeltaFiCoreDomainApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		verifyActionEventResults(postLoadDeltaFile(did), "SampleEnrichAction");
+		verifyActionEventResults(postLoadDeltaFile(did), "SampleDomainAction");
 	}
 
-	DeltaFile postWrongMetadataLoadDeltaFile(String did) {
-		DeltaFile deltaFile = postTransformDeltaFile(did);
+	DeltaFile post09MissingEnrichDeltaFile(String did) {
+		DeltaFile deltaFile = postLoadDeltaFile(did);
+		deltaFile.completeAction("SampleDomainAction", START_TIME, STOP_TIME);
+		deltaFile.addIndexedMetadata(Map.of("domainKey", "domain metadata"));
 		deltaFile.setStage(DeltaFileStage.ERROR);
-		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
 		deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile));
 		deltaFile.addDomain("sample", "sampleDomain", "application/octet-stream");
+		deltaFile.getLastProtocolLayer().setMetadata(loadWrongMetadata);
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleLoadAction", List.of(content), loadWrongMetadata));
 		return deltaFile;
 	}
 
 	@Test
-	void test09LoadWrongMetadata() throws IOException {
+	void test09EnrichSkippedWrongMetadata() throws IOException {
 		// Test is similar to 08.load, but has the wrong metadata value, which
 		// results in the enrich action not being run, and cascades through.
 		String did = UUID.randomUUID().toString();
-		DeltaFile postTransform = postTransformDeltaFile(did);
-		deltaFileRepo.save(postTransform);
+		DeltaFile loaded = postLoadDeltaFile(did);
+
+		// mock loading the incorrect metadata so the enrichAction is not fired
+		loaded.getLastProtocolLayer().setMetadata(loadWrongMetadata);
+		deltaFileRepo.save(loaded);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("09.load"), did),
+				String.format(graphQL("11.domain"), did),
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertEqualsIgnoringDates(postWrongMetadataLoadDeltaFile(did), deltaFile);
+
+		assertEqualsIgnoringDates(post09MissingEnrichDeltaFile(did), deltaFile);
 	}
 
 	@Test
@@ -650,8 +664,30 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEqualsIgnoringDates(child2.forQueue("SampleTransformAction"), actionInputs.get(1).getDeltaFile());
 	}
 
-	DeltaFile postEnrichDeltaFile(String did) {
+	DeltaFile postDomainDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
+		deltaFile.setStage(DeltaFileStage.ENRICH);
+		deltaFile.queueAction("SampleEnrichAction");
+		deltaFile.completeAction("SampleDomainAction", START_TIME, STOP_TIME);
+		deltaFile.addIndexedMetadata(Map.of("domainKey", "domain metadata"));
+		return deltaFile;
+	}
+
+	@Test
+	void test11Domain() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postLoadDeltaFile(did));
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("11.domain"), did),
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class);
+
+		verifyActionEventResults(postDomainDeltaFile(did), "SampleEnrichAction");
+	}
+
+	DeltaFile postEnrichDeltaFile(String did) {
+		DeltaFile deltaFile = postDomainDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("sample.SampleFormatAction");
 		deltaFile.completeAction("SampleEnrichAction", START_TIME, STOP_TIME);
@@ -661,12 +697,12 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
-	void test11Enrich() throws IOException {
+	void test12Enrich() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postLoadDeltaFile(did));
+		deltaFileRepo.save(postDomainDeltaFile(did));
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("11.enrich"), did),
+				String.format(graphQL("12.enrich"), did),
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
@@ -1021,12 +1057,13 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void testRegisterAll() {
 		int count = saveAll(dgsQueryExecutor);
-		assertEquals(6, count);
+		assertEquals(7, count);
 
 		List<ActionSchema> schemas = getSchemas(dgsQueryExecutor);
-		assertEquals(6, schemas.size());
+		assertEquals(7, schemas.size());
 
 		boolean foundEgress = false;
+		boolean foundDomain = false;
 		boolean foundEnrich = false;
 		boolean foundFormat = false;
 		boolean foundLoad = false;
@@ -1057,6 +1094,9 @@ class DeltaFiCoreDomainApplicationTests {
 			} else if (schema instanceof ValidateActionSchema) {
 				checkValidateSchema((ValidateActionSchema) schema);
 				foundValidate = true;
+			} else if (schema instanceof DomainActionSchema) {
+				checkDomainSchema((DomainActionSchema) schema);
+				foundDomain = true;
 			}
 		}
 
@@ -1066,6 +1106,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(foundLoad);
 		assertTrue(foundTransform);
 		assertTrue(foundValidate);
+		assertTrue(foundDomain);
 	}
 
 	private void checkActionCommonFields(ActionSchema schema) {
@@ -1097,6 +1138,12 @@ class DeltaFiCoreDomainApplicationTests {
 	private void checkEnrichSchema(EnrichActionSchema schema) {
 		checkActionCommonFields(schema);
 		assertEquals(ENRICH_ACTION, schema.getId());
+		assertEquals(DOMAIN, schema.getRequiresDomains().get(0));
+	}
+
+	private void checkDomainSchema(DomainActionSchema schema) {
+		checkActionCommonFields(schema);
+		assertEquals(DOMAIN_ACTION, schema.getId());
 		assertEquals(DOMAIN, schema.getRequiresDomains().get(0));
 	}
 
@@ -1346,11 +1393,12 @@ class DeltaFiCoreDomainApplicationTests {
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
 
 		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
-		assertThat(actionFamilies.size()).isEqualTo(7);
+		assertThat(actionFamilies.size()).isEqualTo(8);
 
 		assertThat(getActionNames(actionFamilies, "ingress")).hasSize(1).contains("IngressAction");
 		assertThat(getActionNames(actionFamilies, "transform")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
 		assertThat(getActionNames(actionFamilies, "load")).hasSize(1).contains("SampleLoadAction");
+		assertThat(getActionNames(actionFamilies, "domain")).hasSize(1).contains("SampleDomainAction");
 		assertThat(getActionNames(actionFamilies, "enrich")).hasSize(1).contains("SampleEnrichAction");
 		assertThat(getActionNames(actionFamilies, "format")).hasSize(1).contains("sample.SampleFormatAction");
 		assertThat(getActionNames(actionFamilies, "validate")).isEmpty();
@@ -2928,11 +2976,16 @@ class DeltaFiCoreDomainApplicationTests {
 		EnrichFlow enrichFlow = new EnrichFlow();
 		enrichFlow.setName("enrich");
 
+		org.deltafi.core.domain.configuration.DomainActionConfiguration sampleDomain = new org.deltafi.core.domain.configuration.DomainActionConfiguration();
+		sampleDomain.setName("SampleDomainAction");
+		sampleDomain.setRequiresDomains(List.of("sample"));
+
 		org.deltafi.core.domain.configuration.EnrichActionConfiguration sampleEnrich = new org.deltafi.core.domain.configuration.EnrichActionConfiguration();
 		sampleEnrich.setName("SampleEnrichAction");
 		sampleEnrich.setRequiresDomains(List.of("sample"));
 		sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
 
+		enrichFlow.setDomainActions(List.of(sampleDomain));
 		enrichFlow.setEnrichActions(List.of(sampleEnrich));
 		enrichFlow.getFlowStatus().setState(flowState);
 		return enrichFlow;

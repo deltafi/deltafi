@@ -21,6 +21,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
+import org.deltafi.core.domain.configuration.DomainActionConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,14 +31,32 @@ import java.util.stream.Collectors;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EnrichFlowPlan extends FlowPlan {
+    List<DomainActionConfiguration> domainActions = new ArrayList<>();
     List<EnrichActionConfiguration> enrichActions = new ArrayList<>();
 
     public Set<String> enrichActionTypes() {
-        return enrichActions.stream().map(EnrichActionConfiguration::getType).collect(Collectors.toSet());
+        return distinctTypes(enrichActions);
+    }
+
+    public Set<String> domainActionTypes() {
+        return distinctTypes(domainActions);
     }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return new ArrayList<>(enrichActions);
+        List<ActionConfiguration> actions = new ArrayList<>();
+        if (null != domainActions) {
+            actions.addAll(domainActions);
+        }
+
+        if (null != enrichActions) {
+            actions.addAll(enrichActions);
+        }
+
+        return actions;
+    }
+
+    private Set<String> distinctTypes(List<? extends ActionConfiguration> actions) {
+        return null != actions ? actions.stream().map(ActionConfiguration::getType).collect(Collectors.toSet()) : Set.of();
     }
 }

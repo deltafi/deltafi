@@ -63,6 +63,22 @@ input LoadActionConfigurationInput {
     parameters: JSON
 }
 
+type DomainActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
+    name: String!
+    apiVersion: String
+    requiresDomains: [String]!
+    type: String!
+    parameters: JSON
+}
+
+input DomainActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    requiresDomains: [String]!
+    type: String!
+    parameters: JSON
+}
+
 type EnrichActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String

@@ -24,6 +24,7 @@ public enum ActionType {
     INGRESS("ingress"),
     TRANSFORM("transform"),
     LOAD("load"),
+    DOMAIN("domain"),
     ENRICH("enrich"),
     FORMAT("format"),
     VALIDATE("validate"),

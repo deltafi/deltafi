@@ -77,7 +77,8 @@ type EnrichFlowPlan {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinates!
-  enrichActions: [EnrichActionConfiguration]!
+  domainActions: [DomainActionConfiguration]
+  enrichActions: [EnrichActionConfiguration]
 }
 
 input IngressFlowPlanInput {
@@ -105,7 +106,8 @@ input EnrichFlowPlanInput {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinatesInput!
-  enrichActions: [EnrichActionConfigurationInput]!
+  domainActions: [DomainActionConfigurationInput]
+  enrichActions: [EnrichActionConfigurationInput]
 }
 
 enum FlowState {
@@ -170,7 +172,8 @@ type EnrichFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
-  enrichActions: [EnrichActionConfiguration]!
+  domainActions: [DomainActionConfiguration]
+  enrichActions: [EnrichActionConfiguration]
   variables: [Variable]!
 }
 

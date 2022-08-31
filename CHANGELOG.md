@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.97.1
 
 ### Added
+- Added `DomainActions` that provide a global validation and metadata extraction path for domains
 
 ### Changed
 

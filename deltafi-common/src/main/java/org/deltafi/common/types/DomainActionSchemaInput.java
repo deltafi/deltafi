@@ -23,17 +23,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class ActionRegistrationInput {
-  private List<TransformActionSchemaInput> transformActions;
-  private List<LoadActionSchemaInput> loadActions;
-  private List<DomainActionSchemaInput> domainActions;
-  private List<EnrichActionSchemaInput> enrichActions;
-  private List<FormatActionSchemaInput> formatActions;
-  private List<ValidateActionSchemaInput> validateActions;
-  private List<EgressActionSchemaInput> egressActions;
+public class DomainActionSchemaInput {
+  private String id;
+  private String paramClass;
+  private Map<String, Object> schema;
+  private List<String> requiresDomains;
 }

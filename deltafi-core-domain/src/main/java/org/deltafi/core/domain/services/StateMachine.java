@@ -77,7 +77,7 @@ public class StateMachine {
                 deltaFile.setStage(DeltaFileStage.ENRICH);
             case ENRICH:
                 List<ActionInput> enrichActions = enrichFlowService.getRunningFlows().stream()
-                        .map(enrichFlow -> advanceEnrich(enrichFlow, deltaFile))
+                        .map(enrichFlow -> advanceEnrichStage(enrichFlow, deltaFile))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
 
@@ -124,7 +124,21 @@ public class StateMachine {
                 .findFirst().orElse(null);
     }
 
-    List<ActionInput> advanceEnrich(EnrichFlow enrichFlow, DeltaFile deltaFile) {
+    List<ActionInput> advanceEnrichStage(EnrichFlow enrichFlow, DeltaFile deltaFile) {
+        List<ActionInput> domainActions = nextDomainActions(enrichFlow, deltaFile);
+
+        return domainActions.isEmpty() ? nextEnrichActions(enrichFlow, deltaFile) : domainActions;
+    }
+
+    List<ActionInput> nextDomainActions(EnrichFlow enrichFlow, DeltaFile deltaFile) {
+        return enrichFlow.getDomainActions().stream()
+                .filter(domainActionConfiguration -> domainActionReady(domainActionConfiguration, deltaFile))
+                .filter(domainActionConfiguration -> isNewAction(domainActionConfiguration, deltaFile))
+                .map(actionConfiguration -> actionConfiguration.buildActionInput(deltaFile))
+                .collect(Collectors.toList());
+    }
+
+    List<ActionInput> nextEnrichActions(EnrichFlow enrichFlow, DeltaFile deltaFile) {
         return enrichFlow.getEnrichActions().stream()
                 .filter(enrichActionConfiguration -> enrichActionReady(enrichActionConfiguration, deltaFile))
                 .filter(enrichActionConfiguration -> isNewAction(enrichActionConfiguration, deltaFile))
@@ -158,6 +172,11 @@ public class StateMachine {
 
     boolean isNewAction(ActionConfiguration actionConfiguration, DeltaFile deltaFile) {
         return deltaFile.isNewAction(actionConfiguration.getName());
+    }
+
+    private boolean domainActionReady(DomainActionConfiguration domainAction, DeltaFile deltaFile) {
+        return !deltaFile.hasTerminalAction(domainAction.getName()) &&
+                deltaFile.hasDomains(domainAction.getRequiresDomains());
     }
 
     private boolean enrichActionReady(EnrichActionConfiguration enrichAction, DeltaFile deltaFile) {

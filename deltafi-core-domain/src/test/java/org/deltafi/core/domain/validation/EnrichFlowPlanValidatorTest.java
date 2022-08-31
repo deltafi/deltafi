@@ -18,6 +18,7 @@
 package org.deltafi.core.domain.validation;
 
 import org.assertj.core.api.Assertions;
+import org.deltafi.core.domain.configuration.DomainActionConfiguration;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
 import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.services.EnrichFlowPlanService;
@@ -50,11 +51,12 @@ class EnrichFlowPlanValidatorTest {
     @Test
     void canLoadFlowPlan_noActions() {
         EnrichFlowPlan enrichFlowPlan = enrichFlowPlan();
-        enrichFlowPlan.setEnrichActions(new ArrayList<>());
+        enrichFlowPlan.setDomainActions(List.of());
+        enrichFlowPlan.setEnrichActions(List.of());
 
         Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlowPlan))
                 .isInstanceOf(DeltafiConfigurationException.class)
-                .hasMessage("Config named: enrichFlow had the following error: Enrich flow plans must contain one or more enrich actions");
+                .hasMessage("Config named: enrichFlow had the following error: Enrich flow plans must contain one or more domain and/or enrich actions");
     }
 
     @Test
@@ -69,17 +71,27 @@ class EnrichFlowPlanValidatorTest {
 
         Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlowPlan))
                 .isInstanceOf(DeltafiConfigurationException.class)
-                .hasMessage("Config named: enrichFlow had the following error: Enrich action of type: org.deltafi.enrich.Action is already configured in the enrich flow plan named: other; Config named: enrichFlow had the following error: Enrich action of type: org.deltafi.enrich.Action is already configured in the enrich flow plan named: other; Config named: enrichFlow had the following error: The flow contains the same enrich action type: org.deltafi.enrich.Action in the following actions: enrich1, enrich2");
+                .hasMessage("Config named: enrichFlow had the following error: Action of type: org.deltafi.domain.Action is already configured in the enrich flow plan named: other; Config named: enrichFlow had the following error: Action of type: org.deltafi.enrich.Action is already configured in the enrich flow plan named: other; Config named: enrichFlow had the following error: Action of type: org.deltafi.enrich.Action is already configured in the enrich flow plan named: other; Config named: enrichFlow had the following error: The flow contains the same action type: org.deltafi.enrich.Action in the following actions: enrich1, enrich2");
     }
 
     @Test
-    void findDuplicatesInFlowPlan() {
+    void findDuplicateEnrichTypeInFlowPlan() {
         EnrichFlowPlan enrichFlow = enrichFlowPlan();
         enrichFlow.getEnrichActions().add(enrichAction("enrich2"));
 
         Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlow))
                         .isInstanceOf(DeltafiConfigurationException.class)
-                        .hasMessage("Config named: enrichFlow had the following error: The flow contains the same enrich action type: org.deltafi.enrich.Action in the following actions: enrich1, enrich2");
+                        .hasMessage("Config named: enrichFlow had the following error: The flow contains the same action type: org.deltafi.enrich.Action in the following actions: enrich1, enrich2");
+    }
+
+    @Test
+    void findDuplicateDomainTypeInFlowPlan() {
+        EnrichFlowPlan enrichFlow = enrichFlowPlan();
+        enrichFlow.getDomainActions().add(domainAction("domain2"));
+
+        Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlow))
+                .isInstanceOf(DeltafiConfigurationException.class)
+                .hasMessage("Config named: enrichFlow had the following error: The flow contains the same action type: org.deltafi.domain.Action in the following actions: domain1, domain2");
     }
 
     @Test
@@ -99,18 +111,32 @@ class EnrichFlowPlanValidatorTest {
         enrich3.setName("enrich");
         enrich3.setType("org.deltafi.enrich.Action3");
 
+        DomainActionConfiguration domain = new DomainActionConfiguration();
+        domain.setName("action");
+        domain.setType("org.deltafi.domain.Action1");
+
+        enrichFlow.getDomainActions().add(domain);
+
         enrichFlow.setEnrichActions(List.of(enrich1, enrich2, enrich3));
 
         Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlow))
                 .isInstanceOf(DeltafiConfigurationException.class)
-                .hasMessage("Config named: enrich had the following error: The action name: enrich is duplicated for the following action types: org.deltafi.enrich.Action2, org.deltafi.enrich.Action3");
+                .hasMessage("Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.domain.Action1, org.deltafi.enrich.Action1; Config named: enrich had the following error: The action name: enrich is duplicated for the following action types: org.deltafi.enrich.Action2, org.deltafi.enrich.Action3");
     }
 
     EnrichFlowPlan enrichFlowPlan() {
         EnrichFlowPlan enrichFlow = new EnrichFlowPlan();
         enrichFlow.setName("enrichFlow");
+        enrichFlow.setDomainActions(new ArrayList<>(List.of(domainAction("domain1"))));
         enrichFlow.setEnrichActions(new ArrayList<>(List.of(enrichAction("enrich1"))));
         return enrichFlow;
+    }
+
+    DomainActionConfiguration domainAction(String name) {
+        DomainActionConfiguration domainActionConfiguration = new DomainActionConfiguration();
+        domainActionConfiguration.setName(name);
+        domainActionConfiguration.setType("org.deltafi.domain.Action");
+        return domainActionConfiguration;
     }
 
     EnrichActionConfiguration enrichAction(String name) {

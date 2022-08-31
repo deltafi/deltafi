@@ -19,6 +19,7 @@ package org.deltafi.core.domain.converters;
 
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
+import org.deltafi.core.domain.configuration.DomainActionConfiguration;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.EnrichFlowPlan;
 
@@ -29,13 +30,36 @@ public class EnrichFlowPlanConverter extends FlowPlanConverter<EnrichFlowPlan, E
 
     @Override
     public void populateFlowSpecificFields(EnrichFlowPlan flowPlan, EnrichFlow flow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        flow.setDomainActions(buildDomainActions(flowPlan.getDomainActions(), flowPlanPropertyHelper));
         flow.setEnrichActions(buildEnrichActions(flowPlan.getEnrichActions(), flowPlanPropertyHelper));
     }
 
+    List<DomainActionConfiguration> buildDomainActions(List<DomainActionConfiguration> domainActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        return null != domainActionTemplates ? domainActionTemplates.stream()
+                .map(domainActionTemplate -> buildDomainAction(domainActionTemplate, flowPlanPropertyHelper))
+                .collect(Collectors.toList()) : List.of();
+    }
+
     List<EnrichActionConfiguration> buildEnrichActions(List<EnrichActionConfiguration> enrichActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        return enrichActionTemplates.stream()
+        return null != enrichActionTemplates ? enrichActionTemplates.stream()
                 .map(enrichActionTemplate -> buildEnrichAction(enrichActionTemplate, flowPlanPropertyHelper))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()) : List.of();
+    }
+
+    /**
+     * Return a copy of the domain action configuration with placeholders resolved where possible.
+     *
+     * @param domainActionTemplate template of the DomainActionConfiguration that should be created
+     * @return DomainActionConfiguration with variable values substituted in
+     */
+    DomainActionConfiguration buildDomainAction(DomainActionConfiguration domainActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        DomainActionConfiguration domainActionConfiguration = new DomainActionConfiguration();
+        flowPlanPropertyHelper.replaceCommonActionPlaceholders(domainActionConfiguration, domainActionTemplate);
+
+        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(domainActionTemplate.getRequiresDomains(), domainActionConfiguration.getName());
+        domainActionConfiguration.setRequiresDomains(requiresDomains);
+
+        return domainActionConfiguration;
     }
 
     /**

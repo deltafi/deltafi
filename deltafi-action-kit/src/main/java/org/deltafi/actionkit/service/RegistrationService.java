@@ -61,6 +61,7 @@ public class RegistrationService {
         ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
                 .transformActions(new ArrayList<>())
                 .loadActions(new ArrayList<>())
+                .domainActions(new ArrayList<>())
                 .enrichActions(new ArrayList<>())
                 .formatActions(new ArrayList<>())
                 .validateActions(new ArrayList<>())

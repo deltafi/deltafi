@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.domain.validation;
 
-import org.deltafi.core.domain.generated.types.EnrichActionConfiguration;
+import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.generated.types.FlowConfigError;
 import org.deltafi.core.domain.services.EnrichFlowPlanService;
 import org.deltafi.core.domain.types.EnrichFlowPlan;
@@ -39,44 +39,47 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
     @Override
     public List<FlowConfigError> flowPlanSpecificValidation(EnrichFlowPlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
-        verifyEnrichActionsPopulated(flowPlan).ifPresent(errors::add);
+
+        if (blankList(flowPlan.getDomainActions()) && blankList(flowPlan.getEnrichActions())) {
+            errors.add(FlowConfigError.newBuilder().configName(flowPlan.getName()).message("Enrich flow plans must contain one or more domain and/or enrich actions").build());
+        }
+
         errors.addAll(checkForDuplicatesInOtherPlans(flowPlan));
         errors.addAll(findDuplicatesInFlowPlan(flowPlan));
 
         return errors;
     }
 
-    /**
-     * Make sure there are one or more enrich actions in the plan
-     * @param flowPlan plan to validate
-     * @return optional error if there are no enrich actions
-     */
-    Optional<FlowConfigError> verifyEnrichActionsPopulated(EnrichFlowPlan flowPlan) {
-        if (Objects.isNull(flowPlan.getEnrichActions()) || flowPlan.getEnrichActions().isEmpty()) {
-            return Optional.of(FlowConfigError.newBuilder().configName(flowPlan.getName()).message("Enrich flow plans must contain one or more enrich actions").build());
-        }
-
-        return Optional.empty();
+    List<FlowConfigError> findDuplicatesInFlowPlan(EnrichFlowPlan flowPlan) {
+        List<FlowConfigError> errors = new ArrayList<>();
+        errors.addAll(findDuplicateActionTypes(flowPlan.getEnrichActions(), flowPlan.getName()));
+        errors.addAll(findDuplicateActionTypes(flowPlan.getDomainActions(), flowPlan.getName()));
+        return errors;
     }
 
     /**
-     * Find any enrich action types that are entered multiple times in this flow.
-     * @param enrichFlowPlan to search for duplicate enrich action types
-     * @return list of errors if the same enrich action type is found multiple times
+     * Check the given action list for duplicate action types
+     * @param actions list of actions to check
+     * @param flowPlanName name used in the error message if duplicates exist
+     * @return list of errors if duplicate action types are found
      */
-    List<FlowConfigError> findDuplicatesInFlowPlan(EnrichFlowPlan enrichFlowPlan) {
-        Map<String, List<EnrichActionConfiguration>> duplicatesInflow = enrichFlowPlan.getEnrichActions().stream()
-                .collect(Collectors.groupingBy(EnrichActionConfiguration::getType));
+    List<FlowConfigError> findDuplicateActionTypes(List<? extends ActionConfiguration> actions, String flowPlanName) {
+        if (null == actions) {
+            return List.of();
+        }
+
+        Map<String, List<ActionConfiguration>> duplicatesInflow = actions.stream()
+                .collect(Collectors.groupingBy(ActionConfiguration::getType));
 
         return duplicatesInflow.entrySet().stream()
                 .filter(entry -> entry.getValue().size() > 1)
-                .map(entry -> duplicateEnrichAction(entry, enrichFlowPlan.getName()))
+                .map(entry -> duplicateActionError(entry, flowPlanName))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Find any enrich action types that are already configured in existing
-     * flow plans.
+     * Find any action types that are already configured in an existing
+     * flow plan.
      * @param enrichFlowPlan to search for duplicate enrich action types
      * @return list of errors if new enrich action types already exist in other plans
      */
@@ -89,20 +92,34 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
     }
 
     private List<FlowConfigError> checkForDuplicatesInOtherPlan(EnrichFlowPlan incomingPlan, EnrichFlowPlan otherPlan) {
-        Set<String> existingEnrichActions = otherPlan.enrichActionTypes();
-        return incomingPlan.getEnrichActions().stream()
-                .map(enrichActionConfiguration -> duplicateActionError(enrichActionConfiguration, existingEnrichActions, incomingPlan.getName(), otherPlan.getName()))
-                .filter(Objects::nonNull)
+        List<FlowConfigError> errors = new ArrayList<>();
+        errors.addAll(checkForDuplicatesInOtherPlan(incomingPlan.getDomainActions(), otherPlan.domainActionTypes(), incomingPlan.getName(), otherPlan.getName()));
+        errors.addAll(checkForDuplicatesInOtherPlan(incomingPlan.getEnrichActions(), otherPlan.enrichActionTypes(), incomingPlan.getName(), otherPlan.getName()));
+        return errors;
+    }
+
+    private List<FlowConfigError> checkForDuplicatesInOtherPlan(List<? extends ActionConfiguration> incomingActions, Set<String> existingActions, String incomingPlanName, String otherPlanName) {
+        return incomingActions != null ? findDuplicateActionConfig(incomingActions, existingActions).stream()
+                .map(dupeAction -> duplicateActionError(dupeAction, incomingPlanName, otherPlanName))
+                .collect(Collectors.toList()) : List.of();
+    }
+
+    private List<ActionConfiguration> findDuplicateActionConfig(List<? extends ActionConfiguration> incomingActions, Set<String> existingActionTypes) {
+        return incomingActions.stream()
+                .filter(action -> existingActionTypes.contains(action.getType()))
                 .collect(Collectors.toList());
     }
 
-    private FlowConfigError duplicateEnrichAction(Map.Entry<String, List<EnrichActionConfiguration>> entry, String flowName) {
-        String actions = entry.getValue().stream().map(EnrichActionConfiguration::getName).collect(Collectors.joining(", "));
-        return FlowConfigError.newBuilder().configName(flowName).message("The flow contains the same enrich action type: " + entry.getKey() + " in the following actions: " + actions).build();
+    private FlowConfigError duplicateActionError(Map.Entry<String, List<ActionConfiguration>> entry, String flowName) {
+        String actions = entry.getValue().stream().map(ActionConfiguration::getName).collect(Collectors.joining(", "));
+        return FlowConfigError.newBuilder().configName(flowName).message("The flow contains the same action type: " + entry.getKey() + " in the following actions: " + actions).build();
     }
 
-    private FlowConfigError duplicateActionError(EnrichActionConfiguration enrichActionConfiguration, Set<String> existingEnrichActions, String planName, String otherPlan) {
-        return existingEnrichActions.contains(enrichActionConfiguration.getType()) ?
-                FlowConfigError.newBuilder().configName(planName).message("Enrich action of type: " + enrichActionConfiguration.getType() + " is already configured in the enrich flow plan named: " + otherPlan).build() : null;
+    private FlowConfigError duplicateActionError(ActionConfiguration actionConfiguration, String planName, String otherPlan) {
+        return FlowConfigError.newBuilder().configName(planName).message("Action of type: " + actionConfiguration.getType() + " is already configured in the enrich flow plan named: " + otherPlan).build();
+    }
+
+    private boolean blankList(List<? extends ActionConfiguration> actions) {
+        return null == actions || actions.isEmpty();
     }
 }

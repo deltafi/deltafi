@@ -69,7 +69,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", "includedFlow");
         EnrichFlow enrichFlow = EnrichFlowMaker.builder().build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
 
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
@@ -83,7 +83,7 @@ class StateMachineTest {
                 .enrichRequiresEnrichment(ENRICH)
                 .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
 
@@ -96,7 +96,7 @@ class StateMachineTest {
                 .enrichRequiresEnrichment(ENRICH)
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -108,7 +108,7 @@ class StateMachineTest {
                 .enrichRequiresEnrichment("otherEnrich")
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -121,7 +121,7 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue("wrongKey", "value"))
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -134,7 +134,7 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.advanceEnrich(enrichFlow, deltaFile)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -147,7 +147,7 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
                 .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
 
@@ -161,7 +161,7 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue(PROTOCOL_LAYER_KEY, "value"))
                 .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.advanceEnrich(enrichFlow, deltaFile);
+        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
         assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals("EnrichAction"));
     }
 

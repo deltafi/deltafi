@@ -53,6 +53,21 @@ input EnrichActionSchemaInput {
     requiresEnrichment: [String]
 }
 
+type DomainActionSchema implements ActionSchema {
+    id: String!
+    paramClass: String!
+    schema: JSON
+    lastHeard: DateTime!
+    requiresDomains: [String]!
+}
+
+input DomainActionSchemaInput {
+    id: String!
+    paramClass: String!
+    schema: JSON
+    requiresDomains: [String]!
+}
+
 type FormatActionSchema implements ActionSchema {
     id: String!
     paramClass: String!
@@ -124,6 +139,7 @@ input ValidateActionSchemaInput {
 input ActionRegistrationInput {
     transformActions: [TransformActionSchemaInput!]
     loadActions: [LoadActionSchemaInput!]
+    domainActions: [DomainActionSchemaInput!]
     enrichActions: [EnrichActionSchemaInput!]
     formatActions: [FormatActionSchemaInput!]
     validateActions: [ValidateActionSchemaInput!]

@@ -32,6 +32,7 @@ import java.util.List;
 public class ActionSchemaDatafetcherTestHelper {
 
     public static final String EGRESS_ACTION = "org.deltafi.EgressAction";
+    public static final String DOMAIN_ACTION = "org.deltafi.DomainAction";
     public static final String ENRICH_ACTION = "org.deltafi.EnrichAction";
     public static final String FORMAT_ACTION = "org.deltafi.FormatAction";
     public static final String LOAD_ACTION = "org.deltafi.LoadAction";
@@ -48,6 +49,10 @@ public class ActionSchemaDatafetcherTestHelper {
                 .schema()
 
                 .onEgressActionSchema()
+                .parent()
+
+                .onDomainActionSchema()
+                .requiresDomains()
                 .parent()
 
                 .onEnrichActionSchema()
@@ -97,6 +102,7 @@ public class ActionSchemaDatafetcherTestHelper {
         ActionRegistrationInput input = ActionRegistrationInput.newBuilder()
                 .transformActions(Collections.singletonList(getTransformInput()))
                 .loadActions(Collections.singletonList(getLoadInput()))
+                .domainActions(Collections.singletonList(getDomainSchemaInput()))
                 .enrichActions(Collections.singletonList(getEnrichInput()))
                 .formatActions(Collections.singletonList(getFormatInput()))
                 .validateActions(Collections.singletonList(getValidateInput()))
@@ -129,6 +135,14 @@ public class ActionSchemaDatafetcherTestHelper {
     static private EnrichActionSchemaInput getEnrichInput() {
         return EnrichActionSchemaInput.newBuilder()
                 .id(ENRICH_ACTION)
+                .paramClass(PARAM_CLASS)
+                .requiresDomains(Collections.singletonList(DOMAIN))
+                .build();
+    }
+
+    static private DomainActionSchemaInput getDomainSchemaInput() {
+        return DomainActionSchemaInput.newBuilder()
+                .id(DOMAIN_ACTION)
                 .paramClass(PARAM_CLASS)
                 .requiresDomains(Collections.singletonList(DOMAIN))
                 .build();

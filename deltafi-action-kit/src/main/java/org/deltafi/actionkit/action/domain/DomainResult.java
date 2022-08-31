@@ -15,57 +15,46 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.enrich;
+package org.deltafi.actionkit.action.domain;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.HasIndexedMetadata;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.DomainResultInput;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Specialized result class for ENRICH actions
+ * Specialized result class for DOMAIN actions
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class EnrichResult extends Result implements HasIndexedMetadata {
-    private final List<Enrichment> enrichments = new ArrayList<>();
+public class DomainResult extends Result implements HasIndexedMetadata  {
     private Map<String, String> indexedMetadata = new HashMap<>();
 
     /**
      * @param context Context of the executed action
      */
-    public EnrichResult(@NotNull ActionContext context) {
+    public DomainResult(@NotNull ActionContext context) {
         super(context);
-    }
-
-    /**
-     * Apply an enrichment to the DeltaFile when processing the result of
-     * this action.  Multiple enrichments can be applied by invoking this method
-     * multiple times.
-     * @param enrichmentName Name of enrichment being applied to the DeltaFile
-     * @param value String value of the applied enrichment
-     * @param mediaType Media type of the applied enrichment
-     */
-    public void addEnrichment(@NotNull String enrichmentName, String value, @NotNull String mediaType) {
-        enrichments.add(new Enrichment(enrichmentName, value, mediaType));
     }
 
     @Override
     public final ActionEventType actionEventType() {
-        return ActionEventType.ENRICH;
+        return ActionEventType.DOMAIN;
     }
 
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setEnrich(EnrichInput.newBuilder().enrichments(enrichments).indexedMetadata(indexedMetadata).build());
+        event.setDomain(DomainResultInput.newBuilder().indexedMetadata(indexedMetadata).build());
         return event;
     }
+
 }

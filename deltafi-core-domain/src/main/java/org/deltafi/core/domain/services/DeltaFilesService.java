@@ -188,6 +188,8 @@ public class DeltaFilesService {
                 return transform(deltaFile, event);
             case LOAD:
                 return load(deltaFile, event);
+            case DOMAIN:
+                return domain(deltaFile, event);
             case ENRICH:
                 return enrich(deltaFile, event);
             case FORMAT:
@@ -230,6 +232,16 @@ public class DeltaFilesService {
                     deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
                 }
             }
+        }
+
+        return advanceAndSave(deltaFile);
+    }
+
+    public DeltaFile domain(DeltaFile deltaFile, ActionEventInput event) {
+        deltaFile.completeAction(event);
+
+        if (event.getDomain() != null) {
+            deltaFile.addIndexedMetadata(event.getDomain().getIndexedMetadata());
         }
 
         return advanceAndSave(deltaFile);

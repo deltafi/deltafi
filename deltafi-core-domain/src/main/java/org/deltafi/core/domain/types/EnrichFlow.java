@@ -20,30 +20,34 @@ package org.deltafi.core.domain.types;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.core.domain.configuration.ActionConfiguration;
-import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
-import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
-import org.deltafi.core.domain.configuration.EnrichFlowConfiguration;
+import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 
 @Data
 @Document("enrichFlow")
 @EqualsAndHashCode(callSuper = true)
 public class EnrichFlow extends Flow {
 
-    private List<EnrichActionConfiguration> enrichActions;
+    private List<DomainActionConfiguration> domainActions = new ArrayList<>();
+    private List<EnrichActionConfiguration> enrichActions = new ArrayList<>();
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {
-        return actionNamed(enrichActions, actionName);
+        ActionConfiguration found = actionNamed(domainActions, actionName);
+        return found != null ? found : actionNamed(enrichActions, actionName);
     }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return new ArrayList<>(enrichActions);
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+        actionConfigurations.addAll(domainActions);
+        actionConfigurations.addAll(enrichActions);
+        return actionConfigurations;
     }
 
     @Override
@@ -51,15 +55,18 @@ public class EnrichFlow extends Flow {
         switch (configType) {
             case ENRICH_FLOW:
                 return List.of(asFlowConfiguration());
+            case DOMAIN_ACTION:
+                return new ArrayList<>(domainActions);
             case ENRICH_ACTION:
-                return null != enrichActions ? new ArrayList<>(enrichActions) : Collections.emptyList();
+                return new ArrayList<>(enrichActions);
             default:
-                return Collections.emptyList();
+                return List.of();
         }
     }
 
     @Override
     public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+        updateActionNamesByFamily(actionFamilyMap, ActionType.DOMAIN, actionNames(domainActions));
         updateActionNamesByFamily(actionFamilyMap, ActionType.ENRICH, actionNames(enrichActions));
     }
 
@@ -67,6 +74,7 @@ public class EnrichFlow extends Flow {
     DeltaFiConfiguration asFlowConfiguration() {
         EnrichFlowConfiguration enrichFlowConfiguration = new EnrichFlowConfiguration();
         enrichFlowConfiguration.setName(getName());
+        enrichFlowConfiguration.setDomainActions(actionNames(domainActions));
         enrichFlowConfiguration.setEnrichActions(actionNames(enrichActions));
         return enrichFlowConfiguration;
     }

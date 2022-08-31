@@ -36,6 +36,7 @@ public class ActionEventInput {
   private OffsetDateTime stop;
   private OffsetDateTime time;
   private ActionEventType type;
+  private DomainResultInput domain;
   private TransformInput transform;
   private LoadInput load;
   private EnrichInput enrich;

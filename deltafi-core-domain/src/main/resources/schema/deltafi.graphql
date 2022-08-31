@@ -196,6 +196,7 @@ type Action {
 enum ActionEventType {
   TRANSFORM
   LOAD
+  DOMAIN
   ENRICH
   FORMAT
   FORMAT_MANY
@@ -216,6 +217,7 @@ input ActionEventInput {
   type: ActionEventType!
   transform: TransformInput
   load: LoadInput
+  domain: DomainResultInput
   enrich: EnrichInput
   format: FormatInput
   formatMany: [FormatInput]
@@ -266,6 +268,10 @@ input TransformInput {
 input LoadInput {
   domains: [DomainInput!]!
   protocolLayer: ProtocolLayerInput!
+}
+
+input DomainResultInput {
+  indexedMetadata: Metadata
 }
 
 input EnrichInput {

@@ -142,7 +142,7 @@ load_plan() {
     local LOAD_TYPE="egress flow plan"
     local OPERATION_NAME="saveEgressFlowPlan"
     local QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
-  elif [[ "$JSON" == *"enrichActions"* ]]; then
+  elif [[ "$JSON" == *"enrichActions"* || "$JSON" == *"domainActions"* ]]; then
     local LOAD_TYPE="enrich flow plan"
     local OPERATION_NAME="saveEnrichFlowPlan"
     local QUERY="mutation(\$flowPlan: EnrichFlowPlanInput!) {saveEnrichFlowPlan(enrichFlowPlan: \$flowPlan) { name }}"

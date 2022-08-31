@@ -15,25 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.domain.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class ActionRegistrationInput {
-  private List<TransformActionSchemaInput> transformActions;
-  private List<LoadActionSchemaInput> loadActions;
-  private List<DomainActionSchemaInput> domainActions;
-  private List<EnrichActionSchemaInput> enrichActions;
-  private List<FormatActionSchemaInput> formatActions;
-  private List<ValidateActionSchemaInput> validateActions;
-  private List<EgressActionSchemaInput> egressActions;
+public class DomainActionSchema extends org.deltafi.core.domain.generated.types.DomainActionSchema {
 }

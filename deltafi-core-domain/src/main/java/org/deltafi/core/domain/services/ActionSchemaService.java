@@ -19,12 +19,12 @@ package org.deltafi.core.domain.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.common.types.*;
-import org.deltafi.core.domain.types.*;
+import org.deltafi.common.types.ActionRegistrationInput;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.deltafi.core.domain.repo.ActionSchemaRepo;
+import org.deltafi.core.domain.types.*;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -60,69 +60,43 @@ public class ActionSchemaService implements PluginCleaner {
     public int saveAll(ActionRegistrationInput input) {
         List<ActionSchema> savedRegistrations = new ArrayList<>();
 
-        if (input.getTransformActions() != null) {
-            input.getTransformActions().forEach(a -> savedRegistrations.add(convert(a)));
+        addSchemas(savedRegistrations, input.getTransformActions(), TransformActionSchema.class);
+        addSchemas(savedRegistrations, input.getLoadActions(), LoadActionSchema.class);
+        addSchemas(savedRegistrations, input.getDomainActions(), DomainActionSchema.class);
+        addSchemas(savedRegistrations, input.getEnrichActions(), EnrichActionSchema.class);
+        addSchemas(savedRegistrations, input.getFormatActions(), FormatActionSchema.class);
+        addSchemas(savedRegistrations, input.getValidateActions(), ValidateActionSchema.class);
+        addSchemas(savedRegistrations, input.getEgressActions(), EgressActionSchema.class);
 
-        }
-        if (input.getLoadActions() != null) {
-            input.getLoadActions().forEach(a -> savedRegistrations.add(convert(a)));
-        }
-
-        if (input.getEnrichActions() != null) {
-            input.getEnrichActions().forEach(a -> savedRegistrations.add(convert(a)));
-        }
-
-        if (input.getFormatActions() != null) {
-            input.getFormatActions().forEach(a -> savedRegistrations.add(convert(a)));
-        }
-
-        if (input.getValidateActions() != null) {
-            input.getValidateActions().forEach(a -> savedRegistrations.add(convert(a)));
-        }
-
-        if (input.getEgressActions() != null) {
-            input.getEgressActions().forEach(a -> savedRegistrations.add(convert(a)));
-        }
-
-        actionSchemaRepo.saveAll(savedRegistrations);
-
-        return savedRegistrations.size();
+        return actionSchemaRepo.saveAll(savedRegistrations).size();
     }
 
-    private org.deltafi.core.domain.generated.types.EgressActionSchema convert(EgressActionSchemaInput actionSchemaInput) {
-        org.deltafi.core.domain.types.EgressActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.EgressActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
+    /**
+     * Convert the list of ActionSchema inputs to the given ActionSchema type
+     * and add them to the schemaList
+     * @param schemaList holds the list of schemas that need to be saved
+     * @param inputs ActionSchema input objects that need to be converted
+     * @param type the type of ActionSchema to convert the input to
+     * @param <T> the type of ActionSchema to convert the input to
+     */
+    private <T extends ActionSchema> void addSchemas(List<ActionSchema> schemaList, List<?> inputs, Class<T> type) {
+        if (null != inputs) {
+            inputs.stream().map(input -> convert(input, type)).forEach(schemaList::add);
+        }
     }
 
-    private org.deltafi.core.domain.generated.types.EnrichActionSchema convert(EnrichActionSchemaInput actionSchemaInput) {
-        org.deltafi.core.domain.types.EnrichActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.EnrichActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
-    }
-
-    private org.deltafi.core.domain.generated.types.FormatActionSchema convert(FormatActionSchemaInput actionSchemaInput) {
-        org.deltafi.core.domain.types.FormatActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.FormatActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
-    }
-
-    private org.deltafi.core.domain.generated.types.LoadActionSchema convert(LoadActionSchemaInput actionSchemaInput) {
-        org.deltafi.core.domain.types.LoadActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.LoadActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
-    }
-
-    private org.deltafi.core.domain.generated.types.TransformActionSchema convert(TransformActionSchemaInput actionSchemaInput) {
-        org.deltafi.core.domain.types.TransformActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.TransformActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
-    }
-
-    private org.deltafi.core.domain.generated.types.ValidateActionSchema convert(ValidateActionSchemaInput actionSchemaInput) {
-        org.deltafi.core.domain.types.ValidateActionSchema actionSchema = objectMapper.convertValue(actionSchemaInput, org.deltafi.core.domain.types.ValidateActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
+    /**
+     * Convert the ActionSchema input object to the given schemaClass. Sets the lastHeard
+     * time to the current time.
+     * @param inputObject schema input to convert
+     * @param schemaClass the type of ActionSchema that the input should be mapped to
+     * @param <T> the type of ActionSchema that the input should be mapped to
+     * @return the converted ActionSchema
+     */
+    private <T extends ActionSchema> T convert(Object inputObject, Class<T> schemaClass) {
+        T schema = objectMapper.convertValue(inputObject, schemaClass);
+        schema.setLastHeard(OffsetDateTime.now());
+        return schema;
     }
 
     @Override

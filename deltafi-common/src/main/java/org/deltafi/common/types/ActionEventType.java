@@ -20,6 +20,7 @@ package org.deltafi.common.types;
 public enum ActionEventType {
   TRANSFORM,
   LOAD,
+  DOMAIN,
   ENRICH,
   FORMAT,
   FORMAT_MANY,
