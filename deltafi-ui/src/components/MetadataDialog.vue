@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineExpose, computed } from "vue";
+import { ref, defineProps, defineExpose, defineEmits, computed } from "vue";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
@@ -75,6 +75,7 @@ import useUtilFunctions from "@/composables/useUtilFunctions";
 import Message from 'primevue/message';
 import _ from "lodash";
 
+const emit = defineEmits(['update'])
 const { pluralize } = useUtilFunctions();
 const invalidKey = ref(false);
 const maxSuccessDisplay = 10;
@@ -205,6 +206,7 @@ const requestResumeReplay = async () => {
           }
           let pluralized = pluralize(props.did.length, "DeltaFile");
           notify.success(`Resume request sent successfully for ${pluralized}`, successfulDids.join(", "));
+          emit('update');
         }
       }
     } else {
@@ -228,6 +230,7 @@ const requestResumeReplay = async () => {
           }
           let pluralized = pluralize(props.did.length, "DeltaFile");
           notify.success(`Replay request sent successfully for ${pluralized}`, successfulDids.join(", "));
+          emit('update');
         }
       }
     }

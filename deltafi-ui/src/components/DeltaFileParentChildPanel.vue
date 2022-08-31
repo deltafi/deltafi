@@ -19,7 +19,7 @@
 <template>
   <div>
     <CollapsiblePanel header="Parent/Child DeltaFiles" class="table-panel">
-      <DataTable v-model:expandedRowGroups="expandedRowGroups" :paginator="(didsList.length < 10 ? false : true)" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading" :expandable-row-groups="true" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
+      <DataTable v-model:expandedRowGroups="expandedRowGroups" :paginator="(didsList.length < 10 ? false : true)" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading && !loaded" :expandable-row-groups="true" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
         <template #empty>No Parent/Child DeltaFiles found.</template>
         <template #loading>Loading Parent/Child DeltaFiles. Please wait.</template>
         <Column field="didType" header="DID Type" :hidden="false" :sortable="true" />
@@ -50,7 +50,7 @@ import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
-import { defineProps, onMounted, reactive, ref } from "vue";
+import { defineProps, onMounted, reactive, ref, watch } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import _ from "lodash";
 
@@ -68,6 +68,7 @@ const expandedRowGroups = ref()
 const didsList = ref([]);
 const deltaFile = reactive(props.deltaFileData);
 const loading = ref(true);
+const loaded = ref(false);
 
 onMounted(() => {
   fetchParentChildDidsArrayData();
@@ -96,8 +97,15 @@ const fetchParentChildDidsArrayData = async () => {
     }
   }
   loading.value = false;
-  didsList.value = _.concat(didsList.value, combinDidsList);
+  loaded.value = true;
+  didsList.value = combinDidsList;
 };
+
+watch(
+  () => deltaFile,
+  fetchParentChildDidsArrayData,
+  { deep: true }
+)
 
 const pluralizeWithCount = (count, singular, plural) => {
   let pluralized = pluralize(count, singular, plural, false);

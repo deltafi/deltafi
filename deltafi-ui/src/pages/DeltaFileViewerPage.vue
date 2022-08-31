@@ -75,7 +75,7 @@
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataViewer ref="metadataViewer" :metadata-references="allMetadata" />
-    <MetadataDialog ref="metadataDialog" :did="[did]" />
+    <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
   </div>
 </template>
 
