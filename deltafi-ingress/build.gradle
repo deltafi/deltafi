@@ -1,50 +1,41 @@
 plugins {
-    id "io.quarkus" version "${quarkusPluginVersion}"
-    id "com.palantir.docker" version "${palantirDockerVersion}"
-    id 'org.kordamp.gradle.jandex' version '0.11.0'
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'com.palantir.docker' version "${palantirDockerVersion}"
+    id 'com.github.hierynomus.license' version "${hierynomusLicenseVersion}"
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'org.springframework.boot' version "${springBootVersion}"
 }
+
+description = 'DeltaFi Ingress'
 
 license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)
 }
 
+jar {
+    // do not create the -plain.jar
+    enabled = false
+}
+
+springBoot {
+    buildInfo()
+}
+
 dependencies {
-    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
-
-    implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
-        because 'DGS BOM to automatically define versions of other packages below'
-    }
-
     implementation project(':deltafi-common')
 
-    implementation "redis.clients:jedis:${jedisVersion}"
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation 'org.apache.commons:commons-compress:1.21'
+    implementation 'org.glassfish.jersey.core:jersey-common'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config:3.1.3'
 
-    implementation "io.minio:minio:${minioVersion}"
+    testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.16.2'
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+}
 
-    implementation "io.quarkus:quarkus-arc"
-    implementation "io.quarkus:quarkus-config-yaml"
-    implementation "io.quarkus:quarkus-kotlin"
-    implementation 'io.quarkus:quarkus-resteasy-reactive'
-    implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
-    implementation 'io.quarkus:quarkus-spring-boot-properties'
-    implementation 'io.quarkus:quarkus-spring-cloud-config-client'
-    implementation 'io.quarkus:quarkus-hibernate-validator'
-    implementation("io.quarkiverse.loggingjson:quarkus-logging-json:${quarkusLoggingJsonVersion}") {
-        because 'Plugin to allow JSON formatted logging for log scraping'
-    }
-
-    implementation "com.netflix.graphql.dgs:graphql-dgs-client"
-    implementation "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
-    implementation "org.apache.commons:commons-compress:1.21"
-    implementation "commons-io:commons-io:2.11.0"
-
-    testImplementation "io.quarkus:quarkus-junit5"
-    testImplementation "io.quarkus:quarkus-junit5-mockito"
-    testImplementation "io.rest-assured:rest-assured"
-    testImplementation "org.mockito:mockito-junit-jupiter"
-    testImplementation "org.apache.nifi:nifi-flowfile-packager:1.16.2"
+test {
+    useJUnitPlatform()
 }
 
 task copyProbe(type: Copy) {
@@ -54,15 +45,15 @@ task copyProbe(type: Copy) {
 }
 
 dockerPrepare {
+    dependsOn bootJar
     dependsOn compileJava
     dependsOn assemble
     finalizedBy copyProbe
 }
 
 docker {
-    dependsOn compileJava
-    dependsOn build
+    dependsOn dockerPrepare
     tag "local", "${localDockerRegistry}/${project.name}:latest"
     name "${project.name}:${project.version}"
-    copySpec.from("build/quarkus-app/").into("build/quarkus-app/")
+    copySpec.from(bootJar.archiveFile).into("build/libs/")
 }

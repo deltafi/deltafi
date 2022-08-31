@@ -22,7 +22,7 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.config.ActionsProperties;
+import org.deltafi.common.config.ActionsProperties;
 import org.deltafi.common.types.ActionRegistrationInput;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;

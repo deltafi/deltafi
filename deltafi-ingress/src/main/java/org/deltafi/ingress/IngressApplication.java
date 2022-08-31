@@ -15,12 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.rest;
+package org.deltafi.ingress;
 
-import io.quarkus.test.junit.NativeImageTest;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-@NativeImageTest
-public class NativeGreetingResourceIT extends DeltaFileRestTest {
-
-    // Execute the same tests but in native mode.
+@SpringBootApplication(scanBasePackages = "org.deltafi")
+@EnableConfigurationProperties
+public class IngressApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(IngressApplication.class, args);
+    }
 }

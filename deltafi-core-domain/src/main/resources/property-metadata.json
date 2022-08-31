@@ -72,40 +72,6 @@
         "defaultValue": "32"
       },
       {
-        "key": "quarkus.http.port",
-        "description": "The HTTP port the application will run on.",
-        "defaultValue": "8080"
-      },
-      {
-        "key": "quarkus.http.limits.max-body-size",
-        "description": "The maximum size of a request body.",
-        "defaultValue": "1024M"
-      },
-      {
-        "key": "quarkus.log.level",
-        "description": "The log level of the root category, which is used as the default log level for all categories.",
-        "defaultValue": "INFO",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.log.console.json",
-        "description": "Determine whether to enable the JSON console formatting extension, which disables \"normal\" console formatting.",
-        "defaultValue": "false",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "quarkus.log.console.color",
-        "description": "Enable colors in console logs.",
-        "defaultValue": "false",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
         "key": "deltafi.apiUrl",
         "description": "The URL used to reach the DeltaFi API",
         "defaultValue": "http://deltafi-api-service",

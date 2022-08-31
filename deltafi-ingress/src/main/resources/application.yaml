@@ -1,7 +1,8 @@
-quarkus:
+logging:
+  level:
+    org.springframework.data.convert.CustomConversions: ERROR
+spring:
   application:
     name: deltafi-ingress
-  # enable retrieval of configuration from the Config Server - this is off by default
-  spring-cloud-config:
-    enabled: true
-    url: ${CONFIG_SERVER_URL:http://deltafi-core-domain-service/config}
+  config:
+    import: configserver:http://deltafi-core-domain-service/config

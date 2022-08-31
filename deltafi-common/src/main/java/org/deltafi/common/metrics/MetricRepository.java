@@ -32,7 +32,7 @@ public class MetricRepository {
 
     final private MetricRegistry metrics;
 
-    protected MetricRepository(MetricsProperties metricsProperties) {
+    public MetricRepository(MetricsProperties metricsProperties) {
         if (metricsProperties.isEnabled()) {
             log.info("Creating metric service");
             metrics = new MetricRegistry();

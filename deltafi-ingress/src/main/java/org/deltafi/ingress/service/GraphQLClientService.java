@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.properties.GraphqlClientProperties;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
+import org.springframework.stereotype.Service;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URI;
@@ -32,7 +32,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 
 @Slf4j
-@ApplicationScoped
+@Service
 public class GraphQLClientService {
 
     HttpClient httpClient;

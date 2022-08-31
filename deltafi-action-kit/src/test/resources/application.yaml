@@ -9,7 +9,6 @@ actions:
     protocol: TLSv1.2
 
 
-# placeholders so @QuarkusTests can run
 minio:
   url: minio
   secret-key: empty

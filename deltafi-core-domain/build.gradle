@@ -122,9 +122,6 @@ dependencies {
 	implementation "org.springframework.retry:spring-retry"
 	implementation "org.springframework.cloud:spring-cloud-config-server"
 
-	implementation "redis.clients:jedis:${jedisVersion}"
-
-	implementation "io.minio:minio:${minioVersion}"
 	implementation 'com.squareup.okhttp3:okhttp:4.10.0'
 
 	implementation "com.networknt:json-schema-validator:1.0.72"

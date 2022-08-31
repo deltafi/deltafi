@@ -18,7 +18,6 @@
 package org.deltafi.core.domain.services.api;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.generated.DgsConstants;
 import org.deltafi.core.domain.services.api.model.DiskMetrics;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;

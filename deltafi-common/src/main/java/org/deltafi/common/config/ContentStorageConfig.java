@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,22 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.config;
+package org.deltafi.common.config;
+import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import lombok.Data;
-import org.deltafi.common.ssl.SslProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+@Configuration
+public class ContentStorageConfig {
+    @Bean
+    public ContentStorageService contentStorageService(ObjectStorageService objectStorageService) {
+        return new ContentStorageService(objectStorageService);
+    }
 
-@Data
-@Component
-@ConfigurationProperties(prefix = "actions")
-public class ActionsProperties {
-    private long actionPollingInitialDelayMs = 3000L;
-    private long actionPollingPeriodMs = 100L;
-    private long actionRegistrationPeriodMs = 10000L;
-
-    private String hostname;
-
-    private SslProperties ssl;
 }

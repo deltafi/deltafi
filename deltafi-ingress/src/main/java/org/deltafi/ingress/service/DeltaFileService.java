@@ -43,14 +43,14 @@ import org.deltafi.ingress.client.IngressProjectionRoot;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
+import org.springframework.stereotype.Service;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@ApplicationScoped
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileService {

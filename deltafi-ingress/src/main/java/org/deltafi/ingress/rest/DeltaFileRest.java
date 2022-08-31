@@ -26,34 +26,33 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
 import org.deltafi.ingress.service.DeltaFileService;
-import org.deltafi.ingress.service.MetricService;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
-import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.ingress.util.Metrics.tagsFor;
 
 @Slf4j
-@Path("deltafile")
-@Produces(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
+@RestController
 public class DeltaFileRest {
     private final DeltaFileService deltaFileService;
-    private final MetricService metricService;
+    private final MetricRepository metricService;
 
     ObjectMapper objectMapper = new ObjectMapper();
 
@@ -61,58 +60,50 @@ public class DeltaFileRest {
     public static final String FILENAME_CONTENT = "flowfile.content";
     public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile";
 
-    @POST
-    @Path("ingress")
-    @Consumes(MediaType.WILDCARD)
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response ingressData(InputStream dataStream, @Context HttpHeaders headers,
-                                @QueryParam("filename") String filenameFromQueryParam,
-                                @QueryParam("flow") String flowFromQueryParam,
-                                @HeaderParam("Filename") String filenameFromHeader,
-                                @HeaderParam("Flow") String flowFromHeader,
-                                @HeaderParam("Metadata") String metadata) {
-        String mediaType = headers.getMediaType().getType() + "/" + headers.getMediaType().getSubtype();
-        String flow = Objects.nonNull(flowFromQueryParam) ? flowFromQueryParam : flowFromHeader;
-        String filename = Objects.nonNull(filenameFromQueryParam) ? filenameFromQueryParam : filenameFromHeader;
+    @PostMapping(value = "deltafile/ingress", consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
+    public ResponseEntity<String> ingressData(InputStream dataStream,
+                                              @RequestHeader(value = "Filename", required = false) String filename,
+                                              @RequestHeader(value = "Flow", required = false) String flow,
+                                              @RequestHeader(value = "Metadata", required = false) String metadata,
+                                              @RequestHeader(HttpHeaders.CONTENT_TYPE) String contentType,
+                                              @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false) String username) {
+        username = StringUtils.isNotBlank(username) ? username : "system";
 
-        String username = headers.getHeaderString(DeltaFiConstants.USER_HEADER);
-        username = (username != null && !username.isBlank()) ? username : "system";
-
-        log.debug("Ingressing: flow={} filename={} mediaType={}",
+        log.debug("Ingressing: flow={} filename={} contentType={}",
                 flow,
                 filename,
-                mediaType);
+                contentType);
 
         try {
             DeltaFileService.IngressResult ingressResult;
-            if (mediaType.equals(FLOWFILE_V1_MEDIA_TYPE)) {
+            if (contentType.equals(FLOWFILE_V1_MEDIA_TYPE)) {
                 ingressResult = ingressFlowfileV1(dataStream, metadata, flow, filename, username);
             } else {
-                ingressResult = ingressBinary(dataStream, mediaType, metadata, flow, filename, username);
+                ingressResult = ingressBinary(dataStream, contentType, metadata, flow, filename, username);
             }
 
             Map<String, String> tags = tagsFor(ingressResult.getFlow());
             metricService.increment("files_in", tags, 1);
             metricService.increment("bytes_in", tags, ingressResult.getContentReference().getSize());
 
-            return Response.ok(ingressResult.getContentReference().getDid()).build();
+            return ResponseEntity.ok(ingressResult.getContentReference().getDid());
         } catch (ObjectStorageException | DeltafiGraphQLException | DeltafiException exception) {
             log.error("500 error", exception);
             metricService.increment("files_dropped", tagsFor(flow), 1);
-            return Response.status(500).entity(exception.getMessage()).build();
+            return ResponseEntity.status(500).body(exception.getMessage());
         } catch (DeltafiMetadataException exception) {
-            log.error("400 error", exception);
             metricService.increment("files_dropped", tagsFor(flow), 1);
-            return Response.status(400).entity(exception.getMessage()).build();
+            log.error("400 error", exception);
+            return ResponseEntity.status(400).body(exception.getMessage());
         } catch (Throwable exception) {
             log.error("Unexpected error", exception);
             metricService.increment("files_dropped", tagsFor(flow), 1);
-            return Response.status(500).entity(exception.getMessage()).build();
+            return ResponseEntity.status(500).body(exception.getMessage());
         }
     }
 
     private DeltaFileService.IngressResult ingressBinary(InputStream dataStream, String mediaType, String metadata, String flow, String filename, String username) throws DeltafiMetadataException, DeltafiException, ObjectStorageException {
-        if(Objects.isNull(filename)) throw new DeltafiMetadataException("filename must be passed in as a query parameter or header");
+        if(Objects.isNull(filename)) throw new DeltafiMetadataException("Filename must be passed in as a header");
         return deltaFileService.ingressData(dataStream, filename, flow, metadata, mediaType, username);
     }
 
@@ -125,7 +116,7 @@ public class DeltaFileRest {
         FlowFile flowfile = unarchiveFlowfileV1(dataStream, fromJson(metadataString));
         if (flow == null) { flow = flowfile.metadata.get("flow"); }
         if (Objects.isNull(filename)) { filename = flowfile.metadata.get("filename"); }
-        if(Objects.isNull(filename)) throw new DeltafiMetadataException("filename must be passed in as a query parameter, header, or flowfile attribute");
+        if(Objects.isNull(filename)) throw new DeltafiMetadataException("Filename must be passed in as a header or flowfile attribute");
         return deltaFileService.ingressData(new ByteArrayInputStream(flowfile.content), filename, flow, flowfile.metadata, MediaType.APPLICATION_OCTET_STREAM, username);
     }
 
@@ -171,7 +162,6 @@ public class DeltaFileRest {
     }
 
     protected Map<String, String> extractFlowfileAttributes(final ArchiveInputStream stream) throws IOException {
-
         final Properties props = new Properties();
         props.loadFromXML(CloseShieldInputStream.wrap(stream));
 
@@ -191,14 +181,4 @@ public class DeltaFileRest {
 
         return result;
     }
-
-    private Map<String, String> tagsFor(String flow) {
-        if (flow == null) flow = "unknown";
-        return Map.of("action", INGRESS_ACTION,
-                "ingressFlow", flow,
-                "source", "ingress");
-    }
-
-
-
 }

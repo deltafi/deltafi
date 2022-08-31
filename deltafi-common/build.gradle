@@ -1,6 +1,7 @@
 plugins {
-    id 'org.kordamp.gradle.jandex' version '0.11.0'
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'java-library'
+    id 'org.kordamp.gradle.jandex' version '0.11.0'
 }
 
 description = 'Shared utility library for DeltaFi core'
@@ -15,21 +16,27 @@ license {
 compileJava.dependsOn(processResources)
 
 dependencies {
-    implementation platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
+    api platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
 
-    implementation "redis.clients:jedis:${jedisVersion}"
+    api 'ch.qos.logback:logback-classic:1.2.11'
+    api "com.netflix.graphql.dgs:graphql-dgs-client:${dgsVersion}"
+    api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
+    api 'com.squareup.okhttp3:okhttp:4.10.0'
+    api "commons-io:commons-io:2.11.0"
+    api "io.minio:minio:${minioVersion}"
+    api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    api 'javax.ws.rs:javax.ws.rs-api:2.1.1'
+    api 'net.logstash.logback:logstash-logback-encoder:7.2'
+    api 'org.apache.commons:commons-lang3:3.12.0'
+    api 'org.apache.maven:maven-artifact:3.8.5'
+    api 'org.json:json:20220320'
+    api "redis.clients:jedis:${jedisVersion}"
 
-    implementation "commons-io:commons-io:2.11.0"
-    implementation "org.apache.commons:commons-lang3:3.12.0"
-    implementation "org.apache.maven:maven-artifact:3.8.5"
-
-    implementation "io.minio:minio:${minioVersion}"
-
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3'
+    api "org.slf4j:slf4j-api:1.7.36"
+    implementation 'org.springframework.boot:spring-boot'
+    api 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.dropwizard.metrics:metrics-core:4.2.11'
-
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3'
-    implementation "org.slf4j:slf4j-api:1.7.36"
-    implementation "org.springframework.boot:spring-boot"
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
     implementation 'org.springframework.data:spring-data-mongodb'
 

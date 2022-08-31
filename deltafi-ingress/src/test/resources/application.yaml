@@ -1,22 +1,8 @@
-quarkus:
-  http:
-    test-port: 0
-  spring-cloud-config:
-    enabled: false
-
-# Set these manually since spring-cloud-config is disabled and these are required properties
-graphql:
-  urls:
-    core-domain: "http://localhost"
-minio:
-  url: localhost
-  access-key: minioadmin
-  secret-key: minioadmin
-redis:
-  url: localhost
-  password: redis
-
-smallrye:
-  config:
-    mapping:
-      validate-unknown: false # @QuarkusTest erroneously pulls in application.yaml from deltafi-core-domain!
+spring:
+  application:
+    name: deltafi-ingress
+  cloud:
+    config:
+      enabled: false
+  main:
+    allow-bean-definition-overriding: true

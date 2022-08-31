@@ -15,14 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.config;
+package org.deltafi.ingress.util;
 
-import javax.enterprise.inject.Produces;
-import java.net.http.HttpClient;
+import java.util.Map;
 
-public class HttpClientConfig {
-    @Produces
-    public HttpClient httpClient() {
-        return HttpClient.newHttpClient();
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+
+public class Metrics {
+    static public Map<String, String> tagsFor(String flow) {
+        if (flow == null) flow = "unknown";
+        return Map.of("action", INGRESS_ACTION,
+                "ingressFlow", flow,
+                "source", "ingress");
     }
 }

@@ -18,7 +18,7 @@
 package org.deltafi.actionkit.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.config.ActionsProperties;
+import org.deltafi.common.config.ActionsProperties;
 import org.springframework.stereotype.Service;
 
 import java.net.InetAddress;

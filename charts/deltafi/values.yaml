@@ -4,9 +4,6 @@ deltafi:
     # notation needed spring-boot apps
     - name: DELTAFI_CONFIG_IMPORT
       value: deltafi:mongodb=true&git=false
-    # notation needed for quarkus apps
-    - name: CONFIG_SERVER_URL
-      value: http://deltafi-core-domain-service/config
     - name: REDIS_PASSWORD
       valueFrom:
         secretKeyRef:

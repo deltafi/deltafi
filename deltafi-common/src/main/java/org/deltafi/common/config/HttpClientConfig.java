@@ -15,26 +15,30 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.config;
+package org.deltafi.common.config;
 
-import io.minio.MinioClient;
-import org.deltafi.common.properties.MinioProperties;
-import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.common.storage.s3.minio.MinioObjectStorageService;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.ssl.SslContextFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
+import java.net.http.HttpClient;
+
+@Slf4j
 @Configuration
-public class MinioConfig {
+@Component
+public class HttpClientConfig {
     @Bean
-    public MinioClient minioClient(MinioProperties minioProperties) {
-        return MinioClient.builder()
-                .endpoint(minioProperties.getUrl())
-                .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey()).build();
-    }
-
-    @Bean
-    public ObjectStorageService minioObjectStorageService(MinioClient minioClient, MinioProperties minioProperties) {
-        return new MinioObjectStorageService(minioClient, minioProperties);
+    public HttpClient httpClient(ActionsProperties config) {
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+        if (config.getSsl() != null) {
+            try {
+                httpClientBuilder.sslContext(SslContextFactory.buildSslContext(config.getSsl()));
+            } catch (SslContextFactory.SslException e) {
+                log.warn("Unable to build SSL context. SSL will be disabled.", e);
+            }
+        }
+        return httpClientBuilder.build();
     }
 }

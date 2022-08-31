@@ -6,21 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.97.1
 
 ### Added
+- Statsd aggregation layer added to Graphite stack
+- Custom Statsd reporter for delta metrics added to the common library and used in ingress and action-kit metrics
 - Added `DomainActions` that provide a global validation and metadata extraction path for domains
 
 ### Changed
+- Ingress converted to a Spring Boot app
+- Metric reported to Graphite are now delta metrics, instead of monotonically increasing
+- Flow metrics in Graphite begin with `stats_counts.` prefix
+- Micrometer metrics dependency removed.  Metrics are now based on Dropwizard metrics
+- All system Grafana dashboards are moved to a `DeltaFi` folder
 
 ### Deprecated
+- Quarkus is no longer in use or supported in the DeltaFi monolith.
 
 ### Removed
+- Liveness probes removed from deltafi-core-actions, since it is no longer a web application and exposes no monitoring endpoints
 
 ### Fixed
+- Resolution loss and dropped initial metrics issues are resolved in dashboards
+- Bitrate gauges on dashboards no longer flatline periodically
+- Metric summaries are now accruate at large time scales
+- Metrics reported from multiple replicas will now be aggregated correctly
 
 ### Tech-Debt/Refactor
+- All dashboards updated for delta metrics
 
 ### Security
 
 ### Upgrade and Migration
+- Legacy flow/action metrics will no longer appear in Grafana dashboards.  On update, only the new delta metrics will be displayed on dashboards.
 
 ## [0.97.0] - 2022-08-29
 

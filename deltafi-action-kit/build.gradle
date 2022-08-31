@@ -15,25 +15,13 @@ license {
 dependencies {
     api project(':deltafi-common')
 
-    api "redis.clients:jedis:${jedisVersion}"
-    api "io.minio:minio:${minioVersion}"
-
-    api 'io.dropwizard.metrics:metrics-core:4.2.11'
-
-    api 'net.logstash.logback:logstash-logback-encoder:7.2'
-    api 'ch.qos.logback:logback-classic:1.2.11'
-
     api "org.springframework.boot:spring-boot-starter:${springBootVersion}"
     api 'org.springframework.cloud:spring-cloud-starter-config:3.1.3'
-
-    api "com.netflix.graphql.dgs:graphql-dgs-client:${dgsVersion}"
-    api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
 
     api 'javax.validation:validation-api:2.0.1.Final'
     api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3'
 
     api 'com.fasterxml.jackson.core:jackson-annotations:2.13.3'
-    api 'javax.ws.rs:javax.ws.rs-api:2.1.1'
     api 'org.jetbrains:annotations:23.0.0'
 
     implementation "com.graphql-java:graphql-java:${graphqlJavaVersion}"

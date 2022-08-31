@@ -23,11 +23,11 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.common.metrics.Metric;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.config.ActionsProperties;
+import org.deltafi.common.config.ActionsProperties;
 import org.deltafi.actionkit.service.ActionEventService;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.actionkit.config.DeltaFiSystemProperties;
-import org.deltafi.actionkit.service.MetricService;
+import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
 import org.deltafi.common.types.ActionType;
@@ -69,7 +69,7 @@ public class ActionRunner {
     BuildProperties buildProperties;
 
     @Autowired
-    MetricService metricService;
+    MetricRepository metricService;
 
     private ExecutorService executor;
 

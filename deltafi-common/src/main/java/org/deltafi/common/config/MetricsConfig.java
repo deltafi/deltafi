@@ -15,18 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
-package org.deltafi.actionkit.service;
+package org.deltafi.common.config;
 
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.properties.MetricsProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MetricService extends MetricRepository {
+public class MetricsConfig {
 
-    MetricService(MetricsProperties metricsProperties) {
-        super(metricsProperties);
+    @Bean
+    public MetricRepository metricRepository(MetricsProperties metricsProperties) {
+        return new MetricRepository(metricsProperties);
     }
 
 }
