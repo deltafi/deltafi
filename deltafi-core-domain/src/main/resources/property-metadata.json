@@ -122,6 +122,14 @@
         "editable": true
       },
       {
+        "key": "deltafi.checks.contentStorage.percentThreshold",
+        "description": "Threshold for content storage usage check.",
+        "defaultValue": "90",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
         "key": "deltafi.requeueSeconds",
         "description": "Time to wait for an action to finish processing a DeltaFile before requeuing the action.",
         "defaultValue": "30",
