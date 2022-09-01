@@ -15,6 +15,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+import { faker } from "@faker-js/faker";
 
 const generateData = () => {
   return {
@@ -24,17 +25,14 @@ const generateData = () => {
         resources: {
           cpu: {
             limit: 2000,
-            request: 380,
-            usage: 689,
+            usage: faker.datatype.number({ min: 500, max: 2000 }),
           },
           memory: {
             limit: 8061513728,
-            request: 2252341248,
-            usage: 4478722048,
+            usage: faker.datatype.number({ min: 4061513728, max: 6061513728 }),
           },
           disk: {
             limit: 101000000000,
-            request: 101000000000,
             usage: 14123817690,
           },
         },
@@ -302,13 +300,11 @@ const generateData = () => {
         resources: {
           cpu: {
             limit: 2000,
-            request: 1350,
-            usage: 281,
+            usage: faker.datatype.number({ min: 500, max: 2000 }),
           },
           memory: {
-            limit: 8061530112,
-            request: 2220883968,
-            usage: 3704500224,
+            limit: 8061513728,
+            usage: faker.datatype.number({ min: 4061513728, max: 6061513728 }),
           },
           disk: {
             limit: 100000000000,
@@ -468,13 +464,11 @@ const generateData = () => {
         resources: {
           cpu: {
             limit: 2000,
-            request: 450,
-            usage: 606,
+            usage: faker.datatype.number({ min: 500, max: 2000 }),
           },
           memory: {
-            limit: 8061530112,
-            request: 1209715200,
-            usage: 5630902272,
+            limit: 8061513728,
+            usage: faker.datatype.number({ min: 4061513728, max: 6061513728 }),
           },
           disk: {
             limit: 100000000000,

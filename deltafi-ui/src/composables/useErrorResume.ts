@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-import useGraphQL from './useGraphQL'
+import useGraphQL from "./useGraphQL";
 
 export default function useErrorResume() {
   const { response, queryGraphQL } = useGraphQL();
@@ -26,17 +26,17 @@ export default function useErrorResume() {
         __args: {
           dids: dids,
           removeSourceMetadata: removeSourceMetadata,
-          replaceSourceMetadata: replaceSourceMetadata
+          replaceSourceMetadata: replaceSourceMetadata,
         },
         did: true,
         success: true,
-        error: true
-      }
+        error: true,
+      },
     };
   };
 
-  const resume = async (dids: Array<string>,removeSourceMetadata: Array<string>,replaceSourceMetadata: Array<Object>) => {
-    await queryGraphQL(buildRetryQuery(dids,removeSourceMetadata,replaceSourceMetadata), "useErrorsResume", "mutation");
+  const resume = async (dids: Array<string>, removeSourceMetadata: Array<string>, replaceSourceMetadata: Array<Object>) => {
+    await queryGraphQL(buildRetryQuery(dids, removeSourceMetadata, replaceSourceMetadata), "errorsResume", "mutation");
     return Promise.resolve(response);
   };
 

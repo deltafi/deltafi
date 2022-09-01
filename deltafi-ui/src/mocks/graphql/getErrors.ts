@@ -38,8 +38,8 @@ const generateDeltaFiles = (count: number) => {
         },
       ],
       sourceInfo: {
-        filename: `smoke-${uuid}`,
-        flow: "smoke",
+        filename: `mock_smoke-${uuid}`,
+        flow: "mock_smoke",
       },
       errorAcknowledged: null,
       errorAcknowledgedReason: null,

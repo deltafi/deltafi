@@ -16,35 +16,28 @@
    limitations under the License.
 */
 
-const generateData = () => {
-  const data = {
-    deltaFiles: [
-      {
-        did: "27186720-723a-4f82-a5ab-2fff441b2c9b",
-        stage: "ERROR",
-        created: "2022-03-03T19:23:20.823Z",
-        modified: "2022-03-03T19:23:20.888Z",
-        sourceInfo: {
-          filename: "fakeData.txt",
-          flow: "mock.ingressFlow",
-        },
-      },
-      {
-        did: "39498989-723a-3333-a5ab-2fff441b2c9b",
-        stage: "ERROR",
-        created: "2022-03-03T19:23:20.823Z",
-        modified: "2022-03-03T19:23:20.888Z",
-        sourceInfo: {
-          filename: "fakeData.txt",
-          flow: "mock.ingressFlow",
-        },
-      },
-    ],
-  };
+import { faker } from "@faker-js/faker";
+faker.seed(123);
 
-  return data;
+const generateData = (count: number) => {
+  return Array.from(Array(count)).map(() => {
+    const uuid = faker.datatype.uuid();
+    const date = new Date();
+    return {
+      did: faker.datatype.uuid(),
+      stage: "ERROR",
+      created: "2022-03-03T19:23:20.823Z",
+      modified: "2022-03-03T19:23:20.888Z",
+      sourceInfo: {
+        filename: faker.system.commonFileName("txt"),
+        flow: "mock.ingressFlow",
+      },
+    };
+  });
 };
 
 export default {
-  deltaFiles: generateData(),
+  deltaFiles: {
+    deltaFiles: generateData(Math.floor(Math.random() * 100)),
+  },
 };
