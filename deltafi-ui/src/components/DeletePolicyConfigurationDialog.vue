@@ -170,16 +170,16 @@ const deletePolicyConfigurationMap = new Map([
   ["maxPercent", { header: "Max Percent", placeholder: "A number between 0 and 100", type: "number", min: 0, max: 100, disabled: viewDeletePolicy }],
 ]);
 
-const selectedDeleteId = ref(_.isEmpty(_.get(rowdata, "id")) ? null : rowdata["id"]);
+const selectedDeleteId = ref(_.get(rowdata, "id", null));
 const selectedDeleteflow = ref(_.isEmpty(_.get(rowdata, "flow")) || _.isEqual(_.get(rowdata, "flow"), "All") ? null : rowdata["flow"]);
-const selectedDeleteType = ref(_.isEmpty(_.get(rowdata, "__typename")) ? null : rowdata["__typename"]);
-const selectedLockedBoolean = ref(_.isEmpty(_.get(rowdata, "id")) ? false : rowdata["locked"]);
-const selectedEnabledBoolean = ref(_.isEmpty(_.get(rowdata, "id")) ? false : rowdata["enabled"]);
-const selectedAfterCreate = ref(_.isEmpty(_.get(rowdata, "afterCreate")) ? null : rowdata["afterCreate"]);
-const selectedAfterComplete = ref(_.isEmpty(_.get(rowdata, "afterComplete")) ? null : rowdata["afterComplete"]);
-const selectedMinBytes = ref(!_.isEmpty(_.get(rowdata, "minBytes")) ? null : rowdata["minBytes"]);
-const selectedDeleteMetadata = ref(_.isEmpty(_.get(rowdata, "id")) ? false : rowdata["deleteMetadata"]);
-const selectedMaxPercent = ref(!_.isEmpty(_.get(rowdata, "maxPercent")) ? null : rowdata["maxPercent"]);
+const selectedDeleteType = ref(_.get(rowdata, "__typename", null));
+const selectedLockedBoolean = ref(_.get(rowdata, "locked", false));
+const selectedEnabledBoolean = ref(_.get(rowdata, "enabled", false));
+const selectedAfterCreate = ref(_.get(rowdata, "afterCreate", null));
+const selectedAfterComplete = ref(_.get(rowdata, "afterComplete", null));
+const selectedMinBytes = ref(_.get(rowdata, "minBytes", null));
+const selectedDeleteMetadata = ref(_.get(rowdata, "deleteMetadata", false));
+const selectedMaxPercent = ref(_.get(rowdata, "maxPercent", null));
 
 onMounted(async () => {
   await fetchIngressFlows();

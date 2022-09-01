@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Errors summary views (#202)
 - Fixed bug with Parent/Child DeltaFiles not refreshing on refresh/replay (#214)
 - Have mocks reload data on being called (#222)
+- Adding a new timeDeletePolicy throws a graphql error (#223)
 
 ## [0.97.0]
 
