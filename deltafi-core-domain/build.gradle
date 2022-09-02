@@ -1,7 +1,7 @@
 plugins {
 	id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 	id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
-	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
 	id 'org.springframework.boot' version "${springBootVersion}"
 	id "com.palantir.docker" version "${palantirDockerVersion}"
 }
@@ -115,8 +115,6 @@ dependencies {
 
 	implementation project(':deltafi-common')
 
-	implementation "javax.inject:javax.inject:1"
-
 	implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
 	implementation "org.springframework.boot:spring-boot-starter-aop"
 	implementation "org.springframework.retry:spring-retry"
@@ -126,7 +124,7 @@ dependencies {
 
 	implementation "com.networknt:json-schema-validator:1.0.72"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
-	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter:${dgsVersion}"
+	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter"
 	implementation "org.springframework.boot:spring-boot-starter-web"
 
 	implementation "net.logstash.logback:logstash-logback-encoder:7.2"
@@ -136,7 +134,6 @@ dependencies {
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.awaitility:awaitility:4.2.0'
-	testImplementation 'org.hamcrest:hamcrest:2.2'
 	testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 	testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
 	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
