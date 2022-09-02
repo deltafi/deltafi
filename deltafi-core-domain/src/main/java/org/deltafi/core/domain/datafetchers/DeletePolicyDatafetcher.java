@@ -21,10 +21,12 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
 import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
 import org.deltafi.core.domain.generated.types.Result;
+import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
 import org.deltafi.core.domain.services.DeletePolicyService;
+import org.deltafi.core.domain.types.DeletePolicy;
 
 import java.util.Collection;
 
@@ -54,4 +56,13 @@ public class DeletePolicyDatafetcher {
         return deletePolicyService.enablePolicy(id, enabled);
     }
 
+    @DgsMutation
+    public Result updateDiskSpaceDeletePolicy(DiskSpaceDeletePolicyInput policyUpdate) {
+        return deletePolicyService.update(policyUpdate);
+    }
+
+    @DgsMutation
+    public Result updateTimedDeletePolicy(TimedDeletePolicyInput policyUpdate) {
+        return deletePolicyService.update(policyUpdate);
+    }
 }

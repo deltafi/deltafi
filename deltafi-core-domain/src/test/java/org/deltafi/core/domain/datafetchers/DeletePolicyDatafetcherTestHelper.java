@@ -27,6 +27,7 @@ import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
 import org.deltafi.core.domain.types.DeletePolicy;
 
+import java.util.Collections;
 import java.util.List;
 
 public class DeletePolicyDatafetcherTestHelper {
@@ -37,7 +38,7 @@ public class DeletePolicyDatafetcherTestHelper {
 
     private static final List<DiskSpaceDeletePolicyInput> DISK_POLICY_LIST = List.of(
             DiskSpaceDeletePolicyInput.newBuilder()
-                    .id(DISK_SPACE_PERCENT_POLICY)
+                    .name(DISK_SPACE_PERCENT_POLICY)
                     .enabled(true)
                     .locked(false)
                     .maxPercent(99)
@@ -45,13 +46,13 @@ public class DeletePolicyDatafetcherTestHelper {
 
     private static final List<TimedDeletePolicyInput> TIMED_POLICY_LIST = List.of(
             TimedDeletePolicyInput.newBuilder()
-                    .id(AFTER_COMPLETE_LOCKED_POLICY)
+                    .name(AFTER_COMPLETE_LOCKED_POLICY)
                     .enabled(true)
                     .locked(true)
                     .afterComplete("PT2S")
                     .build(),
             TimedDeletePolicyInput.newBuilder()
-                    .id(OFFLINE_POLICY)
+                    .name(OFFLINE_POLICY)
                     .flow("bogus")
                     .enabled(false)
                     .locked(false)
@@ -61,6 +62,7 @@ public class DeletePolicyDatafetcherTestHelper {
 
     private static final GetDeletePoliciesProjectionRoot projection = new GetDeletePoliciesProjectionRoot()
             .id()
+            .name()
             .enabled()
             .locked()
             .flow()
@@ -89,11 +91,20 @@ public class DeletePolicyDatafetcherTestHelper {
                 policiesListType);
     }
 
+    static public Result loadOneDeletePolicy(DgsQueryExecutor dgsQueryExecutor) {
+        return executeLoad(dgsQueryExecutor, true, DISK_POLICY_LIST, Collections.emptyList());
+    }
+
+    static public Result addOnePolicy(DgsQueryExecutor dgsQueryExecutor) {
+        return executeLoad(dgsQueryExecutor, false, DISK_POLICY_LIST, Collections.emptyList());
+    }
+
     static public Result replaceAllDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
-        return executeLoad(dgsQueryExecutor, DISK_POLICY_LIST, TIMED_POLICY_LIST);
+        return executeLoad(dgsQueryExecutor, true, DISK_POLICY_LIST, TIMED_POLICY_LIST);
     }
 
     static private Result executeLoad(DgsQueryExecutor dgsQueryExecutor,
+                                      boolean replace,
                                       List<DiskSpaceDeletePolicyInput> diskPolicies,
                                       List<TimedDeletePolicyInput> timedPolicies) {
 
@@ -103,7 +114,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 .build();
 
         LoadDeletePoliciesGraphQLQuery query = LoadDeletePoliciesGraphQLQuery.newRequest()
-                .replaceAll(true)
+                .replaceAll(replace)
                 .policies(input)
                 .build();
 
@@ -140,6 +151,42 @@ public class DeletePolicyDatafetcherTestHelper {
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(), Boolean.class);
+    }
+
+    static public Result updateDiskSpaceDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
+                                                     DiskSpaceDeletePolicyInput input) {
+        UpdateDiskSpaceDeletePolicyGraphQLQuery query = UpdateDiskSpaceDeletePolicyGraphQLQuery.newRequest()
+                .policyUpdate(input)
+                .build();
+
+        UpdateDiskSpaceDeletePolicyProjectionRoot projection = new UpdateDiskSpaceDeletePolicyProjectionRoot()
+                .success()
+                .errors();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Result.class);
+    }
+
+    static public Result updateTimedDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
+                                                 TimedDeletePolicyInput input) {
+        UpdateTimedDeletePolicyGraphQLQuery query = UpdateTimedDeletePolicyGraphQLQuery.newRequest()
+                .policyUpdate(input)
+                .build();
+
+        UpdateTimedDeletePolicyProjectionRoot projection = new UpdateTimedDeletePolicyProjectionRoot()
+                .success()
+                .errors();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Result.class);
     }
 
 }

@@ -17,13 +17,9 @@
  */
 package org.deltafi.core.domain.repo;
 
-import org.deltafi.core.domain.types.DeletePolicy;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
-
-@Repository
-public interface DeletePolicyRepo extends MongoRepository<DeletePolicy, String>, DeletePolicyRepoCustom {
-    List<DeletePolicy> findByEnabledIsTrue();
+public interface DeletePolicyRepoCustom {
+    /**
+     * Ensure all indices are created.
+     */
+    void ensureAllIndices();
 }

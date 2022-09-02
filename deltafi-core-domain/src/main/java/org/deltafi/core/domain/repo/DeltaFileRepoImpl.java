@@ -18,7 +18,6 @@
 package org.deltafi.core.domain.repo;
 
 import com.google.common.collect.Lists;
-import com.mongodb.MongoException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -39,8 +38,6 @@ import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.mongodb.util.MongoDbErrorCodes;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;
@@ -147,7 +144,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         IndexOperations idxOps = mongoTemplate.indexOps(DeltaFile.class);
         List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
 
-        INDICES.forEach((indexName, indexDef) -> updateIndices(idxOps, indexName, indexDef, existingIndexes));
+        INDICES.forEach((indexName, indexDef) -> IndexUtils.updateIndices(idxOps, indexName, indexDef, existingIndexes));
 
         Set<String> expected = new HashSet<>(INDICES.keySet());
         expected.add("_id_");
@@ -569,28 +566,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return requeueTime.minusSeconds(requeueSeconds);
     }
 
-    private void updateIndices(IndexOperations idxOps, String indexName, Index index, List<IndexInfo> existingIndexes) {
-        try {
-            log.debug("Ensure index {}", indexName);
-            idxOps.ensureIndex(index);
-        } catch (UncategorizedMongoDbException ex) {
-            if ( ex.getCause() instanceof MongoException && MongoDbErrorCodes.isDataIntegrityViolationCode(((MongoException) ex.getCause()).getCode()) && indexExists(indexName, existingIndexes)) {
-                log.info("An old version of index {} exists, attempting to recreate it", indexName);
-                recreateIndex(idxOps, indexName, index);
-            } else {
-                log.error("Failed to ensure index: {}", index, ex);
-            }
-        }
-    }
-
-    private void recreateIndex(IndexOperations idxOps, String indexName, Index index) {
-        try {
-            idxOps.dropIndex(indexName);
-            idxOps.ensureIndex(index);
-        } catch (UncategorizedMongoDbException ex) {
-            log.error("Failed to recreate index: {}", index, ex);
-        }
-    }
 
     private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndicies) {
         if (!knownIndicies.contains(existing.getName())) {
@@ -605,11 +580,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         } catch (UncategorizedMongoDbException ex) {
             log.error("Failed to remove unknown index {}", indexName, ex);
         }
-    }
-
-    private boolean indexExists(String name, List<IndexInfo> existingIndexes) {
-        return existingIndexes.stream()
-                .anyMatch(indexInfo -> ObjectUtils.nullSafeEquals(name, indexInfo.getName()));
     }
 
     @Override

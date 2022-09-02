@@ -36,6 +36,10 @@ public class DeletePolicyValidator {
             errors.add("id is missing");
         }
 
+        if (StringUtils.isBlank(policy.getName())) {
+            errors.add("name is missing");
+        }
+
         if ((policy.getFlow() != null) && StringUtils.isBlank(policy.getFlow())) {
             errors.add("flow is invalid");
         }
@@ -68,7 +72,7 @@ public class DeletePolicyValidator {
         long minBytes = policy.getMinBytes() != null ? policy.getMinBytes() : 0;
 
         if (errors.isEmpty() && ((minBytes == 0 && afterCreate == null && afterComplete == null) || (afterCreate != null && afterComplete != null))) {
-            errors.add("Timed delete policy " + policy.getId() + " must specify exactly one of afterCreate or afterComplete and/or minBytes");
+            errors.add("Timed delete policy " + policy.getName() + " must specify exactly one of afterCreate or afterComplete and/or minBytes");
         }
         return errors;
     }

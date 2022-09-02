@@ -31,10 +31,11 @@ class DeletePolicyValidatorTest {
     private static final int MAX_PERCENT = 80;
     private static final Long MIN_BYTES = new Long(9999);
     private static final String POLICY_ID = "policyId";
+    private static final String POLICY_NAME = "policyName";
     private static final String FLOW = "flow";
     private static final String GOOD_DURATION = "PT10M";
     private static final String BAD_DURATION = "GARBAGE";
-    private static final String ERROR_MESSAGE = "Timed delete policy " + POLICY_ID
+    private static final String ERROR_MESSAGE = "Timed delete policy " + POLICY_NAME
             + " must specify exactly one of afterCreate or afterComplete and/or minBytes";
 
     @Test
@@ -49,13 +50,17 @@ class DeletePolicyValidatorTest {
     void testInvalidDiskSpaceDeletePolicy() {
         DiskSpaceDeletePolicy policy = makeDiskSpaceDeletePolicy(false);
         policy.setId(null);
+        policy.setName(null);
         policy.setFlow("");
         policy.setMaxPercent(-1);
 
         List<String> errors = DeletePolicyValidator.validate(policy);
-        assertEquals(3, errors.size());
-        assertTrue(errors.containsAll(
-                List.of("id is missing", "flow is invalid", "maxPercent is invalid")));
+        assertEquals(4, errors.size());
+        assertTrue(errors.containsAll(List.of(
+                "id is missing",
+                "name is missing",
+                "flow is invalid",
+                "maxPercent is invalid")));
     }
 
     @Test
@@ -82,13 +87,15 @@ class DeletePolicyValidatorTest {
     void testInvalidTimedDeletePolicy() {
         TimedDeletePolicy policy = makeAfterCreate(false);
         policy.setId(null);
+        policy.setName(null);
         policy.setFlow("");
         policy.setAfterCreate(BAD_DURATION);
 
         List<String> errors = DeletePolicyValidator.validate(policy);
-        assertEquals(3, errors.size());
+        assertEquals(4, errors.size());
         assertTrue(errors.containsAll(List.of(
                 "id is missing",
+                "name is missing",
                 "flow is invalid",
                 "Unable to parse duration for afterCreate")));
     }
@@ -114,6 +121,7 @@ class DeletePolicyValidatorTest {
     private DiskSpaceDeletePolicy makeDiskSpaceDeletePolicy(boolean withOptional) {
         DiskSpaceDeletePolicy policy = new DiskSpaceDeletePolicy();
         policy.setId(POLICY_ID);
+        policy.setName(POLICY_NAME);
         policy.setMaxPercent(MAX_PERCENT);
         if (withOptional) {
             policy.setFlow(FLOW);
@@ -132,6 +140,7 @@ class DeletePolicyValidatorTest {
     private TimedDeletePolicy makeTimedDeletePolicy(boolean afterCreate, boolean withOptional) {
         TimedDeletePolicy policy = new TimedDeletePolicy();
         policy.setId(POLICY_ID);
+        policy.setName(POLICY_NAME);
         if (afterCreate) {
             policy.setAfterCreate(GOOD_DURATION);
         } else {

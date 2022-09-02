@@ -21,17 +21,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.types.DeletePolicy;
-import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.domain.types.TimedDeletePolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
 import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
 import org.deltafi.core.domain.repo.DeletePolicyRepo;
+import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
 import org.deltafi.core.domain.validation.DeletePolicyValidator;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 
 @Service
@@ -41,6 +44,11 @@ public class DeletePolicyService {
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final DeletePolicyRepo deletePolicyRepo;
+
+    @PostConstruct
+    public void indexCheck() {
+        deletePolicyRepo.ensureAllIndices();
+    }
 
     /**
      * Updates the enabled status of delete policy.
@@ -104,10 +112,52 @@ public class DeletePolicyService {
             if (replaceAll) {
                 removeAll();
             }
-            deletePolicyRepo.saveAll(policies);
-            return new Result(true, List.of());
+            try {
+                deletePolicyRepo.saveAll(policies);
+                return new Result(true, List.of());
+            } catch (DuplicateKeyException e) {
+                errors.add("duplicate policy name");
+            }
+        }
+        return new Result(false, errors);
+    }
+
+    /**
+     * Set new disk space delete properties for an existing policy.
+     *
+     * @param policyUpdate The new policy properties
+     * @return Result
+     */
+    public Result update(DiskSpaceDeletePolicyInput policyUpdate) {
+        return update(convert(policyUpdate));
+    }
+
+    /**
+     * Set new timed delete properties for an existing policy.
+     *
+     * @param policyUpdate The new policy properties
+     * @return Result
+     */
+    public Result update(TimedDeletePolicyInput policyUpdate) {
+        return update(convert(policyUpdate));
+    }
+
+    private Result update(DeletePolicy policy) {
+        if (StringUtils.isBlank(policy.getId())) {
+            return new Result(false, List.of("id is missing"));
+        } else if (get(policy.getId()).isEmpty()) {
+            return new Result(false, List.of("policy not found"));
         }
 
+        List<String> errors = validate(List.of(policy));
+        if (errors.isEmpty()) {
+            try {
+                deletePolicyRepo.save(policy);
+                return new Result(true, List.of());
+            } catch (DuplicateKeyException e) {
+                errors.add("duplicate policy name");
+            }
+        }
         return new Result(false, errors);
     }
 
@@ -145,6 +195,9 @@ public class DeletePolicyService {
         List<String> errors = new ArrayList<>();
         Set<String> ids = new HashSet<>();
         policies.stream().forEach(policy -> {
+            if (policy.getId() == null) {
+                policy.setId(UUID.randomUUID().toString());
+            }
             errors.addAll(DeletePolicyValidator.validate(policy));
             String id = policy.getId();
             if (ids.contains(id)) {

@@ -18,8 +18,8 @@
 package org.deltafi.core.domain.delete;
 
 import lombok.Getter;
-import org.deltafi.core.domain.types.TimedDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -33,7 +33,7 @@ public class TimedDelete extends DeletePolicyWorker {
     private final boolean deleteMetadata;
 
     public TimedDelete(int batchSize, DeltaFilesService deltaFilesService, TimedDeletePolicy policy) {
-        super(deltaFilesService, policy.getId(), batchSize);
+        super(deltaFilesService, policy.getName(), batchSize);
 
         afterCreate = policy.getAfterCreate() != null ? Duration.parse(policy.getAfterCreate()) : null;
         afterComplete = policy.getAfterComplete() != null ? Duration.parse(policy.getAfterComplete()) : null;

@@ -41,6 +41,10 @@ public interface DeletePolicy {
 
   void setId(String id);
 
+  String getName();
+
+  void setName(String name);
+
   boolean getEnabled();
 
   void setEnabled(boolean enabled);

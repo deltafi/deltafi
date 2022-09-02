@@ -37,15 +37,6 @@ import org.deltafi.core.config.server.repo.StateHolderRepositoryInMemoryImpl;
 import org.deltafi.core.config.server.service.PropertyMetadataLoader;
 import org.deltafi.core.config.server.service.PropertyService;
 import org.deltafi.core.config.server.service.StateHolderService;
-import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.domain.types.DomainActionSchema;
-import org.deltafi.core.domain.types.EgressActionSchema;
-import org.deltafi.core.domain.types.EnrichActionSchema;
-import org.deltafi.core.domain.types.FormatActionSchema;
-import org.deltafi.core.domain.types.LoadActionSchema;
-import org.deltafi.core.domain.types.TimedDeletePolicy;
-import org.deltafi.core.domain.types.TransformActionSchema;
-import org.deltafi.core.domain.types.ValidateActionSchema;
 import org.deltafi.core.domain.configuration.EgressActionConfiguration;
 import org.deltafi.core.domain.configuration.FormatActionConfiguration;
 import org.deltafi.core.domain.configuration.LoadActionConfiguration;
@@ -65,6 +56,7 @@ import org.deltafi.core.domain.plugin.PluginRepository;
 import org.deltafi.core.domain.repo.*;
 import org.deltafi.core.domain.services.*;
 import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.DomainActionSchema;
 import org.deltafi.core.domain.types.EgressActionSchema;
 import org.deltafi.core.domain.types.EgressFlowPlanInput;
 import org.deltafi.core.domain.types.EnrichActionSchema;
@@ -354,19 +346,163 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Test
+	void testDuplicatePolicyName() {
+		Result result = replaceAllDeletePolicies(dgsQueryExecutor);
+		assertTrue(result.getSuccess());
+		assertTrue(result.getErrors().isEmpty());
+		assertEquals(3, deletePolicyRepo.count());
+
+		Result duplicate = addOnePolicy(dgsQueryExecutor);
+		assertFalse(duplicate.getSuccess());
+		assertTrue(duplicate.getErrors().contains("duplicate policy name"));
+	}
+
+	@Test
 	void testRemoveDeletePolicy() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
 		assertEquals(3, deletePolicyRepo.count());
-		assertTrue(removeDeletePolicy(dgsQueryExecutor, AFTER_COMPLETE_LOCKED_POLICY));
+		String id = getIdByPolicyName(AFTER_COMPLETE_LOCKED_POLICY);
+		assertTrue(removeDeletePolicy(dgsQueryExecutor, id));
 		assertEquals(2, deletePolicyRepo.count());
-		assertFalse(removeDeletePolicy(dgsQueryExecutor, AFTER_COMPLETE_LOCKED_POLICY));
+		assertFalse(removeDeletePolicy(dgsQueryExecutor, id));
 	}
 
 	@Test
 	void testEnablePolicy() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
-		assertTrue(enablePolicy(dgsQueryExecutor, OFFLINE_POLICY, true));
-		assertFalse(enablePolicy(dgsQueryExecutor, AFTER_COMPLETE_LOCKED_POLICY, false));
+		assertTrue(enablePolicy(dgsQueryExecutor, getIdByPolicyName(OFFLINE_POLICY), true));
+		assertFalse(enablePolicy(dgsQueryExecutor, getIdByPolicyName(AFTER_COMPLETE_LOCKED_POLICY), false));
+	}
+
+	private String getIdByPolicyName(String name) {
+		for (DeletePolicy policy : getDeletePolicies(dgsQueryExecutor)) {
+			if (policy.getName().equals(name)) {
+				return policy.getId();
+			}
+		}
+		return null;
+	}
+
+	@Test
+	void testUpdateDiskSpaceDeletePolicy() {
+		loadOneDeletePolicy(dgsQueryExecutor);
+		assertEquals(1, deletePolicyRepo.count());
+		String idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
+
+		Result validationError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
+				DiskSpaceDeletePolicyInput.newBuilder()
+						.id(idToUpdate)
+						.name(DISK_SPACE_PERCENT_POLICY)
+						.maxPercent(-1)
+						.locked(false)
+						.enabled(false)
+						.build());
+		checkUpdateResult(true, validationError, "maxPercent is invalid", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
+
+		Result updateNameIsGood = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
+				DiskSpaceDeletePolicyInput.newBuilder()
+						.id(idToUpdate)
+						.name("newName")
+						.maxPercent(50)
+						.locked(false)
+						.enabled(false)
+						.build());
+		checkUpdateResult(true, updateNameIsGood, null, idToUpdate, "newName", false);
+
+		Result notFoundError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
+				DiskSpaceDeletePolicyInput.newBuilder()
+						.id("wrongId")
+						.name("blah")
+						.maxPercent(50)
+						.locked(false)
+						.enabled(true)
+						.build());
+		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, "newName", false);
+
+		Result missingId = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
+				DiskSpaceDeletePolicyInput.newBuilder()
+						.name("blah")
+						.maxPercent(50)
+						.locked(false)
+						.enabled(true)
+						.build());
+		checkUpdateResult(true, missingId, "id is missing", idToUpdate, "newName", false);
+
+		addOnePolicy(dgsQueryExecutor);
+		assertEquals(2, deletePolicyRepo.count());
+		String secondId = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
+		assertTrue(secondId != null);
+		assertFalse(secondId.equals(idToUpdate));
+
+		Result duplicateName = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
+				DiskSpaceDeletePolicyInput.newBuilder()
+						.id(idToUpdate)
+						.name(DISK_SPACE_PERCENT_POLICY)
+						.maxPercent(60)
+						.locked(false)
+						.enabled(false)
+						.build());
+		assertFalse(duplicateName.getSuccess());
+		assertTrue(duplicateName.getErrors().contains("duplicate policy name"));
+	}
+
+	@Test
+	void testUpdateTimedDeletePolicy() {
+		loadOneDeletePolicy(dgsQueryExecutor);
+		assertEquals(1, deletePolicyRepo.count());
+		String idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
+
+		Result validationError = updateTimedDeletePolicy(dgsQueryExecutor,
+				TimedDeletePolicyInput.newBuilder()
+						.id(idToUpdate)
+						.name("blah")
+						.afterComplete("ABC")
+						.locked(false)
+						.enabled(false)
+						.build());
+		checkUpdateResult(true, validationError, "Unable to parse duration for afterComplete", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
+
+		Result notFoundError = updateTimedDeletePolicy(dgsQueryExecutor,
+				TimedDeletePolicyInput.newBuilder()
+						.id("wrongId")
+						.name("blah")
+						.afterComplete("PT1H")
+						.locked(false)
+						.enabled(true)
+						.build());
+		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
+
+		Result goodUpdate = updateTimedDeletePolicy(dgsQueryExecutor,
+				TimedDeletePolicyInput.newBuilder()
+						.id(idToUpdate)
+						.name("newTypesAndName")
+						.afterComplete("PT1H")
+						.locked(false)
+						.enabled(false)
+						.build());
+		checkUpdateResult(false, goodUpdate, null, idToUpdate, "newTypesAndName", false);
+	}
+
+	private void checkUpdateResult(boolean disk, Result result, String error, String id, String name, boolean enabled) {
+		if (error == null) {
+			assertTrue(result.getSuccess());
+		} else {
+			assertFalse(result.getSuccess());
+			assertTrue(result.getErrors().contains(error));
+		}
+
+		assertEquals(1, deletePolicyRepo.count());
+		List<DeletePolicy> policyList = getDeletePolicies(dgsQueryExecutor);
+		assertEquals(1, policyList.size());
+		assertEquals(id, policyList.get(0).getId());
+		assertEquals(name, policyList.get(0).getName());
+		assertEquals(enabled, policyList.get(0).getEnabled());
+
+		if (disk) {
+			assertTrue(policyList.get(0) instanceof DiskSpaceDeletePolicy);
+		} else {
+			assertTrue(policyList.get(0) instanceof TimedDeletePolicy);
+		}
 	}
 
 	@Test
@@ -378,18 +514,20 @@ class DeltaFiCoreDomainApplicationTests {
 		boolean foundAfterCompleteLockedPolicy = false;
 		boolean foundOfflinePolicy = false;
 		boolean foundDiskSpacePercent = false;
+		Set<String> ids = new HashSet<>();
 
 		for (DeletePolicy policy : policyList) {
+			ids.add(policy.getId());
 			if (policy instanceof DiskSpaceDeletePolicy) {
 				DiskSpaceDeletePolicy diskPolicy = (DiskSpaceDeletePolicy) policy;
-				if (diskPolicy.getId().equals(DISK_SPACE_PERCENT_POLICY)) {
+				if (diskPolicy.getName().equals(DISK_SPACE_PERCENT_POLICY)) {
 					assertTrue(diskPolicy.getEnabled());
 					assertFalse(diskPolicy.getLocked());
 					foundDiskSpacePercent = true;
 				}
 			} else if (policy instanceof TimedDeletePolicy) {
 				TimedDeletePolicy timedPolicy = (TimedDeletePolicy) policy;
-				if (timedPolicy.getId().equals(AFTER_COMPLETE_LOCKED_POLICY)) {
+				if (timedPolicy.getName().equals(AFTER_COMPLETE_LOCKED_POLICY)) {
 					assertTrue(timedPolicy.getEnabled());
 					assertTrue(timedPolicy.getLocked());
 					assertEquals("PT2S", timedPolicy.getAfterComplete());
@@ -397,7 +535,7 @@ class DeltaFiCoreDomainApplicationTests {
 					assertNull(timedPolicy.getMinBytes());
 					foundAfterCompleteLockedPolicy = true;
 
-				} else if (timedPolicy.getId().equals(OFFLINE_POLICY)) {
+				} else if (timedPolicy.getName().equals(OFFLINE_POLICY)) {
 					assertFalse(timedPolicy.getEnabled());
 					assertFalse(timedPolicy.getLocked());
 					assertEquals("PT2S", timedPolicy.getAfterCreate());
@@ -411,6 +549,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertTrue(foundAfterCompleteLockedPolicy);
 		assertTrue(foundOfflinePolicy);
 		assertTrue(foundDiskSpacePercent);
+		assertEquals(3, ids.size());
 	}
 
 	@Test
@@ -419,9 +558,9 @@ class DeltaFiCoreDomainApplicationTests {
 		assertThat(deletePolicyRepo.count()).isEqualTo(3);
 		List<DeletePolicyWorker> policiesScheduled = deleteRunner.refreshPolicies();
 		assertThat(policiesScheduled.size()).isEqualTo(2); // only 2 of 3 are enabled
-		List<String> ids = List.of(policiesScheduled.get(0).getName(),
+		List<String> names = List.of(policiesScheduled.get(0).getName(),
 				policiesScheduled.get(1).getName());
-		assertTrue(ids.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_LOCKED_POLICY)));
+		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_LOCKED_POLICY)));
 	}
 
 	@Test

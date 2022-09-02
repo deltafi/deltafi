@@ -17,6 +17,7 @@ ARGS=($@)
 QUERY="query {
   getDeletePolicies {
     id
+    name
     __typename
     enabled
     locked

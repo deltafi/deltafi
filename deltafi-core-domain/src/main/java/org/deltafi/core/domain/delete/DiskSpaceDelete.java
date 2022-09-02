@@ -20,10 +20,10 @@ package org.deltafi.core.domain.delete;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.DeltaFile;
-import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.deltafi.core.domain.services.DiskSpaceService;
 import org.deltafi.core.domain.services.api.model.DiskMetrics;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
     private final DiskSpaceService diskSpaceService;
 
     public DiskSpaceDelete(int batchSize, DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DiskSpaceDeletePolicy policy) {
-        super(deltaFilesService, policy.getId(), batchSize);
+        super(deltaFilesService, policy.getName(), batchSize);
 
         this.diskSpaceService = diskSpaceService;
         this.maxPercent = policy.getMaxPercent();

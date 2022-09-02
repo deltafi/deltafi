@@ -17,13 +17,13 @@
  */
 package org.deltafi.core.domain.services;
 
-import org.deltafi.core.domain.types.DeletePolicy;
-import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
 import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
 import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
 import org.deltafi.core.domain.repo.DeletePolicyRepo;
+import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,7 +34,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -163,11 +164,13 @@ class DeletePolicyServiceTest {
                 .diskSpacePolicies(List.of(
                         DiskSpaceDeletePolicyInput.newBuilder()
                                 .id("disk1")
+                                .name("disk1")
                                 .maxPercent(90)
                                 .build()))
                 .timedPolicies(List.of(
                         TimedDeletePolicyInput.newBuilder()
                                 .id("timed1")
+                                .name("timed1")
                                 .afterComplete("PT50M")
                                 .build())).build();
         return input;
@@ -178,11 +181,13 @@ class DeletePolicyServiceTest {
                 .diskSpacePolicies(List.of(
                         DiskSpaceDeletePolicyInput.newBuilder()
                                 .id("disk1")
+                                .name("disk1")
                                 .maxPercent(-1)
                                 .build()))
                 .timedPolicies(List.of(
                         TimedDeletePolicyInput.newBuilder()
                                 .id("timed1")
+                                .name("timed1")
                                 .afterComplete("PT50M")
                                 .build())).build();
         return input;
