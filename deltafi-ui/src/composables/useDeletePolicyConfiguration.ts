@@ -25,6 +25,12 @@ export default function useDeletePolicyConfiguration() {
 
   const idSchema = () => {
     return {
+      type: ["string", "null"],
+    };
+  };
+
+  const nameSchema = () => {
+    return {
       type: "string",
     };
   };
@@ -60,11 +66,52 @@ export default function useDeletePolicyConfiguration() {
     };
   };
 
+  const anyOfSchema = () => {
+    return {
+      anyOf: [
+        {
+          properties: {
+            timedPolicies: {
+              type: "array",
+              minItems: 1,
+              uniqueItems: true,
+              items: {
+                $ref: "#/definitions/schemaTimedDeletePolicy",
+              },
+              errorMessage: {
+                minItems: "No Timed Delete Policies were uploaded",
+              },
+            },
+          },
+        },
+        {
+          properties: {
+            diskSpacePolicies: {
+              type: "array",
+              minItems: 1,
+              uniqueItems: true,
+              items: {
+                $ref: "#/definitions/schemaDiskSpaceDeletePolicy",
+              },
+              errorMessage: {
+                minItems: "No Disk Space Delete Policies were uploaded",
+              },
+            },
+          },
+        },
+      ],
+      errorMessage: {
+        anyOf: "Errors were found validating uploaded Delete Policies",
+      },
+    };
+  };
+
   const schemaTimedDeletePolicy = () => {
     return {
       type: "object",
       properties: {
         id: { $ref: "#/definitions/idSchema" },
+        name: { $ref: "#/definitions/nameSchema" },
         flow: { $ref: "#/definitions/flowSchema" },
         enabled: { $ref: "#/definitions/enabledSchema" },
         locked: { $ref: "#/definitions/lockedSchema" },
@@ -73,15 +120,16 @@ export default function useDeletePolicyConfiguration() {
         minBytes: { type: ["number", "null"] },
         deleteMetadata: { type: "boolean" },
       },
-      required: ["id"],
+      required: ["name"],
       additionalProperties: false,
       errorMessage: {
         properties: {
-          id: "${0/id} - id is a required field.",
-          enabled: "${0/id} - enabled must be true or false",
-          locked: "${0/id} - locked must be true or false",
-          afterCreate: "${0/id} - afterCreate needs to be in ISO 8601 notation.",
-          afterComplete: "${0/id} - afterComplete needs to be in ISO 8601 notation.",
+          id: "${0/name} - id is a required field.",
+          name: "name is a required field.",
+          enabled: "${0/name} - enabled must be true or false",
+          locked: "${0/name} - locked must be true or false",
+          afterCreate: "${0/name} - afterCreate needs to be in ISO 8601 notation.",
+          afterComplete: "${0/name} - afterComplete needs to be in ISO 8601 notation.",
         },
       },
     };
@@ -92,19 +140,20 @@ export default function useDeletePolicyConfiguration() {
       type: "object",
       properties: {
         id: { $ref: "#/definitions/idSchema" },
+        name: { $ref: "#/definitions/nameSchema" },
         flow: { $ref: "#/definitions/flowSchema" },
         enabled: { $ref: "#/definitions/enabledSchema" },
         locked: { $ref: "#/definitions/lockedSchema" },
         maxPercent: { $ref: "#/definitions/maxPercentSchema" },
       },
-      required: ["id"],
+      required: ["name"],
       additionalProperties: false,
       errorMessage: {
         properties: {
-          id: "${0/id} - id is a required field.",
-          enabled: "${0/id} - enabled must be true or false",
-          locked: "${0/id} - locked must be true or false",
-          maxPercent: "${0/id} - maxPercent must be a number between 0 and 100.",
+          name: "name is a required field.",
+          enabled: "${0/name} - enabled must be true or false",
+          locked: "${0/name} - locked must be true or false",
+          maxPercent: "${0/name} - maxPercent must be a number between 0 and 100.",
         },
       },
     };
@@ -124,40 +173,14 @@ export default function useDeletePolicyConfiguration() {
           },
         },
       },
-      {
-        anyOf: [
-          {
-            properties: {
-              timedPolicies: {
-                type: "array",
-                minItems: 1,
-                uniqueItems: true,
-                items: {
-                  $ref: "#/definitions/schemaTimedDeletePolicy",
-                },
-              },
-            },
-          },
-          {
-            properties: {
-              diskSpacePolicies: {
-                type: "array",
-                minItems: 1,
-                uniqueItems: true,
-                items: {
-                  $ref: "#/definitions/schemaDiskSpaceDeletePolicy",
-                },
-              },
-            },
-          },
-        ],
-      },
+      anyOfSchema(),
     ],
     definitions: {
       schemaTimedDeletePolicy: schemaTimedDeletePolicy(),
       schemaDiskSpaceDeletePolicy: schemaDiskSpaceDeletePolicy(),
       ISO8601Duration: ISO8601Duration(),
       idSchema: idSchema(),
+      nameSchema: nameSchema(),
       flowSchema: flowSchema(),
       enabledSchema: enabledSchema(),
       lockedSchema: lockedSchema(),
@@ -174,6 +197,7 @@ export default function useDeletePolicyConfiguration() {
       schemaDiskSpaceDeletePolicy: schemaDiskSpaceDeletePolicy(),
       ISO8601Duration: ISO8601Duration(),
       idSchema: idSchema(),
+      nameSchema: nameSchema(),
       flowSchema: flowSchema(),
       enabledSchema: enabledSchema(),
       lockedSchema: lockedSchema(),

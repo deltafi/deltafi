@@ -26,6 +26,7 @@ export default function useDeletePolicyQueryBuilder() {
     const query = {
       getDeletePolicies: {
         id: true,
+        name: true,
         flow: true,
         __typename: true,
         enabled: true,
@@ -49,11 +50,11 @@ export default function useDeletePolicyQueryBuilder() {
   };
 
   // Enable a delete policy
-  const enablePolicy = (policyName: string, enabledState: boolean) => {
+  const enablePolicy = (policyId: string, enabledState: boolean) => {
     const query = {
       enablePolicy: {
         __args: {
-          id: policyName,
+          id: policyId,
           enabled: enabledState,
         },
       },
@@ -62,11 +63,11 @@ export default function useDeletePolicyQueryBuilder() {
   };
 
   // Remove a delete policy
-  const removeDeletePolicy = (policyName: string) => {
+  const removeDeletePolicy = (policyId: string) => {
     const query = {
       removeDeletePolicy: {
         __args: {
-          id: policyName,
+          id: policyId,
         },
       },
     };

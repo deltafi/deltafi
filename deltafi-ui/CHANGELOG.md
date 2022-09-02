@@ -12,8 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Errors summary views (#202)
 - Fixed bug with Parent/Child DeltaFiles not refreshing on refresh/replay (#214)
 - Have mocks reload data on being called (#222)
-- Fixed big related to adding a new timeDeletePolicy (#223)
+- Fixed bug related to adding a new timeDeletePolicy (#223)
 - DID links now display only the first 8 digits of the DID. (#215)
+- Updated deletePolicy code and Schema to work with Id an Name fields (#224)
 
 ## [0.97.0]
 

@@ -29,7 +29,7 @@
         </div>
       </template>
     </ConfirmPopup>
-    <Button v-tooltip.top="`Remove Delete Policy`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmationPopup($event, rowData.id)" />
+    <Button v-tooltip.top="`Remove Delete Policy`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmationPopup($event, rowData.id, rowData.name)" />
   </span>
 </template>
 
@@ -56,7 +56,7 @@ const props = defineProps({
 
 const { rowDataProp: rowData } = reactive(props);
 
-const confirmationPopup = (event, policyName) => {
+const confirmationPopup = (event, policyId, policyName) => {
   confirm.require({
     target: event.currentTarget,
     message: `Remove ${policyName} Delete Policy?`,
@@ -65,14 +65,14 @@ const confirmationPopup = (event, policyName) => {
     icon: "pi pi-exclamation-triangle",
     accept: () => {
       notify.info("Removing Delete Policy", `Removing policy ${policyName}.`, 3000);
-      confirmedRemoveDeletePolicy(policyName);
+      confirmedRemoveDeletePolicy(policyId);
     },
     reject: () => {},
   });
 };
 
-const confirmedRemoveDeletePolicy = async (policyName) => {
-  await removeDeletePolicy(policyName);
+const confirmedRemoveDeletePolicy = async (policyId) => {
+  await removeDeletePolicy(policyId);
   emit("reloadDeletePolicies");
 };
 </script>

@@ -16,10 +16,14 @@
    limitations under the License.
 */
 
+import { faker } from "@faker-js/faker";
+faker.seed(321);
+
 const generateDeltaFiles = () => {
   return [
     {
-      id: "mockOneHourAfterComplete",
+      id: faker.datatype.uuid(),
+      name:  "mockOneHourAfterComplete",
       flow: null,
       __typename: "TimedDeletePolicy",
       enabled: true,
@@ -30,7 +34,8 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: "mockTwoHourAfterComplete",
+      id: faker.datatype.uuid(),
+      name: "mockTwoHourAfterComplete",
       flow: "passthrough",
       __typename: "TimedDeletePolicy",
       enabled: false,
@@ -41,7 +46,8 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: "mockThreeHourAfterComplete",
+      id: faker.datatype.uuid(),
+      name: "mockThreeHourAfterComplete",
       flow: null,
       __typename: "TimedDeletePolicy",
       enabled: true,
@@ -52,7 +58,8 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: "mockFourHourAfterComplete",
+      id: faker.datatype.uuid(),
+      name: "mockFourHourAfterComplete",
       flow: "smoke",
       __typename: "TimedDeletePolicy",
       enabled: false,
@@ -63,7 +70,8 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: "mockOver98PerCent",
+      id: faker.datatype.uuid(),
+      name: "mockOver98PerCent",
       flow: "passthrough",
       __typename: "DiskSpaceDeletePolicy",
       enabled: false,
@@ -71,7 +79,8 @@ const generateDeltaFiles = () => {
       maxPercent: 98,
     },
     {
-      id: "mockOver60PerCent",
+      id: faker.datatype.uuid(),
+      name: "mockOver60PerCent",
       flow: null,
       __typename: "DiskSpaceDeletePolicy",
       enabled: false,
@@ -79,7 +88,8 @@ const generateDeltaFiles = () => {
       maxPercent: 60,
     },
     {
-      id: "mockOver20PerCent",
+      id: faker.datatype.uuid(),
+      name: "mockOver20PerCent",
       flow: "smoke",
       __typename: "DiskSpaceDeletePolicy",
       enabled: true,

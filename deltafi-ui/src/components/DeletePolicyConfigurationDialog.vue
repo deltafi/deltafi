@@ -30,9 +30,9 @@
           </Message>
         </div>
         <dl>
-          <dt>{{ deletePolicyConfigurationMap.get("id").header }}</dt>
+          <dt>{{ deletePolicyConfigurationMap.get("name").header }}</dt>
           <dd>
-            <InputText v-model="selectedDeleteId" :placeholder="deletePolicyConfigurationMap.get('id').placeholder" :disabled="deletePolicyConfigurationMap.get('id').disabled" class="inputWidth" />
+            <InputText v-model="selectedDeleteName" :placeholder="deletePolicyConfigurationMap.get('name').placeholder" :disabled="deletePolicyConfigurationMap.get('name').disabled" class="inputWidth" />
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("flow").header }}</dt>
           <dd>
@@ -61,13 +61,13 @@
               <template v-if="_.isEmpty(selectedAfterComplete)">
                 <dt>{{ deletePolicyConfigurationMap.get("afterCreate").header }}</dt>
                 <dd>
-                  <InputText v-model="selectedAfterCreate" :placeholder="deletePolicyConfigurationMap.get('afterCreate').placeholder" :disabled="deletePolicyConfigurationMap.get('afterCreate').disabled" class="inputWidth" />
+                  <InputText v-model="selectedAfterCreate" :placeholder="deletePolicyConfigurationMap.get('afterCreate').placeholder" :disabled="deletePolicyConfigurationMap.get('afterCreate').disabled" class="inputWidth capitalizeText" />
                 </dd>
               </template>
               <template v-if="_.isEmpty(selectedAfterCreate)">
                 <dt>{{ deletePolicyConfigurationMap.get("afterComplete").header }}</dt>
                 <dd>
-                  <InputText v-model="selectedAfterComplete" :placeholder="deletePolicyConfigurationMap.get('afterComplete').placeholder" :disabled="deletePolicyConfigurationMap.get('afterComplete').disabled" class="inputWidth" />
+                  <InputText v-model="selectedAfterComplete" :placeholder="deletePolicyConfigurationMap.get('afterComplete').placeholder" :disabled="deletePolicyConfigurationMap.get('afterComplete').disabled" class="inputWidth capitalizeText" />
                 </dd>
               </template>
               <dt>{{ deletePolicyConfigurationMap.get("minBytes").header }}</dt>
@@ -158,7 +158,7 @@ const newDeletePolicyUpload = ref({});
 const errorsList = ref([]);
 
 const deletePolicyConfigurationMap = new Map([
-  ["id", { header: "Name", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy || editDeletePolicy }],
+  ["name", { header: "Name", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy }],
   ["__typename", { header: "Type", placeholder: "e.g. TimedDeletePolicy, DiskSpaceDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
   ["flow", { header: "Flow", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
   ["locked", { header: "Locked", type: "boolean", disabled: viewDeletePolicy }],
@@ -171,6 +171,7 @@ const deletePolicyConfigurationMap = new Map([
 ]);
 
 const selectedDeleteId = ref(_.get(rowdata, "id", null));
+const selectedDeleteName = ref(_.get(rowdata, "name", null));
 const selectedDeleteflow = ref(_.isEmpty(_.get(rowdata, "flow")) || _.isEqual(_.get(rowdata, "flow"), "All") ? null : rowdata["flow"]);
 const selectedDeleteType = ref(_.get(rowdata, "__typename", null));
 const selectedLockedBoolean = ref(_.get(rowdata, "locked", false));
@@ -192,6 +193,7 @@ const createNewPolicy = () => {
   newDeletePolicyUpload.value["diskSpacePolicies"] = [];
 
   newDeletePolicy["id"] = selectedDeleteId.value;
+  newDeletePolicy["name"] = selectedDeleteName.value;
   if (_.isEqual(selectedDeleteflow.value, "All")) {
     newDeletePolicy["flow"] = null;
   } else {
@@ -202,8 +204,8 @@ const createNewPolicy = () => {
   newDeletePolicy["enabled"] = selectedEnabledBoolean.value;
 
   if (_.isEqual(selectedDeleteType.value, "TimedDeletePolicy")) {
-    newDeletePolicy["afterCreate"] = selectedAfterCreate.value;
-    newDeletePolicy["afterComplete"] = selectedAfterComplete.value;
+    newDeletePolicy["afterCreate"] = selectedAfterCreate.value ? selectedAfterCreate.value.toUpperCase() : null;
+    newDeletePolicy["afterComplete"] = selectedAfterComplete.value ? selectedAfterComplete.value.toUpperCase() : null;
     newDeletePolicy["minBytes"] = selectedMinBytes.value;
     newDeletePolicy["deleteMetadata"] = selectedDeleteMetadata.value;
     newDeletePolicyUpload.value["timedPolicies"].push(newDeletePolicy);

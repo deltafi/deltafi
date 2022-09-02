@@ -29,7 +29,7 @@
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="deletePolicyToolTip" :model-value="checked" class="p-button-sm" @click="confirmationPopup($event, rowData.id, checked)" />
+    <InputSwitch v-tooltip.top="deletePolicyToolTip" :model-value="checked" class="p-button-sm" @click="confirmationPopup($event, rowData.id, rowData.name, checked)" />
   </span>
 </template>
 
@@ -63,7 +63,7 @@ const deletePolicyToolTip = computed(() => {
   return _.isEqual(checked.value, true) ? "Enabled" : "Disabled";
 });
 
-const confirmationPopup = (event, policyName, state) => {
+const confirmationPopup = (event, policyId, policyName, state) => {
   if (_.isEqual(state, true)) {
     confirm.require({
       target: event.currentTarget,
@@ -73,17 +73,17 @@ const confirmationPopup = (event, policyName, state) => {
       icon: "pi pi-exclamation-triangle",
       accept: () => {
         notify.info("Disabling Delete Policy", `Disabling policy ${policyName}.`, 3000);
-        toggleDeletePolicyState(policyName, !state);
+        toggleDeletePolicyState(policyId, !state);
       },
       reject: () => {},
     });
   } else {
-    toggleDeletePolicyState(policyName, !state);
+    toggleDeletePolicyState(policyId, !state);
   }
 };
 
-const toggleDeletePolicyState = async (policyName, newDeletePolicyState) => {
-  await enablePolicy(policyName, newDeletePolicyState);
+const toggleDeletePolicyState = async (policyId, newDeletePolicyState) => {
+  await enablePolicy(policyId, newDeletePolicyState);
   checked.value = newDeletePolicyState;
   emit("reloadDeletePolicies");
 };

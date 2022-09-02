@@ -36,13 +36,13 @@
           <InputText v-model="filters['global'].value" v-tooltip.left="'Keyword Search on Name and Flow'" placeholder="Keyword Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['id', 'flow']">
+      <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow']">
         <template #empty> No delete policies to display </template>
-        <Column field="id" header="Name" :sortable="true" :style="{ width: '40%' }">
+        <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
             <div class="justify-content-start">
               <DialogTemplate component-name="DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="50vw" :row-data-prop="data" view-delete-policy @reload-delete-policies="fetchDeletePolicies()">
-                <Button :label="data.id" class="p-button-link text-body" />
+                <Button :label="data.name" class="p-button-link text-body" />
               </DialogTemplate>
             </div>
           </template>
@@ -135,6 +135,10 @@ const formatExportPolicyData = () => {
   // Remove the __typename key from policies
   TimedDeletePolicyList.forEach((e, index) => (TimedDeletePolicyList[index] = _.omit(e, ["__typename"])));
   DiskSpaceDeletePolicyList.forEach((e, index) => (DiskSpaceDeletePolicyList[index] = _.omit(e, ["__typename"])));
+
+  // Remove the id key from policies
+  TimedDeletePolicyList.forEach((e, index) => (TimedDeletePolicyList[index] = _.omit(e, ["id"])));
+  DiskSpaceDeletePolicyList.forEach((e, index) => (DiskSpaceDeletePolicyList[index] = _.omit(e, ["id"])));
 
   let formattedDeletePolicies = {};
   formattedDeletePolicies["timedPolicies"] = TimedDeletePolicyList;
