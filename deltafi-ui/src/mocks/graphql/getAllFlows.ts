@@ -66,6 +66,18 @@ const getEnrichedData = () => {
           },
         },
       ],
+      domainActions: [
+        {
+          name: "stix2_1.Stix2_1DomainAction",
+          type: "org.deltafi.stix.actions.Stix2_1DomainAction",
+          requiresDomains: ["stix"],
+          parameters: {
+            domains: {
+              stixDomain: "stix domain value",
+            },
+          },
+        },
+      ],
       variables: [
         {
           name: "smoke-enrich-url",

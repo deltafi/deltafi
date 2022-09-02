@@ -87,7 +87,7 @@
                 </template>
               </div>
             </CollapsiblePanel>
-            <template v-if="index + 1 < Object.keys(flowActions).length">
+            <template v-if="index + 1 < Object.keys(flowActions).length && !_.isEmpty(Object.values(flowActions)[index + 1])">
               <div class="text-center pb-2">
                 <i class="fas fa-arrow-down fa-4x" />
               </div>
@@ -146,7 +146,7 @@ const props = defineProps({
 
 const { header, flowName, flowType, variables } = reactive(props);
 
-const actionsList = ["transformActions", "loadAction", "deleteActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
+const actionsList = ["transformActions", "loadAction", "deleteActions", "domainActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
 
 const refreshInterval = 5000; // 5 seconds
 const flowData = ref("");

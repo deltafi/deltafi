@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-import useGraphQL from './useGraphQL'
+import useGraphQL from "./useGraphQL";
 
 export default function useFlowQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
@@ -47,7 +47,7 @@ export default function useFlowQueryBuilder() {
               configName: true,
               errorType: true,
               message: true,
-            }
+            },
           },
           transformActions: {
             name: true,
@@ -60,7 +60,7 @@ export default function useFlowQueryBuilder() {
             type: true,
             parameters: true,
             apiVersion: true,
-          }
+          },
         },
         enrichFlows: {
           name: true,
@@ -71,7 +71,14 @@ export default function useFlowQueryBuilder() {
               configName: true,
               message: true,
               errorType: true,
-            }
+            },
+          },
+          domainActions: {
+            name: true,
+            type: true,
+            requiresDomains: true,
+            parameters: true,
+            apiVersion: true,
           },
           enrichActions: {
             name: true,
@@ -84,7 +91,7 @@ export default function useFlowQueryBuilder() {
             },
             parameters: true,
             apiVersion: true,
-          }
+          },
         },
         egressFlows: {
           name: true,
@@ -95,7 +102,7 @@ export default function useFlowQueryBuilder() {
               configName: true,
               errorType: true,
               message: true,
-            }
+            },
           },
           includeIngressFlows: true,
           excludeIngressFlows: true,
@@ -125,9 +132,9 @@ export default function useFlowQueryBuilder() {
             description: true,
             defaultValue: true,
             dataType: true,
-          }
-        }
-      }
+          },
+        },
+      },
     };
     return sendGraphQLQuery(query, "getFlowsGroupedByPlugin");
   };
@@ -151,7 +158,7 @@ export default function useFlowQueryBuilder() {
               configName: true,
               errorType: true,
               message: true,
-            }
+            },
           },
           transformActions: {
             name: true,
@@ -171,7 +178,7 @@ export default function useFlowQueryBuilder() {
             description: true,
             defaultValue: true,
             dataType: true,
-          }
+          },
         },
         enrich: {
           name: true,
@@ -187,7 +194,14 @@ export default function useFlowQueryBuilder() {
               configName: true,
               message: true,
               errorType: true,
-            }
+            },
+          },
+          domainActions: {
+            name: true,
+            type: true,
+            requiresDomains: true,
+            parameters: true,
+            apiVersion: true,
           },
           enrichActions: {
             name: true,
@@ -200,7 +214,7 @@ export default function useFlowQueryBuilder() {
             },
             parameters: true,
             apiVersion: true,
-          }
+          },
         },
         egress: {
           name: true,
@@ -216,7 +230,7 @@ export default function useFlowQueryBuilder() {
               configName: true,
               errorType: true,
               message: true,
-            }
+            },
           },
           includeIngressFlows: true,
           excludeIngressFlows: true,
@@ -246,10 +260,9 @@ export default function useFlowQueryBuilder() {
             description: true,
             defaultValue: true,
             dataType: true,
-          }
-        }
-      }
-
+          },
+        },
+      },
     };
     return sendGraphQLQuery(query, "getAllFlows");
   };
@@ -259,7 +272,7 @@ export default function useFlowQueryBuilder() {
     const query = {
       getIngressFlow: {
         __args: {
-          flowName: flowName
+          flowName: flowName,
         },
         name: true,
         description: true,
@@ -275,7 +288,7 @@ export default function useFlowQueryBuilder() {
             configName: true,
             message: true,
             errorType: true,
-          }
+          },
         },
         transformActions: {
           name: true,
@@ -295,18 +308,18 @@ export default function useFlowQueryBuilder() {
           description: true,
           defaultValue: true,
           required: true,
-        }
-      }
+        },
+      },
     };
     return sendGraphQLQuery(query, "getIngressFlowByName");
-  }
+  };
 
   // Get an Enrich Flow - (if you want to grab a single flow, return type is EnrichFlow)
   const getEnrichFlowByName = (flowName: string) => {
     const query = {
       getEnrichFlow: {
         __args: {
-          flowName: flowName
+          flowName: flowName,
         },
         name: true,
         description: true,
@@ -321,7 +334,14 @@ export default function useFlowQueryBuilder() {
             configName: true,
             message: true,
             errorType: true,
-          }
+          },
+        },
+        domainActions: {
+          name: true,
+          type: true,
+          requiresDomains: true,
+          parameters: true,
+          apiVersion: true,
         },
         enrichActions: {
           name: true,
@@ -334,8 +354,8 @@ export default function useFlowQueryBuilder() {
           },
           parameters: true,
           apiVersion: true,
-        }
-      }
+        },
+      },
     };
     return sendGraphQLQuery(query, "getEnrichFlowByName");
   };
@@ -345,7 +365,7 @@ export default function useFlowQueryBuilder() {
     const query = {
       getEgressFlow: {
         __args: {
-          flowName: flowName
+          flowName: flowName,
         },
         name: true,
         description: true,
@@ -360,7 +380,7 @@ export default function useFlowQueryBuilder() {
             configName: true,
             errorType: true,
             message: true,
-          }
+          },
         },
         includeIngressFlows: true,
         excludeIngressFlows: true,
@@ -391,11 +411,11 @@ export default function useFlowQueryBuilder() {
           description: true,
           defaultValue: true,
           required: true,
-        }
-      }
+        },
+      },
     };
     return sendGraphQLQuery(query, "getEgressFlowByName");
-  }
+  };
 
   // Validate an ingress flow - return type is IngressFlow
   const validateIngressFlow = (flowName: string) => {
@@ -410,12 +430,12 @@ export default function useFlowQueryBuilder() {
             configName: true,
             errorType: true,
             message: true,
-          }
-        }
-      }
+          },
+        },
+      },
     };
     return sendGraphQLQuery(query, "validateIngressFlow");
-  }
+  };
 
   // Validate an Enrich flow - return type is EnrichFlow
   const validateEnrichFlow = (flowName: string) => {
@@ -430,9 +450,9 @@ export default function useFlowQueryBuilder() {
             configName: true,
             errorType: true,
             message: true,
-          }
-        }
-      }
+          },
+        },
+      },
     };
     return sendGraphQLQuery(query, "validateEnrichFlow");
   };
@@ -450,12 +470,12 @@ export default function useFlowQueryBuilder() {
             configName: true,
             errorType: true,
             message: true,
-          }
-        }
+          },
+        },
       },
     };
     return sendGraphQLQuery(query, "validateEgressFlow");
-  }
+  };
 
   // Set plugin variables
   const setPluginVariables = (pluginVariables: string) => {
@@ -463,8 +483,8 @@ export default function useFlowQueryBuilder() {
       setPluginVariableValues: {
         __args: {
           name: pluginVariables,
-        }
-      }
+        },
+      },
     };
     return sendGraphQLQuery(query, "setPluginVariables", "mutation");
   };
@@ -474,9 +494,9 @@ export default function useFlowQueryBuilder() {
     const query = {
       startIngressFlow: {
         __args: {
-          flowName: flowName
-        }
-      }
+          flowName: flowName,
+        },
+      },
     };
     return sendGraphQLQuery(query, "startIngressFlowByName", "mutation");
   };
@@ -486,9 +506,9 @@ export default function useFlowQueryBuilder() {
     const query = {
       stopIngressFlow: {
         __args: {
-          flowName: flowName
-        }
-      }
+          flowName: flowName,
+        },
+      },
     };
     return sendGraphQLQuery(query, "stopIngressFlowByName", "mutation");
   };
@@ -498,9 +518,9 @@ export default function useFlowQueryBuilder() {
     const query = {
       startEnrichFlow: {
         __args: {
-          flowName: flowName
-        }
-      }
+          flowName: flowName,
+        },
+      },
     };
     return sendGraphQLQuery(query, "startEnrichFlowByName", "mutation");
   };
@@ -510,9 +530,9 @@ export default function useFlowQueryBuilder() {
     const query = {
       stopEnrichFlow: {
         __args: {
-          flowName: flowName
-        }
-      }
+          flowName: flowName,
+        },
+      },
     };
     return sendGraphQLQuery(query, "stopEnrichFlowByName", "mutation");
   };
@@ -522,9 +542,9 @@ export default function useFlowQueryBuilder() {
     const query = {
       startEgressFlow: {
         __args: {
-          flowName: flowName
-        }
-      }
+          flowName: flowName,
+        },
+      },
     };
     return sendGraphQLQuery(query, "startEgressFlowByName", "mutation");
   };
@@ -534,12 +554,12 @@ export default function useFlowQueryBuilder() {
     const query = {
       stopEgressFlow: {
         __args: {
-          flowName: flowName
-        }
-      }
+          flowName: flowName,
+        },
+      },
     };
     return sendGraphQLQuery(query, "stopEgressFlowByName", "mutation");
-  }
+  };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
@@ -548,7 +568,7 @@ export default function useFlowQueryBuilder() {
     } catch {
       // Continue regardless of error
     }
-  }
+  };
 
   return {
     getFlowsGroupedByPlugin,
@@ -565,6 +585,6 @@ export default function useFlowQueryBuilder() {
     startEnrichFlowByName,
     stopEnrichFlowByName,
     startEgressFlowByName,
-    stopEgressFlowByName
+    stopEgressFlowByName,
   };
 }

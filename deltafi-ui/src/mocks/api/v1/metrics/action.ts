@@ -52,6 +52,10 @@ const generateData = () => {
         "stix2_1.Stix2_1LoadAction": {},
       },
       enrich: {
+        "stix2_1.Stix2_1DomainAction": {
+          files_completed: 284,
+          files_in: 284,
+        },
         "artificial-enrichment.BinaryEnrichAction": {
           files_completed: 284,
           files_in: 284,
