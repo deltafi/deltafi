@@ -20,7 +20,7 @@ const generateData = () => {
   return [
     {
       target: "passthrough",
-      tags: { ingressFlow: "passthrough", name: "bytes_in" },
+      tags: { ingressFlow: "passthrough", name: "stats_counts.bytes_in" },
       datapoints: [
         [null, 1660139070],
         [null, 1660139080],
@@ -29,7 +29,7 @@ const generateData = () => {
     },
     {
       target: "smoke",
-      tags: { ingressFlow: "smoke", name: "bytes_in" },
+      tags: { ingressFlow: "smoke", name: "stats_counts.bytes_in" },
       datapoints: [
         [null, 1660139070],
         [100.0, 1660139080],
@@ -38,7 +38,7 @@ const generateData = () => {
     },
     {
       target: "stix1_x",
-      tags: { ingressFlow: "stix1_x", name: "bytes_in" },
+      tags: { ingressFlow: "stix1_x", name: "stats_counts.bytes_in" },
       datapoints: [
         [null, 1660139070],
         [null, 1660139080],

@@ -23,17 +23,17 @@ export default function useGraphiteQueryBuilder() {
   const { data, fetch } = useGraphiteApi();
 
   const buildByteRateQuery = (byteType: string, operationName: string) => {
-    const queryString = `sortByName(aliasByTags(groupByTags(nonNegativeDerivative(seriesByTag('name=${byteType}', 'metricattribute=count')), 'averageSeries', 'ingressFlow'), 'ingressFlow'), true, false)`;
-    const queryEncoded = `target=` + encodeURIComponent(queryString) + `&from=-30s&until=now&format=json&title=${operationName}`;
+    const queryString = `sortByName(aliasByTags(groupByTags(transformNull(scale(scaleToSeconds(seriesByTag('name=${byteType}'), 1), 8), 0), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)`;
+    const queryEncoded = `target=` + encodeURIComponent(queryString) + `&from=-40s&until=-10s&format=json&title=${operationName}`;
     return queryEncoded;
   };
 
   const fetchIngressFlowsByteRate = async () => {
-    await fetch(buildByteRateQuery("bytes_in", "fetchIngressFlowsByteRate"));
+    await fetch(buildByteRateQuery("stats_counts.bytes_in", "fetchIngressFlowsByteRate"));
   };
 
   const fetchEgressFlowsByteRate = async () => {
-    await fetch(buildByteRateQuery("bytes_out", "fetchEgressFlowsByteRate"));
+    await fetch(buildByteRateQuery("stats_counts.bytes_out", "fetchEgressFlowsByteRate"));
   };
 
   return { data, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate };
