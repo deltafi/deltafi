@@ -105,9 +105,9 @@
       <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
         <template #empty>No DeltaFiles in the selected time range.</template>
         <template #loading>Loading DeltaFiles. Please wait.</template>
-        <Column field="did" header="DID (UUID)">
-          <template #body="tData">
-            <router-link class="monospace" :to="{ path: 'viewer/' + tData.data.did }">{{ tData.data.did }}</router-link>
+        <Column field="did" header="DID" class="did-column">
+          <template #body="{ data }">
+            <DidLink :did="data.did" />
           </template>
         </Column>
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
@@ -151,6 +151,7 @@ import FormattedBytes from "@/components/FormattedBytes.vue";
 import Paginator from "primevue/paginator";
 import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
+import DidLink from "@/components/DidLink.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref, computed, watch, onMounted, nextTick, inject } from "vue";

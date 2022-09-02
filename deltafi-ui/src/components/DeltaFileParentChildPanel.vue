@@ -23,9 +23,9 @@
         <template #empty>No Parent/Child DeltaFiles found.</template>
         <template #loading>Loading Parent/Child DeltaFiles. Please wait.</template>
         <Column field="didType" header="DID Type" :hidden="false" :sortable="true" />
-        <Column field="did" header="DID (UUID)" class="col-4">
-          <template #body="tData">
-            <router-link class="monospace" :to="{ path: '' + tData.data.did }">{{ tData.data.did }}</router-link>
+        <Column field="did" header="DID" class="col-4">
+          <template #body="{ data }">
+            <DidLink :did="data.did" />
           </template>
         </Column>
         <Column field="sourceInfo.filename" header="Filename" class="col-4" :sortable="true" />
@@ -49,6 +49,7 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import DidLink from "@/components/DidLink.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import { defineProps, onMounted, reactive, ref, watch } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";

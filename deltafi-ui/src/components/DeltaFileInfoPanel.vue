@@ -32,7 +32,7 @@
               </span>
               <span v-else>{{ value }}</span>
               <span v-if="key === 'Stage'">
-                <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" />
+                <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" class="ml-2" />
               </span>
             </dd>
           </dl>

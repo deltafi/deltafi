@@ -44,11 +44,10 @@
     }
   }
   .deltafiles {
-    .did-column {
-      width: 27%;
+    td.did-column {
+      width: 16rem;
     }
     .filename-column {
-      width: 35%;
       overflow-wrap: anywhere;
     }
     .flow-column {

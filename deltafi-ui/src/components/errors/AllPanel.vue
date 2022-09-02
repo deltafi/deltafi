@@ -30,10 +30,9 @@
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
       <Column class="expander-column" :expander="true" />
-      <Column field="did" header="DID">
-        <template #body="error">
-          <router-link class="monospace" :to="{ path: '/deltafile/viewer/' + error.data.did }">{{ error.data.did }}</router-link>
-          <ErrorAcknowledgedBadge v-if="error.data.errorAcknowledged" :reason="error.data.errorAcknowledgedReason" :timestamp="error.data.errorAcknowledged" class="ml-2" />
+      <Column field="did" header="DID" class="did-column">
+        <template #body="{ data }">
+          <DidLink :did="data.did" />
         </template>
       </Column>
       <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
@@ -49,7 +48,10 @@
         </template>
       </Column>
       <Column field="last_error_cause" header="Last Error">
-        <template #body="error">{{ latestError(error.data.actions).errorCause }}</template>
+        <template #body="{ data }">
+          <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
+          {{ latestError(data.actions).errorCause }}
+        </template>
       </Column>
       <Column field="actions.length" header="Errors">
         <template #body="error">{{ countErrors(error.data.actions) }}</template>
@@ -96,6 +98,7 @@ import ErrorViewerDialog from "@/components/errors/ViewerDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import Paginator from "primevue/paginator";
+import DidLink from "@/components/DidLink.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useErrors from "@/composables/useErrors";
 import useErrorCount from "@/composables/useErrorCount";

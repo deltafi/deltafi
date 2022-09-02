@@ -77,7 +77,7 @@
                   <ProgressBar :value="file.data.percentComplete" />
                 </span>
                 <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
-                <router-link v-else class="monospace" :to="{ path: '/deltafile/viewer/' + file.data.did }">{{ file.data.did }}</router-link>
+                <DidLink :did="file.data.did" />
               </template>
             </Column>
             <Column field="filename" header="Filename" class="filename-column" />
@@ -118,6 +118,7 @@ import ProgressBar from "primevue/progressbar";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import MetadataViewer from "@/components/MetadataViewer.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import DidLink from "@/components/DidLink.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useFlows from "@/composables/useFlows";
 import useIngress from "@/composables/useIngress";
