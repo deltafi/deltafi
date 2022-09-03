@@ -8,14 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- Moved all used Mocks to ts files (#213)
 - Added Errors summary views (#202)
-- Fixed bug with Parent/Child DeltaFiles not refreshing on refresh/replay (#214)
-- Have mocks reload data on being called (#222)
-- Fixed bug related to adding a new timeDeletePolicy (#223)
 - DID links now display only the first 8 digits of the DID. (#215)
 - Updated deletePolicy code and Schema to work with Id an Name fields (#224)
-- Update enrich flows to include DomainActions (#218)
+- Updated enrich flows to include DomainActions (#218)
+- Moved all used Mocks to TypeScript (#213)
+- Mocks now reload data on each call (#222)
+
+### Fixed
+
+- Fixed bug with Parent/Child DeltaFiles not refreshing on refresh/replay (#214)
+- Fixed bug related to adding a new timeDeletePolicy (#223)
+- Fixed bug preventing progress bars from being displayed on Upload page (#226)
 
 ## [0.97.0]
 

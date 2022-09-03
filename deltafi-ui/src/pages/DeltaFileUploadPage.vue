@@ -77,7 +77,7 @@
                   <ProgressBar :value="file.data.percentComplete" />
                 </span>
                 <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
-                <DidLink :did="file.data.did" />
+                <DidLink v-else :did="file.data.did" />
               </template>
             </Column>
             <Column field="filename" header="Filename" class="filename-column" />
@@ -123,7 +123,7 @@ import Timestamp from "@/components/Timestamp.vue";
 import useFlows from "@/composables/useFlows";
 import useIngress from "@/composables/useIngress";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import { ref, computed, onBeforeMount } from "vue";
+import { ref, computed, onBeforeMount, watch } from "vue";
 import _ from "lodash";
 
 const uploadedTimestamp = ref(new Date());
@@ -205,17 +205,26 @@ const onUpload = (event) => {
 };
 
 const ingressFiles = async (event) => {
-  let results = new Array();
   uploadedTimestamp.value = new Date();
   for (let file of event.files) {
-    const result = await ingressFile(file, selectedFlow.value.name, metadataRecord.value);
+    const result = ingressFile(file, selectedFlow.value.name, metadataRecord.value);
     result["uploadedTimestamp"] = uploadedTimestamp.value;
     result["uploadedMetadata"] = JSON.parse(JSON.stringify(metadata.value));
-    results.push(result);
+    deltaFiles.value.unshift(result);
   }
-  storeDeltaFileUploadSession(results);
   fileUploader.value.files = [];
 };
+
+watch(
+  () => deltaFiles.value,
+  () => {
+    // If all files are done loading, store in session
+    if (deltaFiles.value.every((file) => !file.loading && file.did)) {
+      storeDeltaFileUploadSession(deltaFiles.value);
+    }
+  },
+  { deep: true }
+)
 
 // Store for the sessions user selected Flow.
 const selectedFlowStorage = useStorage("selectedFlowStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });

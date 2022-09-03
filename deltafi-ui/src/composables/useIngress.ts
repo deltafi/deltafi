@@ -23,7 +23,7 @@ import axios from "axios";
 export default function useIngress() {
   const notify = useNotifications();
 
-  const ingressFile = async (file: File, flow: string, metadata: Record<string, string>) => {
+  const ingressFile = (file: File, flow: string, metadata: Record<string, string>) => {
     const result = reactive({
       did: "",
       loading: true,
@@ -32,7 +32,7 @@ export default function useIngress() {
       flow: flow,
       percentComplete: 0
     });
-    await axios
+    axios
       .request({
         method: "post",
         url: "/deltafile/ingress",
@@ -45,7 +45,7 @@ export default function useIngress() {
         },
         onUploadProgress: (progressEvent) => {
           result.percentComplete = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
+            progressEvent.loaded / progressEvent.total * 100
           );
         }
       })
