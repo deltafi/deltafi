@@ -17,15 +17,12 @@
  */
 package org.deltafi.core.domain.services;
 
+import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.types.Action;
-import org.deltafi.common.types.ActionEventInput;
-import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.ActionState;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.*;
 import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.deltafi.core.domain.configuration.DeltaFiProperties;
+import org.deltafi.core.domain.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +46,7 @@ import java.util.Optional;
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, DeltaFiProperties.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
-@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, RedisService.class, ContentStorageService.class, FlowAssignmentService.class})
+@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class})
 @EnableRetry
 public class DeltaFileServiceRetryTest {
 

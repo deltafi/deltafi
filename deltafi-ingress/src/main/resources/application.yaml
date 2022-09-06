@@ -1,8 +1,9 @@
-logging:
-  level:
-    org.springframework.data.convert.CustomConversions: ERROR
 spring:
   application:
     name: deltafi-ingress
   config:
     import: configserver:http://deltafi-core-domain-service/config
+
+logging:
+  level:
+    org.springframework.data.convert.CustomConversions: ERROR

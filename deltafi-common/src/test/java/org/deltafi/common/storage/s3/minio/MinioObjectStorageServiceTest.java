@@ -22,7 +22,6 @@ import io.minio.errors.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
-import org.deltafi.common.properties.MinioProperties;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.junit.jupiter.api.Test;

@@ -21,7 +21,6 @@ package org.deltafi.common.metrics;
 import com.codahale.metrics.MetricRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.metrics.statsd.StatsdDeltaReporter;
-import org.deltafi.common.properties.MetricsProperties;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;

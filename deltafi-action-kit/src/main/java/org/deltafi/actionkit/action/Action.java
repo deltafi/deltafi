@@ -70,6 +70,7 @@ public abstract class Action<P extends ActionParameters> {
      * @see ErrorResult
      */
     protected abstract Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params);
+
     public Result executeAction(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull Map<String, Object> params) {
         return execute(deltaFile, context, convertToParams(params));
     }

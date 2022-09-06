@@ -20,13 +20,13 @@ package org.deltafi.actionkit.action.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.common.metrics.Metric;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.common.config.ActionsProperties;
-import org.deltafi.actionkit.service.ActionEventService;
+import org.deltafi.actionkit.properties.ActionsProperties;
+import org.deltafi.actionkit.properties.DeltaFiProperties;
 import org.deltafi.actionkit.service.HostnameService;
-import org.deltafi.actionkit.config.DeltaFiSystemProperties;
+import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.common.metrics.Metric;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
@@ -38,7 +38,9 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,12 +48,12 @@ import java.util.concurrent.Executors;
  * Base class for all DeltaFi Actions.  No action should directly extend this class, but should use
  * specialized classes in the action taxonomy (LoadAction, EgressAction, etc.)
  */
-@Slf4j
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class ActionRunner {
     @Autowired
-    private ActionEventService actionEventService;
+    private ActionEventQueue actionEventQueue;
 
     @Autowired
     private ActionsProperties actionsProperties;
@@ -60,7 +62,7 @@ public class ActionRunner {
     private HostnameService hostnameService;
 
     @Autowired
-    private DeltaFiSystemProperties deltaFiSystemProperties;
+    private DeltaFiProperties deltaFiProperties;
 
     @Autowired
     private List<Action<?>> actions;
@@ -93,13 +95,13 @@ public class ActionRunner {
             Thread.sleep(delayMs);
             while (!Thread.currentThread().isInterrupted()) {
                 log.trace(getFeedString(action) + "listening");
-                ActionInput actionInput = actionEventService.getAction(getFeedString(action));
+                ActionInput actionInput = actionEventQueue.takeAction(getFeedString(action));
                 OffsetDateTime now = OffsetDateTime.now();
                 ActionContext context = actionInput.getActionContext();
                 context.setActionVersion(buildProperties.getVersion());
                 context.setHostname(hostnameService.getHostname());
                 context.setStartTime(now);
-                context.setSystemName(deltaFiSystemProperties.getSystemName());
+                context.setSystemName(deltaFiProperties.getSystemName());
 
                 log.trace("Running action {} with input {}", getFeedString(action), actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();
@@ -119,7 +121,7 @@ public class ActionRunner {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
             }
 
-            actionEventService.submitResult(result);
+            actionEventQueue.putResult(result.toEvent());
             postMetrics(result, action.getActionType());
         } catch (Throwable e) {
             ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);

@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,22 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.config;
+
+package org.deltafi.common.metrics;
 
 import lombok.Data;
-import org.deltafi.common.ssl.SslProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
+@ConfigurationProperties(prefix = "metrics")
 @Data
-@Component
-@ConfigurationProperties(prefix = "actions")
-public class ActionsProperties {
-    private long actionPollingInitialDelayMs = 3000L;
-    private long actionPollingPeriodMs = 100L;
-    private long actionRegistrationPeriodMs = 10000L;
+public class MetricsProperties {
+    boolean enabled = true;
+    Integer periodSeconds = 10;
 
-    private String hostname;
+    @Data
+    public static class StatsdProperties {
+        String hostname = "deltafi-graphite";
+        Integer port = 8125;
+    }
 
-    private SslProperties ssl;
+    StatsdProperties statsd = new StatsdProperties();
 }

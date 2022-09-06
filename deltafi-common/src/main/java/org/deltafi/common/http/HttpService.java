@@ -15,11 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.service;
+package org.deltafi.common.http;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.exception.HttpPostException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 

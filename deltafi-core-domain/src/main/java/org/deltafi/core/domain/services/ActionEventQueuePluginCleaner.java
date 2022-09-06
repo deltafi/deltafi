@@ -15,17 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.configuration;
+package org.deltafi.core.domain.services;
 
-import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.core.domain.plugin.Plugin;
+import org.deltafi.core.domain.plugin.PluginCleaner;
+import org.springframework.stereotype.Service;
 
-@Configuration
-public class ContentStorageConfiguration {
-    @Bean
-    public ContentStorageService contentStorageService(ObjectStorageService objectStorageService) {
-        return new ContentStorageService(objectStorageService);
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ActionEventQueuePluginCleaner implements PluginCleaner {
+    private final ActionEventQueue actionEventQueue;
+
+    @Override
+    public void cleanupFor(Plugin plugin) {
+        actionEventQueue.drop(plugin.actionNames());
     }
 }

@@ -24,6 +24,7 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import graphql.ExecutionResult;
+import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
@@ -75,6 +76,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -116,6 +118,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest
+@ConfigurationPropertiesScan(basePackages = "org.deltafi")
 @TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "enableScheduling=false"})
 @Testcontainers
 class DeltaFiCoreDomainApplicationTests {
@@ -208,16 +211,16 @@ class DeltaFiCoreDomainApplicationTests {
 	@EnableConfigurationProperties(ConfigServerProperties.class)
 	public static class Configuration {
 		@Bean
-		public RedisService redisService() {
-			RedisService redisService = Mockito.mock(RedisService.class);
+		public ActionEventQueue actionEventQueue() {
+			ActionEventQueue actionEventQueue = Mockito.mock(ActionEventQueue.class);
 			try {
 				// Allows the ActionEventScheduler to not hold up other scheduled tasks (by default, Spring Boot uses a
 				// single thread for all scheduled tasks). Throwing an exception here breaks it out of its tight loop.
-				Mockito.when(redisService.dgsFeed()).thenThrow(new RuntimeException());
+				Mockito.when(actionEventQueue.takeResult()).thenThrow(new RuntimeException());
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
 			}
-			return redisService;
+			return actionEventQueue;
 		}
 
 		// Create the property related beans that are normally created in the DeltaFiConfigDataLocationResolver
@@ -244,7 +247,7 @@ class DeltaFiCoreDomainApplicationTests {
 	}
 
 	@Autowired
-	RedisService redisService;
+	ActionEventQueue actionEventQueue;
 
 	final static List <KeyValue> loadSampleMetadata = Arrays.asList(
 			new KeyValue("loadSampleType", "load-sample-type"),
@@ -266,7 +269,7 @@ class DeltaFiCoreDomainApplicationTests {
 		loadConfig();
 		loadTestProperties();
 
-		Mockito.clearInvocations(redisService);
+		Mockito.clearInvocations(actionEventQueue);
 	}
 
 	void loadConfig() {
@@ -795,7 +798,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
 		assertEquals(1, child2.getLastProtocolLayerContent().size());
 
-		Mockito.verify(redisService).enqueue(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
@@ -908,7 +911,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
 		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getOffset());
 
-		Mockito.verify(redisService).enqueue(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		assertEquals(4, actionInputListCaptor.getValue().size());
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(0).getActionContext().getDid());
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
@@ -936,7 +939,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 
-		Mockito.verify(redisService, never()).enqueue(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any());
 		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 	}
 
@@ -1070,7 +1073,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postEgressDeltaFile(did), deltaFile);
 
-		Mockito.verify(redisService, never()).enqueue(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any());
 	}
 
 	@Test
@@ -1168,7 +1171,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 		assertEquals(true, deltaFile.getFiltered());
 
-		Mockito.verify(redisService, never()).enqueue(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any());
 	}
 
 	@Test
@@ -1975,7 +1978,7 @@ class DeltaFiCoreDomainApplicationTests {
 
 		assertTrue(result.getSuccess());
 		assertEquals(1, pluginRepository.count());
-		Mockito.verify(redisService).cleanupFor(any());
+		Mockito.verify(actionEventQueue).drop(any());
 	}
 
 	@Test
@@ -3065,7 +3068,7 @@ class DeltaFiCoreDomainApplicationTests {
 		DeltaFile afterMutation = deltaFilesService.getDeltaFile(expected.getDid());
 		assertEqualsIgnoringDates(expected, afterMutation);
 
-		Mockito.verify(redisService).enqueue(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(forActions.length);
 		for (int i = 0; i < forActions.length; i++) {

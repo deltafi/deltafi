@@ -1,4 +1,4 @@
-/*
+/**
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,25 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+package org.deltafi.common.action;
 
-package org.deltafi.common.properties;
-
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@Data
-@Component
-@ConfigurationProperties(prefix = "metrics")
-public class MetricsProperties {
-    boolean enabled = true;
-    Integer periodSeconds = 10;
-
-    @Data
-    public static class StatsdProperties {
-        String hostname = "deltafi-graphite";
-        Integer port = 8125;
+@Configuration
+public class ActionEventQueueConfig {
+    @Bean
+    @ConfigurationProperties("redis")
+    public ActionEventQueueProperties actionEventQueueProperties() {
+        return new ActionEventQueueProperties();
     }
-
-    StatsdProperties statsd = new StatsdProperties();
 }

@@ -15,30 +15,38 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.config;
+package org.deltafi.common.http;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.ssl.SslContextFactory;
+import org.deltafi.common.ssl.SslProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 import java.net.http.HttpClient;
 
-@Slf4j
 @Configuration
-@Component
+@Slf4j
 public class HttpClientConfig {
     @Bean
-    public HttpClient httpClient(ActionsProperties config) {
+    @ConfigurationProperties("ssl")
+    public SslProperties sslProperties() {
+        return new SslProperties();
+    }
+
+    @Bean
+    public HttpClient httpClient(SslProperties sslProperties) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
-        if (config.getSsl() != null) {
+
+        if (sslProperties.isEnabled()) {
             try {
-                httpClientBuilder.sslContext(SslContextFactory.buildSslContext(config.getSsl()));
+                httpClientBuilder.sslContext(SslContextFactory.buildSslContext(sslProperties));
             } catch (SslContextFactory.SslException e) {
                 log.warn("Unable to build SSL context. SSL will be disabled.", e);
             }
         }
+
         return httpClientBuilder.build();
     }
 }

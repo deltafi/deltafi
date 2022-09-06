@@ -13,6 +13,7 @@ spring:
       features:
         - SYNC_DELAY
         - NO_HTTP_INTERFACE_ARG
+
 deltafi:
   delete:
     onCompletion: false

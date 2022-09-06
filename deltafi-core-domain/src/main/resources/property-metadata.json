@@ -183,6 +183,48 @@
         "description": "Name of the DeltaFi cluster",
         "defaultValue": "deltafi",
         "editable": true
+      },
+      {
+        "key": "ssl.protocol",
+        "description": "The SSL protocol to use.",
+        "editable": true,
+        "defaultValue": "TLSv1.2"
+      },
+      {
+        "key": "ssl.key-store",
+        "description": "The path to the key store that holds the SSL certificate.",
+        "editable": true,
+        "defaultValue": "/etc/pki/keyStore.p12"
+      },
+      {
+        "key": "ssl.key-store-password",
+        "description": "The password used to access the key store. This should be set via the KEYSTORE_PASSWORD environment variable.",
+        "editable": false,
+        "defaultValue": "${KEYSTORE_PASSWORD:not-set}"
+      },
+      {
+        "key": "ssl.key-store-type",
+        "description": "The type of the key store.",
+        "editable": true,
+        "defaultValue": "PKCS12"
+      },
+      {
+        "key": "ssl.trust-store",
+        "description": "The path to the trust store that holds SSL certificates.",
+        "editable": true,
+        "defaultValue": "/etc/pki/trustStore.jks"
+      },
+      {
+        "key": "ssl.trust-store-password",
+        "description": "The password used to access the trust store. This should be set via the TRUSTSTORE_PASSWORD environment variable.",
+        "editable": false,
+        "defaultValue": "${TRUSTSTORE_PASSWORD:not-set}"
+      },
+      {
+        "key": "ssl.trust-store-type",
+        "description": "The type of the trust store.",
+        "editable": true,
+        "defaultValue": "JKS"
       }
     ]
   },
@@ -205,48 +247,6 @@
         "key": "actions.action-registration-period-ms",
         "description": "Frequency that the actions register with the core system.",
         "defaultValue": "10000"
-      },
-      {
-        "key": "actions.ssl.protocol",
-        "description": "The SSL protocol to use.",
-        "editable": true,
-        "defaultValue": "TLSv1.2"
-      },
-      {
-        "key": "actions.ssl.key-store",
-        "description": "The path to the key store that holds the SSL certificate.",
-        "editable": true,
-        "defaultValue": "/etc/pki/keyStore.p12"
-      },
-      {
-        "key": "actions.ssl.key-store-password",
-        "description": "The password used to access the key store. This should be set via the KEYSTORE_PASSWORD environment variable.",
-        "editable": false,
-        "defaultValue": "${KEYSTORE_PASSWORD:not-set}"
-      },
-      {
-        "key": "actions.ssl.key-store-type",
-        "description": "The type of the key store.",
-        "editable": true,
-        "defaultValue": "PKCS12"
-      },
-      {
-        "key": "actions.ssl.trust-store",
-        "description": "The path to the trust store that holds SSL certificates.",
-        "editable": true,
-        "defaultValue": "/etc/pki/trustStore.jks"
-      },
-      {
-        "key": "actions.ssl.trust-store-password",
-        "description": "The password used to access the trust store. This should be set via the TRUSTSTORE_PASSWORD environment variable.",
-        "editable": false,
-        "defaultValue": "${TRUSTSTORE_PASSWORD:not-set}"
-      },
-      {
-        "key": "actions.ssl.trust-store-type",
-        "description": "The type of the trust store.",
-        "editable": true,
-        "defaultValue": "JKS"
       },
       {
         "key": "actions.hostname",

@@ -15,15 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.exceptions;
+package org.deltafi.common.graphql.dgs;
 
-public class DeltafiGraphQLException extends RuntimeException {
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-    public DeltafiGraphQLException(String message) {
-        super(message);
-    }
-
-    public DeltafiGraphQLException(String message, Throwable cause) {
-        super(message, cause);
-    }
+@ConfigurationProperties(prefix = "graphql.urls")
+@Data
+public class GraphqlClientProperties {
+    private String coreDomain;
 }

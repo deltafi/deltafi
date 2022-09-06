@@ -21,7 +21,7 @@ import org.apache.nifi.util.FlowFileUnpackagerV1;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.service.HttpService;
+import org.deltafi.common.http.HttpService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.converters.KeyValueConverter;

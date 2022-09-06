@@ -15,18 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.properties;
+package org.deltafi.common.action;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Data
-@Component
-@ConfigurationProperties(prefix = "minio")
-public class MinioProperties {
-    String url;
-    String accessKey;
-    String secretKey;
-    long partSize;
+public class ActionEventQueueProperties {
+    private String url;
+    private Optional<String> password = Optional.empty();
+    private int maxIdle = 16;
+    private int maxTotal = 16;
 }

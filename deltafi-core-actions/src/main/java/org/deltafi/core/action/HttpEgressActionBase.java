@@ -23,7 +23,7 @@ import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressActionParameters;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.service.HttpService;
+import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.FormattedData;

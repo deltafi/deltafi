@@ -70,14 +70,14 @@ class PluginRegistryServiceTest {
     PluginValidator pluginValidator;
 
     @Mock
-    RedisService redisService;
+    ActionEventQueuePluginCleaner actionEventQueuePluginCleaner;
 
     PluginRegistryService pluginRegistryService;
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, pluginVariableService, actionSchemaService, redisService);
+        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, pluginVariableService, actionSchemaService, actionEventQueuePluginCleaner);
         List<PluginUninstallCheck> checkers = List.of(ingressFlowService, enrichFlowService, egressFlowService);
         pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService, pluginVariableService, pluginRepository, pluginValidator, actionSchemaService, checkers, cleaners);
     }
@@ -205,7 +205,7 @@ class PluginRegistryServiceTest {
         Mockito.verify(egressFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
         Mockito.verify(actionSchemaService).cleanupFor(plugin1);
-        Mockito.verify(redisService).cleanupFor(plugin1);
+        Mockito.verify(actionEventQueuePluginCleaner).cleanupFor(plugin1);
     }
 
     private Plugin makeDependencyPlugin() {

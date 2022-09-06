@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,23 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.configuration;
+package org.deltafi.common.metrics;
 
-import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
-import org.deltafi.common.properties.RedisProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.net.URISyntaxException;
-
 @Configuration
-@EnableConfigurationProperties(RedisProperties.class)
-public class RedisConfiguration {
+public class MetricsConfig {
 
     @Bean
-    public JedisKeyedBlockingQueue jedisKeyedBlockingQueue(RedisProperties redisProperties) throws URISyntaxException {
-        return new JedisKeyedBlockingQueue(redisProperties.getUrl(), redisProperties.getPassword().orElse(null), 8, 8);
+    public MetricRepository metricRepository(MetricsProperties metricsProperties) {
+        return new MetricRepository(metricsProperties);
     }
 
 }

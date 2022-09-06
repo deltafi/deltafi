@@ -19,10 +19,10 @@ package org.deltafi.core;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication(scanBasePackages = "org.deltafi")
-@EnableConfigurationProperties
+@ConfigurationPropertiesScan(basePackages = "org.deltafi")
 public class CoreActionsApplication {
     public static void main(String[] args) {
         SpringApplication.run(CoreActionsApplication.class, args);

@@ -6,3 +6,6 @@ spring:
       enabled: false
   main:
     allow-bean-definition-overriding: true
+
+redis:
+  url: http://localhost

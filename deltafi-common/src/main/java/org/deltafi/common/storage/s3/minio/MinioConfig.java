@@ -15,12 +15,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.config;
+package org.deltafi.common.storage.s3.minio;
 
 import io.minio.MinioClient;
-import org.deltafi.common.properties.MinioProperties;
-import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.common.storage.s3.minio.MinioObjectStorageService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -31,10 +28,5 @@ public class MinioConfig {
         return MinioClient.builder()
                 .endpoint(minioProperties.getUrl())
                 .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey()).build();
-    }
-
-    @Bean
-    public ObjectStorageService minioObjectStorageService(MinioClient minioClient, MinioProperties minioProperties) {
-        return new MinioObjectStorageService(minioClient, minioProperties);
     }
 }

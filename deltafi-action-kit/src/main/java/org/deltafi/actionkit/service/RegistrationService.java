@@ -17,12 +17,14 @@
  */
 package org.deltafi.actionkit.service;
 
-import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.common.config.ActionsProperties;
+import org.deltafi.actionkit.properties.ActionsProperties;
+import org.deltafi.common.graphql.dgs.DeltafiGraphQLException;
+import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
+import org.deltafi.common.graphql.dgs.GraphQLExecutor;
 import org.deltafi.common.types.ActionRegistrationInput;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,10 +51,10 @@ public class RegistrationService {
     ActionsProperties actionsProperties;
 
     @Autowired
-    DomainGatewayService domainGatewayService;
+    GraphQLClientFactory graphQLClientFactory;
 
-    @Autowired
-    List<Action<?>> actions;
+    @Autowired(required = false)
+    List<Action<?>> actions = Collections.emptyList();
 
     private GraphQLQuery query;
     private boolean firstTime = true;
@@ -84,17 +87,17 @@ public class RegistrationService {
 
     private void registerActions() {
         try {
-            GraphQLResponse response = domainGatewayService.submit(new GraphQLQueryRequest(query, null));
-            int result = response.extractValueAsObject("data." + query.getOperationName(), Integer.class);
+            int result = GraphQLExecutor.executeQuery(graphQLClientFactory.build(),
+                    new GraphQLQueryRequest(query, null), "data." + query.getOperationName(), Integer.class);
+
             if (result <= 0) {
                 log.error("No actions registered");
             } else if (firstTime) {
                 firstTime = false;
                 log.info("Action registration count: " + result);
             }
-        } catch (Throwable exception) {
-            log.error("Could not send action parameter schema", exception);
+        } catch (DeltafiGraphQLException e) {
+            log.error("Could not send action parameter schema", e);
         }
     }
-
 }

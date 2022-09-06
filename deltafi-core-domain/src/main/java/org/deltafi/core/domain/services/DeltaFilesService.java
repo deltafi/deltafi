@@ -24,6 +24,7 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
@@ -73,7 +74,7 @@ public class DeltaFilesService {
     final FlowAssignmentService flowAssignmentService;
     final StateMachine stateMachine;
     final DeltaFileRepo deltaFileRepo;
-    final RedisService redisService;
+    final ActionEventQueue actionEventQueue;
     final ContentStorageService contentStorageService;
 
     public static final int EXECUTOR_THREADS = 16;
@@ -806,7 +807,7 @@ public class DeltaFilesService {
     public void processActionEvents() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                ActionEventInput event = redisService.dgsFeed();
+                ActionEventInput event = actionEventQueue.takeResult();
                 executor.submit(() -> {
                     int count = 0;
                     while (true) {
@@ -836,7 +837,7 @@ public class DeltaFilesService {
 
     private void enqueueActions(List<ActionInput> enqueueActions) {
         try {
-            redisService.enqueue(enqueueActions);
+            actionEventQueue.putActions(enqueueActions);
         } catch (JedisConnectionException e) {
             // This scenario is most likely due to all Redis instances being unavailable
             // Eating this exception.  Subsequent timeout/retry will ensure the DeltaFile is processed

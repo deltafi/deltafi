@@ -1,6 +1,3 @@
-logging:
-  level:
-    org.springframework.data.convert.CustomConversions: ERROR
 spring:
   application:
     name: deltafi-core-actions
@@ -10,3 +7,7 @@ spring:
     web-application-type: none
   mustache:
     check-template-location: false
+
+logging:
+  level:
+    org.springframework.data.convert.CustomConversions: ERROR

@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.exception;
+package org.deltafi.common.http;
 
 public class HttpPostException extends RuntimeException {
     public HttpPostException(String clazz, String reason) {

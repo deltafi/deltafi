@@ -15,15 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.config;
+package org.deltafi.actionkit.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Data
-@Component
 @ConfigurationProperties(prefix = "deltafi")
-public class DeltaFiSystemProperties {
+@Data
+public class DeltaFiProperties {
     private String systemName = "deltafi";
 }

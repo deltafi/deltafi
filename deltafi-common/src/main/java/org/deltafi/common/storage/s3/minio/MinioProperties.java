@@ -1,4 +1,4 @@
-/*
+/**
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,19 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.config;
+package org.deltafi.common.storage.s3.minio;
 
-import org.deltafi.common.metrics.MetricRepository;
-import org.deltafi.common.properties.MetricsProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Component
-public class MetricsConfig {
-
-    @Bean
-    public MetricRepository metricRepository(MetricsProperties metricsProperties) {
-        return new MetricRepository(metricsProperties);
-    }
-
+@ConfigurationProperties(prefix = "minio")
+@Data
+public class MinioProperties {
+    String url;
+    String accessKey;
+    String secretKey;
+    long partSize;
 }

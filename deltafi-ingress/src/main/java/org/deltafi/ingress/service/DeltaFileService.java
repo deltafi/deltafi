@@ -21,8 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.graphql.dgs.client.GraphQLError;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import graphql.scalar.GraphqlStringCoercing;
 import graphql.schema.Coercing;
@@ -32,8 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.converters.KeyValueConverter;
+import org.deltafi.common.graphql.dgs.DeltafiGraphQLException;
+import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
+import org.deltafi.common.graphql.dgs.GraphQLExecutor;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressInput;
 import org.deltafi.common.types.KeyValue;
@@ -41,7 +42,6 @@ import org.deltafi.common.types.SourceInfo;
 import org.deltafi.ingress.client.IngressGraphQLQuery;
 import org.deltafi.ingress.client.IngressProjectionRoot;
 import org.deltafi.ingress.exceptions.DeltafiException;
-import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileService {
-    private final GraphQLClientService graphQLClientService;
+    private final GraphQLClientFactory graphQLClientFactory;
     private final ContentStorageService contentStorageService;
     private final ObjectMapper objectMapper;
 
@@ -104,8 +104,9 @@ public class DeltaFileService {
         return new KeyValue(entry.getKey(), value);
     }
 
-    private String sendToIngressGraphQl(String did, String sourceFileName, String namespacedFlow, List<KeyValue> metadata,
-                                      List<Content> content, OffsetDateTime created, String username) throws DeltafiException {
+    private String sendToIngressGraphQl(String did, String sourceFileName, String namespacedFlow,
+                                        List<KeyValue> metadata, List<Content> content, OffsetDateTime created,
+                                        String username) throws DeltafiException {
         IngressInput ingressInput = IngressInput.newBuilder()
                 .did(did)
                 .sourceInfo(new SourceInfo(sourceFileName, namespacedFlow, metadata))
@@ -113,20 +114,12 @@ public class DeltaFileService {
                 .created(created)
                 .build();
 
-        GraphQLResponse response;
         try {
-            response = graphQLClientService.graphQLClient(username).executeQuery(toGraphQlRequest(ingressInput).serialize());
+            return GraphQLExecutor.executeQuery(graphQLClientFactory.build(DeltaFiConstants.USER_HEADER, username),
+                    toGraphQlRequest(ingressInput), FLOW_FIELD_PATH, String.class);
         } catch (DeltafiGraphQLException e) {
-            throw e;
-        } catch (Exception e) {
             throw new DeltafiException(e.getMessage());
         }
-
-        if (response.hasErrors()) {
-            String errors = response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining(", "));
-            throw new DeltafiGraphQLException(errors);
-        }
-        return response.extractValueAsObject(FLOW_FIELD_PATH, String.class);
     }
 
     List<KeyValue> fromMetadataString(String metadata) throws DeltafiMetadataException {

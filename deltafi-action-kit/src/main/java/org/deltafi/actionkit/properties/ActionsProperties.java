@@ -15,18 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.properties;
+package org.deltafi.actionkit.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
+@ConfigurationProperties(prefix = "actions")
 @Data
-@Component
-@ConfigurationProperties(prefix = "redis")
-public class RedisProperties {
-    private String url;
-    private Optional<String> password;
+public class ActionsProperties {
+    private long actionPollingInitialDelayMs = 3000L;
+    private long actionPollingPeriodMs = 100L;
+    private long actionRegistrationPeriodMs = 10000L;
+
+    private String hostname;
 }

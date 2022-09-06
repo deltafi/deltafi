@@ -15,14 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.service;
+package org.deltafi.common.graphql.dgs;
 
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.HttpResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.properties.GraphqlClientProperties;
-import org.deltafi.ingress.exceptions.DeltafiGraphQLException;
 import org.springframework.stereotype.Service;
 
 import javax.ws.rs.core.MediaType;
@@ -31,28 +29,28 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 
-@Slf4j
 @Service
-public class GraphQLClientService {
+@RequiredArgsConstructor
+@Slf4j
+public class GraphQLClientFactory {
 
-    HttpClient httpClient;
-    GraphqlClientProperties graphqlProperties;
+    private final HttpClient httpClient;
+    private final GraphqlClientProperties graphqlProperties;
 
-    public GraphQLClientService(HttpClient httpClient, GraphqlClientProperties graphqlProperties) {
-        this.httpClient = httpClient;
-        this.graphqlProperties = graphqlProperties;
-    }
-
-    public GraphQLClient graphQLClient(final String username) {
-        return GraphQLClient.createCustom(graphqlProperties.getCoreDomain(), (url, headers, body) -> {
-            HttpRequest request = HttpRequest.newBuilder()
+    public GraphQLClient build(String... headers) {
+        return GraphQLClient.createCustom(graphqlProperties.getCoreDomain(), (url, defaultHeaders, body) -> {
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    .headers("content-type", MediaType.APPLICATION_JSON, DeltaFiConstants.USER_HEADER, username)
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
+                    .header("content-type", MediaType.APPLICATION_JSON)
+                    .POST(HttpRequest.BodyPublishers.ofString(body));
+
+            if (headers.length > 0) {
+                requestBuilder.headers(headers);
+            }
 
             try {
-                java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+                java.net.http.HttpResponse<String> response = httpClient.send(requestBuilder.build(),
+                        java.net.http.HttpResponse.BodyHandlers.ofString());
                 return new HttpResponse(response.statusCode(), response.body());
             } catch (IOException ioException) {
                 throw new DeltafiGraphQLException("Failed to make graphQL request", ioException);

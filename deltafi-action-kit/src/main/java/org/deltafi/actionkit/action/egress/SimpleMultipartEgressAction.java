@@ -19,9 +19,6 @@ package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
-import org.deltafi.actionkit.action.egress.EgressAction;
-import org.deltafi.actionkit.action.egress.MultipartEgressAction;
-import org.deltafi.actionkit.action.egress.SimpleEgressAction;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.FormattedData;
