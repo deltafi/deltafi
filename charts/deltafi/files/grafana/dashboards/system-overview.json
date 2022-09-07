@@ -26,6 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 110,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -263,7 +264,7 @@
               "log": 10,
               "type": "log"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -299,6 +300,7 @@
       },
       "id": 3,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -436,7 +438,7 @@
               "log": 10,
               "type": "log"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -472,6 +474,8 @@
         "y": 8
       },
       "id": 7,
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -586,6 +590,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Filtered"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -639,6 +658,16 @@
           },
           "hide": false,
           "refCount": 0,
+          "refId": "Filtered",
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}')), 'Filtered')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
           "refId": "Dropped",
           "target": "alias(sum(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}')), 'Dropped')"
         },
@@ -651,16 +680,6 @@
           "refCount": 0,
           "refId": "Errored",
           "target": "alias(sum(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}')), 'Errored')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "Filtered",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}')), 'Filtered')"
         }
       ],
       "transparent": true,
@@ -731,6 +750,8 @@
         "y": 16
       },
       "id": 8,
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -822,6 +843,8 @@
         "y": 16
       },
       "id": 9,
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -852,7 +875,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "${datasource}"
+        "uid": "P1D261A8554D2DA69"
       },
       "fieldConfig": {
         "defaults": {
@@ -866,8 +889,8 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 50,
-            "gradientMode": "opacity",
+            "fillOpacity": 20,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -879,7 +902,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -889,84 +912,23 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          },
-          "unit": "none"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ingress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Egress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Dropped"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Errored"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
           }
-        ]
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 10,
@@ -974,8 +936,9 @@
         "x": 0,
         "y": 25
       },
-      "id": 36,
+      "id": 41,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [
@@ -994,11 +957,107 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "${datasource}"
+            "uid": "P1D261A8554D2DA69"
           },
           "hide": false,
           "refCount": 0,
-          "refId": "Dropped",
+          "refId": "B",
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+        }
+      ],
+      "title": "Files Filtered",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "P1D261A8554D2DA69"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 25
+      },
+      "id": 40,
+      "interval": "10s",
+      "maxDataPoints": 99999,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "P1D261A8554D2DA69"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
           "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
         }
       ],
@@ -1008,7 +1067,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "${datasource}"
+        "uid": "P1D261A8554D2DA69"
       },
       "fieldConfig": {
         "defaults": {
@@ -1022,8 +1081,8 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 50,
-            "gradientMode": "opacity",
+            "fillOpacity": 20,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -1035,7 +1094,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1045,240 +1104,23 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          },
-          "unit": "none"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ingress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Egress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Dropped"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Errored"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
           }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 8,
-        "y": 25
-      },
-      "id": 37,
-      "interval": "10s",
-      "options": {
-        "legend": {
-          "calcs": [
-            "sum"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "Errored",
-          "target": "sortByName(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}'), '10s', 'sum', 'minutes'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
-        }
-      ],
-      "title": "Files Errored",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 50,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ingress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Egress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Dropped"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Errored"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 10,
@@ -1286,7 +1128,9 @@
         "x": 16,
         "y": 25
       },
-      "id": 38,
+      "id": 39,
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [
@@ -1305,15 +1149,15 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "${datasource}"
+            "uid": "P1D261A8554D2DA69"
           },
           "hide": false,
           "refCount": 0,
-          "refId": "Filtered",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "refId": "B",
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
         }
       ],
-      "title": "Files Filtered",
+      "title": "Files Errored",
       "type": "timeseries"
     },
     {
@@ -1382,7 +1226,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1400,6 +1245,8 @@
         "y": 37
       },
       "id": 5,
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -1439,7 +1286,8 @@
     },
     {
       "datasource": {
-        "type": "graphite"
+        "type": "graphite",
+        "uid": "P1D261A8554D2DA69"
       },
       "description": "",
       "fieldConfig": {
@@ -1482,7 +1330,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1500,6 +1349,8 @@
         "y": 45
       },
       "id": 17,
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [
@@ -1594,7 +1445,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1658,7 +1510,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "dark-green",
@@ -1737,7 +1590,7 @@
       "type": "bargauge"
     }
   ],
-  "refresh": "1m",
+  "refresh": "5m",
   "schemaVersion": 37,
   "style": "dark",
   "tags": [

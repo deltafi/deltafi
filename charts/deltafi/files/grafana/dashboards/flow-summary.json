@@ -27,6 +27,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 111,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -270,6 +271,7 @@
       },
       "id": 3,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -389,6 +391,21 @@
                 "id": "color",
                 "value": {
                   "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Errored"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
                   "mode": "fixed"
                 }
               }
@@ -604,6 +621,7 @@
       },
       "id": 23,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -697,7 +715,8 @@
         "y": 19
       },
       "id": 73,
-      "interval": "30s",
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "calculate": false,
         "calculation": {},
@@ -792,8 +811,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -931,8 +949,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -983,6 +1000,7 @@
       },
       "id": 38,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -1035,8 +1053,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1250,8 +1267,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1347,6 +1363,7 @@
       },
       "id": 41,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],

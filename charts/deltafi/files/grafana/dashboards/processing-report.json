@@ -27,6 +27,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 112,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -436,6 +437,7 @@
       },
       "id": 23,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -571,6 +573,7 @@
       },
       "id": 37,
       "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -630,19 +633,21 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 18,
+        "h": 25,
         "w": 12,
         "x": 0,
         "y": 8
       },
       "id": 34,
+      "interval": "10s",
+      "maxDataPoints": 99999,
       "options": {
         "footer": {
           "fields": "",
           "reducer": [
             "sum"
           ],
-          "show": true
+          "show": false
         },
         "showHeader": true,
         "sortBy": []
@@ -654,31 +659,69 @@
             "type": "graphite",
             "uid": "P1D261A8554D2DA69"
           },
+          "refCount": 0,
           "refId": "A",
           "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction'), '1d', 'sum'), 'ingressFlow')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "P1D261A8554D2DA69"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress'), '1d', 'sum'), 'ingressFlow')"
         }
       ],
-      "title": "Ingressed Bytes by Flow",
+      "title": "Processed Bytes by Flow",
       "transformations": [
         {
           "id": "reduce",
           "options": {
-            "labelsToFields": false,
+            "labelsToFields": true,
             "reducers": [
               "sum"
             ]
           }
         },
         {
-          "id": "sortBy",
+          "id": "groupBy",
           "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "Total"
+            "fields": {
+              "Field": {
+                "aggregations": []
+              },
+              "Total": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "action": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "ingressFlow": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "groupby"
+              },
+              "name": {
+                "aggregations": [
+                  "last"
+                ]
               }
-            ]
+            }
+          }
+        },
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "action",
+            "rowField": "ingressFlow",
+            "valueField": "Total (sum)"
           }
         },
         {
@@ -687,8 +730,148 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "Field": "Flow",
-              "Total": "Ingressed Bytes"
+              "IngressAction": "Ingress Bytes",
+              "egress": "Egress Bytes",
+              "ingressFlow\\action": "Flow"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "P1D261A8554D2DA69"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlPu"
+          },
+          "custom": {
+            "align": "left",
+            "displayMode": "auto",
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "-",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 25,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 38,
+      "interval": "10s",
+      "maxDataPoints": 99999,
+      "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "9.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "P1D261A8554D2DA69"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), '1d', 'sum'), 'ingressFlow')"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "P1D261A8554D2DA69"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress'), '1d', 'sum'), 'ingressFlow')"
+        }
+      ],
+      "title": "Processed Files by Flow",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "labelsToFields": true,
+            "reducers": [
+              "sum"
+            ]
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Field": {
+                "aggregations": []
+              },
+              "Total": {
+                "aggregations": [
+                  "sum"
+                ],
+                "operation": "aggregate"
+              },
+              "action": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "ingressFlow": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "groupby"
+              },
+              "name": {
+                "aggregations": [
+                  "last"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "action",
+            "rowField": "ingressFlow",
+            "valueField": "Total (sum)"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "IngressAction": "Ingress Files",
+              "egress": "Egress Files",
+              "ingressFlow\\action": "Flow"
             }
           }
         }
@@ -719,8 +902,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -736,7 +918,7 @@
         "h": 18,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 33
       },
       "id": 36,
       "options": {
