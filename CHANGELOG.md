@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Statsd aggregation layer added to Graphite stack
 - Custom Statsd reporter for delta metrics added to the common library and used in ingress and action-kit metrics
 - Added `DomainActions` that provide a global validation and metadata extraction path for domains
+- Added content storage check to API system checks
 
 ### Changed
 - Ingress converted to a Spring Boot app
@@ -16,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Flow metrics in Graphite begin with `stats_counts.` prefix
 - Micrometer metrics dependency removed.  Metrics are now based on Dropwizard metrics
 - All system Grafana dashboards are moved to a `DeltaFi` folder
+- Metric dashboard charts have increased resolution to avoid inaccuracies introduced by linear regression
+- Delete policy now has a name that is independent of the policy ID
 
 ### Deprecated
 - Quarkus is no longer in use or supported in the DeltaFi monolith.
@@ -35,7 +38,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
-- Legacy flow/action metrics will no longer appear in Grafana dashboards.  On update, only the new delta metrics will be displayed on dashboards.
+- Legacy flow/action metrics will no longer appear in Grafana dashboards.  On update, only the new delta metrics will be displayed on dashboards
+- Java dependencies updated, including:
+  - DGS 5.2.1
+  - MinIO 8.4.3
+  - Spring Boot 2.7.3
+  - Spring Cloud 2021.0.3
 
 ## [0.97.0] - 2022-08-29
 
