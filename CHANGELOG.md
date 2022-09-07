@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - All system Grafana dashboards are moved to a `DeltaFi` folder
 - Metric dashboard charts have increased resolution to avoid inaccuracies introduced by linear regression
 - Delete policy now has a name that is independent of the policy ID
+- Consolidated all Spring Boot base docker images to a common 40% smaller, JRE-only image (`deltafi-spring-base`)
 
 ### Deprecated
 - Quarkus is no longer in use or supported in the DeltaFi monolith.
@@ -48,6 +49,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - MinIO 8.4.3
   - Spring Boot 2.7.3
   - Spring Cloud 2021.0.3
+- Upgraded all Spring Boot base images to `deltafi/deltafi-spring-base:0.97.0`
+- Upgraded KinD node image to `deltafi/deltafi-kind-node:0.97.0` for KinD 0.15.0 compatibility
 
 ## [0.97.0] - 2022-08-29
 
