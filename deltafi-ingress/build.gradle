@@ -1,7 +1,7 @@
 plugins {
     id 'com.palantir.docker' version "${palantirDockerVersion}"
     id 'com.github.hierynomus.license' version "${hierynomusLicenseVersion}"
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
     id 'org.springframework.boot' version "${springBootVersion}"
 }
 

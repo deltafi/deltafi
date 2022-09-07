@@ -19,7 +19,7 @@ dependencies {
 
     api 'ch.qos.logback:logback-classic:1.2.11'
     api "com.netflix.graphql.dgs:graphql-dgs-client:${dgsVersion}"
-    api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenVersion}"
+    api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenClientVersion}"
     api 'com.squareup.okhttp3:okhttp:4.10.0'
     api "commons-io:commons-io:2.11.0"
     api "io.minio:minio:${minioVersion}"

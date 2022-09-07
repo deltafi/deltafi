@@ -41,6 +41,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Legacy flow/action metrics will no longer appear in Grafana dashboards.  On update, only the new delta metrics will be displayed on dashboards
 - Java dependencies updated, including:
   - DGS 5.2.1
+  - DGS Codegen 5.3.1
+  - Jackson 2.13.4
+  - Log4J 2.18.0
+  - Lombok 1.18.24
   - MinIO 8.4.3
   - Spring Boot 2.7.3
   - Spring Cloud 2021.0.3
