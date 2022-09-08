@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.97.1
+## [Unreleased] - Next release 0.98.0
 
 ### Added
 - Statsd aggregation layer added to Graphite stack
@@ -21,6 +21,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Delete policy now has a name that is independent of the policy ID
 - Consolidated all Spring Boot base docker images to a common 40% smaller, JRE-only image (`deltafi-spring-base`)
 - Multiple Domain and Enrich Actions of the same time can now be configured as long as they do not operate on the same domains
+- Renamed `RedisService` to `ActionEventQueue`, consolidated all take and put methods into it, and moved it to `deltafi-common` (property prefix remains "redis")
+- Consolidated GraphQL client code to a new `org.deltafi.common.graphql.dgs` package in `deltafi-common`
+- Moved the `HttpService` to a new `org.deltafi.common.http` package in `deltafi-common`
+- Moved SSL configuration properties to the top level instead of being under actions
+- Removed `@Configuration` from `@ConfigurationProperties` classes. `@EnableConfigurationProperties` needs to be replaced with `@ConfigurationPropertiesScan(basePackages = "org.deltafi")` in Spring Boot applications and tests.
 
 ### Deprecated
 - Quarkus is no longer in use or supported in the DeltaFi monolith.
