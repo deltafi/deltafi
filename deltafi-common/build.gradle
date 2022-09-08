@@ -17,7 +17,6 @@ compileJava.dependsOn(processResources)
 dependencies {
     api platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
 
-    api 'ch.qos.logback:logback-classic:1.2.11'
     api "com.netflix.graphql.dgs:graphql-dgs-client:${dgsVersion}"
     api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenClientVersion}"
     api 'com.squareup.okhttp3:okhttp:4.10.0'
@@ -32,7 +31,9 @@ dependencies {
     api "redis.clients:jedis:${jedisVersion}"
 
     api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3'
-    api "org.slf4j:slf4j-api:2.0.0"
+    api "org.slf4j:slf4j-api:1.7.30"
+    api 'ch.qos.logback:logback-core:1.2.11'
+    api 'ch.qos.logback:logback-classic:1.2.11'
     implementation 'org.springframework.boot:spring-boot'
     api 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.dropwizard.metrics:metrics-core:4.2.11'
