@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Metric dashboard charts have increased resolution to avoid inaccuracies introduced by linear regression
 - Delete policy now has a name that is independent of the policy ID
 - Consolidated all Spring Boot base docker images to a common 40% smaller, JRE-only image (`deltafi-spring-base`)
+- Multiple Domain and Enrich Actions of the same time can now be configured as long as they do not operate on the same domains
 
 ### Deprecated
 - Quarkus is no longer in use or supported in the DeltaFi monolith.

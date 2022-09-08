@@ -27,7 +27,7 @@ import java.util.List;
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NONE
 )
-public class EnrichActionConfiguration extends org.deltafi.core.domain.generated.types.EnrichActionConfiguration implements ActionConfiguration {
+public class EnrichActionConfiguration extends org.deltafi.core.domain.generated.types.EnrichActionConfiguration implements ActionRequiringDomainConfiguration {
 
     public EnrichActionConfiguration() {
         setRequiresDomains(new ArrayList<>());
