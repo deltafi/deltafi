@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Custom Statsd reporter for delta metrics added to the common library and used in ingress and action-kit metrics
 - Added `DomainActions` that provide a global validation and metadata extraction path for domains
 - Added content storage check to API system checks
+- Added heartbeat to Monitor and configured the Kubernetes probe to use that for liveliness
+- Added better Redis exception handling to API/Monitor
 
 ### Changed
 - Ingress converted to a Spring Boot app
