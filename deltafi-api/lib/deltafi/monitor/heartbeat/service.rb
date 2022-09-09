@@ -24,7 +24,7 @@ module Deltafi
   module Monitor
     module Heartbeat
       class Service
-        INTERVAL = 45
+        INTERVAL = 5
 
         def initialize
           @redis = DF.redis_client
