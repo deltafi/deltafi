@@ -24,7 +24,7 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
   DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
-  PROJECT_LIST: "deltafi-core-domain deltafi-core-actions deltafi-ingress deltafi-auth deltafi-api deltafi-egress-sink deltafi-nodemonitor"
+  PROJECT_LIST: "deltafi-core deltafi-core-actions deltafi-ingress deltafi-auth deltafi-api deltafi-egress-sink deltafi-nodemonitor"
   deltafi_config_server_HELM_IMAGE_PATH: deltafi.config_server.image
   deltafi_core_domain_HELM_IMAGE_PATH: deltafi.core_domain.image
   deltafi_core_actions_HELM_IMAGE_PATH: deltafi.core_actions.image

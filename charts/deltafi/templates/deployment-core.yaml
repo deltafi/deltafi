@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-core
+  labels:
+    app: deltafi-core
+    group: deltafi-core
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-core
+      group: deltafi-core
+  template:
+    metadata:
+      labels:
+        app: deltafi-core
+        group: deltafi-core
+    spec:
+      initContainers:
+      - name: wait-for-mongo
+        image: busybox:1.35.0
+        command:
+        - 'sh'
+        - '-c'
+        - >
+          until nc -z -w 2 deltafi-mongodb 27017 && echo mongodb ok;
+            do sleep 1;
+          done
+      containers:
+      - name: deltafi-core
+        image: {{ .Values.deltafi.core.image }}
+        env:
+        - name: MONGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-passwords
+              key: mongodb-password
+          {{- with .Values.deltafi.envVars }}
+          {{- toYaml . | nindent 8 }}
+          {{- end }}
+        ports:
+        - containerPort: 8080
+        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
+        volumeMounts:
+        - mountPath: {{ .Values.deltafi.core.nativeConfigMountPath }}
+          name: config-map
+          readOnly: true
+      volumes:
+        - name: config-map
+          configMap:
+            name: {{ .Values.deltafi.core.nativeConfigMap }}
+            optional: true
+      imagePullSecrets:
+      - name: docker-secret
+      serviceAccountName: deltafi-core
+      nodeSelector:
+        node-role.deltafi.org/compute: "true"

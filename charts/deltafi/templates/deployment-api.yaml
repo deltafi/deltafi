@@ -17,7 +17,7 @@ spec:
         app: deltafi-api
         group: deltafi-core
     spec:
-      {{- include "initContainersWaitForCoreDomain" . | nindent 6 }}
+      {{- include "initContainersWaitForCore" . | nindent 6 }}
       containers:
       - name: deltafi-api
         image: {{ .Values.deltafi.api.image }}

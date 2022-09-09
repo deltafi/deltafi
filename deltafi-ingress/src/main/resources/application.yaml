@@ -2,7 +2,7 @@ spring:
   application:
     name: deltafi-ingress
   config:
-    import: configserver:http://deltafi-core-domain-service/config
+    import: configserver:http://deltafi-core-service/config
 
 logging:
   level:

@@ -23,7 +23,7 @@ spec:
           VARIABLES="{\"pluginInput\": $JSON}"
           POST_QUERY="{\"query\": \"$MUTATION\", \"variables\":$VARIABLES}"
           echo "Sending $POST_QUERY"
-          RESPONSE_CODE=$(curl -s -o ${TMPFILE} -X POST -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://deltafi-core-domain-service/graphql)
+          RESPONSE_CODE=$(curl -s -o ${TMPFILE} -X POST -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://deltafi-core-service/graphql)
           if [[ "$RESPONSE_CODE" != "200" ]]; then
             echo "Registering plugin manifest failed" "Bad response code ($RESPONSE_CODE) with response $(cat ${TMPFILE})"
             exit 1

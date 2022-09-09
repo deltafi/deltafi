@@ -13,7 +13,7 @@ data:
     expected_deployments:
     - deltafi-api
     - deltafi-core-actions
-    - deltafi-core-domain
+    - deltafi-core
     - deltafi-egress-sink
     - deltafi-grafana
     - deltafi-ingress
@@ -33,7 +33,7 @@ data:
   ServiceCheck: |
     expected_services:
     - deltafi-api-service
-    - deltafi-core-domain-service
+    - deltafi-core-service
     - deltafi-egress-sink-service
     - deltafi-grafana
     - deltafi-graphite

@@ -69,7 +69,7 @@ VARIABLES="{\"rules\": $JSON }"
 
 QUERY="mutation (\$rules: [FlowAssignmentRuleInput!]!) { loadFlowAssignmentRules(replaceAll: ${REPLACEALL}, rules: \$rules) { success errors } }"
 
-DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
 
 truncate --size 0 ${TMPFILE}

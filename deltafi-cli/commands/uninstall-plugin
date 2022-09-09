@@ -88,7 +88,7 @@ PLUGIN_ID=$(cat ${PLUGIN_MANIFEST} | jq -r '.pluginCoordinates')
 
 uninstallPlugin() {
   MUTATION="uninstallPlugin"
-  DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+  DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
   QUERY="mutation (\$pluginId: PluginCoordinatesInput!) {$MUTATION(dryRun: $DGSVARDRYRUN, pluginCoordinatesInput: \$pluginId) {success errors}}"
   VARIABLES=$(echo "{}" |  jq --argjson pluginId "$PLUGIN_ID" '. + {pluginId: $pluginId}')
   POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
