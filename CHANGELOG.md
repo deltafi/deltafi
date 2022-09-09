@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Moved the `HttpService` to a new `org.deltafi.common.http` package in `deltafi-common`
 - Moved SSL configuration properties to the top level instead of being under actions
 - Removed `@Configuration` from `@ConfigurationProperties` classes. `@EnableConfigurationProperties` needs to be replaced with `@ConfigurationPropertiesScan(basePackages = "org.deltafi")` in Spring Boot applications and tests.
+- Migrated Java StatsD client from UDP to TCP to guarantee metric delivery and handle metrics back-up when graphite is down
 
 ### Deprecated
 - Quarkus is no longer in use or supported in the DeltaFi monolith.
@@ -57,6 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - Spring Cloud 2021.0.3
 - Upgraded all Spring Boot base images to `deltafi/deltafi-spring-base:0.97.0`
 - Upgraded KinD node image to `deltafi/deltafi-kind-node:0.97.0` for KinD 0.15.0 compatibility
+- `@EnableConfigurationProperties` needs to be replaced with `@ConfigurationPropertiesScan(basePackages = "org.deltafi")` in Spring Boot applications and tests.
 
 ## [0.97.0] - 2022-08-29
 

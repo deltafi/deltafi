@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.MissingResourceException;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -35,27 +35,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 class StatsdClientTest {
-    private final InetSocketAddress address = new InetSocketAddress("deltafi.org", 42);
-    private final DatagramSocket socket = mock(DatagramSocket.class);
-    private final StatsdClient.DatagramSocketFactory datagramSocketFactory = mock(StatsdClient.DatagramSocketFactory.class);
-    private final StatsdClient.DatagramPacketFactory datagramPacketFactory = mock(StatsdClient.DatagramPacketFactory.class);
-    private final StatsdClient statsdClient = new StatsdClient(address, datagramSocketFactory, datagramPacketFactory);
+    final String HOSTNAME = "deltafi.org";
+    final int PORT = 42;
+    private final Socket socket = mock(Socket.class);
+    private final PrintWriter stream = mock(PrintWriter.class);
+    private final StatsdClient.SocketFactory socketFactory = mock(StatsdClient.SocketFactory.class);
+    private final StatsdClient.StreamFactory streamFactory = mock(StatsdClient.StreamFactory.class);
+    private final StatsdClient statsdClient = new StatsdClient(HOSTNAME, PORT, socketFactory, streamFactory);
 
-    private final ArgumentCaptor<byte[]> capturedBytes = ArgumentCaptor.forClass(byte[].class);
-    private final ArgumentCaptor<InetSocketAddress> capturedAddress = ArgumentCaptor.forClass(InetSocketAddress.class);
-    private final ArgumentCaptor<DatagramPacket> capturedDatagram = ArgumentCaptor.forClass(DatagramPacket.class);
+    private final ArgumentCaptor<String> capturedString = ArgumentCaptor.forClass(String.class);
 
     @BeforeEach @SneakyThrows
     public void setup() {
-        when(datagramSocketFactory.create()).thenReturn(socket);
-        when(datagramPacketFactory.create(capturedBytes.capture(), anyInt(), capturedAddress.capture())).thenCallRealMethod();
-        doNothing().when(socket).send(capturedDatagram.capture());
+        when(socketFactory.create(HOSTNAME, PORT)).thenReturn(socket);
+        when(streamFactory.create(socket)).thenReturn(stream);
+        doNothing().when(stream).println(capturedString.capture());
     }
 
     @Test @SneakyThrows
     public void connect() {
         statsdClient.connect();
-        verify(datagramSocketFactory).create();
+        verify(socketFactory).create(HOSTNAME, PORT);
     }
 
     @Test @SneakyThrows
@@ -63,7 +63,7 @@ class StatsdClientTest {
         try (StatsdClient client = statsdClient) {
             client.connect();
         }
-        verify(datagramSocketFactory).create();
+        verify(socketFactory).create(HOSTNAME, PORT);
         verify(socket).close();
     }
 
@@ -71,39 +71,65 @@ class StatsdClientTest {
     public void sendCounter() {
         statsdClient.connect();
         statsdClient.sendCounter("foo", "42");
-        assertThat(new String(capturedBytes.getValue()), equalTo("foo:42|c"));
-        assertThat(capturedAddress.getValue(), equalTo(address));
+        assertThat(capturedString.getValue(), equalTo("foo:42|c"));
         assertThat(statsdClient.success(), is(true));
+        statsdClient.close();
+        verify(stream).close();
+        verify(socket).close();
     }
 
     @Test @SneakyThrows
     public void sendGauge() {
         statsdClient.connect();
         statsdClient.sendGauge("foo", "42");
-        assertThat(new String(capturedBytes.getValue()), equalTo("foo:42|g"));
-        assertThat(capturedAddress.getValue(), equalTo(address));
+        assertThat(capturedString.getValue(), equalTo("foo:42|g"));
         assertThat(statsdClient.success(), is(true));
+        statsdClient.close();
+        verify(stream).close();
+        verify(socket).close();
     }
 
     @Test @SneakyThrows
-    public void failure() {
-        doThrow(new IOException("Boom")).when(socket).send(capturedDatagram.capture());
+    public void connectFailure() {
         statsdClient.connect();
-        statsdClient.sendGauge("foo", "42");
-        assertThat(statsdClient.success(), is(false));
-        statsdClient.sendGauge("foo", "42");
-        assertThat(statsdClient.success(), is(false));
-        doNothing().when(socket).send(capturedDatagram.capture());
+        assertThat(statsdClient.success(), is(true));
         statsdClient.sendGauge("foo", "42");
         assertThat(statsdClient.success(), is(true));
+        statsdClient.close();
+        doThrow(new IOException("Boom")).when(socketFactory).create(HOSTNAME, PORT);
+        assertThrows(IOException.class, statsdClient::connect);
+        assertThat(statsdClient.success(), is(false));
+        assertThrows(IOException.class, statsdClient::connect);
+        assertThat(statsdClient.success(), is(false));
+    }
+
+    @Test @SneakyThrows
+    public void closeFailure() {
+        doThrow(new IOException("Boom")).when(socket).close();
+        statsdClient.connect();
+        assertThat(statsdClient.success(), is(true));
+        statsdClient.sendGauge("foo", "42");
+        assertThat(statsdClient.success(), is(true));
+        statsdClient.close();
+        assertThat(statsdClient.success(), is(false));
+    }
+
+    @Test @SneakyThrows
+    public void sendFailure() {
+        doThrow(new MissingResourceException("Boom", "Boom", "Boom")).when(stream).println(anyString());
+        statsdClient.connect();
+        assertThat(statsdClient.success(), is(true));
+        assertThrows(MissingResourceException.class, () -> statsdClient.sendGauge("foo", "42"));
+        assertThat(statsdClient.success(), is(false));
+        statsdClient.close();
+        assertThat(statsdClient.success(), is(false));
     }
 
     @Test @SneakyThrows
     public void sanitize() {
         statsdClient.connect();
         statsdClient.sendGauge("foo |bar : baz", "42");
-        assertThat(new String(capturedBytes.getValue()), equalTo("foo-bar-baz:42|g"));
-        assertThat(capturedAddress.getValue(), equalTo(address));
+        assertThat(capturedString.getValue(), equalTo("foo-bar-baz:42|g"));
         assertThat(statsdClient.success(), is(true));
     }
 

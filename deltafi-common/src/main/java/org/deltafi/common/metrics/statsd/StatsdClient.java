@@ -23,11 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
+import java.io.PrintWriter;
+import java.net.*;
 import java.util.regex.Pattern;
 
 /**
@@ -42,21 +39,24 @@ public class StatsdClient implements Closeable {
 
   private static final Pattern ILLEGAL_CHARACTERS = Pattern.compile("[|:\\s]+");
 
-  private final InetSocketAddress address;
-  private DatagramSocket socket;
+  private Socket socket;
   private int failCount;
 
-  static public class DatagramSocketFactory {
-    public DatagramSocket create() throws SocketException { return new DatagramSocket(); }
+  static public class SocketFactory {
+    public Socket create(String host, int port) throws IOException { return new Socket(host, port); }
   }
 
-  static public class DatagramPacketFactory {
-    public DatagramPacket create(byte[] bytes, int length, InetSocketAddress address) throws SocketException { return new DatagramPacket(bytes, length, address); }
+  static public class StreamFactory {
+    public PrintWriter create(Socket socket) throws IOException { return new PrintWriter(socket.getOutputStream(), true);
+    }
   }
 
-  private final DatagramSocketFactory datagramSocketFactory;
-  private final DatagramPacketFactory datagramPacketFactory;
+  final String host;
+  final int port;
+  private final SocketFactory socketFactory;
+  private final StreamFactory streamFactory;
 
+  private PrintWriter out = null;
   /**
    * Constructs a client for the given host and port.
    *
@@ -64,44 +64,57 @@ public class StatsdClient implements Closeable {
    * @param port statsd port on the server
    */
   public StatsdClient(final String host, final int port) {
-    this(new InetSocketAddress(host, port), new DatagramSocketFactory(), new DatagramPacketFactory());
+    this(host, port, new SocketFactory(), new StreamFactory());
   }
 
   /***
-   * Creates a socket for the statsd server
+   * Creates a socket connection to the statsd server
    *
    * @throws IllegalStateException if the client is already connected
    * @throws IOException           if there is an error connecting
    */
   public void connect() throws IOException {
     if (socket != null) {
+      failCount++;
       throw new IllegalStateException("Already connected");
     }
 
-    this.socket = datagramSocketFactory.create();
+    try {
+      socket = socketFactory.create(host, port);
+      out = streamFactory.create(socket);
+    } catch (Throwable e) {
+      incrementFailCount(e);
+      if (socket != null) { socket.close(); }
+      throw e;
+    }
+  }
+
+  private void incrementFailCount(Throwable e) {
+    failCount++;
+    if (failCount == 1) {
+      log.warn("Unable to transmit metrics to statsd", e);
+    } else {
+      log.debug("Unable to transmit metrics to statsd", e);
+    }
   }
 
   private void send(final String name, final String value, final String format) {
+    String message = String.format(format, sanitize(name), value);
     try {
-      byte[] bytes = String.format(format, sanitize(name), value).getBytes(StandardCharsets.UTF_8);
-      socket.send(datagramPacketFactory.create(bytes, bytes.length, address));
-      if (failCount > 0) {
-        log.info("Resumed sending metrics to statsd");
-      }
-      failCount = 0;
-    } catch (IOException e) {
-      failCount++;
+      out.println(message);
+    } catch (Throwable e) {
+      incrementFailCount(e);
+      throw e;
+    }
 
-      if (failCount == 1) {
-        log.warn("Unable to transmit metrics to statsd", e);
-      } else {
-        log.debug("Unable to transmit metrics to statsd", e);
-      }
+    if (failCount > 0) {
+      log.info("Resumed sending metrics to statsd");
+      failCount = 0;
     }
   }
 
   /**
-   * Sends the given measurement to the server as a counter. Logs exceptions.
+   * Sends the given measurement to the server as a counter
    *
    * @param name  metric name
    * @param value metric value
@@ -111,7 +124,7 @@ public class StatsdClient implements Closeable {
   }
 
   /**
-   * Sends the given measurement to the server as a gauge. Logs exceptions.
+   * Sends the given measurement to the server as a gauge
    *
    * @param name  metric name
    * @param value metric value
@@ -120,10 +133,20 @@ public class StatsdClient implements Closeable {
     send(name, value, "%s:%s|g");
   }
 
+  /**
+   * Close the connection to the StatsD server
+   */
   @Override
-  public void close() throws IOException {
+  public void close() {
+    if (out != null) {
+      out.close();
+    }
     if (socket != null) {
-      socket.close();
+      try {
+        socket.close();
+      } catch (Throwable e) {
+        incrementFailCount(e);
+      }
     }
     this.socket = null;
   }

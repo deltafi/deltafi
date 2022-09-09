@@ -108,7 +108,7 @@ public class StatsdDeltaReporter extends ScheduledReporter {
     } catch (IllegalStateException e) {
       log.error("multiple statsd connections attempted.  Possible threading issue", e);
     } catch (IOException e) {
-      log.warn("statsd service failure", e);
+      log.warn("statsd service failure: {}", e.getMessage());
     } catch (Throwable e) {
       log.error("Unexpected error", e);
     }

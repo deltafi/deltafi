@@ -288,6 +288,8 @@ graphite:
     existingClaim: deltafi-graphite
   nodeSelector:
     node-role.deltafi.org/storage: "true"
+  statsd:
+    interface: TCP
 
 # Enable a "black hole" service that consumes all HTTP posts with a 200 response on http://deltafi-blackhole-service
 blackhole:
