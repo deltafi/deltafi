@@ -161,6 +161,11 @@
         "defaultValue": "100000000"
       },
       {
+        "key": "minio.expiration-days",
+        "description": "Maximum number of days to keep objects in minio",
+        "defaultValue": "13"
+      },
+      {
         "key": "redis.url",
         "description": "The URL used to reach redis",
         "defaultValue": "http://deltafi-redis-master:6379"

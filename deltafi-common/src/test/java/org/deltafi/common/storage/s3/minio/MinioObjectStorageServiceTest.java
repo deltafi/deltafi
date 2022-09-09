@@ -25,6 +25,7 @@ import lombok.AllArgsConstructor;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
@@ -169,4 +170,68 @@ public class MinioObjectStorageServiceTest {
         assertTrue(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
         assertFalse(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
     }
+
+    @Test
+    void testBucketExists() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioProperties minioProperties = new MinioProperties();
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                minioProperties);
+
+        Mockito.when(minioClient.bucketExists(Mockito.any())).thenReturn(true);
+        assertTrue(minioObjectStorageService.bucketExists(BUCKET));
+    }
+
+    @Test
+    void testBucketExistsThrows() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioProperties minioProperties = new MinioProperties();
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                minioProperties);
+
+        Mockito.when(minioClient.bucketExists(Mockito.any())).thenThrow(ServerException.class);
+        assertThrows(ObjectStorageException.class, () ->
+                minioObjectStorageService.bucketExists(BUCKET));
+    }
+
+    @Test
+    void testCreateBucket() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        ArgumentCaptor<MakeBucketArgs> captureArgs = ArgumentCaptor.forClass(MakeBucketArgs.class);
+
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioProperties minioProperties = new MinioProperties();
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                minioProperties);
+
+        Mockito.doThrow(new ServerException("test", 0, "test"))
+                .when(minioClient).makeBucket(captureArgs.capture());
+
+        Mockito.when(minioClient.bucketExists(Mockito.any())).thenReturn(false);
+        assertThrows(ObjectStorageException.class, () ->
+                minioObjectStorageService.createBucket(BUCKET));
+    }
+
+    @Test
+    void testSetExpiration() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        ArgumentCaptor<SetBucketLifecycleArgs> captureArgs = ArgumentCaptor.forClass(SetBucketLifecycleArgs.class);
+
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioProperties minioProperties = new MinioProperties();
+        minioProperties.setExpirationDays(3);
+
+        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
+                minioProperties);
+
+        Mockito.doThrow(new ServerException("test", 0, "test"))
+                .when(minioClient).setBucketLifecycle(captureArgs.capture());
+
+        assertThrows(ObjectStorageException.class, () ->
+                minioObjectStorageService.setExpiration(BUCKET));
+    }
+
 }

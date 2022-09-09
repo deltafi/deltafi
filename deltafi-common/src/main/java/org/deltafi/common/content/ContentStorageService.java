@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ContentStorageService {
-    private static final String CONTENT_BUCKET = "storage";
-    
+    public static final String CONTENT_BUCKET = "storage";
+
     private final ObjectStorageService objectStorageService;
 
     public InputStream load(ContentReference contentReference) throws ObjectStorageException {

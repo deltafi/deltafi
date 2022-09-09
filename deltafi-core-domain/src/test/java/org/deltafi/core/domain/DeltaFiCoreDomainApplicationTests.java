@@ -80,6 +80,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.config.server.config.ConfigServerProperties;
 import org.springframework.cloud.config.server.environment.EnvironmentRepository;
 import org.springframework.context.annotation.Bean;
@@ -190,6 +191,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	@Autowired
 	EgressFlowPlanService egressFlowPlanService;
+
+	@MockBean
+	StorageConfigurationService storageConfigurationService;
 
 	@Captor
 	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;

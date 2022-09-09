@@ -27,4 +27,5 @@ public class MinioProperties {
     String accessKey;
     String secretKey;
     long partSize;
+    int expirationDays;
 }

@@ -104,19 +104,6 @@ minio:
   service:
     type: NodePort
     port: 9000
-  buckets:
-    - name: storage
-      policy: none
-      purge: false
-      ilm:
-        Rules:
-          - Expiration:
-              Days: 13
-            ID: AgeOff
-            Status: Enabled
-  makeBucketJob:
-    annotations:
-      "helm.sh/hook-weight": "1"
   nodeSelector:
     node-role.deltafi.org/storage: "true"
 # Values for the MongoDB dependency

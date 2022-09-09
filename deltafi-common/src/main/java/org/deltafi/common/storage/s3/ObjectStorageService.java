@@ -23,6 +23,12 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface ObjectStorageService {
+    boolean bucketExists(String bucketName) throws ObjectStorageException;
+
+    void createBucket(String bucketName) throws ObjectStorageException;
+
+    void setExpiration(String bucketName) throws ObjectStorageException;
+
     InputStream getObject(ObjectReference objectReference) throws ObjectStorageException;
 
     default byte[] getObjectAsByteArray(ObjectReference objectReference) throws ObjectStorageException, IOException {
