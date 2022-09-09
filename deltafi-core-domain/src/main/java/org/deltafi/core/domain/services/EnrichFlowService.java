@@ -19,10 +19,13 @@ package org.deltafi.core.domain.services;
 
 import org.deltafi.core.domain.converters.EnrichFlowPlanConverter;
 import org.deltafi.core.domain.repo.EnrichFlowRepo;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.EnrichFlowPlan;
 import org.deltafi.core.domain.validation.EnrichFlowValidator;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow> {
@@ -31,5 +34,16 @@ public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow> {
 
     public EnrichFlowService(EnrichFlowRepo flowRepo, PluginVariableService pluginVariableService, EnrichFlowValidator enrichFlowValidator) {
         super("enrich", flowRepo, pluginVariableService, ENRICH_FLOW_PLAN_CONVERTER, enrichFlowValidator);
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setRunningEnrichFlows(getRunningFlowNames());
+    }
+
+
+    @Override
+    List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getRunningEnrichFlows();
     }
 }

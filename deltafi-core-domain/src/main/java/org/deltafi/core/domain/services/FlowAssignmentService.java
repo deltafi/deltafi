@@ -19,13 +19,17 @@ package org.deltafi.core.domain.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.deltafi.common.types.SourceInfo;
-import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.repo.FlowAssignmentRuleRepo;
+import org.deltafi.core.domain.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.domain.snapshot.Snapshotter;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
+import org.deltafi.core.domain.types.Result;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +37,7 @@ import java.util.Optional;
 @Service
 @Slf4j
 @AllArgsConstructor
-public class FlowAssignmentService {
+public class FlowAssignmentService implements Snapshotter {
 
     public static final int DEFAULT_PRIORITY = 500;
 
@@ -100,9 +104,29 @@ public class FlowAssignmentService {
         if (errors.isEmpty()) {
             flowAssignmentRuleRepo.save(flowAssignmentRule);
             refreshCache();
-            return new Result(true, List.of());
+            return Result.newBuilder().success(true).build();
         }
-        return new Result(false, errors);
+        return Result.newBuilder().success(false).errors(errors).build();
+    }
+
+    public Result saveAll(List<FlowAssignmentRule> flowAssignmentRules) {
+        Result result = new Result();
+        List<FlowAssignmentRule> valid = new ArrayList<>();
+        for (FlowAssignmentRule flowAssignmentRule : flowAssignmentRules) {
+            List<String> errors = flowAssignmentRule.validate();
+            if (errors.isEmpty()) {
+                valid.add(flowAssignmentRule);
+            } else {
+                result.setSuccess(false);
+                result.getErrors().addAll(errors);
+            }
+        }
+
+        if (!valid.isEmpty()) {
+            flowAssignmentRuleRepo.saveAll(valid);
+        }
+
+        return result;
     }
 
     /**
@@ -119,5 +143,24 @@ public class FlowAssignmentService {
             }
         }
         return null;
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setFlowAssignmentRules(flowAssignmentRuleRepo.findAll());
+    }
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        if (hardReset) {
+            flowAssignmentRuleRepo.deleteAll();
+        }
+
+        return saveAll(systemSnapshot.getFlowAssignmentRules());
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.FLOW_ASSIGNMENT_ORDER;
     }
 }

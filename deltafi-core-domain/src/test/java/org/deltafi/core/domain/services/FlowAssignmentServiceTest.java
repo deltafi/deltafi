@@ -17,14 +17,17 @@
  */
 package org.deltafi.core.domain.services;
 
+import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
-import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.deltafi.core.domain.repo.FlowAssignmentRuleRepo;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -108,12 +111,12 @@ class FlowAssignmentServiceTest {
 
     @Test
     void testValidSave() {
-        assertTrue(flowAssignmentService.save(getRegexRule()).getSuccess());
+        assertTrue(flowAssignmentService.save(getRegexRule()).isSuccess());
     }
 
     @Test
     void testSaveNullName() {
-        assertFalse(flowAssignmentService.save(new FlowAssignmentRule()).getSuccess());
+        assertFalse(flowAssignmentService.save(new FlowAssignmentRule()).isSuccess());
     }
 
     private List<FlowAssignmentRule> getAllRules() {
@@ -123,6 +126,29 @@ class FlowAssignmentServiceTest {
                 getMetaAndRegexRule(),
                 getPassDownRule());
         return rules;
+    }
+
+    @Test
+    void testUpdateSnapshot() {
+        List<FlowAssignmentRule> expected = getAllRules();
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+
+        Mockito.when(flowAssignmentRuleRepo.findAll()).thenReturn(expected);
+
+        flowAssignmentService.updateSnapshot(systemSnapshot);
+
+        Assertions.assertThat(systemSnapshot.getFlowAssignmentRules()).isEqualTo(expected);
+    }
+
+    @Test
+    void testResetFromSnapshot() {
+        List<FlowAssignmentRule> expected = getAllRules();
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        systemSnapshot.setFlowAssignmentRules(expected);
+        flowAssignmentService.resetFromSnapshot(systemSnapshot, true);
+
+        Mockito.verify(flowAssignmentRuleRepo).deleteAll();
+        Mockito.verify(flowAssignmentRuleRepo).saveAll(expected);
     }
 
     private FlowAssignmentRule getRegexRule() {

@@ -33,4 +33,8 @@ public class Variable {
   private boolean required;
   private String defaultValue;
   private String value;
+
+  public boolean hasValue() {
+    return null != value;
+  }
 }

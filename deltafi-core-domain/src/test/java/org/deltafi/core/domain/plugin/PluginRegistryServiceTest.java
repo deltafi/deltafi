@@ -17,20 +17,25 @@
  */
 package org.deltafi.core.domain.plugin;
 
-import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.*;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -83,28 +88,28 @@ class PluginRegistryServiceTest {
     }
 
     @Test
-    public void addsPluginWithDependencies() {
+    void addsPluginWithDependencies() {
         Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of());
 
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         Result result = pluginRegistryService.addPlugin(plugin);
 
-        assertTrue(result.getSuccess());
+        assertTrue(result.isSuccess());
         ArgumentCaptor<Plugin> pluginArgumentCaptor = ArgumentCaptor.forClass(Plugin.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
     }
 
     @Test
-    public void addPluginMissingDependenciesReturnsErrors() {
+    void addPluginMissingDependenciesReturnsErrors() {
         Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of("error1", "error2"));
 
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         Result result = pluginRegistryService.addPlugin(plugin);
 
-        assertFalse(result.getSuccess());
+        assertFalse(result.isSuccess());
         assertEquals(2, result.getErrors().size());
         assertEquals("error1", result.getErrors().get(0));
         assertEquals("error2", result.getErrors().get(1));
@@ -112,10 +117,10 @@ class PluginRegistryServiceTest {
     }
 
     @Test
-    public void uninstallNotFound() {
+    void uninstallNotFound() {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.empty());
         Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.getSuccess());
+        assertFalse(result.isSuccess());
         assertEquals(1, result.getErrors().size());
         assertTrue(result.getErrors().contains("Plugin not found"));
 
@@ -125,20 +130,20 @@ class PluginRegistryServiceTest {
     }
 
     @Test
-    public void uninstallFlowRunning() {
+    void uninstallFlowRunning() {
         Plugin plugin1 = makePlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(ingressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
 
         Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.getSuccess());
+        assertFalse(result.isSuccess());
         assertEquals(1, result.getErrors().size());
         assertTrue(result.getErrors().contains("The plugin has created the following ingress flows which are still running: mockIngress"));
     }
 
     @Test
-    public void uninstallIsADependency() {
+    void uninstallIsADependency() {
         Plugin plugin1 = makePlugin();
         Plugin plugin2 = makeDependencyPlugin();
 
@@ -146,13 +151,13 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
 
         Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.getSuccess());
+        assertFalse(result.isSuccess());
 
-        Assertions.assertThat(result.getErrors()).hasSize(1).contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
+        assertThat(result.getErrors()).hasSize(1).contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
     }
 
     @Test
-    public void uninstallRunningAndADependency() {
+    void uninstallRunningAndADependency() {
         Plugin plugin1 = makePlugin();
         Plugin plugin2 = makeDependencyPlugin();
 
@@ -163,9 +168,9 @@ class PluginRegistryServiceTest {
         Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
         Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.getSuccess());
+        assertFalse(result.isSuccess());
 
-        Assertions.assertThat(result.getErrors()).hasSize(4)
+        assertThat(result.getErrors()).hasSize(4)
                 .contains("The plugin has created the following ingress flows which are still running: mockIngress")
                 .contains("The plugin has created the following enrich flows which are still running: mockEnrich")
                 .contains("The plugin has created the following egress flows which are still running: mockEgress")
@@ -173,13 +178,13 @@ class PluginRegistryServiceTest {
     }
 
     @Test
-    public void uninstallDryRun() {
+    void uninstallDryRun() {
         Plugin plugin1 = makePlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
 
         Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertTrue(result.getSuccess());
+        assertTrue(result.isSuccess());
 
         // none of the removal steps should run for a dry-run
         Mockito.verify(pluginRepository, Mockito.never()).deleteById(Mockito.any());
@@ -191,13 +196,13 @@ class PluginRegistryServiceTest {
     }
 
     @Test
-    public void uninstallSuccess() {
+    void uninstallSuccess() {
         Plugin plugin1 = makePlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
 
         Result result = pluginRegistryService.uninstallPlugin(false, PLUGIN_COORDINATES_1);
-        assertTrue(result.getSuccess());
+        assertTrue(result.isSuccess());
 
         Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
         Mockito.verify(ingressFlowPlanService).cleanupFor(plugin1);
@@ -206,6 +211,46 @@ class PluginRegistryServiceTest {
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
         Mockito.verify(actionSchemaService).cleanupFor(plugin1);
         Mockito.verify(actionEventQueuePluginCleaner).cleanupFor(plugin1);
+    }
+
+    @Test
+    void testUpdateSnapshot() {
+        Plugin one = makePlugin();
+        Plugin two = makePlugin();
+        two.setPluginCoordinates(PLUGIN_COORDINATES_2);
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+
+        Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
+        pluginRegistryService.updateSnapshot(systemSnapshot);
+
+        assertThat(systemSnapshot.getInstalledPlugins()).hasSize(2).contains(PLUGIN_COORDINATES_1, PLUGIN_COORDINATES_2);
+    }
+
+    @Test
+    void testResetFromSnapshot() {
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+
+        Plugin installedOnly = makePlugin();
+        installedOnly.setPluginCoordinates(new PluginCoordinates("org.installed", "installed-plugin", "1.0.0"));
+        Plugin newVersion = makePlugin();
+        newVersion.setPluginCoordinates( new PluginCoordinates("org.mock", "plugin-2", "1.1.0"));
+
+
+        Plugin inBoth = makePlugin();
+        PluginCoordinates oldVersion = PLUGIN_COORDINATES_2;
+        PluginCoordinates inSnapshotOnly = new PluginCoordinates("org.unique", "custom-plugin", "1.0.0");
+
+
+        Mockito.when(pluginRepository.findAll()).thenReturn(List.of(installedOnly, newVersion, inBoth));
+
+        systemSnapshot.setInstalledPlugins(Set.of(inBoth.getPluginCoordinates(), oldVersion, inSnapshotOnly));
+
+        Result result = pluginRegistryService.resetFromSnapshot(systemSnapshot, true);
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInfo()).hasSize(3)
+                .contains("Installed plugin org.mock:plugin-2:1.1.0 was a different version at the time of the snapshot: org.mock:plugin-2:1.0.0")
+                .contains("Plugin org.unique:custom-plugin:1.0.0 was installed at the time of the snapshot but is no longer installed")
+                .contains("Installed plugin org.installed:installed-plugin:1.0.0 was not installed at the time of the snapshot");
     }
 
     private Plugin makeDependencyPlugin() {

@@ -29,7 +29,11 @@ import org.deltafi.core.domain.generated.types.PluginVariablesInput;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.deltafi.core.domain.repo.PluginVariableRepo;
+import org.deltafi.core.domain.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.domain.snapshot.Snapshotter;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
 import org.deltafi.core.domain.types.PluginVariables;
+import org.deltafi.core.domain.types.Result;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -37,7 +41,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class PluginVariableService implements PluginCleaner {
+public class PluginVariableService implements PluginCleaner, Snapshotter {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -108,6 +112,63 @@ public class PluginVariableService implements PluginCleaner {
 
         pluginVariableRepo.save(pluginVariables);
         return true;
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        // Only include PluginVariables that have the value set
+        systemSnapshot.setPluginVariables(pluginVariableRepo.findAll().stream()
+                .map(this::filterSetValuesOnly)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()));
+    }
+
+    PluginVariables filterSetValuesOnly(PluginVariables pluginVariables) {
+        PluginVariables result = new PluginVariables();
+        result.setSourcePlugin(pluginVariables.getSourcePlugin());
+        result.setVariables(filterSetValuesOnly(pluginVariables.getVariables()));
+
+        return !result.getVariables().isEmpty() ? result : null;
+    }
+
+    private List<Variable> filterSetValuesOnly(List<Variable> variables) {
+        return null != variables ? variables.stream().filter(Variable::hasValue).collect(Collectors.toList()) : List.of();
+    }
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        if (hardReset) {
+            // Unset all the values, a full deleteAll/replace could lead to problems if this snapshot is from a different version of DeltaFi
+            pluginVariableRepo.resetAllVariableValues();
+        }
+
+        List<PluginVariables> variablesToSet = pluginVariableRepo.findAll();
+        List<PluginVariables> snapshotVariables = systemSnapshot.getPluginVariables();
+
+        List<PluginVariables> resetPluginVariables = variablesToSet.stream().map(rollbackVariables -> rollbackValues(rollbackVariables, snapshotVariables)).collect(Collectors.toList());
+        
+        pluginVariableRepo.saveAll(resetPluginVariables);
+
+        return new Result();
+    }
+
+    PluginVariables rollbackValues(PluginVariables variablesToSet, List<PluginVariables> valuesToUse) {
+        Optional<PluginVariables> valuesT = valuesToUse.stream()
+                .filter(snapshot -> snapshot.getSourcePlugin().equals(variablesToSet.getSourcePlugin()))
+                .findFirst();
+
+        if (valuesT.isPresent()) {
+            PluginVariables valueHolder = valuesT.get();
+            valueHolder.getVariables().forEach(rollbackVariable -> rollbackValues(variablesToSet, rollbackVariable));
+        }
+
+        return variablesToSet;
+    }
+
+    void rollbackValues(PluginVariables pluginVariables, Variable rollbackValue) {
+        pluginVariables.getVariables().stream()
+                .filter(variable -> variable.getName().equals(rollbackValue.getName()))
+                .findFirst().ifPresent(variable -> variable.setValue(rollbackValue.getValue()));
     }
 
     /**
@@ -202,5 +263,10 @@ public class PluginVariableService implements PluginCleaner {
     @Override
     public void cleanupFor(Plugin plugin) {
         removeVariables(plugin.getPluginCoordinates());
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.PLUGIN_VARIABLE_ORDER;
     }
 }

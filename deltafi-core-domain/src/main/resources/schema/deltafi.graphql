@@ -389,6 +389,7 @@ type AcknowledgeResult {
 
 type Result {
   success: Boolean!
+  info: [String]
   errors: [String]
 }
 

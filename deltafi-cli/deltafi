@@ -156,6 +156,7 @@ Commands:
   start                (alias for install)
   status               show status of system
   stop                 (alias for uninstall)
+  system-snapshot      manage system state snapshots
   trace                show trace data for a DID
   update               (alias for install)
   upgrade              (alias for install)
@@ -282,6 +283,9 @@ case "$1" in
     ;;
   set-admin-password)
     "$DELTAFICLI_WORKDIR/commands/set-admin-password" $@
+    ;;
+  system-snapshot)
+    "$DELTAFICLI_WORKDIR/commands/system-snapshot" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/system-snapshot.log"
     ;;
   trace)
     "$DELTAFICLI_WORKDIR/commands/trace" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/trace.log"

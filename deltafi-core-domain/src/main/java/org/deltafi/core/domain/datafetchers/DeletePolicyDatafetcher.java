@@ -21,12 +21,12 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
-import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
-import org.deltafi.core.domain.generated.types.Result;
-import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
 import org.deltafi.core.domain.services.DeletePolicyService;
+import org.deltafi.core.domain.types.DeletePolicies;
 import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.domain.types.Result;
+import org.deltafi.core.domain.types.TimedDeletePolicy;
 
 import java.util.Collection;
 
@@ -42,7 +42,7 @@ public class DeletePolicyDatafetcher {
     }
 
     @DgsMutation
-    public Result loadDeletePolicies(boolean replaceAll, LoadDeletePoliciesInput policies) {
+    public Result loadDeletePolicies(boolean replaceAll, DeletePolicies policies) {
         return deletePolicyService.saveAll(replaceAll, policies);
     }
 
@@ -57,12 +57,12 @@ public class DeletePolicyDatafetcher {
     }
 
     @DgsMutation
-    public Result updateDiskSpaceDeletePolicy(DiskSpaceDeletePolicyInput policyUpdate) {
+    public Result updateDiskSpaceDeletePolicy(DiskSpaceDeletePolicy policyUpdate) {
         return deletePolicyService.update(policyUpdate);
     }
 
     @DgsMutation
-    public Result updateTimedDeletePolicy(TimedDeletePolicyInput policyUpdate) {
+    public Result updateTimedDeletePolicy(TimedDeletePolicy policyUpdate) {
         return deletePolicyService.update(policyUpdate);
     }
 }

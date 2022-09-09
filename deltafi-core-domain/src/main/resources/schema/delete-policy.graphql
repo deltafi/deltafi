@@ -69,9 +69,14 @@ input TimedDeletePolicyInput {
     deleteMetadata: Boolean!
 }
 
-input LoadDeletePoliciesInput {
+input DeletePoliciesInput {
     timedPolicies: [TimedDeletePolicyInput!]!
     diskSpacePolicies: [DiskSpaceDeletePolicyInput!]!
+}
+
+type DeletePolicies {
+    timedPolicies: [TimedDeletePolicy!]!
+    diskSpacePolicies: [DiskSpaceDeletePolicy!]!
 }
 
 extend type Query {
@@ -80,7 +85,7 @@ extend type Query {
 
 extend type Mutation {
     removeDeletePolicy(id: String!) : Boolean!
-    loadDeletePolicies(replaceAll: Boolean!, policies: LoadDeletePoliciesInput!) : Result!
+    loadDeletePolicies(replaceAll: Boolean!, policies: DeletePoliciesInput!) : Result!
     enablePolicy(id: String!, enabled: Boolean!) : Boolean!
     updateDiskSpaceDeletePolicy(policyUpdate: DiskSpaceDeletePolicyInput!) : Result!
     updateTimedDeletePolicy(policyUpdate: TimedDeletePolicyInput!) : Result!

@@ -86,4 +86,10 @@ public interface PropertyRepository {
      * @return number of property sets that were updated
      */
     int unsetProperties(List<PropertyId> propertyIds);
+
+    /**
+     * Null out all property.$.value settings to get back to default
+     * settings
+     */
+    void resetAllPropertyValues();
 }

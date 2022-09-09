@@ -57,8 +57,14 @@ public class PropertyMetadataLoader {
         return currentPropertyMetadata;
     }
 
-    void keepOverriddenValues(List<PropertySet> updated, List<PropertySet> current) {
-        updated.forEach(propertySet -> keepOverriddenValues(propertySet, current));
+    /**
+     * Take any custom values found in the propertySetsToPort and set them in the
+     * propertySetsToUpdate if the property is found
+     * @param propertySetsToUpdate propertySets that need the values set
+     * @param propertySetsToPort propertySets that contain values to use
+     */
+    public void keepOverriddenValues(List<PropertySet> propertySetsToUpdate, List<PropertySet> propertySetsToPort) {
+        propertySetsToUpdate.forEach(propertySetToUpdate -> keepOverriddenValues(propertySetToUpdate, propertySetsToPort));
     }
 
     /**
@@ -66,18 +72,18 @@ public class PropertyMetadataLoader {
      * as the incomingPropertySet. If existing properties are found copy any values
      * that are set into the incoming properties to preserve overridden values.
      *
-     * @param incomingPropertySet - propertySet based on the property-metadata.json
-     * @param currentPropertySets - list of propertySets stored in mongo
+     * @param propertySetsToUpdate - propertySet that need the values set
+     * @param propertySetsToPort - propertySets that contain values to use
      */
-    private void keepOverriddenValues(PropertySet incomingPropertySet, List<PropertySet> currentPropertySets) {
-        List<Property> existingProperties = currentPropertySets.stream()
-                .filter(currentPropertySet -> currentPropertySet.getId().equals(incomingPropertySet.getId()))
+    private void keepOverriddenValues(PropertySet propertySetsToUpdate, List<PropertySet> propertySetsToPort) {
+        List<Property> existingProperties = propertySetsToPort.stream()
+                .filter(propertySetToPort -> propertySetToPort.getId().equals(propertySetsToUpdate.getId()))
                 .findFirst().map(PropertySet::getProperties)
                 .orElse(Collections.emptyList());
 
         // don't loop through the incoming properties if there are no existing values to port
         if(!existingProperties.isEmpty()) {
-            incomingPropertySet.getProperties().forEach(property -> keepOverriddenValues(property, existingProperties));
+            propertySetsToUpdate.getProperties().forEach(property -> keepOverriddenValues(property, existingProperties));
         }
 
     }

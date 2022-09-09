@@ -15,23 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.types;
+package org.deltafi.core.domain.repo;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public interface PluginVariableRepoCustom {
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class DiskSpaceDeletePolicy implements DeletePolicy {
-    private String id;
-    private String name;
-    private boolean enabled;
-    private boolean locked;
-    private String flow;
-    private int maxPercent;
+    void resetAllVariableValues();
 
 }

@@ -20,6 +20,7 @@ package org.deltafi.core.domain.services;
 import org.deltafi.core.domain.converters.EgressFlowPlanConverter;
 import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.repo.EgressFlowRepo;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EgressFlowPlan;
 import org.deltafi.core.domain.validation.EgressFlowValidator;
@@ -62,5 +63,15 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
         }
 
         return egressFlow;
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setRunningEgressFlows(getRunningFlowNames());
+    }
+
+    @Override
+    List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getRunningEgressFlows();
     }
 }

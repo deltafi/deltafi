@@ -24,9 +24,9 @@ import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.domain.generated.client.*;
 import org.deltafi.core.domain.generated.types.FlowAssignmentRuleInput;
-import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.FlowAssignmentService;
 import org.deltafi.core.domain.types.FlowAssignmentRule;
+import org.deltafi.core.domain.types.Result;
 
 import java.util.Collections;
 import java.util.List;

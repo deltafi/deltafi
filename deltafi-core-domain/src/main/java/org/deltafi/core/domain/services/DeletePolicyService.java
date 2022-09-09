@@ -17,19 +17,14 @@
  */
 package org.deltafi.core.domain.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
-import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
-import org.deltafi.core.domain.generated.types.Result;
-import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
 import org.deltafi.core.domain.repo.DeletePolicyRepo;
-import org.deltafi.core.domain.types.DeletePolicy;
-import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.domain.types.TimedDeletePolicy;
+import org.deltafi.core.domain.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.domain.snapshot.Snapshotter;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.*;
 import org.deltafi.core.domain.validation.DeletePolicyValidator;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -40,9 +35,8 @@ import java.util.*;
 @Service
 @Slf4j
 @AllArgsConstructor
-public class DeletePolicyService {
+public class DeletePolicyService implements Snapshotter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final DeletePolicyRepo deletePolicyRepo;
 
     @PostConstruct
@@ -59,7 +53,7 @@ public class DeletePolicyService {
      */
     public boolean enablePolicy(String id, boolean enable) {
         Optional<DeletePolicy> policy = get(id);
-        if (!policy.isPresent() || (policy.get().getLocked() && !enable) || (policy.get().getEnabled() == enable)) {
+        if (policy.isEmpty() || (policy.get().isLocked() && !enable) || (policy.get().isEnabled() == enable)) {
             return false;
         }
         policy.get().setEnabled(enable);
@@ -102,10 +96,8 @@ public class DeletePolicyService {
      * @param input      the policies and options to save
      * @return Result
      */
-    public Result saveAll(boolean replaceAll, LoadDeletePoliciesInput input) {
-        List<DeletePolicy> policies = new ArrayList<>();
-        input.getTimedPolicies().forEach(t -> policies.add(convert(t)));
-        input.getDiskSpacePolicies().forEach(d -> policies.add(convert(d)));
+    public Result saveAll(boolean replaceAll, DeletePolicies input) {
+        List<DeletePolicy> policies = input.allPolicies();
 
         List<String> errors = validate(policies);
         if (errors.isEmpty()) {
@@ -114,51 +106,37 @@ public class DeletePolicyService {
             }
             try {
                 deletePolicyRepo.saveAll(policies);
-                return new Result(true, List.of());
+                return new Result();
             } catch (DuplicateKeyException e) {
                 errors.add("duplicate policy name");
             }
         }
-        return new Result(false, errors);
+        return Result.newBuilder().success(false).errors(errors).build();
     }
 
     /**
-     * Set new disk space delete properties for an existing policy.
+     * Set new delete properties for an existing policy.
      *
-     * @param policyUpdate The new policy properties
+     * @param policy The new policy properties
      * @return Result
      */
-    public Result update(DiskSpaceDeletePolicyInput policyUpdate) {
-        return update(convert(policyUpdate));
-    }
-
-    /**
-     * Set new timed delete properties for an existing policy.
-     *
-     * @param policyUpdate The new policy properties
-     * @return Result
-     */
-    public Result update(TimedDeletePolicyInput policyUpdate) {
-        return update(convert(policyUpdate));
-    }
-
-    private Result update(DeletePolicy policy) {
+    public Result update(DeletePolicy policy) {
         if (StringUtils.isBlank(policy.getId())) {
-            return new Result(false, List.of("id is missing"));
+            return Result.newBuilder().success(false).errors(List.of("id is missing")).build();
         } else if (get(policy.getId()).isEmpty()) {
-            return new Result(false, List.of("policy not found"));
+            return Result.newBuilder().success(false).errors(List.of("policy not found")).build();
         }
 
         List<String> errors = validate(List.of(policy));
         if (errors.isEmpty()) {
             try {
                 deletePolicyRepo.save(policy);
-                return new Result(true, List.of());
+                return new Result();
             } catch (DuplicateKeyException e) {
                 errors.add("duplicate policy name");
             }
         }
-        return new Result(false, errors);
+        return Result.newBuilder().success(false).errors(errors).build();
     }
 
     /**
@@ -182,19 +160,44 @@ public class DeletePolicyService {
         deletePolicyRepo.deleteAll();
     }
 
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        DeletePolicies deletePolicies = new DeletePolicies();
+        List<DeletePolicy> allPolicies = deletePolicyRepo.findAll();
 
-    private org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicy convert(DiskSpaceDeletePolicyInput inputPolicy) {
-        return objectMapper.convertValue(inputPolicy, DiskSpaceDeletePolicy.class);
+        for (DeletePolicy deletePolicy : allPolicies) {
+            if (deletePolicy instanceof TimedDeletePolicy) {
+                deletePolicies.getTimedPolicies().add((TimedDeletePolicy) deletePolicy);
+            } else if (deletePolicy instanceof DiskSpaceDeletePolicy) {
+                deletePolicies.getDiskSpacePolicies().add((DiskSpaceDeletePolicy) deletePolicy);
+            } else {
+                String type = null != deletePolicy ? deletePolicy.getClass().getName() : "null";
+                throw new IllegalStateException("Delete Policy is not a known instance type: " + type);
+            }
+        }
+
+        systemSnapshot.setDeletePolicies(deletePolicies);
     }
 
-    private org.deltafi.core.domain.generated.types.TimedDeletePolicy convert(TimedDeletePolicyInput inputPolicy) {
-        return objectMapper.convertValue(inputPolicy, TimedDeletePolicy.class);
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        if (hardReset) {
+            deletePolicyRepo.deleteAll();
+        }
+
+        deletePolicyRepo.saveAll(systemSnapshot.getDeletePolicies().allPolicies());
+        return Result.newBuilder().success(true).build();
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.DELETE_POLICY_ORDER;
     }
 
     private List<String> validate(List<DeletePolicy> policies) {
         List<String> errors = new ArrayList<>();
         Set<String> ids = new HashSet<>();
-        policies.stream().forEach(policy -> {
+        policies.forEach(policy -> {
             if (policy.getId() == null) {
                 policy.setId(UUID.randomUUID().toString());
             }
@@ -208,5 +211,4 @@ public class DeletePolicyService {
         });
         return errors;
     }
-
 }

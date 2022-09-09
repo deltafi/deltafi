@@ -22,16 +22,29 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class DiskSpaceDeletePolicy implements DeletePolicy {
-    private String id;
-    private String name;
-    private boolean enabled;
-    private boolean locked;
-    private String flow;
-    private int maxPercent;
+public class DeletePolicies {
+    @Builder.Default
+    private List<TimedDeletePolicy> timedPolicies = new ArrayList<>();
+    @Builder.Default
+    private List<DiskSpaceDeletePolicy> diskSpacePolicies = new ArrayList<>();
 
+    public List<DeletePolicy> allPolicies() {
+        List<DeletePolicy> allPolicies = new ArrayList<>();
+        if (null != timedPolicies) {
+            allPolicies.addAll(timedPolicies);
+        }
+
+        if (null != diskSpacePolicies) {
+            allPolicies.addAll(diskSpacePolicies);
+        }
+
+        return allPolicies;
+    }
 }

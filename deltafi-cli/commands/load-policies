@@ -69,7 +69,7 @@ JSON=$(cat "$POLICIES_FILE")
 
 VARIABLES="{\"policies\": $JSON }"
 
-QUERY="mutation (\$policies: LoadDeletePoliciesInput!) { loadDeletePolicies(replaceAll: ${REPLACEALL}, policies: \$policies) { success errors } }"
+QUERY="mutation (\$policies: DeletePoliciesInput!) { loadDeletePolicies(replaceAll: ${REPLACEALL}, policies: \$policies) { success errors } }"
 
 DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"

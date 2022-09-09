@@ -25,7 +25,7 @@ import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.PluginInput;
-import org.deltafi.core.domain.generated.types.Result;
+import org.deltafi.core.domain.types.Result;
 
 import java.util.Collection;
 

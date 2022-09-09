@@ -25,10 +25,10 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.SourceInfo;
-import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.deltafi.core.domain.generated.types.FlowAssignmentRuleInput;
-import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.FlowAssignmentService;
+import org.deltafi.core.domain.types.FlowAssignmentRule;
+import org.deltafi.core.domain.types.Result;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,9 +57,7 @@ public class FlowAssignmentDatafetcher {
         if (replaceAll) {
             flowAssignmentService.removeAll();
         }
-        return rules.stream().map(rule -> {
-            return convertAndSave(rule);
-        }).collect(Collectors.toList());
+        return rules.stream().map(this::convertAndSave).collect(Collectors.toList());
     }
 
     @DgsMutation

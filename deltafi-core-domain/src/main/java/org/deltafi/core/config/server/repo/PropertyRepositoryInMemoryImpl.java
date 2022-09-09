@@ -98,6 +98,15 @@ public class PropertyRepositoryInMemoryImpl implements PropertyRepository {
         return numUpdates;
     }
 
+    @Override
+    public void resetAllPropertyValues() {
+        propertySets.values().forEach(this::resetAllPropertyValues);
+    }
+
+    private void resetAllPropertyValues(PropertySet propertySet) {
+        propertySet.getProperties().forEach(property -> property.setValue(null));
+    }
+
     private int updateProperty(PropertyUpdate update, Property property) {
         if (keyMatchesAndEditable(update.getKey(), property)) {
             property.setValue(update.getValue());

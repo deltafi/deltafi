@@ -26,7 +26,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface PluginVariableRepo extends MongoRepository<PluginVariables, PluginCoordinates> {
+public interface PluginVariableRepo extends MongoRepository<PluginVariables, PluginCoordinates>, PluginVariableRepoCustom {
     @Query("{ 'sourcePlugin.groupId': ?0, 'sourcePlugin.artifactId' : ?1 }")
     Optional<PluginVariables> findIgnoringVersion(String groupId, String artifactId);
 }

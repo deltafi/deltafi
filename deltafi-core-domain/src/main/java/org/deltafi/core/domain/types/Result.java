@@ -22,16 +22,22 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
+@Builder(builderMethodName = "newBuilder")
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class DiskSpaceDeletePolicy implements DeletePolicy {
-    private String id;
-    private String name;
-    private boolean enabled;
-    private boolean locked;
-    private String flow;
-    private int maxPercent;
+public class Result {
+    @Builder.Default
+    private boolean success = true;
+    @Builder.Default
+    private List<String> info = new ArrayList<>();
+    @Builder.Default
+    private List<String> errors = new ArrayList<>();
 
+    public static Result success() {
+        return new Result();
+    }
 }

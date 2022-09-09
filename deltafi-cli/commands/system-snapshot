@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: system-snapshot
+Subcommands:
+  create
+  restore [SNAPSHOT_ID]
+  import [EXPORTED_STATE_FILE]
+  show [SNAPSHOT_ID]
+  list
+
+Usage:
+  system-snapshot [SUBCOMMAND] [OPTIONS]
+
+Options:
+  -h, --help        Show help
+  -R, --hard-reset  Reset the system to the default settings prior to applying the snapshot settings"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-system-snapshot.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+log_failed() {
+  cli_log "${red}${BASENAME}: Failed to execute ${SUBCOMMAND}${normal}"
+  echo -e "${red}Error: ${1}${normal}"
+}
+
+trap cleanup INT
+
+HARD_RESET=false
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    -R|--hard-reset)
+      HARD_RESET=true
+      shift
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+SUBCOMMAND=${ARGS[1]}
+ID_OR_FILE=${ARGS[2]}
+
+ALL_SNAPSHOT_FIELDS="id
+            created
+            propertySets {
+              id
+              displayName
+              description
+              properties {
+                key
+                value
+                description
+                defaultValue
+                hidden
+                editable
+                refreshable
+              }
+            }
+            deletePolicies {
+              timedPolicies {
+                id
+                name
+                enabled
+                locked
+                flow
+                afterCreate
+                afterComplete
+                minBytes
+                deleteMetadata
+              }
+              diskSpacePolicies {
+                id
+                name
+                enabled
+                locked
+                flow
+                maxPercent
+              }
+            }
+            installedPlugins {
+              groupId
+              artifactId
+              version
+            }
+            pluginVariables {
+              sourcePlugin {
+                groupId
+                artifactId
+                version
+              }
+              variables {
+                name
+                description
+                dataType
+                required
+                defaultValue
+                value
+              }
+            }
+            flowAssignmentRules {
+              name
+              flow
+              priority
+              filenameRegex
+              requiredMetadata {
+                key
+                value
+              }
+            }
+            runningIngressFlows
+            runningEnrichFlows
+            runningEgressFlows"
+
+ALL_RESULT_FIELDS="success info errors"
+
+VARIABLES="{}"
+case "$SUBCOMMAND" in
+  create)
+    EXTRACT_PATH=".data.snapshotSystem"
+    QUERY="mutation { snapshotSystem { $ALL_SNAPSHOT_FIELDS } }"
+    ;;
+  restore)
+    VARIABLES="{\"snapshotId\": \"$ID_OR_FILE\", \"hardReset\": $HARD_RESET}"
+    EXTRACT_PATH=".data.resetFromSnapshotWithId"
+    QUERY="mutation(\$snapshotId: String!, \$hardReset: Boolean) { resetFromSnapshotWithId(snapshotId: \$snapshotId, hardReset: \$hardReset) { $ALL_RESULT_FIELDS } }"
+    ;;
+  import)
+    if [ ! -f "$ID_OR_FILE" ]; then
+      cli_log "${red}$ID_OR_FILE: snapshot file was not found${normal}"
+      exit 1
+    fi
+
+    JSON=$(cat "$ID_OR_FILE")
+    VARIABLES="{\"snapshotData\": $JSON, \"hardReset\": $HARD_RESET}"
+    EXTRACT_PATH=".data.resetFromSnapshot"
+    QUERY="mutation(\$snapshotData: SystemSnapshotInput!, \$hardReset: Boolean) { resetFromSnapshot(snapshot: \$snapshotData, hardReset: \$hardReset) { $ALL_RESULT_FIELDS } }"
+    ;;
+  list)
+    EXTRACT_PATH=".data.getSystemSnapshots"
+    QUERY="query { getSystemSnapshots { id created } } "
+    ;;
+  show)
+    VARIABLES="{\"snapshotId\": \"$ID_OR_FILE\"}"
+    EXTRACT_PATH=".data.getSystemSnapshot"
+    QUERY="query(\$snapshotId: String!) { getSystemSnapshot(snapshotId: \$snapshotId) { $ALL_SNAPSHOT_FIELDS } }"
+    ;;
+  *)
+    cli_help_command
+    ;;
+esac
+
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  ERRORS=$(cat ${TMPFILE})
+  log_failed "$ERRORS"
+else
+  DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$DGS_ERRORS" != "" ]]; then
+    log_failed "$DGS_ERRORS"
+  else
+    cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"
+  fi
+fi
+
+cleanup

@@ -17,5 +17,23 @@
  */
 package org.deltafi.core.domain.types;
 
-public class TimedDeletePolicy extends org.deltafi.core.domain.generated.types.TimedDeletePolicy {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder(builderMethodName = "newBuilder")
+public class TimedDeletePolicy implements DeletePolicy {
+    private String id;
+    private String name;
+    private boolean enabled;
+    private boolean locked;
+    private String flow;
+    private String afterCreate;
+    private String afterComplete;
+    private Long minBytes;
+    private boolean deleteMetadata;
 }

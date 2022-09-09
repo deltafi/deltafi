@@ -19,10 +19,13 @@ package org.deltafi.core.domain.services;
 
 import org.deltafi.core.domain.converters.IngressFlowPlanConverter;
 import org.deltafi.core.domain.repo.IngressFlowRepo;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
 import org.deltafi.core.domain.types.IngressFlow;
 import org.deltafi.core.domain.types.IngressFlowPlan;
 import org.deltafi.core.domain.validation.IngressFlowValidator;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow> {
@@ -31,6 +34,17 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
 
     public IngressFlowService(IngressFlowRepo ingressFlowRepo, PluginVariableService pluginVariableService, IngressFlowValidator ingressFlowValidator) {
         super("ingress", ingressFlowRepo, pluginVariableService, INGRESS_FLOW_PLAN_CONVERTER, ingressFlowValidator);
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setRunningIngressFlows(getRunningFlowNames());
+    }
+
+
+    @Override
+    List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getRunningIngressFlows();
     }
 
 }

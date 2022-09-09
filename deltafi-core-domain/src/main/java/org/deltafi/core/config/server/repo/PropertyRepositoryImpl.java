@@ -98,6 +98,13 @@ public class PropertyRepositoryImpl implements PropertyRepository {
         return writeResult.getModifiedCount();
     }
 
+    @Override
+    public void resetAllPropertyValues() {
+        Update unsetValues = new Update();
+        unsetValues.unset("properties.$[].value");
+        mongoTemplate.updateMulti(new Query(), unsetValues, PropertySet.class);
+    }
+
     private Pair<Query, Update> toMongoUnset(PropertyId propertyId) {
         Query query = propertyQuery(propertyId.getPropertySetId(), propertyId.getKey());
         Update mongoUpdate = new Update();

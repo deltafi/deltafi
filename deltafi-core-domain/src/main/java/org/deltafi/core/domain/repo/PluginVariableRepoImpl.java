@@ -15,23 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.domain.types;
+package org.deltafi.core.domain.repo;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.domain.types.PluginVariables;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class DiskSpaceDeletePolicy implements DeletePolicy {
-    private String id;
-    private String name;
-    private boolean enabled;
-    private boolean locked;
-    private String flow;
-    private int maxPercent;
+@RequiredArgsConstructor
+public class PluginVariableRepoImpl implements PluginVariableRepoCustom {
 
+    private final MongoTemplate mongoTemplate;
+
+    @Override
+    public void resetAllVariableValues() {
+        Update unsetValues = new Update();
+        unsetValues.unset("variables.$[].value");
+        mongoTemplate.updateMulti(new Query(), unsetValues, PluginVariables.class);
+    }
 }

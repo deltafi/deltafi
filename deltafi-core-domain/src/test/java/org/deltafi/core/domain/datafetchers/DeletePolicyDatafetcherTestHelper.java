@@ -21,11 +21,7 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.domain.generated.client.*;
-import org.deltafi.core.domain.generated.types.DiskSpaceDeletePolicyInput;
-import org.deltafi.core.domain.generated.types.LoadDeletePoliciesInput;
-import org.deltafi.core.domain.generated.types.Result;
-import org.deltafi.core.domain.generated.types.TimedDeletePolicyInput;
-import org.deltafi.core.domain.types.DeletePolicy;
+import org.deltafi.core.domain.types.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,22 +32,22 @@ public class DeletePolicyDatafetcherTestHelper {
     public static final String AFTER_COMPLETE_LOCKED_POLICY = "afterCompleteLockedPolicy";
     public static final String OFFLINE_POLICY = "offlinePolicy";
 
-    private static final List<DiskSpaceDeletePolicyInput> DISK_POLICY_LIST = List.of(
-            DiskSpaceDeletePolicyInput.newBuilder()
+    private static final List<DiskSpaceDeletePolicy> DISK_POLICY_LIST = List.of(
+            DiskSpaceDeletePolicy.newBuilder()
                     .name(DISK_SPACE_PERCENT_POLICY)
                     .enabled(true)
                     .locked(false)
                     .maxPercent(99)
                     .build());
 
-    private static final List<TimedDeletePolicyInput> TIMED_POLICY_LIST = List.of(
-            TimedDeletePolicyInput.newBuilder()
+    private static final List<TimedDeletePolicy> TIMED_POLICY_LIST = List.of(
+            TimedDeletePolicy.newBuilder()
                     .name(AFTER_COMPLETE_LOCKED_POLICY)
                     .enabled(true)
                     .locked(true)
                     .afterComplete("PT2S")
                     .build(),
-            TimedDeletePolicyInput.newBuilder()
+            TimedDeletePolicy.newBuilder()
                     .name(OFFLINE_POLICY)
                     .flow("bogus")
                     .enabled(false)
@@ -105,10 +101,10 @@ public class DeletePolicyDatafetcherTestHelper {
 
     static private Result executeLoad(DgsQueryExecutor dgsQueryExecutor,
                                       boolean replace,
-                                      List<DiskSpaceDeletePolicyInput> diskPolicies,
-                                      List<TimedDeletePolicyInput> timedPolicies) {
+                                      List<DiskSpaceDeletePolicy> diskPolicies,
+                                      List<TimedDeletePolicy> timedPolicies) {
 
-        LoadDeletePoliciesInput input = LoadDeletePoliciesInput.newBuilder()
+        DeletePolicies input = DeletePolicies.newBuilder()
                 .diskSpacePolicies(diskPolicies)
                 .timedPolicies(timedPolicies)
                 .build();
@@ -154,7 +150,7 @@ public class DeletePolicyDatafetcherTestHelper {
     }
 
     static public Result updateDiskSpaceDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
-                                                     DiskSpaceDeletePolicyInput input) {
+                                                     DiskSpaceDeletePolicy input) {
         UpdateDiskSpaceDeletePolicyGraphQLQuery query = UpdateDiskSpaceDeletePolicyGraphQLQuery.newRequest()
                 .policyUpdate(input)
                 .build();
@@ -172,7 +168,7 @@ public class DeletePolicyDatafetcherTestHelper {
     }
 
     static public Result updateTimedDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
-                                                 TimedDeletePolicyInput input) {
+                                                 TimedDeletePolicy input) {
         UpdateTimedDeletePolicyGraphQLQuery query = UpdateTimedDeletePolicyGraphQLQuery.newRequest()
                 .policyUpdate(input)
                 .build();

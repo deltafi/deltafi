@@ -20,11 +20,14 @@ package org.deltafi.core.domain.plugin;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.domain.generated.types.Flows;
-import org.deltafi.core.domain.generated.types.Result;
 import org.deltafi.core.domain.services.*;
+import org.deltafi.core.domain.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.domain.snapshot.Snapshotter;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EnrichFlow;
 import org.deltafi.core.domain.types.IngressFlow;
+import org.deltafi.core.domain.types.Result;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -32,7 +35,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class PluginRegistryService {
+public class PluginRegistryService implements Snapshotter {
 
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
@@ -48,7 +51,7 @@ public class PluginRegistryService {
     public Result addPlugin(Plugin plugin) {
         List<String> validationErrors = pluginValidator.validate(plugin);
         if (!validationErrors.isEmpty()) {
-            return new Result(false, validationErrors);
+            return Result.newBuilder().success(false).errors(validationErrors).build();
         }
 
         pluginRepository.deleteOlderVersions(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
@@ -127,6 +130,54 @@ public class PluginRegistryService {
         }
 
         return Result.newBuilder().success(true).build();
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setInstalledPlugins(getInstalledPluginCoordinates());
+    }
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        Result result = new Result();
+        Set<PluginCoordinates> installedPlugins = getInstalledPluginCoordinates();
+        Set<PluginCoordinates> snapshotPlugins = systemSnapshot.getInstalledPlugins();
+
+        Set<PluginCoordinates> missing = new HashSet<>(installedPlugins);
+
+        for (PluginCoordinates installedPlugin : installedPlugins) {
+            for (PluginCoordinates snapshotPlugin : snapshotPlugins) {
+                if (snapshotPlugin.equals(installedPlugin)) {
+                    missing.remove(installedPlugin);
+                } else if (snapshotPlugin.equalsIgnoreVersion(installedPlugin)) {
+                    missing.remove(installedPlugin);
+                    result.getInfo().add("Installed plugin " + installedPlugin + " was a different version at the time of the snapshot: " + snapshotPlugin);
+                }
+            }
+        }
+
+        result.getInfo().addAll(missing.stream().map(installed -> "Installed plugin " + installed + " was not installed at the time of the snapshot").collect(Collectors.toList()));
+
+        missing = new HashSet<>(snapshotPlugins);
+        for (PluginCoordinates snapshotPlugin: snapshotPlugins) {
+            for (PluginCoordinates installedPlugin: installedPlugins) {
+                if (snapshotPlugin.equals(installedPlugin) || snapshotPlugin.equalsIgnoreVersion(installedPlugin)) {
+                    missing.remove(snapshotPlugin);
+                }
+            }
+        }
+
+        result.getInfo().addAll(missing.stream().map(snapshotPlugin -> "Plugin " + snapshotPlugin + " was installed at the time of the snapshot but is no longer installed").collect(Collectors.toList()));
+        return result;
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.PLUGIN_REGISTRY_ORDER;
+    }
+
+    private Set<PluginCoordinates> getInstalledPluginCoordinates() {
+        return getPlugins().stream().map(Plugin::getPluginCoordinates).collect(Collectors.toSet());
     }
 
     private List<String> canBeUninstalled(Plugin plugin) {

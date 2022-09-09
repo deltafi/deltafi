@@ -19,10 +19,12 @@ package org.deltafi.core.config.server.service;
 
 import org.deltafi.common.types.Property;
 import org.deltafi.common.types.PropertySet;
-import org.deltafi.core.domain.types.PropertyUpdate;
 import org.deltafi.core.config.server.environment.GitEnvironmentRepository;
 import org.deltafi.core.config.server.repo.PropertyRepository;
 import org.deltafi.core.domain.Util;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.PropertyUpdate;
+import org.deltafi.core.domain.types.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +33,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
+import org.springframework.cloud.context.refresh.ContextRefresher;
 
 import java.util.*;
 
@@ -65,9 +68,13 @@ class PropertyServiceTest {
     @Mock
     GitEnvironmentRepository gitRepo;
 
+    @Mock
+    ContextRefresher contextRefresher;
+
     @BeforeEach
     public void setup() {
         propertyService = new PropertyService(propertyRepository, propertyMetadataLoader, stateHolderService, gitRepo, null);
+        propertyService.setContextRefresher(contextRefresher);
     }
 
     @Test
@@ -176,6 +183,43 @@ class PropertyServiceTest {
         Mockito.when(propertyRepository.removeById("props")).thenReturn(false);
         assertThat(propertyService.removeProperties("props")).isFalse();
         Mockito.verify(stateHolderService, times(0)).updateConfigStateId();
+    }
+
+    @Test
+    void updateSnapshot() {
+        // one value is set and should be included in the snapshot
+        PropertySet coreSet = Util.getPropertySetWithProperty("core");
+        coreSet.getProperties().add(Util.getProperty("skip", null, true));
+
+        // no custom values so this will not be in the snapshot
+        PropertySet actionSet = Util.getPropertySetWithProperty("action");
+        actionSet.getProperties().get(0).setValue(null);
+
+        Mockito.when(propertyRepository.findAll()).thenReturn(List.of(coreSet, actionSet));
+
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        propertyService.updateSnapshot(systemSnapshot);
+
+        assertThat(systemSnapshot.getPropertySets()).hasSize(1).contains(Util.getPropertySetWithProperty("core"));
+    }
+
+    @Test
+    void testResetFromSnapshot() {
+        List<PropertySet> propertySets = List.of(Util.getPropertySetWithProperty("core"));
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        systemSnapshot.setPropertySets(propertySets);
+        Mockito.when(propertyRepository.findAll()).thenReturn(propertySets);
+
+        Result result = propertyService.resetFromSnapshot(systemSnapshot, true);
+
+        Mockito.verify(propertyRepository).resetAllPropertyValues();
+        Mockito.verify(propertyMetadataLoader).keepOverriddenValues(propertySets, propertySets);
+        Mockito.verify(propertyRepository).saveAll(propertySets);
+        Mockito.verify(stateHolderService).updateConfigStateId();
+        Mockito.verify(propertyRepository, times(2)).findAll();
+        Mockito.verify(contextRefresher).refresh();
+
+        assertThat(result.isSuccess()).isTrue();
     }
 
     Environment gitEnv() {

@@ -19,11 +19,15 @@ package org.deltafi.core.config.server.service;
 
 import org.deltafi.common.types.Property;
 import org.deltafi.common.types.PropertySet;
-import org.deltafi.core.domain.types.PropertyId;
-import org.deltafi.core.domain.types.PropertyUpdate;
 import org.deltafi.core.config.server.environment.DeltaFiNativeEnvironmentRepository;
 import org.deltafi.core.config.server.environment.GitEnvironmentRepository;
 import org.deltafi.core.config.server.repo.PropertyRepository;
+import org.deltafi.core.domain.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.domain.snapshot.Snapshotter;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.PropertyId;
+import org.deltafi.core.domain.types.PropertyUpdate;
+import org.deltafi.core.domain.types.Result;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
 import org.springframework.cloud.context.refresh.ContextRefresher;
@@ -37,7 +41,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.deltafi.common.types.PropertySource.*;
 
-public class PropertyService {
+public class PropertyService implements Snapshotter {
 
     private static final PropertySource EMPTY_SOURCE = new PropertySource("empty", new HashMap<>());
     private static final Environment EMPTY_ENV = new Environment("empty");
@@ -188,6 +192,53 @@ public class PropertyService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setPropertySets(getAll().stream()
+                .map(this::pruneDefaultProperties)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()));
+    }
+
+    private PropertySet pruneDefaultProperties(PropertySet propertySet) {
+        List<Property> customizedProperties = filterWithCustomValues(propertySet.getProperties());
+
+        if (customizedProperties.isEmpty()) {
+            return null;
+        }
+
+        PropertySet copy = createCopy(propertySet);
+        copy.setProperties(customizedProperties);
+        return copy;
+    }
+
+    private List<Property> filterWithCustomValues(List<Property> fullList) {
+        return null != fullList ? fullList.stream()
+                .filter(Property::hasValue).collect(Collectors.toList()) : List.of();
+    }
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+
+        if (hardReset) {
+            // Unset values instead removing/replacing because the snapshot could contain properties from different DeltaFi/Plugin versions
+            repo.resetAllPropertyValues();
+        }
+
+        List<PropertySet> propertySets = getAll();
+
+        propertyMetadataLoader.keepOverriddenValues(propertySets, systemSnapshot.getPropertySets());
+        repo.saveAll(propertySets);
+
+        reloadCacheAndRefreshContext();
+        return new Result();
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.PROPERTY_SET_ORDER;
     }
 
     private void setDefaultValues(PropertySet propertySet) {

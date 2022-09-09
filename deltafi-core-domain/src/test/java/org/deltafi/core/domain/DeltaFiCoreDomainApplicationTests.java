@@ -56,7 +56,6 @@ import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginRepository;
 import org.deltafi.core.domain.repo.*;
 import org.deltafi.core.domain.services.*;
-import org.deltafi.core.domain.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.domain.types.DomainActionSchema;
 import org.deltafi.core.domain.types.EgressActionSchema;
 import org.deltafi.core.domain.types.EgressFlowPlanInput;
@@ -65,7 +64,6 @@ import org.deltafi.core.domain.types.FlowAssignmentRule;
 import org.deltafi.core.domain.types.FormatActionSchema;
 import org.deltafi.core.domain.types.LoadActionSchema;
 import org.deltafi.core.domain.types.PluginVariables;
-import org.deltafi.core.domain.types.TimedDeletePolicy;
 import org.deltafi.core.domain.types.TransformActionSchema;
 import org.deltafi.core.domain.types.ValidateActionSchema;
 import org.deltafi.core.domain.types.*;
@@ -347,7 +345,7 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void testReplaceAllDeletePolicies() {
 		Result result = replaceAllDeletePolicies(dgsQueryExecutor);
-		assertTrue(result.getSuccess());
+		assertTrue(result.isSuccess());
 		assertTrue(result.getErrors().isEmpty());
 		assertEquals(3, deletePolicyRepo.count());
 	}
@@ -355,12 +353,12 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void testDuplicatePolicyName() {
 		Result result = replaceAllDeletePolicies(dgsQueryExecutor);
-		assertTrue(result.getSuccess());
+		assertTrue(result.isSuccess());
 		assertTrue(result.getErrors().isEmpty());
 		assertEquals(3, deletePolicyRepo.count());
 
 		Result duplicate = addOnePolicy(dgsQueryExecutor);
-		assertFalse(duplicate.getSuccess());
+		assertFalse(duplicate.isSuccess());
 		assertTrue(duplicate.getErrors().contains("duplicate policy name"));
 	}
 
@@ -397,7 +395,7 @@ class DeltaFiCoreDomainApplicationTests {
 		String idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
 
 		Result validationError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicyInput.newBuilder()
+				DiskSpaceDeletePolicy.newBuilder()
 						.id(idToUpdate)
 						.name(DISK_SPACE_PERCENT_POLICY)
 						.maxPercent(-1)
@@ -407,7 +405,7 @@ class DeltaFiCoreDomainApplicationTests {
 		checkUpdateResult(true, validationError, "maxPercent is invalid", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
 		Result updateNameIsGood = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicyInput.newBuilder()
+				DiskSpaceDeletePolicy.newBuilder()
 						.id(idToUpdate)
 						.name("newName")
 						.maxPercent(50)
@@ -417,7 +415,7 @@ class DeltaFiCoreDomainApplicationTests {
 		checkUpdateResult(true, updateNameIsGood, null, idToUpdate, "newName", false);
 
 		Result notFoundError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicyInput.newBuilder()
+				DiskSpaceDeletePolicy.newBuilder()
 						.id("wrongId")
 						.name("blah")
 						.maxPercent(50)
@@ -427,7 +425,7 @@ class DeltaFiCoreDomainApplicationTests {
 		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, "newName", false);
 
 		Result missingId = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicyInput.newBuilder()
+				DiskSpaceDeletePolicy.newBuilder()
 						.name("blah")
 						.maxPercent(50)
 						.locked(false)
@@ -442,14 +440,14 @@ class DeltaFiCoreDomainApplicationTests {
 		assertFalse(secondId.equals(idToUpdate));
 
 		Result duplicateName = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicyInput.newBuilder()
+				DiskSpaceDeletePolicy.newBuilder()
 						.id(idToUpdate)
 						.name(DISK_SPACE_PERCENT_POLICY)
 						.maxPercent(60)
 						.locked(false)
 						.enabled(false)
 						.build());
-		assertFalse(duplicateName.getSuccess());
+		assertFalse(duplicateName.isSuccess());
 		assertTrue(duplicateName.getErrors().contains("duplicate policy name"));
 	}
 
@@ -460,7 +458,7 @@ class DeltaFiCoreDomainApplicationTests {
 		String idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
 
 		Result validationError = updateTimedDeletePolicy(dgsQueryExecutor,
-				TimedDeletePolicyInput.newBuilder()
+				TimedDeletePolicy.newBuilder()
 						.id(idToUpdate)
 						.name("blah")
 						.afterComplete("ABC")
@@ -470,7 +468,7 @@ class DeltaFiCoreDomainApplicationTests {
 		checkUpdateResult(true, validationError, "Unable to parse duration for afterComplete", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
 		Result notFoundError = updateTimedDeletePolicy(dgsQueryExecutor,
-				TimedDeletePolicyInput.newBuilder()
+				TimedDeletePolicy.newBuilder()
 						.id("wrongId")
 						.name("blah")
 						.afterComplete("PT1H")
@@ -480,7 +478,7 @@ class DeltaFiCoreDomainApplicationTests {
 		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
 		Result goodUpdate = updateTimedDeletePolicy(dgsQueryExecutor,
-				TimedDeletePolicyInput.newBuilder()
+				TimedDeletePolicy.newBuilder()
 						.id(idToUpdate)
 						.name("newTypesAndName")
 						.afterComplete("PT1H")
@@ -492,9 +490,9 @@ class DeltaFiCoreDomainApplicationTests {
 
 	private void checkUpdateResult(boolean disk, Result result, String error, String id, String name, boolean enabled) {
 		if (error == null) {
-			assertTrue(result.getSuccess());
+			assertTrue(result.isSuccess());
 		} else {
-			assertFalse(result.getSuccess());
+			assertFalse(result.isSuccess());
 			assertTrue(result.getErrors().contains(error));
 		}
 
@@ -503,7 +501,7 @@ class DeltaFiCoreDomainApplicationTests {
 		assertEquals(1, policyList.size());
 		assertEquals(id, policyList.get(0).getId());
 		assertEquals(name, policyList.get(0).getName());
-		assertEquals(enabled, policyList.get(0).getEnabled());
+		assertEquals(enabled, policyList.get(0).isEnabled());
 
 		if (disk) {
 			assertTrue(policyList.get(0) instanceof DiskSpaceDeletePolicy);
@@ -528,23 +526,23 @@ class DeltaFiCoreDomainApplicationTests {
 			if (policy instanceof DiskSpaceDeletePolicy) {
 				DiskSpaceDeletePolicy diskPolicy = (DiskSpaceDeletePolicy) policy;
 				if (diskPolicy.getName().equals(DISK_SPACE_PERCENT_POLICY)) {
-					assertTrue(diskPolicy.getEnabled());
-					assertFalse(diskPolicy.getLocked());
+					assertTrue(diskPolicy.isEnabled());
+					assertFalse(diskPolicy.isLocked());
 					foundDiskSpacePercent = true;
 				}
 			} else if (policy instanceof TimedDeletePolicy) {
 				TimedDeletePolicy timedPolicy = (TimedDeletePolicy) policy;
 				if (timedPolicy.getName().equals(AFTER_COMPLETE_LOCKED_POLICY)) {
-					assertTrue(timedPolicy.getEnabled());
-					assertTrue(timedPolicy.getLocked());
+					assertTrue(timedPolicy.isEnabled());
+					assertTrue(timedPolicy.isLocked());
 					assertEquals("PT2S", timedPolicy.getAfterComplete());
 					assertNull(timedPolicy.getAfterCreate());
 					assertNull(timedPolicy.getMinBytes());
 					foundAfterCompleteLockedPolicy = true;
 
 				} else if (timedPolicy.getName().equals(OFFLINE_POLICY)) {
-					assertFalse(timedPolicy.getEnabled());
-					assertFalse(timedPolicy.getLocked());
+					assertFalse(timedPolicy.isEnabled());
+					assertFalse(timedPolicy.isLocked());
 					assertEquals("PT2S", timedPolicy.getAfterCreate());
 					assertNull(timedPolicy.getAfterComplete());
 					assertEquals(1000, timedPolicy.getMinBytes());
@@ -1672,12 +1670,12 @@ class DeltaFiCoreDomainApplicationTests {
 	@Test
 	void testLoadFlowAssignmentRules() {
 		Result result = saveFirstRule(dgsQueryExecutor);
-		assertTrue(result.getSuccess());
+		assertTrue(result.isSuccess());
 		assertTrue(result.getErrors().isEmpty());
 		assertEquals(1, flowAssignmentRuleRepo.count());
 
 		Result badResult = saveBadRule(dgsQueryExecutor, false);
-		assertFalse(badResult.getSuccess());
+		assertFalse(badResult.isSuccess());
 		assertEquals("missing rule name", badResult.getErrors().get(0));
 
 		// Verify firstRule still present since replaceAll was false
@@ -1693,7 +1691,7 @@ class DeltaFiCoreDomainApplicationTests {
 		List<Result> results = saveAllRules(dgsQueryExecutor);
 		// Verify saved 4, and 5th was invalid
 		assertEquals(4, flowAssignmentRuleRepo.count());
-		assertFalse(results.get(4).getSuccess());
+		assertFalse(results.get(4).isSuccess());
 		List<FlowAssignmentRule> assignmentList = getAllFlowAssignmentRules(dgsQueryExecutor);
 		// Verify ordered by priority, then flow
 		assertEquals(4, assignmentList.size());
@@ -1913,7 +1911,7 @@ class DeltaFiCoreDomainApplicationTests {
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + registerPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertTrue(result.getSuccess());
+		assertTrue(result.isSuccess());
 		List<org.deltafi.core.domain.plugin.Plugin> plugins = pluginRepository.findAll();
 		assertEquals(3, plugins.size());
 	}
@@ -1937,7 +1935,7 @@ class DeltaFiCoreDomainApplicationTests {
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + registerPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertTrue(result.getSuccess());
+		assertTrue(result.isSuccess());
 		List<org.deltafi.core.domain.plugin.Plugin> plugins = pluginRepository.findAll();
 		assertEquals(3, plugins.size());
 		assertThat(pluginRepository.findById(existingPlugin.getPluginCoordinates())).isEmpty();
@@ -1956,7 +1954,7 @@ class DeltaFiCoreDomainApplicationTests {
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + registerPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertFalse(result.getSuccess());
+		assertFalse(result.isSuccess());
 		assertEquals(2, result.getErrors().size());
 		assertTrue(result.getErrors().contains("Plugin dependency not registered: org.deltafi:plugin-2:1.0.0."));
 		assertTrue(result.getErrors().contains("Plugin dependency not registered: org.deltafi:plugin-3:1.0.0."));
@@ -1980,7 +1978,7 @@ class DeltaFiCoreDomainApplicationTests {
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertTrue(result.getSuccess());
+		assertTrue(result.isSuccess());
 		assertEquals(1, pluginRepository.count());
 		Mockito.verify(actionEventQueue).drop(any());
 	}
@@ -2001,7 +1999,7 @@ class DeltaFiCoreDomainApplicationTests {
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertTrue(result.getSuccess());
+		assertTrue(result.isSuccess());
 		assertEquals(2, pluginRepository.count());
 	}
 
@@ -2021,7 +2019,7 @@ class DeltaFiCoreDomainApplicationTests {
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertFalse(result.getSuccess());
+		assertFalse(result.isSuccess());
 		assertEquals(1, result.getErrors().size());
 		assertEquals("Plugin not found", result.getErrors().get(0));
 		assertEquals(2, pluginRepository.count());
@@ -2044,7 +2042,7 @@ class DeltaFiCoreDomainApplicationTests {
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertFalse(result.getSuccess());
+		assertFalse(result.isSuccess());
 		assertEquals(1, result.getErrors().size());
 		assertEquals("The following plugins depend on this plugin: org.deltafi:plugin-1:1.0.0", result.getErrors().get(0));
 		assertEquals(3, pluginRepository.count());

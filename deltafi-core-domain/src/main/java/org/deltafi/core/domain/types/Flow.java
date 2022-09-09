@@ -107,6 +107,14 @@ public abstract class Flow {
         return FlowState.RUNNING.equals(getFlowStatus().getState());
     }
 
+    public boolean isStopped() {
+        return FlowState.STOPPED.equals(getFlowStatus().getState());
+    }
+
+    public boolean isInvalid() {
+        return FlowState.INVALID.equals(getFlowStatus().getState());
+    }
+
     public boolean hasErrors() {
         return !getFlowStatus().getErrors().isEmpty();
     }

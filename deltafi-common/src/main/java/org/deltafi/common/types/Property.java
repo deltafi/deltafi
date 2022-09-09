@@ -35,4 +35,8 @@ public class Property {
     private boolean refreshable;
     private boolean editable;
     private boolean hidden;
+
+    public boolean hasValue() {
+        return null != value;
+    }
 }

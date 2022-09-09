@@ -45,14 +45,14 @@ public interface DeletePolicy {
 
   void setName(String name);
 
-  boolean getEnabled();
+  boolean isEnabled();
 
   void setEnabled(boolean enabled);
 
   /**
    * A locked policy can never be disabled
    */
-  boolean getLocked();
+  boolean isLocked();
 
   /**
    * A locked policy can never be disabled

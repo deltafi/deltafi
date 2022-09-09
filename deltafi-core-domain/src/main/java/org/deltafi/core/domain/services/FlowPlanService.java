@@ -28,15 +28,16 @@ import org.deltafi.core.domain.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginCleaner;
 import org.deltafi.core.domain.repo.FlowPlanRepo;
-import org.deltafi.core.domain.types.Flow;
-import org.deltafi.core.domain.types.FlowPlan;
-import org.deltafi.core.domain.types.FlowPlanInput;
+import org.deltafi.core.domain.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.domain.snapshot.Snapshotter;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.*;
 import org.deltafi.core.domain.validation.FlowPlanValidator;
 
 import java.util.List;
 
 @AllArgsConstructor
-public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginCleaner {
+public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginCleaner, Snapshotter {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -119,6 +120,25 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        // nothing to do here, flow plans should be packaged in the plugin
+    }
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        // rebuild flows if there were any plugin variable changes
+        systemSnapshot.getPluginVariables().stream()
+                .map(PluginVariables::getSourcePlugin)
+                .forEach(this::rebuildFlowsForPlugin);
+        return new Result();
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.FLOW_PLAN_ORDER;
     }
 
     abstract FlowPlanT mapFromInput(FlowPlanInput flowPlanInput);

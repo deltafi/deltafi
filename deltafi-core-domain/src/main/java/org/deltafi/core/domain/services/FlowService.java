@@ -19,9 +19,8 @@ package org.deltafi.core.domain.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.Variable;
-import org.deltafi.core.domain.types.ConfigType;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.Variable;
 import org.deltafi.core.domain.configuration.ActionConfiguration;
 import org.deltafi.core.domain.configuration.DeltaFiConfiguration;
 import org.deltafi.core.domain.converters.FlowPlanConverter;
@@ -29,8 +28,13 @@ import org.deltafi.core.domain.generated.types.*;
 import org.deltafi.core.domain.plugin.Plugin;
 import org.deltafi.core.domain.plugin.PluginUninstallCheck;
 import org.deltafi.core.domain.repo.FlowRepo;
+import org.deltafi.core.domain.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.domain.snapshot.Snapshotter;
+import org.deltafi.core.domain.snapshot.SystemSnapshot;
+import org.deltafi.core.domain.types.ConfigType;
 import org.deltafi.core.domain.types.Flow;
 import org.deltafi.core.domain.types.FlowPlan;
+import org.deltafi.core.domain.types.Result;
 import org.deltafi.core.domain.validation.FlowValidator;
 
 import javax.annotation.PostConstruct;
@@ -42,7 +46,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginUninstallCheck {
+public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginUninstallCheck, Snapshotter {
 
     private static final char FLOW_DELIMITER = '.';
 
@@ -97,10 +101,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @return true if the flow was successfully stopped
      */
     public boolean stopFlow(String flowName) {
-        FlowT ingressFlow = getFlowOrThrow(flowName);
+        FlowT flow = getFlowOrThrow(flowName);
 
-        if (!FlowState.RUNNING.equals(ingressFlow.getFlowStatus().getState())) {
-            log.warn("Tried to stop " + flowType+ " flow " + flowName + " which was not running");
+        if (!flow.isRunning()) {
+            log.warn("Tried to stop {} flow {} which was not running", flowType, flowName);
             return false;
         }
 
@@ -210,6 +214,47 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         }
 
         return flowCache.values().stream().collect(Collectors.toList());
+    }
+
+    /**
+     * Get the name of all running flows
+     * @return list of names of the running flows
+     */
+    public List<String> getRunningFlowNames() {
+        return getAll().stream().filter(Flow::isRunning).map(Flow::getName).collect(Collectors.toList());
+    }
+
+    abstract List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot);
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        Result result = new Result();
+        List<String> runningFlowsInSnapshot = getRunningFromSnapshot(systemSnapshot);
+
+        if (hardReset) {
+            getRunningFlowNames().forEach(this::stopFlow);
+        }
+
+        for (String flow : runningFlowsInSnapshot) {
+            flowRepo.findById(flow).ifPresentOrElse(existingFlow -> resetFlowState(existingFlow, result),
+                    () -> result.getErrors().add("Flow: " + flow + " is no longer installed"));
+        }
+
+        result.setSuccess(result.getErrors().isEmpty());
+        return result;
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.FLOW_ORDER;
+    }
+
+    void resetFlowState(FlowT flow, Result result) {
+        if (flow.isStopped()) {
+            startFlow(flow.getName());
+        } else if (flow.isInvalid()) {
+            result.getErrors().add("Flow: " + flow.getName() + " is invalid and cannot be started");
+        }
     }
 
     /**

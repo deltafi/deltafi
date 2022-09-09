@@ -38,7 +38,7 @@ public class TimedDelete extends DeletePolicyWorker {
         afterCreate = policy.getAfterCreate() != null ? Duration.parse(policy.getAfterCreate()) : null;
         afterComplete = policy.getAfterComplete() != null ? Duration.parse(policy.getAfterComplete()) : null;
         minBytes = policy.getMinBytes() != null ? policy.getMinBytes() : 0;
-        deleteMetadata = policy.getDeleteMetadata();
+        deleteMetadata = policy.isDeleteMetadata();
 
         if ((minBytes == 0 && afterCreate == null && afterComplete == null) || (afterCreate != null && afterComplete != null)) {
             throw new IllegalArgumentException("Timed delete policy " + name + " must specify exactly one of afterCreate or afterComplete and/or minBytes");
