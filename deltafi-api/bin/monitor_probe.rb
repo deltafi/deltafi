@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env ruby
 #
 #    DeltaFi - Data transformation and enrichment platform
 #
@@ -17,4 +17,13 @@
 #    limitations under the License.
 #
 
-bundle exec bin/monitor_probe.rb
+# frozen_string_literal: true
+
+$LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
+
+require 'deltafi'
+
+if DF::Monitor::Heartbeat.stale?
+  puts 'Stale heartbeat'
+  exit 1
+end

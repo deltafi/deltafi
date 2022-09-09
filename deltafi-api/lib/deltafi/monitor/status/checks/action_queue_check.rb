@@ -30,7 +30,8 @@ module Deltafi
           SIZE_THRESHOLD_PROPERTY = 'deltafi.checks.actionQueue.sizeThreshold'
           DGS_QUEUE_NAME = 'dgs'
           INGORED_QUEUE_NAMES = [
-            DF::Common::STATUS_REDIS_KEY
+            DF::Common::STATUS_REDIS_KEY,
+            DF::Common::HEARTBEAT_REDIS_KEY
           ].freeze
 
           def initialize

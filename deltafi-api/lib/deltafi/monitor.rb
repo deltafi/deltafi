@@ -54,18 +54,11 @@ module Deltafi
         timers = Timers::Group.new
         timers.now_and_every(service_class::INTERVAL) do
           service.run
-          touch_probe_file(service_class.name)
         rescue StandardError => e
           puts e
         end
         loop { timers.wait }
       end
-    end
-
-    def touch_probe_file(filename)
-      FileUtils.mkdir_p(ENV['PROBE_DIR']) if ENV['PROBE_DIR']
-      target = File.join(ENV['PROBE_DIR'], filename)
-      FileUtils.touch(target)
     end
   end
 end

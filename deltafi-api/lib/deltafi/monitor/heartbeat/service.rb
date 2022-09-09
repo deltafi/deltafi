@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 #    DeltaFi - Data transformation and enrichment platform
 #
@@ -17,4 +16,24 @@
 #    limitations under the License.
 #
 
-bundle exec bin/monitor_probe.rb
+# frozen_string_literal: true
+
+require 'deltafi/common'
+
+module Deltafi
+  module Monitor
+    module Heartbeat
+      class Service
+        INTERVAL = 45
+
+        def initialize
+          @redis = DF.redis_client
+        end
+
+        def run
+          @redis.set(DF::Common::HEARTBEAT_REDIS_KEY, Time.now.to_i)
+        end
+      end
+    end
+  end
+end

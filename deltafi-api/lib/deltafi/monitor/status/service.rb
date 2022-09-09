@@ -44,6 +44,7 @@ module Deltafi
             timestamp: Time.now
           }
           self.checks = Status::Checks.constants.map { |c| Status::Checks.const_get(c) }
+          @redis = DF.redis_client
         end
 
         def run
@@ -54,8 +55,8 @@ module Deltafi
         private
 
         def publish_status
-          DF.redis_client.publish(SSE_REDIS_CHANNEL, status.to_json)
-          DF.redis_client.set(DF::Common::STATUS_REDIS_KEY, status.to_json)
+          @redis.publish(SSE_REDIS_CHANNEL, status.to_json)
+          @redis.set(DF::Common::STATUS_REDIS_KEY, status.to_json)
         end
 
         def run_checks

@@ -21,9 +21,13 @@
 require 'httparty'
 require 'k8s-ruby'
 require 'redis'
+require 'deltafi/logger'
 
 module Deltafi
+  extend Deltafi::Logger
+
   REDIS_RECONNECT_ATTEMPTS = 1_000_000_000
+  REDIS_RETRY_COUNT = 30
   @@system_properties = nil
 
   def self.k8s_client
@@ -45,13 +49,25 @@ module Deltafi
     redis_url = ENV['REDIS_URL'] ||
                 cached_system_properties['redis.url']&.gsub(/^http/, 'redis') ||
                 'redis://deltafi-redis-master:6379'
-    Redis.new(
-      url: redis_url,
-      password: redis_password,
-      reconnect_attempts: REDIS_RECONNECT_ATTEMPTS,
-      reconnect_delay: 1,
-      reconnect_delay_max: 5
-    )
+
+    retries = 0
+    begin
+      Redis.new(
+        url: redis_url,
+        password: redis_password,
+        reconnect_attempts: REDIS_RECONNECT_ATTEMPTS,
+        reconnect_delay: 1,
+        reconnect_delay_max: 5
+      )
+    rescue Errno::EALREADY => e
+      raise e if retries >= REDIS_RETRY_COUNT
+
+      error e.message
+      e.backtrace.each { |line| error line }
+      sleep 1
+      retries += 1
+      retry
+    end
   end
 
   def self.cached_system_properties
