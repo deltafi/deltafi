@@ -31,7 +31,7 @@ module Deltafi
       SMOKE_INTERVAL_MS = 1000
       SMOKE_TIMEOUT_MS = 5000
 
-      GRAPHQL_URL = 'http://deltafi-core-service/graphql'
+      GRAPHQL_URL = 'http://deltafi-core-domain-service/graphql'
       GET_FLOWS = '{"query":"{ getRunningFlows { ingress { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
       def initialize

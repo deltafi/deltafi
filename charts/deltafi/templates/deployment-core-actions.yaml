@@ -17,7 +17,7 @@ spec:
         app: deltafi-core-actions
         group: deltafi-core
     spec:
-      {{- include "initContainersWaitForCore" . | nindent 6 }}
+      {{- include "initContainersWaitForCoreDomain" . | nindent 6 }}
       containers:
       - name: deltafi-core-actions
         image: "{{ .Values.deltafi.core_actions.image }}"

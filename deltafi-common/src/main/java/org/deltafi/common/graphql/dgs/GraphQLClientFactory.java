@@ -38,7 +38,7 @@ public class GraphQLClientFactory {
     private final GraphqlClientProperties graphqlProperties;
 
     public GraphQLClient build(String... headers) {
-        return GraphQLClient.createCustom(graphqlProperties.getCore(), (url, defaultHeaders, body) -> {
+        return GraphQLClient.createCustom(graphqlProperties.getCoreDomain(), (url, defaultHeaders, body) -> {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("content-type", MediaType.APPLICATION_JSON)

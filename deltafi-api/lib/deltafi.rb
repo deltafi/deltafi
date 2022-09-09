@@ -36,8 +36,8 @@ module Deltafi
 
   def self.graphql(query)
     graphql_url = ENV['DELTAFI_GRAPHQL_URL'] ||
-                  cached_system_properties['graphql.urls.core'] ||
-                  'http://deltafi-core-service/graphql'
+                  cached_system_properties['graphql.urls.core-domain'] ||
+                  'http://deltafi-core-domain-service/graphql'
 
     HTTParty.post(graphql_url,
                   body: { query: query }.to_json,
@@ -82,7 +82,7 @@ module Deltafi
     @@system_properties ||= {}
     return @@system_properties unless running_in_cluster?
 
-    base_url = ENV['DELTAFI_CONFIG_URL'] || 'http://deltafi-core-service'
+    base_url = ENV['DELTAFI_CONFIG_URL'] || 'http://deltafi-core-domain-service'
     config_url = File.join(base_url, 'config/application/default')
 
     begin

@@ -71,7 +71,7 @@ VARIABLES="{\"policies\": $JSON }"
 
 QUERY="mutation (\$policies: DeletePoliciesInput!) { loadDeletePolicies(replaceAll: ${REPLACEALL}, policies: \$policies) { success errors } }"
 
-DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
 
 truncate --size 0 ${TMPFILE}

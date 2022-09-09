@@ -1,0 +1,11 @@
+.core-domain:
+  variables:
+    PROJECT_NAME: deltafi-core-domain
+
+core-domain:docker:
+  stage: docker
+  extends:
+    - .core-domain
+    - .docker
+  needs:
+    - job: "build"

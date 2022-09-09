@@ -17,7 +17,7 @@ Options:
 execute_graphql() {
   truncate --size 0 ${TMPFILE}
 
-  DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
+  DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
 
   local POST_QUERY="$@"
 

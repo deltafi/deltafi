@@ -23,5 +23,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "graphql.urls")
 @Data
 public class GraphqlClientProperties {
-    private String core;
+    private String coreDomain;
 }

@@ -118,7 +118,7 @@ case "$SUBCOMMAND" in
     ;;
 esac
 
-DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
 QUERY=$(echo $QUERY | sed 's/"/\\"/g')
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
 
