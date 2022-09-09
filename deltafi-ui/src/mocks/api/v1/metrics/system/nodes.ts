@@ -542,7 +542,7 @@ const generateData = () => {
             },
           },
           {
-            name: "deltafi-core-domain-f89544bd5-vtvbv",
+            name: "deltafi-core-f89544bd5-vtvbv",
             namespace: "deltafi",
             resources: {
               cpu: {

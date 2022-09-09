@@ -34,7 +34,7 @@ const App = () => (
   <GraphiQL
     fetcher={async graphQLParams => {
       const data = await fetch(
-        '/graphql-core-domain',
+        '/graphql-core',
         {
           method: 'POST',
           headers: {

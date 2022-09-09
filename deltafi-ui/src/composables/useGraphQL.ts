@@ -22,7 +22,7 @@ import useNotifications from "./useNotifications";
 
 export default function useGraphQL() {
   const notify = useNotifications();
-  const basePath: RequestInfo = "/graphql-core-domain";
+  const basePath: RequestInfo = "/graphql-core";
   const response: Ref<any> = ref({});
   const loading: Ref<Boolean> = ref(false);
   const loaded: Ref<Boolean> = ref(false);

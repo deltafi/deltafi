@@ -47,10 +47,10 @@ const generateData = () => {
         group: "deltafi-core",
       },
       {
-        app: "deltafi-core-domain",
-        container: "deltafi-core-domain",
+        app: "deltafi-core",
+        container: "deltafi-core",
         image: {
-          name: "deltafi/deltafi-core-domain",
+          name: "deltafi/deltafi-core",
           tag: "0.21.0",
         },
         group: "deltafi-core",
