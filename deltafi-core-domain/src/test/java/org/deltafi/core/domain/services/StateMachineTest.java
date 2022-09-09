@@ -22,10 +22,7 @@ import lombok.Singular;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.types.*;
 import org.deltafi.core.domain.Util;
-import org.deltafi.core.domain.configuration.EgressActionConfiguration;
-import org.deltafi.core.domain.configuration.EnrichActionConfiguration;
-import org.deltafi.core.domain.configuration.FormatActionConfiguration;
-import org.deltafi.core.domain.configuration.ValidateActionConfiguration;
+import org.deltafi.core.domain.configuration.*;
 import org.deltafi.core.domain.exceptions.MissingEgressFlowException;
 import org.deltafi.core.domain.types.EgressFlow;
 import org.deltafi.core.domain.types.EnrichFlow;
@@ -63,6 +60,9 @@ class StateMachineTest {
 
     @Mock
     EgressFlowService egressFlowService;
+
+    @Mock
+    DeltaFiProperties deltaFiProperties;
 
     @Test
     void testGetEnrichActions() {

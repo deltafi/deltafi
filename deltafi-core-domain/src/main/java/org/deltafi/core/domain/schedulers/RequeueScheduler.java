@@ -17,26 +17,33 @@
  */
 package org.deltafi.core.domain.schedulers;
 
+import lombok.RequiredArgsConstructor;
 import org.deltafi.core.domain.services.DeltaFilesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = true)
 @Service
+@RefreshScope
 @EnableScheduling
-public class RequeueScheduler {
+@RequiredArgsConstructor
+public class RequeueScheduler implements ApplicationListener<RefreshScopeRefreshedEvent> {
 
     final DeltaFilesService deltaFilesService;
-
-    public RequeueScheduler(DeltaFilesService deltaFilesService) {
-        this.deltaFilesService = deltaFilesService;
-    }
 
     // convert to milliseconds then divide each interval into 10 samples
     @Scheduled(fixedDelayString = "#{deltaFiProperties.getRequeueSeconds() * 1000 / 10}")
     public void requeue() {
         deltaFilesService.requeue();
+    }
+
+    @Override
+    public void onApplicationEvent(RefreshScopeRefreshedEvent event) {
+
     }
 }

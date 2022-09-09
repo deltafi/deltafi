@@ -32,4 +32,5 @@ public class DeltaFiProperties {
     private DeleteConfiguration delete = new DeleteConfiguration();
     private Duration actionInactivityThreshold = Duration.ofMinutes(5);
     private String apiUrl;
+    private String systemName;
 }

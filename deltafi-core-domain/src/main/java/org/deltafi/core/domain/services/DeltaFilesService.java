@@ -801,7 +801,7 @@ public class DeltaFilesService {
             return null;
         }
 
-        return actionConfiguration.buildActionInput(deltaFile);
+        return actionConfiguration.buildActionInput(deltaFile, properties.getSystemName());
     }
 
     public void processActionEvents() {

@@ -141,14 +141,6 @@
         "defaultValue": "http://deltafi-core-domain-service/graphql"
       },
       {
-        "key": "smallrye.config.mapping.validate-unknown",
-        "description": "When true unknown properties will cause the application to fail to start.",
-        "defaultValue": "true",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
         "key": "minio.url",
         "description": "The URL used to reach MinIO",
         "defaultValue": "http://deltafi-minio:9000"
@@ -182,7 +174,8 @@
         "key": "deltafi.systemName",
         "description": "Name of the DeltaFi cluster",
         "defaultValue": "deltafi",
-        "editable": true
+        "editable": true,
+        "refreshable": true
       },
       {
         "key": "ssl.protocol",

@@ -101,7 +101,6 @@ public class ActionRunner {
                 context.setActionVersion(buildProperties.getVersion());
                 context.setHostname(hostnameService.getHostname());
                 context.setStartTime(now);
-                context.setSystemName(deltaFiProperties.getSystemName());
 
                 log.trace("Running action {} with input {}", getFeedString(action), actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();
