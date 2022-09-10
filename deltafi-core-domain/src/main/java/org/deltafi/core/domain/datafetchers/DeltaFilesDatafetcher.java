@@ -78,7 +78,7 @@ public class DeltaFilesDatafetcher {
     // remove subfields -- for example if we have did, sourceInfo, and sourceInfo.flow, this should resolve to did and sourceInfo.flow
     List<String> includeFields = rawIncludeFields.stream().filter(f -> rawIncludeFields.stream().noneMatch(p -> p.startsWith(f) && !p.equals(f))).collect(Collectors.toList());
 
-    return deltaFilesService.getDeltaFiles(offset, limit, filter, orderBy);
+    return deltaFilesService.getDeltaFiles(offset, limit, filter, orderBy, includeFields);
   }
 
   String buildName(SelectedField f) {
@@ -180,7 +180,7 @@ public class DeltaFilesDatafetcher {
 
     for (int i = 0; i < numFiles; i++) {
       String did = UUID.randomUUID().toString();
-      log.info("Saving content for " + did);
+      log.info("Saving content for {} ({}/{})", did, i+1, numFiles);
       byte[] contentBytes = new byte[contentSize];
       random.nextBytes(contentBytes);
       crs.add(contentStorageService.save(did, contentBytes, "application/octet-stream"));
