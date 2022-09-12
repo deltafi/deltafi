@@ -64,7 +64,7 @@ if [ ! -f "$PLUGIN_MANIFEST" ]; then
 fi
 
 PLUGIN_ID=$(cat "$PLUGIN_MANIFEST" | jq -r '.pluginCoordinates')
-DELTAFI_DGS=$(deltafi serviceip deltafi-core-domain-service)
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
 
 read_file() {
   FLOW_PLAN_FILE="$@"

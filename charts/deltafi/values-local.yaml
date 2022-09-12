@@ -7,8 +7,8 @@ deltafi:
     image: localhost:5000/deltafi-passthrough-actions:latest
   core_actions:
     image: localhost:5000/deltafi-core-actions:latest
-  core_domain:
-    image: localhost:5000/deltafi-core-domain:latest
+  core:
+    image: localhost:5000/deltafi-core:latest
   ingress:
     image: localhost:5000/deltafi-ingress:latest
   auth:

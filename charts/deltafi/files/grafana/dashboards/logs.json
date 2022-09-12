@@ -271,8 +271,8 @@
       {
         "current": {
           "selected": false,
-          "text": "deltafi-core-domain",
-          "value": "deltafi-core-domain"
+          "text": "deltafi-core",
+          "value": "deltafi-core"
         },
         "datasource": {
           "type": "loki",

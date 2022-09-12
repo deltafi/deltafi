@@ -2,7 +2,7 @@ spring:
   application:
     name: deltafi-core-actions
   config:
-    import: configserver:http://deltafi-core-domain-service/config
+    import: configserver:http://deltafi-core-service/config
   main:
     web-application-type: none
   mustache:

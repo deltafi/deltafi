@@ -14,7 +14,7 @@ minio:
 
 graphql:
   urls:
-    core-domain: core-domain
+    core: core
 
 redis:
   url: redis

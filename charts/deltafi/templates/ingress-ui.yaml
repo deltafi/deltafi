@@ -29,11 +29,11 @@ spec:
             name: deltafi-api-service
             port:
               number: 80
-      - path: /(graphql)-core-domain
+      - path: /(graphql)-core
         pathType: Prefix
         backend:
           service:
-            name: deltafi-core-domain-service
+            name: deltafi-core-service
             port:
               number: 80
       - path: /(deltafile/ingress)
