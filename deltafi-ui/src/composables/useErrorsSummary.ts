@@ -51,6 +51,18 @@ export default function useErrors() {
     await queryGraphQL(searchParams, "getErrorsByMessage");
     data.value = response.value.data.errorSummaryByMessage;
   };
+  const fetchAllMessage = async () => {
+    const searchParams = {
+      errorSummaryByMessage: {
+        countPerMessage: {
+          message: true,
+        },
+      }
+    }
+    await queryGraphQL(searchParams, "getErrorsByMessage");
+    data.value = response.value.data.errorSummaryByMessage.countPerMessage;
+  };
+
   const fetchByFlow = async (showAcknowled: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string,flow: string) => {
     const searchParamsFlow = {
       errorSummaryByFlow: {
@@ -79,5 +91,5 @@ export default function useErrors() {
     data.value = response.value.data.errorSummaryByFlow;
   };
 
-  return { data, loading, loaded, fetchByMessage, fetchByFlow, errors };
+  return { data, loading, loaded, fetchByMessage, fetchByFlow, fetchAllMessage, errors };
 }

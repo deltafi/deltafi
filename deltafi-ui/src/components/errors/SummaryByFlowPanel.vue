@@ -33,7 +33,7 @@
       <Column field="count" header="Count" :sortable="true" />
     </DataTable>
   </Panel>
-  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" />
+  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
 </template>
 
@@ -127,6 +127,11 @@ onMounted(() => {
   fetchErrorsFlow();
 });
 
+const onRefresh = () => {
+  selectedErrors.value = [];
+  fetchErrorsFlow();
+};
+
 const { data: response, fetchByFlow: getErrorsByFlow } = useErrorsSummary();
 
 const fetchErrorsFlow = async () => {
@@ -211,5 +216,4 @@ watch(
 );
 </script>
 
-<style lang="scss">
-</style>
+<style lang="scss"></style>

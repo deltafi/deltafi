@@ -25,15 +25,15 @@
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
     </PageHeader>
-    <TabView>
+    <TabView v-model:activeIndex="activeTab">
       <TabPanel header="All">
-        <AllErrorsPanel ref="errorsSummaryPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
+        <AllErrorsPanel ref="errorsSummaryPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Flow">
         <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Message">
-        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
+        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message="tabChange" />
       </TabPanel>
     </TabView>
   </div>
@@ -66,13 +66,20 @@ const newErrorsCount = ref(0);
 const lastServerContact = ref(new Date());
 const showAcknowledged = ref(false);
 const ingressFlowNameSelected = ref(null);
+const errorMessageSelected = ref(null);
 const selectedErrors = ref([]);
+const activeTab = ref(0);
 
 const refreshButtonIcon = computed(() => {
   let classes = ["fa", "fa-sync-alt"];
   if (loading.value) classes.push("fa-spin");
   return classes.join(" ");
 });
+
+const tabChange = (errorMessage) => {
+  errorMessageSelected.value = { message: errorMessage };
+  activeTab.value = 0;
+};
 
 const refreshButtonClass = computed(() => {
   let classes = ["p-button", "deltafi-input-field", "ml-3"];

@@ -14,12 +14,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated enrich flows to include DomainActions (#218)
 - Moved all used Mocks to TypeScript (#213)
 - Mocks now reload data on each call (#222)
+- Added Error Search Options (#230)
 
 ### Fixed
 
 - Fixed bug with Parent/Child DeltaFiles not refreshing on refresh/replay (#214)
 - Fixed bug related to adding a new timeDeletePolicy (#223)
 - Fixed bug preventing progress bars from being displayed on Upload page (#226)
+- Fixed bug preventing Error selection clear after resume/replay (#227)
 
 ## [0.97.0]
 

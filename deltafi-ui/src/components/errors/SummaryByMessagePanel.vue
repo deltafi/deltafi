@@ -29,12 +29,16 @@
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="message" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsMessage" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Flow" :sortable="true" class="filename-column" />
+      <Column field="flow" header="Flow" :sortable="true" class="filename-column"> </Column>
       <Column field="count" header="Count" :sortable="true" />
-      <Column field="message" header="Message" :sortable="true" />
+      <Column field="message" header="Message" :sortable="true">
+        <template #body="msg">
+          <a class="monospace" @click="showAll(msg.data.message)">{{ msg.data.message }}</a>
+        </template>
+      </Column>
     </DataTable>
   </Panel>
-  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" />
+  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
 </template>
 
@@ -64,7 +68,7 @@ const sortField = ref("modified");
 const metadataDialog = ref();
 const sortDirection = ref("DESC");
 const selectedErrors = ref([]);
-const emit = defineEmits(["refreshErrors"]);
+const emit = defineEmits(["refreshErrors", "changeTab:errorMessage"]);
 const notify = useNotifications();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
@@ -129,6 +133,15 @@ onMounted(() => {
 });
 
 const { data: response, fetchByMessage: getErrorsByMessage } = useErrorsSummary();
+
+const onRefresh = () => {
+  selectedErrors.value = [];
+  fetchErrorsMessages();
+};
+
+const showAll = (errorMessage) => {
+  emit("changeTab:errorMessage", errorMessage);
+};
 
 const filterSelectedDids = computed(() => {
   let dids = selectedErrors.value.map((selectedError) => {
@@ -211,5 +224,4 @@ const onPage = (event) => {
 };
 </script>
 
-<style lang="scss">
-</style>
+<style lang="scss"></style>

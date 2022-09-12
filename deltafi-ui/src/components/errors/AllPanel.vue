@@ -26,7 +26,7 @@
       <Menu ref="menu" :model="menuItems" :popup="true" />
       <Paginator v-if="errors.length > 0" :rows="10" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
     </template>
-    <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+    <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
       <Column class="expander-column" :expander="true" />
@@ -47,14 +47,14 @@
           <Timestamp :timestamp="row.data.modified" />
         </template>
       </Column>
-      <Column field="last_error_cause" header="Last Error">
+      <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false">
         <template #body="{ data }">
           <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
           {{ latestError(data.actions).errorCause }}
         </template>
-      </Column>
-      <Column field="actions.length" header="Errors">
-        <template #body="error">{{ countErrors(error.data.actions) }}</template>
+        <template #filter="{ filterModel, filterCallback }">
+          <Dropdown v-model="filterModel.value" placeholder="Select an Error Message" :options="errorsMessages" :filter="true" option-label="message" show-clear :editable="false" class="p-column-filter deltafi-input-field ml-3" @change="filterCallback()" />
+        </template>
       </Column>
       <template #expansion="error">
         <div class="errors-Subtable">
@@ -84,11 +84,12 @@
   </Panel>
   <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
-  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" />
+  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
 </template>
 
 <script setup>
 import Column from "primevue/column";
+import Dropdown from "primevue/dropdown";
 import DataTable from "primevue/datatable";
 import Button from "primevue/button";
 import Panel from "primevue/panel";
@@ -104,10 +105,13 @@ import useErrors from "@/composables/useErrors";
 import useErrorCount from "@/composables/useErrorCount";
 import MetadataDialog from "@/components/MetadataDialog.vue";
 import useNotifications from "@/composables/useNotifications";
+import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
+import useErrorsSummary from "@/composables/useErrorsSummary";
 import { ref, computed, onMounted, defineExpose, defineEmits, defineProps, watch } from "vue";
 
 const metadataDialog = ref();
+const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
 const emit = defineEmits(["refreshErrors"]);
@@ -135,6 +139,11 @@ const props = defineProps({
   awknowledged: {
     type: Boolean,
     required: true,
+  },
+  errorsMessageSelected: {
+    type: Object,
+    required: false,
+    default: undefined,
   },
 });
 const errorViewer = ref({
@@ -181,13 +190,21 @@ const menuItems = ref([
   },
 ]);
 
-const { data: response, fetch: getErrors } = useErrors();
+const onRefresh = () => {
+  selectedErrors.value = [];
+  fetchErrors();
+};
 
+const { data: response, fetch: getErrors } = useErrors();
+const filters = ref({
+  last_error_cause: { value: null, matchMode: FilterMatchMode.EQUALS },
+});
 const fetchErrors = async () => {
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName.name : null;
+  let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   let showAcknowled = props.awknowledged ? null : false;
   loading.value = true;
-  await getErrors(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getErrors(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;
@@ -241,10 +258,6 @@ const latestError = (actions) => {
   return filterErrors(actions).sort((a, b) => (a.modified < b.modified ? 1 : -1))[0];
 };
 
-const countErrors = (actions) => {
-  return filterErrors(actions).length;
-};
-
 const actionRowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";
   if (action.state === "RETRIED") return "table-warning action-error";
@@ -283,16 +296,35 @@ watch(
 );
 
 watch(
+  () => props.errorsMessageSelected,
+  () => {
+    filters.value.last_error_cause.value = props.errorsMessageSelected;
+    fetchErrors();
+  }
+);
+
+watch(
   () => props.awknowledged,
   () => {
     selectedErrors.value = [];
     fetchErrors();
   }
 );
+watch(
+  () => filters.value.last_error_cause.value,
+  () => {
+    fetchErrors();
+  }
+);
 onMounted(() => {
   fetchErrors();
+  getAllErrorsMessage();
 });
 </script>
 
 <style lang="scss">
+.p-column-filter-overlay {
+  margin-left: -18px;
+  max-width: 300px;
+}
 </style>
