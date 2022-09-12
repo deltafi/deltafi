@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.98.0
 
 ### Added
+- ActionKit action log entries are tagged with the originating action name
+- Action logs are labeled by promtail and indexed by Loki
+- New action logs dashboard allows per action aggregated log viewing
+- Added action log chart to action overview dashboard
 - Statsd aggregation layer added to Graphite stack
 - Custom Statsd reporter for delta metrics added to the common library and used in ingress and action-kit metrics
 - Added `DomainActions` that provide a global validation and metadata extraction path for domains
@@ -13,8 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added heartbeat to Monitor and configured the Kubernetes probe to use that for liveliness
 - Added better Redis exception handling to API/Monitor
 - KinD: Added Linux compatability to `cluster` command
+- DecompressionTransformAction will log error results.
 
 ### Changed
+- Action-kit contains a logback.xml configuration file to configure logging for all actions
 - Ingress converted to a Spring Boot app
 - Metric reported to Graphite are now delta metrics, instead of monotonically increasing
 - Flow metrics in Graphite begin with `stats_counts.` prefix
@@ -30,10 +36,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Moved SSL configuration properties to the top level instead of being under actions
 - Removed `@Configuration` from `@ConfigurationProperties` classes. `@EnableConfigurationProperties` needs to be replaced with `@ConfigurationPropertiesScan(basePackages = "org.deltafi")` in Spring Boot applications and tests.
 - Migrated Java StatsD client from UDP to TCP to guarantee metric delivery and handle metrics back-up when graphite is down
-- Changed name of deltafi-core-domain to deltafi-core.
+- Changed name of deltafi-core-domain to deltafi-core
+- Disabled spring log banners in deltafi-ingress and deltafi-core-actions
 
 ### Deprecated
-- Quarkus is no longer in use or supported in the DeltaFi monolith.
+- Quarkus is no longer in use or supported in the DeltaFi monolith
 
 ### Removed
 - Liveness probes removed from deltafi-core-actions, since it is no longer a web application and exposes no monitoring endpoints
@@ -43,6 +50,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Bitrate gauges on dashboards no longer flatline periodically
 - Metric summaries are now accruate at large time scales
 - Metrics reported from multiple replicas will now be aggregated correctly
+- Audit log dashboard will show all known users, instead of limiting to users active in the time window
+- Application log dashboard will show all known apps, instead of limiting to apps active in the time window
 - Bug in Action Queue Check initialization
 
 ### Tech-Debt/Refactor
@@ -63,8 +72,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - Spring Cloud 2021.0.3
 - Upgraded all Spring Boot base images to `deltafi/deltafi-spring-base:0.97.0`
 - Upgraded KinD node image to `deltafi/deltafi-kind-node:0.97.0` for KinD 0.15.0 compatibility
-- `@EnableConfigurationProperties` needs to be replaced with `@ConfigurationPropertiesScan(basePackages = "org.deltafi")` in Spring Boot applications and tests.
-- Plugins pointing to deltafi-core-domain-service will need to change to new name at deltafi-core-service.
+- `@EnableConfigurationProperties` needs to be replaced with `@ConfigurationPropertiesScan(basePackages = "org.deltafi")` in Spring Boot applications and tests
+- Plugins pointing to deltafi-core-domain-service will need to change to new name at deltafi-core-service
+- Plugin actions should remove their logback.xml configuration in order to pick up the common configuration
 
 ## [0.97.0] - 2022-08-29
 

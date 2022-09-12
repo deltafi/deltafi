@@ -5,6 +5,7 @@ spring:
     import: configserver:http://deltafi-core-service/config
   main:
     web-application-type: none
+    banner-mode: "off"
   mustache:
     check-template-location: false
 

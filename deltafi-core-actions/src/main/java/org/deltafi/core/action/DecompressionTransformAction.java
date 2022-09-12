@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.action;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -54,7 +55,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Action
+@Action @Slf4j
 public class DecompressionTransformAction extends MultipartTransformAction<DecompressionTransformParameters> {
 
     public DecompressionTransformAction() { super(DecompressionTransformParameters.class); }
@@ -102,18 +103,18 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
                         decompressionType = decompressAutomatic(content, result, context.getDid(), getContentName(contentList));
                         break;
                     default:
-                        return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType());
+                        return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType()).logErrorTo(log);
                 }
                 content.close();
             } catch (DecompressionTransformException | IOException e) {
                 if (e.getCause() == null) {
-                    return new ErrorResult(context, e.getMessage());
+                    return new ErrorResult(context, e.getMessage()).logErrorTo(log);
                 } else {
-                    return new ErrorResult(context, e.getMessage(), e.getCause());
+                    return new ErrorResult(context, e.getMessage(), e.getCause()).logErrorTo(log);
                 }
             }
         } catch (ObjectStorageException | IOException e) {
-            return new ErrorResult(context, "Failed to load compressed binary from storage", e);
+            return new ErrorResult(context, "Failed to load compressed binary from storage", e).logErrorTo(log);
         }
         result.addMetadata("decompressionType", decompressionType);
 

@@ -32,6 +32,7 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -114,7 +115,7 @@ public class ActionRunner {
     }
 
     private void executeAction(Action<?> action, DeltaFile deltaFile, ActionContext context, Map<String, Object> params) {
-        try {
+        try(MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
             Result result = action.executeAction(deltaFile, context, params);
             if (Objects.isNull(result)) {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());

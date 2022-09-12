@@ -3,6 +3,8 @@ spring:
     name: deltafi-ingress
   config:
     import: configserver:http://deltafi-core-service/config
+  main:
+    banner-mode: "off"
 
 logging:
   level:

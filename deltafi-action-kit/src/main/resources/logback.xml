@@ -6,11 +6,12 @@
                 <pattern>
                     <pattern>
                         {
-                        "timestamp": "%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}",
-                        "loggerName":"%logger{40}",
-                        "level":"%level",
-                        "message":"%message",
-                        "threadName":"%thread"
+                            "timestamp": "%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}",
+                            "loggerName": "%logger{40}",
+                            "level": "%level",
+                            "message": "%message",
+                            "threadName": "%thread",
+                            "action": "%X{action}"
                         }
                     </pattern>
                 </pattern>

@@ -26,7 +26,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 12611,
   "graphTooltip": 0,
-  "id": 58,
+  "id": 14,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -81,8 +81,9 @@
         "y": 0
       },
       "id": 11,
+      "interval": "10s",
       "links": [],
-      "maxDataPoints": 100,
+      "maxDataPoints": 99999,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -105,7 +106,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "builder",
-          "expr": "sum(count_over_time({app=~\"$container_name\", pod=~\"$pod_name\", stream=~\"$stream\"} [$__interval]))",
+          "expr": "sum(count_over_time({type=\"ACTION\", action=~\"$action_name\"} [$__interval]))",
           "hide": false,
           "queryType": "range",
           "refId": "A"
@@ -166,8 +167,9 @@
         "y": 0
       },
       "id": 6,
+      "interval": "10s",
       "links": [],
-      "maxDataPoints": 100,
+      "maxDataPoints": 99999,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -190,7 +192,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "builder",
-          "expr": "sum(count_over_time({app=\"$container_name\", stream=~\"$stream\", pod=~\"$pod_name\"} |~ `(?i)$searchable_pattern` [$__interval]))",
+          "expr": "sum(count_over_time({type=\"ACTION\", action=~\"$action_name\"} |~ `(?i)$searchable_pattern` [$__interval]))",
           "hide": false,
           "queryType": "range",
           "refId": "A"
@@ -212,6 +214,7 @@
         "y": 3
       },
       "id": 2,
+      "interval": "10s",
       "options": {
         "dedupStrategy": "exact",
         "enableLogDetails": true,
@@ -229,7 +232,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "builder",
-          "expr": "{app=\"$container_name\", pod=~\"$pod_name\", stream=~\"$stream\"} |~ `(?i)$searchable_pattern`",
+          "expr": "{app=~\".+\", type=~\"ACTION\", action=~\"$action_name\"} |~ `(?i)$searchable_pattern`",
           "hide": false,
           "queryType": "range",
           "refId": "A"
@@ -271,87 +274,6 @@
       {
         "current": {
           "selected": false,
-          "text": "deltafi-core",
-          "value": "deltafi-core"
-        },
-        "datasource": {
-          "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
-        },
-        "definition": "label_values(app)",
-        "hide": 0,
-        "includeAll": false,
-        "label": "App",
-        "multi": false,
-        "name": "container_name",
-        "options": [],
-        "query": "label_values(app)",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 1,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
-        },
-        "definition": "label_values({app=\"$container_name\"}, pod)",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Pod",
-        "multi": false,
-        "name": "pod_name",
-        "options": [],
-        "query": "label_values({app=\"$container_name\"}, pod)",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
-        },
-        "definition": "label_values({app=\"$container_name\"}, stream)",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Stream",
-        "multi": false,
-        "name": "stream",
-        "options": [],
-        "query": "label_values({app=\"$container_name\"}, stream)",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "current": {
-          "selected": false,
           "text": "error",
           "value": "error"
         },
@@ -361,18 +283,50 @@
         "options": [
           {
             "selected": true,
-            "text": "error",
-            "value": "error"
+            "text": "",
+            "value": ""
           }
         ],
-        "query": "error",
+        "query": "",
         "skipUrlSync": false,
         "type": "textbox"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "P8E80F9AEF21F6940"
+        },
+        "definition": "label_values(action)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Action",
+        "multi": true,
+        "name": "action_name",
+        "options": [],
+        "query": "label_values(action)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       }
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -389,8 +343,8 @@
     ]
   },
   "timezone": "",
-  "title": "Application Log Viewer",
-  "uid": "log-viewer",
-  "version": 2,
+  "title": "Action Log Viewer",
+  "uid": "action-log-viewer",
+  "version": 1,
   "weekStart": ""
 }

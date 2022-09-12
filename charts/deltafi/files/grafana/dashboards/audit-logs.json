@@ -26,7 +26,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 12611,
   "graphTooltip": 0,
-  "iteration": 1659626074676,
+  "id": 59,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -97,7 +97,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "targets": [
         {
           "datasource": {
@@ -124,6 +124,8 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
@@ -185,7 +187,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "right"
+          "placement": "right",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
@@ -285,7 +288,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "9.0.1",
+      "pluginVersion": "9.1.1",
       "targets": [
         {
           "datasource": {
@@ -360,8 +363,8 @@
       "type": "table"
     }
   ],
-  "refresh": "10s",
-  "schemaVersion": 36,
+  "refresh": "1m",
+  "schemaVersion": 37,
   "style": "dark",
   "tags": [
     "DeltaFi",
@@ -403,14 +406,14 @@
           "type": "loki",
           "uid": "${datasource}"
         },
-        "definition": "label_values({user=~\".+\"}, user)",
+        "definition": "label_values(user)",
         "hide": 0,
         "includeAll": true,
         "label": "Users",
         "multi": true,
         "name": "user",
         "options": [],
-        "query": "label_values({user=~\".+\"}, user)",
+        "query": "label_values(user)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -460,7 +463,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -479,6 +482,6 @@
   "timezone": "",
   "title": "Audit Log Viewer",
   "uid": "audit-log",
-  "version": 6,
+  "version": 2,
   "weekStart": ""
 }

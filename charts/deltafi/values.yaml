@@ -223,18 +223,18 @@ promtail:
         - cri: {}
         - labeldrop:
             - filename
+        # Label action logs
         - match:
-            selector: '{app="graphite"}'
+            selector: '{ app=~".+" } |~ "\"action\":\"[^\"]+\""'
             stages:
-              # Filtering out graphite debug logs containing "(Tagging|Tagged)"
-              - drop:
-                  expression: "Tagg"
-        - match:
-            selector: '{app=~"(deltafi-core-actions|deltafi-ingress)"}'
-            stages:
-              - multiline:
-                  firstline: '\d{4}-\d{2}-\d{2}\s\d{1,2}\:\d{2}\:\d{2}([\.,\,]{1}\d{3})?'
-                  max_wait_time: 2s
+            - json:
+                expressions:
+                  action: action
+            - labels:
+                action:
+            - static_labels:
+                type: 'ACTION'
+        # Label audit logs
         - match:
               selector: '{ app=~".*" } |= "\"loggerName\":\"AUDIT\""'
               stages:
@@ -245,6 +245,13 @@ promtail:
                   user:
               - static_labels:
                   type: "AUDIT"
+        # Squelch nasty graphite debug logs
+        - match:
+            selector: '{app="graphite"}'
+            stages:
+              # Filtering out graphite debug logs containing "(Tagging|Tagged)"
+              - drop:
+                  expression: "Tagg"
 
 loki:
   image:
