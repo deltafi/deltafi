@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added content storage check to API system checks
 - Added heartbeat to Monitor and configured the Kubernetes probe to use that for liveliness
 - Added better Redis exception handling to API/Monitor
+- KinD: Added Linux compatability to `cluster` command
 
 ### Changed
 - Ingress converted to a Spring Boot app

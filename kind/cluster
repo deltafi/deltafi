@@ -108,6 +108,24 @@ _readlink() {
   fi
 }
 
+# Detect linux OS
+_is_linux() {
+  if [[ $(uname) == 'Linux' ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Detect arm processor
+_is_arm() {
+  if [[ $(uname -p) == 'arm' ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 export BASE_PATH="$( cd "$( dirname $(_readlink -f "${BASH_SOURCE[0]}"))" &> /dev/null && pwd )"
 DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
 ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
@@ -138,10 +156,11 @@ fi
 
 source $BASE_PATH/files/bask
 
-command -v deltafi &> /dev/null || _exit_1 echo "DeltaFi cli command 'deltafi' must be installed"
-command -v kubectl &> /dev/null || _exit_1 echo "'kubectl' must be installed"
 command -v docker &> /dev/null || _exit_1 echo "'docker' must be installed"
+command -v kubectl &> /dev/null || _exit_1 echo "'kubectl' must be installed"
+command -v kubens &> /dev/null || _exit_1 echo "'kubens' must be installed"
 command -v kind &> /dev/null || _exit_1 echo "'kind' must be installed"
+command -v deltafi &> /dev/null || _exit_1 echo "DeltaFi cli command 'deltafi' must be installed"
 
 ___start=$(date +%s)
 
@@ -281,7 +300,11 @@ up() {
   _attention "Initializing KinD cluster"
   _check_deltafi_cli
   _check_docker
-  mkdir -p $PV_DIR
+  if _is_linux; then
+    ${SUDO} mkdir -p -m 2775 $PV_DIR
+  else
+    mkdir -p $PV_DIR
+  fi
   pushd $BASE_PATH > /dev/null
 
   _create_registry kind-registry 5000
@@ -357,10 +380,18 @@ EOF
 }
 
 _k8s_add_pv() {
-  local name=$1
-  local path=${2:-${PV_DIR}/${name}}
-  local size=${3:-1G}
+  local name=deltafi-$1
+  local path=/data/deltafi/$1
+  local localpath=$PV_DIR/$1
+  local size=${2:-1G}
+  local owner=${3:-1000}
   local namespace=${4:-deltafi}
+  if _is_linux; then
+    ${SUDO} mkdir -p -m 2775 ${localpath}
+    ${SUDO} chown ${owner}:${owner} ${localpath}
+  else
+    mkdir -p ${localpath}
+  fi
   if ! kubectl get persistentvolumeclaim $name 2>&1 > /dev/null; then
     cat <<EOF | kubectl apply -f -
 ---
@@ -467,15 +498,6 @@ _check_local_fqdns() {
   done
 }
 
-# Detect arm processor
-_is_arm() {
-  if [[ $(uname -p) == 'arm' ]]; then
-    return 0
-  else
-    return 1
-  fi
-}
-
 describe install "Initialize a KinD cluster and install core DeltaFi"
 install() {
   up
@@ -494,13 +516,13 @@ _k8s_init() {
   _k8s_add_secret minio-keys accesskey $(_random_password 20) secretkey $(_random_password 40)
   _k8s_add_secret redis-password redis-password $(_random_password 16)
   _k8s_add_secret config-repo-secret config-token $(_random_password 16)
-  _k8s_add_pv deltafi-mongodb /data/deltafi/mongodb 1G
-  _k8s_add_pv deltafi-minio /data/deltafi/minio 1G
-  _k8s_add_pv deltafi-graphite /data/deltafi/graphite 1G
-  _k8s_add_pv deltafi-grafana /data/deltafi/grafana 1G
-  _k8s_add_pv deltafi-loki /data/deltafi/loki 1G
-  _k8s_add_pv deltafi-egress-sink /data/deltafi/egress-sink 1G
-  _k8s_add_pv deltafi-auth /data/deltafi/auth 1G
+  _k8s_add_pv mongodb 1G 1001
+  _k8s_add_pv minio 1G 1000
+  _k8s_add_pv graphite 1G 1000
+  _k8s_add_pv grafana 1G 472
+  _k8s_add_pv loki 1G 10001
+  _k8s_add_pv egress-sink 1G 1000
+  _k8s_add_pv auth 1G 1000
   _ok "Kubernetes prerequisites"
 }
 
@@ -510,7 +532,11 @@ down() {
   if kind get clusters 2>/dev/null | grep "^${CLUSTER_NAME}$" > /dev/null; then
     [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure
     kind delete cluster --name ${CLUSTER_NAME}
-    rm -rf $PV_DIR/mongodb
+    if _is_linux; then
+      ${SUDO} rm -rf $PV_DIR/mongodb
+    else
+      rm -rf $PV_DIR/mongodb
+    fi
     _down "KinD Cluster"
   else
     _fail "No deltafi cluster instantiated"
@@ -527,6 +553,11 @@ destroy() {
   down $@
   [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure "Do you want to delete all local persistent volume data?"
   rm -rf $PV_DIR
+  if _is_linux; then
+    ${SUDO} rm -rf $PV_DIR
+  else
+    rm -rf $PV_DIR
+  fi
 }
 
 describe help "Get additional details on commands"
