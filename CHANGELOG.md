@@ -43,6 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Bitrate gauges on dashboards no longer flatline periodically
 - Metric summaries are now accruate at large time scales
 - Metrics reported from multiple replicas will now be aggregated correctly
+- Bug in Action Queue Check initialization
 
 ### Tech-Debt/Refactor
 - All dashboards updated for delta metrics

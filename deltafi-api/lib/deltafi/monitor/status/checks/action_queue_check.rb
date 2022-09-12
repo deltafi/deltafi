@@ -36,14 +36,15 @@ module Deltafi
 
           def initialize
             super('Action Queue Check')
-            @redis_client = DF.redis_client
-            @threshold = size_threshold
-            @queue_names = [ DGS_QUEUE_NAME ] + action_queue_names
             @queues_over_threshold = {}
             @orphan_queues = {}
           end
 
           def run
+            @redis_client = DF.redis_client
+            @threshold = size_threshold
+            @queue_names = [ DGS_QUEUE_NAME ] + action_queue_names
+
             check_queue_sizes
             check_orphan_queues
 
