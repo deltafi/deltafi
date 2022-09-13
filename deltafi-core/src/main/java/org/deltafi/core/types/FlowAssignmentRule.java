@@ -19,7 +19,6 @@ package org.deltafi.core.types;
 
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
-import org.springframework.data.annotation.Id;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,13 +31,8 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
     public static final String INVALID_PRIORITY = "invalid priority";
     public static final String MISSING_CRITERIA = "missing match criteria";
     public static final String MISSING_FLOW_NAME = "missing flow name";
+    public static final String MISSING_ID = "missing id";
     public static final String MISSING_RULE_NAME = "missing rule name";
-
-    @Id
-    @Override
-    public String getName() {
-        return super.getName();
-    }
 
     /**
      * Compares the SourceInfo to the rule's filenameRegex and metadata.
@@ -58,6 +52,10 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
      */
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
+        if (isBlank(super.getId())) {
+            errors.add(MISSING_ID);
+        }
+
         if (isBlank(super.getName())) {
             errors.add(MISSING_RULE_NAME);
         }

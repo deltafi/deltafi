@@ -79,6 +79,7 @@ input SourceInfoFilter {
 }
 
 type FlowAssignmentRule {
+  id: String!
   name: String!
   flow: String!
   priority: Int!
@@ -87,6 +88,7 @@ type FlowAssignmentRule {
 }
 
 input FlowAssignmentRuleInput {
+  id: String
   name: String!
   flow: String!
   priority: Int
@@ -413,7 +415,7 @@ type Query {
 
   resolveFlowFromFlowAssignmentRules(sourceInfo: SourceInfoInput!): String
   getAllFlowAssignmentRules: [FlowAssignmentRule]!
-  getFlowAssignmentRule(name: String!): FlowAssignmentRule
+  getFlowAssignmentRule(id: String!): FlowAssignmentRule
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile
@@ -437,7 +439,8 @@ type Query {
 
 type Mutation {
   loadFlowAssignmentRules(replaceAll: Boolean!, rules: [FlowAssignmentRuleInput!]!): [Result!]!
-  removeFlowAssignmentRule(name: String!): Boolean!
+  removeFlowAssignmentRule(id: String!): Boolean!
+  updateFlowAssignmentRule(rule: FlowAssignmentRuleInput!): Result!
 
   saveIngressFlowPlan(ingressFlowPlan: IngressFlowPlanInput!) : IngressFlow!
   saveEnrichFlowPlan(enrichFlowPlan: EnrichFlowPlanInput!) : EnrichFlow!

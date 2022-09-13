@@ -48,8 +48,8 @@ public class FlowAssignmentDatafetcher {
     }
 
     @DgsQuery
-    public FlowAssignmentRule getFlowAssignmentRule(String name) {
-        return flowAssignmentService.get(name).orElse(null);
+    public FlowAssignmentRule getFlowAssignmentRule(String id) {
+        return flowAssignmentService.get(id).orElse(null);
     }
 
     @DgsMutation
@@ -61,13 +61,19 @@ public class FlowAssignmentDatafetcher {
     }
 
     @DgsMutation
-    public boolean removeFlowAssignmentRule(String name) {
-        return flowAssignmentService.remove(name);
+    public boolean removeFlowAssignmentRule(String id) {
+        return flowAssignmentService.remove(id);
     }
 
     @DgsQuery
     public String resolveFlowFromFlowAssignmentRules(SourceInfo sourceInfo) {
         return flowAssignmentService.findFlow(sourceInfo);
+    }
+
+    @DgsMutation
+    public Result updateFlowAssignmentRule(FlowAssignmentRuleInput rule) {
+        FlowAssignmentRule flowAssignmentRule = OBJECT_MAPPER.convertValue(rule, FlowAssignmentRule.class);
+        return flowAssignmentService.update(flowAssignmentRule);
     }
 
     private Result convertAndSave(FlowAssignmentRuleInput flowAssignmentRule) {

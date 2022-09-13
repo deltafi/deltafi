@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.repo.FlowAssignmentRuleRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
@@ -26,13 +27,11 @@ import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.Result;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -46,8 +45,17 @@ public class FlowAssignmentService implements Snapshotter {
     private List<FlowAssignmentRule> rulesCache = Collections.emptyList();
 
     @PostConstruct
+    private void init() {
+        refreshCache();
+        indexCheck();
+    }
+
     public void refreshCache() {
         rulesCache = getAll();
+    }
+
+    private void indexCheck() {
+        flowAssignmentRuleRepo.ensureAllIndices();
     }
 
     /**
@@ -60,14 +68,14 @@ public class FlowAssignmentService implements Snapshotter {
     }
 
     /**
-     * Delete a flow assignment rule by name.
+     * Delete a flow assignment rule by id.
      *
-     * @param name name of the rule to delete.
+     * @param id id of the rule to delete.
      * @return true if deleted; false if not found
      */
-    public boolean remove(String name) {
-        if (get(name).isPresent()) {
-            flowAssignmentRuleRepo.deleteById(name);
+    public boolean remove(String id) {
+        if (get(id).isPresent()) {
+            flowAssignmentRuleRepo.deleteById(id);
             refreshCache();
             return true;
         }
@@ -84,13 +92,13 @@ public class FlowAssignmentService implements Snapshotter {
     }
 
     /**
-     * Get a flow assignment rule by name.
+     * Get a flow assignment rule by id.
      *
-     * @param name name of the rule to return
+     * @param id id of the rule to return
      * @return flow assignment rule if found
      */
-    public Optional<FlowAssignmentRule> get(String name) {
-        return flowAssignmentRuleRepo.findById(name);
+    public Optional<FlowAssignmentRule> get(String id) {
+        return flowAssignmentRuleRepo.findById(id);
     }
 
     /**
@@ -100,19 +108,44 @@ public class FlowAssignmentService implements Snapshotter {
      * @return Result of operation
      */
     public Result save(FlowAssignmentRule flowAssignmentRule) {
+        if (flowAssignmentRule.getId() == null) {
+            flowAssignmentRule.setId(UUID.randomUUID().toString());
+        }
         List<String> errors = flowAssignmentRule.validate();
         if (errors.isEmpty()) {
-            flowAssignmentRuleRepo.save(flowAssignmentRule);
-            refreshCache();
-            return Result.newBuilder().success(true).build();
+            try {
+                flowAssignmentRuleRepo.save(flowAssignmentRule);
+                refreshCache();
+                return new Result();
+            } catch (DuplicateKeyException e) {
+                errors.add("duplicate rule name");
+            }
         }
         return Result.newBuilder().success(false).errors(errors).build();
     }
 
-    public Result saveAll(List<FlowAssignmentRule> flowAssignmentRules) {
+    /**
+     * Update a flow assignment rule.
+     *
+     * @param flowAssignmentRule the updated rule
+     * @return Result of operation
+     */
+    public Result update(FlowAssignmentRule flowAssignmentRule) {
+        if (StringUtils.isBlank(flowAssignmentRule.getId())) {
+            return Result.newBuilder().success(false).errors(List.of("id is missing")).build();
+        } else if (get(flowAssignmentRule.getId()).isEmpty()) {
+            return Result.newBuilder().success(false).errors(List.of("rule not found")).build();
+        }
+        return save(flowAssignmentRule);
+    }
+
+    private Result saveAll(List<FlowAssignmentRule> flowAssignmentRules) {
         Result result = new Result();
         List<FlowAssignmentRule> valid = new ArrayList<>();
         for (FlowAssignmentRule flowAssignmentRule : flowAssignmentRules) {
+            if (flowAssignmentRule.getId() == null) {
+                flowAssignmentRule.setId(UUID.randomUUID().toString());
+            }
             List<String> errors = flowAssignmentRule.validate();
             if (errors.isEmpty()) {
                 valid.add(flowAssignmentRule);
@@ -123,7 +156,12 @@ public class FlowAssignmentService implements Snapshotter {
         }
 
         if (!valid.isEmpty()) {
-            flowAssignmentRuleRepo.saveAll(valid);
+            try {
+                flowAssignmentRuleRepo.saveAll(valid);
+                refreshCache();
+            } catch (DuplicateKeyException e) {
+                result.getErrors().add("duplicate rule name");
+            }
         }
 
         return result;

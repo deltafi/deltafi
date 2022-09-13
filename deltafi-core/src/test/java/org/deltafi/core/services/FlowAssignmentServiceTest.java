@@ -153,6 +153,7 @@ class FlowAssignmentServiceTest {
 
     private FlowAssignmentRule getRegexRule() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("regexRule");
         rule.setName("regexRule");
         rule.setFlow(REGEX_FLOW);
         rule.setPriority(1);
@@ -162,6 +163,7 @@ class FlowAssignmentServiceTest {
 
     private FlowAssignmentRule getMetaRule() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("metaRule");
         rule.setName("metaRule");
         rule.setFlow(META_FLOW);
         rule.setPriority(2);
@@ -174,6 +176,7 @@ class FlowAssignmentServiceTest {
 
     private FlowAssignmentRule getMetaAndRegexRule() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("bothRule");
         rule.setName("bothRule");
         rule.setFlow(BOTH_FLOW);
         rule.setPriority(3);
@@ -186,6 +189,7 @@ class FlowAssignmentServiceTest {
 
     private FlowAssignmentRule getPassDownRule() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("passRule");
         rule.setName("passRule");
         rule.setFlow(PASS_DOWN_FLOW);
         rule.setPriority(4);

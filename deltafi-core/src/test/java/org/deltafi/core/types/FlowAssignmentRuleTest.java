@@ -18,7 +18,6 @@
 package org.deltafi.core.types;
 
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.core.types.FlowAssignmentRule;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -36,10 +35,17 @@ class FlowAssignmentRuleTest {
     @Test
     void testMissingAll() {
         assertTrue(new FlowAssignmentRule().validate().containsAll(List.of(
+                FlowAssignmentRule.MISSING_ID,
                 FlowAssignmentRule.MISSING_RULE_NAME,
                 FlowAssignmentRule.MISSING_FLOW_NAME,
                 FlowAssignmentRule.INVALID_PRIORITY,
                 FlowAssignmentRule.MISSING_CRITERIA)));
+    }
+
+    @Test
+    void testNoId() {
+        assertTrue(getNoId().validate().contains(FlowAssignmentRule.MISSING_ID));
+        assertEquals(1, getNoName().validate().size());
     }
 
     @Test
@@ -74,6 +80,17 @@ class FlowAssignmentRuleTest {
 
     private FlowAssignmentRule getValid() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("id");
+        rule.setName("name");
+        rule.setFlow("flow");
+        rule.setPriority(1);
+        rule.setFilenameRegex("regex");
+        rule.setRequiredMetadata(List.of(new KeyValue("k", "v")));
+        return rule;
+    }
+
+    private FlowAssignmentRule getNoId() {
+        FlowAssignmentRule rule = new FlowAssignmentRule();
         rule.setName("name");
         rule.setFlow("flow");
         rule.setPriority(1);
@@ -84,6 +101,7 @@ class FlowAssignmentRuleTest {
 
     private FlowAssignmentRule getNoName() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("id");
         rule.setFlow("flow");
         rule.setPriority(1);
         rule.setFilenameRegex("regex");
@@ -93,6 +111,7 @@ class FlowAssignmentRuleTest {
 
     private FlowAssignmentRule getNoFlow() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("id");
         rule.setName("name");
         rule.setPriority(1);
         rule.setFilenameRegex("regex");
@@ -102,6 +121,7 @@ class FlowAssignmentRuleTest {
 
     private FlowAssignmentRule getInvalidPriority() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("id");
         rule.setName("name");
         rule.setFlow("flow");
         rule.setFilenameRegex("regex");
@@ -111,6 +131,7 @@ class FlowAssignmentRuleTest {
 
     private FlowAssignmentRule getNoCriteria() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("id");
         rule.setName("name");
         rule.setFlow("flow");
         rule.setPriority(1);
@@ -119,6 +140,7 @@ class FlowAssignmentRuleTest {
 
     private FlowAssignmentRule getEmptyCriteria() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("id");
         rule.setName("name");
         rule.setFlow("flow");
         rule.setPriority(1);
@@ -128,6 +150,7 @@ class FlowAssignmentRuleTest {
 
     private FlowAssignmentRule getEmptyCriteria2() {
         FlowAssignmentRule rule = new FlowAssignmentRule();
+        rule.setId("id");
         rule.setName("name");
         rule.setFlow("flow");
         rule.setPriority(1);

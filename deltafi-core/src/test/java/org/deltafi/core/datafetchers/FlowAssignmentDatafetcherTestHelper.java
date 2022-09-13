@@ -45,6 +45,7 @@ public class FlowAssignmentDatafetcherTestHelper {
 
     static public List<FlowAssignmentRule> getAllFlowAssignmentRules(DgsQueryExecutor dgsQueryExecutor) {
         GetAllFlowAssignmentRulesProjectionRoot projection = new GetAllFlowAssignmentRulesProjectionRoot()
+                .id()
                 .name()
                 .flow()
                 .priority()
@@ -68,8 +69,9 @@ public class FlowAssignmentDatafetcherTestHelper {
                 ruleListType);
     }
 
-    static public FlowAssignmentRule getFlowAssignment(DgsQueryExecutor dgsQueryExecutor, String name) {
+    static public FlowAssignmentRule getFlowAssignment(DgsQueryExecutor dgsQueryExecutor, String id) {
         GetFlowAssignmentRuleProjectionRoot projection = new GetFlowAssignmentRuleProjectionRoot()
+                .id()
                 .name()
                 .flow()
                 .priority()
@@ -80,7 +82,7 @@ public class FlowAssignmentDatafetcherTestHelper {
                 .parent();
 
         GetFlowAssignmentRuleGraphQLQuery query =
-                GetFlowAssignmentRuleGraphQLQuery.newRequest().name(name).build();
+                GetFlowAssignmentRuleGraphQLQuery.newRequest().id(id).build();
         GraphQLQueryRequest graphQLQueryRequest =
                 new GraphQLQueryRequest(query, projection);
 
@@ -93,6 +95,12 @@ public class FlowAssignmentDatafetcherTestHelper {
     static public Result saveFirstRule(DgsQueryExecutor dgsQueryExecutor) {
         FlowAssignmentRuleInput input = makeRegexRule(RULE_NAME1, FLOW_NAME1, 0, FILENAME_REGEX);
         return executeLoadRules(dgsQueryExecutor, true, List.of(input)).get(0);
+    }
+
+    static public List<Result> loadRulesWithDuplicates(DgsQueryExecutor dgsQueryExecutor) {
+        FlowAssignmentRuleInput input = makeRegexRule(RULE_NAME1, FLOW_NAME1, 0, FILENAME_REGEX);
+        FlowAssignmentRuleInput duplicate = makeRegexRule(RULE_NAME1, FLOW_NAME1, 0, FILENAME_REGEX);
+        return executeLoadRules(dgsQueryExecutor, true, List.of(input, duplicate));
     }
 
     static public Result saveBadRule(DgsQueryExecutor dgsQueryExecutor, boolean replaceAll) {
@@ -176,14 +184,38 @@ public class FlowAssignmentDatafetcherTestHelper {
                 "data." + query.getOperationName(), String.class);
     }
 
-    static public boolean removeFlowAssignment(DgsQueryExecutor dgsQueryExecutor, String name) {
-        RemoveFlowAssignmentRuleGraphQLQuery query = RemoveFlowAssignmentRuleGraphQLQuery.newRequest().name(name).build();
+    static public boolean removeFlowAssignment(DgsQueryExecutor dgsQueryExecutor, String id) {
+        RemoveFlowAssignmentRuleGraphQLQuery query = RemoveFlowAssignmentRuleGraphQLQuery.newRequest().id(id).build();
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(), Boolean.class);
+    }
+
+    static public Result updateFlowAssignmentRule(DgsQueryExecutor dgsQueryExecutor, String id, String name, int priority) {
+        FlowAssignmentRuleInput input = FlowAssignmentRuleInput.newBuilder()
+                .id(id)
+                .name(name)
+                .flow("testFlow")
+                .filenameRegex("testRegex")
+                .priority(priority)
+                .build();
+
+        UpdateFlowAssignmentRuleProjectionRoot projection = new UpdateFlowAssignmentRuleProjectionRoot()
+                .success()
+                .errors();
+
+        UpdateFlowAssignmentRuleGraphQLQuery query =
+                UpdateFlowAssignmentRuleGraphQLQuery.newRequest().rule(input).build();
+        GraphQLQueryRequest graphQLQueryRequest =
+                new GraphQLQueryRequest(query, projection);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Result.class);
     }
 
 }

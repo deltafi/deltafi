@@ -17,7 +17,7 @@ Options:
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
-QUERY="query { getAllFlowAssignmentRules { name flow priority filenameRegex requiredMetadata { key value } } }"
+QUERY="query { getAllFlowAssignmentRules { id name flow priority filenameRegex requiredMetadata { key value } } }"
 
 RESULT=$(deltafi query $QUERY)
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
