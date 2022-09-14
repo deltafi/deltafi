@@ -23,7 +23,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionInput;
-import org.springframework.stereotype.Service;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.URISyntaxException;
@@ -35,7 +34,6 @@ import static org.deltafi.common.constant.DeltaFiConstants.DGS_QUEUE;
 /**
  * Service for pushing and popping action events to a redis queue.
  */
-@Service
 @Slf4j
 public class ActionEventQueue {
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;

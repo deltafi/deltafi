@@ -20,15 +20,18 @@ package org.deltafi.common.http;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.ssl.SslContextFactory;
 import org.deltafi.common.ssl.SslProperties;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.net.http.HttpClient;
 
-@Configuration
+@AutoConfiguration
+@ConfigurationPropertiesScan
 @Slf4j
-public class HttpClientConfig {
+public class HttpServiceAutoConfiguration {
     @Bean
     @ConfigurationProperties("ssl")
     public SslProperties sslProperties() {
@@ -48,5 +51,11 @@ public class HttpClientConfig {
         }
 
         return httpClientBuilder.build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public HttpService httpService(HttpClient httpClient) {
+        return new HttpService(httpClient);
     }
 }

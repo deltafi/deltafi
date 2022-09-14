@@ -26,7 +26,6 @@ import org.apache.commons.io.input.CountingInputStream;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +35,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
 public class MinioObjectStorageService implements ObjectStorageService {

@@ -1,4 +1,4 @@
-/*
+/**
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,17 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.metrics;
+package org.deltafi.common.content;
 
+import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class MetricsConfig {
-
+@AutoConfiguration
+@ConfigurationPropertiesScan
+public class ContentStorageServiceAutoConfiguration {
     @Bean
-    public MetricRepository metricRepository(MetricsProperties metricsProperties) {
-        return new MetricRepository(metricsProperties);
+    @ConditionalOnMissingBean
+    public ContentStorageService contentStorageService(ObjectStorageService objectStorageService) {
+        return new ContentStorageService(objectStorageService);
     }
-
 }

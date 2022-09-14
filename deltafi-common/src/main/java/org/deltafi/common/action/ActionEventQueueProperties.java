@@ -18,9 +18,11 @@
 package org.deltafi.common.action;
 
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Optional;
 
+@ConfigurationProperties("redis")
 @Data
 public class ActionEventQueueProperties {
     private String url;

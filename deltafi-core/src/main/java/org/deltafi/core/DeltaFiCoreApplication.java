@@ -19,12 +19,10 @@ package org.deltafi.core;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-@SpringBootApplication(scanBasePackages = "org.deltafi")
-@ConfigurationPropertiesScan(basePackages = "org.deltafi")
+@SpringBootApplication
 @EnableAsync
 @EnableRetry
 public class DeltaFiCoreApplication {

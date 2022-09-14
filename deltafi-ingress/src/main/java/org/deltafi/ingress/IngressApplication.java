@@ -19,10 +19,8 @@ package org.deltafi.ingress;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
-@SpringBootApplication(scanBasePackages = "org.deltafi")
-@ConfigurationPropertiesScan(basePackages = "org.deltafi")
+@SpringBootApplication
 public class IngressApplication {
     public static void main(String[] args) {
         SpringApplication.run(IngressApplication.class, args);

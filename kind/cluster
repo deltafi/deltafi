@@ -552,7 +552,6 @@ describe destroy "Shut down the KinD cluster and remove persistent volume data"
 destroy() {
   down $@
   [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure "Do you want to delete all local persistent volume data?"
-  rm -rf $PV_DIR
   if _is_linux; then
     ${SUDO} rm -rf $PV_DIR
   else

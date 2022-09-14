@@ -25,9 +25,9 @@ import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.ingress.service.DeltaFileService;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -50,7 +50,6 @@ import static org.mockito.ArgumentMatchers.*;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ConfigurationPropertiesScan(basePackages = "org.deltafi")
 class DeltaFileRestTest {
 
     @Autowired

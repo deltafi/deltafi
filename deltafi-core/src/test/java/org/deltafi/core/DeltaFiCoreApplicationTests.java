@@ -74,7 +74,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -117,7 +116,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest
-@ConfigurationPropertiesScan(basePackages = "org.deltafi")
 @TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "enableScheduling=false"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {

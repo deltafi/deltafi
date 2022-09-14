@@ -28,7 +28,6 @@ import org.deltafi.common.graphql.dgs.GraphQLExecutor;
 import org.deltafi.common.types.ActionRegistrationInput;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -41,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Service that gathers up all the extant actions and registers them with the domain
  */
-@Service
 @Slf4j
 public class RegistrationService {
 

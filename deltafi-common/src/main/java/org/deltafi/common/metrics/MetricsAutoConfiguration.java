@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,18 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.storage.s3.minio;
+package org.deltafi.common.metrics;
 
-import io.minio.MinioClient;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class MinioConfig {
+@AutoConfiguration
+@ConfigurationPropertiesScan
+public class MetricsAutoConfiguration {
     @Bean
-    public MinioClient minioClient(MinioProperties minioProperties) {
-        return MinioClient.builder()
-                .endpoint(minioProperties.getUrl())
-                .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey()).build();
+    @ConditionalOnMissingBean
+    public MetricRepository metricRepository(MetricsProperties metricsProperties) {
+        return new MetricRepository(metricsProperties);
     }
 }

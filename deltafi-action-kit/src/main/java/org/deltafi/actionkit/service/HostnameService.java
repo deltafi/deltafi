@@ -19,7 +19,6 @@ package org.deltafi.actionkit.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.properties.ActionsProperties;
-import org.springframework.stereotype.Service;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -28,7 +27,6 @@ import java.util.Map;
 /**
  * Service object that provides access to the local hostname
  */
-@Service
 @Slf4j
 public class HostnameService {
 

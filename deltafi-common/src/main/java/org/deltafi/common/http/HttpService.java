@@ -20,7 +20,6 @@ package org.deltafi.common.http;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +33,6 @@ import java.util.stream.Stream;
 /**
  * General purpose HTTP client service
  */
-@Component
 @RequiredArgsConstructor
 @Slf4j
 public class HttpService {

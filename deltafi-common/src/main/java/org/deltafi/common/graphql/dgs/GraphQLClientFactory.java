@@ -21,7 +21,6 @@ import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.HttpResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -29,11 +28,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
 public class GraphQLClientFactory {
-
     private final HttpClient httpClient;
     private final GraphqlClientProperties graphqlProperties;
 

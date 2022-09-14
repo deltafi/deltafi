@@ -17,15 +17,20 @@
  */
 package org.deltafi.common.action;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class ActionEventQueueConfig {
+import java.net.URISyntaxException;
+
+@AutoConfiguration
+@ConfigurationPropertiesScan
+public class ActionEventQueueAutoConfiguration {
     @Bean
-    @ConfigurationProperties("redis")
-    public ActionEventQueueProperties actionEventQueueProperties() {
-        return new ActionEventQueueProperties();
+    @ConditionalOnMissingBean
+    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties)
+            throws URISyntaxException {
+        return new ActionEventQueue(actionEventQueueProperties);
     }
 }

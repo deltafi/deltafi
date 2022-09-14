@@ -17,13 +17,11 @@
  */
 package org.deltafi.actionkit.action.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.properties.ActionsProperties;
-import org.deltafi.actionkit.properties.DeltaFiProperties;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.metrics.Metric;
@@ -35,22 +33,16 @@ import org.deltafi.common.types.DeltaFile;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Base class for all DeltaFi Actions.  No action should directly extend this class, but should use
- * specialized classes in the action taxonomy (LoadAction, EgressAction, etc.)
- */
-@Service
-@RequiredArgsConstructor
 @Slf4j
 public class ActionRunner {
     @Autowired
@@ -62,11 +54,8 @@ public class ActionRunner {
     @Autowired
     private HostnameService hostnameService;
 
-    @Autowired
-    private DeltaFiProperties deltaFiProperties;
-
-    @Autowired
-    private List<Action<?>> actions;
+    @Autowired(required = false)
+    private List<Action<?>> actions = Collections.emptyList();
 
     @Autowired
     BuildProperties buildProperties;
@@ -83,7 +72,9 @@ public class ActionRunner {
     public void startActions() {
         if (actions.isEmpty()) {
             log.error("No actions found!");
+            return;
         }
+
         executor = Executors.newFixedThreadPool(actions.size());
         for (Action<?> action : actions) {
             log.info("Starting action: {}", getFeedString(action));

@@ -35,7 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Consolidated GraphQL client code to a new `org.deltafi.common.graphql.dgs` package in `deltafi-common`
 - Moved the `HttpService` to a new `org.deltafi.common.http` package in `deltafi-common`
 - Moved SSL configuration properties to the top level instead of being under actions
-- Removed `@Configuration` from `@ConfigurationProperties` classes. `@EnableConfigurationProperties` needs to be replaced with `@ConfigurationPropertiesScan(basePackages = "org.deltafi")` in Spring Boot applications and tests.
+- Added auto configuration classes to deltafi-common and deltafi-actionkit. It's no longer necessary to specify base packages to scan.
+- Removed `@Configuration` from `@ConfigurationProperties` classes. The @ConfigurationPropertiesScan in the auto configurations doesn't need it.
 - Migrated Java StatsD client from UDP to TCP to guarantee metric delivery and handle metrics back-up when graphite is down
 - Changed name of deltafi-core-domain to deltafi-core
 - Disabled spring log banners in deltafi-ingress and deltafi-core-actions
