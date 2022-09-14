@@ -56,7 +56,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
             FlowFilePackagerV1 packager = new FlowFilePackagerV1();
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 packager.packageFlowFile(inputStream, out,
-                        buildHeadersMap(context.getDid(), sourceInfo, formattedData, params),
+                        buildHeadersMap(context.getDid(), sourceInfo, formattedData, context.getEgressFlow()),
                         formattedData.getContentReference().getSize());
                 HttpResponse<InputStream> response;
                 try (ByteArrayInputStream flowfile = new ByteArrayInputStream(out.toByteArray())) {

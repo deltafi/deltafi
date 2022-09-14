@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.FormattedData;
@@ -31,13 +32,13 @@ import org.jetbrains.annotations.NotNull;
  * @see MultipartEgressAction
  * @see EgressAction
  */
-public abstract class SimpleEgressAction extends EgressAction<EgressActionParameters> {
+public abstract class SimpleEgressAction extends EgressAction<ActionParameters> {
     public SimpleEgressAction() {
-        super(EgressActionParameters.class);
+        super(ActionParameters.class);
     }
 
     @Override
-    public final Result egress(@NotNull ActionContext context, @NotNull EgressActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    public final Result egress(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         return egress(context, sourceInfo, formattedData);
     }
 

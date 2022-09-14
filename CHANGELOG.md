@@ -42,6 +42,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Disabled spring log banners in deltafi-ingress and deltafi-core-actions
 - MinIO storage creation now done in deltafi-core instead of helm
 - Flow assignment rules now has a name that is independent of the rule ID
+- Removed "egressFlow" parameter for EgressActions.
 
 ### Deprecated
 - Quarkus is no longer in use or supported in the DeltaFi monolith

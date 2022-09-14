@@ -63,7 +63,7 @@ public interface ActionConfiguration extends DeltaFiConfiguration {
      * @param systemName system name to set in context
      * @return ActionInput containing the ActionConfiguration
      */
-    default ActionInput buildActionInput(DeltaFile deltaFile, String systemName) {
+    default ActionInput buildActionInput(DeltaFile deltaFile, String systemName, String egressFlow) {
         if (Objects.isNull(getParameters())) {
             setParameters(Collections.emptyMap());
         }
@@ -74,6 +74,7 @@ public interface ActionConfiguration extends DeltaFiConfiguration {
                         .did(deltaFile.getDid())
                         .name(getName())
                         .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                        .egressFlow(egressFlow)
                         .systemName(systemName)
                         .build())
                 .actionParams(getParameters())

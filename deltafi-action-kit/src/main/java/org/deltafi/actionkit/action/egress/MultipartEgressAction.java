@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.SourceInfo;
@@ -36,7 +37,7 @@ import java.util.List;
  * @see EgressAction
  */
 @SuppressWarnings("unused")
-public abstract class MultipartEgressAction<P extends EgressActionParameters> extends EgressActionBase<P> {
+public abstract class MultipartEgressAction<P extends ActionParameters> extends EgressActionBase<P> {
     public MultipartEgressAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }

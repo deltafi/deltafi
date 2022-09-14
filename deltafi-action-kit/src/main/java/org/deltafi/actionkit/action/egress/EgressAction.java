@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.SourceInfo;
@@ -32,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * @see MultipartEgressAction
  * @see SimpleMultipartEgressAction
  */
-public abstract class EgressAction<P extends EgressActionParameters> extends EgressActionBase<P> {
+public abstract class EgressAction<P extends ActionParameters> extends EgressActionBase<P> {
     public EgressAction(Class<P> actionParametersClass) {
         super(actionParametersClass);
     }

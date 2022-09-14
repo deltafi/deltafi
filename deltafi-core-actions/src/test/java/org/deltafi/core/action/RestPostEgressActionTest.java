@@ -82,7 +82,7 @@ class RestPostEgressActionTest {
     private static final SourceInfo SOURCE_INFO = new SourceInfo(ORIG_FILENAME, FLOW, List.of());
     static Integer NUM_TRIES = 3;
     static Integer RETRY_WAIT = 10;
-    private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(EGRESS_FLOW, URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
+    private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
 
     @Mock
     private ContentStorageService contentStorageService;
@@ -105,7 +105,7 @@ class RestPostEgressActionTest {
 
     @SuppressWarnings("unchecked")
     private Result runTest(int statusCode, String responseBody, int numTries) throws IOException {
-        ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
+        ActionContext context = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
         HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
             @Override
             public int statusCode() {

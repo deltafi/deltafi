@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.egress.EgressAction;
-import org.deltafi.actionkit.action.egress.EgressActionParameters;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
@@ -71,14 +70,14 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
     abstract protected Result doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 
 
-    public Map<String, String> buildHeadersMap(String did, SourceInfo sourceInfo, FormattedData formattedData, EgressActionParameters params) {
+    public Map<String, String> buildHeadersMap(String did, SourceInfo sourceInfo, FormattedData formattedData, String egressFlow) {
         Map<String, String> headersMap = new HashMap<>();
         if (formattedData.getMetadata() != null) {
             formattedData.getMetadata().forEach(pair -> headersMap.put(pair.getKey(), pair.getValue()));
         }
         headersMap.put("did", did);
         headersMap.put("ingressFlow", sourceInfo.getFlow());
-        headersMap.put("flow", params.getEgressFlow());
+        headersMap.put("flow", egressFlow);
         headersMap.put("originalFilename", sourceInfo.getFilename());
         headersMap.put("filename", formattedData.getFilename());
 

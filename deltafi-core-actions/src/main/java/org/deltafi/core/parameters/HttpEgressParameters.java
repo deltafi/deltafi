@@ -23,13 +23,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.deltafi.actionkit.action.egress.EgressActionParameters;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class HttpEgressParameters extends EgressActionParameters {
+public class HttpEgressParameters extends ActionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("The URL to post the DeltaFile to")
     public String url;
@@ -40,9 +40,7 @@ public class HttpEgressParameters extends EgressActionParameters {
     @JsonPropertyDescription("Number milliseconds to wait for an HTTP retry")
     public Integer retryDelayMs = 150;
 
-    public HttpEgressParameters(String egressFlow, String url, Integer retryCount, Integer retryDelayMs) {
-        super(egressFlow);
-
+    public HttpEgressParameters(String url, Integer retryCount, Integer retryDelayMs) {
         this.url = url;
         this.retryCount = retryCount;
         this.retryDelayMs = retryDelayMs;

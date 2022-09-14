@@ -96,7 +96,7 @@ class FlowfileEgressActionTest {
 
     static Integer NUM_TRIES = 3;
     static Integer RETRY_WAIT = 10;
-    private static final HttpEgressParameters PARAMS = new HttpEgressParameters(EGRESS_FLOW, URL, NUM_TRIES, RETRY_WAIT);
+    private static final HttpEgressParameters PARAMS = new HttpEgressParameters(URL, NUM_TRIES, RETRY_WAIT);
 
     @Mock
     private ContentStorageService contentStorageService;
@@ -110,7 +110,7 @@ class FlowfileEgressActionTest {
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
-        Result result = runTest(200, METADATA, 1);
+        Result result = runTest(200, 1);
 
         assertThat(result, instanceOf(EgressResult.class));
         assertThat(result.toEvent().getDid(), equalTo(DID));
@@ -118,8 +118,8 @@ class FlowfileEgressActionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private Result runTest(int statusCode, Map<String, String> expectedMetadata, int numTries) throws IOException {
-        ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
+    private Result runTest(int statusCode, int numTries) throws IOException {
+        ActionContext context = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
 
         final List<byte[]> posts = new ArrayList<>();
         when(httpService.post(any(), any(), any(), any())).thenAnswer(
@@ -127,7 +127,7 @@ class FlowfileEgressActionTest {
                     InputStream is = invocation.getArgument(2);
                     posts.add(is.readAllBytes());
                     is.close();
-                    HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
+                    return new HttpResponse<>() {
                         @Override public int statusCode() {
                             return statusCode;
                         }
@@ -149,7 +149,6 @@ class FlowfileEgressActionTest {
                             return null;
                         }
                     };
-                    return httpResponse;
                 }
         );
         Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
@@ -163,7 +162,7 @@ class FlowfileEgressActionTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Map<String, String> metadata = unpackager.unpackageFlowFile(new ByteArrayInputStream(posts.get(0)), out);
         // Expected metadata + ADDITIONAL_METADATA should be in the flowfile attributes
-        assertThat(metadata, equalTo(Stream.of(expectedMetadata, ADDITIONAL_METADATA).flatMap(m -> m.entrySet().stream())
+        assertThat(metadata, equalTo(Stream.of(FlowfileEgressActionTest.METADATA, ADDITIONAL_METADATA).flatMap(m -> m.entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
         byte[] content = out.toByteArray();
         assertThat(content, equalTo(CONTENT));
@@ -199,14 +198,14 @@ class FlowfileEgressActionTest {
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new TestInputStream(CONTENT));
-        Result result = runTest(200, METADATA,1);
+        Result result = runTest(200, 1);
         assertThat(result, instanceOf(EgressResult.class));
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
-        Result result = runTest(505, METADATA, 4);
+        Result result = runTest(505, 4);
 
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat(((ErrorResult) result).getErrorCause(), containsString("505"));

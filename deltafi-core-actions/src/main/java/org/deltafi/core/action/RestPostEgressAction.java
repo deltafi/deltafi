@@ -57,7 +57,7 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
     protected Result doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
-                    buildHeadersMapString(context.getDid(), sourceInfo, formattedData, params)), inputStream, formattedData.getContentReference().getMediaType());
+                    buildHeadersMapString(context.getDid(), sourceInfo, formattedData, context.getEgressFlow())), inputStream, formattedData.getContentReference().getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
                 return new ErrorResult(context, "Unsuccessful POST: " + response.statusCode() + " " + new String(response.body().readAllBytes())).logErrorTo(log);
@@ -76,8 +76,8 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
         return new EgressResult(context, params.getUrl(), formattedData.getContentReference().getSize());
     }
 
-    private String buildHeadersMapString(String did, SourceInfo sourceInfo, FormattedData formattedData, RestPostEgressParameters params)
+    private String buildHeadersMapString(String did, SourceInfo sourceInfo, FormattedData formattedData, String egressFlow)
             throws JsonProcessingException {
-        return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, sourceInfo, formattedData, params));
+        return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, sourceInfo, formattedData, egressFlow));
     }
 }

@@ -30,8 +30,8 @@ public class RestPostEgressParameters extends HttpEgressParameters {
     @JsonPropertyDescription("Send metadata as JSON in this HTTP header field")
     public String metadataKey;
 
-    public RestPostEgressParameters(String egressFlow, String url, String metadataKey, Integer retryCount, Integer retryDelayMs) {
-        super(egressFlow, url, retryCount, retryDelayMs);
+    public RestPostEgressParameters(String url, String metadataKey, Integer retryCount, Integer retryDelayMs) {
+        super(url, retryCount, retryDelayMs);
         this.metadataKey = metadataKey;
     }
 }

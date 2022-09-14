@@ -780,12 +780,14 @@ public class DeltaFilesService {
 
     private ActionInput toActionInput(Action action, DeltaFile deltaFile) {
         ActionConfiguration actionConfiguration = null;
+        String egressFlow = null;
         if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
             actionConfiguration = ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), action.getName());
         } else if (DeltaFileStage.ENRICH.equals(deltaFile.getStage())) {
             actionConfiguration = enrichFlowService.findActionConfig(action.getName());
         } else if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())){
             actionConfiguration = egressFlowService.findActionConfig(action.getName());
+            egressFlow = egressFlowService.getFlowName(action.getName());
         }
 
         if (Objects.isNull(actionConfiguration)) {
@@ -802,7 +804,7 @@ public class DeltaFilesService {
             return null;
         }
 
-        return actionConfiguration.buildActionInput(deltaFile, properties.getSystemName());
+        return actionConfiguration.buildActionInput(deltaFile, properties.getSystemName(), egressFlow);
     }
 
     public void processActionEvents() {

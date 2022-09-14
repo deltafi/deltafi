@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.ActionRegistrationInput;
 import org.deltafi.common.types.EgressActionSchemaInput;
@@ -31,7 +32,7 @@ import org.deltafi.common.types.EgressActionSchemaInput;
  * @see MultipartEgressAction
  * @see SimpleMultipartEgressAction
  */
-public abstract class EgressActionBase<P extends EgressActionParameters> extends Action<P> {
+public abstract class EgressActionBase<P extends ActionParameters> extends Action<P> {
     public EgressActionBase(Class<P> actionParametersClass) {
         super(ActionType.EGRESS, actionParametersClass);
     }

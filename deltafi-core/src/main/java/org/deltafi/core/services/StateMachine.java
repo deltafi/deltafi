@@ -62,7 +62,7 @@ public class StateMachine {
                 TransformActionConfiguration nextTransformAction = getTransformAction(ingressFlow, deltaFile);
                 if (nextTransformAction != null) {
                     deltaFile.queueAction(nextTransformAction.getName());
-                    enqueueActions.add(buildActionInput(nextTransformAction, deltaFile));
+                    enqueueActions.add(buildActionInput(nextTransformAction, deltaFile, null));
                     break;
                 }
 
@@ -70,7 +70,7 @@ public class StateMachine {
                 LoadActionConfiguration loadAction = ingressFlow.getLoadAction();
                 if (loadAction != null && !deltaFile.hasTerminalAction(loadAction.getName())) {
                     deltaFile.queueAction(loadAction.getName());
-                    enqueueActions.add(buildActionInput(loadAction, deltaFile));
+                    enqueueActions.add(buildActionInput(loadAction, deltaFile, null));
                     break;
                 }
 
@@ -135,7 +135,7 @@ public class StateMachine {
         return enrichFlow.getDomainActions().stream()
                 .filter(domainActionConfiguration -> domainActionReady(domainActionConfiguration, deltaFile))
                 .filter(domainActionConfiguration -> isNewAction(domainActionConfiguration, deltaFile))
-                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile))
+                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null))
                 .collect(Collectors.toList());
     }
 
@@ -143,14 +143,14 @@ public class StateMachine {
         return enrichFlow.getEnrichActions().stream()
                 .filter(enrichActionConfiguration -> enrichActionReady(enrichActionConfiguration, deltaFile))
                 .filter(enrichActionConfiguration -> isNewAction(enrichActionConfiguration, deltaFile))
-                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile))
+                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null))
                 .collect(Collectors.toList());
     }
 
     List<ActionInput> advanceEgress(EgressFlow egressFlow, DeltaFile deltaFile) {
         return nextEgressActions(egressFlow, deltaFile).stream()
                 .filter(actionConfiguration -> isNewAction(actionConfiguration, deltaFile))
-                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile))
+                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, egressFlow.getName()))
                 .collect(Collectors.toList());
     }
 
@@ -236,8 +236,8 @@ public class StateMachine {
                 !deltaFile.hasTerminalAction(egressFlow.getEgressAction().getName());
     }
 
-    private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltafFile) {
-        return actionConfiguration.buildActionInput(deltafFile, deltaFiProperties.getSystemName());
+    private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile, String egressFlow) {
+        return actionConfiguration.buildActionInput(deltaFile, deltaFiProperties.getSystemName(), egressFlow);
     }
 
 }

@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.FormattedData;
@@ -35,13 +36,13 @@ import java.util.List;
  * @see EgressAction
  */
 @SuppressWarnings("unused")
-public abstract class SimpleMultipartEgressAction extends MultipartEgressAction<EgressActionParameters> {
+public abstract class SimpleMultipartEgressAction extends MultipartEgressAction<ActionParameters> {
     public SimpleMultipartEgressAction() {
-        super(EgressActionParameters.class);
+        super(ActionParameters.class);
     }
 
     @Override
-    public final Result egress(@NotNull ActionContext context, @NotNull EgressActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<FormattedData> formattedDataList) {
+    public final Result egress(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull List<FormattedData> formattedDataList) {
         return egress(context, sourceInfo, formattedDataList);
     }
 
