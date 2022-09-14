@@ -137,4 +137,18 @@ public interface DeltaFileRepoCustom {
      */
     ErrorsByMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy);
 
+    /**
+     * Get a list of all domains that are currently assigned deltaFiles
+     *
+     * @return the Domains
+     */
+    List<String> domains();
+
+    /**
+     * Get a list of all indexed metadata keys currently assigned by deltaFiles
+     *
+     * @param domain An optional domain to filter by
+     * @return the indexed metadata
+     */
+    List<String> indexedMetadataKeys(String domain);
 }

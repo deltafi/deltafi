@@ -105,7 +105,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String ID_ERROR_MESSAGE = ID + "." + ERROR_MESSAGE;
     private static final String ID_FLOW = ID + "." + FLOW_LOWER_CASE;
     private static final String UNWIND_STATE = "unwindState";
-    public static final String INDEXED_METADATA = "indexedMetadata.";
+    public static final String INDEXED_METADATA = "indexedMetadata";
 
     static class FlowCountAndDids {
         TempSourceInfo sourceInfo;
@@ -134,7 +134,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             "created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC),
-            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA+"$**", Sort.Direction.ASC));
+            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA +".$**", Sort.Direction.ASC));
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
@@ -522,7 +522,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             key = StringUtils.replace(key, ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
         }
 
-        return Criteria.where(INDEXED_METADATA + key).is(value);
+        return Criteria.where(INDEXED_METADATA + "." + key).is(value);
     }
 
     private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
@@ -763,5 +763,30 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return criteria;
+    }
+
+    @Override
+    public List<String> domains() {
+        return mongoTemplate.findDistinct(new Query(), DOMAINS_NAME, DeltaFile.class, String.class);
+    }
+
+    @Override
+    public List<String> indexedMetadataKeys(String domain) {
+        List<AggregationOperation> operations = new ArrayList<>();
+
+        if (domain != null && !domain.isEmpty()) {
+            operations.add(match(Criteria.where(DOMAINS_NAME).is(domain)));
+        }
+        operations.add(project().and(ObjectOperators.valueOf(INDEXED_METADATA).toArray()).as(INDEXED_METADATA));
+        operations.add(unwind(INDEXED_METADATA));
+        operations.add(group().addToSet("indexedMetadata.k").as("keys"));
+
+        List<String> keys = Optional
+                .ofNullable(mongoTemplate.aggregate(newAggregation(operations), COLLECTION, Document.class).getUniqueMappedResult())
+                .map(doc -> doc.getList("keys", String.class))
+                .orElse(Collections.emptyList());
+        Collections.sort(keys);
+
+        return keys;
     }
 }

@@ -3239,4 +3239,98 @@ class DeltaFiCoreApplicationTests {
 		}
 		return keyValues;
 	}
+
+	@Test
+	void domains() {
+		deltaFileRepo.insert(DeltaFile.newBuilder()
+				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
+				.build());
+		deltaFileRepo.insert(DeltaFile.newBuilder()
+				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
+				.build());
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery());
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.Domains,
+				new TypeRef<>() {}
+		);
+
+		assertEquals(List.of("a", "b", "c"), actual);
+	}
+
+	@Test
+	void domainsEmpty() {;
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery());
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.Domains,
+				new TypeRef<>() {}
+		);
+
+		assertEquals(Collections.emptyList(), actual);
+	}
+
+	@Test
+	void indexedMetadata() {
+		deltaFileRepo.insert(DeltaFile.newBuilder()
+				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
+				.indexedMetadata(Map.of("x", "1", "y", "2"))
+				.build());
+		deltaFileRepo.insert(DeltaFile.newBuilder()
+				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
+				.indexedMetadata(Map.of("y", "3", "z", "4"))
+				.build());
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new IndexedMetadataKeysGraphQLQuery());
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.IndexedMetadataKeys,
+				new TypeRef<>() {}
+		);
+
+		assertEquals(List.of("x", "y", "z"), actual);
+	}
+
+	@Test
+	void indexedMetadataPerDomain() {
+		deltaFileRepo.insert(DeltaFile.newBuilder()
+				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
+				.indexedMetadata(Map.of("x", "1", "y", "2"))
+				.build());
+		deltaFileRepo.insert(DeltaFile.newBuilder()
+				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
+				.indexedMetadata(Map.of("y", "3", "z", "4"))
+				.build());
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(IndexedMetadataKeysGraphQLQuery
+				.newRequest()
+				.domain("a")
+				.build());
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.IndexedMetadataKeys,
+				new TypeRef<>() {}
+		);
+
+		assertEquals(List.of("x", "y"), actual);
+	}
+
+	@Test
+	void indexedMetadataEmpty() {
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new IndexedMetadataKeysGraphQLQuery());
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.IndexedMetadataKeys,
+				new TypeRef<>() {}
+		);
+
+		assertEquals(Collections.emptyList(), actual);
+	}
 }

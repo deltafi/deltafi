@@ -194,4 +194,14 @@ public class DeltaFilesDatafetcher {
 
     return numFiles;
   }
+
+  @DgsQuery
+  public List<String> domains() {
+    return deltaFilesService.domains();
+  }
+
+  @DgsQuery
+  public List<String> indexedMetadataKeys(@InputArgument String domain) {
+    return deltaFilesService.indexedMetadataKeys(domain);
+  }
 }

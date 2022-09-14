@@ -433,8 +433,11 @@ type Query {
   actionSchemas: [ActionSchema!]!
   exportConfigAsYaml: String!
 
-  plugins:  [Plugin!]!
+  plugins: [Plugin!]!
   verifyActionsAreRegistered(pluginCoordinates: PluginCoordinatesInput!) : Boolean
+
+  domains: [String!]!
+  indexedMetadataKeys(domain: String): [String!]!
 }
 
 type Mutation {

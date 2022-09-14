@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added better Redis exception handling to API/Monitor
 - KinD: Added Linux compatability to `cluster` command
 - DecompressionTransformAction will log error results.
+- Add domains and indexedMetadataKeys graphQL endpoints
 
 ### Changed
 - Action-kit contains a logback.xml configuration file to configure logging for all actions

@@ -872,4 +872,11 @@ public class DeltaFilesService {
                 filter, orderBy);
     }
 
+    public List<String> domains() {
+        return deltaFileRepo.domains();
+    }
+
+    public List<String> indexedMetadataKeys(String domain) {
+        return deltaFileRepo.indexedMetadataKeys(domain);
+    }
 }
