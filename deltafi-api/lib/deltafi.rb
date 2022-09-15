@@ -71,10 +71,10 @@ module Deltafi
   end
 
   def self.cached_system_properties
-    unless @@system_properties.nil? || @@system_properties.keys.empty?
-      @@system_properties
-    else
+    if @@system_properties.nil? || @@system_properties.keys.empty?
       system_properties
+    else
+      @@system_properties
     end
   end
 

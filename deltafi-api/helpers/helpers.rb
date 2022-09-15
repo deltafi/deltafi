@@ -21,11 +21,11 @@
 class ApiServer < Sinatra::Base
   helpers do
     def audit(message)
-      user = request.env["HTTP_X_USER_NAME"] || 'system'
+      user = request.env['HTTP_X_USER_NAME'] || 'system'
       audit_message = {
-        timestamp: Time.now.utc.strftime("%FT%T.%3NZ"),
-        loggerName: "AUDIT",
-        level: "INFO",
+        timestamp: Time.now.utc.strftime('%FT%T.%3NZ'),
+        loggerName: 'AUDIT',
+        level: 'INFO',
         user: user,
         message: message
       }.to_json

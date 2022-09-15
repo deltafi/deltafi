@@ -46,11 +46,11 @@ module Deltafi
 
           def check_pvcs
             pvcs = DF.k8s_client.api('v1').resource('persistentvolumeclaims', namespace: DF::Common::K8S_NAMESPACE).get('').items
-            unbound = pvcs.select { |pvc| pvc.status.phase != 'Bound' }
+            unbound = pvcs.reject { |pvc| pvc.status.phase == 'Bound' }
             unless unbound.empty?
               self.code = 2
               message_lines << '##### Unbound Persistent Volume Claims'
-              message_lines << unbound.map { |pvc| "- #{pvc.metadata.name}"}
+              message_lines << unbound.map { |pvc| "- #{pvc.metadata.name}" }
             end
 
             pvc_names = pvcs.map { |pvc| pvc.metadata.name }.sort

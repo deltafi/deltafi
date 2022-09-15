@@ -20,7 +20,7 @@
 
 require 'logger'
 
-STDOUT.sync = true
+$stdout.sync = true
 
 module Deltafi
   module Logger
@@ -58,7 +58,7 @@ module Deltafi
       end
 
       def configure_logger_for(klass)
-        logger = ::Logger.new(STDOUT)
+        logger = ::Logger.new($stdout)
         logger.progname = klass
 
         level ||= LOGLEVELS.index ENV.fetch('LOG_LEVEL', 'INFO')

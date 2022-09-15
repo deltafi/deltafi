@@ -35,7 +35,7 @@ module Deltafi
         begin
           JSON.parse(HTTParty.post(graphite_url,
                                    query: query).to_s,
-                                   symbolize_names: true)
+                     symbolize_names: true)
         rescue JSON::ParserError => e
           raise JSON::ParserError, "Failed to parse graphite response: #{e.message}"
         end

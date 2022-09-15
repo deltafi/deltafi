@@ -29,11 +29,9 @@ module Deltafi
         MINIO_REGION = 'us-east-1'
 
         class << self
-          def get(content_reference)
+          def get(content_reference, &block)
             minio_options = minio_object_options(content_reference)
-            minio_client.get_object(minio_options) do |chunk|
-              yield(chunk)
-            end
+            minio_client.get_object(minio_options, &block)
           rescue Aws::S3::Errors::NoSuchKey => e
             raise "Content not found: #{e.message}"
           rescue Aws::S3::Errors::InvalidRange => e

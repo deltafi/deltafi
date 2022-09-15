@@ -17,6 +17,7 @@
 #
 
 # frozen_string_literal: true
+
 module Deltafi
   module API
     module V1
@@ -61,11 +62,11 @@ module Deltafi
               QUERY
 
               results = DF::Metrics.graphite({
-                                              target: [usage_query, limit_query],
-                                              from: '-1min',
-                                              until: 'now',
-                                              format: 'json'
-                                            })
+                                               target: [usage_query, limit_query],
+                                               from: '-1min',
+                                               until: 'now',
+                                               format: 'json'
+                                             })
               disks = {}
 
               results.each do |metric|

@@ -32,11 +32,11 @@ module Deltafi
               QUERY
 
               results = DF::Metrics.graphite({
-                                              target: query,
-                                              from: '-20sec',
-                                              until: 'now',
-                                              format: 'json'
-                                            })
+                                               target: query,
+                                               from: '-20sec',
+                                               until: 'now',
+                                               format: 'json'
+                                             })
 
               queue_list = []
 
@@ -62,16 +62,16 @@ module Deltafi
               QUERY
 
               results = DF::Metrics.graphite({
-                                              target: query,
-                                              from: "-#{last}",
-                                              until: 'now',
-                                              format: 'json'
-                                            })
+                                               target: query,
+                                               from: "-#{last}",
+                                               until: 'now',
+                                               format: 'json'
+                                             })
               transform = Hash.new { |hash, key| hash[key] = hash.dup.clear }
 
               results.each do |metric|
                 tags = metric[:tags]
-                transform[tags[:action]][tags[:source]][tags[:name].sub(/stats_counts./,'')] = metric[:datapoints].first.first || 0
+                transform[tags[:action]][tags[:source]][tags[:name].sub(/stats_counts./, '')] = metric[:datapoints].first.first || 0
               end
 
               transform
