@@ -145,6 +145,7 @@ Commands:
   mongo-cli            launch the mongo CLI
   mongo-eval           eval a command in mongo
   mongo-migrate        run mongo migrations
+  performance-test     run performance tests against DeltaFi
   query                send a query to graphql
   redis-cli            launch the redis CLI
   redis-latency        monitor redis latency
@@ -250,6 +251,9 @@ case "$1" in
       ;;
   mongo-migrate)
     "$DELTAFICLI_WORKDIR/commands/mongo-migrate" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/mongo-migrate.log"
+    ;;
+  performance-test)
+    BUNDLE_GEMFILE=$DELTAFICLI_WORKDIR/Gemfile bundle exec "$DELTAFICLI_WORKDIR/commands/performance-test" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/performance-test.log"
     ;;
   query)
     "$DELTAFICLI_WORKDIR/commands/query" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/query.log"
