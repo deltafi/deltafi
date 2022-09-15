@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Dialog :header="acknowledgeButtonLabel" :maximizable="false" :modal="true" :style="{ width: '25vw' }" @update:visible="close">
+  <Dialog v-model:visible="displayAcknowledgeDialog" :header="acknowledgeButtonLabel" :maximizable="false" :modal="true" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" @update:visible="close">
     <div class="p-fluid">
       <span class="p-float-label mt-3">
         <InputText id="reason" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" autofocus />
@@ -29,19 +29,34 @@
       <Button :label="acknowledgeButtonLabel" icon="pi pi-check" @click="acknowledge" />
     </template>
   </Dialog>
+  <Dialog :visible="displayBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Acknowledging Errors">
+    <div>
+      <p>Error acknowledgment in progress. Please do not refresh the page!</p>
+      <ProgressBar :value="batchCompleteValue" />
+    </div>
+  </Dialog>
 </template>
 
 <script setup>
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Dialog from "primevue/dialog";
+import ProgressBar from "primevue/progressbar";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, ref, defineProps, defineEmits } from "vue";
+import { computed, ref, defineProps, defineEmits, watch } from "vue";
 import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
 
+const displayAcknowledgeDialog = ref(false);
+const batchCompleteValue = ref(0);
+const displayBatchingDialog = ref(false);
+const batchSize = 500;
 const props = defineProps({
   dids: {
     type: Array,
+    required: true,
+  },
+  visible: {
+    type: Boolean,
     required: true,
   },
 });
@@ -58,13 +73,32 @@ const acknowledgeButtonLabel = computed(() => {
   let pluralized = pluralize(props.dids.length, "Error");
   return `Acknowledge ${pluralized}`;
 });
-
+watch(
+  () => props.visible,
+  () => {
+    displayAcknowledgeDialog.value = props.visible;
+  }
+);
 const acknowledge = async () => {
   if (reason.value) {
     try {
-      await PostAcknowledgeErrors(props.dids, reason.value);
+      let batchedDids = props.dids.length > batchSize ? getBatchDids(props.dids) : props.dids;
+      if (props.dids.length > batchSize) {
+        close();
+        displayBatchingDialog.value = true;
+      }
+      let completedBatches = 0;
+      batchCompleteValue.value = 0;
+      for (const dids of batchedDids) {
+        await PostAcknowledgeErrors(dids, reason.value);
+        ++completedBatches;
+        batchCompleteValue.value = Math.round((completedBatches / batchedDids.length) * 100);
+      }
+      displayBatchingDialog.value = false;
+      batchCompleteValue.value = 0;
       emit("acknowledged", props.dids, reason.value);
       emit("update:visible", false);
+      close();
       reason.value = "";
     } catch {
       // Do Nothing
@@ -74,10 +108,21 @@ const acknowledge = async () => {
   }
 };
 
+const getBatchDids = (allDids) => {
+  const res = [];
+  for (let i = 0; i < allDids.length; i += batchSize) {
+    const chunk = allDids.slice(i, i + batchSize);
+    res.push(chunk);
+  }
+  return res;
+};
+
 const close = () => {
+  displayAcknowledgeDialog.value = false;
   emit("update:visible", false);
 };
 </script>
 
 <style lang="scss">
+
 </style>

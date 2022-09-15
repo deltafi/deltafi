@@ -18,7 +18,7 @@
 
 <template>
   <div class="metadataDialog">
-    <Dialog v-model:visible="metadataDialogVisible" header="Metadata" :modal="true" :style="{ width: '30vw' }">
+    <Dialog v-model:visible="metadataDialogVisible" header="Metadata" :modal="true" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }">
       <template #header>
         <strong>Modify Metadata</strong>
       </template>
@@ -60,6 +60,18 @@
       </template>
     </Dialog>
   </div>
+  <Dialog v-model:visible="displayBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Resuming">
+    <div>
+      <p>Resume in progress. Please do not refresh the page!</p>
+      <ProgressBar :value="batchCompleteValue" />
+    </div>
+  </Dialog>
+  <Dialog v-model:visible="displayMetadataBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Loading Metadata">
+    <div>
+      <p>Metadata loading in progress. Please do not refresh the page!</p>
+      <ProgressBar :value="batchCompleteValue" />
+    </div>
+  </Dialog>
 </template>
 
 <script setup>
@@ -72,14 +84,18 @@ import useErrorResume from "@/composables/useErrorResume";
 import useReplay from "@/composables/useReplay";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import Message from 'primevue/message';
+import Message from "primevue/message";
+import ProgressBar from "primevue/progressbar";
 import _ from "lodash";
 
-const emit = defineEmits(['update'])
+const emit = defineEmits(["update"]);
 const { pluralize } = useUtilFunctions();
 const invalidKey = ref(false);
 const maxSuccessDisplay = 10;
+const displayBatchingDialog = ref(false);
+const displayMetadataBatchingDialog = ref(false);
 const notify = useNotifications();
+const batchCompleteValue = ref(0);
 const props = defineProps({
   did: {
     type: Array,
@@ -89,7 +105,7 @@ const props = defineProps({
 
 const { resume } = useErrorResume();
 const { replay } = useReplay();
-const { fetch: meta, data: allMetadata } = useMetadata();
+const { fetch: meta, data: batchMetadata } = useMetadata();
 
 const resumeReplay = ref();
 const modifiedMetadata = ref([]);
@@ -97,12 +113,53 @@ const removedMetadata = ref([]);
 const metadataDialogVisible = ref(false);
 const confirmDialogVisible = ref(false);
 const pluralized = ref();
+const batchSize = 500;
+const allMetadata = ref([]);
 
 const showMetadataDialog = async () => {
   confirmDialogVisible.value = false;
-  await meta(props.did);
-  formatMetadata();
+  await formatMetadata();
   metadataDialogVisible.value = true;
+};
+
+const getAllMeta = async () => {
+  let batchedDids = props.did.length > batchSize ? getBatchDids(props.did) : props.did;
+  // displayMetadataBatchingDialog.value = props.did.length > batchSize ? true : false;
+  displayMetadataBatchingDialog.value = true;
+  batchCompleteValue.value = 0;
+  let completedBatches = 0;
+  allMetadata.value = [];
+  for (const dids of batchedDids) {
+    await meta(dids);
+    if (batchMetadata.value.length > 0) {
+      let tmp = [...batchMetadata.value, ...allMetadata.value];
+      allMetadata.value = tmp;
+    }
+    ++completedBatches;
+    batchCompleteValue.value = Math.round((completedBatches / batchedDids.length) * 100);
+  }
+
+  allMetadata.value = await getUniqueMetadataKeys(allMetadata.value);
+  displayMetadataBatchingDialog.value = false;
+};
+
+const getUniqueMetadataKeys = async (originalMetadata) => {
+  let data = JSON.parse(JSON.stringify(originalMetadata));
+  let current = [];
+  for (let i = 0; i < data.length; i++) {
+    current = data[i];
+    for (let j = data.length - 1; j > i; j--) {
+      if (current.key === data[j].key) {
+        if (Array.isArray(current.value)) {
+          current.values = current.value.concat([data[j].value]);
+        } else {
+          current.values = "Multiple";
+        }
+        data.splice(j, 1);
+      }
+    }
+  }
+  return data;
 };
 
 const showConfirmDialog = async (replayResume) => {
@@ -161,11 +218,10 @@ const checkDuplicates = (key) => {
 const hasDuplicateKeys = computed(() => {
   let keys = modifiedMetadata.value.map((object) => object.key);
   return _.some(Object.values(_.countBy(keys)), (count) => count > 1);
-})
+});
 
 const formatMetadata = async () => {
-  await meta(props.did);
-
+  await getAllMeta();
   if (allMetadata.value !== undefined) {
     modifiedMetadata.value = JSON.parse(JSON.stringify(allMetadata.value)).map((metadata) => {
       return {
@@ -186,28 +242,42 @@ const requestResumeReplay = async () => {
   let response;
   try {
     if (resumeReplay.value === "Resume") {
-      response = await resume(props.did, removedMetadata.value, getModifiedMetadata());
-      if (response.value.data !== undefined && response.value.data !== null) {
-        let successResume = new Array();
-        for (const resumeStatus of response.value.data.retry) {
-          if (resumeStatus.success) {
-            successResume.push(resumeStatus);
-          } else {
-            notify.error(`Resume request failed for ${resumeStatus.did}`, resumeStatus.error);
+      let batchedDids = props.did.length > batchSize ? getBatchDids(props.did) : props.did;
+      let successBatch;
+      displayBatchingDialog.value = props.did.length > batchSize ? true : false;
+      let completedBatches = 0;
+      batchCompleteValue.value = 0;
+      for (const dids of batchedDids) {
+        response = await resume(dids, removedMetadata.value, getModifiedMetadata());
+        if (response.value.data !== undefined && response.value.data !== null) {
+          let successResume = new Array();
+          for (const resumeStatus of response.value.data.retry) {
+            if (resumeStatus.success) {
+              successResume.push(resumeStatus);
+            } else {
+              notify.error(`Resume request failed for ${resumeStatus.did}`, resumeStatus.error);
+            }
+          }
+          if (successResume.length > 0) {
+            let successfulDids = successResume.map((resumeStatus) => {
+              return resumeStatus.did;
+            });
+            if (successfulDids.length > maxSuccessDisplay) {
+              successfulDids = successfulDids.slice(0, maxSuccessDisplay);
+              successfulDids.push("...");
+            }
+            let pluralized = pluralize(dids.length, "DeltaFile");
+            notify.success(`Resume request sent successfully for ${pluralized}`, successfulDids.join(", "));
+            successBatch = true;
           }
         }
-        if (successResume.length > 0) {
-          let successfulDids = successResume.map((resumeStatus) => {
-            return resumeStatus.did;
-          });
-          if (successfulDids.length > maxSuccessDisplay) {
-            successfulDids = successfulDids.slice(0, maxSuccessDisplay);
-            successfulDids.push("...");
-          }
-          let pluralized = pluralize(props.did.length, "DeltaFile");
-          notify.success(`Resume request sent successfully for ${pluralized}`, successfulDids.join(", "));
-          emit('update');
-        }
+        ++completedBatches;
+        batchCompleteValue.value = Math.round((completedBatches / batchedDids.length) * 100);
+      }
+      displayBatchingDialog.value = false;
+      batchCompleteValue.value = 0;
+      if (successBatch) {
+        emit("update");
       }
     } else {
       response = await replay(props.did, removedMetadata.value, getModifiedMetadata());
@@ -230,7 +300,7 @@ const requestResumeReplay = async () => {
           }
           let pluralized = pluralize(props.did.length, "DeltaFile");
           notify.success(`Replay request sent successfully for ${pluralized}`, successfulDids.join(", "));
-          emit('update');
+          emit("update");
         }
       }
     }
@@ -251,6 +321,15 @@ const getModifiedMetadata = () => {
   } else {
     return [];
   }
+};
+
+const getBatchDids = (allDids) => {
+  const res = [];
+  for (let i = 0; i < allDids.length; i += batchSize) {
+    const chunk = allDids.slice(i, i + batchSize);
+    res.push(chunk);
+  }
+  return res;
 };
 
 defineExpose({

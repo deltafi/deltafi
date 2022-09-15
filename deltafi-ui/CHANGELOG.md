@@ -22,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed bug related to adding a new timeDeletePolicy (#223)
 - Fixed bug preventing progress bars from being displayed on Upload page (#226)
 - Fixed bug preventing Error selection clear after resume/replay (#227)
+- Resuming Errors is now batched (#232)
+- Acknowledging Errors is now batched (#233)
 
 ## [0.97.0]
 
