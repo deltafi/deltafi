@@ -172,9 +172,9 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
-  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles) throws ObjectStorageException {
+  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument List<KeyValue> metadata) throws ObjectStorageException {
     Random random = new Random();
-    SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, new ArrayList<>());
+    SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new ArrayList<>() : metadata);
     Content c = new Content("stressTestContent", Collections.emptyList(), null);
     List<ContentReference> crs = new ArrayList<>();
 

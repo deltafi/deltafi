@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: Added Linux compatability to `cluster` command
 - DecompressionTransformAction will log error results.
 - Add domains and indexedMetadataKeys graphQL endpoints
+- Add metadata parameter to stressTest
 
 ### Changed
 - Action-kit contains a logback.xml configuration file to configure logging for all actions
