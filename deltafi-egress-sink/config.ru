@@ -8,11 +8,12 @@ module WEBrick
     def log(level, data)
       return unless @log && level <= @level
 
-      @log << { timestamp: Time.now,
-                level: level,
-                loggerName: 'deltafi-egress-sink',
-                hostName: `hostname`,
-                message: data }.to_json + "\n"
+      blob = { timestamp: Time.now,
+               level: level,
+               loggerName: 'deltafi-egress-sink',
+               hostName: `hostname`,
+               message: data }.to_json
+      @log << "#{blob}\n"
     end
   end
 end

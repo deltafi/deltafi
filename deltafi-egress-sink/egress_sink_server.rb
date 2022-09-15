@@ -37,7 +37,7 @@ class EgressSinkServer < Sinatra::Base
   @@smoke_service = Deltafi::Smoke::Service.new
 
   configure do
-    set :logger, Deltafi::Logger.new(STDOUT)
+    set :logger, Deltafi::Logger.new($stdout)
     enable :logging, :dump_errors
     set :raise_errors, true
     set :quiet_logger_prefixes, %w[probe]

@@ -20,7 +20,7 @@
 
 require 'logger'
 
-STDOUT.sync = true
+$stdout.sync = true
 
 module Deltafi
   # Produce JSON logs
@@ -39,7 +39,7 @@ module Deltafi
           log[:message] = msg
         end
 
-        log.to_json + "\n"
+        "#{log.to_json}\n"
       end
 
       super(logdev, formatter: formatter)

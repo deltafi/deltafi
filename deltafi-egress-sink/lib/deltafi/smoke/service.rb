@@ -36,7 +36,7 @@ module Deltafi
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
       def initialize
         @smoke = {}
-        @logger = Deltafi::Logger.new(STDOUT)
+        @logger = Deltafi::Logger.new($stdout)
         @connected_to_graphql = true
         spawn_worker
       end
@@ -72,8 +72,8 @@ module Deltafi
         end
       end
 
-      def isFlowRunning(flows)
-        return flows.find{ |flow| flow["name"] == "smoke" }
+      def flow_running?(flows)
+        return flows.find { |flow| flow['name'] == 'smoke' }
       end
 
       def smoke_running?
@@ -86,7 +86,7 @@ module Deltafi
           return false
         end
         flows = response.parsed_response.dig('data', 'getRunningFlows')
-        return isFlowRunning(flows["ingress"]) && isFlowRunning(flows["egress"])
+        return flow_running?(flows['ingress']) && flow_running?(flows['egress'])
       end
 
       def timeout_smoke
