@@ -87,8 +87,8 @@ class User < Sequel::Model
       dn: dn,
       username: username,
       domains: domains,
-      created_at: created_at.utc.strftime("%FT%T.%3NZ"),
-      updated_at: updated_at.utc.strftime("%FT%T.%3NZ")
+      created_at: created_at.utc.strftime('%FT%T.%3NZ'),
+      updated_at: updated_at.utc.strftime('%FT%T.%3NZ')
     }
   end
 end

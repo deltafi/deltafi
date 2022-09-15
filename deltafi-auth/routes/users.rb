@@ -44,7 +44,7 @@ class AuthApi < Sinatra::Application
     end
 
     user.save
-    audit("created", user)
+    audit('created', user)
 
     return user.to_api.to_json
   end
@@ -66,7 +66,7 @@ class AuthApi < Sinatra::Application
     end
 
     user.save
-    audit("updated", user)
+    audit('updated', user)
 
     return User[id].to_api.to_json
   end
@@ -86,7 +86,7 @@ class AuthApi < Sinatra::Application
     end
 
     user.delete
-    audit("deleted", user)
+    audit('deleted', user)
 
     return user.to_api.to_json
   end

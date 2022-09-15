@@ -20,10 +20,13 @@
 
 ENV['RACK_ENV'] = 'test'
 
-require './auth_api.rb'
-require './models/user.rb'
+require './auth_api'
+require './models/user'
 require 'rspec'
 require 'rack/test'
+
+USERNAME = 'frank'
+PASSWORD = 'P@ssw0rd'
 
 RSpec.describe 'Auth API' do
   include Rack::Test::Methods
@@ -170,9 +173,6 @@ RSpec.describe 'Auth API' do
   end
 
   describe '/basic-auth' do
-    USERNAME = 'frank'
-    PASSWORD = 'P@ssw0rd'
-
     before do
       create_user({ name: 'Frank', domains: 'test.deltafi.org', username: USERNAME, password: PASSWORD })
     end
