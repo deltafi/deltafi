@@ -19,7 +19,7 @@
 <template>
   <span>
     <ConfirmPopup></ConfirmPopup>
-    <ConfirmPopup group="removePolicy">
+    <ConfirmPopup :group="rowData.id + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
@@ -59,6 +59,7 @@ const { rowDataProp: rowData } = reactive(props);
 const confirmationPopup = (event, policyId, policyName) => {
   confirm.require({
     target: event.currentTarget,
+    group: `${policyId}_${policyName}`,
     message: `Remove ${policyName} Delete Policy?`,
     acceptLabel: "Remove",
     rejectLabel: "Cancel",

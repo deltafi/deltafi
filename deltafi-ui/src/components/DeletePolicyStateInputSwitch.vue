@@ -19,7 +19,7 @@
 <template>
   <span>
     <ConfirmPopup></ConfirmPopup>
-    <ConfirmPopup group="stopPolicy">
+    <ConfirmPopup :group="rowData.id + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
@@ -67,6 +67,7 @@ const confirmationPopup = (event, policyId, policyName, state) => {
   if (_.isEqual(state, true)) {
     confirm.require({
       target: event.currentTarget,
+      group: `${policyId}_${policyName}`,
       message: `Disable the ${policyName} Delete Policy?`,
       acceptLabel: "Disable",
       rejectLabel: "Cancel",

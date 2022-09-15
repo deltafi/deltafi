@@ -19,7 +19,7 @@
 <template>
   <span>
     <ConfirmPopup></ConfirmPopup>
-    <ConfirmPopup group="stopFlow">
+    <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
@@ -62,6 +62,7 @@ const confirmationPopup = (event, name, state, flowType) => {
   if (_.isEqual(state, "RUNNING")) {
     confirm.require({
       target: event.currentTarget,
+      group: `${rowData.flowType}_${rowData.name}`,
       message: `Stop the ${name} flow?`,
       acceptLabel: "Stop",
       rejectLabel: "Cancel",
