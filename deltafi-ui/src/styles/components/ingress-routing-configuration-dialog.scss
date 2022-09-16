@@ -16,28 +16,37 @@
    limitations under the License.
 */
 
-const generateData = () => {
-  const data = {
-    deltaFiConfigs: [
-      {
-        name: "mock_decompress-passthrough",
-      },
-      {
-        name: "mock_passthrough",
-      },
-      {
-        name: "mock_smoke",
-      },
-      {
-        name: "mock_stix1_x",
-      },
-      {
-        name: "mock_stix2_1",
-      },
-    ],
-  };
+.information-panel {
+  dt {
+    margin-bottom: 0.5rem;
+  }
+  dd {
+    margin-bottom: 1.2rem;
+  }
+  dl {
+    margin-bottom: 1rem;
+  }
+  .p-panel-content {
+    padding-bottom: 0.25rem !important;
+  }
+}
+.ingress-routing-body {
+  width: 98%;
+}
 
-  return data;
-};
+.inputWidth {
+  width: 90% !important;
+}
 
-export default generateData();
+.p-chips .p-chips-multiple-container {
+  padding: 0.25rem 0.75rem;
+  width: 100% !important;
+}
+
+.chipInputWidth {
+  width: 100% !important;
+}
+
+.p-filled.capitalizeText {
+  text-transform: uppercase;
+}

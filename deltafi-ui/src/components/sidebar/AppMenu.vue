@@ -118,6 +118,11 @@ const staticMenuItems = ref([
         icon: "fas fa-landmark fa-fw",
         path: "/config/delete-policies",
       },
+      {
+        name: "Ingress Routing",
+        icon: "fas fa-route fa-fw",
+        path: "/config/ingress-routing",
+      },
     ],
   },
   {

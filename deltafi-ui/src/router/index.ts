@@ -81,6 +81,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/DeletePoliciesPage.vue'),
   },
   {
+    path: "/config/ingress-routing",
+    name: "Ingress Routing",
+    component: () => import("@/pages/IngressRoutingPage.vue"),
+  },
+  {
     path: '/config/flows',
     name: 'Flows',
     component: () => import('@/pages/FlowPlansPage.vue'),

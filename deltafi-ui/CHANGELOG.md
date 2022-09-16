@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.98.0]
 
 ### Changed
 
@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Moved all used Mocks to TypeScript (#213)
 - Mocks now reload data on each call (#222)
 - Added Error Search Options (#230)
+- Added Ingress Routing page (#197)
 
 ### Fixed
 
@@ -341,7 +342,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.97.0...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.0...main
+[0.98.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.97.0...0.98.0
 [0.97.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.4...0.97.0
 [0.96.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.3...0.96.4
 [0.96.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.2...0.96.3
