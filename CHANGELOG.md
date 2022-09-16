@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added action log chart to action overview dashboard
 - Statsd aggregation layer added to Graphite stack
 - Custom Statsd reporter for delta metrics added to the common library and used in ingress and action-kit metrics
+- Added API for flow metrics reports (`metrics/flow.json` and `metrics/flow.csv`)
 - Added `DomainActions` that provide a global validation and metadata extraction path for domains
 - Added content storage check to API system checks
 - Added heartbeat to Monitor and configured the Kubernetes probe to use that for liveliness

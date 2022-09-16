@@ -73,6 +73,15 @@ class ApiServer < Sinatra::Base
       build_response({ actions: DF::API::V1::Metrics::Action.metrics_by_action_by_family(last: last, flow: flow) })
     end
 
+    get '/metrics/flow(.json)?' do
+      build_response({ flow_report: DF::API::V1::Metrics::Flow.summary(params: params) })
+    end
+
+    get '/metrics/flow.csv' do
+      content_type 'text/csv'
+      DF::API::V1::Metrics::Flow.summary_csv(params: params)
+    end
+
     get '/metrics/graphite' do
       DF::Metrics.graphite(params, raw: true)
     end
