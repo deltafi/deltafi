@@ -163,7 +163,10 @@
       {
         "key": "minio.expiration-days",
         "description": "Maximum number of days to keep objects in minio",
-        "defaultValue": "13"
+        "defaultValue": "13",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
       },
       {
         "key": "redis.url",

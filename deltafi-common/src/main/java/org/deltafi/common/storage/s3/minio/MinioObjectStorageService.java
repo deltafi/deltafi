@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class MinioObjectStorageService implements ObjectStorageService {
+    private static final String AGE_OFF = "AgeOff";
+
     protected final MinioClient minioClient;
     protected final MinioProperties minioProperties;
 
@@ -51,6 +53,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
         }
     }
 
+    @Override
     public void createBucket(String bucketName) throws ObjectStorageException {
         if (!bucketExists(bucketName)) {
             try {
@@ -63,6 +66,28 @@ public class MinioObjectStorageService implements ObjectStorageService {
         }
     }
 
+    @Override
+    public boolean expectedConfiguration(String bucketName) throws ObjectStorageException {
+        try {
+            return checkConfiguration(
+                    minioClient.getBucketLifecycle(GetBucketLifecycleArgs.builder()
+                            .bucket(bucketName).build()));
+        } catch (Exception e) {
+            log.error("Unable to get bucket lifecycle");
+            throw new ObjectStorageException("Unable to get bucket lifecycle", e);
+        }
+    }
+
+    private boolean checkConfiguration(LifecycleConfiguration configuration) {
+        return configuration != null &&
+                configuration.rules() != null &&
+                configuration.rules().size() == 1 &&
+                configuration.rules().get(0).status() == Status.ENABLED &&
+                configuration.rules().get(0).id().equals(AGE_OFF) &&
+                configuration.rules().get(0).expiration().days() == minioProperties.getExpirationDays();
+    }
+
+    @Override
     public void setExpiration(String bucketName) throws ObjectStorageException {
         try {
             minioClient.setBucketLifecycle(SetBucketLifecycleArgs.builder()
@@ -82,7 +107,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
                         null,
                         new Expiration((ZonedDateTime) null, minioProperties.getExpirationDays(), null),
                         new RuleFilter(""),
-                        "AgeOff",
+                        AGE_OFF,
                         null,
                         null,
                         null)));

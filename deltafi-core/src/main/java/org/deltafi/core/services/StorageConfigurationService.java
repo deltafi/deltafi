@@ -22,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -37,6 +39,16 @@ public class StorageConfigurationService {
         if (!objectStorageService.bucketExists(ContentStorageService.CONTENT_BUCKET)) {
             objectStorageService.createBucket(ContentStorageService.CONTENT_BUCKET);
             objectStorageService.setExpiration(ContentStorageService.CONTENT_BUCKET);
+        } else if (!objectStorageService.expectedConfiguration(ContentStorageService.CONTENT_BUCKET)) {
+            objectStorageService.setExpiration(ContentStorageService.CONTENT_BUCKET);
         }
     }
+
+    @EventListener
+    public void onEnvChange(final EnvironmentChangeEvent event) throws ObjectStorageException {
+        if (event.getKeys().contains("minio.expiration-days")) {
+            objectStorageService.setExpiration(ContentStorageService.CONTENT_BUCKET);
+        }
+    }
+
 }

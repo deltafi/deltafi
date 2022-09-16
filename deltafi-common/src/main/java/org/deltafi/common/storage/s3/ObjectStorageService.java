@@ -27,6 +27,8 @@ public interface ObjectStorageService {
 
     void createBucket(String bucketName) throws ObjectStorageException;
 
+    boolean expectedConfiguration(String bucketName) throws ObjectStorageException;
+
     void setExpiration(String bucketName) throws ObjectStorageException;
 
     InputStream getObject(ObjectReference objectReference) throws ObjectStorageException;
