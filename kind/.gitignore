@@ -3,3 +3,4 @@ mounts/
 config/
 .logs/
 Brewfile.lock.json
+cluster.yaml

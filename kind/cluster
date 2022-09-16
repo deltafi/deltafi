@@ -131,7 +131,7 @@ DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
 ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
 CLUSTER_NAME=deltafi
 
-if [[ "$(basename $0)" == "deltafi" ]]; then
+if [[ "$(basename "$0")" == "deltafi" ]]; then
   # Deltafi wrapper mode
 
   if [[ $# -gt 0 ]]; then
@@ -156,18 +156,23 @@ fi
 
 source $BASE_PATH/files/bask
 
-command -v docker &> /dev/null || _exit_1 echo "'docker' must be installed"
-command -v kubectl &> /dev/null || _exit_1 echo "'kubectl' must be installed"
-command -v kubens &> /dev/null || _exit_1 echo "'kubens' must be installed"
-command -v kind &> /dev/null || _exit_1 echo "'kind' must be installed"
-command -v deltafi &> /dev/null || _exit_1 echo "DeltaFi cli command 'deltafi' must be installed"
+_require() {
+  command -v "$1" &> /dev/null || _exit_1 echo "'$1' must be installed"
+}
+
+_require docker
+_require kubectl
+_require kubens
+_require kind
+_require yq
+_require deltafi
 
 ___start=$(date +%s)
 
 # Duration trap
 _emit_duration() {
   local duration=$(echo "$(date +%s) - $___start" | bc)
-  local execution_time=`printf "%d seconds" $duration`
+  local execution_time=$(printf "%d seconds" $duration)
   echo
   echo "Execution time: $execution_time"
   echo
@@ -176,17 +181,19 @@ _emit_duration() {
 trap _emit_duration EXIT
 
 PV_DIR=$BASE_PATH/data
-
 SUDO=$(which sudo)
 
-FQDNS=( \
-  local.deltafi.org \
-  graphite.local.deltafi.org \
-  metrics.local.deltafi.org \
-  minio.local.deltafi.org \
-  k8s.local.deltafi.org \
-  egress.local.deltafi.org \
-)
+# Load configuration from cluster.yaml
+CONFIG=${BASE_PATH}/cluster.yaml
+[[ -f "${CONFIG}" ]] || cp "${CONFIG}.template" "${CONFIG}"
+PV_STORAGE=$(yq '.persistent_volume.storage' "${CONFIG}")
+readarray FQDNS < <(yq '.fqdns[]' "${CONFIG}")
+readarray PLUGINS < <(yq '.plugins[].name' "${CONFIG}")
+
+_url_for_plugin() {
+  local plugin=$1
+  yq ".plugins[] | select(.name == '$plugin') | .url" "${CONFIG}"
+}
 
 _are_you_sure() {
   local prompt=${1:-"Are you sure?"}
@@ -203,7 +210,7 @@ _are_you_sure() {
 _check_deltafi_cli() {
   if ! which deltafi >/dev/null; then
     _debug ">> Installing DeltaFi CLI"
-    pushd $DELTAFI_PATH/deltafi-cli > /dev/null
+    pushd "$DELTAFI_PATH/deltafi-cli" > /dev/null
     ./install.sh
     popd > /dev/null
     _ok "Local CLI"
@@ -516,13 +523,13 @@ _k8s_init() {
   _k8s_add_secret minio-keys accesskey $(_random_password 20) secretkey $(_random_password 40)
   _k8s_add_secret redis-password redis-password $(_random_password 16)
   _k8s_add_secret config-repo-secret config-token $(_random_password 16)
-  _k8s_add_pv mongodb 1G 1001
-  _k8s_add_pv minio 1G 1000
-  _k8s_add_pv graphite 1G 1000
-  _k8s_add_pv grafana 1G 472
-  _k8s_add_pv loki 1G 10001
-  _k8s_add_pv egress-sink 1G 1000
-  _k8s_add_pv auth 1G 1000
+  _k8s_add_pv mongodb ${PV_STORAGE} 1001
+  _k8s_add_pv minio ${PV_STORAGE} 1000
+  _k8s_add_pv graphite ${PV_STORAGE} 1000
+  _k8s_add_pv grafana ${PV_STORAGE} 472
+  _k8s_add_pv loki ${PV_STORAGE} 10001
+  _k8s_add_pv egress-sink ${PV_STORAGE} 1000
+  _k8s_add_pv auth ${PV_STORAGE} 1000
   _ok "Kubernetes prerequisites"
 }
 
@@ -706,7 +713,7 @@ loc() {
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
     _attention "Installing DeltaFi core"
     install -f deltafi/charts/deltafi/values-local.yaml
-    for plugin in deltafi-passthrough deltafi-stix; do
+    for plugin in ${PLUGINS[@]}; do
       _attention "Installing $plugin"
       run deltafi install-plugin $plugin -f $plugin/charts/values-local.yaml
     done
@@ -727,34 +734,33 @@ _local_build() {
     _attention "Building local images"
   fi
 
+  _attention "Building deltafi"
   cd $ROOT/deltafi
   git pull || echo "Cannot pull latest"
   ./gradlew $BUILD_TARGETS -x test publishToMavenLocal docker dockerPushLocal
 
-  if [[ ! -d $ROOT/deltafi-stix ]]; then
-    git clone git@gitlab.com:systolic/deltafi/deltafi-stix $ROOT/deltafi-stix
-  fi
-  cd $ROOT/deltafi-stix
-  git pull || echo "Cannot pull latest"
-  ./gradlew $BUILD_TARGETS -x test docker dockerPushLocal
-
-  if [[ ! -d $ROOT/deltafi-passthrough ]]; then
-    git clone git@gitlab.com:systolic/deltafi/deltafi-passthrough $ROOT/deltafi-passthrough
-  fi
-  cd $ROOT/deltafi-passthrough
-  git pull || echo "Cannot pull latest"
-  ./gradlew $BUILD_TARGETS -x test docker dockerPushLocal
-
+  _attention "Building deltafi-ui"
   if [[ ! -d $ROOT/deltafi-ui ]]; then
     git clone git@gitlab.com:systolic/deltafi/deltafi-ui $ROOT/deltafi-ui
   fi
   cd $ROOT/deltafi-ui
   docker build -t localhost:5000/deltafi-ui:latest .
   docker push localhost:5000/deltafi-ui:latest
+
+  for plugin in ${PLUGINS[@]}; do
+    _attention "Building $plugin"
+    if [[ ! -d $ROOT/$plugin ]]; then
+      git clone $(_url_for_plugin $plugin) $ROOT/$plugin
+    fi
+    cd $ROOT/$plugin
+    git pull || echo "Cannot pull latest"
+    ./gradlew $BUILD_TARGETS -x test docker dockerPushLocal
+  done
+
 }
 
 _local_push() {
-  for img in `docker images | grep localhost.*latest | cut -f1 -d' '`; do
+  for img in $(docker images | grep localhost.*latest | cut -f1 -d' '); do
     docker push $img 1>/dev/null
     run crictl pull $img 1>/dev/null
     _ok "Push to cluster: $img"
@@ -765,8 +771,9 @@ _local_cluster() {
   local_build $@
   up
   install -f deltafi/charts/deltafi/values-local.yaml
-  run deltafi install-plugin deltafi-passthrough -f deltafi-passthrough/charts/values-local.yaml
-  run deltafi install-plugin deltafi-stix -f deltafi-stix/charts/values-local.yaml
+  for plugin in ${PLUGINS[@]}; do
+    run deltafi install-plugin $plugin -f $plugin/charts/values-local.yaml
+  done
 }
 
 _green() {

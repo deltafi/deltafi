@@ -1,0 +1,14 @@
+fqdns:
+  - local.deltafi.org
+  - graphite.local.deltafi.org
+  - metrics.local.deltafi.org
+  - minio.local.deltafi.org
+  - k8s.local.deltafi.org
+  - egress.local.deltafi.org
+plugins:
+  - name: deltafi-passthrough
+    url: 'git@gitlab.com:systolic/deltafi/deltafi-passthrough'
+  # - name: deltafi-stix
+  #   url: 'git@gitlab.com:systolic/deltafi/deltafi-stix'
+persistent_volume:
+  storage: '1G'
