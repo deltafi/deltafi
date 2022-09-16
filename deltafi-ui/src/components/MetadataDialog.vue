@@ -251,7 +251,7 @@ const requestResumeReplay = async () => {
         response = await resume(dids, removedMetadata.value, getModifiedMetadata());
         if (response.value.data !== undefined && response.value.data !== null) {
           let successResume = new Array();
-          for (const resumeStatus of response.value.data.retry) {
+          for (const resumeStatus of response.value.data.resume) {
             if (resumeStatus.success) {
               successResume.push(resumeStatus);
             } else {

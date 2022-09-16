@@ -22,7 +22,7 @@ export default function useErrorResume() {
   const { response, queryGraphQL } = useGraphQL();
   const buildRetryQuery = (dids: Array<string>, removeSourceMetadata: Array<string>, replaceSourceMetadata: Array<Object>) => {
     return {
-      retry: {
+      resume: {
         __args: {
           dids: dids,
           removeSourceMetadata: removeSourceMetadata,

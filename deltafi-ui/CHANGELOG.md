@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Mocks now reload data on each call (#222)
 - Added Error Search Options (#230)
 - Added Ingress Routing page (#197)
+- Errors page now uses new `resume` GraphQL mutation (#240)
 
 ### Fixed
 
