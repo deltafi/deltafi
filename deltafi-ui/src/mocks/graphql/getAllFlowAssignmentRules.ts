@@ -24,42 +24,23 @@ const generateData = () => {
     getAllFlowAssignmentRules: [
       {
         id: faker.datatype.uuid(),
-        name: "filenameRegex136",
-        flow: "mock_smoke",
-        priority: 500,
-        filenameRegex: "^abc.*",
-        requiredMetadata: null,
+        name: "mock-foobar",
+        flow: "smoke",
+        priority: 122,
+        filenameRegex: "^foobar",
+        requiredMetadata: [
+          {
+            key: "test",
+            value: "test",
+          },
+        ],
       },
       {
         id: faker.datatype.uuid(),
-        name: "filenameRegex562",
-        flow: "mock_passthrough",
-        priority: 600,
-        filenameRegex: "^xyz.*",
-        requiredMetadata: null,
-      },
-      {
-        id: faker.datatype.uuid(),
-        name: "filenameRegex873",
-        flow: "mock_stix1_x",
-        priority: 500,
-        filenameRegex: "^123.*",
-        requiredMetadata: null,
-      },
-      {
-        id: faker.datatype.uuid(),
-        name: "filenameRegex936",
-        flow: "mock_stix1_1",
-        priority: 400,
-        filenameRegex: "^kjkl.*",
-        requiredMetadata: null,
-      },
-      {
-        id: faker.datatype.uuid(),
-        name: "requiredMetadata136",
+        name: "mock-requiredMetadata136",
         flow: "mock_smoke",
         priority: 400,
-        filenameRegex: null,
+        filenameRegex: "^test.*",
         requiredMetadata: [
           {
             key: "a",
@@ -77,10 +58,31 @@ const generateData = () => {
       },
       {
         id: faker.datatype.uuid(),
-        name: "requiredMetadata369",
+        name: "mock-filenameRegex936",
+        flow: "mock_stix1_1",
+        priority: 400,
+        filenameRegex: "^kjkl.*",
+        requiredMetadata: null,
+      },
+      {
+        id: faker.datatype.uuid(),
+        name: "mock-rule136",
+        flow: "mock_passthrough",
+        priority: 500,
+        filenameRegex: "^abc.*",
+        requiredMetadata: [
+          {
+            key: "test",
+            value: "test",
+          },
+        ],
+      },
+      {
+        id: faker.datatype.uuid(),
+        name: "mock-filenameRegex136",
         flow: "mock_smoke",
         priority: 500,
-        filenameRegex: null,
+        filenameRegex: "^test.*",
         requiredMetadata: [
           {
             key: "g",
@@ -98,22 +100,64 @@ const generateData = () => {
       },
       {
         id: faker.datatype.uuid(),
-        name: "requiredMetadata543",
-        flow: "mock_stix1_1",
-        priority: 300,
+        name: "mock-requiredMetadata369",
+        flow: "mock_smoke",
+        priority: 500,
         filenameRegex: null,
         requiredMetadata: [
           {
             key: "m",
-            value: "b",
+            value: "n",
           },
           {
-            key: "n",
-            value: "o",
+            key: "o",
+            value: "p",
           },
           {
-            key: "p",
-            value: "q",
+            key: "q",
+            value: "r",
+          },
+        ],
+      },
+      {
+        id: faker.datatype.uuid(),
+        name: "mock-filenameRegex873",
+        flow: "mock_stix1_x",
+        priority: 500,
+        filenameRegex: "^123.*",
+        requiredMetadata: [
+          {
+            key: "s",
+            value: "t",
+          },
+          {
+            key: "u",
+            value: "v",
+          },
+          {
+            key: "w",
+            value: "x",
+          },
+          {
+            key: "y",
+            value: "z",
+          },
+        ],
+      },
+      {
+        id: faker.datatype.uuid(),
+        name: "mock-filenameRegex562",
+        flow: "mock_passthrough",
+        priority: 600,
+        filenameRegex: "^xyz.*",
+        requiredMetadata: [
+          {
+            key: "1",
+            value: "2",
+          },
+          {
+            key: "3",
+            value: "4",
           },
         ],
       },

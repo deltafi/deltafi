@@ -49,17 +49,10 @@
         </Column>
         <Column field="flow" header="Flow" :sortable="true" :style="{ width: 'auto' }"></Column>
         <Column field="priority" header="Priority" :sortable="true" :style="{ width: '5rem' }"></Column>
-        <Column field="matcherType" header="Matcher Type" :sortable="true" :style="{ width: '11rem' }"></Column>
-        <Column field="matcherValue" header="Matcher Value" :sortable="true" :style="{ width: 'auto' }">
+        <Column field="filenameRegex" header="Filename Regex" :sortable="true" :style="{ width: '11rem' }"></Column>
+        <Column field="requiredMetadata" header="Required Metadata" :sortable="true" :style="{ width: 'auto' }">
           <template #body="{ data }">
-            <template v-if="_.get(data, 'filenameRegex')">
-              <div>
-                <span>{{ data.matcherValue }}</span>
-              </div>
-            </template>
-            <template v-else>
-              <div v-for="item in viewList(data.matcherValue)" :key="item">{{ item }}</div>
-            </template>
+            <div v-for="item in viewList(data.requiredMetadata)" :key="item">{{ item }}</div>
           </template>
         </Column>
         <Column :style="{ width: '5rem' }">
@@ -108,26 +101,16 @@ const fetchIngressRoutes = async () => {
   await nextTick();
   ingressRoutes.value = ingressRouteResponse.data.getAllFlowAssignmentRules;
   uiIngressRoutes.value = _.assign(ingressRoutes.value);
-  addFieldsToData();
 };
 
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-const addFieldsToData = () => {
-  uiIngressRoutes.value.forEach((object) => {
-    if (_.get(object, "filenameRegex")) {
-      object["matcherType"] = "filenameRegex";
-      object["matcherValue"] = _.get(object, "filenameRegex");
-    } else {
-      object["matcherType"] = "requiredMetadata";
-      object["matcherValue"] = _.get(object, "requiredMetadata");
-    }
-  });
-};
-
 const viewList = (value) => {
+  if (_.isEmpty(value)) {
+    return null;
+  }
   // Combine objects of Key Name and Value Name into a key value pair
   let combineKeyValue = value.reduce((r, { key, value }) => ((r[key] = value), r), {});
 
@@ -143,8 +126,6 @@ const formatExportIngressRoutesData = () => {
   let ingressRoutesList = JSON.parse(JSON.stringify(ingressRoutes.value));
   // Remove the id key from route
   ingressRoutesList.forEach((e, index) => (ingressRoutesList[index] = _.omit(e, ["id"])));
-  ingressRoutesList.forEach((e, index) => (ingressRoutesList[index] = _.omit(e, ["matcherType"])));
-  ingressRoutesList.forEach((e, index) => (ingressRoutesList[index] = _.omit(e, ["matcherValue"])));
 
   return ingressRoutesList;
 };

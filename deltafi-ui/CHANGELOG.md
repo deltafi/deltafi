@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed bug related to flow toggle confirmation dialog not sticking to button (#238)
 - Resuming Errors is now batched (#232)
 - Acknowledging Errors is now batched (#233)
+- Ingress Routing allows both filenameRegex and requiredMetadata fields to be uploaded/updated (#241)
 
 ## [0.97.0]
 

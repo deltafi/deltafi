@@ -45,28 +45,24 @@
           <dd>
             <small id="priorityId-help">Priority defaults to 500 unless changed.</small>
           </dd>
-          <template v-if="_.isEmpty(selectedRequiredMetadata)">
-            <dt>{{ ingressRouteConfigurationMap.get("filenameRegex").header }}</dt>
-            <dd>
-              <InputText v-model="selectedFilenameRegex" :placeholder="ingressRouteConfigurationMap.get('filenameRegex').placeholder" :disabled="ingressRouteConfigurationMap.get('filenameRegex').disabled" class="inputWidth" />
-            </dd>
-          </template>
-          <template v-if="_.isEmpty(selectedFilenameRegex)">
-            <dt>{{ ingressRouteConfigurationMap.get("requiredMetadata").header }}</dt>
-            <dd class="d-flex">
-              <div class="inputWidth">
-                <Chips v-model="selectedRequiredMetadata" separator="," add-on-blur :allow-duplicate="false" :disabled="ingressRouteConfigurationMap.get('requiredMetadata').disabled" class="chipInputWidth" @add="addMetadata" @remove="removeMetadata" />
-                <div>
-                  <small id="priorityId-help">Enter text in key:value format(ex: testKey:testValue).</small>
-                </div>
+          <dt>{{ ingressRouteConfigurationMap.get("filenameRegex").header }}</dt>
+          <dd>
+            <InputText v-model="selectedFilenameRegex" :placeholder="ingressRouteConfigurationMap.get('filenameRegex').placeholder" :disabled="ingressRouteConfigurationMap.get('filenameRegex').disabled" class="inputWidth" />
+          </dd>
+          <dt>{{ ingressRouteConfigurationMap.get("requiredMetadata").header }}</dt>
+          <dd class="d-flex">
+            <div class="inputWidth">
+              <Chips v-model="selectedRequiredMetadata" separator="," add-on-blur :allow-duplicate="false" :disabled="ingressRouteConfigurationMap.get('requiredMetadata').disabled" class="chipInputWidth" @add="addMetadata" @remove="removeMetadata" />
+              <div>
+                <small id="priorityId-help">Enter text in key:value format(ex: testKey:testValue).</small>
               </div>
-              <template v-if="!viewIngressRouteRule">
-                <IngressRoutingMetadataEditDialog :variable="rowdata" class="pl-2" @save-metadata="addMetadataFromEditDialog">
-                  <Button icon="pi pi-plus" class="p-button-rounded p-button-secondary" />
-                </IngressRoutingMetadataEditDialog>
-              </template>
-            </dd>
-          </template>
+            </div>
+            <template v-if="!viewIngressRouteRule">
+              <IngressRoutingMetadataEditDialog :variable="rowdata" class="pl-2" @save-metadata="addMetadataFromEditDialog">
+                <Button icon="pi pi-plus" class="p-button-rounded p-button-secondary" />
+              </IngressRoutingMetadataEditDialog>
+            </template>
+          </dd>
         </dl>
       </div>
     </div>

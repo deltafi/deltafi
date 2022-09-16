@@ -92,8 +92,8 @@ export default function useIngressRoutingConfiguration() {
           },
         },
       },
-    ]
-  }
+    ];
+  };
 
   const schemaFlowAssignmentRule = () => {
     return {
@@ -106,15 +106,15 @@ export default function useIngressRoutingConfiguration() {
         filenameRegex: { $ref: "#/definitions/filenameRegexSchema" },
         requiredMetadata: { $ref: "#/definitions/requiredMetadataSchema" },
       },
-      oneOf: requireFileNameOrMetadata(),
+      anyOf: requireFileNameOrMetadata(),
       required: ["name"],
       additionalProperties: false,
       errorMessage: {
-        oneOf: "${0/name} - requires filenameRegex or requiredMetadata",
+        oneOf: "${0/name} - requires filenameRegex and/or requiredMetadata",
         properties: {
           name: "name is a required field.",
           filenameRegex: "${0/name} - not a valid regular expression",
-          requiredMetadata: "${0/name} - not a valid key:value pair"
+          requiredMetadata: "${0/name} - not a valid key:value pair",
         },
       },
     };
