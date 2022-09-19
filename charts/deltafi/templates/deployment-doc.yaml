@@ -1,0 +1,30 @@
+{{- if .Values.deltafi.doc.enabled -}}
+# Documentation server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-doc
+  labels:
+    app: deltafi-doc
+    group: deltafi-core
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-doc
+      group: deltafi-core
+  template:
+    metadata:
+      labels:
+        app: deltafi-doc
+        group: deltafi-core
+    spec:
+      containers:
+      - name: deltafi-doc
+        image: {{ .Values.deltafi.doc.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+  strategy:
+    type: Recreate
+{{- end -}}

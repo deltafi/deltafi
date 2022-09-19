@@ -1,5 +1,6 @@
 fqdns:
   - local.deltafi.org
+  - docs.local.deltafi.org
   - graphite.local.deltafi.org
   - metrics.local.deltafi.org
   - minio.local.deltafi.org
