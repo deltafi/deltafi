@@ -29,6 +29,7 @@ import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.DeltaFiles;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.MongoExpression;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
@@ -42,7 +43,6 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -106,6 +106,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String ID_FLOW = ID + "." + FLOW_LOWER_CASE;
     private static final String UNWIND_STATE = "unwindState";
     public static final String INDEXED_METADATA = "indexedMetadata";
+
+    private static final String CUMULATIVE_BYTES = "cumulativeBytes";
+    private static final String OVER = "over";
+    private static final String CUMULATIVE_OVER = "cumulativeOver";
 
     static class FlowCountAndDids {
         TempSourceInfo sourceInfo;
@@ -235,37 +239,56 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
         }
 
-        // get an exhaustive list of all deltafiles with content, sorted by created date ASC, so we can figure out when to start the delete threshold
-        // TODO: move to mongo 5 and use $setWindowFields to push this work to the database (see https://stackoverflow.com/questions/27995085/how-to-calculate-the-running-total-using-aggregate/70135796#70135796)
-        Query query = new Query();
-        query.fields().include(TOTAL_BYTES, CREATED);
-        query.limit(batchSize);
+        List<AggregationOperation> operations = new ArrayList<>();
 
-        query.addCriteria(Criteria.where(CONTENT_DELETED).isNull());
-        query.addCriteria(Criteria.where(TOTAL_BYTES).gt(0L));
-
-        DeltaFileOrder orderBy = DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build();
-        query.with(Sort.by(Collections.singletonList(new Sort.Order(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()))));
-        List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
-
-        if (deltaFiles.isEmpty()) {
-            return deltaFiles;
+        //  Match the flow if provided
+        //  { $match: { "sourceInfo.flow": "passthrough" } }
+        if (flow != null && !flow.isEmpty()) {
+            operations.add(match(Criteria.where(SOURCE_INFO_FLOW).is(flow)));
         }
 
-        OffsetDateTime createdDate = null;
-        long bytesSoFar = 0;
-        for (DeltaFile deltaFile : deltaFiles) {
-            bytesSoFar += deltaFile.getTotalBytes();
-            createdDate = deltaFile.getCreated();
-            if (bytesSoFar >= bytesToDelete) {
-                break;
-            }
-        }
+        //  Sort by created date so we can limit by batch size
+        //  { $sort: { created: 1 } }
+        operations.add(sort(Sort.by(CREATED)));
 
-        // add a millisecond to include the last DeltaFile we found
-        createdDate = createdDate.plus(1, ChronoField.MILLI_OF_DAY.getBaseUnit());
+        //  Limit by batchSize
+        //  { $limit: 1000 }
+        operations.add(limit(batchSize));
 
-        return findForDelete(createdDate, null, 0, flow, policy, false, batchSize);
+        //  Add a cumulative number of bytes when sorted by created date
+        //  { $setWindowFields: { sortBy: { created: 1 }, output: { cumulativeBytes: { $sum: "$totalBytes", window: { documents: [ "unbounded", "current" ] } } } } }
+        operations.add(new SetWindowFieldsOperation.SetWindowFieldsOperationBuilder()
+                .sortBy(CREATED)
+                .output(new SetWindowFieldsOperation.WindowOutput(
+                            new SetWindowFieldsOperation.ComputedField(CUMULATIVE_BYTES,
+                                    AggregationExpression.from(MongoExpression.create("$sum: \"$" + TOTAL_BYTES + "\"")),
+                                    new SetWindowFieldsOperation.DocumentWindowBuilder().fromUnbounded().toCurrent().build()))
+                )
+                .build());
+
+        //  All records with cumulative bytes >= the amount we're trying to delete will be 1, else 0
+        //  { $set: { over: { $cond: { if: { $gte: [ "$cumulativeBytes", 35000 ] }, then: 1, else: 0 } } } }
+        operations.add(SetOperation.builder()
+                .set(OVER)
+                .toValueOf(new ConditionalOperators.ConditionalOperatorFactory(
+                        Criteria.where(CUMULATIVE_BYTES).gte(bytesToDelete)).then(1).otherwise(0)));
+
+        //  Get a running total of the "over" we just added -- this will look like 0 0 0 0 1 2 3 4 where everything marked 0 or 1 will need to be deleted
+        //  { $setWindowFields: { sortBy: { created: 1 }, output: { cumulativeOver: { $sum: "$over", window: { documents: [ "unbounded", "current" ] } } } } },
+        operations.add(new SetWindowFieldsOperation.SetWindowFieldsOperationBuilder()
+                .sortBy(CREATED)
+                .output(new SetWindowFieldsOperation.WindowOutput(
+                        new SetWindowFieldsOperation.ComputedField(CUMULATIVE_OVER,
+                                AggregationExpression.from(MongoExpression.create("$sum: \"$" + OVER + "\"")),
+                                new SetWindowFieldsOperation.DocumentWindowBuilder().fromUnbounded().toCurrent().build()))
+                )
+                .build());
+
+        //  Filter for entries that should be deleted
+        //  { $match: { cumulativeOver: { $lte: 1 } } }
+        operations.add(match(Criteria.where(CUMULATIVE_OVER).lte(1)));
+
+        return mongoTemplate.aggregate(newAggregation(operations), COLLECTION, DeltaFile.class).getMappedResults();
     }
 
     @Override

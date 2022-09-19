@@ -2331,6 +2331,22 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testFindForDeleteDiskSpaceBatchSizeFlow() {
+		DeltaFile deltaFile1 = buildDeltaFile("1", "a", DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile1.setTotalBytes(100L);
+		deltaFileRepo.save(deltaFile1);
+		DeltaFile deltaFile2 = buildDeltaFile("2", "a", DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(2));
+		deltaFile2.setTotalBytes(300L);
+		deltaFileRepo.save(deltaFile2);
+		DeltaFile deltaFile3 = buildDeltaFile("3", "b", DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile3.setTotalBytes(500L);
+		deltaFileRepo.save(deltaFile3);
+
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, "a", "policy", 100);
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+	}
+
+	@Test
 	void testDeltaFiles_all() {
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
 		deltaFileRepo.save(deltaFile1);
