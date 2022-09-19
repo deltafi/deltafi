@@ -1,21 +1,21 @@
 {
   "timedPolicies": [
     {
-      "id": "oneHourAfterComplete",
-      "name": "oneHourAfterComplete",
+      "id": "afterComplete",
+      "name": "afterComplete",
       "enabled": true,
       "locked": false,
-      "afterComplete": "PT1H",
+      "afterComplete": "P13D",
       "deleteMetadata": true
     }
   ],
   "diskSpacePolicies": [
     {
-      "id": "over98PerCent",
-      "name": "over98PerCent",
+      "id": "percentDisk",
+      "name": "percentDisk",
       "enabled": true,
       "locked": false,
-      "maxPercent": 98
+      "maxPercent": 95
     }
   ]
 }

@@ -82,7 +82,7 @@
       {
         "key": "deltafi.checks.actionQueue.sizeThreshold",
         "description": "Threshold for Action Queue size check.",
-        "defaultValue": "0",
+        "defaultValue": "10",
         "hidden": false,
         "refreshable": true,
         "editable": true
@@ -247,7 +247,7 @@
       {
         "key": "actions.action-registration-period-ms",
         "description": "Frequency that the actions register with the core system.",
-        "defaultValue": "10000"
+        "defaultValue": "60000"
       },
       {
         "key": "actions.hostname",
