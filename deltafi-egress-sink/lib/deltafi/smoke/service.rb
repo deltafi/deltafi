@@ -32,7 +32,7 @@ module Deltafi
       SMOKE_TIMEOUT_MS = 5000
 
       GRAPHQL_URL = 'http://deltafi-core-service/graphql'
-      GET_FLOWS = '{"query":"{ getRunningFlows { ingress { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
+      GET_FLOWS = '{"query":"{ getRunningFlows { ingress { name flowStatus { state } } enrich { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
       def initialize
         @smoke = {}
@@ -73,7 +73,7 @@ module Deltafi
       end
 
       def flow_running?(flows)
-        return flows.find { |flow| flow['name'] == 'smoke' }
+        return flows.find { |flow| flow['name'] == 'smoke' || flow['name'] == 'artificial-enrichment' }
       end
 
       def smoke_running?
@@ -86,7 +86,7 @@ module Deltafi
           return false
         end
         flows = response.parsed_response.dig('data', 'getRunningFlows')
-        return flow_running?(flows['ingress']) && flow_running?(flows['egress'])
+        return flow_running?(flows['ingress']) && flow_running?(flows['egress']) && flow_running?(flows['enrich'])
       end
 
       def timeout_smoke
