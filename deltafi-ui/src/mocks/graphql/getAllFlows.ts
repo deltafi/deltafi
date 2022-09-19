@@ -114,8 +114,6 @@ const generateFlows = () => {
           {
             name: "smoke.SmokeTransformAction",
             type: "org.deltafi.passthrough.action.RoteTransformAction",
-            consumes: "binary",
-            produces: "passthrough-binary",
             parameters: {
               resultType: "binary",
             },
@@ -124,7 +122,6 @@ const generateFlows = () => {
         loadAction: {
           name: "smoke.SmokeLoadAction",
           type: "org.deltafi.passthrough.action.RoteLoadAction",
-          consumes: "passthrough-binary",
           parameters: {
             domains: ["binary"],
           },
@@ -148,8 +145,6 @@ const generateFlows = () => {
           {
             name: "decompress-passthrough.DecompressPassthroughTransformAction",
             type: "org.deltafi.core.action.DecompressionTransformAction",
-            consumes: "compressedBinary",
-            produces: "binary",
             parameters: {
               decompressionType: "auto",
             },
@@ -158,7 +153,6 @@ const generateFlows = () => {
         loadAction: {
           name: "decompress-passthrough.DecompressPassthroughLoadAction",
           type: "org.deltafi.core.action.SplitterLoadAction",
-          consumes: "binary",
           parameters: {
             reinjectFlow: "passthrough",
           },
@@ -182,8 +176,6 @@ const generateFlows = () => {
           {
             name: "passthrough.PassthroughTransformAction",
             type: "org.deltafi.passthrough.action.RoteTransformAction",
-            consumes: "binary",
-            produces: "passthrough-binary",
             parameters: {
               resultType: "binary",
             },
@@ -192,7 +184,6 @@ const generateFlows = () => {
         loadAction: {
           name: "passthrough.PassthroughLoadAction",
           type: "org.deltafi.passthrough.action.RoteLoadAction",
-          consumes: "passthrough-binary",
           parameters: {
             domains: ["binary"],
           },
@@ -216,15 +207,12 @@ const generateFlows = () => {
           {
             name: "stix1_x.Stix1_xTo2_1TransformAction",
             type: "org.deltafi.stix.actions.StixTransformAction",
-            consumes: "stix1_x",
-            produces: "stix2_1",
             parameters: null,
           },
         ],
         loadAction: {
           name: "stix1_x.Stix2_1LoadAction",
           type: "org.deltafi.stix.actions.StixLoadAction",
-          consumes: "stix2_1",
           parameters: null,
         },
         variables: [],
@@ -246,7 +234,6 @@ const generateFlows = () => {
         loadAction: {
           name: "stix2_1.Stix2_1LoadAction",
           type: "org.deltafi.stix.actions.StixLoadAction",
-          consumes: "stix2_1",
           parameters: null,
         },
         variables: [],

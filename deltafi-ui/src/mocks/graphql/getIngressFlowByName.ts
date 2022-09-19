@@ -59,8 +59,6 @@ const generateData = () => {
     transformActions: [
       {
         name: "decompress-passthrough.DecompressPassthroughTransformAction1",
-        consumes: "compressedBinary",
-        produces: "binary",
         parameters: {
           decompressionType: "auto",
         },
@@ -70,8 +68,6 @@ const generateData = () => {
       },
       {
         name: "decompress-passthrough.DecompressPassthroughTransformAction2",
-        consumes: "compressedBinary",
-        produces: "binary",
         parameters: {
           decompressionType: "auto",
         },
@@ -81,7 +77,6 @@ const generateData = () => {
     ],
     loadAction: {
       name: "decompress-passthrough.DecompressPassthroughLoadAction",
-      consumes: "binary",
       apiVersion: null,
       parameters: {
         reinjectFlow: "passthrough",

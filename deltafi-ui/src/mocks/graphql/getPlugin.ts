@@ -30,32 +30,22 @@ const generateData = () => {
       actions: [
         {
           name: "org.deltafi.goofy.RubberStampValidateAction",
-          consumes: null,
-          produces: null,
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          consumes: "stix2_1",
-          produces: "stix1_x",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix234_1FormatAction",
-          consumes: "stix2_1",
-          produces: "stix2_1",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          consumes: "stix2_1",
-          produces: null,
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          consumes: "stix1_x",
-          produces: "stix2_1",
           requiresDomains: null,
         },
       ],
@@ -82,32 +72,22 @@ const generateData = () => {
       actions: [
         {
           name: "org.RubberStampValidateAction",
-          consumes: null,
-          produces: null,
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          consumes: "stix2_1",
-          produces: "stix1_x",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix2_1FormatAction",
-          consumes: "stix2_1",
-          produces: "stix2_1",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          consumes: "stix2_1",
-          produces: null,
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          consumes: "stix1_x",
-          produces: "stix2_1",
           requiresDomains: null,
         },
       ],
@@ -148,32 +128,22 @@ const generateData = () => {
       actions: [
         {
           name: "org.deltafi.stix.actions.RubberStampValidateAction",
-          consumes: null,
-          produces: null,
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          consumes: "stix2_1",
-          produces: "stix1_x",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix2_1FormatAction",
-          consumes: "stix2_1",
-          produces: "stix2_1",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          consumes: "stix2_1",
-          produces: null,
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          consumes: "stix1_x",
-          produces: "stix2_1",
           requiresDomains: null,
         },
       ],
@@ -200,32 +170,18 @@ const generateData = () => {
       actions: [
         {
           name: "org.deltafi.stix.actions.RubberStampValidateAction",
-          consumes: null,
-          produces: null,
-          requiresDomains: null,
-        },
-        {
-          name: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          consumes: "stix2_1",
-          produces: "stix1_x",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix2_1FormatAction",
-          consumes: "stix2_1",
-          produces: "stix2_1",
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          consumes: "stix2_1",
-          produces: null,
           requiresDomains: null,
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          consumes: "stix1_x",
-          produces: "stix2_1",
           requiresDomains: null,
         },
       ],
