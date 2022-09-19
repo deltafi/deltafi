@@ -146,7 +146,6 @@ export default function useFlowQueryBuilder() {
         ingress: {
           name: true,
           description: true,
-          type: true,
           sourcePlugin: {
             artifactId: true,
             groupId: true,
