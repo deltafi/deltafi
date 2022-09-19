@@ -26,10 +26,6 @@ interface ActionConfiguration {
 type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    # deprecated - remove in future release
-    consumes: String
-    # deprecated - remove in future release
-    produces: String
     type: String!
     parameters: JSON
 }
@@ -37,10 +33,6 @@ type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfig
 input TransformActionConfigurationInput {
     name: String!
     apiVersion: String
-    # deprecated - remove in future release
-    consumes: String
-    # deprecated - remove in future release
-    produces: String
     type: String!
     parameters: JSON
 }
@@ -48,8 +40,6 @@ input TransformActionConfigurationInput {
 type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    # deprecated - remove in future release
-    consumes: String
     type: String!
     parameters: JSON
 }
@@ -57,8 +47,6 @@ type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfigurati
 input LoadActionConfigurationInput {
     name: String!
     apiVersion: String
-    # deprecated - remove in future release
-    consumes: String
     type: String!
     parameters: JSON
 }
@@ -139,20 +127,6 @@ type EgressActionConfiguration implements ActionConfiguration & DeltaFiConfigura
 }
 
 input EgressActionConfigurationInput {
-    name: String!
-    apiVersion: String
-    type: String!
-    parameters: JSON
-}
-
-type DeleteActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
-    name: String!
-    apiVersion: String
-    type: String!
-    parameters: JSON
-}
-
-input DeleteActionConfigurationInput {
     name: String!
     apiVersion: String
     type: String!

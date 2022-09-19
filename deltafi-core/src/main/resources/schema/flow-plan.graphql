@@ -56,8 +56,6 @@ type IngressFlowPlan {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinates!
-  # deprecated - remove in future release
-  type: String
   transformActions: [TransformActionConfiguration]
   loadAction: LoadActionConfiguration!
 }
@@ -85,8 +83,6 @@ input IngressFlowPlanInput {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinatesInput!
-  # deprecated - remove in future release
-  type: String
   transformActions: [TransformActionConfigurationInput]
   loadAction: LoadActionConfigurationInput!
 }
@@ -160,8 +156,6 @@ type IngressFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
-  # deprecated - remove in future release
-  type: String
   transformActions: [TransformActionConfiguration]
   loadAction: LoadActionConfiguration!
   variables: [Variable]!

@@ -31,7 +31,5 @@ import java.util.List;
 public class ActionDescriptor {
   private String name;
   private String description;
-  private String consumes;
-  private String produces;
   private List<String> requiresDomains;
 }

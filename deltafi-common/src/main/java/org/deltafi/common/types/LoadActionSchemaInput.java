@@ -32,5 +32,4 @@ public class LoadActionSchemaInput {
   private String id;
   private String paramClass;
   private Map<String, Object> schema;
-  private String consumes;
 }

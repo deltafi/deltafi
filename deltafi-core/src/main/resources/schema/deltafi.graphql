@@ -132,8 +132,6 @@ Ingress and transform actions create contentReferences and express additional me
 Followon actions get the latest "state" of the transformed object from the top of the ProtocolLayer stack
 """
 type ProtocolLayer {
-  # deprecated - remove in a future release
-  type: String
   "The action that produced this ProtocolLayer"
   action: String!
   "Content produced by the action"
@@ -143,8 +141,6 @@ type ProtocolLayer {
 }
 
 input ProtocolLayerInput {
-  # deprecated - remove in a future release
-  type: String
   action: String!
   content: [ContentInput!]!
   metadata: [KeyValueInput!]
@@ -214,8 +210,6 @@ input ActionEventInput {
   action: String!
   start: DateTime!
   stop: DateTime!
-  # deprecated -- remove after a few releases have bumped through (5/3/22)
-  time: DateTime
   type: ActionEventType!
   transform: TransformInput
   load: LoadInput
@@ -232,10 +226,8 @@ type DeltaFile {
   did: String!
   parentDids: [String!]!
   childDids: [String!]!
-  # TODO: Make this a required field in a future release.  Optional for now for backward compatibility.
-  ingressBytes: Long
-  # TODO: Make this a required field in a future release.  Optional for now for backward compatibility.
-  totalBytes: Long
+  ingressBytes: Long!
+  totalBytes: Long!
   stage: DeltaFileStage!
   actions: [Action!]!
   sourceInfo: SourceInfo!

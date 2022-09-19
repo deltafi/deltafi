@@ -31,19 +31,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ProtocolLayer {
-    // deprecated
-    private String type;
-
     private String action;
     private List<Content> content;
     private List<KeyValue> metadata;
-
-    // remove once deprecated type is removed
-    public ProtocolLayer(String action, List<Content> content, List<KeyValue> metadata) {
-        this.action = action;
-        this.content = content;
-        this.metadata = metadata;
-    }
 
     @JsonIgnore
     public ContentReference getContentReference() {
