@@ -802,7 +802,7 @@ _fail() {
   printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 1)" "FAIL" "$(tput sgr0)" "$@"
 }
 
-diff cluster.yaml cluster.yaml.template || _attention "NOTE: cluster.yaml differs from template"
+diff ${CONFIG} ${CONFIG}.template || _attention "NOTE: cluster.yaml differs from template"
 
 # Initialize bask framework
 _init
