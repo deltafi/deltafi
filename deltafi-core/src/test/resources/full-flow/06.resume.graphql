@@ -20,8 +20,6 @@ mutation {
     resume(
         dids: ["%1$s"],
         removeSourceMetadata: [ "removeMe" ]
-        replaceFilename: "newFilename"
-        replaceFlow: "theFlow"
         replaceSourceMetadata: [
             {
                 key: "AuthorizedBy"

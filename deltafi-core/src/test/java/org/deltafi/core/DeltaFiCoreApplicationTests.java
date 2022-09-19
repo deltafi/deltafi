@@ -681,11 +681,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertTrue(retryResults.get(0).getSuccess());
 
-		DeltaFile expected = postRetryTransformDeltaFile(did, "SampleLoadAction");
-		expected.getSourceInfo().setFilename("newFilename");
-		expected.getSourceInfo().setFlow("theFlow");
-		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("sourceInfo.filename.original", "input.txt"), new KeyValue("sourceInfo.flow.original", "sample"), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
-		verifyActionEventResults(expected, "SampleLoadAction");
+		DeltaFile expected = postRetryTransformDeltaFile(did, "SampleTransformAction");
+		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
+		verifyActionEventResults(expected, "SampleTransformAction");
 	}
 
 	@Test

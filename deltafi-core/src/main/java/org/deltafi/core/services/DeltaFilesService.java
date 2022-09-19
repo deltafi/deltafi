@@ -483,7 +483,7 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    public List<RetryResult> resume(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
+    public List<RetryResult> resume(@NotNull List<String> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
         return dids.stream()
                 .map(did -> {
                     RetryResult result = RetryResult.newBuilder()
@@ -510,7 +510,7 @@ public class DeltaFilesService {
                                 deltaFile.setErrorAcknowledged(null);
                                 deltaFile.setErrorAcknowledgedReason(null);
 
-                                applyRetryOverrides(deltaFile, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
+                                applyRetryOverrides(deltaFile, null, null, removeSourceMetadata, replaceSourceMetadata);
 
                                 advanceAndSave(deltaFile);
                             }
