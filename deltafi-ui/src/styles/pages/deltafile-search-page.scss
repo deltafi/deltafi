@@ -17,9 +17,76 @@
 */
 
 .search-page {
+  label {
+    font-weight: 500;
+  }
+
+  .p-panel-content {
+    padding: 1.25rem 0.75rem 1.5rem;
+  }
+  .search-options-wrapper {
+    display: flex;
+  }
+
+  .flex-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .flex-column {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 100%;
+    flex: 2;
+    margin: 0 0.75rem;
+  }
+
+  .flex-column-small {
+    flex: 1;
+  }
+
+  .advanced-search-button-container {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    button {
+      width: 10rem
+    }
+  }
+
+  .p-dropdown	{
+    max-width: 600px;
+  }
+
+  .invalid-chip {
+    background: var(--warning);
+    color: var(--black);
+  }
+
+  .valid-chip {
+    background: var(--info);
+    color: var(--white);
+  }
+
+  .add-metadata-btn {
+    cursor: pointer;
+    background: var(--secondary);
+    color: var(--primary-color-text);
+    padding: 0 .25rem;
+  }
+
   .time-range .form-control:disabled,
   .time-range .form-control[readonly] {
     background-color: #ffffff;
+  }
+
+  .ingress-size-container {
+    > * {
+      vertical-align: middle !important;
+    }
   }
 
   .icon-index {
@@ -35,6 +102,10 @@
   }
 
   .results {
+    .p-paginator-current {
+      margin-right: 0.75rem;
+      font-weight: 500;
+    }
     .p-panel-header {
       padding: 0 1.25rem;
       .p-panel-title {
