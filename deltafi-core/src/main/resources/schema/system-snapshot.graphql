@@ -18,6 +18,7 @@
 
 type SystemSnapshot {
     id: String!
+    reason: String
     created: DateTime!
     deletePolicies: DeletePolicies!
     flowAssignmentRules: [FlowAssignmentRule]!
@@ -31,6 +32,7 @@ type SystemSnapshot {
 
 input SystemSnapshotInput {
     id: String!
+    reason: String
     created: DateTime!
     deletePolicies: DeletePoliciesInput!
     flowAssignmentRules: [FlowAssignmentRuleInput]!
@@ -48,8 +50,8 @@ extend type Query {
 }
 
 extend type Mutation {
-    # create and return a new system snapshot
-    snapshotSystem: SystemSnapshot!
+    # create and return a new system snapshot with an optional reason
+    snapshotSystem(reason: String): SystemSnapshot!
 
     # apply the snapshot with the given SnapshotId, hardReset (default=false) indicates all custom config should be reset before applying the snapshot
     resetFromSnapshotWithId(snapshotId: String!, hardReset: Boolean) : Result!

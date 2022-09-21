@@ -41,8 +41,9 @@ public class SystemSnapshotService {
         return systemSnapshotRepo.findAll();
     }
 
-    public SystemSnapshot createSnapshot() {
+    public SystemSnapshot createSnapshot(String reason) {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
+        systemSnapshot.setReason(reason);
         snapshotters.forEach(snapshotter -> snapshotter.updateSnapshot(systemSnapshot));
         return systemSnapshotRepo.save(systemSnapshot);
     }

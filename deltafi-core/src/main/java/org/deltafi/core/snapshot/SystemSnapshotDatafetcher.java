@@ -20,6 +20,7 @@ package org.deltafi.core.snapshot;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
+import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.Result;
 
@@ -42,8 +43,8 @@ public class SystemSnapshotDatafetcher {
     }
 
     @DgsMutation
-    public SystemSnapshot snapshotSystem() {
-        return systemSnapshotService.createSnapshot();
+    public SystemSnapshot snapshotSystem(@InputArgument String reason) {
+        return systemSnapshotService.createSnapshot(reason);
     }
 
     @DgsMutation

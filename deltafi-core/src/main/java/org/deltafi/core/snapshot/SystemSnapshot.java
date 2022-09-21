@@ -37,6 +37,7 @@ import java.util.Set;
 public class SystemSnapshot {
     @Id
     private String id;
+    private String reason;
     private OffsetDateTime created = OffsetDateTime.now();
     private List<PluginVariables> pluginVariables;
     private DeletePolicies deletePolicies;
