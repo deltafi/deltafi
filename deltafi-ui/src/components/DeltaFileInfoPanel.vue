@@ -27,7 +27,7 @@
               <span v-if="['Modified', 'Created'].includes(key)">
                 <Timestamp :timestamp="value" />
               </span>
-              <span v-else-if="['Original File Size', 'Total File Size'].includes(key)">
+              <span v-else-if="key.includes('Size')">
                 <FormattedBytes :bytes="value" />
               </span>
               <span v-else>{{ value }}</span>
@@ -58,20 +58,12 @@ const props = defineProps({
 
 const deltaFile = reactive(props.deltaFileData);
 
-const originalFileSize = computed(() => {
-  const ingressAction = deltaFile.protocolStack.find((p) => {
-    return p.action === "IngressAction";
-  });
-  if (!ingressAction) return "N/A";
-  return ingressAction.content[0].contentReference.size;
-});
-
 const infoFields = computed(() => {
   let fields = {};
   fields["DID"] = deltaFile.did;
-  fields["Original Filename"] = deltaFile.sourceInfo.filename;
-  fields["Original File Size"] = originalFileSize.value;
-  fields["Total File Size"] = deltaFile.totalBytes;
+  fields["Filename"] = deltaFile.sourceInfo.filename;
+  fields["Ingress Size"] = deltaFile.ingressBytes;
+  fields["Total Size"] = deltaFile.totalBytes;
   fields["Ingress Flow"] = deltaFile.sourceInfo.flow;
   fields["Stage"] = deltaFile.stage;
   fields["Created"] = deltaFile.created;

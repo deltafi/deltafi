@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Changed
+- Added ingressBytes to raw DeltaFile view (#249)
+- Renamed fields on DeltaFile viewer page (#250)
+  - `Original Filename` -> `Filename`
+  - `Original File Size` -> `Ingress Size`
+  - `Total File Size` -> `Total Size`
 - Updated Search Page
   - Allow filtering on Indexed Metadata (#211)
   - Allow filtering on Ingress Bytes (#235)

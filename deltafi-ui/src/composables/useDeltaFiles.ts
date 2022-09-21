@@ -34,6 +34,7 @@ export default function useDeltaFiles() {
         parentDids: true,
         childDids: true,
         totalBytes: true,
+        ingressBytes: true,
         sourceInfo: {
           filename: true,
           flow: true,
