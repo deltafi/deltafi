@@ -351,6 +351,8 @@ input DeltaFilesFilter {
   parentDid: String
   ingressBytesMin: Long
   ingressBytesMax: Long
+  totalBytesMin: Long
+  totalBytesMax: Long
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]

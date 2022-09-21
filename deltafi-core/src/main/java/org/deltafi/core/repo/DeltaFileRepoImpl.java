@@ -508,6 +508,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             andCriteria.add(Criteria.where(INGRESS_BYTES).lte(filter.getIngressBytesMax()));
         }
 
+        if (nonNull(filter.getTotalBytesMin())) {
+            andCriteria.add(Criteria.where(TOTAL_BYTES).gte(filter.getTotalBytesMin()));
+        }
+
+        if (nonNull(filter.getTotalBytesMax())) {
+            andCriteria.add(Criteria.where(TOTAL_BYTES).lte(filter.getTotalBytesMax()));
+        }
+
         if (nonNull(filter.getErrorAcknowledged())) {
             if (filter.getErrorAcknowledged()) {
                 andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));

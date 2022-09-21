@@ -2429,6 +2429,7 @@ class DeltaFiCoreApplicationTests {
 	void testDeltaFiles_filter() {
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFile1.setIngressBytes(100L);
+		deltaFile1.setTotalBytes(1000L);
 		deltaFile1.setDomains(List.of(new Domain("domain1", null, null)));
 		deltaFile1.addIndexedMetadata(Map.of("a.1", "first", "common", "value"));
 		deltaFile1.setEnrichment(List.of(new Enrichment("enrichment1", null, null)));
@@ -2441,6 +2442,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 		deltaFile2.setIngressBytes(200L);
+		deltaFile2.setTotalBytes(2000L);
 		deltaFile2.setDomains(List.of(new Domain("domain1", null, null), new Domain("domain2", null, null)));
 		deltaFile2.addIndexedMetadata(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
@@ -2468,6 +2470,11 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(250L).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(150L).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(100L).ingressBytesMin(100L).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMin(500L).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMin(1500L).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMax(2500L).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMax(1500L).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMax(1000L).totalBytesMin(1000L).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.COMPLETE).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("filename1").build()).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().flow("flow2").build()).build(), deltaFile2);
