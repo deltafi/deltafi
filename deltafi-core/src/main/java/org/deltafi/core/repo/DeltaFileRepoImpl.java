@@ -241,10 +241,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         List<AggregationOperation> operations = new ArrayList<>();
 
-        //  Match the flow if provided
+        //  Get undeleted files with size > 0B. Match the flow if provided.
         //  { $match: { "sourceInfo.flow": "passthrough" } }
+        Criteria criteria = Criteria.where(CONTENT_DELETED).isNull().andOperator(Criteria.where(TOTAL_BYTES).gt(0L));
         if (flow != null && !flow.isEmpty()) {
-            operations.add(match(Criteria.where(SOURCE_INFO_FLOW).is(flow)));
+            operations.add(match(Criteria.where(SOURCE_INFO_FLOW).is(flow).andOperator(criteria)));
+        } else {
+            operations.add(match(criteria));
         }
 
         //  Sort by created date so we can limit by batch size

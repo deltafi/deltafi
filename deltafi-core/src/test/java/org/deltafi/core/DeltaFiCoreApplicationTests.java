@@ -2309,6 +2309,13 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
+		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile4.setTotalBytes(500L);
+		deltaFile4.setContentDeleted(OffsetDateTime.now());
+		deltaFileRepo.save(deltaFile4);
+		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile4.setTotalBytes(0L);
+		deltaFileRepo.save(deltaFile5);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
