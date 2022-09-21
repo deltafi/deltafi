@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.98.1
+## [Unreleased] - Next release 0.98.2
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.98.1] - 2022-09-21
 
 ### Added
 - Added optional documentation server deployment enabled via values.yaml
@@ -15,19 +33,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Improved default delete policy names and configuration
 - Egress does not generate smoke when artificial-enrichment is disabled
 - Modified DID search to be case-insensitive
-### Deprecated
+- Allow disk use on MongoDB aggregations
 
 ### Removed
 - Removed deprecated type, produces, and consumes fields
 
 ### Fixed
 - `files_errored` metric was not incremented when an error occurred due to no configured egress
-
-### Tech-Debt/Refactor
-
-### Security
-
-### Upgrade and Migration
+- KinD bug with cluster.yaml diffs
 
 ## [0.98.0] - 2022-09-19
 
