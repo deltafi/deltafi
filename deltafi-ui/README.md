@@ -82,6 +82,16 @@ This section describes how to build deltafi-ui for production.
 
 - Docker
 
-#### Build Docker Image
+#### Build Base Image
+
+This step is only required if the `package.json` is updated.
+
+    export VERSION=<version>
+    docker buildx build --push --platform linux/amd64,linux/arm64 \
+      -t deltafi/deltafi-ui-base:$VERSION -f Dockerfile.build .
+
+And be sure to update the base image version in the main `Dockerfile`.
+
+#### Build UI Image
 
     docker build -t deltafi-ui:latest .
