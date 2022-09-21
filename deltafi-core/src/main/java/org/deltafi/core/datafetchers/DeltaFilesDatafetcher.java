@@ -166,24 +166,36 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
-  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument List<KeyValue> metadata) throws ObjectStorageException {
+  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument List<KeyValue> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
     Random random = new Random();
     SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new ArrayList<>() : metadata);
     Content c = new Content("stressTestContent", Collections.emptyList(), null);
-    List<ContentReference> crs = new ArrayList<>();
 
-    for (int i = 0; i < numFiles; i++) {
-      String did = UUID.randomUUID().toString();
-      log.info("Saving content for {} ({}/{})", did, i+1, numFiles);
-      byte[] contentBytes = new byte[contentSize];
-      random.nextBytes(contentBytes);
-      crs.add(contentStorageService.save(did, contentBytes, "application/octet-stream"));
+    // batches let us test quick bursts of ingress traffic, deferring ingress until after content is stored for the batch
+    if (batchSize == null || batchSize < 1) {
+      batchSize = 1;
     }
-    for (ContentReference cr : crs) {
-      c.setContentReference(cr);
-      IngressInput ingressInput = new IngressInput(cr.getDid(), sourceInfo, List.of(c), OffsetDateTime.now());
-      log.info("Ingressing " + cr.getDid());
-      ingress(ingressInput);
+    int remainingFiles = numFiles;
+
+    while (remainingFiles > 0) {
+      List<ContentReference> crs = new ArrayList<>();
+      for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
+        String did = UUID.randomUUID().toString();
+        log.info("Saving content for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
+        byte[] contentBytes = new byte[contentSize];
+        random.nextBytes(contentBytes);
+        crs.add(contentStorageService.save(did, contentBytes, "application/octet-stream"));
+      }
+
+      for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
+        ContentReference cr = crs.get(i);
+        c.setContentReference(cr);
+        IngressInput ingressInput = new IngressInput(cr.getDid(), sourceInfo, List.of(c), OffsetDateTime.now());
+        log.info("Ingressing metadata for {} ({}/{})", cr.getDid(), i + (numFiles - remainingFiles) + 1, numFiles);
+        ingress(ingressInput);
+      }
+
+      remainingFiles -= batchSize;
     }
 
     return numFiles;

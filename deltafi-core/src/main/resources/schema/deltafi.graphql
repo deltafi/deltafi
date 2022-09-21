@@ -475,5 +475,5 @@ type Mutation {
   addPluginPropertySet(propertySet: PropertySetInput!) : Boolean!
   removePluginPropertySet(propertySetId: String!): Boolean!
 
-  stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!]) : Int!
+  stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!
 }
