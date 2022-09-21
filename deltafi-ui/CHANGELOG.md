@@ -4,17 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.98.1]
 
 ### Changed
+
 - Added ingressBytes to raw DeltaFile view (#249)
 - Renamed fields on DeltaFile viewer page (#250)
   - `Original Filename` -> `Filename`
   - `Original File Size` -> `Ingress Size`
   - `Total File Size` -> `Total Size`
 - Updated Search Page
-  - Allow filtering on Indexed Metadata (#211)
-  - Allow filtering on Ingress Bytes (#235)
+  - Allowed filtering on Domain (#211)
+  - Allowed filtering on Indexed Metadata (#211)
+  - Allowed filtering on Ingress Bytes (#235)
+  - Allowed filtering on Total Bytes (#251)
   - Removed Action Type filter (#247)
   - Query optimization (#231)
 
@@ -358,7 +361,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.0...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.1...main
+[0.98.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.0...0.98.1
 [0.98.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.97.0...0.98.0
 [0.97.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.4...0.97.0
 [0.96.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.3...0.96.4

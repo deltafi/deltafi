@@ -47,11 +47,12 @@
                 <Dropdown id="fileNameId" v-model="fileNameOptionSelected" :placeholder="fileNameOptionSelected ? fileNameOptionSelected.name + ' ' : 'Select a File Name'" :options="fileNameOptions" option-label="name" :filter="true" :show-clear="true" class="deltafi-input-field min-width" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
                 <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
-                <label for="stageId" class="mt-2">Ingress Size:</label>
-                <div class="ingress-size-container">
-                  <InputNumber v-model="ingressSizeMin" class="p-inputtext-sm" input-style="width: 8rem" placeholder="Min" /> -
-                  <InputNumber v-model="ingressSizeMax" class="p-inputtext-sm" input-style="width: 8rem" placeholder="Max" />
-                  <Dropdown v-model="ingressSizeUnitSelected" :options="sizeUnits" option-label="name" class="deltafi-input-field ml-2" />
+                <label for="stageId" class="mt-2">Size:</label>
+                <div class="size-container">
+                  <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem;" class="deltafi-input-field mr-2" />
+                  <InputNumber v-model="sizeMin" class="p-inputtext-sm" input-style="width: 6rem" placeholder="Min" /> -
+                  <InputNumber v-model="sizeMax" class="p-inputtext-sm" input-style="width: 6rem" placeholder="Max" />
+                  <Dropdown v-model="sizeUnitSelected" :options="sizeUnits" option-label="name" class="deltafi-input-field ml-2" />
                 </div>
               </div>
               <div class='flex-column flex-column-small'>
@@ -96,7 +97,7 @@
       </template>
       <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>
-        <template #loading>Loading DeltaFiles. Please wait.</template>
+        <template #loading>Loading results. Please wait.</template>
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
             <DidLink :did="data.did" />
@@ -177,49 +178,48 @@ const newMetadataKey = ref(null)
 const newMetadataValue = ref(null)
 const fileNameOptions = ref([]);
 const fileNameOptionSelected = ref(null);
-const actionTypeOptions = ref([]);
-const actionTypeOptionSelected = ref(null);
 const flowOptions = ref([]);
 const flowOptionSelected = ref(null);
 const stageOptions = ref([]);
 const stageOptionSelected = ref(null);
-const egressedOptions = ref([{ name: "true" }, { name: "false" }])
+const egressedOptions = ref([{ name: "True", value: true }, { name: "False", value: false }])
 const egressedOptionSelected = ref(null);
-const filteredOptions = ref([{ name: "true" }, { name: "false" }])
+const filteredOptions = ref([{ name: "True", value: true }, { name: "False", value: false }])
 const filteredOptionSelected = ref(null);
 const loading = ref(true);
 const totalRecords = ref(0);
 const collapsedSearchOption = ref(true);
 const tableData = ref([]);
-const fileName = ref(null);
-const stageName = ref(null);
-const actionName = ref(null);
-const flowName = ref(null);
-const egressed = ref(null);
-const filtered = ref(null);
 const offset = ref(0);
 const perPage = ref(10);
 const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const metadataArray = ref([]);
-const ingressSizeMin = ref();
-const ingressSizeMax = ref();
+const sizeMin = ref();
+const sizeMax = ref();
 const sizeUnits = [
   { name: "B", multiplier: 1 },
   { name: "kB", multiplier: 1000 },
   { name: "MB", multiplier: 1000000 },
   { name: "GB", multiplier: 1000000000 },
 ];
-const ingressSizeUnitSelected = ref(sizeUnits[0])
+const sizeTypes = [
+  { name: "Ingress", ingress: true },
+  { name: "Total", total: true },
+];
+const sizeTypeSelected = ref(sizeTypes[0])
+const sizeUnitSelected = ref(sizeUnits[0])
 
-const ingressBytesMin = computed(() => {
-  return ingressSizeMin.value ? ingressSizeMin.value * ingressSizeUnitSelected.value.multiplier : null
-})
-
-const ingressBytesMax = computed(() => {
-  return ingressSizeMax.value ? ingressSizeMax.value * ingressSizeUnitSelected.value.multiplier : null
-})
+const ingressBytesMin = computed(() => sizeMin.value && sizeTypeSelected.value.ingress ? sizeMin.value * sizeUnitSelected.value.multiplier : null);
+const ingressBytesMax = computed(() => sizeMax.value && sizeTypeSelected.value.ingress ? sizeMax.value * sizeUnitSelected.value.multiplier : null);
+const totalBytesMin = computed(() => sizeMin.value && sizeTypeSelected.value.total ? sizeMin.value * sizeUnitSelected.value.multiplier : null);
+const totalBytesMax = computed(() => sizeMax.value && sizeTypeSelected.value.total ? sizeMax.value * sizeUnitSelected.value.multiplier : null);
+const egressed = computed(() => egressedOptionSelected.value ? egressedOptionSelected.value.value : null);
+const filtered = computed(() => filteredOptionSelected.value ? filteredOptionSelected.value.value : null);
+const fileName = computed(() => fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null);
+const stageName = computed(() => stageOptionSelected.value ? stageOptionSelected.value.name : null);
+const flowName = computed(() => flowOptionSelected.value ? flowOptionSelected.value.name : null);
 
 const metadata = computed(() => {
   return metadataArray.value.map((i) => {
@@ -279,14 +279,13 @@ const items = ref([
         label: "Clear Options",
         icon: "fas fa-times",
         command: () => {
-          actionTypeOptionSelected.value = null;
           fileNameOptionSelected.value = null;
           flowOptionSelected.value = null;
           stageOptionSelected.value = null;
           egressedOptionSelected.value = null;
           filteredOptionSelected.value = null;
-          ingressSizeMax.value = null;
-          ingressSizeMin.value = null;
+          sizeMax.value = null;
+          sizeMin.value = null;
           domainOptionSelected.value = null;
           metadataArray.value = [];
           fetchDeltaFilesData();
@@ -303,7 +302,6 @@ const fetchFileNames = async () => {
   for (const deltaFiObject of deltaFilesObjectsArray) {
     fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });
   }
-
   fileNameOptions.value = _.uniqBy(fileNameDataArray, "name");
 };
 
@@ -321,7 +319,7 @@ watch(selectedDomain, async (value) => {
   fetchDeltaFilesData();
   await fetchIndexedMetadataKeys(value);
   validateMetadataArray();
-})
+});
 
 watch(
   metadataArray,
@@ -331,18 +329,23 @@ watch(
 
 watch(
   [
-    ingressSizeMin,
-    ingressSizeMax,
-    ingressSizeUnitSelected,
+    sizeMin,
+    sizeMax,
     fileNameOptionSelected,
-    actionTypeOptionSelected,
     flowOptionSelected,
     stageOptionSelected,
     egressedOptionSelected,
     filteredOptionSelected
   ],
   () => { fetchDeltaFilesData() },
-)
+);
+
+watch([sizeTypeSelected, sizeUnitSelected], () => {
+  if (sizeMin.value || sizeMax.value) {
+    fetchDeltaFilesData();
+  }
+  setPersistedParams();
+});
 
 const validateMetadataArray = () => {
   const validKeys = metadataKeysOptions.value.map((i) => i.key)
@@ -390,21 +393,7 @@ const optionMenuToggle = (event) => {
 
 const fetchConfigTypes = async () => {
   const flowTypes = ["INGRESS_FLOW"];
-  let enumsConfigTypes = await getEnumValuesByEnumType("ConfigType");
-  let configTypeNames = enumsConfigTypes.data.__type.enumValues;
-  let actionTypes = configTypeNames.map((a) => a.name).filter((name) => name.includes("ACTION"));
-
-  fetchActions(actionTypes);
   fetchFlows(flowTypes);
-};
-
-const fetchActions = async (actionTypes) => {
-  for (const actionType of actionTypes) {
-    let actionData = await getConfigByType(actionType);
-    let actionDataValues = actionData.data.deltaFiConfigs;
-    actionTypeOptions.value = _.concat(actionTypeOptions.value, actionDataValues);
-    actionTypeOptions.value = _.sortBy(actionTypeOptions.value, ["name"]);
-  }
 };
 
 const fetchFlows = async (flowTypes) => {
@@ -437,12 +426,30 @@ const fetchStages = async () => {
 };
 
 const fetchDeltaFilesData = _.debounce(async () => {
-  await nextTick();
-  setQueryParams();
   setPersistedParams();
 
   loading.value = true;
-  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, actionName.value, flowName.value, JSON.parse(egressed.value), JSON.parse(filtered.value), selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value);
+  let data = await getDeltaFileSearchData(
+    startDateISOString.value,
+    endDateISOString.value,
+    offset.value,
+    perPage.value,
+    sortField.value,
+    sortDirection.value,
+    fileName.value,
+    stageName.value,
+    null,
+    flowName.value,
+    egressed.value,
+    filtered.value,
+    selectedDomain.value,
+    metadata.value,
+    ingressBytesMin.value,
+    ingressBytesMax.value,
+    totalBytesMin.value,
+    totalBytesMax.value
+  );
+  console.log(egressed.value)
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
@@ -457,15 +464,6 @@ const results = computed(() => {
     };
   });
 });
-
-const setQueryParams = () => {
-  fileName.value = fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null;
-  stageName.value = stageOptionSelected.value ? stageOptionSelected.value.name : null;
-  actionName.value = actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null;
-  flowName.value = flowOptionSelected.value ? flowOptionSelected.value.name : null;
-  egressed.value = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
-  filtered.value = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
-};
 
 const onSort = (event) => {
   offset.value = event.first;
@@ -488,22 +486,23 @@ const onPage = (event) => {
 const getPersistedParams = () => {
   startTimeDate.value = new Date(state.value.startTimeDateState ? state.value.startTimeDateState : startTimeDate.value);
   endTimeDate.value = new Date(state.value.endTimeDateState ? state.value.endTimeDateState : endTimeDate.value);
+  sizeUnitSelected.value = state.value.sizeUnitState ? sizeUnits.find(i => i.name == state.value.sizeUnitState) : sizeUnits[0];
+  sizeTypeSelected.value = state.value.sizeTypeState ? sizeTypes.find(i => i.name == state.value.sizeTypeState) : sizeTypes[0];
 
+  // Values that, if set, should expand Advanced Search Options.
   fileNameOptionSelected.value = state.value.fileNameOptionState ? { name: state.value.fileNameOptionState } : null;
   stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
-  actionTypeOptionSelected.value = state.value.actionTypeOptionState ? { name: state.value.actionTypeOptionState } : null;
   flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
   egressedOptionSelected.value = state.value.egressedOptionState ? { name: state.value.egressedOptionState } : null;
   filteredOptionSelected.value = state.value.filteredOptionState ? { name: state.value.filteredOptionState } : null;
   domainOptionSelected.value = state.value.domainOptionState ? { name: state.value.domainOptionState } : null;
-  ingressSizeUnitSelected.value = state.value.ingressSizeUnitState ? sizeUnits.find(i => i.name == state.value.ingressSizeUnitState) : sizeUnits[0];
-  ingressSizeMin.value = state.value.ingressSizeMinState;
-  ingressSizeMax.value = state.value.ingressSizeMaxState;
+  sizeMin.value = state.value.sizeMinState;
+  sizeMax.value = state.value.sizeMaxState;
   metadataArray.value = state.value.metadataArrayState || [];
 
   // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
   // what search options are being used.
-  collapsedSearchOption.value = !_.some(Object.values(state.value).slice(2), (i) => !(i == null || i.length == 0))
+  collapsedSearchOption.value = !_.some(Object.values(state.value).slice(4), (i) => !(i == null || i.length == 0))
 };
 const state = useStorage("advanced-search-options-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 
@@ -511,16 +510,18 @@ const setPersistedParams = () => {
   state.value = {
     startTimeDateState: startTimeDate.value ? startTimeDate.value : null,
     endTimeDateState: endTimeDate.value ? endTimeDate.value : null,
+    sizeUnitState: sizeUnitSelected.value ? sizeUnitSelected.value.name : null,
+    sizeTypeState: sizeTypeSelected.value ? sizeTypeSelected.value.name : null,
+
+    // Values that, if set, should expand Advanced Search Options.
     fileNameOptionState: fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
-    actionTypeOptionState: actionTypeOptionSelected.value ? actionTypeOptionSelected.value.name : null,
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
     egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
     filteredOptionState: filteredOptionSelected.value ? filteredOptionSelected.value.name : null,
     domainOptionState: domainOptionSelected.value ? domainOptionSelected.value.name : null,
-    ingressSizeUnitState: ingressSizeUnitSelected.value ? ingressSizeUnitSelected.value.name : null,
-    ingressSizeMinState: ingressSizeMin.value,
-    ingressSizeMaxState: ingressSizeMax.value,
+    sizeMinState: sizeMin.value,
+    sizeMaxState: sizeMax.value,
     metadataArrayState: metadataArray.value
   };
 }

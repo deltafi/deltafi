@@ -22,7 +22,7 @@ import useGraphQL from './useGraphQL'
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -42,7 +42,9 @@ export default function useDeltaFilesQueryBuilder() {
             domains: domain ? [domain] : [],
             indexedMetadata: metadata,
             ingressBytesMin: ingressBytesMin,
-            ingressBytesMax: ingressBytesMax
+            ingressBytesMax: ingressBytesMax,
+            totalBytesMin: totalBytesMin,
+            totalBytesMax: totalBytesMax
           },
           orderBy: {
             direction: new EnumType(sortDirection),
@@ -66,39 +68,6 @@ export default function useDeltaFilesQueryBuilder() {
       }
     };
     return sendGraphQLQuery(query, "getDeltaFileSearchData");
-  };
-
-  const getRecordCount = (startDateISOString: String, endDateISOString: String, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean, domain?:string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number) => {
-    const query = {
-      deltaFiles: {
-        __args: {
-          offset: 0,
-          limit: 1,
-          filter: {
-            egressed: egressed,
-            filtered: filtered,
-            sourceInfo: {
-              flow: flowName,
-              filename: fileName
-            },
-            stage: stageName ? new EnumType(stageName) : null,
-            actions: actionName,
-            modifiedAfter: startDateISOString,
-            modifiedBefore: endDateISOString,
-            domains: domain ? [domain] : [],
-            indexedMetadata: metadata,
-            ingressBytesMin: ingressBytesMin,
-            ingressBytesMax: ingressBytesMax
-          },
-          orderBy: {
-            direction: new EnumType('DESC'),
-            field: 'modified'
-          }
-        },
-        totalCount: true,
-      }
-    };
-    return sendGraphQLQuery(query, "getRecordCount");
   };
 
   const getDeltaFiFileNames = (startDateISOString: String, endDateISOString: String) => {
@@ -194,7 +163,6 @@ export default function useDeltaFilesQueryBuilder() {
 
   return {
     getDeltaFileSearchData,
-    getRecordCount,
     getDeltaFiFileNames,
     getDeltaFilesByDIDs,
     getEnumValuesByEnumType,
