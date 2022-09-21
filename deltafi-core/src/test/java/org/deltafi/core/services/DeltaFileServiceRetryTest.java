@@ -19,6 +19,8 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.core.Util;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -56,13 +58,17 @@ public class DeltaFileServiceRetryTest {
     @MockBean
     private DeltaFileRepo deltaFileRepo;
 
+    @MockBean
+    private MetricRepository metricRepository;
+
     @Test
     void testRetry() {
         String did = "abc";
         String fromAction = "validateAction";
 
+        DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
+
         Mockito.when(deltaFileRepo.findById(did)).thenAnswer((Answer<Optional<DeltaFile>>) invocationOnMock -> {
-            DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
             Action action = Action.newBuilder().name(fromAction).state(ActionState.QUEUED).build();
             deltaFile.setActions(new ArrayList<>(Collections.singletonList(action)));
             return Optional.of(deltaFile);

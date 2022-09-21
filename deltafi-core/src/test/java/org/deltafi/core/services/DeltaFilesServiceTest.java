@@ -21,6 +21,8 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.core.Util;
 import org.deltafi.core.configuration.ActionConfiguration;
@@ -35,10 +37,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import static org.deltafi.common.metrics.MetricsUtil.FILES_ERRORED;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -73,6 +77,9 @@ class DeltaFilesServiceTest {
 
     @InjectMocks
     DeltaFilesService deltaFilesService;
+
+    @Mock
+    MetricRepository metricRepository;
 
     @Test
     void setsAndGets() {
@@ -246,6 +253,7 @@ class DeltaFilesServiceTest {
         Action action = maybeAction.get();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
         Assertions.assertThat(action.getErrorCause()).isEqualTo("Action named action is no longer running");
+        Mockito.verify(metricRepository).increment(FILES_ERRORED, MetricsUtil.tagsFor(deltaFile), 1);
     }
 
     @Test

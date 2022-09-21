@@ -35,9 +35,10 @@ import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 
 public class Util {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final String FLOW = "myFlow";
 
     public static DeltaFile buildDeltaFile(String did) {
-        return emptyDeltaFile(did, null);
+        return emptyDeltaFile(did, FLOW);
     }
 
     public static DeltaFile buildDeltaFile(String did, List<KeyValue> metadata) {

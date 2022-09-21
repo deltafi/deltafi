@@ -28,6 +28,8 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.ActionConfiguration;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -56,6 +58,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.common.metrics.MetricsUtil.FILES_ERRORED;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
 @Service
@@ -77,6 +80,7 @@ public class DeltaFilesService {
     final DeltaFileRepo deltaFileRepo;
     final ActionEventQueue actionEventQueue;
     final ContentStorageService contentStorageService;
+    private final MetricRepository metricService;
 
     public static final int EXECUTOR_THREADS = 16;
 
@@ -318,6 +322,8 @@ public class DeltaFilesService {
         }
 
         deltaFile.errorAction(event);
+
+        metricService.increment(FILES_ERRORED, MetricsUtil.tagsFor(deltaFile), 1);
 
         return deltaFile;
     }

@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Removed deprecated type, produces, and consumes fields
 
 ### Fixed
+- `files_errored` metric was not incremented when an error occurred due to no configured egress
 
 ### Tech-Debt/Refactor
 
@@ -27,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Upgrade and Migration
 
-## [Unreleased] - Next release 0.98.0
+## [0.98.0] - 2022-09-19
 
 ### Added
 - ActionKit action log entries are tagged with the originating action name

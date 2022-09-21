@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static org.deltafi.common.metrics.MetricsUtil.*;
 import static org.deltafi.ingress.util.Metrics.tagsFor;
 
 @Slf4j
@@ -83,21 +84,21 @@ public class DeltaFileRest {
             }
 
             Map<String, String> tags = tagsFor(ingressResult.getFlow());
-            metricService.increment("files_in", tags, 1);
-            metricService.increment("bytes_in", tags, ingressResult.getContentReference().getSize());
+            metricService.increment(FILES_IN, tags, 1);
+            metricService.increment(BYTES_IN, tags, ingressResult.getContentReference().getSize());
 
             return ResponseEntity.ok(ingressResult.getContentReference().getDid());
         } catch (ObjectStorageException | DeltafiGraphQLException | DeltafiException exception) {
             log.error("500 error", exception);
-            metricService.increment("files_dropped", tagsFor(flow), 1);
+            metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             return ResponseEntity.status(500).body(exception.getMessage());
         } catch (DeltafiMetadataException exception) {
-            metricService.increment("files_dropped", tagsFor(flow), 1);
+            metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             log.error("400 error", exception);
             return ResponseEntity.status(400).body(exception.getMessage());
         } catch (Throwable exception) {
             log.error("Unexpected error", exception);
-            metricService.increment("files_dropped", tagsFor(flow), 1);
+            metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             return ResponseEntity.status(500).body(exception.getMessage());
         }
     }

@@ -43,6 +43,8 @@ import java.io.InputStream;
 import java.util.Map;
 
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
+import static org.deltafi.common.metrics.MetricsUtil.BYTES_IN;
+import static org.deltafi.common.metrics.MetricsUtil.FILES_IN;
 import static org.deltafi.ingress.rest.DeltaFileRest.FLOWFILE_V1_MEDIA_TYPE;
 import static org.deltafi.ingress.util.Metrics.tagsFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -123,8 +125,8 @@ class DeltaFileRestTest {
         // assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
         Map<String, String> tags = tagsFor(FLOW);
-        Mockito.verify(metricRepository).increment("files_in", tags, 1);
-        Mockito.verify(metricRepository).increment("bytes_in", tags, CONTENT.length());
+        Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
+        Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
     }
 
     @Test
@@ -143,8 +145,8 @@ class DeltaFileRestTest {
         // assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
         Map<String, String> tags = tagsFor(FLOW);
-        Mockito.verify(metricRepository).increment("files_in", tags, 1);
-        Mockito.verify(metricRepository).increment("bytes_in", tags, CONTENT.length());
+        Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
+        Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
     }
 
     @Test
@@ -176,8 +178,8 @@ class DeltaFileRestTest {
         // assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
         Map<String, String> tags = tagsFor(FLOW);
-        Mockito.verify(metricRepository).increment("files_in", tags, 1);
-        Mockito.verify(metricRepository).increment("bytes_in", tags, CONTENT.length());
+        Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
+        Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
     }
 
     @Test

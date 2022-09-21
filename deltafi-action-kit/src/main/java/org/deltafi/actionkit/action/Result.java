@@ -30,16 +30,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
+import static org.deltafi.common.metrics.MetricsUtil.*;
+
 /**
  * Base class for all action results.  Specializations of the Result class are provided for each action type.
  */
 @Getter
 @EqualsAndHashCode
 public abstract class Result {
-    private static final String FILES_IN = "files_in";
-    private static final String FILES_COMPLETED = "files_completed";
-    private static final String FILES_ERRORED = "files_errored";
-    private static final String FILES_FILTERED = "files_filtered";
 
     protected final ActionContext context;
 

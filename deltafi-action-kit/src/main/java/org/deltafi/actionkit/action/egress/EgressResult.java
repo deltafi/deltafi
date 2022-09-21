@@ -29,6 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static org.deltafi.common.metrics.MetricsUtil.BYTES_OUT;
+import static org.deltafi.common.metrics.MetricsUtil.FILES_OUT;
+
 /**
  * Specialized result class for EGRESS actions
  */
@@ -60,8 +63,8 @@ public class EgressResult extends Result {
     public Collection<Metric> getCustomMetrics() {
         ArrayList<Metric> metrics = new ArrayList<>();
 
-        metrics.add(new Metric("files_out", 1).addTag("endpoint", destination));
-        metrics.add(new Metric("bytes_out", bytesEgressed).addTag("endpoint", destination));
+        metrics.add(new Metric(FILES_OUT, 1).addTag("endpoint", destination));
+        metrics.add(new Metric(BYTES_OUT, bytesEgressed).addTag("endpoint", destination));
 
         return metrics;
     }
