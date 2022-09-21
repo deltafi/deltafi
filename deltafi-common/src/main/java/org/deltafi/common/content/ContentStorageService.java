@@ -56,10 +56,12 @@ public class ContentStorageService {
     }
 
     public void deleteAll(List<ContentReference> contentReferences) {
-        objectStorageService.removeObjects(CONTENT_BUCKET, contentReferences.stream()
-                .map(ContentReference::objectName)
-                .distinct()
-                .collect(Collectors.toList()));
+        if (!contentReferences.isEmpty()) {
+            objectStorageService.removeObjects(CONTENT_BUCKET, contentReferences.stream()
+                    .map(ContentReference::objectName)
+                    .distinct()
+                    .collect(Collectors.toList()));
+        }
     }
 
     private ObjectReference buildObjectReference(ContentReference contentReference) {

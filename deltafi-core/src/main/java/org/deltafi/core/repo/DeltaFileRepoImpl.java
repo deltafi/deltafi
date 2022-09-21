@@ -288,7 +288,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         //  { $match: { cumulativeOver: { $lte: 1 } } }
         operations.add(match(Criteria.where(CUMULATIVE_OVER).lte(1)));
 
-        return mongoTemplate.aggregate(newAggregation(operations), COLLECTION, DeltaFile.class).getMappedResults();
+        Aggregation aggregation = newAggregation(operations).withOptions(AggregationOptions.builder().allowDiskUse(true).build());
+
+        return mongoTemplate.aggregate(aggregation, COLLECTION, DeltaFile.class).getMappedResults();
     }
 
     @Override
@@ -615,7 +617,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Aggregation countAggregation = Aggregation.newAggregation(
                 matchesErrorStage,
                 group(SOURCE_INFO_FLOW).count().as(GROUP_COUNT),
-                count().as(COUNT_FOR_PAGING));
+                count().as(COUNT_FOR_PAGING))
+                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
 
         final Long countForPaging = Optional
                 .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
@@ -631,8 +634,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     project(DIDS, GROUP_COUNT).and(SOURCE_INFO_FLOW).previousOperation(),
                     errorSummaryByFlowSort(orderBy),
                     skip(elementsToSkip),
-                    limit(limit)
-            );
+                    limit(limit))
+                    .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
 
             AggregationResults<FlowCountAndDids> aggResults = mongoTemplate.aggregate(
                     pagingAggregation, COLLECTION, FlowCountAndDids.class);
@@ -679,7 +682,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         List<AggregationOperation> aggregationWithCount = new ArrayList<>(mainStages);
         aggregationWithCount.add(count().as(COUNT_FOR_PAGING));
-        Aggregation countAggregation = Aggregation.newAggregation(aggregationWithCount);
+        Aggregation countAggregation = Aggregation.newAggregation(aggregationWithCount)
+                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
 
         final Long countForPaging = Optional
                 .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
@@ -693,7 +697,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             stagesWithPaging.add(errorSummaryByMessageSort(orderBy));
             stagesWithPaging.add(skip(elementsToSkip));
             stagesWithPaging.add(limit(limit));
-            Aggregation pagingAggregation = Aggregation.newAggregation(stagesWithPaging);
+            Aggregation pagingAggregation = Aggregation.newAggregation(stagesWithPaging)
+                    .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
 
             AggregationResults<MessageFlowGroup> aggResults = mongoTemplate.aggregate(
                     pagingAggregation, COLLECTION, MessageFlowGroup.class);
@@ -804,8 +809,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         operations.add(unwind(INDEXED_METADATA));
         operations.add(group().addToSet("indexedMetadata.k").as("keys"));
 
+        Aggregation aggregation = newAggregation(operations).withOptions(AggregationOptions.builder().allowDiskUse(true).build());
+
         List<String> keys = Optional
-                .ofNullable(mongoTemplate.aggregate(newAggregation(operations), COLLECTION, Document.class).getUniqueMappedResult())
+                .ofNullable(mongoTemplate.aggregate(aggregation, COLLECTION, Document.class).getUniqueMappedResult())
                 .map(doc -> doc.getList("keys", String.class))
                 .orElse(Collections.emptyList());
         Collections.sort(keys);
