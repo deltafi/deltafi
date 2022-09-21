@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Decreased action registration period
 - Improved default delete policy names and configuration
 - Egress does not generate smoke when artificial-enrichment is disabled
-
+- Modified DID search to be case-insensitive
 ### Deprecated
 
 ### Removed

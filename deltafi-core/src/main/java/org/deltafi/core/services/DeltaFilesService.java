@@ -87,7 +87,7 @@ public class DeltaFilesService {
     private final ExecutorService executor = Executors.newFixedThreadPool(EXECUTOR_THREADS);
 
     public DeltaFile getDeltaFile(String did) {
-        return deltaFileRepo.findById(did).orElse(null);
+        return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
     }
 
     public DeltaFiles getDeltaFiles(Integer offset, Integer limit, DeltaFilesFilter filter, DeltaFileOrder orderBy) {
