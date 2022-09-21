@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.98.2]
+
+### Fixed
+- Removed `type` field from top level `getIngressFlow` graphql query to fix error (#253)
+
 ## [0.98.1]
 
 ### Changed
@@ -361,7 +366,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.1...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.2...main
+[0.98.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.1...0.98.2
 [0.98.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.0...0.98.1
 [0.98.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.97.0...0.98.0
 [0.97.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.96.4...0.97.0

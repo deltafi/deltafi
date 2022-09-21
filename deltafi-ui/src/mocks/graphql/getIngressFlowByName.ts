@@ -49,7 +49,6 @@ const generateData = () => {
   return {
     name: "decompress-passthrough",
     description: "Flow that passes data through unchanged",
-    type: "compressedBinary",
     sourcePlugin: {
       groupId: "org.deltafi.passthrough",
       artifactId: "deltafi-passthrough",

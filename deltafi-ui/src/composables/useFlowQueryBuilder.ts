@@ -275,7 +275,6 @@ export default function useFlowQueryBuilder() {
         },
         name: true,
         description: true,
-        type: true,
         sourcePlugin: {
           groupId: true,
           artifactId: true,
