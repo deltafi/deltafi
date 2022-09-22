@@ -39,10 +39,18 @@ public class ActionEventQueue {
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
 
     public ActionEventQueue(ActionEventQueueProperties actionEventQueueProperties) throws URISyntaxException {
-        // TODO: The maxIdle and maxTotal need to scale up with the number of actions configured
         jedisKeyedBlockingQueue = new JedisKeyedBlockingQueue(actionEventQueueProperties.getUrl(),
                 actionEventQueueProperties.getPassword().orElse(""), actionEventQueueProperties.getMaxIdle(),
                 actionEventQueueProperties.getMaxTotal());
+        log.info("Jedis pool size: " + actionEventQueueProperties.getMaxTotal());
+    }
+
+    public ActionEventQueue(ActionEventQueueProperties actionEventQueueProperties, int actionCount) throws URISyntaxException {
+        int maxIdle = actionCount > 0 ? actionCount : actionEventQueueProperties.getMaxIdle();
+        int maxTotal = actionCount > 0 ? actionCount : actionEventQueueProperties.getMaxTotal();
+        jedisKeyedBlockingQueue = new JedisKeyedBlockingQueue(actionEventQueueProperties.getUrl(),
+                actionEventQueueProperties.getPassword().orElse(""), maxIdle, maxTotal);
+        log.info("Jedis pool size: " + maxTotal);
     }
 
     public void putActions(List<ActionInput> actionInputs) throws JedisConnectionException {
@@ -60,6 +68,7 @@ public class ActionEventQueue {
 
     /**
      * Request an ActionInput object from the ActionEvent queue for the specified action
+     *
      * @param actionClassName Name of action for Action event request
      * @return next Action on the queue for the given action name
      * @throws JsonProcessingException if the incoming event cannot be serialized
@@ -70,6 +79,7 @@ public class ActionEventQueue {
 
     /**
      * Submit a result object for action processing
+     *
      * @param result ActionEventInput object for the result to be posted to the action queue
      * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */

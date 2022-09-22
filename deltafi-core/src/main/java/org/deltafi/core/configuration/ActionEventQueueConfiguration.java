@@ -15,20 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.action;
+package org.deltafi.core.configuration;
 
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.common.action.ActionEventQueueProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.net.URISyntaxException;
 
-@AutoConfiguration
-@ConfigurationPropertiesScan
-public class ActionEventQueueAutoConfiguration {
+@Configuration
+@EnableConfigurationProperties(ActionEventQueueProperties.class)
+public class ActionEventQueueConfiguration {
     @Bean
-    @ConditionalOnMissingBean
     public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties)
             throws URISyntaxException {
         return new ActionEventQueue(actionEventQueueProperties);

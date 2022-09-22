@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 ### Tech-Debt/Refactor
+- Redis connection pool scales to action count, and no longer used by ingress
 
 ### Security
 

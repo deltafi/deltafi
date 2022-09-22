@@ -1,4 +1,3 @@
-org.deltafi.common.action.ActionEventQueueAutoConfiguration
 org.deltafi.common.content.ContentStorageServiceAutoConfiguration
 org.deltafi.common.graphql.dgs.GraphQLClientFactoryAutoConfiguration
 org.deltafi.common.http.HttpServiceAutoConfiguration
