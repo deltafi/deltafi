@@ -4,9 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+
+- DialogTemplate components now use standard PrimeVue footers (#248)
+
 ## [0.98.2]
 
 ### Fixed
+
 - Removed `type` field from top level `getIngressFlow` graphql query to fix error (#253)
 
 ## [0.98.1]

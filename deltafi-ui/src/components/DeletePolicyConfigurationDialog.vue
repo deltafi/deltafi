@@ -95,14 +95,11 @@
         </dl>
       </div>
     </div>
-    <template v-if="!viewDeletePolicy">
-      <Divider />
-      <div class="row float-right">
-        <div class="col">
-          <Button label="Submit" @click="submit()" />
-        </div>
+    <teleport v-if="isMounted && !viewDeletePolicy" to="#dialogTemplate">
+      <div class="p-dialog-footer">
+        <Button label="Submit" @click="submit()" />
       </div>
-    </template>
+    </teleport>
   </div>
 </template>
 
@@ -111,6 +108,7 @@ import useDeletePolicyConfiguration from "@/composables/useDeletePolicyConfigura
 import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
 import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
+import { useMounted } from "@vueuse/core";
 import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
 
 import Button from "primevue/button";
@@ -181,6 +179,7 @@ const selectedAfterComplete = ref(_.get(rowdata, "afterComplete", null));
 const selectedMinBytes = ref(_.get(rowdata, "minBytes", null));
 const selectedDeleteMetadata = ref(_.get(rowdata, "deleteMetadata", false));
 const selectedMaxPercent = ref(_.get(rowdata, "maxPercent", null));
+const isMounted = ref(useMounted());
 
 onMounted(async () => {
   await fetchIngressFlows();

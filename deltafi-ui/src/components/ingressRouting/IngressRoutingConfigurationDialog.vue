@@ -66,14 +66,11 @@
         </dl>
       </div>
     </div>
-    <template v-if="!viewIngressRouteRule">
-      <div class="ml-n3 mr-n4">
-        <Divider />
-      </div>
-      <div class="float-right">
+    <teleport v-if="!viewIngressRouteRule && isMounted" to="#dialogTemplate">
+      <div class="p-dialog-footer">
         <Button label="Submit" @click="submit()" />
       </div>
-    </template>
+    </teleport>
   </div>
 </template>
 
@@ -83,11 +80,11 @@ import useIngressRoutingConfiguration from "@/composables/useIngressRoutingConfi
 import useIngressRoutingQueryBuilder from "@/composables/useIngressRoutingQueryBuilder";
 import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
+import { useMounted } from "@vueuse/core";
 import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
 
 import Button from "primevue/button";
 import Chips from "primevue/chips";
-import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
@@ -118,6 +115,7 @@ const { validateIngressRouteFile } = useIngressRoutingConfiguration();
 const { loadFlowAssignmentRules } = useIngressRoutingQueryBuilder();
 const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
 const notify = useNotifications();
+const isMounted = ref(useMounted());
 
 const newIngressRouteRuleUpload = ref({});
 
