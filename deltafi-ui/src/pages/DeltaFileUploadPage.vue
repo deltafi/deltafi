@@ -32,8 +32,7 @@
             </div>
             <div class="col-5">
               <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" option-label="name" :placeholder="selectedFlow ? selectedFlow.name + ' ' : 'Select an Ingress Flow'" :class="{ 'p-invalid': flowSelectInvalid }" />
-              <InlineMessage v-if="flowSelectInvalid" class="ml-3">Ingress Flow is required</InlineMessage>
+              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" option-label="name" :placeholder="selectedFlow ? selectedFlow.name + ' ' : 'Select an Ingress Flow'" show-clear />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -110,7 +109,6 @@ import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
 import FileUpload from "primevue/fileupload";
-import InlineMessage from "primevue/inlinemessage";
 import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Panel from "primevue/panel";
@@ -129,7 +127,6 @@ import _ from "lodash";
 const uploadedTimestamp = ref(new Date());
 const deltaFilesMenu = ref();
 const selectedFlow = ref(null);
-const flowSelectError = ref(false);
 const metadata = ref([]);
 const fileUploader = ref();
 const deltaFiles = ref([]);
@@ -171,10 +168,6 @@ const metadataRecord = computed(() => {
   return record;
 });
 
-const flowSelectInvalid = computed(() => {
-  return flowSelectError.value && selectedFlow.value == null;
-});
-
 const metadataClearDisabled = computed(() => {
   return metadata.value.length == 0 && selectedFlow.value == null;
 });
@@ -189,7 +182,6 @@ const removeMetadataField = (field) => {
 };
 
 const clearMetadata = () => {
-  flowSelectError.value = false;
   selectedFlow.value = null;
   selectedFlowStorage.value = "";
   metadata.value = [];
@@ -197,17 +189,13 @@ const clearMetadata = () => {
 };
 
 const onUpload = (event) => {
-  if (selectedFlow.value == null) {
-    flowSelectError.value = true;
-  } else {
     ingressFiles(event);
-  }
 };
 
 const ingressFiles = async (event) => {
   uploadedTimestamp.value = new Date();
   for (let file of event.files) {
-    const result = ingressFile(file, selectedFlow.value.name, metadataRecord.value);
+    const result = ingressFile(file, metadataRecord.value, _.get(selectedFlow.value, "name", null));
     result["uploadedTimestamp"] = uploadedTimestamp.value;
     result["uploadedMetadata"] = JSON.parse(JSON.stringify(metadata.value));
     deltaFiles.value.unshift(result);

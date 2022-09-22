@@ -19,49 +19,55 @@
 import { reactive } from "vue";
 import useNotifications from "./useNotifications";
 import axios from "axios";
+import _ from "lodash";
 
 export default function useIngress() {
   const notify = useNotifications();
 
-  const ingressFile = (file: File, flow: string, metadata: Record<string, string>) => {
+  const ingressFile = (file: File, metadata: Record<string, string>, flow?: string) => {
     const result = reactive({
       did: "",
       loading: true,
       error: false,
       filename: file.name,
       flow: flow,
-      percentComplete: 0
+      percentComplete: 0,
     });
+
+    const buildHeader = () => {
+      const headerObject: any = {};
+      headerObject["Content-Type"] = file.type || "application/octet-stream";
+      if (!_.isEmpty(flow)) {
+        headerObject["Flow"] = flow;
+      }
+      headerObject["Filename"] = file.name;
+      headerObject["Metadata"] = JSON.stringify(metadata);
+      return headerObject;
+    };
+
     axios
       .request({
         method: "post",
         url: "/deltafile/ingress",
         data: file,
-        headers: {
-          "Content-Type": file.type || "application/octet-stream",
-          Flow: flow,
-          Filename: file.name,
-          Metadata: JSON.stringify(metadata),
-        },
+        headers: buildHeader(),
         onUploadProgress: (progressEvent) => {
-          result.percentComplete = Math.round(
-            progressEvent.loaded / progressEvent.total * 100
-          );
-        }
+          result.percentComplete = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+        },
       })
       .then((res) => {
         result.did = res.data.toString();
         result.loading = false;
-        notify.success("Ingress successful", file.name)
+        notify.success("Ingress successful", file.name);
       })
       .catch((error) => {
         result.loading = false;
         result.error = true;
         console.error(error.response.data);
-        notify.error(`Failed to ingress ${file.name}`, error.response.data)
+        notify.error(`Failed to ingress ${file.name}`, error.response.data);
       });
     return result;
-  }
+  };
 
   return { ingressFile };
 }
