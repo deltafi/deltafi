@@ -21,9 +21,7 @@
     <PageHeader heading="Ingress Routing">
       <div class="d-flex mb-2">
         <Button label="Export Rules" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies()" />
-        <DialogTemplate component-name="ingressRouting/IngressRoutingImportFile" header="Import Ingress Routes" dialog-width="40vw" @reload-ingress-routes="fetchIngressRoutes()">
-          <Button label="Import Rules" icon="fas fa-upload fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" />
-        </DialogTemplate>
+        <IngressRoutingImportFile @reload-ingress-routes="fetchIngressRoutes()" />
         <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="Add New Ingress Route Rule" dialog-width="25vw" :row-data-prop="{}" @reload-ingress-routes="fetchIngressRoutes()">
           <Button label="Add Rule" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
@@ -33,10 +31,10 @@
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" v-tooltip.left="'Keyword Search on Name and Flow'" placeholder="Keyword Search" />
+          <InputText v-model="filters['global'].value" v-tooltip.left="'Keyword Search'" placeholder="Keyword Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="uiIngressRoutes" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow', 'priority', 'matcherType', 'matcherValue']">
+      <DataTable v-model:filters="filters" :value="uiIngressRoutes" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow', 'priority', 'filenameRegex', 'requiredMetadata']">
         <template #empty> No Ingress Routing rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: 'auto' }">
           <template #body="{ data }">
@@ -71,6 +69,7 @@
 </template>
 
 <script setup>
+import IngressRoutingImportFile from "@/components/ingressRouting/IngressRoutingImportFile.vue";
 import IngressRoutingRemoveButton from "@/components/ingressRouting/IngressRoutingRemoveButton.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";

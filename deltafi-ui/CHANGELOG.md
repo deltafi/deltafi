@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - DialogTemplate components now use standard PrimeVue footers (#248)
 - Remove Ingress Flow requirement from Upload Page (#254)
 - Added import/export Metadata to/from Upload page (#190)
+- Refactored file upload buttons on Delete Policies and Ingress Routing (#239)
 
 ## [0.98.2]
 

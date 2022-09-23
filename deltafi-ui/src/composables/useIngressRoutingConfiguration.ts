@@ -110,11 +110,13 @@ export default function useIngressRoutingConfiguration() {
       required: ["name"],
       additionalProperties: false,
       errorMessage: {
-        oneOf: "${0/name} - requires filenameRegex and/or requiredMetadata",
+        required: "Must have required property 'name'.",
+        oneOf: "${0/name} - requires filenameRegex and/or requiredMetadata.",
+        additionalProperties: "Must NOT have additional properties.",
         properties: {
           name: "name is a required field.",
-          filenameRegex: "${0/name} - not a valid regular expression",
-          requiredMetadata: "${0/name} - not a valid key:value pair",
+          filenameRegex: "${0/name} - not a valid regular expression.",
+          requiredMetadata: "${0/name} - not a valid key:value pair.",
         },
       },
     };
@@ -126,6 +128,10 @@ export default function useIngressRoutingConfiguration() {
     uniqueItems: true,
     items: {
       $ref: "#/definitions/schemaFlowAssignmentRule",
+    },
+    errorMessage: {
+      type: "File uploaded not in required Ingress Routing format.",
+      additionalProperties: "Must NOT have additional properties.",
     },
     definitions: {
       schemaFlowAssignmentRule: schemaFlowAssignmentRule(),

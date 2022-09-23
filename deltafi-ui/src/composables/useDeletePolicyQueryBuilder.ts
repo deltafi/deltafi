@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 
 export default function useDeletePolicyQueryBuilder() {
-  const { response, queryGraphQL } = useGraphQL();
+  const { response, errors, queryGraphQL } = useGraphQL();
 
   // Get current delete policies
   const getDeletePolicies = () => {
@@ -92,7 +92,8 @@ export default function useDeletePolicyQueryBuilder() {
     try {
       await queryGraphQL(query, operationName, queryType, bypass);
       return response.value;
-    } catch {
+    } catch (e: any) {
+      return e.value;
       // Continue regardless of error
     }
   };

@@ -107,8 +107,8 @@ export default function useIngressRoutingQueryBuilder() {
     try {
       await queryGraphQL(query, operationName, queryType, bypass);
       return response.value;
-    } catch {
-      // Continue regardless of error
+    } catch (e: any) {
+      return e.value;
     }
   };
 

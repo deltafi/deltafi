@@ -21,12 +21,12 @@
     <PageHeader heading="Delete Policies">
       <div class="d-flex mb-2">
         <Button label="Export Delete Policies" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies" />
-        <DialogTemplate component-name="DeletePolicyImportFile" header="Import Delete Policies" dialog-width="50vw" @reload-delete-policies="fetchDeletePolicies()">
-          <Button label="Import Delete Policies" icon="fas fa-upload fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" />
-        </DialogTemplate>
-        <DialogTemplate component-name="DeletePolicyConfigurationDialog" header="Add New Delete Policy" dialog-width="50vw" @reload-delete-policies="fetchDeletePolicies()">
-          <Button label="Add Delete Policy" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
-        </DialogTemplate>
+        <DeletePolicyImportFile @reload-delete-policies="fetchDeletePolicies()" />
+        <div>
+          <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Add New Delete Policy" dialog-width="25vw" @reload-delete-policies="fetchDeletePolicies()">
+            <Button label="Add Delete Policy" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+          </DialogTemplate>
+        </div>
       </div>
     </PageHeader>
     <Panel header="Delete Policies" class="delete-policy-panel table-panel">
@@ -41,7 +41,7 @@
         <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
             <div class="justify-content-start">
-              <DialogTemplate component-name="DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="50vw" :row-data-prop="data" view-delete-policy @reload-delete-policies="fetchDeletePolicies()">
+              <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="25vw" :row-data-prop="data" view-delete-policy @reload-delete-policies="fetchDeletePolicies()">
                 <Button :label="data.name" class="p-button-link text-body" />
               </DialogTemplate>
             </div>
@@ -61,7 +61,7 @@
         <Column :style="{ width: '10%' }">
           <template #body="{ data }">
             <div class="d-flex">
-              <DialogTemplate component-name="DeletePolicyConfigurationDialog" header="Update Delete Policy" dialog-width="50vw" :row-data-prop="data" edit-delete-policy @reload-delete-policies="fetchDeletePolicies()">
+              <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Update Delete Policy" dialog-width="25vw" :row-data-prop="data" edit-delete-policy @reload-delete-policies="fetchDeletePolicies()">
                 <Button v-tooltip.top="`Edit Delete Policy`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
               </DialogTemplate>
               <DeletePolicyRemoveButton class="pl-2" :row-data-prop="data" @reload-delete-policies="fetchDeletePolicies()"></DeletePolicyRemoveButton>
@@ -75,8 +75,9 @@
 </template>
 
 <script setup>
-import DeletePolicyRemoveButton from "@/components/DeletePolicyRemoveButton.vue";
-import DeletePolicyStateInputSwitch from "@/components/DeletePolicyStateInputSwitch.vue";
+import DeletePolicyImportFile from "@/components/deletePolicy/DeletePolicyImportFile";
+import DeletePolicyRemoveButton from "@/components/deletePolicy/DeletePolicyRemoveButton.vue";
+import DeletePolicyStateInputSwitch from "@/components/deletePolicy/DeletePolicyStateInputSwitch.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";

@@ -17,9 +17,9 @@
 -->
 
 <template>
-  <div class="ingress-routing-import-file">
-    <FileUpload ref="fileUploader" auto mode="basic" choose-label="Import Rules" accept=".json,application/JSON" :file-limit="1" custom-upload class="p-button-sm p-button-secondary p-button-outlined mx-1" @uploader="preUploadValidation" @click="setOverlayPanelPosition" />
-  </div>
+  <span class="delete-policy-import-file">
+    <FileUpload ref="fileUploader" auto mode="basic" choose-label="Import Delete Policies" accept=".json,application/JSON" :file-limit="1" custom-upload class="p-button-sm p-button-secondary p-button-outlined mx-1" @uploader="preUploadValidation" @click="setOverlayPanelPosition" />
+  </span>
   <OverlayPanel ref="errorOverlayPanel" dismissable show-close-icon @hide="clearUploadErrors">
     <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
       <ul>
@@ -32,8 +32,8 @@
 </template>
 
 <script setup>
-import useIngressRoutingConfiguration from "@/composables/useIngressRoutingConfiguration";
-import useIngressRoutingQueryBuilder from "@/composables/useIngressRoutingQueryBuilder";
+import useDeletePolicyConfiguration from "@/composables/useDeletePolicyConfiguration";
+import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import FileUpload from "primevue/fileupload";
 import Message from "primevue/message";
@@ -42,9 +42,9 @@ import { defineEmits, ref } from "vue";
 
 import _ from "lodash";
 
-const emit = defineEmits(["reloadIngressRoutes"]);
-const { validateIngressRouteFile: validateFile } = useIngressRoutingConfiguration();
-const { loadFlowAssignmentRules } = useIngressRoutingQueryBuilder();
+const emit = defineEmits(["reloadDeletePolicies"]);
+const { validateDeletePolicyFile: validateFile } = useDeletePolicyConfiguration();
+const { loadDeletePolicies } = useDeletePolicyQueryBuilder();
 const notify = useNotifications();
 
 const fileUploader = ref("");
@@ -77,14 +77,14 @@ const preUploadValidation = async (request) => {
 };
 
 const uploadFile = async (file) => {
-  let response = await loadFlowAssignmentRules(JSON.parse(validUpload.value));
+  let response = await loadDeletePolicies(JSON.parse(validUpload.value));
   if (!_.isEmpty(_.get(response, "errors", null))) {
     notify.error(`Upload failed for ${file.name}`, `Removing ${file.name}.`, 4000);
   } else {
     notify.success(`Uploaded ${file.name}`, `Successfully uploaded ${file.name}.`, 4000);
   }
   deleteUploadFile();
-  emit("reloadIngressRoutes");
+  emit("reloadDeletePolicies");
 };
 
 const deleteUploadFile = () => {
@@ -102,5 +102,5 @@ const setOverlayPanelPosition = (event) => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/ingress-routing-import-file.scss";
+@import "@/styles/components/delete-policy-import-file.scss";
 </style>

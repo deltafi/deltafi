@@ -18,10 +18,10 @@
 
 <template>
   <div class="delete-policy-body">
-    <div class="row information-panel">
-      <div class="col-12 pb-0">
+    <div class="delete-policy-panel">
+      <div class="pb-0">
         <div v-if="!_.isEmpty(errorsList)" class="pt-2">
-          <Message severity="error" :sticky="true" class="mb-2 mt-0">
+          <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errorsList" :key="key">
                 <li class="text-wrap text-break">{{ error }}</li>
@@ -227,10 +227,17 @@ const submit = async () => {
     }
     notify.error(`Delete Policy Validation Errors`, `Unable to upload Delete Policy `, 4000);
   } else {
-    await loadDeletePolicies(newDeletePolicyUpload.value);
+    let response = await loadDeletePolicies(newDeletePolicyUpload.value);
+    if (!_.isEmpty(_.get(response, "errors", null))) {
+      notify.error(`Upload failed`, `Unable to update Delete Policy.`, 4000);
+    }
     closeDialogCommand.command();
     emit("reloadDeletePolicies");
   }
+};
+
+const clearErrors = () => {
+  errorsList.value = [];
 };
 </script>
 

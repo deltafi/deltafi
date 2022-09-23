@@ -16,28 +16,29 @@
    limitations under the License.
 */
 
-.information-panel {
-  dt {
-    margin-bottom: 0.5rem;
-  }
-  dd {
-    margin-bottom: 1.2rem;
-  }
-  dl {
-    margin-bottom: 1rem;
-  }
-  .p-panel-content {
-    padding-bottom: 0.25rem !important;
-  }
-}
 .delete-policy-body {
   width: 98%;
-}
 
-.inputWidth {
-  width: 50% !important;
-}
+  .delete-policy-panel {
+    dt {
+      margin-bottom: 0.5rem;
+    }
+    dd {
+      margin-bottom: 1.2rem;
+    }
+    dl {
+      margin-bottom: 1rem;
+    }
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+  }
 
-.p-filled.capitalizeText {
-  text-transform: uppercase;
+  .inputWidth {
+    width: 90% !important;
+  }
+
+  .p-filled.capitalizeText {
+    text-transform: uppercase;
+  }
 }

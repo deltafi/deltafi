@@ -61,6 +61,7 @@ export default function useDeletePolicyConfiguration() {
     return {
       type: ["string", "null"],
       pattern: "^P([0-9]+(?:[,.][0-9]+)?Y)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?D)?(?:T([0-9]+(?:[,.][0-9]+)?H)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?S)?)?$",
+      //pattern: "^P([0-9]+(?:[,.][0-9]+)?Y)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?D)?(?:T([0-9]+(?:[,.][0-9]+)?H)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]S)?)?$",
       //pattern: "^P(?=\d|T\d)(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)([DW]))?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+?)S)?)?$",
       //pattern: "^P(([0-9]+Y)?([0-9]+M)?([0-9]+W)?([0-9]+D)?(T([0-9]+H)?([0-9]+M)?([0-9]+(.?[0-9]+)?S)?))?$",
     };
@@ -79,7 +80,7 @@ export default function useDeletePolicyConfiguration() {
                 $ref: "#/definitions/schemaTimedDeletePolicy",
               },
               errorMessage: {
-                minItems: "No Timed Delete Policies were uploaded",
+                minItems: "No Timed Delete Policies were uploaded.",
               },
             },
           },
@@ -94,14 +95,14 @@ export default function useDeletePolicyConfiguration() {
                 $ref: "#/definitions/schemaDiskSpaceDeletePolicy",
               },
               errorMessage: {
-                minItems: "No Disk Space Delete Policies were uploaded",
+                minItems: "No Disk Space Delete Policies were uploaded.",
               },
             },
           },
         },
       ],
       errorMessage: {
-        anyOf: "Errors were found validating uploaded Delete Policies",
+        anyOf: "Errors were found validating uploaded Delete Policies.",
       },
     };
   };
@@ -123,11 +124,13 @@ export default function useDeletePolicyConfiguration() {
       required: ["name"],
       additionalProperties: false,
       errorMessage: {
+        required: "Must have required property 'name'.",
+        additionalProperties: "Must NOT have additional properties.",
         properties: {
           id: "${0/name} - id is a required field.",
           name: "name is a required field.",
-          enabled: "${0/name} - enabled must be true or false",
-          locked: "${0/name} - locked must be true or false",
+          enabled: "${0/name} - enabled must be true or false.",
+          locked: "${0/name} - locked must be true or false.",
           afterCreate: "${0/name} - afterCreate needs to be in ISO 8601 notation.",
           afterComplete: "${0/name} - afterComplete needs to be in ISO 8601 notation.",
         },
@@ -149,6 +152,8 @@ export default function useDeletePolicyConfiguration() {
       required: ["name"],
       additionalProperties: false,
       errorMessage: {
+        required: "Must have required property 'name'.",
+        additionalProperties: "Must NOT have additional properties.",
         properties: {
           name: "name is a required field.",
           enabled: "${0/name} - enabled must be true or false",

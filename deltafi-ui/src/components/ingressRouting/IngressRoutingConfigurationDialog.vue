@@ -239,7 +239,10 @@ const submit = async () => {
     }
     notify.error(`Ingress Routing Rule Validation Errors`, `Unable to upload Ingress Routing Rule`, 4000);
   } else {
-    await loadFlowAssignmentRules(newIngressRouteRuleUpload.value);
+    let response = await loadFlowAssignmentRules(newIngressRouteRuleUpload.value);
+    if (!_.isEmpty(_.get(response, "errors", null))) {
+      notify.error(`Upload failed`, `Unable to update Ingress Rule.`, 4000);
+    }
     closeDialogCommand.command();
     emit("reloadIngressRoutes");
   }
