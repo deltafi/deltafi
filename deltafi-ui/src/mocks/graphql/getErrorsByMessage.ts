@@ -46,6 +46,12 @@ const generateData = () => {
           flow: "mock_stix2_1",
           dids: ["fe8b6d9f-7833-45c2-a003-7cbfa630a0a8", "3df9b0b8-7b81-4401-9d7b-118008bbeeed"],
         },
+        {
+          count: 2,
+          message: "Mock failed to load STIX 2.1 JSON from storage",
+          flow: "mock_stix2_2",
+          dids: ["fe8b6d91-7833-45c2-a003-7cbfa630a0a8", "1df9b0b8-7b81-4401-9d7b-118008bbeeed"],
+        },
       ],
     },
   };

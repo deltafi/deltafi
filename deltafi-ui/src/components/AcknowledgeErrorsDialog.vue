@@ -82,10 +82,12 @@ watch(
 const acknowledge = async () => {
   if (reason.value) {
     try {
-      let batchedDids = props.dids.length > batchSize ? getBatchDids(props.dids) : props.dids;
+      let batchedDids = getBatchDids(props.dids);
       if (props.dids.length > batchSize) {
         close();
         displayBatchingDialog.value = true;
+      } else {
+        close();
       }
       let completedBatches = 0;
       batchCompleteValue.value = 0;
@@ -123,6 +125,4 @@ const close = () => {
 };
 </script>
 
-<style lang="scss">
-
-</style>
+<style lang="scss"></style>

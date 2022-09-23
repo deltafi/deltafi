@@ -123,9 +123,8 @@ const showMetadataDialog = async () => {
 };
 
 const getAllMeta = async () => {
-  let batchedDids = props.did.length > batchSize ? getBatchDids(props.did) : props.did;
-  // displayMetadataBatchingDialog.value = props.did.length > batchSize ? true : false;
-  displayMetadataBatchingDialog.value = true;
+  let batchedDids = getBatchDids(props.did);
+  displayMetadataBatchingDialog.value = props.did.length > batchSize ? true : false;
   batchCompleteValue.value = 0;
   let completedBatches = 0;
   allMetadata.value = [];
@@ -242,9 +241,9 @@ const requestResumeReplay = async () => {
   let response;
   try {
     if (resumeReplay.value === "Resume") {
-      let batchedDids = props.did.length > batchSize ? getBatchDids(props.did) : props.did;
+      let batchedDids = getBatchDids(props.did);
       let successBatch;
-      displayBatchingDialog.value = props.did.length > batchSize ? true : false;
+      displayBatchingDialog.value = true;
       let completedBatches = 0;
       batchCompleteValue.value = 0;
       for (const dids of batchedDids) {
