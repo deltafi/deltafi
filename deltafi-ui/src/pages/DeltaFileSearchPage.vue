@@ -449,7 +449,6 @@ const fetchDeltaFilesData = _.debounce(async () => {
     totalBytesMin.value,
     totalBytesMax.value
   );
-  console.log(egressed.value)
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;

@@ -43,6 +43,17 @@
       }
     }
   }
+  .p-fileupload-choose:not(.p-disabled):hover {
+    background: rgba(108, 117, 125, 0.04) !important;
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+  }
+
+  .p-fileupload-choose:not(.p-disabled):active {
+    background: transparent !important;
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+  }
   .deltafiles {
     td.did-column {
       width: 16rem;
