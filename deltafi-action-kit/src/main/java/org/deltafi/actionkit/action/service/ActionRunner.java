@@ -17,6 +17,7 @@
  */
 package org.deltafi.actionkit.action.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
@@ -105,7 +106,7 @@ public class ActionRunner {
         }
     }
 
-    private void executeAction(Action<?> action, DeltaFile deltaFile, ActionContext context, Map<String, Object> params) {
+    private void executeAction(Action<?> action, DeltaFile deltaFile, ActionContext context, Map<String, Object> params) throws JsonProcessingException {
         try(MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
             Result result = action.executeAction(deltaFile, context, params);
             if (Objects.isNull(result)) {
@@ -116,6 +117,7 @@ public class ActionRunner {
             postMetrics(result, action.getActionType());
         } catch (Throwable e) {
             ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
+            actionEventQueue.putResult(errorResult.toEvent());
             postMetrics(errorResult, action.getActionType());
         }
     }
