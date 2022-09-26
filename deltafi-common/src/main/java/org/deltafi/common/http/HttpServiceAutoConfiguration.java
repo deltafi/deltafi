@@ -42,11 +42,11 @@ public class HttpServiceAutoConfiguration {
     public HttpClient httpClient(SslProperties sslProperties) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
 
-        if (sslProperties.isEnabled()) {
+        if (isConfigured(sslProperties)) {
             try {
                 httpClientBuilder.sslContext(SslContextFactory.buildSslContext(sslProperties));
             } catch (SslContextFactory.SslException e) {
-                log.warn("Unable to build SSL context. SSL will be disabled.", e);
+                log.error("Unable to build SSL context. SSL will be disabled.", e);
             }
         }
 
@@ -57,5 +57,18 @@ public class HttpServiceAutoConfiguration {
     @ConditionalOnMissingBean
     public HttpService httpService(HttpClient httpClient) {
         return new HttpService(httpClient);
+    }
+
+    private boolean isConfigured(SslProperties sslProperties) {
+        if (null == sslProperties || isPasswordNotSet(sslProperties.getKeyStorePassword())) {
+            log.info("SSL Configuration is not setup, SSL will not be enabled");
+            return false;
+        }
+        log.info("Configuring SSL with keystore {} and truststore {}", sslProperties.getKeyStore(), sslProperties.getTrustStore());
+        return true;
+    }
+
+    private boolean isPasswordNotSet(String password) {
+        return null != password && "not-set".equals(password);
     }
 }

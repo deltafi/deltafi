@@ -21,8 +21,6 @@ import lombok.Data;
 
 @Data
 public class SslProperties {
-    private boolean enabled;
-
     private String protocol;
 
     private String keyStore;

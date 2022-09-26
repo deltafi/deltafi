@@ -33,3 +33,6 @@ dgs:
   graphql:
     graphiql:
       enabled: false
+
+ssl:
+  key-store-password: not-set

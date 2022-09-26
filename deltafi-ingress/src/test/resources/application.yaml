@@ -9,3 +9,6 @@ spring:
 
 redis:
   url: http://localhost
+
+ssl:
+  key-store-password: not-set

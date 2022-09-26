@@ -46,4 +46,6 @@ dependencies {
 
     testImplementation project(':deltafi-common-test')
     testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
+    testImplementation 'org.assertj:assertj-core:3.23.1'
+
 }
