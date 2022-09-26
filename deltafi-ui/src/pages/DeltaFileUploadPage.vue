@@ -55,10 +55,11 @@
             <div class="col-5">
               <InputText v-model="field.value" type="text" placeholder="Value" />
             </div>
-            <div class="col-2 text-right">
+            <div class="col-2">
               <Button icon="pi pi-times" @click="removeMetadataField(field)" />
             </div>
           </div>
+          <ScrollTop target="parent" :threshold="100" icon="pi pi-arrow-up" />
         </Panel>
       </div>
     </div>
@@ -128,6 +129,7 @@ import Message from "primevue/message";
 import OverlayPanel from "primevue/overlaypanel";
 import Panel from "primevue/panel";
 import ProgressBar from "primevue/progressbar";
+import ScrollTop from "primevue/scrolltop";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import MetadataViewer from "@/components/MetadataViewer.vue";
 import PageHeader from "@/components/PageHeader.vue";

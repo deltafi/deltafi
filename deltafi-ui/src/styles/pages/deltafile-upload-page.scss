@@ -24,6 +24,10 @@
     .p-inputtext:disabled {
       background: #eeeeee !important;
     }
+    .p-panel-content {
+      max-height: 45vh;
+      overflow: scroll;
+    }
   }
   .p-fileupload-empty {
     padding: 1.5rem 1rem;
