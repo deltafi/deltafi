@@ -27,7 +27,7 @@
             <Button label="Clear" icon="pi pi-times" :disabled="metadataClearDisabled" class="mr-2" @click="clearMetadata" />
             <div class="float-right btn-group">
               <Button label="Export Metadata" icon="fas fa-download fa-fw" class="p-button-md p-button-secondary p-button-outlined mx-1" :disabled="metadataClearDisabled" @click="onExportMetadata" />
-              <FileUpload ref="metadataFileUploader" auto mode="basic" choose-label="Import Metadata" accept=".json,application/JSON" :file-limit="1" custom-upload class="p-button-md p-button-secondary p-button-outlined mx-1" @uploader="preUploadMetadataValidation" @click="setOverlayPanelPosition" />
+              <FileUpload ref="metadataFileUploader" auto mode="basic" choose-label="Import Metadata" accept=".json,application/json" :file-limit="1" custom-upload class="metadata-upload p-button-secondary p-button-outlined mx-1" @uploader="preUploadMetadataValidation" @click="setOverlayPanelPosition" />
               <OverlayPanel ref="errorOverlayPanel" dismissable show-close-icon @hide="clearMetadataUploadErrors">
                 <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
                   <ul>

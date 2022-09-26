@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.98.3]
+
 ### Changed
 
 - DialogTemplate components now use standard PrimeVue footers (#248)
@@ -383,7 +385,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.2...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.3...main
+[0.98.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.2...0.98.3
 [0.98.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.1...0.98.2
 [0.98.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.0...0.98.1
 [0.98.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.97.0...0.98.0
