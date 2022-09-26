@@ -23,6 +23,7 @@ import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
 import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.ingress.service.DeltaFileService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -42,11 +43,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Map;
 
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
-import static org.deltafi.common.metrics.MetricsUtil.BYTES_IN;
-import static org.deltafi.common.metrics.MetricsUtil.FILES_IN;
+import static org.deltafi.common.metrics.MetricsUtil.*;
 import static org.deltafi.ingress.rest.DeltaFileRest.FLOWFILE_V1_MEDIA_TYPE;
-import static org.deltafi.ingress.util.Metrics.tagsFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 
@@ -124,7 +124,7 @@ class DeltaFileRestTest {
         // TODO: EOF inputStream?
         // assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
-        Map<String, String> tags = tagsFor(FLOW);
+        Map<String, String> tags = tagsFor(ActionType.INGRESS, INGRESS_ACTION, FLOW, null);
         Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
         Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
     }
@@ -144,7 +144,7 @@ class DeltaFileRestTest {
         // TODO: EOF inputStream?
         // assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
-        Map<String, String> tags = tagsFor(FLOW);
+        Map<String, String> tags = tagsFor(ActionType.INGRESS, INGRESS_ACTION, FLOW, null);
         Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
         Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
     }
@@ -177,7 +177,7 @@ class DeltaFileRestTest {
         // TODO: EOF inputStream?
         // assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
-        Map<String, String> tags = tagsFor(FLOW);
+        Map<String, String> tags = tagsFor(ActionType.INGRESS, INGRESS_ACTION, FLOW, null);
         Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
         Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
     }

@@ -18,6 +18,7 @@
 package org.deltafi.core.configuration;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.core.types.ActionSchema;
 import org.deltafi.core.types.TransformActionSchema;
 
@@ -41,4 +42,8 @@ public class TransformActionConfiguration extends org.deltafi.core.generated.typ
         return errors;
     }
 
+    @Override
+    public ActionType getActionType() {
+        return ActionType.TRANSFORM;
+    }
 }

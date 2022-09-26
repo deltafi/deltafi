@@ -18,10 +18,10 @@
 
 package org.deltafi.common.metrics;
 
-import org.deltafi.common.types.Action;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.ActionType;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MetricsUtil {
@@ -40,15 +40,30 @@ public class MetricsUtil {
     static final public String ACTION = "action";
     static final public String SOURCE = "source";
     static final public String INGRESS_FLOW = "ingressFlow";
+    static final public String EGRESS_FLOW = "egressFlow";
 
-    static public Map<String, String> tagsFor(DeltaFile deltafile) {
+    /** Metrics are confusingly named! Assign the correct keys.
+     *
+     * @param actionType lowercased, becomes "action" tagged
+     * @param actionName becomes "source" tagged
+     * @param ingressFlow "ingressFlow" tagged
+     * @param egressFlow "egressFlow" tagged
+     * @return the map
+     */
+    static public Map<String, String> tagsFor(@NotNull ActionType actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
+        Map<String, String> tags = new HashMap<>();
 
-        List<Action> actions = deltafile.getActions();
-        Action action = actions.get(actions.size() - 1);
+        tags.put(ACTION, actionType.name().toLowerCase());
+        tags.put(SOURCE, actionName);
 
-        return Map.of(ACTION, action.getName(),
-                INGRESS_FLOW, deltafile.getSourceInfo().getFlow(),
-                SOURCE, deltafile.getStage().name());
+        if (ingressFlow != null) {
+            tags.put(INGRESS_FLOW, ingressFlow);
+        }
+
+        if (egressFlow != null) {
+            tags.put(EGRESS_FLOW, egressFlow);
+        }
+
+        return tags;
     }
-
 }

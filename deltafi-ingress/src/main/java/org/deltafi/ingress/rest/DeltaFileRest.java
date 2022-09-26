@@ -30,7 +30,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.graphql.dgs.DeltafiGraphQLException;
 import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.ingress.exceptions.DeltafiException;
 import org.deltafi.ingress.exceptions.DeltafiMetadataException;
 import org.deltafi.ingress.service.DeltaFileService;
@@ -45,8 +47,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.metrics.MetricsUtil.*;
-import static org.deltafi.ingress.util.Metrics.tagsFor;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -101,6 +103,10 @@ public class DeltaFileRest {
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             return ResponseEntity.status(500).body(exception.getMessage());
         }
+    }
+
+    private Map<String, String> tagsFor(String ingressFlow) {
+        return MetricsUtil.tagsFor(ActionType.INGRESS, INGRESS_ACTION, ingressFlow, null);
     }
 
     private DeltaFileService.IngressResult ingressBinary(InputStream dataStream, String mediaType, String metadata, String flow, String filename, String username) throws DeltafiMetadataException, DeltafiException, ObjectStorageException {

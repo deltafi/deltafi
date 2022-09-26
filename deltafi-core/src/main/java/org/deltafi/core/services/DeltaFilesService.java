@@ -323,7 +323,15 @@ public class DeltaFilesService {
 
         deltaFile.errorAction(event);
 
-        metricService.increment(FILES_ERRORED, MetricsUtil.tagsFor(deltaFile), 1);
+        ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
+        ActionType actionType = ActionType.UNKNOWN;
+        if (actionConfiguration != null) {
+            actionType = actionConfiguration.getActionType();
+        }
+        String egressFlow = egressFlow(event.getAction(), deltaFile);
+        metricService.increment(FILES_ERRORED,
+                MetricsUtil.tagsFor(actionType, event.getAction(), deltaFile.getSourceInfo().getFlow(), egressFlow),
+                1);
 
         return deltaFile;
     }
@@ -784,17 +792,43 @@ public class DeltaFilesService {
                 .collect(Collectors.toList());
     }
 
-    private ActionInput toActionInput(Action action, DeltaFile deltaFile) {
-        ActionConfiguration actionConfiguration = null;
-        String egressFlow = null;
-        if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
-            actionConfiguration = ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), action.getName());
-        } else if (DeltaFileStage.ENRICH.equals(deltaFile.getStage())) {
-            actionConfiguration = enrichFlowService.findActionConfig(action.getName());
-        } else if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())){
-            actionConfiguration = egressFlowService.findActionConfig(action.getName());
-            egressFlow = egressFlowService.getFlowName(action.getName());
+    private ActionConfiguration actionConfiguration(String actionName, DeltaFile deltaFile) {
+        Optional<Action> action = deltaFile.actionNamed(actionName);
+        return action.map(value -> actionConfiguration(value, deltaFile)).orElse(null);
+    }
+
+    private ActionConfiguration actionConfiguration(Action action, DeltaFile deltaFile) {
+        try {
+            if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
+                return ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), action.getName());
+            } else if (DeltaFileStage.ENRICH.equals(deltaFile.getStage())) {
+                return enrichFlowService.findActionConfig(action.getName());
+            } else if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())) {
+                return egressFlowService.findActionConfig(action.getName());
+            }
+        } catch (IllegalArgumentException ignored) {}
+
+        return null;
+    }
+
+    private String egressFlow(String actionName, DeltaFile deltaFile) {
+        Optional<Action> action = deltaFile.actionNamed(actionName);
+        return action.map(value -> egressFlow(value, deltaFile)).orElse(null);
+    }
+
+    private String egressFlow(Action action, DeltaFile deltaFile) {
+        if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())) {
+            try {
+                return egressFlowService.getFlowName(action.getName());
+            } catch (IllegalArgumentException ignored) {}
         }
+
+        return null;
+    }
+
+    private ActionInput toActionInput(Action action, DeltaFile deltaFile) {
+        ActionConfiguration actionConfiguration = actionConfiguration(action, deltaFile);
+        String egressFlow = egressFlow(action, deltaFile);
 
         if (Objects.isNull(actionConfiguration)) {
             String errorMessage = "Action named " + action.getName() + " is no longer running";

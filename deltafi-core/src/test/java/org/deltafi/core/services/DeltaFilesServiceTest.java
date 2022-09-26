@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -253,7 +252,7 @@ class DeltaFilesServiceTest {
         Action action = maybeAction.get();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
         Assertions.assertThat(action.getErrorCause()).isEqualTo("Action named action is no longer running");
-        Mockito.verify(metricRepository).increment(FILES_ERRORED, MetricsUtil.tagsFor(deltaFile), 1);
+        Mockito.verify(metricRepository).increment(FILES_ERRORED, MetricsUtil.tagsFor(ActionType.UNKNOWN, "action", deltaFile.getSourceInfo().getFlow(), null), 1);
     }
 
     @Test

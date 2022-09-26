@@ -18,6 +18,7 @@
 package org.deltafi.core.configuration;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.core.generated.types.DomainActionSchema;
 import org.deltafi.core.types.ActionSchema;
 
@@ -53,4 +54,8 @@ public class DomainActionConfiguration extends org.deltafi.core.generated.types.
         return errors;
     }
 
+    @Override
+    public ActionType getActionType() {
+        return ActionType.DOMAIN;
+    }
 }

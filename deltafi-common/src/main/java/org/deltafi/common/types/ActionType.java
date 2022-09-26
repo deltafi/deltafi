@@ -29,9 +29,10 @@ public enum ActionType {
     FORMAT("format"),
     VALIDATE("validate"),
     EGRESS("egress"),
-    DELETE("delete");
+    DELETE("delete"),
+    UNKNOWN("unknown");
 
-    String display;
+    final String display;
 
     ActionType(String display) {
         this.display = display;

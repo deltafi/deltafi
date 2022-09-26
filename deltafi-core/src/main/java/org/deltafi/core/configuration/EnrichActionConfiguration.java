@@ -18,6 +18,7 @@
 package org.deltafi.core.configuration;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.core.types.ActionSchema;
 import org.deltafi.core.types.EnrichActionSchema;
 
@@ -54,4 +55,8 @@ public class EnrichActionConfiguration extends org.deltafi.core.generated.types.
         return errors;
     }
 
+    @Override
+    public ActionType getActionType() {
+        return ActionType.ENRICH;
+    }
 }

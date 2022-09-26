@@ -20,6 +20,7 @@ package org.deltafi.core.configuration;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.types.ActionSchema;
 
@@ -45,6 +46,8 @@ public interface ActionConfiguration extends DeltaFiConfiguration {
     }
 
     String getType();
+
+    ActionType getActionType();
 
     Map<String, Object> getParameters();
 
