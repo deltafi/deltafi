@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Fixed bug with batching when resuming < 500 errors (#254)
 - Fixed bug with selecting on By Message error summary (#257)
+- Fixed mocks used in Deltafile Viewer (#258)
 
 ## [0.98.2]
 
