@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed bug with selecting on By Message error summary (#257)
 - Fixed mocks used in Deltafile Viewer (#258)
 - Fixed bug hiding horizontal scrollbar on Metadata viewer (#256)
+- Fixed bug where list/map plugin variable defaults were displayed as strings (#228)
 
 ## [0.98.2]
 

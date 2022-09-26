@@ -35,6 +35,9 @@
               </span>
               <span v-if="data.value == null">
                 <span v-if="data.defaultValue == null"><em>null</em></span>
+                <span v-else-if="['MAP', 'LIST'].includes(data.dataType)">
+                  <div v-for="item in viewList(data.defaultValue)" :key="item" class="list-item">{{ item }}</div>
+                </span>
                 <span v-else>{{ data.defaultValue }}</span>
               </span>
               <span v-else-if="data.value === ''"><em>empty string</em></span>
