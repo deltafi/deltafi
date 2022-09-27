@@ -31,18 +31,16 @@
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" v-tooltip.left="'Keyword Search'" placeholder="Keyword Search" />
+          <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
       </template>
       <DataTable v-model:filters="filters" :value="uiIngressRoutes" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow', 'priority', 'filenameRegex', 'requiredMetadata']">
         <template #empty> No Ingress Routing rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: 'auto' }">
           <template #body="{ data }">
-            <div class="justify-content-start">
-              <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="View Ingress Route Rule" dialog-width="25vw" :row-data-prop="data" view-ingress-route-rule @reload-ingress-routes="fetchIngressRoutes()">
-                <Button :label="data.name" class="p-button-link text-body" />
-              </DialogTemplate>
-            </div>
+            <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="View Ingress Route Rule" dialog-width="25vw" :row-data-prop="data" view-ingress-route-rule @reload-ingress-routes="fetchIngressRoutes()">
+              <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
+            </DialogTemplate>
           </template>
         </Column>
         <Column field="flow" header="Flow" :sortable="true" :style="{ width: 'auto' }"></Column>
@@ -53,7 +51,7 @@
             <div v-for="item in viewList(data.requiredMetadata)" :key="item">{{ item }}</div>
           </template>
         </Column>
-        <Column :style="{ width: '5rem' }">
+        <Column :style="{ width: '5rem' }" :body-style="{ padding: 0 }">
           <template #body="{ data }">
             <div class="d-flex">
               <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="Edit Ingress Route Rule" dialog-width="25vw" :row-data-prop="data" @reload-ingress-routes="fetchIngressRoutes()">
@@ -134,7 +132,7 @@ const exportDeletePolicies = () => {
   let downloadFileName = "ingress_route_export_" + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
   let blob = new Blob([JSON.stringify(formatExportIngressRoutesData(), null, 2)], {
-    type: "application/JSON",
+    type: "application/json",
   });
   link.href = URL.createObjectURL(blob);
   link.click();

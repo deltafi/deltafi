@@ -20,11 +20,11 @@
   <div>
     <PageHeader heading="Delete Policies">
       <div class="d-flex mb-2">
-        <Button label="Export Delete Policies" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies" />
+        <Button label="Export Policies" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies" />
         <DeletePolicyImportFile @reload-delete-policies="fetchDeletePolicies()" />
         <div>
           <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Add New Delete Policy" dialog-width="25vw" @reload-delete-policies="fetchDeletePolicies()">
-            <Button label="Add Delete Policy" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+            <Button label="Add Policy" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
           </DialogTemplate>
         </div>
       </div>
@@ -33,18 +33,16 @@
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" v-tooltip.left="'Keyword Search on Name and Flow'" placeholder="Keyword Search" />
+          <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Flow'" placeholder="Search" />
         </span>
       </template>
       <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow']">
         <template #empty> No delete policies to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
-            <div class="justify-content-start">
-              <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="25vw" :row-data-prop="data" view-delete-policy @reload-delete-policies="fetchDeletePolicies()">
-                <Button :label="data.name" class="p-button-link text-body" />
-              </DialogTemplate>
-            </div>
+            <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="25vw" :row-data-prop="data" view-delete-policy @reload-delete-policies="fetchDeletePolicies()">
+              <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
+            </DialogTemplate>
           </template>
         </Column>
         <Column field="flow" header="Flow" :sortable="true" :style="{ width: '30%' }"></Column>
@@ -58,7 +56,7 @@
             <i v-tooltip.right="deletePolicyLocked.get(data.locked).tooltip" :class="deletePolicyLocked.get(data.locked).class" />
           </template>
         </Column>
-        <Column :style="{ width: '10%' }">
+        <Column :style="{ width: '10%' }" :body-style="{ padding: 0 }">
           <template #body="{ data }">
             <div class="d-flex">
               <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Update Delete Policy" dialog-width="25vw" :row-data-prop="data" edit-delete-policy @reload-delete-policies="fetchDeletePolicies()">
@@ -152,7 +150,7 @@ const exportDeletePolicies = () => {
   let downloadFileName = "delete_policy_export_" + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
   let blob = new Blob([JSON.stringify(formatExportPolicyData(), null, 2)], {
-    type: "application/JSON",
+    type: "application/json",
   });
   link.href = URL.createObjectURL(blob);
   link.click();

@@ -123,6 +123,11 @@ const staticMenuItems = ref([
         icon: "fas fa-route fa-fw",
         path: "/config/ingress-routing",
       },
+      {
+        name: "System Snapshots",
+        icon: "far fa-clock fa-fw",
+        path: "/config/snapshots",
+      },
     ],
   },
   {

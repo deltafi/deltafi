@@ -90,6 +90,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Flows',
     component: () => import('@/pages/FlowPlansPage.vue'),
   },
+    {
+    path: '/config/snapshots',
+    name: 'System Snapshots',
+    component: () => import('@/pages/SystemSnapshotsPage.vue'),
+  },
   {
     path: "/versions",
     name: "Versions",
