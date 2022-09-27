@@ -23,7 +23,6 @@
         <Button label="Create Snapshot" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="onCreateSnapshot()" />
       </div>
     </PageHeader>
-
     <Panel header="Snapshots" class="table-panel system-snapshots-panel">
       <template #icons>
         <span class="p-input-icon-left">
@@ -36,7 +35,7 @@
         <template #loading>Loading. Please wait...</template>
         <Column field="id" header="ID">
           <template #body="data">
-            <a v-tooltip.top="`View Snapshot`" class="cursor-pointer" style="color: black" @click="showSnapshot(data.data)">{{ data.data.id }}</a>
+            <a v-tooltip.top="`View Snapshot`" class="cursor-pointer monospace" style="color: black" @click="showSnapshot(data.data)">{{ data.data.id }}</a>
           </template>
         </Column>
         <Column field="reason" header="Reason" />
