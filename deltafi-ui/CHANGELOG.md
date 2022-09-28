@@ -4,11 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.98.4]
 
 ### Changes
 
 - Added System Snapshots page (#234)
+
+### Fixed
+
+- Fixed bug causing `Filtered` and `Egressed` fields to not persist properly on Search page. (#260)
 
 ## [0.98.3]
 
@@ -389,7 +393,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.3...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.4...main
+[0.98.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.3...0.98.4
 [0.98.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.2...0.98.3
 [0.98.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.1...0.98.2
 [0.98.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.0...0.98.1

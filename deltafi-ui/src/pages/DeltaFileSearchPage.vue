@@ -492,8 +492,8 @@ const getPersistedParams = () => {
   fileNameOptionSelected.value = state.value.fileNameOptionState ? { name: state.value.fileNameOptionState } : null;
   stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
   flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
-  egressedOptionSelected.value = state.value.egressedOptionState ? { name: state.value.egressedOptionState } : null;
-  filteredOptionSelected.value = state.value.filteredOptionState ? { name: state.value.filteredOptionState } : null;
+  egressedOptionSelected.value = state.value.egressedOptionState ? egressedOptions.value.find(i => i.name == state.value.egressedOptionState) : null;
+  filteredOptionSelected.value = state.value.filteredOptionState ? filteredOptions.value.find(i => i.name == state.value.filteredOptionState) : null;
   domainOptionSelected.value = state.value.domainOptionState ? { name: state.value.domainOptionState } : null;
   sizeMin.value = state.value.sizeMinState;
   sizeMax.value = state.value.sizeMaxState;
