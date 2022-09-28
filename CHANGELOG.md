@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - Enable SSL if the keystore password is set, remove the `ssl.enabled` property  
-
+- Handle `application/flowfile-v1` contentType in ingress
 ### Deprecated
 
 ### Removed

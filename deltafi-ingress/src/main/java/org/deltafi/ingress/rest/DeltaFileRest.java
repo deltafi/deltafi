@@ -61,7 +61,8 @@ public class DeltaFileRest {
 
     public static final String FILENAME_ATTRIBUTES = "flowfile.attributes";
     public static final String FILENAME_CONTENT = "flowfile.content";
-    public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile";
+    public static final String FLOWFILE_MEDIA_TYPE = "application/flowfile";
+    public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile-v1";
 
     @PostMapping(value = "deltafile/ingress", consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
     public ResponseEntity<String> ingressData(InputStream dataStream,
@@ -79,7 +80,7 @@ public class DeltaFileRest {
 
         try {
             DeltaFileService.IngressResult ingressResult;
-            if (contentType.equals(FLOWFILE_V1_MEDIA_TYPE)) {
+            if (contentType.equals(FLOWFILE_MEDIA_TYPE) || contentType.equals(FLOWFILE_V1_MEDIA_TYPE)) {
                 ingressResult = ingressFlowfileV1(dataStream, metadata, flow, filename, username);
             } else {
                 ingressResult = ingressBinary(dataStream, contentType, metadata, flow, filename, username);
