@@ -3,19 +3,39 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.98.3
+## [Unreleased] - Next release 0.98.4
+
+### Added
+- Support `application/flowfile-v1` contentType in ingress
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.98.3] - 2022-09-26
 
 ### Added
 
 ### Changed
 - Enable SSL if the keystore password is set, remove the `ssl.enabled` property  
-- Handle `application/flowfile-v1` contentType in ingress
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 - Return ErrorResult from uncaught Action exceptions
+- Standardized Metrics tagging
 
 ### Tech-Debt/Refactor
 - Redis connection pool scales to action count, and no longer used by ingress
