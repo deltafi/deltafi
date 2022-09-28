@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
+import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.metrics.MetricRepository;
@@ -28,10 +29,12 @@ import org.deltafi.core.Util;
 import org.deltafi.core.configuration.ActionConfiguration;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.FormatActionConfiguration;
+import org.deltafi.core.configuration.LoadActionConfiguration;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.UniqueKeyValues;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -73,6 +76,9 @@ class DeltaFilesServiceTest {
 
     @Mock
     EgressFlowService egressFlowService;
+
+    @Mock
+    ActionEventQueue actionEventQueue;
 
     @InjectMocks
     DeltaFilesService deltaFilesService;
@@ -280,5 +286,88 @@ class DeltaFilesServiceTest {
 
         DeltaFilesService.calculateTotalBytes(deltaFile);
         assertEquals(800, deltaFile.getTotalBytes());
+    }
+
+    @Test
+    void testSplitNoChildFlow() {
+        IngressFlow flow = new IngressFlow();
+        LoadActionConfiguration actionConfig = new LoadActionConfiguration();
+        actionConfig.setName("loadAction");
+        flow.setName("loadAction");
+        flow.setLoadAction(actionConfig);
+
+        // "good" flow is available
+        when(flowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
+        // "bad" flow is not available
+        when(flowService.getRunningFlowByName(eq("bad"))).thenThrow(new DgsEntityNotFoundException());
+
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .sourceInfo(SourceInfo.builder().flow("good").build())
+                .actions(new ArrayList<>(List.of(Action.newBuilder()
+                        .name("loadAction").state(ActionState.QUEUED).build())))
+                .build();
+
+        deltaFilesService.split(deltaFile, ActionEventInput.newBuilder()
+                .action("loadAction")
+                .split(List.of(
+                        SplitInput.newBuilder().sourceInfo(
+                                SourceInfo.builder().flow("bad").build()).build(),
+                        SplitInput.newBuilder().sourceInfo(
+                                SourceInfo.builder().flow("bad").build()).build()))
+                .build());
+
+        assertTrue(deltaFile.hasErroredAction());
+        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState()==ActionState.ERROR).map(Action::getErrorCause)
+                .allMatch(DeltaFilesService.NO_CHILD_INGRESS_CONFIGURED_CAUSE::equals));
+        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState()==ActionState.ERROR).map(Action::getErrorContext)
+                .allMatch(ec -> ec.startsWith(DeltaFilesService.NO_CHILD_INGRESS_CONFIGURED_CONTEXT)));
+    }
+
+    @Test
+    void testSplitCorrectChildFlow() {
+        IngressFlow flow = new IngressFlow();
+        LoadActionConfiguration actionConfig = new LoadActionConfiguration();
+        actionConfig.setName("loadAction");
+        flow.setName("loadAction");
+        flow.setLoadAction(actionConfig);
+
+        // "good" flow is available
+        when(flowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
+        // "bad" flow is not available
+
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .sourceInfo(SourceInfo.builder().flow("good").build())
+                .actions(new ArrayList<>(List.of(Action.newBuilder()
+                        .name("reinject").state(ActionState.COMPLETE).build())))
+                .did("00000000-0000-0000-00000-000000000000")
+                .build();
+
+        deltaFilesService.split(deltaFile, ActionEventInput.newBuilder()
+                .action("loadAction")
+                .split(List.of(
+                        SplitInput.newBuilder().sourceInfo(
+                                        SourceInfo.builder().flow("good").build())
+                                .content(List.of(Content.newBuilder().contentReference(createContentReference(32L, "first", null, 0L, null))
+                                        .build())).build(),
+                        SplitInput.newBuilder().sourceInfo(
+                                        SourceInfo.builder().flow("good").build())
+                                .content(List.of(Content.newBuilder().contentReference(createContentReference(32L, "second", null, 0L, null))
+                                        .build())).build()))
+                .build());
+
+        assertFalse(deltaFile.hasErroredAction());
+        assertTrue(deltaFile.getActions().stream().noneMatch(a -> a.getState()==ActionState.ERROR));
+    }
+
+    private ContentReference createContentReference(long size, String did, String uuid, long offset, String mediaType) {
+        ContentReference contentReference = new ContentReference();
+
+        contentReference.setSize(size);
+        contentReference.setDid(did);
+        contentReference.setUuid(uuid);
+        contentReference.setOffset(offset);
+        contentReference.setMediaType(mediaType);
+
+        return contentReference;
     }
 }

@@ -68,6 +68,8 @@ public class DeltaFilesService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
+    public static final String NO_CHILD_INGRESS_CONFIGURED_CAUSE = "No child ingress flow configured";
+    public static final String NO_CHILD_INGRESS_CONFIGURED_CONTEXT = "This DeltaFile split does not match any known ingress flows: ";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
@@ -350,6 +352,20 @@ public class DeltaFilesService {
                 .build();
     }
 
+    public static ActionEventInput buildNoChildFlowErrorEvent(DeltaFile deltaFile, String action, String flow) {
+        final OffsetDateTime now = OffsetDateTime.now();
+        return ActionEventInput.newBuilder()
+                .did(deltaFile.getDid())
+                .action(action)
+                .start(now)
+                .stop(now)
+                .error(ErrorInput.newBuilder()
+                        .cause(NO_CHILD_INGRESS_CONFIGURED_CAUSE)
+                        .context(NO_CHILD_INGRESS_CONFIGURED_CONTEXT + flow)
+                        .build())
+                .build();
+    }
+
     @MongoRetryable
     public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
         List<SplitInput> splits = event.getSplit();
@@ -376,6 +392,16 @@ public class DeltaFilesService {
                     .build();
 
             childDeltaFiles = splits.stream().map(split -> {
+                // Before we build a DeltaFile, make sure the split makes sense to do--i.e. the flow is
+                // enabled and valid
+                try {
+                    ingressFlowService.getRunningFlowByName(split.getSourceInfo().getFlow());
+                }
+                catch(DgsEntityNotFoundException notFound) {
+                    deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getAction(), split.getSourceInfo().getFlow()));
+                    return null;
+                }
+
                 DeltaFile child = DeltaFile.newBuilder()
                         .did(UUID.randomUUID().toString())
                         .parentDids(List.of(deltaFile.getDid()))
@@ -401,7 +427,9 @@ public class DeltaFilesService {
                 return child;
             }).collect(Collectors.toList());
 
-            deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+            if(!childDeltaFiles.contains(null)) {
+                deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+            }
 
             deltaFile.splitAction(event);
         }
@@ -410,9 +438,11 @@ public class DeltaFilesService {
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileRepo.save(deltaFile);
-        deltaFileRepo.saveAll(childDeltaFiles);
+        if(!childDeltaFiles.contains(null)) {
+            deltaFileRepo.saveAll(childDeltaFiles);
 
-        enqueueActions(enqueueActions);
+            enqueueActions(enqueueActions);
+        }
 
         return deltaFile;
     }
