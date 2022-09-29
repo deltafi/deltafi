@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.98.4
+## [Unreleased] - Next release 0.98.5
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.98.4] - 2022-09-28
 
 ### Added
 - Support `application/flowfile-v1` contentType in ingress
@@ -647,7 +665,9 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.2...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.4...main
+[0.98.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.3...0.98.4
+[0.98.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.2...0.98.3
 [0.98.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.1...0.98.2
 [0.98.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.0...0.98.1
 [0.98.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.97.0...0.98.0
