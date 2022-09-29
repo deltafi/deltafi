@@ -181,15 +181,45 @@ const contentDeleted = computed(() => {
   return loaded.value && deltaFile.contentDeleted !== null;
 });
 
+const deltaFileLinks = computed(() => {
+  if (Object.keys(deltaFile).length == 0) return [];
+
+  return uiConfig.deltaFileLinks.map((link) => {
+    const output = { ...link };
+    const variables = output.url.match(/\$\{[a-zA-Z0-9._-]+\}/g);
+    const undefinedFields = [];
+
+    for (const v of variables) {
+      const deltaFilePath = v.match(/\$\{(.*)\}/)[1];
+      let value;
+      try {
+        value = deltaFilePath.split('.').reduce((o,i) => o[i], deltaFile);
+      } catch {
+        value = undefined
+      }
+      if (value === undefined) undefinedFields.push(deltaFilePath)
+      output.url = output.url.replace(v, value);
+    }
+
+    if (undefinedFields.length > 0) {
+      output.issue = `The following required fields are undefined on this DeltaFile: ${undefinedFields.join(', ')}`;
+    }
+    return output;
+  });
+})
+
 const menuItems = computed(() => {
   let items = staticMenuItems;
-  const customLinks = uiConfig.deltaFileLinks.map((link) => {
+  const customLinks = deltaFileLinks.value.map((link) => {
     return {
       label: link.name,
       icon: "fas fa-external-link-alt fa-fw",
       command: () => {
-        const url = link.url.replace("${DID}", did.value);
-        window.open(url, "_blank");
+        if (link.issue) {
+          notify.error("Unable To Resolve Link", link.issue)
+        } else {
+          window.open(link.url, "_blank");
+        }
       },
     };
   });

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Added support for using DeltaFile fields in deltaFileLinks URL templates (#229)
+
 ## [0.98.4]
 
 ### Changes
