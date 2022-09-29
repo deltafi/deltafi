@@ -43,6 +43,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
@@ -124,10 +125,14 @@ class DeltaFilesServiceTest {
 
     @Test
     void getRawDeltaFile() throws JsonProcessingException {
-        DeltaFile deltaFile = DeltaFile.newBuilder().did("hi").build();
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .did("hi")
+                .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+                .build();
         when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile("hi", false);
         assertTrue(json.contains("\"did\":\"hi\""));
+        assertTrue(json.contains("\"created\":\"2022-09-29T11:30:00.000Z\""));
         assertEquals(1, json.split("\n").length);
     }
 

@@ -17,9 +17,10 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -50,9 +51,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -66,8 +70,22 @@ import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFilesService {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    static {
+        SimpleModule simpleModule = new SimpleModule().addSerializer(OffsetDateTime.class, new JsonSerializer<>() {
+            @Override
+            public void serialize(OffsetDateTime offsetDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+                jsonGenerator.writeString(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneOffset.UTC).format(offsetDateTime));
+            }
+        });
+        OBJECT_MAPPER.registerModule(simpleModule);
+    }
+
     private static final ObjectWriter PRETTY_OBJECT_WRITER = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
+
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
     public static final String NO_CHILD_INGRESS_CONFIGURED_CAUSE = "No child ingress flow configured";
@@ -740,7 +758,6 @@ public class DeltaFilesService {
     }
 
     public List<CancelResult> cancel(List<String> dids) {
-        OffsetDateTime now = OffsetDateTime.now();
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
 
         List<CancelResult> results = dids.stream()
