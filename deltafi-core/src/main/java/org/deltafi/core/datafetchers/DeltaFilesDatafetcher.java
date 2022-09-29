@@ -68,6 +68,18 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @SuppressWarnings("unused")
+  public String rawDeltaFile(@InputArgument String did, @InputArgument Boolean pretty) throws JsonProcessingException {
+    String deltaFileJson = deltaFilesService.getRawDeltaFile(did, pretty == null || pretty);
+
+    if (deltaFileJson == null) {
+      throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
+    }
+
+    return deltaFileJson;
+  }
+
+  @DgsQuery
+  @SuppressWarnings("unused")
   public DeltaFiles deltaFiles(DataFetchingEnvironment dfe) {
     Integer offset = dfe.getArgument("offset");
     Integer limit = dfe.getArgument("limit");

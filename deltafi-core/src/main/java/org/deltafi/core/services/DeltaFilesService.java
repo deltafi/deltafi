@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +67,7 @@ import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 @Slf4j
 public class DeltaFilesService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectWriter PRETTY_OBJECT_WRITER = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
     public static final String NO_CHILD_INGRESS_CONFIGURED_CAUSE = "No child ingress flow configured";
@@ -90,6 +92,20 @@ public class DeltaFilesService {
 
     public DeltaFile getDeltaFile(String did) {
         return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
+    }
+
+    public String getRawDeltaFile(String did, boolean pretty) throws JsonProcessingException {
+        DeltaFile deltaFile = getDeltaFile(did);
+
+        if (deltaFile == null) {
+            return null;
+        }
+
+        if (pretty) {
+            return PRETTY_OBJECT_WRITER.writeValueAsString(deltaFile);
+        }
+
+        return OBJECT_MAPPER.writeValueAsString(deltaFile);
     }
 
     public DeltaFiles getDeltaFiles(Integer offset, Integer limit, DeltaFilesFilter filter, DeltaFileOrder orderBy) {

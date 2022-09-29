@@ -423,6 +423,7 @@ type Query {
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile
+  rawDeltaFile(did: String!, pretty: Boolean): String
   lastCreated(last: Int) : [DeltaFile]!
   lastModified(last: Int) : [DeltaFile]!
   lastErrored(last: Int) : [DeltaFile]!

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.action.ActionEventQueue;
@@ -44,6 +45,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static org.deltafi.common.metrics.MetricsUtil.FILES_ERRORED;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,6 +79,7 @@ class DeltaFilesServiceTest {
     @Mock
     EgressFlowService egressFlowService;
 
+    @SuppressWarnings("unused")
     @Mock
     ActionEventQueue actionEventQueue;
 
@@ -120,6 +123,30 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void getRawDeltaFile() throws JsonProcessingException {
+        DeltaFile deltaFile = DeltaFile.newBuilder().did("hi").build();
+        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
+        String json = deltaFilesService.getRawDeltaFile("hi", false);
+        assertTrue(json.contains("\"did\":\"hi\""));
+        assertEquals(1, json.split("\n").length);
+    }
+
+    @Test
+    void getRawDeltaFilePretty() throws JsonProcessingException {
+        DeltaFile deltaFile = DeltaFile.newBuilder().did("hi").build();
+        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
+        String json = deltaFilesService.getRawDeltaFile("hi", true);
+        assertTrue(json.contains("  \"did\" : \"hi\",\n"));
+        assertNotEquals(1, json.split("\n").length);
+    }
+
+    @Test
+    void getRawReturnsNullOnMissingDid() throws JsonProcessingException {
+        assertNull(deltaFilesService.getRawDeltaFile("nonsense", true));
+        assertNull(deltaFilesService.getRawDeltaFile("nonsense", false));
+    }
+
+    @Test
     void testSourceMetadataUnion() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(
                 new KeyValue("k1", "1a"),
@@ -135,7 +162,6 @@ class DeltaFilesServiceTest {
         List<String> dids = List.of("1", "2", "3", "4");
         DeltaFilesFilter filter = new DeltaFilesFilter();
         filter.setDids(dids);
-
 
         DeltaFiles deltaFiles = new DeltaFiles(0, 3, 3, List.of(deltaFile1, deltaFile2, deltaFile3));
         when(deltaFileRepo.deltaFiles(0, dids.size(), filter, null,
@@ -347,11 +373,11 @@ class DeltaFilesServiceTest {
                 .split(List.of(
                         SplitInput.newBuilder().sourceInfo(
                                         SourceInfo.builder().flow("good").build())
-                                .content(List.of(Content.newBuilder().contentReference(createContentReference(32L, "first", null, 0L, null))
+                                .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
                                         .build())).build(),
                         SplitInput.newBuilder().sourceInfo(
                                         SourceInfo.builder().flow("good").build())
-                                .content(List.of(Content.newBuilder().contentReference(createContentReference(32L, "second", null, 0L, null))
+                                .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
                                         .build())).build()))
                 .build());
 
@@ -359,14 +385,14 @@ class DeltaFilesServiceTest {
         assertTrue(deltaFile.getActions().stream().noneMatch(a -> a.getState()==ActionState.ERROR));
     }
 
-    private ContentReference createContentReference(long size, String did, String uuid, long offset, String mediaType) {
+    private ContentReference createContentReference(String did) {
         ContentReference contentReference = new ContentReference();
 
-        contentReference.setSize(size);
+        contentReference.setSize(32L);
         contentReference.setDid(did);
-        contentReference.setUuid(uuid);
-        contentReference.setOffset(offset);
-        contentReference.setMediaType(mediaType);
+        contentReference.setUuid(UUID.randomUUID().toString());
+        contentReference.setOffset(0L);
+        contentReference.setMediaType(APPLICATION_XML);
 
         return contentReference;
     }
