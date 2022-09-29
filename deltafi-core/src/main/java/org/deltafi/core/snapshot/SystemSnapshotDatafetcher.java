@@ -53,7 +53,7 @@ public class SystemSnapshotDatafetcher {
     }
 
     @DgsMutation
-    public Result resetFromSnapshot(SystemSnapshot snapshot, Boolean hardReset) {
-        return systemSnapshotService.importAndResetFromSnapshot(snapshot, Boolean.TRUE.equals(hardReset));
+    public SystemSnapshot importSnapshot(SystemSnapshot snapshot) {
+        return systemSnapshotService.saveSnapshot(snapshot);
     }
 }

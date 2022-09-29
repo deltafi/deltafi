@@ -164,13 +164,13 @@ case "$SUBCOMMAND" in
     fi
 
     JSON=$(cat "$ID_OR_FILE")
-    VARIABLES="{\"snapshotData\": $JSON, \"hardReset\": $HARD_RESET}"
-    EXTRACT_PATH=".data.resetFromSnapshot"
-    QUERY="mutation(\$snapshotData: SystemSnapshotInput!, \$hardReset: Boolean) { resetFromSnapshot(snapshot: \$snapshotData, hardReset: \$hardReset) { $ALL_RESULT_FIELDS } }"
+    VARIABLES="{\"snapshotData\": $JSON}"
+    EXTRACT_PATH=".data.importSnapshot"
+    QUERY="mutation(\$snapshotData: SystemSnapshotInput!) { importSnapshot(snapshot: \$snapshotData) { $ALL_SNAPSHOT_FIELDS } }"
     ;;
   list)
     EXTRACT_PATH=".data.getSystemSnapshots"
-    QUERY="query { getSystemSnapshots { id created } } "
+    QUERY="query { getSystemSnapshots { id created reason } } "
     ;;
   show)
     VARIABLES="{\"snapshotId\": \"$ID_OR_FILE\"}"

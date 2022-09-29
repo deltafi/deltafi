@@ -45,19 +45,18 @@ public class SystemSnapshotService {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setReason(reason);
         snapshotters.forEach(snapshotter -> snapshotter.updateSnapshot(systemSnapshot));
-        return systemSnapshotRepo.save(systemSnapshot);
+        return saveSnapshot(systemSnapshot);
     }
 
     public Result resetFromSnapshot(String snapshotId, boolean hardReset) {
         return resetFromSnapshot(get(snapshotId), hardReset);
     }
 
-    public Result importAndResetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
-        SystemSnapshot saved = systemSnapshotRepo.save(systemSnapshot);
-        return resetFromSnapshot(saved, hardReset);
+    public SystemSnapshot saveSnapshot(SystemSnapshot systemSnapshot) {
+        return systemSnapshotRepo.save(systemSnapshot);
     }
 
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    private Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         Result baseResult = new Result();
         return snapshotters.stream()
                 .map(snapshotter -> snapshotter.resetFromSnapshot(systemSnapshot, hardReset))

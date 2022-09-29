@@ -56,6 +56,6 @@ extend type Mutation {
     # apply the snapshot with the given SnapshotId, hardReset (default=false) indicates all custom config should be reset before applying the snapshot
     resetFromSnapshotWithId(snapshotId: String!, hardReset: Boolean) : Result!
 
-    # apply the given SystemSnapshot, hardReset (default=false) indicates all existing config should be removed before applying the snapshot
-    resetFromSnapshot(snapshot: SystemSnapshotInput!, hardReset: Boolean) : Result!
+    # import the given SystemSnapshot
+    importSnapshot(snapshot: SystemSnapshotInput!) : SystemSnapshot!
 }
