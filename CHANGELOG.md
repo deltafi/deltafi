@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.98.5
 
 ### Added
+- New `cancel` mutation for DeltaFiles, and added `requeueCount`
 
 ### Changed
 

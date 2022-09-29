@@ -168,6 +168,7 @@ enum DeltaFileStage {
   EGRESS
   COMPLETE
   ERROR
+  CANCELLED
 }
 
 enum ActionState {
@@ -177,6 +178,7 @@ enum ActionState {
   RETRIED
   FILTERED
   SPLIT
+  CANCELLED
 }
 
 type Action {
@@ -226,6 +228,7 @@ type DeltaFile {
   did: String!
   parentDids: [String!]!
   childDids: [String!]!
+  requeueCount: Int!
   ingressBytes: Long!
   totalBytes: Long!
   stage: DeltaFileStage!
@@ -349,6 +352,7 @@ type ErrorsByMessage {
 input DeltaFilesFilter {
   dids: [String!]
   parentDid: String
+  requeueCountMin: Int
   ingressBytesMin: Long
   ingressBytesMax: Long
   totalBytesMin: Long
@@ -378,6 +382,12 @@ type RetryResult {
 }
 
 type AcknowledgeResult {
+  did: String!
+  success: Boolean!
+  error: String
+}
+
+type CancelResult {
   did: String!
   success: Boolean!
   error: String
@@ -462,6 +472,7 @@ type Mutation {
   resume(dids: [String!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
+  cancel(dids: [String!]!) : [CancelResult!]!
 
   registerActions(actionRegistration: ActionRegistrationInput!): Int!
 

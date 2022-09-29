@@ -72,6 +72,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String FILTERED = "filtered";
     public static final String TOTAL_BYTES = "totalBytes";
     public static final String INGRESS_BYTES = "ingressBytes";
+    public static final String REQUEUE_COUNT = "requeueCount";
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
@@ -134,11 +135,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private static final Map<String, Index> INDICES = Map.of(
             "action_search", new Index().named("action_search").on(ACTIONS_NAME, Sort.Direction.ASC),
+            "queued_loop", new Index().named("queued_loop").on(REQUEUE_COUNT, Sort.Direction.DESC).on(STAGE, Sort.Direction.ASC),
             "completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC),
-            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA +".$**", Sort.Direction.ASC));
+            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC));
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
@@ -213,6 +215,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                         a.setQueued(requeueTime);
                     });
             deltaFile.setModified(requeueTime);
+            deltaFile.incrementRequeueCount();
         }
 
         return filesToRequeue;
@@ -342,6 +345,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     Update buildRequeueUpdate(OffsetDateTime modified, int requeueSeconds) {
         Update update = new Update();
+        update.inc(REQUEUE_COUNT, 1);
 
         // clear out any old error messages
         update.set(ACTIONS_UPDATE_ERROR, null);
@@ -501,6 +505,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             if (nonNull(filter.getFormattedData().getEgressActions()) && !filter.getFormattedData().getEgressActions().isEmpty()) {
                 andCriteria.add(Criteria.where(FORMATTED_DATA_EGRESS_ACTIONS).all(filter.getFormattedData().getEgressActions()));
             }
+        }
+
+        if (nonNull(filter.getRequeueCountMin())) {
+            andCriteria.add(Criteria.where(REQUEUE_COUNT).gte(filter.getRequeueCountMin()));
         }
 
         if (nonNull(filter.getIngressBytesMin())) {

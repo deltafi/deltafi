@@ -32,10 +32,10 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
-import org.deltafi.core.types.DeltaFiles;
-import org.deltafi.core.types.UniqueKeyValues;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.UniqueKeyValues;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -157,6 +157,12 @@ public class DeltaFilesDatafetcher {
   @SuppressWarnings("unused")
   public List<AcknowledgeResult> acknowledge(@InputArgument List<String> dids, @InputArgument String reason) {
     return deltaFilesService.acknowledge(dids, reason);
+  }
+
+  @DgsMutation
+  @SuppressWarnings("unused")
+  public List<CancelResult> cancel(@InputArgument List<String> dids) {
+    return deltaFilesService.cancel(dids);
   }
 
   @DgsQuery

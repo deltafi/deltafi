@@ -23,5 +23,6 @@ public enum ActionState {
   ERROR,
   RETRIED,
   FILTERED,
-  SPLIT
+  SPLIT,
+  CANCELLED
 }

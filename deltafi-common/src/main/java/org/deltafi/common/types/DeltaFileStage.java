@@ -22,5 +22,6 @@ public enum DeltaFileStage {
   ENRICH,
   EGRESS,
   COMPLETE,
-  ERROR
+  ERROR,
+  CANCELLED
 }

@@ -43,6 +43,7 @@ public class DeltaFile {
   private String did;
   private List<String> parentDids;
   private List<String> childDids;
+  private int requeueCount;
   private Long ingressBytes;
   private Long totalBytes;
   private DeltaFileStage stage;
@@ -350,5 +351,24 @@ public class DeltaFile {
             .filter(c -> c.getDid().equals(getDid()))
             .collect(Collectors.toList()));
     return contentReferences;
+  }
+
+  public void cancelQueuedActions() {
+    OffsetDateTime now = OffsetDateTime.now();
+    getActions().stream()
+            .filter(a -> a.getState().equals(ActionState.QUEUED))
+            .forEach(a -> {
+              a.setState(ActionState.CANCELLED);
+              a.setModified(now);
+            });
+    setModified(now);
+  }
+
+  public void incrementRequeueCount() {
+    ++requeueCount;
+  }
+
+  public boolean inactiveStage() {
+    return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
   }
 }

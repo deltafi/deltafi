@@ -153,6 +153,7 @@ public class DeltaFilesService {
                 .did(input.getDid())
                 .parentDids(parentDids)
                 .childDids(Collections.emptyList())
+                .requeueCount(0)
                 .ingressBytes(computeContentSize(input.getContent()))
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
@@ -185,6 +186,11 @@ public class DeltaFilesService {
 
         if (deltaFile == null) {
             throw new DgsEntityNotFoundException("Received event for unknown did: " + event);
+        }
+
+        if (deltaFile.getStage() == DeltaFileStage.CANCELLED) {
+            log.warn("Received event for cancelled did " + deltaFile.getDid());
+            return deltaFile;
         }
 
         if (deltaFile.noPendingAction(event.getAction())) {
@@ -406,6 +412,7 @@ public class DeltaFilesService {
                         .did(UUID.randomUUID().toString())
                         .parentDids(List.of(deltaFile.getDid()))
                         .childDids(Collections.emptyList())
+                        .requeueCount(0)
                         .ingressBytes(computeContentSize(split.getContent()))
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
@@ -633,6 +640,7 @@ public class DeltaFilesService {
                                     .did(UUID.randomUUID().toString())
                                     .parentDids(List.of(deltaFile.getDid()))
                                     .childDids(Collections.emptyList())
+                                    .requeueCount(0)
                                     .ingressBytes(deltaFile.getIngressBytes())
                                     .stage(DeltaFileStage.INGRESS)
                                     .actions(new ArrayList<>(List.of(action)))
@@ -701,6 +709,43 @@ public class DeltaFilesService {
                         } else {
                             deltaFile.setErrorAcknowledged(now);
                             deltaFile.setErrorAcknowledgedReason(reason);
+                            changedDeltaFiles.add(deltaFile);
+                        }
+                    } catch (Exception e) {
+                        result.setSuccess(false);
+                        result.setError(e.getMessage());
+                    }
+                    return result;
+                })
+                .collect(Collectors.toList());
+
+        deltaFileRepo.saveAll(changedDeltaFiles);
+        return results;
+    }
+
+    public List<CancelResult> cancel(List<String> dids) {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<DeltaFile> changedDeltaFiles = new ArrayList<>();
+
+        List<CancelResult> results = dids.stream()
+                .map(did -> {
+                    CancelResult result = CancelResult.newBuilder()
+                            .did(did)
+                            .success(true)
+                            .build();
+
+                    try {
+                        DeltaFile deltaFile = getDeltaFile(did);
+
+                        if (Objects.isNull(deltaFile)) {
+                            result.setSuccess(false);
+                            result.setError("DeltaFile with did " + did + " not found");
+                        } else if (deltaFile.inactiveStage()) {
+                            result.setSuccess(false);
+                            result.setError("DeltaFile with did " + did + " is no longer active");
+                        } else {
+                            deltaFile.cancelQueuedActions();
+                            deltaFile.setStage(DeltaFileStage.CANCELLED);
                             changedDeltaFiles.add(deltaFile);
                         }
                     } catch (Exception e) {

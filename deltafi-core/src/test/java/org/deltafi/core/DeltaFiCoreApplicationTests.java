@@ -29,11 +29,11 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
-import org.deltafi.core.configuration.*;
 import org.deltafi.core.configuration.EgressActionConfiguration;
 import org.deltafi.core.configuration.FormatActionConfiguration;
 import org.deltafi.core.configuration.LoadActionConfiguration;
 import org.deltafi.core.configuration.TransformActionConfiguration;
+import org.deltafi.core.configuration.*;
 import org.deltafi.core.configuration.server.constants.PropertyConstants;
 import org.deltafi.core.configuration.server.environment.DeltaFiCompositeEnvironmentRepository;
 import org.deltafi.core.configuration.server.environment.MongoEnvironmentRepository;
@@ -56,7 +56,6 @@ import org.deltafi.core.plugin.Plugin;
 import org.deltafi.core.plugin.PluginRepository;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.*;
-import org.deltafi.core.types.*;
 import org.deltafi.core.types.DomainActionSchema;
 import org.deltafi.core.types.EgressActionSchema;
 import org.deltafi.core.types.EgressFlowPlanInput;
@@ -67,6 +66,7 @@ import org.deltafi.core.types.LoadActionSchema;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.TransformActionSchema;
 import org.deltafi.core.types.ValidateActionSchema;
+import org.deltafi.core.types.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,9 +103,9 @@ import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
-import static org.deltafi.core.configuration.server.constants.PropertyConstants.DELTAFI_PROPERTY_SET;
 import static org.deltafi.core.Util.assertEqualsIgnoringDates;
 import static org.deltafi.core.Util.buildDeltaFile;
+import static org.deltafi.core.configuration.server.constants.PropertyConstants.DELTAFI_PROPERTY_SET;
 import static org.deltafi.core.datafetchers.ActionSchemaDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
@@ -1026,6 +1026,48 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertNotNull(deltaFile.getErrorAcknowledged());
 		assertEquals("apathy", deltaFile.getErrorAcknowledgedReason());
+	}
+
+	@Test
+	void test25Cancel() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
+		deltaFileRepo.save(deltaFile);
+
+		List<CancelResult> cancelResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("25.cancel"), did),
+				"data." + DgsConstants.MUTATION.Cancel,
+				new TypeRef<>() {
+				});
+
+		assertEquals(2, cancelResults.size());
+		assertEquals(did, cancelResults.get(0).getDid());
+		assertTrue(cancelResults.get(0).getSuccess());
+		assertFalse(cancelResults.get(1).getSuccess());
+		assertTrue(cancelResults.get(1).getError().contains("not found"));
+
+		DeltaFile afterMutation = deltaFilesService.getDeltaFile(did);
+		assertEqualsIgnoringDates(postCancelDeltaFile(did), afterMutation);
+
+		List<CancelResult> alreadyCancelledResult = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("25.cancel"), did),
+				"data." + DgsConstants.MUTATION.Cancel,
+				new TypeRef<>() {
+				});
+
+		assertEquals(2, alreadyCancelledResult.size());
+		assertEquals(did, alreadyCancelledResult.get(0).getDid());
+		assertFalse(alreadyCancelledResult.get(0).getSuccess());
+		assertTrue(alreadyCancelledResult.get(0).getError().contains("no longer active"));
+		assertFalse(alreadyCancelledResult.get(1).getSuccess());
+		assertTrue(alreadyCancelledResult.get(1).getError().contains("not found"));
+	}
+
+	DeltaFile postCancelDeltaFile(String did) {
+		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
+		deltaFile.setStage(DeltaFileStage.CANCELLED);
+		deltaFile.cancelQueuedActions();
+		return deltaFile;
 	}
 
 	DeltaFile postValidateAuthorityDeltaFile(String did) {
@@ -2179,6 +2221,10 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, hits.size());
 		assertEquals(hit.getDid(), hits.get(0).getDid());
+		assertEquals(1, hits.get(0).getRequeueCount());
+
+		DeltaFile fromDatabase = deltaFilesService.getDeltaFile(hits.get(0).getDid());
+		assertEquals(1, fromDatabase.getRequeueCount());
 
 		DeltaFile hitAfter = loadDeltaFile("did");
 		DeltaFile missAfter = loadDeltaFile("did2");
@@ -2445,6 +2491,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
 		deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename1").formatAction("formatAction1").metadata(List.of(new KeyValue("formattedKey1", "formattedValue1"), new KeyValue("formattedKey2", "formattedValue2"))).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
+		deltaFile1.incrementRequeueCount();
 		deltaFileRepo.save(deltaFile1);
 
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
@@ -2472,6 +2519,8 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().contentDeleted(false).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().modifiedAfter(MONGO_NOW).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().modifiedBefore(MONGO_NOW).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().requeueCountMin(1).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().requeueCountMin(0).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMin(50L).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMin(150L).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(250L).build(), deltaFile2, deltaFile1);
