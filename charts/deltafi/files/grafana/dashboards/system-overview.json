@@ -214,7 +214,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByMaxima(aliasByTags(groupByTags(transformNull(scale(scaleToSeconds(seriesByTag('name=stats_counts.bytes_in', 'ingressFlow=~${flow:regex}', 'action=IngressAction'), 1), 8), 0), 'sum', 'ingressFlow'), 'ingressFlow'))",
+          "target": "sortByMaxima(aliasByTags(groupByTags(transformNull(scale(scaleToSeconds(seriesByTag('name=stats_counts.bytes_in', 'ingressFlow=~${flow:regex}', 'action=ingress'), 1), 8), 0), 'sum', 'ingressFlow'), 'ingressFlow'))",
           "textEditor": false
         }
       ],
@@ -322,7 +322,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
         }
       ],
       "title": "Bytes In",
@@ -639,7 +639,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -771,7 +771,7 @@
             "uid": "P1D261A8554D2DA69"
           },
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}'), 'average', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'average', 'ingressFlow'), 'ingressFlow'), true, false)"
         }
       ],
       "title": "Files In",
@@ -1268,7 +1268,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(groupByTags(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action!=IngressAction')), 'sum', 'source'), 'source')"
+          "target": "aliasByTags(groupByTags(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action!=ingress')), 'sum', 'source'), 'source')"
         },
         {
           "datasource": {
@@ -1278,7 +1278,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action!=IngressAction'), 'sum', 'source'), 'source')"
+          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action!=ingress'), 'sum', 'source'), 'source')"
         }
       ],
       "title": "Action Executions",

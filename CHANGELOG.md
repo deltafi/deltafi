@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Update the metric reports to use the `ingress` action tag
 
 ### Tech-Debt/Refactor
 

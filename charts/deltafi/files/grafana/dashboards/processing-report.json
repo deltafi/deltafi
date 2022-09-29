@@ -113,7 +113,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Flows",
-          "target": "alias(countSeries(seriesByTag('action=IngressAction', 'metricattribute=count', 'name=files_in')), 'Flows')"
+          "target": "alias(countSeries(seriesByTag('action=ingress', 'name=stats_counts.files_in')), 'Flows')"
         }
       ],
       "title": "Total Flows",
@@ -212,7 +212,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -321,7 +321,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -458,7 +458,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'))), 'Ingress')"
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=stats_counts.files_in', 'action=ingress'))), 'Ingress')"
         },
         {
           "datasource": {
@@ -594,7 +594,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), 'ingressFlow')"
+          "target": "aliasByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress'), 'ingressFlow')"
         }
       ],
       "title": "Processed Files by Flow",
@@ -661,7 +661,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '1d', 'sum'), 'ingressFlow')"
         },
         {
           "datasource": {
@@ -730,7 +730,7 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "IngressAction": "Ingress Bytes",
+              "ingress": "Ingress Bytes",
               "egress": "Egress Bytes",
               "ingressFlow\\action": "Flow"
             }
@@ -800,7 +800,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum'), 'ingressFlow')"
         },
         {
           "datasource": {
@@ -869,7 +869,7 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "IngressAction": "Ingress Files",
+              "ingress": "Ingress Files",
               "egress": "Egress Files",
               "ingressFlow\\action": "Flow"
             }
@@ -940,7 +940,7 @@
             "uid": "P1D261A8554D2DA69"
           },
           "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum'), 'ingressFlow')"
         }
       ],
       "title": "Ingressed Files by Flow",

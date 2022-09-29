@@ -156,7 +156,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -292,7 +292,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -445,7 +445,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -642,7 +642,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=IngressAction', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
+          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=ingress', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
         },
         {
           "datasource": {
@@ -765,7 +765,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow')"
+          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow')"
         }
       ],
       "title": "Activity Heatmap by flow",
@@ -886,7 +886,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -1021,7 +1021,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -1173,7 +1173,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -1384,7 +1384,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=IngressAction', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
         },
         {
           "datasource": {
