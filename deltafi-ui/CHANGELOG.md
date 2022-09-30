@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Added support for using DeltaFile fields in deltaFileLinks URL templates (#229)
+- Updated Raw DeltaFile view to use new rawDeltaFile GraphQL endpoint (#261)
 
 ## [0.98.4]
 

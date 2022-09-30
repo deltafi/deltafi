@@ -62,7 +62,7 @@ export default function useDeltaFiles() {
           value: true,
           mediaType: true,
         },
-	indexedMetadata: true,
+        indexedMetadata: true,
         egressed: true,
         enrichment: {
           name: true,
@@ -122,5 +122,18 @@ export default function useDeltaFiles() {
     loaded.value = true;
   }
 
-  return { data, loading, loaded, getDeltaFile, errors };
+  const getRawDeltaFile = async (did: string) => {
+    const query = {
+      rawDeltaFile: {
+        __args: {
+          did: did,
+          pretty: false
+        }
+      }
+    }
+    await queryGraphQL(query, "getRawDeltaFile");
+    return response.value.data.rawDeltaFile;
+  }
+
+  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, errors };
 }

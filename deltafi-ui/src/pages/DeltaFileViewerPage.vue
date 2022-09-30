@@ -69,7 +69,8 @@
       </div>
     </div>
     <Dialog v-model:visible="rawJSONDialog.visible" :header="rawJSONDialog.header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
-      <HighlightedCode :code="rawJSONDialog.body" />
+      <HighlightedCode v-if="rawJSONDialog.body" :code="rawJSONDialog.body" />
+      <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
       <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
     </Dialog>
     <ConfirmDialog />
@@ -109,7 +110,7 @@ const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][
 const route = useRoute();
 const router = useRouter();
 const uiConfig = inject("uiConfig");
-const { data: deltaFile, getDeltaFile, loaded, loading } = useDeltaFiles();
+const { data: deltaFile, getDeltaFile, getRawDeltaFile, loaded, loading } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
 const notify = useNotifications();
 const showForm = ref(true);
@@ -300,10 +301,11 @@ const toggleMenu = (event) => {
   menu.value.toggle(event);
 };
 
-const viewRawJSON = () => {
+const viewRawJSON = async () => {
   rawJSONDialog.visible = true;
   rawJSONDialog.header = did.value;
-  rawJSONDialog.body = JSON.stringify(deltaFile, null, 2);
+  const raw = await getRawDeltaFile(did.value);
+  rawJSONDialog.body = JSON.stringify(JSON.parse(raw), null, 2);
 };
 
 const onAcknowledged = (_, reason) => {
