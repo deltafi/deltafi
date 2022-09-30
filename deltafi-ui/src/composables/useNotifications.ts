@@ -18,34 +18,65 @@
 
 import { useToast } from "primevue/usetoast";
 
+const currentNotifications: Array<string> = [];
+
+enum Severity {
+  SUCCESS = "success",
+  INFO = "info",
+  WARN = "warn",
+  ERROR = "error",
+}
+
+const defaultTTL = {
+  success: 5000,
+  info: 5000,
+  warn: 10000,
+  error: 10000,
+};
+
 export default function useNotifications() {
   const toast = useToast();
 
-  const defaultTTL = {
-    success: 5000,
-    info: 5000,
-    warn: 10000,
-    error: 10000,
+  const showToast = (severity: Severity, summary: string, detail: string, ttl: number ) => {
+    const hash = severity + summary + detail;
+
+    // Check if message is in the list
+    if (currentNotifications.includes(hash)) {
+      // If it is, do nothing
+      return;
+    } else {
+      // If it's not, put message in the list
+      currentNotifications.push(hash)
+
+      // Remove message from the list after TTL seconds
+      setTimeout(() => {
+        const index = currentNotifications.indexOf(hash);
+        currentNotifications.splice(index, 1);
+      }, ttl)
+
+      toast.add({ severity: severity, summary, detail, life: ttl })
+    }
   };
 
   const success = (summary: string, detail: string = "", ttl: number = defaultTTL.success) => {
-    toast.add({ severity: "success", summary, detail, life: ttl });
+    showToast(Severity.SUCCESS, summary, detail, ttl)
   };
 
   const info = (summary: string, detail: string = "", ttl: number = defaultTTL.info) => {
-    toast.add({ severity: "info", summary, detail, life: ttl });
+    showToast(Severity.INFO, summary, detail, ttl)
   };
 
   const warn = (summary: string, detail: string = "", ttl: number = defaultTTL.warn) => {
-    toast.add({ severity: "warn", summary, detail, life: ttl });
+    showToast(Severity.WARN, summary, detail, ttl)
   };
 
   const error = (summary: string, detail: string = "", ttl: number = defaultTTL.error) => {
-    toast.add({ severity: "error", summary, detail, life: ttl });
+    showToast(Severity.ERROR, summary, detail, ttl)
   };
 
   const clear = () => {
     toast.removeAllGroups();
+    currentNotifications.length = 0;
   };
 
   return { success, info, warn, error, clear };

@@ -31,7 +31,7 @@
       </div>
     </div>
     <FooterBanner />
-    <Toast position="bottom-right" />
+    <CustomToast position="bottom-right" />
     <Dialog v-model:visible="idle" header="Are you still there?" :modal="true" :style="{ width: '25vw' }">
       <p>All background network activity has been paused due to user inactivity. Move the mouse to resume.</p>
     </Dialog>
@@ -43,7 +43,7 @@ import HeaderBanner from "@/components/header/HeaderBanner";
 import AppTopBar from "@/components/header/AppTopBar";
 import AppMenu from "@/components/sidebar/AppMenu";
 import FooterBanner from "@/components/footer/FooterBanner";
-import Toast from "primevue/toast";
+import CustomToast from "@/components/CustomToast";
 import Dialog from "primevue/dialog";
 import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";

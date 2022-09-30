@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added support for using DeltaFile fields in deltaFileLinks URL templates (#229)
 - Updated Raw DeltaFile view to use new rawDeltaFile GraphQL endpoint (#261)
 - Added link to corresponding Grafana logs on Action Metrics page (#236)
+- Duplicate Toast messages no longer stack (#237)
+- Added support for HTML in Toast messages (#263)
+- Toast messages from successful Replays now link to DeltaFile Viewer (#264)
 
 ## [0.98.4]
 
@@ -32,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Refactored file upload buttons on Delete Policies and Ingress Routing (#239)
 
 ### Fixed
+
 - Fixed bug with batching when resuming < 500 errors (#254)
 - Fixed bug with selecting on By Message error summary (#257)
 - Fixed mocks used in Deltafile Viewer (#258)

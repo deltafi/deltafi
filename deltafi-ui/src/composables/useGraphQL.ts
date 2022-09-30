@@ -101,7 +101,7 @@ export default function useGraphQL() {
       return Promise.resolve(res);
     } catch (error: any) {
       errors.value.push(error)
-      notify.error("Error Contacting GraphQL", error);
+      notify.error("Error Contacting GraphQL", error.message);
       return Promise.reject(error);
     } finally {
       loading.value = false;

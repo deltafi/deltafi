@@ -298,7 +298,8 @@ const requestResumeReplay = async () => {
             successfulDids.push("...");
           }
           let pluralized = pluralize(props.did.length, "DeltaFile");
-          notify.success(`Replay request sent successfully for ${pluralized}`, successfulDids.join(", "));
+          const links = successfulDids.map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+          notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
           emit("update");
         }
       }

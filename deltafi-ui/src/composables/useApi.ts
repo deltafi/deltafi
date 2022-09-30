@@ -81,7 +81,7 @@ export default function useApi(version: Number = 1) {
       return Promise.resolve(res);
     } catch (error: any) {
       errors.value.push(error)
-      notify.error("Error Contacting API", error);
+      notify.error("Error Contacting API", error.message);
       return Promise.reject(error);
     } finally {
       loading.value = false;
@@ -106,7 +106,7 @@ export default function useApi(version: Number = 1) {
       return Promise.resolve(res);
     } catch (error: any) {
       errors.value.push(error)
-      notify.error("Error Contacting API", error);
+      notify.error("Error Contacting API", error.message);
       return Promise.reject(error);
     } finally {
       loading.value = false;

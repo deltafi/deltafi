@@ -194,7 +194,7 @@ const deltaFileLinks = computed(() => {
       const deltaFilePath = v.match(/\$\{(.*)\}/)[1];
       let value;
       try {
-        value = deltaFilePath.split('.').reduce((o,i) => o[i], deltaFile);
+        value = deltaFilePath.split('.').reduce((o, i) => o[i], deltaFile);
       } catch {
         value = undefined
       }
