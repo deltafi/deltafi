@@ -30,6 +30,8 @@ module Deltafi
 
         class << self
           def get(content_reference, &block)
+            return empty_output(content_reference) if content_reference[:size].to_i < 1
+
             minio_options = minio_object_options(content_reference)
             minio_client.get_object(minio_options, &block)
           rescue Aws::S3::Errors::NoSuchKey => e
@@ -43,12 +45,21 @@ module Deltafi
           end
 
           def head(content_reference)
+            return empty_output(content_reference) if content_reference[:size].to_i < 1
+
             minio_options = minio_object_options(content_reference)
             minio_client.head_object(minio_options)
           rescue Aws::S3::Errors::NotFound => e
             raise e, "Content not found: #{e.message}"
           rescue Aws::S3::Errors::Forbidden => e
             raise e, "Access denied: #{e.message}"
+          end
+
+          def empty_output(content_reference)
+            output = Aws::S3::Types::GetObjectOutput.new
+            output.content_length = 0
+            output.content_type = content_reference[:mediaType]
+            output
           end
 
           def minio_object_options(content_reference)

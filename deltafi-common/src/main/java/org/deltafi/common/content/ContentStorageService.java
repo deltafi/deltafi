@@ -40,6 +40,10 @@ public class ContentStorageService {
     }
 
     public ContentReference save(String did, byte[] content, String mediaType) throws ObjectStorageException {
+        if (content.length == 0) {
+            return new ContentReference(UUID.randomUUID().toString(), 0, 0, did, mediaType);
+        }
+
         return save(did, new ByteArrayInputStream(content), mediaType);
     }
 
