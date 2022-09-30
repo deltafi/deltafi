@@ -51,7 +51,7 @@
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^5.15.4",
+    "@fortawesome/fontawesome-free": "^6.2.0",
     "@types/lodash": "^4.14.178",
     "@types/vkbeautify": "^0.99.2",
     "@vue/cli-plugin-babel": "~4.5.0",

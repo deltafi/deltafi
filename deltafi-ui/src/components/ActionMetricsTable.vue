@@ -22,6 +22,12 @@
       <template #empty>No Action Metrics available.</template>
       <template #loading>Loading Action Metrics data. Please wait.</template>
       <Column header="Action Name" field="action_name" :sortable="true" :hidden="props.hiddenColumn">
+        <template #body="{ data }">
+          {{ data.action_name }}
+          <a v-tooltip.top="`View logs`" class="cursor-pointer" style="color: black" :href="actionLogLink(data.action_name)" target="_blank" rel="noopener noreferrer">
+            <i class="ml-1 text-muted fa-regular fa-chart-bar" />
+          </a>
+        </template>
         <template #filter="{ filterModel, filterCallback }">
           <InputText v-model="filterModel.value" type="text" class="p-inputtext-sm p-column-filter" placeholder="Filter by Action Name" @focus="pauseTimer(true)" @blur="pauseTimer(false)" @input="filterCallback()" />
         </template>
@@ -46,11 +52,12 @@ import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineProps, ref, defineEmits } from "vue";
+import { computed, defineEmits, defineProps, inject, ref } from "vue";
 
 import _ from "lodash";
 
 const emit = defineEmits(["pauseTimer"]);
+const uiConfig = inject("uiConfig");
 
 const props = defineProps({
   actions: {
@@ -64,18 +71,18 @@ const props = defineProps({
   filterType: {
     type: String || null,
     required: false,
-    default: "row"
+    default: "row",
   },
   filterBy: {
     type: String || null,
     required: false,
-    default: null
+    default: null,
   },
   hiddenColumn: {
     type: Boolean,
     required: false,
-    default: false
-  }
+    default: false,
+  },
 });
 
 const { formattedBytes } = useUtilFunctions();
@@ -130,9 +137,14 @@ const columns = computed(() => {
       };
     });
 });
+
 const tableData = computed(() => {
   return rows.value.length > 0 && columns.value.length > 0 ? rows : [];
 });
+
+const actionLogLink = (actionNameForLink) => {
+  return `https://metrics.${uiConfig.domain}/d/action-log-viewer/action-log-viewer?var-datasource=Loki&var-searchable_pattern=&var-action_name=${actionNameForLink}`;
+};
 
 const formatMetricValue = (row) => {
   const field = row.column.key;

@@ -39,8 +39,13 @@
                         <div v-if="!_.isEmpty(value) && !_.isEqual(actionInfoKey, 'parameters')" class="col-6 pb-0">
                           <dl>
                             <dt>{{ _.startCase(actionInfoKey) }}</dt>
-                            <dd>
-                              <span>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</span>
+                            <dd class="d-flex">
+                              <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
+                              <template v-if="_.isEqual(actionInfoKey, 'name')">
+                                <a v-tooltip.top="`View logs`" class="cursor-pointer pl-1" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                                  <i class="ml-1 text-muted fa-regular fa-chart-bar" />
+                                </a>
+                              </template>
                             </dd>
                           </dl>
                         </div>
@@ -67,8 +72,13 @@
                       <div v-if="!_.isEmpty(value) && !_.isEqual(actionInfoKey, 'parameters')" class="col-6 pb-0">
                         <dl>
                           <dt>{{ _.startCase(actionInfoKey) }}</dt>
-                          <dd>
-                            <span>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</span>
+                          <dd class="d-flex">
+                            <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
+                            <template v-if="_.isEqual(actionInfoKey, 'name')">
+                              <a v-tooltip.top="`View logs`" class="cursor-pointer pl-1" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                                <i class="ml-1 text-muted fa-regular fa-chart-bar" />
+                              </a>
+                            </template>
                           </dd>
                         </dl>
                       </div>
@@ -110,7 +120,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FlowVariableViewer from "@/components/FlowVariableViewer.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { defineExpose, defineProps, computed, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";
+import { computed, defineExpose, defineProps, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";
 
 import Divider from "primevue/divider";
 import Message from "primevue/message";
@@ -119,6 +129,7 @@ import TabView from "primevue/tabview";
 
 import _ from "lodash";
 const isIdle = inject("isIdle");
+const uiConfig = inject("uiConfig");
 
 const { fetch: getActionMetrics, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
 
@@ -203,6 +214,10 @@ const flowActions = computed(() => {
 const panelHeader = (actionType) => {
   const words = actionType.replace(/([A-Z])/g, " $1");
   return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
+const actionLogLink = (actionNameForLink) => {
+  return `https://metrics.${uiConfig.domain}/d/action-log-viewer/action-log-viewer?var-datasource=Loki&var-searchable_pattern=&var-action_name=${actionNameForLink}`;
 };
 </script>
 
