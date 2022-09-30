@@ -61,6 +61,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.metrics.MetricsUtil.FILES_ERRORED;
@@ -132,6 +133,12 @@ public class DeltaFilesService {
 
     public DeltaFiles getDeltaFiles(Integer offset, Integer limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
         return deltaFileRepo.deltaFiles(offset, (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT, filter, orderBy, includeFields);
+    }
+
+    public Map<String, DeltaFile> getDeltaFiles(List<String> dids) {
+        Iterable<DeltaFile> deltaFilesIter = deltaFileRepo.findAllById(dids);
+        return StreamSupport.stream(deltaFilesIter.spliterator(), false)
+                .collect(Collectors.toMap(DeltaFile::getDid, d -> d));
     }
 
     public List<DeltaFile> getLastCreatedDeltaFiles(Integer last) {
@@ -569,7 +576,10 @@ public class DeltaFilesService {
     }
 
     public List<RetryResult> resume(@NotNull List<String> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
-        return dids.stream()
+        Map<String, DeltaFile> deltaFiles = getDeltaFiles(dids);
+        List<DeltaFile> advanceAndSaveDeltaFiles = new ArrayList<>();
+
+        List<RetryResult> retryResults = dids.stream()
                 .map(did -> {
                     RetryResult result = RetryResult.newBuilder()
                             .did(did)
@@ -577,7 +587,7 @@ public class DeltaFilesService {
                             .build();
 
                     try {
-                        DeltaFile deltaFile = getDeltaFile(did);
+                        DeltaFile deltaFile = deltaFiles.get(did);
 
                         if (deltaFile == null) {
                             result.setSuccess(false);
@@ -597,7 +607,7 @@ public class DeltaFilesService {
 
                                 applyRetryOverrides(deltaFile, null, null, removeSourceMetadata, replaceSourceMetadata);
 
-                                advanceAndSave(deltaFile);
+                                advanceAndSaveDeltaFiles.add(deltaFile);
                             }
                         }
                     } catch (Exception e) {
@@ -607,6 +617,9 @@ public class DeltaFilesService {
                     return result;
                 })
                 .collect(Collectors.toList());
+
+        advanceAndSave(advanceAndSaveDeltaFiles);
+        return retryResults;
     }
 
     private static void applyRetryOverrides(DeltaFile deltaFile, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
@@ -638,6 +651,8 @@ public class DeltaFilesService {
     }
 
     public List<RetryResult> replay(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata)  {
+        Map<String, DeltaFile> deltaFiles = getDeltaFiles(dids);
+
         List<DeltaFile> parentDeltaFiles = new ArrayList<>();
         List<DeltaFile> childDeltaFiles = new ArrayList<>();
         List<ActionInput> enqueueActions = new ArrayList<>();
@@ -650,7 +665,7 @@ public class DeltaFilesService {
                             .build();
 
                     try {
-                        DeltaFile deltaFile = getDeltaFile(did);
+                        DeltaFile deltaFile = deltaFiles.get(did);
 
                         if (deltaFile == null) {
                             result.setSuccess(false);
@@ -837,20 +852,58 @@ public class DeltaFilesService {
                 }
             }
         } catch (MissingEgressFlowException e) {
-            handleMissingEgressFlow(deltaFile);
+            handleMissingEgressFlow(Collections.singletonList(deltaFile));
         }
         return deltaFile;
     }
 
-    private void handleMissingEgressFlow(DeltaFile deltaFile) {
-        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
-        try {
-            processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile));
-        } catch (JsonProcessingException e) {
-            log.error("Unable to create error file: " + e.getMessage());
+    public void advanceAndSave(List<DeltaFile> deltaFiles) {
+        List<DeltaFile> saveDeltaFiles = new ArrayList<>();
+        List<DeltaFile> deleteDeltaFiles = new ArrayList<>();
+        List<DeltaFile> missingEgressFlowDeltaFiles = new ArrayList<>();
+        List<ActionInput> enqueueActions = new ArrayList<>();
+
+        deltaFiles.forEach(deltaFile -> {
+            try {
+                enqueueActions.addAll(stateMachine.advance(deltaFile));
+                if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
+                    deleteDeltaFiles.add(deltaFile);
+                } else {
+                    saveDeltaFiles.add(deltaFile);
+                }
+            } catch (MissingEgressFlowException e) {
+                missingEgressFlowDeltaFiles.add(deltaFile);
+            }
+        });
+
+        if (!deltaFiles.isEmpty()) {
+            deltaFileRepo.saveAll(saveDeltaFiles);
         }
-        deltaFile.setStage(DeltaFileStage.ERROR);
-        deltaFileRepo.save(deltaFile);
+
+        if (!deleteDeltaFiles.isEmpty()) {
+            delete(deleteDeltaFiles, "on completion", false);
+        }
+
+        if (!missingEgressFlowDeltaFiles.isEmpty()) {
+            handleMissingEgressFlow(missingEgressFlowDeltaFiles);
+        }
+
+        if (!enqueueActions.isEmpty()) {
+            enqueueActions(enqueueActions);
+        }
+    }
+
+    private void handleMissingEgressFlow(List<DeltaFile> deltaFiles) {
+        for (DeltaFile deltaFile : deltaFiles) {
+            deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
+            try {
+                processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile));
+            } catch (JsonProcessingException e) {
+                log.error("Unable to create error file: " + e.getMessage());
+            }
+            deltaFile.setStage(DeltaFileStage.ERROR);
+        }
+        deltaFileRepo.saveAll(deltaFiles);
     }
 
     public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata, int batchSize) {
@@ -867,6 +920,10 @@ public class DeltaFilesService {
     }
 
     public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
+        if (deltaFiles.isEmpty()) {
+            return deltaFiles;
+        }
+
         log.info("Deleting " + deltaFiles.size() + " files for policy " + policy);
         deleteContent(deltaFiles, policy);
         if (deleteMetadata) {
