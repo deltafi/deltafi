@@ -53,6 +53,8 @@ module Deltafi
 
           def usage
             content = DF::API::V1::Metrics::System.content
+            raise "Unable to get content storage metrics!\n\n#{content}" unless content&.values&.all?(&:positive?)
+
             content[:usage] / content[:limit] * 100
           end
         end

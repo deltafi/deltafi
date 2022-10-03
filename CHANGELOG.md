@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Update the metric reports to use the `ingress` action tag
+- Improved error handling in Content Storage Check
 
 ### Tech-Debt/Refactor
 - Optimize batch resume, replay, and acknowledge operations
@@ -52,7 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 ### Changed
-- Enable SSL if the keystore password is set, remove the `ssl.enabled` property  
+- Enable SSL if the keystore password is set, remove the `ssl.enabled` property
 
 ### Deprecated
 
@@ -703,4 +704,3 @@ No changes.  UI update only
 [0.16.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.16.0...0.16.1
 [0.16.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.15.0...0.16.0
 [0.15.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.14.1...0.15.0
-
