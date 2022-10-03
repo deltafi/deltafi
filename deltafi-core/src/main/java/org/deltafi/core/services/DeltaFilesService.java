@@ -739,6 +739,8 @@ public class DeltaFilesService {
     }
 
     public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {
+        Map<String, DeltaFile> deltaFiles = getDeltaFiles(dids);
+
         OffsetDateTime now = OffsetDateTime.now();
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
 
@@ -750,7 +752,7 @@ public class DeltaFilesService {
                             .build();
 
                     try {
-                        DeltaFile deltaFile = getDeltaFile(did);
+                        DeltaFile deltaFile = deltaFiles.get(did);
 
                         if (Objects.isNull(deltaFile)) {
                             result.setSuccess(false);
@@ -773,6 +775,7 @@ public class DeltaFilesService {
     }
 
     public List<CancelResult> cancel(List<String> dids) {
+        Map<String, DeltaFile> deltaFiles = getDeltaFiles(dids);
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
 
         List<CancelResult> results = dids.stream()
@@ -783,7 +786,7 @@ public class DeltaFilesService {
                             .build();
 
                     try {
-                        DeltaFile deltaFile = getDeltaFile(did);
+                        DeltaFile deltaFile = deltaFiles.get(did);
 
                         if (Objects.isNull(deltaFile)) {
                             result.setSuccess(false);

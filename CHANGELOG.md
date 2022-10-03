@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.98.5
 
 ### Added
-- New `cancel` mutation for DeltaFiles, and added `requeueCount`
+- New `cancel` mutation for DeltaFiles
+- Added `requeueCount` to DeltaFile
 
 ### Changed
 
@@ -18,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Update the metric reports to use the `ingress` action tag
 
 ### Tech-Debt/Refactor
-- Optimize batch resume and replay operations
+- Optimize batch resume, replay, and acknowledge operations
 
 ### Security
 
