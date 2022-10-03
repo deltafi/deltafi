@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - New `cancel` mutation for DeltaFiles
 - Added `requeueCount` to DeltaFile
+- Added `rawDeltaFile` query to return all DeltaFile fields as JSON
 
 ### Changed
 
@@ -20,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Tech-Debt/Refactor
 - Optimize batch resume, replay, and acknowledge operations
+- Optimize empty content when running stressTest
 
 ### Security
 
