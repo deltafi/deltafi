@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added support for HTML in Toast messages (#263)
 - Toast messages from successful Replays now link to DeltaFile Viewer (#264)
 
+### Fixed
+
+- Sidebar now has a scrollbar to see all menu options (#217)
+
 ## [0.98.4]
 
 ### Changes

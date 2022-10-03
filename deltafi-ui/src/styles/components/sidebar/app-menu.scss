@@ -63,6 +63,11 @@
   }
 }
 
+.sidebar-scroller {
+  overflow-y: scroll;
+  padding-bottom: 80px;
+}
+
 @media (max-width: 768px) {
   .menu {
     width: 150px !important;
