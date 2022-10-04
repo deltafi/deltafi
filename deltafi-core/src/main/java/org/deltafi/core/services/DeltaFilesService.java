@@ -90,7 +90,7 @@ public class DeltaFilesService {
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
     public static final String NO_CHILD_INGRESS_CONFIGURED_CAUSE = "No child ingress flow configured";
-    public static final String NO_CHILD_INGRESS_CONFIGURED_CONTEXT = "This DeltaFile split does not match any known ingress flows: ";
+    public static final String NO_CHILD_INGRESS_CONFIGURED_CONTEXT = "This DeltaFile split does not match any running ingress flows: ";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 

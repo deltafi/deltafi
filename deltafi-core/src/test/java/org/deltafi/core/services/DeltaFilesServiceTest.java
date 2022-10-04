@@ -336,16 +336,20 @@ class DeltaFilesServiceTest {
                 .sourceInfo(SourceInfo.builder().flow("good").build())
                 .actions(new ArrayList<>(List.of(Action.newBuilder()
                         .name("loadAction").state(ActionState.QUEUED).build())))
+                .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
         deltaFilesService.split(deltaFile, ActionEventInput.newBuilder()
                 .action("loadAction")
                 .split(List.of(
                         SplitInput.newBuilder().sourceInfo(
-                                SourceInfo.builder().flow("bad").build()).build(),
+                                SourceInfo.builder().flow("good").build())
+                                .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
+                                        .build())).build(),
                         SplitInput.newBuilder().sourceInfo(
-                                SourceInfo.builder().flow("bad").build()).build()))
-                .build());
+                                SourceInfo.builder().flow("bad").build())
+                                .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
+                                        .build())).build())).build());
 
         assertTrue(deltaFile.hasErroredAction());
         assertTrue(deltaFile.getActions().stream().filter(a -> a.getState()==ActionState.ERROR).map(Action::getErrorCause)
@@ -369,7 +373,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .sourceInfo(SourceInfo.builder().flow("good").build())
                 .actions(new ArrayList<>(List.of(Action.newBuilder()
-                        .name("reinject").state(ActionState.COMPLETE).build())))
+                        .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
