@@ -1454,7 +1454,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "decbytes"
         },
         "overrides": []
       },
@@ -1667,6 +1667,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }

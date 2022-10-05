@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Fixed slow Monitor probe that was causing erroneous restarts
+- System Overview dashboard uniformly uses SI measurements for bytes
 
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
@@ -32,12 +33,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added `requeueCount` to DeltaFile
 - Added `rawDeltaFile` query to return all DeltaFile fields as JSON
 
-### Changed
-
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Update the metric reports to use the `ingress` action tag
 - Improved error handling in Content Storage Check
@@ -45,10 +40,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Tech-Debt/Refactor
 - Optimize batch resume, replay, and acknowledge operations
 - Optimize empty content when running stressTest
-
-### Security
-
-### Upgrade and Migration
 
 ## [0.98.4] - 2022-09-28
 
@@ -58,28 +49,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - Replaced `resetFromSnapshot` with `importSnapshot`
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Tech-Debt/Refactor
-
-### Security
-
-### Upgrade and Migration
-
 ## [0.98.3] - 2022-09-26
-
-### Added
 
 ### Changed
 - Enable SSL if the keystore password is set, remove the `ssl.enabled` property
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 - Return ErrorResult from uncaught Action exceptions
@@ -88,29 +61,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Tech-Debt/Refactor
 - Redis connection pool scales to action count, and no longer used by ingress
 
-### Security
-
-### Upgrade and Migration
-
 ## [0.98.2] - 2022-09-21
 
 ### Added
 - Added an optional `reason` to the snapshots
 
-### Changed
-
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Disk space delete policy properly ignores deltaFiles if content is empty or already deleted
-
-### Tech-Debt/Refactor
-
-### Security
-
-### Upgrade and Migration
 
 ## [0.98.1] - 2022-09-21
 
