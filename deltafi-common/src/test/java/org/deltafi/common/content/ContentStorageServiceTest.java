@@ -79,6 +79,19 @@ public class ContentStorageServiceTest {
     }
 
     @Test
+    public void savesEmptyContent() throws ObjectStorageException {
+        byte[] content = {};
+
+        ContentReference contentReference =
+                contentStorageService.save("did", new ByteArrayInputStream(content), "mediaType");
+
+        assertEquals(0, contentReference.getOffset());
+        assertEquals(0, contentReference.getSize());
+        assertEquals("did", contentReference.getDid());
+        assertEquals("mediaType", contentReference.getMediaType());
+    }
+
+    @Test
     public void savesByteArrayContent() throws ObjectStorageException {
         byte[] content = "test".getBytes();
 

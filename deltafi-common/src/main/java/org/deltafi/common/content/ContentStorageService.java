@@ -23,7 +23,9 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,18 +43,34 @@ public class ContentStorageService {
 
     public ContentReference save(String did, byte[] content, String mediaType) throws ObjectStorageException {
         if (content.length == 0) {
-            return new ContentReference(UUID.randomUUID().toString(), 0, 0, did, mediaType);
+            return emptyContentReference(did, mediaType);
         }
 
         return save(did, new ByteArrayInputStream(content), mediaType);
     }
 
     public ContentReference save(String did, InputStream inputStream, String mediaType) throws ObjectStorageException {
+        PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream);
+
+        try {
+            int byTe = pushbackInputStream.read();
+            if (byTe == -1) {
+                return emptyContentReference(did, mediaType);
+            }
+            pushbackInputStream.unread(byTe);
+        } catch (IOException e) {
+            throw new ObjectStorageException("Error peeking into stream", e);
+        }
+
         ContentReference contentReference = new ContentReference(UUID.randomUUID().toString(), did, mediaType);
         ObjectReference objectReference = objectStorageService.putObject(
-                buildObjectReference(contentReference), inputStream);
+                buildObjectReference(contentReference), pushbackInputStream);
         contentReference.setSize(objectReference.getSize());
         return contentReference;
+    }
+
+    private ContentReference emptyContentReference(String did, String mediaType) {
+        return new ContentReference(UUID.randomUUID().toString(), 0, 0, did, mediaType);
     }
 
     public void delete(ContentReference contentReference) {
