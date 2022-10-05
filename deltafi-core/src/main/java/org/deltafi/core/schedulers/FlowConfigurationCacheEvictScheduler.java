@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "schedule.propertySync", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 public class FlowConfigurationCacheEvictScheduler {
@@ -36,7 +36,7 @@ public class FlowConfigurationCacheEvictScheduler {
         this.flowServices = flowServices;
     }
 
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelay = 5000)
     public void cacheEvict() {
         flowServices.forEach(FlowService::refreshCache);
     }

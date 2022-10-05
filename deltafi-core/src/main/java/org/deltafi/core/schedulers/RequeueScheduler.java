@@ -27,7 +27,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-@ConditionalOnProperty(value = "enableScheduling", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @RefreshScope
 @EnableScheduling

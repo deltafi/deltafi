@@ -116,7 +116,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest
-@TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "enableScheduling=false", "metrics.enabled=false"})
+@TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "schedule.actionEvents=false", "schedule.maintenance=false", "schedule.propertySync=false", "metrics.enabled=false"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
 
