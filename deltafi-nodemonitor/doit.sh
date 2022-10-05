@@ -17,7 +17,6 @@
 #    limitations under the License.
 #
 
-HOSTNAME=`hostname`
 GRAPHITE_HOST=${GRAPHITE_HOST:-deltafi-graphite}
 GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
 PERIOD=${PERIOD:-9}
@@ -25,7 +24,7 @@ PERIOD=${PERIOD:-9}
 _log() {
     local log_level=$1
     local message=$2
-    timestamp=$(date "+%Y-%m-%dT%H:%M:%SZ") 
+    timestamp=$(date "+%Y-%m-%dT%H:%M:%SZ")
     echo "{\"timestamp\":\"$timestamp\",\"level\":\"$log_level\",\"$message\"}"
 }
 
@@ -41,12 +40,12 @@ _info() {
     _log "INFO" "$1"
 }
 
-_info "Starting up on ${HOSTNAME}"
+_info "Starting up on ${NODE_NAME}"
 _info "Graphite: ${GRAPHITE_HOST}:${GRAPHITE_PORT}"
 _info "Reporting period: ${PERIOD} seconds"
 
 exterminate() {
-    _warn "Terminating the nodemonitor.."
+    _warn "Terminating the nodemonitor."
     exit
 }
 
@@ -57,9 +56,9 @@ while true; do
     LIMIT=`df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f2`
     USAGE=`df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f3`
     TIMESTAMP=`date +%s`
-    echo "gauge.node.disk.usage;hostname=$HOSTNAME $USAGE $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
-    echo "gauge.node.disk.limit;hostname=$HOSTNAME $LIMIT $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
+    echo "gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
+    echo "gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
 
-    _debug "$HOSTNAME: Using $USAGE of $LIMIT"
+    _debug "$NODE_NAME: Using $USAGE of $LIMIT"
     sleep $PERIOD
 done

@@ -64,3 +64,10 @@ initContainers:
       do sleep 1;
     done
 {{- end -}}
+
+{{- define "defaultEnvVars" -}}
+- name: NODE_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: spec.nodeName
+{{- end -}}
