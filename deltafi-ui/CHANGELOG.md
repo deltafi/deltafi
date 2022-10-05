@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Filename filter on Search Page is now plain text and supports partial search (#266)
+
+## [0.98.5]
+
+### Changed
+
 - Added support for using DeltaFile fields in deltaFileLinks URL templates (#229)
 - Updated Raw DeltaFile view to use new rawDeltaFile GraphQL endpoint (#261)
 - Added link to corresponding Grafana logs on Action Metrics page (#236)
@@ -409,7 +415,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.4...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.5...main
+[0.98.5]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.4...0.98.5
 [0.98.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.3...0.98.4
 [0.98.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.2...0.98.3
 [0.98.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.1...0.98.2

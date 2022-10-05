@@ -43,8 +43,7 @@
             <div class='flex-row'>
               <div class='flex-column'>
                 <label for="fileNameId">Filename:</label>
-                <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-                <Dropdown id="fileNameId" v-model="fileNameOptionSelected" :placeholder="fileNameOptionSelected ? fileNameOptionSelected.name + ' ' : 'Select a File Name'" :options="fileNameOptions" option-label="name" :filter="true" :show-clear="true" class="deltafi-input-field min-width" />
+                <InputText v-model="fileName" class="p-inputtext-sm" placeholder="Filename" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
                 <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="stageId" class="mt-2">Size:</label>
@@ -158,7 +157,7 @@ import _ from "lodash";
 
 dayjs.extend(utc);
 
-const { getDeltaFileSearchData, getDeltaFiFileNames, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
+const { getDeltaFileSearchData, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
 const { duration, formatTimestamp, shortTimezone, convertLocalDateToUTC } = useUtilFunctions();
 const { getDomains, getIndexedMetadataKeys } = useDomains();
 
@@ -176,8 +175,7 @@ const domainOptionSelected = ref(null);
 const metadataKeysOptions = ref([]);
 const newMetadataKey = ref(null)
 const newMetadataValue = ref(null)
-const fileNameOptions = ref([]);
-const fileNameOptionSelected = ref(null);
+const fileName = ref(null);
 const flowOptions = ref([]);
 const flowOptionSelected = ref(null);
 const stageOptions = ref([]);
@@ -211,13 +209,14 @@ const sizeTypes = [
 const sizeTypeSelected = ref(sizeTypes[0])
 const sizeUnitSelected = ref(sizeUnits[0])
 
+const watchEnabled = ref(false);
+
 const ingressBytesMin = computed(() => sizeMin.value && sizeTypeSelected.value.ingress ? sizeMin.value * sizeUnitSelected.value.multiplier : null);
 const ingressBytesMax = computed(() => sizeMax.value && sizeTypeSelected.value.ingress ? sizeMax.value * sizeUnitSelected.value.multiplier : null);
 const totalBytesMin = computed(() => sizeMin.value && sizeTypeSelected.value.total ? sizeMin.value * sizeUnitSelected.value.multiplier : null);
 const totalBytesMax = computed(() => sizeMax.value && sizeTypeSelected.value.total ? sizeMax.value * sizeUnitSelected.value.multiplier : null);
 const egressed = computed(() => egressedOptionSelected.value ? egressedOptionSelected.value.value : null);
 const filtered = computed(() => filteredOptionSelected.value ? filteredOptionSelected.value.value : null);
-const fileName = computed(() => fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null);
 const stageName = computed(() => stageOptionSelected.value ? stageOptionSelected.value.name : null);
 const flowName = computed(() => flowOptionSelected.value ? flowOptionSelected.value.name : null);
 
@@ -279,7 +278,7 @@ const items = ref([
         label: "Clear Options",
         icon: "fas fa-times",
         command: () => {
-          fileNameOptionSelected.value = null;
+          fileName.value = null;
           flowOptionSelected.value = null;
           stageOptionSelected.value = null;
           egressedOptionSelected.value = null;
@@ -295,24 +294,12 @@ const items = ref([
   },
 ]);
 
-const fetchFileNames = async () => {
-  let fileNameDataArray = [];
-  let fetchFileNames = await getDeltaFiFileNames(startDateISOString.value, endDateISOString.value);
-  let deltaFilesObjectsArray = fetchFileNames.data.deltaFiles.deltaFiles;
-  for (const deltaFiObject of deltaFilesObjectsArray) {
-    fileNameDataArray.push({ name: deltaFiObject.sourceInfo.filename });
-  }
-  fileNameOptions.value = _.uniqBy(fileNameDataArray, "name");
-};
-
 watch(startTimeDate, () => {
-  fetchFileNames();
-  fetchDeltaFilesData();
+  if (watchEnabled.value) fetchDeltaFilesData();
 });
 
 watch(endTimeDate, () => {
-  fetchFileNames();
-  fetchDeltaFilesData();
+  if (watchEnabled.value) fetchDeltaFilesData();
 });
 
 watch(selectedDomain, async (value) => {
@@ -323,7 +310,7 @@ watch(selectedDomain, async (value) => {
 
 watch(
   metadataArray,
-  () => { fetchDeltaFilesData() },
+  () => { if (watchEnabled.value) fetchDeltaFilesData() },
   { deep: true }
 );
 
@@ -331,14 +318,21 @@ watch(
   [
     sizeMin,
     sizeMax,
-    fileNameOptionSelected,
     flowOptionSelected,
     stageOptionSelected,
     egressedOptionSelected,
     filteredOptionSelected
   ],
-  () => { fetchDeltaFilesData() },
+  () => { if (watchEnabled.value) fetchDeltaFilesData() },
 );
+
+watch(
+  fileName,
+  _.debounce(() => {
+    if (watchEnabled.value) fetchDeltaFilesData();
+  }, 500, { leading: false, trailing: true })
+);
+
 
 watch([sizeTypeSelected, sizeUnitSelected], () => {
   if (sizeMin.value || sizeMax.value) {
@@ -378,13 +372,14 @@ const updateInputEndTime = async (e) => {
   }
 };
 
-onMounted(() => {
-  getPersistedParams();
-  fetchFileNames();
+onMounted(async () => {
   fetchConfigTypes();
   fetchStages();
   fetchDomains();
   fetchIndexedMetadataKeys();
+  await getPersistedParams();
+  await nextTick();
+  watchEnabled.value = true;
 });
 
 const optionMenuToggle = (event) => {
@@ -482,14 +477,14 @@ const onPage = (event) => {
   fetchDeltaFilesData();
 };
 
-const getPersistedParams = () => {
+const getPersistedParams = async () => {
   startTimeDate.value = new Date(state.value.startTimeDateState ? state.value.startTimeDateState : startTimeDate.value);
   endTimeDate.value = new Date(state.value.endTimeDateState ? state.value.endTimeDateState : endTimeDate.value);
   sizeUnitSelected.value = state.value.sizeUnitState ? sizeUnits.find(i => i.name == state.value.sizeUnitState) : sizeUnits[0];
   sizeTypeSelected.value = state.value.sizeTypeState ? sizeTypes.find(i => i.name == state.value.sizeTypeState) : sizeTypes[0];
 
   // Values that, if set, should expand Advanced Search Options.
-  fileNameOptionSelected.value = state.value.fileNameOptionState ? { name: state.value.fileNameOptionState } : null;
+  fileName.value = state.value.fileName;
   stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
   flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
   egressedOptionSelected.value = state.value.egressedOptionState ? egressedOptions.value.find(i => i.name == state.value.egressedOptionState) : null;
@@ -513,7 +508,7 @@ const setPersistedParams = () => {
     sizeTypeState: sizeTypeSelected.value ? sizeTypeSelected.value.name : null,
 
     // Values that, if set, should expand Advanced Search Options.
-    fileNameOptionState: fileNameOptionSelected.value ? fileNameOptionSelected.value.name : null,
+    fileName: fileName.value,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
     egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,

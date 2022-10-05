@@ -70,31 +70,6 @@ export default function useDeltaFilesQueryBuilder() {
     return sendGraphQLQuery(query, "getDeltaFileSearchData");
   };
 
-  const getDeltaFiFileNames = (startDateISOString: String, endDateISOString: String) => {
-    const query = {
-      deltaFiles: {
-        __args: {
-          offset: 0,
-          limit: 10000,
-          filter: {
-            modifiedAfter: startDateISOString,
-            modifiedBefore: endDateISOString
-          },
-          orderBy: {
-            direction: new EnumType('DESC'),
-            field: 'modified'
-          }
-        },
-        deltaFiles: {
-          sourceInfo: {
-            filename: true,
-          }
-        }
-      }
-    };
-    return sendGraphQLQuery(query, "getDeltaFiFileNames");
-  };
-
   const getDeltaFilesByDIDs = (didsArray?: string[]) => {
     const query = {
       deltaFiles: {
@@ -163,7 +138,6 @@ export default function useDeltaFilesQueryBuilder() {
 
   return {
     getDeltaFileSearchData,
-    getDeltaFiFileNames,
     getDeltaFilesByDIDs,
     getEnumValuesByEnumType,
     getConfigByType
