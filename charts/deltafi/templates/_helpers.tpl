@@ -48,7 +48,7 @@ livenessProbe:
   exec:
     command: ["/probe.sh"]
   periodSeconds: 30
-  timeoutSeconds: 5
+  timeoutSeconds: 30
   failureThreshold: 2
 {{- end -}}
 

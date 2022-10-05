@@ -18,20 +18,6 @@
 
 # frozen_string_literal: true
 
-require 'deltafi/common'
-
-module Deltafi
-  module Monitor
-    module Heartbeat
-      TRESHOLD = 30 # seconds
-
-      def self.stale?
-        DF.redis_client.get(DF::Common::HEARTBEAT_REDIS_KEY).to_i < (Time.now.to_i - TRESHOLD)
-      end
-    end
-  end
-end
-
 Dir[File.join(File.dirname(__FILE__), 'heartbeat', '*.rb')].each do |f|
   require "deltafi/monitor/heartbeat/#{File.basename(f).split('.')[0]}"
 end

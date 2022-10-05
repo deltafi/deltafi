@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Fixed slow Monitor probe that was causing erroneous restarts
 
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
