@@ -466,7 +466,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (nonNull(filter.getSourceInfo())) {
             if (nonNull(filter.getSourceInfo().getFilename())) {
-                andCriteria.add(Criteria.where(SOURCE_INFO_FILENAME).is(filter.getSourceInfo().getFilename()));
+                andCriteria.add(Criteria.where(SOURCE_INFO_FILENAME).regex(".*" + filter.getSourceInfo().getFilename() + ".*", "i"));
             }
 
             if (nonNull(filter.getSourceInfo().getFlow())) {
