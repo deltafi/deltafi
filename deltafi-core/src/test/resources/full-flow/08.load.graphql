@@ -25,7 +25,7 @@ mutation {
             stop: "2021-07-11T13:44:22.184Z"
             type: LOAD
             load: {
-                domains: [ { name: "sample", value: "sampleDomain", mediaType: "application/octet-stream" } ]
+                domains: [ { name: "sampleDomain", value: "sampleDomainValue", mediaType: "application/octet-stream" } ]
                 protocolLayer: {
                     action: "SampleLoadAction"
                     content: [

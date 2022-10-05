@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.98.6
 
 ### Added
+- DeltaFile contains egress flow name for each egress flow executed
 
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring

@@ -69,6 +69,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ERROR_CAUSE = "errorCause";
     public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
+    public static final String EGRESS_FLOW = "egress.flow";
     public static final String FILTERED = "filtered";
     public static final String TOTAL_BYTES = "totalBytes";
     public static final String INGRESS_BYTES = "ingressBytes";
@@ -413,6 +414,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         List<Criteria> andCriteria = new ArrayList<>();
+
+        if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
+            andCriteria.add(Criteria.where(EGRESS_FLOW).all(filter.getEgressFlows()));
+        }
 
         if (nonNull(filter.getDids()) && !filter.getDids().isEmpty()) {
             andCriteria.add(Criteria.where(ID).in(filter.getDids()));

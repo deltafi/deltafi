@@ -22,7 +22,7 @@ mutation {
             did: "%1$s"
             sourceInfo: {
                 filename: "input.txt"
-                flow: "sample"
+                flow: "sampleIngress"
                 metadata: [
                     {
                         key: "AuthorizedBy"

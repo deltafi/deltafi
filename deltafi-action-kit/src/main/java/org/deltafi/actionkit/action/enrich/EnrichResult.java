@@ -36,7 +36,7 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 public class EnrichResult extends Result implements HasIndexedMetadata {
     private final List<Enrichment> enrichments = new ArrayList<>();
-    private Map<String, String> indexedMetadata = new HashMap<>();
+    private final Map<String, String> indexedMetadata = new HashMap<>();
 
     /**
      * @param context Context of the executed action

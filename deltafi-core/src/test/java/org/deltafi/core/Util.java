@@ -118,6 +118,7 @@ public class Util {
                 .protocolStack(new ArrayList<>())
                 .domains(new ArrayList<>())
                 .enrichment(new ArrayList<>())
+                .egress(new ArrayList<>())
                 .formattedData(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
@@ -139,6 +140,7 @@ public class Util {
         Assertions.assertThat(actual.getFormattedData()).isEqualTo(expected.getFormattedData());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
+        Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());
     }
 
     public static void assertActionsEqualIgnoringDates(List<Action> expected, List<Action> actual) {

@@ -54,6 +54,7 @@ public class DeltaFile {
   @Builder.Default
   private Map<String, String> indexedMetadata = new HashMap<>();
   private List<Enrichment> enrichment;
+  private List<Egress> egress = new ArrayList<>();
   private List<FormattedData> formattedData;
   private OffsetDateTime created;
   private OffsetDateTime modified;
@@ -203,6 +204,12 @@ public class DeltaFile {
     this.indexedMetadata.putAll(metadata);
   }
 
+  public void addEgressFlow(@NotNull String flow) {
+    if (!getEgress().stream().map(Egress::getFlow).collect(Collectors.toList()).contains(flow)) {
+      getEgress().add(new Egress(flow));
+    }
+  }
+
   @SuppressWarnings("unused")
   public Enrichment getEnrichment(String enrichment) {
     return getEnrichment().stream().filter(e -> e.getName().equals(enrichment)).findFirst().orElse(null);
@@ -321,6 +328,11 @@ public class DeltaFile {
 
   public @NotNull List<Enrichment> getEnrichment() {
     return enrichment == null ? Collections.emptyList() : enrichment;
+  }
+
+  public @NotNull List<Egress> getEgress() {
+    if (egress == null) egress = new ArrayList<>();
+    return egress;
   }
 
   public DeltaFile forQueue(String actionName) {

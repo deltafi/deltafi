@@ -48,6 +48,10 @@ input DomainInput {
   mediaType: String!
 }
 
+type Egress {
+  flow: String!
+}
+
 type Enrichment {
   name: String!
   value: String
@@ -239,6 +243,7 @@ type DeltaFile {
   indexedMetadata: Metadata
   enrichment: [Enrichment!]!
   formattedData: [FormattedData!]!
+  egress: [Egress!]!
   created: DateTime!
   modified: DateTime!
   contentDeleted: DateTime
@@ -362,6 +367,7 @@ input DeltaFilesFilter {
   domains: [String!]
   indexedMetadata: [KeyValueInput]
   enrichment: [String!]
+  egressFlows: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime
   modifiedBefore: DateTime

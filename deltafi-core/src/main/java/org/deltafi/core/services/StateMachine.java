@@ -105,7 +105,10 @@ public class StateMachine {
                     throw new MissingEgressFlowException(deltaFile.getDid());
                 }
 
-                egressActions.forEach(actionInput -> deltaFile.queueNewAction(actionInput.getActionContext().getName()));
+                egressActions.forEach(actionInput -> {
+                    deltaFile.addEgressFlow(actionInput.getActionContext().getEgressFlow());
+                    deltaFile.queueNewAction(actionInput.getActionContext().getName());
+                });
                 enqueueActions.addAll(egressActions);
 
                 break;
