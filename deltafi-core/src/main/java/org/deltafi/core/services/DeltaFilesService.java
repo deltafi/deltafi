@@ -417,7 +417,7 @@ public class DeltaFilesService {
     public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
         List<SplitInput> splits = event.getSplit();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
-
+        List<String> encounteredError = new ArrayList<>();
         List<ActionInput> enqueueActions = new ArrayList<>();
 
         String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
@@ -439,13 +439,18 @@ public class DeltaFilesService {
                     .build();
 
             childDeltaFiles = splits.stream().map(split -> {
+                if (!encounteredError.isEmpty()) {
+                    // Fail fast on first error
+                    return null;
+                }
+
                 // Before we build a DeltaFile, make sure the split makes sense to do--i.e. the flow is
                 // enabled and valid
                 try {
                     ingressFlowService.getRunningFlowByName(split.getSourceInfo().getFlow());
-                }
-                catch(DgsEntityNotFoundException notFound) {
+                } catch (DgsEntityNotFoundException notFound) {
                     deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getAction(), split.getSourceInfo().getFlow()));
+                    encounteredError.add(deltaFile.getDid());
                     return null;
                 }
 
@@ -475,7 +480,7 @@ public class DeltaFilesService {
                 return child;
             }).collect(Collectors.toList());
 
-            if(!childDeltaFiles.contains(null)) {
+            if (encounteredError.isEmpty()) {
                 deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
             }
 
@@ -486,7 +491,7 @@ public class DeltaFilesService {
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileRepo.save(deltaFile);
-        if(!childDeltaFiles.contains(null)) {
+        if (encounteredError.isEmpty()) {
             deltaFileRepo.saveAll(childDeltaFiles);
 
             enqueueActions(enqueueActions);

@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring
+- Optimize error detection when a split result does not match a running ingress flow
 
 ### Deprecated
 
@@ -33,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - New `cancel` mutation for DeltaFiles
 - Added `requeueCount` to DeltaFile
 - Added `rawDeltaFile` query to return all DeltaFile fields as JSON
+- Added error when a split result does not match a running ingress flow
 
 ### Fixed
 - Update the metric reports to use the `ingress` action tag
