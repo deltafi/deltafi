@@ -17,16 +17,18 @@
  */
 package org.deltafi.core;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import graphql.ExecutionResult;
+import lombok.SneakyThrows;
+import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.EgressActionConfiguration;
@@ -78,11 +80,15 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.config.server.config.ConfigServerProperties;
 import org.springframework.cloud.config.server.environment.EnvironmentRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexInfo;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -90,7 +96,11 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import javax.ws.rs.core.MediaType;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -102,6 +112,8 @@ import java.util.stream.Stream;
 import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
+import static org.deltafi.common.metrics.MetricsUtil.*;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.core.Util.assertEqualsIgnoringDates;
 import static org.deltafi.core.Util.buildDeltaFile;
@@ -111,11 +123,13 @@ import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
+import static org.deltafi.core.rest.IngressRest.FLOWFILE_V1_MEDIA_TYPE;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "schedule.actionEvents=false", "schedule.maintenance=false", "schedule.propertySync=false", "metrics.enabled=false"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
@@ -194,6 +208,15 @@ class DeltaFiCoreApplicationTests {
 	@Captor
 	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
 
+	@Autowired
+	TestRestTemplate restTemplate;
+
+	@MockBean
+	IngressService ingressService;
+
+	@MockBean
+	MetricRepository metricRepository;
+
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	// mongo eats microseconds, jump through hoops
@@ -219,7 +242,7 @@ class DeltaFiCoreApplicationTests {
 				// Allows the ActionEventScheduler to not hold up other scheduled tasks (by default, Spring Boot uses a
 				// single thread for all scheduled tasks). Throwing an exception here breaks it out of its tight loop.
 				Mockito.when(actionEventQueue.takeResult()).thenThrow(new RuntimeException());
-			} catch (JsonProcessingException e) {
+			} catch (com.fasterxml.jackson.core.JsonProcessingException e) {
 				e.printStackTrace();
 			}
 			return actionEventQueue;
@@ -3419,5 +3442,190 @@ class DeltaFiCoreApplicationTests {
 		);
 
 		assertEquals(Collections.emptyList(), actual);
+	}
+
+	static final String CONTENT = "STARLORD was here";
+	static final String METADATA = "{\"key\": \"value\"}";
+	static final String FILENAME = "incoming.txt";
+	static final String FLOW = "theFlow";
+	static final String INCOMING_FLOWFILE_METADATA = "{\"fromHeader\": \"this is from header\", \"overwrite\": \"emacs is awesome\"}";
+	static final Map<String, String> RESOLVED_FLOWFILE_METADATA = Map.of(
+			"fromHeader", "this is from header",
+			"overwrite", "vim is awesome",
+			"fromFlowfile", "youbetcha");
+	static final Map<String, String> FLOWFILE_METADATA_NO_HEADERS = Map.of(
+			"filename", FILENAME,
+			"flow", FLOW,
+			"overwrite", "vim is awesome",
+			"fromFlowfile", "youbetcha");
+	static final Map<String, String> FLOWFILE_METADATA_NO_HEADERS_NO_FLOW = Map.of(
+			"filename", FILENAME,
+			"overwrite", "vim is awesome",
+			"fromFlowfile", "youbetcha");
+	static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
+	static final String USERNAME = "myname";
+	ContentReference CONTENT_REFERENCE = new ContentReference(FILENAME, 0, CONTENT.length(), "did", MEDIA_TYPE);
+	IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW);
+
+	private ResponseEntity<String> ingress(String filename, String flow, String metadata, byte[] body, String contentType) {
+		HttpHeaders headers = new HttpHeaders();
+		if (filename != null) {
+			headers.add("Filename", filename);
+		}
+		if (flow != null) {
+			headers.add("Flow", flow);
+		}
+		if (metadata != null) {
+			headers.add("Metadata", metadata);
+		}
+		headers.add(HttpHeaders.CONTENT_TYPE, contentType);
+		headers.add(USER_HEADER, USERNAME);
+		HttpEntity<byte[]> request = new HttpEntity<>(body, headers);
+
+		return restTemplate.postForEntity("/deltafile/ingress", request, String.class);
+	}
+
+	@Test
+	@SneakyThrows
+	void testIngress() {
+		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+
+		ResponseEntity<String> response = ingress(FILENAME, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(INGRESS_RESULT.getContentReference().getDid(), response.getBody());
+
+		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
+		Mockito.verify(ingressService).ingressData(is.capture(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE));
+		// TODO: EOF inputStream?
+		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
+
+		Map<String, String> tags = tagsFor(ActionType.INGRESS, INGRESS_ACTION, FLOW, null);
+		Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
+		Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
+	}
+
+	@Test
+	@SneakyThrows
+	void testIngress_missingFlow() {
+		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), isNull(), eq(METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+
+		ResponseEntity<String> response = ingress(FILENAME, null, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
+
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(INGRESS_RESULT.getContentReference().getDid(), response.getBody());
+
+		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
+		Mockito.verify(ingressService).ingressData(is.capture(), eq(FILENAME), isNull(), eq(METADATA), eq(MEDIA_TYPE));
+		// TODO: EOF inputStream?
+		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
+
+		Map<String, String> tags = tagsFor(ActionType.INGRESS, INGRESS_ACTION, FLOW, null);
+		Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
+		Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
+	}
+
+	@Test
+	void testIngress_missingFilename() {
+		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
+		assertEquals(400, response.getStatusCodeValue());
+
+		Mockito.verifyNoInteractions(ingressService);
+	}
+
+	@Test
+	@SneakyThrows
+	void testIngress_flowfile() {
+		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(RESOLVED_FLOWFILE_METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+		ResponseEntity<String> response = ingress(FILENAME, FLOW, INCOMING_FLOWFILE_METADATA, flowfile(Map.of("overwrite", "vim is awesome", "fromFlowfile", "youbetcha")), FLOWFILE_V1_MEDIA_TYPE);
+
+		assertEquals(200, response.getStatusCodeValue());
+
+		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
+
+		Mockito.verify(ingressService).ingressData(is.capture(),
+				eq(FILENAME),
+				eq(FLOW),
+				eq(RESOLVED_FLOWFILE_METADATA),
+				eq(MEDIA_TYPE));
+
+		// TODO: EOF inputStream?
+		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
+
+		Map<String, String> tags = tagsFor(ActionType.INGRESS, INGRESS_ACTION, FLOW, null);
+		Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
+		Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
+	}
+
+	@Test
+	@SneakyThrows
+	void testIngress_flowfile_noParamsOrHeaders() {
+		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(FLOWFILE_METADATA_NO_HEADERS), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+		ResponseEntity<String> response = ingress(null, null, null,
+				flowfile(Map.of(
+						"flow", FLOW,
+						"filename", FILENAME,
+						"overwrite", "vim is awesome",
+						"fromFlowfile", "youbetcha")),
+				FLOWFILE_V1_MEDIA_TYPE);
+
+		assertEquals(200, response.getStatusCodeValue());
+
+		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
+
+		Mockito.verify(ingressService).ingressData(is.capture(),
+				eq(FILENAME),
+				eq(FLOW),
+				eq(FLOWFILE_METADATA_NO_HEADERS),
+				eq(MEDIA_TYPE));
+
+		// TODO: EOF inputStream?
+		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
+	}
+
+	@Test @SneakyThrows
+	void testIngress_flowfile_missingFilename() {
+		ResponseEntity<String> response = ingress(null, null, null,
+				flowfile(Map.of(
+						"flow", FLOW,
+						"overwrite", "vim is awesome",
+						"fromFlowfile", "youbetcha")),
+				FLOWFILE_V1_MEDIA_TYPE);
+
+		assertEquals(400, response.getStatusCodeValue());
+		assertEquals("Filename must be passed in as a header or flowfile attribute", response.getBody());
+	}
+
+	@Test
+	@SneakyThrows
+	void testIngress_flowfile_missingFlow() {
+		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), isNull(), eq(FLOWFILE_METADATA_NO_HEADERS_NO_FLOW), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+		ResponseEntity<String> response = ingress(null, null, null,
+				flowfile(Map.of(
+						"filename", FILENAME,
+						"overwrite", "vim is awesome",
+						"fromFlowfile", "youbetcha")),
+				FLOWFILE_V1_MEDIA_TYPE);
+
+		assertEquals(200, response.getStatusCodeValue());
+
+		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
+
+		Mockito.verify(ingressService).ingressData(is.capture(),
+				eq(FILENAME),
+				isNull(),
+				eq(FLOWFILE_METADATA_NO_HEADERS_NO_FLOW),
+				eq(MEDIA_TYPE));
+
+		// TODO: EOF inputStream?
+		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
+	}
+
+	@SneakyThrows
+	byte[] flowfile(Map<String, String> metadata) {
+		FlowFilePackagerV1 packager = new FlowFilePackagerV1();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		packager.packageFlowFile(new ByteArrayInputStream(CONTENT.getBytes()),
+				out, metadata, CONTENT.length());
+		return out.toByteArray();
 	}
 }

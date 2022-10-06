@@ -15,14 +15,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.client;
+package org.deltafi.core.exceptions;
 
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-
-public class IngressProjectionRoot extends BaseProjectionNode {
-  public Ingress_SourceInfoProjection sourceInfo() {
-    Ingress_SourceInfoProjection projection = new Ingress_SourceInfoProjection(this, this);    
-    getFields().put("sourceInfo", projection);
-    return projection;
-  }
+public class IngressException extends Exception {
+    public IngressException(String message) { super(message); }
+    public IngressException(String message, Throwable t) { super(message, t); }
 }

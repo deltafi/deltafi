@@ -14,9 +14,10 @@ data:
     - deltafi-api
     - deltafi-core-actions
     - deltafi-core
+    - deltafi-core-worker
     - deltafi-egress-sink
-    - deltafi-grafana
     - deltafi-ingress
+    - deltafi-grafana
     - deltafi-kubernetes-dashboard
     - deltafi-minio
     - deltafi-mongodb

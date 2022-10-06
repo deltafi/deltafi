@@ -42,7 +42,6 @@ deltafi:
     image: deltafi/deltafi-doc:0.98.5
     enabled: false
   ingress:
-    image: deltafi/deltafi-ingress:0.98.5
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:

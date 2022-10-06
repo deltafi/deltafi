@@ -11,8 +11,6 @@ deltafi:
     image: localhost:5000/deltafi-core:latest
   doc:
     image: localhost:5000/deltafi-doc:latest
-  ingress:
-    image: localhost:5000/deltafi-ingress:latest
   auth:
     image: localhost:5000/deltafi-auth:latest
     mode: disabled

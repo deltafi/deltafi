@@ -15,9 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.exceptions;
+package org.deltafi.core.exceptions;
 
-public class DeltafiException extends Exception {
-    public DeltafiException(String message) { super(message); }
-    public DeltafiException(String message, Throwable t) { super(message, t); }
+public class IngressMetadataException extends Exception {
+
+    public IngressMetadataException(String message) {
+        super(message);
+    }
 }

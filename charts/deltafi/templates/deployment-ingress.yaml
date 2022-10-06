@@ -20,11 +20,21 @@ spec:
       {{- include "initContainersWaitForCore" . | nindent 6 }}
       containers:
       - name: deltafi-ingress
-        image: {{ .Values.deltafi.ingress.image }}
+        image: {{ .Values.deltafi.core.image }}
         {{- with .Values.deltafi.envVars }}
         env:
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        - name: JDK_JAVA_OPTIONS
+          value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=false"
+        - name: MONGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-passwords
+              key: mongodb-password
+                {{- with .Values.deltafi.envVars }}
+                {{- toYaml . | nindent 8 }}
+                {{- end }}
         ports:
         - containerPort: 8080
         {{- include "defaultStartupProbe" . | nindent 8 }}

@@ -50,7 +50,7 @@ import java.util.Optional;
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
 @MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class})
 @EnableRetry
-public class DeltaFileServiceRetryTest {
+public class IngressServiceRetryTest {
 
     @Autowired
     private DeltaFilesService deltaFilesService;

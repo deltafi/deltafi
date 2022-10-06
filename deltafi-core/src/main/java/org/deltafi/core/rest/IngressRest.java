@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.ingress.rest;
+package org.deltafi.core.rest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -33,9 +33,9 @@ import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.ingress.exceptions.DeltafiException;
-import org.deltafi.ingress.exceptions.DeltafiMetadataException;
-import org.deltafi.ingress.service.DeltaFileService;
+import org.deltafi.core.exceptions.IngressException;
+import org.deltafi.core.exceptions.IngressMetadataException;
+import org.deltafi.core.services.IngressService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -53,8 +53,8 @@ import static org.deltafi.common.metrics.MetricsUtil.*;
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-public class DeltaFileRest {
-    private final DeltaFileService deltaFileService;
+public class IngressRest {
+    private final IngressService ingressService;
     private final MetricRepository metricService;
 
     ObjectMapper objectMapper = new ObjectMapper();
@@ -72,6 +72,7 @@ public class DeltaFileRest {
                                               @RequestHeader(HttpHeaders.CONTENT_TYPE) String contentType,
                                               @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false) String username) {
         username = StringUtils.isNotBlank(username) ? username : "system";
+        // TODO: Audit log
 
         log.debug("Ingressing: flow={} filename={} contentType={}",
                 flow,
@@ -79,11 +80,11 @@ public class DeltaFileRest {
                 contentType);
 
         try {
-            DeltaFileService.IngressResult ingressResult;
+            IngressService.IngressResult ingressResult;
             if (contentType.equals(FLOWFILE_MEDIA_TYPE) || contentType.equals(FLOWFILE_V1_MEDIA_TYPE)) {
-                ingressResult = ingressFlowfileV1(dataStream, metadata, flow, filename, username);
+                ingressResult = ingressFlowfileV1(dataStream, metadata, flow, filename);
             } else {
-                ingressResult = ingressBinary(dataStream, contentType, metadata, flow, filename, username);
+                ingressResult = ingressBinary(dataStream, contentType, metadata, flow, filename);
             }
 
             Map<String, String> tags = tagsFor(ingressResult.getFlow());
@@ -91,11 +92,11 @@ public class DeltaFileRest {
             metricService.increment(BYTES_IN, tags, ingressResult.getContentReference().getSize());
 
             return ResponseEntity.ok(ingressResult.getContentReference().getDid());
-        } catch (ObjectStorageException | DeltafiGraphQLException | DeltafiException exception) {
+        } catch (ObjectStorageException | DeltafiGraphQLException | IngressException exception) {
             log.error("500 error", exception);
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             return ResponseEntity.status(500).body(exception.getMessage());
-        } catch (DeltafiMetadataException exception) {
+        } catch (IngressMetadataException exception) {
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             log.error("400 error", exception);
             return ResponseEntity.status(400).body(exception.getMessage());
@@ -110,9 +111,9 @@ public class DeltaFileRest {
         return MetricsUtil.tagsFor(ActionType.INGRESS, INGRESS_ACTION, ingressFlow, null);
     }
 
-    private DeltaFileService.IngressResult ingressBinary(InputStream dataStream, String mediaType, String metadata, String flow, String filename, String username) throws DeltafiMetadataException, DeltafiException, ObjectStorageException {
-        if(Objects.isNull(filename)) throw new DeltafiMetadataException("Filename must be passed in as a header");
-        return deltaFileService.ingressData(dataStream, filename, flow, metadata, mediaType, username);
+    private IngressService.IngressResult ingressBinary(InputStream dataStream, String mediaType, String metadata, String flow, String filename) throws IngressMetadataException, IngressException, ObjectStorageException {
+        if(Objects.isNull(filename)) throw new IngressMetadataException("Filename must be passed in as a header");
+        return ingressService.ingressData(dataStream, filename, flow, metadata, mediaType);
     }
 
     static class FlowFile {
@@ -120,33 +121,33 @@ public class DeltaFileRest {
         Map<String, String> metadata;
     }
 
-    private DeltaFileService.IngressResult ingressFlowfileV1(InputStream dataStream, String metadataString, String flow, String filename, String username) throws DeltafiMetadataException, DeltafiException, ObjectStorageException {
+    private IngressService.IngressResult ingressFlowfileV1(InputStream dataStream, String metadataString, String flow, String filename) throws IngressMetadataException, IngressException, ObjectStorageException {
         FlowFile flowfile = unarchiveFlowfileV1(dataStream, fromJson(metadataString));
         if (flow == null) { flow = flowfile.metadata.get("flow"); }
         if (Objects.isNull(filename)) { filename = flowfile.metadata.get("filename"); }
-        if(Objects.isNull(filename)) throw new DeltafiMetadataException("Filename must be passed in as a header or flowfile attribute");
-        return deltaFileService.ingressData(new ByteArrayInputStream(flowfile.content), filename, flow, flowfile.metadata, MediaType.APPLICATION_OCTET_STREAM, username);
+        if(Objects.isNull(filename)) throw new IngressMetadataException("Filename must be passed in as a header or flowfile attribute");
+        return ingressService.ingressData(new ByteArrayInputStream(flowfile.content), filename, flow, flowfile.metadata, MediaType.APPLICATION_OCTET_STREAM);
     }
 
-    Map<String, String> fromJson(String metadata) throws DeltafiMetadataException {
+    Map<String, String> fromJson(String metadata) throws IngressMetadataException {
         if (Objects.isNull(metadata)) {
             return Map.of();
         }
         try {
             return objectMapper.readValue(metadata, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
-            throw new DeltafiMetadataException("Could not parse metadata, metadata must be a JSON Object: " + e.getMessage());
+            throw new IngressMetadataException("Could not parse metadata, metadata must be a JSON Object: " + e.getMessage());
         }
     }
 
-    FlowFile unarchiveFlowfileV1(@NotNull InputStream stream, Map<String, String> metadata) throws DeltafiException {
+    FlowFile unarchiveFlowfileV1(@NotNull InputStream stream, Map<String, String> metadata) throws IngressException {
         try (TarArchiveInputStream archive = new TarArchiveInputStream(stream)) {
             FlowFile flowfile = new FlowFile();
             flowfile.metadata = new HashMap<>(metadata);
             final TarArchiveEntry attribEntry = archive.getNextTarEntry();
-            if (Objects.isNull(attribEntry)) { throw new DeltafiException("No content in flowfile"); }
+            if (Objects.isNull(attribEntry)) { throw new IngressException("No content in flowfile"); }
             if (!attribEntry.getName().equals(FILENAME_ATTRIBUTES)) {
-                throw new DeltafiException("Expected two tar entries: "
+                throw new IngressException("Expected two tar entries: "
                         + FILENAME_CONTENT + " and "
                         + FILENAME_ATTRIBUTES);
             }
@@ -165,7 +166,7 @@ public class DeltaFileRest {
             return flowfile;
 
         } catch (IOException e) {
-            throw new DeltafiException("Unable to unarchive tar", e);
+            throw new IngressException("Unable to unarchive tar", e);
         }
     }
 

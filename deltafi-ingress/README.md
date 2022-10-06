@@ -1,1 +1,0 @@
-# deltafi-ingress project
