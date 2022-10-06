@@ -38,16 +38,9 @@ import static org.deltafi.common.constant.DeltaFiConstants.DGS_QUEUE;
 public class ActionEventQueue {
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
 
-    public ActionEventQueue(ActionEventQueueProperties actionEventQueueProperties) throws URISyntaxException {
-        jedisKeyedBlockingQueue = new JedisKeyedBlockingQueue(actionEventQueueProperties.getUrl(),
-                actionEventQueueProperties.getPassword().orElse(""), actionEventQueueProperties.getMaxIdle(),
-                actionEventQueueProperties.getMaxTotal());
-        log.info("Jedis pool size: " + actionEventQueueProperties.getMaxTotal());
-    }
-
-    public ActionEventQueue(ActionEventQueueProperties actionEventQueueProperties, int actionCount) throws URISyntaxException {
-        int maxIdle = actionCount > 0 ? actionCount : actionEventQueueProperties.getMaxIdle();
-        int maxTotal = actionCount > 0 ? actionCount : actionEventQueueProperties.getMaxTotal();
+    public ActionEventQueue(ActionEventQueueProperties actionEventQueueProperties, int poolSize) throws URISyntaxException {
+        int maxIdle = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxIdle();
+        int maxTotal = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxTotal();
         jedisKeyedBlockingQueue = new JedisKeyedBlockingQueue(actionEventQueueProperties.getUrl(),
                 actionEventQueueProperties.getPassword().orElse(""), maxIdle, maxTotal);
         log.info("Jedis pool size: " + maxTotal);

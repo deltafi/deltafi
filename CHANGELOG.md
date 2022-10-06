@@ -79,6 +79,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Added optional documentation server deployment enabled via values.yaml
 - Made `totalBytes` field in DeltaFile searchable
+- Added `deltafi.coreServiceThreads` property to configure core thread pool
 
 ### Changed
 - Increased action queue check threshold

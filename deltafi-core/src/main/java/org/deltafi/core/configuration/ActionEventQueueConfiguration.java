@@ -19,18 +19,19 @@ package org.deltafi.core.configuration;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.action.ActionEventQueueProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.net.URISyntaxException;
 
 @Configuration
-@EnableConfigurationProperties(ActionEventQueueProperties.class)
+@ConfigurationPropertiesScan(basePackages = {"org.deltafi.common.action", "org.deltafi.core.configuration"})
 public class ActionEventQueueConfiguration {
     @Bean
-    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties)
+    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
+                                             DeltaFiProperties deltaFiProperties)
             throws URISyntaxException {
-        return new ActionEventQueue(actionEventQueueProperties);
+        return new ActionEventQueue(actionEventQueueProperties, deltaFiProperties.getCoreServiceThreads());
     }
 }

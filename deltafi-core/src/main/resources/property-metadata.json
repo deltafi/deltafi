@@ -104,6 +104,14 @@
         "editable": true
       },
       {
+        "key": "deltafi.coreServiceThreads",
+        "description": " The number of threads used in core processing.",
+        "defaultValue": "16",
+        "hidden": false,
+        "refreshable": false,
+        "editable": true
+      },
+      {
         "key": "deltafi.deltaFileTtl",
         "description": "Duration that a DeltaFile should live, any records older will be removed.",
         "defaultValue": "14d",

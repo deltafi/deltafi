@@ -28,6 +28,7 @@ import java.time.Duration;
 @Data
 public class DeltaFiProperties {
     private int requeueSeconds = 30;
+    private int coreServiceThreads = 16;
     private Duration deltaFileTtl= Duration.ofDays(14);
     private DeleteConfiguration delete = new DeleteConfiguration();
     private Duration actionInactivityThreshold = Duration.ofMinutes(5);

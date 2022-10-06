@@ -51,6 +51,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -104,10 +105,14 @@ public class DeltaFilesService {
     final ActionEventQueue actionEventQueue;
     final ContentStorageService contentStorageService;
     private final MetricRepository metricService;
+    private ExecutorService executor;
 
-    public static final int EXECUTOR_THREADS = 16;
-
-    private final ExecutorService executor = Executors.newFixedThreadPool(EXECUTOR_THREADS);
+    @PostConstruct
+    private void initializeExecutor() {
+        int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
+        executor = Executors.newFixedThreadPool(threadCount);
+        log.info("Executors pool size: " + threadCount);
+    }
 
     public DeltaFile getDeltaFile(String did) {
         return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
