@@ -188,6 +188,12 @@ grafana:
       enable_feedback_links: false
     dashboards:
       min_refresh_interval: "10s"
+    unified_alerting:
+      enabled: true
+    alerting:
+      enabled: false
+    security:
+      allow_embedding: true
   sidecar:
     dashboards:
       enabled: true

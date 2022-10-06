@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - DeltaFile contains egress flow name for each egress flow executed
+- Enable advanced alerting in Grafana
+- Enable iframe embedding from Grafana
 
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring
