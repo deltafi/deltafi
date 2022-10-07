@@ -205,21 +205,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueSeconds), DeltaFile.class);
         }
 
-        // replicate what was updated in the database locally, so we don't have to issue another query
-        for (DeltaFile deltaFile : filesToRequeue) {
-            deltaFile.getActions().stream()
-                    .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().plusSeconds(requeueSeconds).isBefore(requeueTime))
-                    .forEach(a -> {
-                        a.setErrorCause(null);
-                        a.setErrorContext(null);
-                        a.setModified(requeueTime);
-                        a.setQueued(requeueTime);
-                    });
-            deltaFile.setModified(requeueTime);
-            deltaFile.incrementRequeueCount();
-        }
-
-        return filesToRequeue;
+        List<String> dids = filesToRequeue.stream().map(DeltaFile::getDid).collect(Collectors.toList());
+        Query query = Query.query(Criteria.where(ID).in(dids));
+        return mongoTemplate.find(query, DeltaFile.class);
     }
 
     @Override

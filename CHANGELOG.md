@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - Fixed slow Monitor probe that was causing erroneous restarts
 - System Overview dashboard uniformly uses SI measurements for bytes
+- Errors on requeued DeltaFiles due to missing flows were not properly marked
 
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
