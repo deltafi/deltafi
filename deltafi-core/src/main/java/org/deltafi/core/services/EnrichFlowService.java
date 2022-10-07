@@ -21,7 +21,7 @@ import org.deltafi.core.converters.EnrichFlowPlanConverter;
 import org.deltafi.core.repo.EnrichFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.EnrichFlowPlan;
+import org.deltafi.common.types.EnrichFlowPlan;
 import org.deltafi.core.validation.EnrichFlowValidator;
 import org.springframework.stereotype.Service;
 

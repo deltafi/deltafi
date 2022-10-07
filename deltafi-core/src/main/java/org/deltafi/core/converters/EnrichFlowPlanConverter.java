@@ -18,10 +18,10 @@
 package org.deltafi.core.converters;
 
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.core.configuration.EnrichActionConfiguration;
-import org.deltafi.core.configuration.DomainActionConfiguration;
+import org.deltafi.common.types.EnrichActionConfiguration;
+import org.deltafi.common.types.DomainActionConfiguration;
 import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.EnrichFlowPlan;
+import org.deltafi.common.types.EnrichFlowPlan;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -72,11 +72,11 @@ public class EnrichFlowPlanConverter extends FlowPlanConverter<EnrichFlowPlan, E
         EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration();
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(enrichActionConfiguration, enrichActionTemplate);
 
-        List<String> requiresEnrichment = flowPlanPropertyHelper.replaceListOfPlaceholders(enrichActionTemplate.getRequiresEnrichment(), enrichActionConfiguration.getName());
+        List<String> requiresEnrichments = flowPlanPropertyHelper.replaceListOfPlaceholders(enrichActionTemplate.getRequiresEnrichments(), enrichActionConfiguration.getName());
         List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(enrichActionTemplate.getRequiresDomains(), enrichActionConfiguration.getName());
         List<KeyValue> requiresMetadata = flowPlanPropertyHelper.replaceKeyValuePlaceholders(enrichActionTemplate.getRequiresMetadataKeyValues(), enrichActionConfiguration.getName());
 
-        enrichActionConfiguration.setRequiresEnrichment(requiresEnrichment);
+        enrichActionConfiguration.setRequiresEnrichments(requiresEnrichments);
         enrichActionConfiguration.setRequiresDomains(requiresDomains);
         enrichActionConfiguration.setRequiresMetadataKeyValues(requiresMetadata);
 

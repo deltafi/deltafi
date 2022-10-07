@@ -81,8 +81,8 @@ module Deltafi
           end
 
           def action_queue_names
-            response = DF.graphql('query { actionSchemas { id } }')
-            response.parsed_response['data']['actionSchemas'].map { |a| a['id'] }
+            response = DF.graphql('query { actionDescriptors { name } }')
+            response.parsed_response['data']['actionDescriptors'].map { |a| a['name'] }
           end
 
           def size_threshold

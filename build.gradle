@@ -25,7 +25,10 @@ subprojects {
     apply plugin: 'java'
 
     ext {
-        excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12", "**/*.yaml", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar", "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**", "**/node_modules/**"]
+        excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
+                              "**/*.yaml", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
+                              "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
+                              "**/node_modules/**"]
     }
 
     java {
@@ -42,24 +45,14 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
-    apply plugin: 'jacoco'
-
     test {
         useJUnitPlatform()
     }
 
-    jacoco {
-        reportsDirectory.set(layout.buildDirectory.dir('jacocoReport'))
-    }
+    apply plugin: 'jacoco'
 
     jacocoTestReport {
         dependsOn test
-        reports {
-            xml.enabled true
-            csv.enabled true
-            html.destination layout.buildDirectory.dir('jacocoHtmlReport').get().asFile
-        }
-
         afterEvaluate {
             classDirectories.setFrom(files(classDirectories.files.collect {
                 fileTree(dir: it, exclude: ['**/generated/**', '**/*Application.class'])

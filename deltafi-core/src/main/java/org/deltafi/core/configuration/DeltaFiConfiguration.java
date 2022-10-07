@@ -17,10 +17,27 @@
  */
 package org.deltafi.core.configuration;
 
-import java.io.Serializable;
+import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.common.action.ActionEventQueueProperties;
+import org.deltafi.core.services.api.DeltafiApiClient;
+import org.deltafi.core.services.api.DeltafiApiRestClient;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public interface DeltaFiConfiguration extends org.deltafi.core.generated.types.DeltaFiConfiguration, Serializable {
+import java.net.URISyntaxException;
 
-    String getName();
-    void setName(String name);
+@Configuration
+@EnableConfigurationProperties({ActionEventQueueProperties.class, DeltaFiProperties.class})
+public class DeltaFiConfiguration {
+    @Bean
+    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
+                                             DeltaFiProperties deltaFiProperties) throws URISyntaxException {
+        return new ActionEventQueue(actionEventQueueProperties, deltaFiProperties.getCoreServiceThreads());
+    }
+
+    @Bean
+    public DeltafiApiClient deltafiApiClient(DeltaFiProperties properties) {
+        return new DeltafiApiRestClient(properties.getApiUrl());
+    }
 }

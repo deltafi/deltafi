@@ -40,8 +40,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class MultipartFormatAction<P extends ActionParameters> extends FormatActionBase<P> {
-    public MultipartFormatAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public MultipartFormatAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

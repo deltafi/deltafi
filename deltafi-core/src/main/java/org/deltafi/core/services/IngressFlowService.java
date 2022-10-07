@@ -21,7 +21,7 @@ import org.deltafi.core.converters.IngressFlowPlanConverter;
 import org.deltafi.core.repo.IngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.IngressFlow;
-import org.deltafi.core.types.IngressFlowPlan;
+import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.core.validation.IngressFlowValidator;
 import org.springframework.stereotype.Service;
 

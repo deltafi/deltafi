@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.validation;
 
-import org.deltafi.core.types.EgressFlowPlan;
+import org.deltafi.common.types.EgressFlowPlan;
 import org.springframework.stereotype.Service;
 
 @Service

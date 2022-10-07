@@ -19,19 +19,23 @@ package org.deltafi.core.configuration;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 
-@Configuration
-@ConfigurationProperties(prefix = "deltafi")
+@ConfigurationProperties("deltafi")
 @Data
 public class DeltaFiProperties {
+    @Data
+    public static class DeleteProperties {
+        private Duration frequency = Duration.ofMinutes(10);
+        private boolean onCompletion = false;
+        private int policyBatchSize = 1000;
+    }
+
     private int requeueSeconds = 30;
     private int coreServiceThreads = 16;
-    private Duration deltaFileTtl= Duration.ofDays(14);
-    private DeleteConfiguration delete = new DeleteConfiguration();
-    private Duration actionInactivityThreshold = Duration.ofMinutes(5);
+    private Duration deltaFileTtl = Duration.ofDays(14);
+    private DeleteProperties delete = new DeleteProperties();
     private String apiUrl;
     private String systemName;
 }

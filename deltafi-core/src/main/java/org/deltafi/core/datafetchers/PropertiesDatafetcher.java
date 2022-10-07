@@ -44,12 +44,12 @@ public class PropertiesDatafetcher {
     }
 
     @DgsMutation
-    public int updateProperties(@InputArgument(collectionType = PropertyUpdate.class) List<PropertyUpdate> updates) {
+    public int updateProperties(@InputArgument List<PropertyUpdate> updates) {
         return propertiesService.updateProperties(updates);
     }
 
     @DgsMutation
-    public int removePropertyOverrides(@InputArgument(collectionType = PropertyId.class) List<PropertyId> propertyIds) {
+    public int removePropertyOverrides(@InputArgument List<PropertyId> propertyIds) {
         return propertiesService.unsetProperties(propertyIds);
     }
 

@@ -19,6 +19,7 @@ package org.deltafi.core.plugin;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.maven.VersionMatcher;
+import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.springframework.stereotype.Service;
 

@@ -19,9 +19,8 @@ package org.deltafi.actionkit.action.domain;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionRegistrationInput;
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DomainActionSchemaInput;
 
 import java.util.List;
 
@@ -33,8 +32,8 @@ import java.util.List;
  * @see SimpleDomainAction
  */
 public abstract class DomainActionBase<P extends ActionParameters> extends Action<P> {
-    public DomainActionBase(Class<P> actionParametersClass) {
-        super(ActionType.DOMAIN, actionParametersClass);
+    public DomainActionBase(Class<P> actionParametersClass, String description) {
+        super(ActionType.DOMAIN, actionParametersClass, description);
     }
 
     /**
@@ -44,13 +43,9 @@ public abstract class DomainActionBase<P extends ActionParameters> extends Actio
     public abstract List<String> getRequiresDomains();
 
     @Override
-    public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
-        DomainActionSchemaInput input = DomainActionSchemaInput.newBuilder()
-                .id(getClassCanonicalName())
-                .paramClass(getParamClass())
-                .schema(getDefinition())
-                .requiresDomains(getRequiresDomains())
-                .build();
-        actionRegistrationInput.getDomainActions().add(input);
+    public ActionDescriptor buildActionDescriptor() {
+        ActionDescriptor actionDescriptor = super.buildActionDescriptor();
+        actionDescriptor.setRequiresDomains(getRequiresDomains());
+        return actionDescriptor;
     }
 }

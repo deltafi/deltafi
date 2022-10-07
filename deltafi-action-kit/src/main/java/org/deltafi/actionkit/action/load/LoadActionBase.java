@@ -21,9 +21,6 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionType;
 
-import org.deltafi.common.types.ActionRegistrationInput;
-import org.deltafi.common.types.LoadActionSchemaInput;
-
 /**
  * Specialization class for LOAD actions.  This class should not be used directly, but instead use one of
  * the provided Load action implementation classes.
@@ -34,17 +31,7 @@ import org.deltafi.common.types.LoadActionSchemaInput;
  * @see SimpleMultipartLoadAction
  */
 public abstract class LoadActionBase<P extends ActionParameters> extends Action<P> {
-    public LoadActionBase(Class<P> actionParametersClass) {
-        super(ActionType.LOAD, actionParametersClass);
-    }
-
-    @Override
-    public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
-        LoadActionSchemaInput input = LoadActionSchemaInput.newBuilder()
-                .id(getClassCanonicalName())
-                .paramClass(getParamClass())
-                .schema(getDefinition())
-                .build();
-        actionRegistrationInput.getLoadActions().add(input);
+    public LoadActionBase(Class<P> actionParametersClass, String description) {
+        super(ActionType.LOAD, actionParametersClass, description);
     }
 }

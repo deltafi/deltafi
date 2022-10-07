@@ -21,12 +21,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.*;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.core.types.ActionSchema;
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.services.ActionSchemaService;
+import org.deltafi.core.services.ActionDescriptorService;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -37,15 +36,14 @@ import java.util.stream.Collectors;
 public class SchemaComplianceValidator {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
+    private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
 
-    private final DeltaFiProperties properties;
-    private final ActionSchemaService actionSchemaService;
+    private final ActionDescriptorService actionDescriptorService;
     private final SchemaValidatorsConfig validatorsConfig;
 
-    public SchemaComplianceValidator(ActionSchemaService actionSchemaService, DeltaFiProperties properties) {
-        this.actionSchemaService = actionSchemaService;
-        this.properties = properties;
+    public SchemaComplianceValidator(ActionDescriptorService actionDescriptorService) {
+        this.actionDescriptorService = actionDescriptorService;
+
         validatorsConfig = new SchemaValidatorsConfig();
         validatorsConfig.setTypeLoose(true);
     }
@@ -66,34 +64,31 @@ public class SchemaComplianceValidator {
         return errors;
     }
 
-    List<FlowConfigError> validateAgainstSchema(ActionConfiguration actionConfiguration) {
-        return actionSchemaService.getByActionClass(actionConfiguration.getType())
-                .map(schema -> this.validateAgainstSchema(schema, actionConfiguration))
+    private List<FlowConfigError> validateAgainstSchema(ActionConfiguration actionConfiguration) {
+        return actionDescriptorService.getByActionClass(actionConfiguration.getType())
+                .map(actionDescriptor -> validateAgainstSchema(actionDescriptor, actionConfiguration))
                 .orElseGet(() -> Collections.singletonList(notRegisteredError(actionConfiguration)));
     }
 
-    public List<FlowConfigError> validateAgainstSchema(ActionSchema actionSchema, ActionConfiguration actionConfiguration) {
+    public List<FlowConfigError> validateAgainstSchema(ActionDescriptor actionDescriptor, ActionConfiguration actionConfiguration) {
         List<FlowConfigError> errors = new ArrayList<>();
-        if (isInactive(actionSchema)) {
-            errors.add(inactiveActionError(actionConfiguration, actionSchema.getLastHeard()));
-        }
 
-        validateParameters(actionConfiguration, actionSchema).ifPresent(errors::add);
+        validateParameters(actionConfiguration, actionDescriptor).ifPresent(errors::add);
 
-        actionConfiguration.validate(actionSchema).stream()
+        actionConfiguration.validate(actionDescriptor).stream()
                 .map(message -> actionConfigError(actionConfiguration, message))
                 .forEach(errors::add);
 
         return errors;
     }
 
-    Optional<FlowConfigError> validateParameters(ActionConfiguration actionConfig, ActionSchema actionSchema) {
-        JsonNode schemaNode = OBJECT_MAPPER.convertValue(actionSchema.getSchema(), JsonNode.class);
+    private Optional<FlowConfigError> validateParameters(ActionConfiguration actionConfig, ActionDescriptor actionDescriptor) {
+        JsonNode schemaNode = OBJECT_MAPPER.convertValue(actionDescriptor.getSchema(), JsonNode.class);
 
         Map<String, Object> paramMap = Objects.nonNull(actionConfig.getParameters()) ? actionConfig.getParameters() : new HashMap<>();
         JsonNode params = OBJECT_MAPPER.convertValue(paramMap, JsonNode.class);
 
-        final JsonSchema schema = factory.getSchema(schemaNode, validatorsConfig);
+        final JsonSchema schema = FACTORY.getSchema(schemaNode, validatorsConfig);
 
         schema.initializeValidators();
 
@@ -137,9 +132,4 @@ public class SchemaComplianceValidator {
         configError.setMessage(message);
         return configError;
     }
-
-    boolean isInactive(ActionSchema schema) {
-        return Objects.isNull(schema.getLastHeard()) || schema.getLastHeard().isBefore(OffsetDateTime.now().minus(properties.getActionInactivityThreshold()));
-    }
-
 }

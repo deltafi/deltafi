@@ -92,7 +92,7 @@ case "$SUBCOMMAND" in
                  name
                  type
                  requiresDomains
-                 requiresEnrichment
+                 requiresEnrichments
                  parameters
                }
                validateActions {

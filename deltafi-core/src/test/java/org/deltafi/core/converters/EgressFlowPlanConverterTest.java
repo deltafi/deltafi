@@ -24,14 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
-import org.deltafi.core.configuration.EgressActionConfiguration;
-import org.deltafi.core.configuration.FormatActionConfiguration;
-import org.deltafi.core.configuration.ValidateActionConfiguration;
+import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.FormatActionConfiguration;
+import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EgressFlowPlan;
+import org.deltafi.common.types.EgressFlowPlan;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -109,7 +109,7 @@ class EgressFlowPlanConverterTest {
         formatActionConfiguration.setName("passthrough.PassthroughFormatAction");
         formatActionConfiguration.setType("org.deltafi.passthrough.action.RoteFormatAction");
         formatActionConfiguration.setRequiresDomains(List.of("binary"));
-        formatActionConfiguration.setRequiresEnrichment(List.of("binary"));
+        formatActionConfiguration.setRequiresEnrichments(List.of("binary"));
         return formatActionConfiguration;
     }
 

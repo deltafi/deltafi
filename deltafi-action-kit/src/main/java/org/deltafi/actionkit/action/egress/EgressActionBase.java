@@ -20,8 +20,6 @@ package org.deltafi.actionkit.action.egress;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.ActionRegistrationInput;
-import org.deltafi.common.types.EgressActionSchemaInput;
 
 /**
  * Specialization class for EGRESS actions.  This class should not be used directly, but instead use one of
@@ -33,17 +31,7 @@ import org.deltafi.common.types.EgressActionSchemaInput;
  * @see SimpleMultipartEgressAction
  */
 public abstract class EgressActionBase<P extends ActionParameters> extends Action<P> {
-    public EgressActionBase(Class<P> actionParametersClass) {
-        super(ActionType.EGRESS, actionParametersClass);
-    }
-
-    @Override
-    public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
-        EgressActionSchemaInput input = EgressActionSchemaInput.newBuilder()
-                .id(getClassCanonicalName())
-                .paramClass(getParamClass())
-                .schema(getDefinition())
-                .build();
-        actionRegistrationInput.getEgressActions().add(input);
+    public EgressActionBase(Class<P> actionParametersClass, String description) {
+        super(ActionType.EGRESS, actionParametersClass, description);
     }
 }

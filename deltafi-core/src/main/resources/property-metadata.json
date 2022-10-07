@@ -253,11 +253,6 @@
         "defaultValue": "100"
       },
       {
-        "key": "actions.action-registration-period-ms",
-        "description": "Frequency that the actions register with the core system.",
-        "defaultValue": "60000"
-      },
-      {
         "key": "actions.hostname",
         "description": "Hostname of the server running the action.",
         "defaultValue": null

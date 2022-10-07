@@ -21,8 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
-import org.deltafi.core.types.ActionSchema;
-import org.deltafi.core.types.EgressActionSchema;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -193,14 +191,12 @@ public class Util {
                 .value(value).build();
     }
 
-    public static ActionSchema egressSchema() {
-        return egressSchema("config-test/rest-egress-schema.json");
+    public static ActionDescriptor egressActionDescriptor() {
+        return egressActionDescriptor("config-test/rest-egress-action-descriptor.json");
     }
 
-    public static ActionSchema egressSchema(String schemaPath) {
-        EgressActionSchema actionSchema = readResource(schemaPath, EgressActionSchema.class);
-        actionSchema.setLastHeard(OffsetDateTime.now());
-        return actionSchema;
+    public static ActionDescriptor egressActionDescriptor(String schemaPath) {
+        return readResource(schemaPath, ActionDescriptor.class);
     }
 
     public static <T> T readResource(String resourcePath, Class<T> clazz) {

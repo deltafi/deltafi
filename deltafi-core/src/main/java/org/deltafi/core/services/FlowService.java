@@ -21,27 +21,24 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.DeltaFiConfiguration;
-import org.deltafi.core.converters.FlowPlanConverter;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.core.types.ConfigType;
+import org.deltafi.common.types.DeltaFiConfiguration;
+import org.deltafi.core.types.Flow;
+import org.deltafi.common.types.FlowPlan;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.plugin.Plugin;
+import org.deltafi.core.converters.FlowPlanConverter;
+import org.deltafi.common.types.Plugin;
 import org.deltafi.core.plugin.PluginUninstallCheck;
 import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.types.ConfigType;
-import org.deltafi.core.types.Flow;
-import org.deltafi.core.types.FlowPlan;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
 
 import javax.annotation.PostConstruct;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -213,7 +210,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
             refreshCache();
         }
 
-        return flowCache.values().stream().collect(Collectors.toList());
+        return new ArrayList<>(flowCache.values());
     }
 
     /**

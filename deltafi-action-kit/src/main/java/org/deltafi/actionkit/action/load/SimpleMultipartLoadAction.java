@@ -37,8 +37,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartLoadAction extends MultipartLoadAction<ActionParameters> {
-    public SimpleMultipartLoadAction() {
-        super(ActionParameters.class);
+    public SimpleMultipartLoadAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.98.6
+## [Unreleased] - Next release 0.99.0
 
 ### Added
 - DeltaFile contains egress flow name for each egress flow executed
@@ -13,10 +13,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring
 - Optimize error detection when a split result does not match a running ingress flow
+- ActionDescriptor now contains the schema. All ActionSchema classes have been removed.
+- requiresEnrichment changed to requiresEnrichments.
 
 ### Deprecated
+- The gradle-plugin is no longer needed to generate a plugin manifest. It is now generated on plugin startup.
 
 ### Removed
+- The ActionProcessor annotation processor is no longer needed to discover @Action-annotated classes and has\
+been removed.
 
 ### Fixed
 - Fixed slow Monitor probe that was causing erroneous restarts
@@ -27,11 +32,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Do not store 0-byte files in minio
 - Use Kubernetes node name in nodemonitor metrics
 - Merge ingress code into core. Start ingress as a separate core instance with most core services disabled. Remove the overhead of an internal HTTP call on ingress.
+- Plugins now register themselves with their actions, variables, and flows on startup.
 
 ### Security
 
 ### Upgrade and Migration
 - Upgraded to Redis 7.0.5.  Air gapped installations will need the new Redis image
+- Plugins now require expanded Spring boot info in build.gradle (plugin dependencies are optional):
+```
+springBoot {
+    buildInfo {
+        properties {
+            additional = [
+                    description: "Provides conversions to/from STIX 1.X and 2.1 formats",
+                    actionKitVersion: "${deltafiVersion}"
+                    pluginDependencies: "org.deltafi:deltafi-core-actions:${deltafiVersion},org.deltafi:deltafi-passthrough:1.0.0"
+            ]
+        }
+    }
+}
+```
+- Helm charts are (currently) still used by install-plugin/uninstall-plugin. They require a group annotation in\
+Chart.yaml:
+```
+annotations:
+  group: org.deltafi.passthrough
+```
+- Plugin flow files now require a type field. Valid values are INGRESS, ENRICH, and EGRESS.
+- Plugin variables.json files need to have the extra "variables" field removed, making it just an array of variables.
 
 ## [0.98.5] - 2022-10-03
 

@@ -17,18 +17,16 @@
  */
 package org.deltafi.core.converters;
 
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.Util;
-import org.deltafi.core.types.ActionSchema;
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.configuration.EgressActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.validation.SchemaComplianceValidator;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +34,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("unchecked")
 class FlowPlanPropertyHelperTest {
 
     @Test
@@ -235,8 +234,8 @@ class FlowPlanPropertyHelperTest {
     }
 
     @Test
-    void testValidParameterSubstitution() throws IOException {
-        SchemaComplianceValidator validator = new SchemaComplianceValidator(null, new DeltaFiProperties());
+    void testValidParameterSubstitution() {
+        SchemaComplianceValidator validator = new SchemaComplianceValidator(null);
 
         Map<String, Object> parameters = Util.readResource("config-test/complex-parameter-values.json", Map.class);
 
@@ -246,8 +245,8 @@ class FlowPlanPropertyHelperTest {
         ActionConfiguration actionConfiguration = new EgressActionConfiguration();
         actionConfiguration.setParameters(mappedParameters);
 
-        ActionSchema egressSchema = Util.egressSchema("config-test/complex-parameter-schema.json");
-        List<FlowConfigError> errors = validator.validateAgainstSchema(egressSchema, actionConfiguration);
+        ActionDescriptor egressActionDescriptor = Util.egressActionDescriptor("config-test/complex-parameter-action-descriptor.json");
+        List<FlowConfigError> errors = validator.validateAgainstSchema(egressActionDescriptor, actionConfiguration);
         assertThat(errors).isEmpty();
     }
 

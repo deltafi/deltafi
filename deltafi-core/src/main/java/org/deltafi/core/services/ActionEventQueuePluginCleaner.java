@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.core.plugin.Plugin;
+import org.deltafi.common.types.Plugin;
 import org.deltafi.core.plugin.PluginCleaner;
 import org.springframework.stereotype.Service;
 

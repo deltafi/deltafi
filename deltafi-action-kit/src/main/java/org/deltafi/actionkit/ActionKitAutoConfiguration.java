@@ -20,39 +20,34 @@ package org.deltafi.actionkit;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.properties.ActionsProperties;
+import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
-import org.deltafi.actionkit.service.RegistrationService;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.action.ActionEventQueueProperties;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.List;
 
 @AutoConfiguration
-@ConfigurationPropertiesScan(basePackages ={"org.deltafi.common.action", "org.deltafi.actionkit.properties"})
+@EnableConfigurationProperties({ActionEventQueueProperties.class, ActionsProperties.class})
 public class ActionKitAutoConfiguration {
-    @Autowired(required = false)
-    private final List<Action<?>> actions = Collections.emptyList();
+    @Bean
+    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
+                                             List<Action<?>> actions) throws URISyntaxException {
+        return new ActionEventQueue(actionEventQueueProperties, actions.size());
+    }
 
     @Bean
-    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties)
-            throws URISyntaxException {
-        return new ActionEventQueue(actionEventQueueProperties, actions.size());
+    public PluginRegistrar pluginRegistrar() {
+        return new PluginRegistrar();
     }
 
     @Bean
     public ActionRunner actionRunner() {
         return new ActionRunner();
-    }
-
-    @Bean
-    public RegistrationService registrationService() {
-        return new RegistrationService();
     }
 
     @Bean

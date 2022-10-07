@@ -17,16 +17,11 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.generated.types.PluginVariablesInput;
-import org.deltafi.core.plugin.Plugin;
 import org.deltafi.core.plugin.PluginCleaner;
 import org.deltafi.core.repo.PluginVariableRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
@@ -42,13 +37,6 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class PluginVariableService implements PluginCleaner, Snapshotter {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
     private final PluginVariableRepo pluginVariableRepo;
 
     /**
@@ -69,31 +57,82 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     /**
      * Check if an older version of the variables exist. If they do upgrade the variables,
      * otherwise save the new variables as is.
-     * @param pluginVariablesInput variables to insert or update
+     * @param variables variables to insert or update
      */
-    public void saveVariables(PluginVariablesInput pluginVariablesInput) {
-        String errors = checkNewDefaultValues(pluginVariablesInput);
+    public void saveVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
+        String errors = checkNewDefaultValues(variables);
 
         if (null != errors) {
             throw new IllegalArgumentException(errors);
         }
 
-        findExisting(pluginVariablesInput.getSourcePlugin())
-                .ifPresentOrElse(existingVariables -> replaceVariables(existingVariables, pluginVariablesInput),
-                        () -> insertVariables(pluginVariablesInput));
+        findExisting(pluginCoordinates).ifPresentOrElse(
+                existingVariables -> replaceVariables(pluginCoordinates, variables, existingVariables),
+                () -> insertVariables(pluginCoordinates, variables));
+    }
+
+    private String checkNewDefaultValues(List<Variable> variables) {
+        List<String> errors = new ArrayList<>();
+
+        for (Variable variable : variables) {
+            String errMsg = variable.getDataType().validateValue(variable.getDefaultValue());
+            if (null != errMsg) {
+                errors.add("Variable named: " + variable.getName() + " has an invalid default value: " + errMsg);
+            }
+        }
+
+        return errors.isEmpty() ? null : String.join(",", errors);
+    }
+
+    private Optional<PluginVariables> findExisting(PluginCoordinates pluginId) {
+        return pluginVariableRepo.findIgnoringVersion(pluginId.getGroupId(), pluginId.getArtifactId());
+    }
+
+    /**
+     * Replace the existing variables with the given set of variables.
+     * Preserve any values that were set in the old variables.
+     *
+     * @param pluginCoordinates the plugin coordinates
+     * @param variables variables to use in the update
+     * @param existing plugin variables that were previously stored
+     */
+    private void replaceVariables(PluginCoordinates pluginCoordinates, List<Variable> variables, PluginVariables existing) {
+        pluginVariableRepo.deleteById(existing.getSourcePlugin());
+        insertVariables(pluginCoordinates, variables.stream()
+                .map(variable -> preserveValue(variable, existing.getVariables()))
+                .collect(Collectors.toList()));
+    }
+
+    private Variable preserveValue(Variable incoming, List<Variable> existingValues) {
+        Variable variable = Variable.newBuilder()
+                .name(incoming.getName())
+                .defaultValue(incoming.getDefaultValue())
+                .dataType(incoming.getDataType())
+                .required(incoming.isRequired())
+                .description(incoming.getDescription())
+                .build();
+
+        existingValues.stream()
+                .filter(existing -> existing.getName().equals(incoming.getName()))
+                .findFirst().map(Variable::getValue)
+                .ifPresent(variable::setValue);
+
+        return variable;
+    }
+
+    private void insertVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
+        PluginVariables incoming = new PluginVariables();
+        incoming.setSourcePlugin(pluginCoordinates);
+        incoming.setVariables(variables);
+        pluginVariableRepo.save(incoming);
     }
 
     /**
      * Remove the variables for given plugin
      * @param pluginCoordinates plugin coordinates of the plugin whose variables should be removed
-     * @return true if the variables were removed for this plugin
      */
-    public boolean removeVariables(PluginCoordinates pluginCoordinates) {
-        if (exists(pluginCoordinates)) {
-            pluginVariableRepo.deleteById(pluginCoordinates);
-            return true;
-        }
-        return false;
+    public void removeVariables(PluginCoordinates pluginCoordinates) {
+        pluginVariableRepo.deleteById(pluginCoordinates);
     }
 
     /**
@@ -112,6 +151,24 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
 
         pluginVariableRepo.save(pluginVariables);
         return true;
+    }
+
+    private void setVariableFromKeyValue(PluginVariables pluginVariables, KeyValue keyValue) {
+        Variable variable = pluginVariables.getVariables().stream()
+                .filter(v1 -> nameMatches(v1, keyValue))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Variable name: " + keyValue.getKey() + " was not found in the variables for plugin: " + pluginVariables.getSourcePlugin()));
+
+        String errorMsg = variable.getDataType().validateValue(keyValue.getValue());
+
+        if (null != errorMsg) {
+            throw new IllegalArgumentException("Variable named: " + keyValue.getKey() + " has an invalid value for the given type: " + errorMsg);
+        }
+
+        variable.setValue(keyValue.getValue());
+    }
+
+    private boolean nameMatches(Variable variable, KeyValue keyValue) {
+        return Objects.nonNull(keyValue) && Objects.nonNull(keyValue.getKey()) && keyValue.getKey().equals(variable.getName());
     }
 
     @Override
@@ -169,95 +226,6 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         pluginVariables.getVariables().stream()
                 .filter(variable -> variable.getName().equals(rollbackValue.getName()))
                 .findFirst().ifPresent(variable -> variable.setValue(rollbackValue.getValue()));
-    }
-
-    /**
-     * Persist the new set of variables
-     * @param pluginVariablesInput new set of variables to save
-     */
-    void insertVariables(PluginVariablesInput pluginVariablesInput) {
-        pluginVariableRepo.save(mapFromInput(pluginVariablesInput));
-    }
-
-    /**
-     * Replace the existing variables with the given set of variables.
-     * Preserve any values that were set in the old variables.
-     * @param existing plugin variables that were previously stored
-     * @param pluginVariablesInput variables to use in the update
-     */
-    void replaceVariables(PluginVariables existing, PluginVariablesInput pluginVariablesInput) {
-        PluginVariables incoming = new PluginVariables();
-        incoming.setSourcePlugin(pluginVariablesInput.getSourcePlugin());
-        incoming.setVariables(pluginVariablesInput
-                .getVariables().stream().map(variableInput -> preserveValue(variableInput, existing.getVariables()))
-                .collect(Collectors.toList()));
-
-        pluginVariableRepo.deleteById(existing.getSourcePlugin());
-        pluginVariableRepo.save(incoming);
-    }
-
-    Variable preserveValue(Variable incoming, List<Variable> existingValues) {
-        Variable variable = Variable.newBuilder()
-                .name(incoming.getName())
-                .defaultValue(incoming.getDefaultValue())
-                .dataType(incoming.getDataType())
-                .required(incoming.isRequired())
-                .description(incoming.getDescription())
-                .build();
-
-        existingValues.stream()
-                .filter(existing -> existing.getName().equals(incoming.getName()))
-                .findFirst().map(Variable::getValue)
-                .ifPresent(variable::setValue);
-
-        return variable;
-    }
-
-    Optional<PluginVariables> findExisting(PluginCoordinates pluginId) {
-        return pluginVariableRepo.findIgnoringVersion(pluginId.getGroupId(), pluginId.getArtifactId());
-    }
-
-    boolean exists(PluginCoordinates pluginCoordinates) {
-        return pluginVariableRepo.existsById(pluginCoordinates);
-    }
-
-
-    private void setVariableFromKeyValue(PluginVariables pluginVariables, KeyValue keyValue) {
-        Variable variable = pluginVariables.getVariables().stream()
-                .filter(v1 -> nameMatches(v1, keyValue))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Variable name: " + keyValue.getKey() + " was not found in the variables for plugin: " + pluginVariables.getSourcePlugin()));
-
-        String errorMsg = variable.getDataType().validateValue(keyValue.getValue());
-
-        if (null != errorMsg) {
-            throw new IllegalArgumentException("Variable named: " + keyValue.getKey() + " has an invalid value for the given type: " + errorMsg);
-        }
-
-        variable.setValue(keyValue.getValue());
-    }
-
-    boolean nameMatches(Variable variable, KeyValue keyValue) {
-        return Objects.nonNull(keyValue) && Objects.nonNull(keyValue.getKey()) && keyValue.getKey().equals(variable.getName());
-    }
-
-    private PluginVariables mapFromInput(PluginVariablesInput pluginVariablesInput) {
-        return OBJECT_MAPPER.convertValue(pluginVariablesInput, PluginVariables.class);
-    }
-
-    private String checkNewDefaultValues(PluginVariablesInput pluginVariablesInput) {
-        if (null == pluginVariablesInput || null == pluginVariablesInput.getVariables()) {
-            return null;
-        }
-
-        List<String> errors = new ArrayList<>();
-        for (Variable variable : pluginVariablesInput.getVariables()) {
-            String errMsg = variable.getDataType().validateValue(variable.getDefaultValue());
-            if (null != errMsg) {
-                errors.add("Variable named: " + variable.getName() + " has an invalid default value: " + errMsg);
-            }
-        }
-
-        return errors.isEmpty() ? null : String.join(",", errors);
     }
 
     @Override

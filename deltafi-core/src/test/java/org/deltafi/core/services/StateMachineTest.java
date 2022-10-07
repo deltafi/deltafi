@@ -22,7 +22,7 @@ import lombok.Singular;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.types.*;
 import org.deltafi.core.Util;
-import org.deltafi.core.configuration.*;
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
@@ -572,7 +572,7 @@ class StateMachineTest {
 
             FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration();
             formatActionConfiguration.setName(formatActionName);
-            formatActionConfiguration.setRequiresEnrichment(formatRequiresEnrichment);
+            formatActionConfiguration.setRequiresEnrichments(formatRequiresEnrichment);
             formatActionConfiguration.setRequiresDomains(formatRequiresDomains);
             egressFlow.setFormatAction(formatActionConfiguration);
             egressFlow.setValidateActions(validateActions.stream().map(this::named).collect(Collectors.toList()));
@@ -604,7 +604,7 @@ class StateMachineTest {
             EnrichActionConfiguration enrich = new EnrichActionConfiguration();
             enrich.setName(enrichActionName);
             enrich.setRequiresDomains(enrichRequiresDomains);
-            enrich.setRequiresEnrichment(enrichRequiresEnrichment);
+            enrich.setRequiresEnrichments(enrichRequiresEnrichment);
             enrich.setRequiresMetadataKeyValues(enrichRequiresMetadata);
             enrichFlow.setEnrichActions(List.of(enrich));
 

@@ -20,8 +20,8 @@ package org.deltafi.core.datafetchers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import graphql.ExecutionResult;
-import org.deltafi.core.configuration.server.constants.PropertyConstants;
 import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.configuration.server.constants.PropertyConstants;
 
 import java.util.List;
 import java.util.Map;

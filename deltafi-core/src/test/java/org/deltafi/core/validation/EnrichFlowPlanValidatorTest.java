@@ -18,11 +18,11 @@
 package org.deltafi.core.validation;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.configuration.DomainActionConfiguration;
-import org.deltafi.core.configuration.EnrichActionConfiguration;
+import org.deltafi.common.types.DomainActionConfiguration;
+import org.deltafi.common.types.EnrichActionConfiguration;
+import org.deltafi.common.types.EnrichFlowPlan;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.services.EnrichFlowPlanService;
-import org.deltafi.core.types.EnrichFlowPlan;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -64,8 +64,7 @@ class EnrichFlowPlanValidatorTest {
         EnrichFlowPlan enrichFlowPlan = enrichFlowPlan();
         enrichFlowPlan.getEnrichActions().add(enrichAction("enrich2", "domain"));
 
-        EnrichFlowPlan existingFlow = enrichFlowPlan();
-        existingFlow.setName("other");
+        EnrichFlowPlan existingFlow = enrichFlowPlan("other");
 
         Mockito.when(enrichFlowPlanService.getAll()).thenReturn(List.of(existingFlow));
 
@@ -112,27 +111,22 @@ class EnrichFlowPlanValidatorTest {
 
     @Test
     void duplicateActionNameErrors() {
-        EnrichFlowPlan enrichFlow = new EnrichFlowPlan();
-        enrichFlow.setName("enrichFlow");
-
-        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
-        enrich1.setName("action");
-        enrich1.setType("org.deltafi.enrich.Action1");
-
-        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
-        enrich2.setName("enrich");
-        enrich2.setType("org.deltafi.enrich.Action2");
-
-        EnrichActionConfiguration enrich3 = new EnrichActionConfiguration();
-        enrich3.setName("enrich");
-        enrich3.setType("org.deltafi.enrich.Action3");
+        EnrichFlowPlan enrichFlow = new EnrichFlowPlan("enrichFlow", null);
 
         DomainActionConfiguration domain = new DomainActionConfiguration();
         domain.setName("action");
         domain.setType("org.deltafi.domain.Action1");
+        enrichFlow.setDomainActions(List.of(domain));
 
-        enrichFlow.getDomainActions().add(domain);
-
+        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
+        enrich1.setName("action");
+        enrich1.setType("org.deltafi.enrich.Action1");
+        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
+        enrich2.setName("enrich");
+        enrich2.setType("org.deltafi.enrich.Action2");
+        EnrichActionConfiguration enrich3 = new EnrichActionConfiguration();
+        enrich3.setName("enrich");
+        enrich3.setType("org.deltafi.enrich.Action3");
         enrichFlow.setEnrichActions(List.of(enrich1, enrich2, enrich3));
 
         Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlow))
@@ -141,8 +135,11 @@ class EnrichFlowPlanValidatorTest {
     }
 
     EnrichFlowPlan enrichFlowPlan() {
-        EnrichFlowPlan enrichFlow = new EnrichFlowPlan();
-        enrichFlow.setName("enrichFlow");
+        return enrichFlowPlan("enrichFlow");
+    }
+
+    EnrichFlowPlan enrichFlowPlan(String name) {
+        EnrichFlowPlan enrichFlow = new EnrichFlowPlan(name, null);
         enrichFlow.setDomainActions(new ArrayList<>(List.of(domainAction("domain1", "domain"))));
         enrichFlow.setEnrichActions(new ArrayList<>(List.of(enrichAction("enrich1", "domain"))));
         return enrichFlow;

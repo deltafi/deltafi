@@ -22,7 +22,7 @@ import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.repo.EgressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EgressFlowPlan;
+import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.core.validation.EgressFlowValidator;
 import org.springframework.stereotype.Service;
 

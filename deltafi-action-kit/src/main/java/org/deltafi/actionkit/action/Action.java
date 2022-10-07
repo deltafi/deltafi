@@ -30,13 +30,12 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionRegistrationInput;
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.validation.constraints.NotNull;
-
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -46,8 +45,8 @@ import java.util.Map;
  * specialized classes in the action taxonomy (LoadAction, EgressAction, etc.)
  * @param <P> The parameter class that will be used to configure the action instance.
  */
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public abstract class Action<P extends ActionParameters> {
     private static final ObjectMapper OBJECT_MAPPER =
             new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
@@ -56,8 +55,11 @@ public abstract class Action<P extends ActionParameters> {
     protected ContentStorageService contentStorageService;
 
     private final ActionType actionType;
-    private final Class<P> paramType;
-    private Map<String, Object> definition = null;
+    private final Class<P> paramClass;
+    private final String description;
+
+    private ActionDescriptor actionDescriptor;
+    private Map<String, Object> definition;
 
     /**
      * This is the action entry point where all specific action functionality is implemented.  This abstract method
@@ -69,27 +71,36 @@ public abstract class Action<P extends ActionParameters> {
      * @return An action result object.  If there is an error, an ErrorResult object should be returned.
      * @see ErrorResult
      */
-    protected abstract Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params);
+    protected abstract Result execute(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull P params);
 
-    public Result executeAction(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull Map<String, Object> params) {
+    public Result executeAction(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull Map<String, Object> params) {
         return execute(deltaFile, context, convertToParams(params));
     }
 
-    /**
-     * Get the canonical class name of the parameter class
-     * @return parameter class name
-     */
-    protected String getParamClass() {
-        return paramType.getCanonicalName();
+    public ActionDescriptor getActionDescriptor() {
+        if (actionDescriptor == null) {
+            actionDescriptor = buildActionDescriptor();
+        }
+        return actionDescriptor;
+    }
+
+    protected ActionDescriptor buildActionDescriptor() {
+        return ActionDescriptor.builder()
+                .name(getClassCanonicalName())
+                .description(description)
+                .type(actionType)
+                .paramClass(paramClass.getCanonicalName())
+                .schema(getDefinition())
+                .build();
     }
 
     /**
      * Generate a key/value map for the parameter schema of this action
      * @return Map of parameter class used to configure this action
      */
-    protected Map<String, Object> getDefinition() {
+    public Map<String, Object> getDefinition() {
         if (definition == null) {
-            JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramType);
+            JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramClass);
             definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>() {});
             log.trace("Action schema: {}", schemaJson.toPrettyString());
         }
@@ -97,20 +108,11 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     /**
-     * Each action type base class should implement this method.  The implementation should provide an action
-     * schema and add it to the provided ActionRegistrationInput.  This method will be invoked by an action
-     * registration service for each type of action that is created.
-     *
-     * @param a An ActionRegistrationInput object representing the schema for the implemented action type
-     */
-    public abstract void registerSchema(ActionRegistrationInput a);
-
-    /**
      * Safely get the canonical name of this action class
      * @return the canonical name of the action class as a string
      */
-    protected String getClassCanonicalName() {
-        return this.getClass().getCanonicalName();
+    public String getClassCanonicalName() {
+        return getClass().getCanonicalName();
     }
 
     /**
@@ -165,16 +167,12 @@ public abstract class Action<P extends ActionParameters> {
         return contentStorageService.save(did, content, mediaType);
     }
 
-    public ActionType getActionType() {
-        return actionType;
-    }
-
     /**
      * Convert a map of key/values to a parameter object for the Action
      * @param params Key-value map representing the values in the paraameter object
      * @return a parameter object initialized by the params map
      */
     public P convertToParams(Map<String, Object> params) {
-        return OBJECT_MAPPER.convertValue(params, paramType);
+        return OBJECT_MAPPER.convertValue(params, paramClass);
     }
 }

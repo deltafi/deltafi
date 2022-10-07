@@ -21,15 +21,22 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
+@Builder
 public class ActionDescriptor {
+  @Id
   private String name;
   private String description;
+  private ActionType type;
+  private String paramClass;
+  private Map<String, Object> schema;
   private List<String> requiresDomains;
+  private List<String> requiresEnrichments;
 }

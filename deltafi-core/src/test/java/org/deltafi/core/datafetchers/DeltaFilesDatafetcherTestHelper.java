@@ -22,10 +22,16 @@ import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressInput;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
-import org.deltafi.core.generated.client.*;
+import org.deltafi.core.generated.client.DeltaFileProjectionRoot;
+import org.deltafi.core.generated.client.DeltaFilesProjectionRoot;
+import org.deltafi.core.generated.client.ErrorSummaryByFlowProjectionRoot;
+import org.deltafi.core.generated.client.ErrorSummaryByMessageProjectionRoot;
 
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 public class DeltaFilesDatafetcherTestHelper {
 

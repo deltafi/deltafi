@@ -24,13 +24,13 @@ import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
-import org.deltafi.core.configuration.LoadActionConfiguration;
-import org.deltafi.core.configuration.TransformActionConfiguration;
+import org.deltafi.common.types.LoadActionConfiguration;
+import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.IngressFlow;
-import org.deltafi.core.types.IngressFlowPlan;
+import org.deltafi.common.types.IngressFlowPlan;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

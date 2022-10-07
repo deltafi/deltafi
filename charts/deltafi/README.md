@@ -47,8 +47,6 @@ data:
     actions:
       action-polling-initial-delay-ms: 4000
       action-polling-period-ms: 200
-      action-registration-initial-delay-ms: 500
-      action-registration-period-ms: 15000
 ```
 
 #### Read properties from git

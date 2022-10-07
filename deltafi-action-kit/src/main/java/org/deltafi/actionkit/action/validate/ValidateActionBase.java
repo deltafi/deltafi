@@ -20,8 +20,6 @@ package org.deltafi.actionkit.action.validate;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.ActionRegistrationInput;
-import org.deltafi.common.types.ValidateActionSchemaInput;
 
 /**
  * Specialization class for VALIDATE actions.  This class should not be used directly, but instead use one of
@@ -33,17 +31,7 @@ import org.deltafi.common.types.ValidateActionSchemaInput;
  * @see SimpleMultipartValidateAction
  */
 public abstract class ValidateActionBase<P extends ActionParameters> extends Action<P> {
-    public ValidateActionBase(Class<P> actionParametersClass) {
-        super(ActionType.VALIDATE, actionParametersClass);
-    }
-
-    @Override
-    public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
-        ValidateActionSchemaInput input = ValidateActionSchemaInput.newBuilder()
-                .id(getClassCanonicalName())
-                .paramClass(getParamClass())
-                .schema(getDefinition())
-                .build();
-        actionRegistrationInput.getValidateActions().add(input);
+    public ValidateActionBase(Class<P> actionParametersClass, String description) {
+        super(ActionType.VALIDATE, actionParametersClass, description);
     }
 }

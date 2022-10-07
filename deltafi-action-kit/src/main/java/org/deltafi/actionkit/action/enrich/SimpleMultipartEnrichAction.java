@@ -39,8 +39,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartEnrichAction extends MultipartEnrichAction<ActionParameters> {
-    public SimpleMultipartEnrichAction() {
-        super(ActionParameters.class);
+    public SimpleMultipartEnrichAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

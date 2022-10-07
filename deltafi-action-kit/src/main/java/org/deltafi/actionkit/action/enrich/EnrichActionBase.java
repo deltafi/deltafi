@@ -19,9 +19,8 @@ package org.deltafi.actionkit.action.enrich;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.ActionRegistrationInput;
-import org.deltafi.common.types.EnrichActionSchemaInput;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,8 +35,8 @@ import java.util.List;
  * @see SimpleMultipartEnrichAction
  */
 public abstract class EnrichActionBase<P extends ActionParameters> extends Action<P> {
-    public EnrichActionBase(Class<P> actionParametersClass) {
-        super(ActionType.ENRICH, actionParametersClass);
+    public EnrichActionBase(Class<P> actionParametersClass, String description) {
+        super(ActionType.ENRICH, actionParametersClass, description);
     }
 
     /**
@@ -50,19 +49,15 @@ public abstract class EnrichActionBase<P extends ActionParameters> extends Actio
      * Implement to provide a list of required enrichments for enrichment to proceed
      * @return List of enrichment name strings
      */
-    public List<String> getRequiresEnrichment() {
+    public List<String> getRequiresEnrichments() {
         return Collections.emptyList();
     }
 
     @Override
-    public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
-        EnrichActionSchemaInput input = EnrichActionSchemaInput.newBuilder()
-                .id(getClassCanonicalName())
-                .paramClass(getParamClass())
-                .schema(getDefinition())
-                .requiresDomains(getRequiresDomains())
-                .requiresEnrichment(getRequiresEnrichment())
-                .build();
-        actionRegistrationInput.getEnrichActions().add(input);
+    public ActionDescriptor buildActionDescriptor() {
+        ActionDescriptor actionDescriptor = super.buildActionDescriptor();
+        actionDescriptor.setRequiresDomains(getRequiresDomains());
+        actionDescriptor.setRequiresEnrichments(getRequiresEnrichments());
+        return actionDescriptor;
     }
 }

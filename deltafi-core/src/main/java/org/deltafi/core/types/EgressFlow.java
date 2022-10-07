@@ -20,23 +20,36 @@ package org.deltafi.core.types;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.core.configuration.*;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
 
+@Document
 @Data
-@Document("egressFlow")
 @EqualsAndHashCode(callSuper = true)
 public class EgressFlow extends Flow {
-
-    private EgressActionConfiguration egressAction;
-    private FormatActionConfiguration formatAction;
-    private List<ValidateActionConfiguration> validateActions = new ArrayList<>();
     private List<String> includeIngressFlows;
     private List<String> excludeIngressFlows;
+
+    private FormatActionConfiguration formatAction;
+    private List<ValidateActionConfiguration> validateActions = new ArrayList<>();
+    private EgressActionConfiguration egressAction;
+
+    @Override
+    public ActionConfiguration findActionConfigByName(String actionName) {
+        if (nameMatches(formatAction, actionName)) {
+            return formatAction;
+        }
+
+        ActionConfiguration validateActionConfiguration = actionNamed(validateActions, actionName);
+        if (validateActionConfiguration != null) {
+            return validateActionConfiguration;
+        }
+
+        return nameMatches(egressAction, actionName) ? egressAction : null;
+    }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
@@ -64,22 +77,6 @@ public class EgressFlow extends Flow {
     }
 
     @Override
-    public ActionConfiguration findActionConfigByName(String actionName) {
-        if (nameMatches(egressAction, actionName)) {
-            return egressAction;
-        }
-
-        if (nameMatches(formatAction, actionName)) {
-            return formatAction;
-        }
-
-        return actionNamed(validateActions, actionName);
-    }
-
-    public List<String> validateActionNames() {
-        return actionNames(validateActions);
-    }
-
     public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
         updateActionNamesByFamily(actionFamilyMap, ActionType.FORMAT, formatAction.getName());
         updateActionNamesByFamily(actionFamilyMap, ActionType.VALIDATE, validateActionNames());
@@ -90,13 +87,17 @@ public class EgressFlow extends Flow {
     public DeltaFiConfiguration asFlowConfiguration() {
         EgressFlowConfiguration egressFlowConfiguration = new EgressFlowConfiguration();
         egressFlowConfiguration.setName(getName());
-        egressFlowConfiguration.setFormatAction(this.formatAction.getName());
+        egressFlowConfiguration.setIncludeIngressFlows(includeIngressFlows);
+        egressFlowConfiguration.setExcludeIngressFlows(excludeIngressFlows);
+        egressFlowConfiguration.setFormatAction(formatAction.getName());
         egressFlowConfiguration.setValidateActions(validateActionNames());
-        egressFlowConfiguration.setEgressAction(this.egressAction.getName());
-        egressFlowConfiguration.setIncludeIngressFlows(this.includeIngressFlows);
-        egressFlowConfiguration.setExcludeIngressFlows(this.excludeIngressFlows);
+        egressFlowConfiguration.setEgressAction(egressAction.getName());
 
         return egressFlowConfiguration;
+    }
+
+    public List<String> validateActionNames() {
+        return actionNames(validateActions);
     }
 
     public boolean flowMatches(String flow) {

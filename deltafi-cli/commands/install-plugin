@@ -66,13 +66,6 @@ fi
 
 PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
 
-cli_log "${bold}$PLUGIN_NAME${normal}: Registering plugin manifest"
-PLUGIN_MANIFEST="$CHARTS_DIRECTORY/files/plugin.json"
-if [ ! -f "$PLUGIN_MANIFEST" ]; then
-  cli_log "${red}$PLUGIN_DIRECTORY: Plugin manifest (plugin.json) not found in ${bold}.plugin${normal}${red} subdirectory. Make sure the project uses the generate-plugin-manifest gradle plugin.${normal}"
-  exit 1
-fi
-
 cli_log "${bold}$PLUGIN_NAME${normal}: Installing plugin"
 helm upgrade --install --wait \
   --values $CHARTS_DIRECTORY/values.yaml \
@@ -81,13 +74,6 @@ helm upgrade --install --wait \
 
 HELM_RETURN_CODE=$?
 [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
-
-FLOWS_DIRECTORY="$PLUGIN_DIRECTORY/flows"
-if [ ! -d "$FLOWS_DIRECTORY" ]; then
-  cli_log "${yellow}$PLUGIN_NAME: Plugin directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
-else
-  deltafi load-plans "$PLUGIN_DIRECTORY"
-fi
 
 cli_log "${bold}$PLUGIN_NAME${normal}: Plugin install complete."
 cleanup

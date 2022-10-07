@@ -1,14 +1,25 @@
 plugins {
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
-    id "com.palantir.docker" version "${palantirDockerVersion}"
     id 'org.springframework.boot' version "${springBootVersion}"
+    id "com.palantir.docker" version "${palantirDockerVersion}"
 }
-
-description = 'Core actions for DeltaFi core'
 
 license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)
+}
+
+dependencies {
+    implementation project(':deltafi-action-kit')
+
+    implementation 'org.apache.commons:commons-compress:1.21'
+    implementation 'org.tukaani:xz:1.9'
+    implementation 'org.apache.nifi:nifi-flowfile-packager:1.16.2'
+
+    testImplementation 'io.rest-assured:rest-assured:5.1.1'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.7.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
 }
 
 jar {
@@ -17,28 +28,22 @@ jar {
 }
 
 springBoot {
-    buildInfo()
+    buildInfo {
+        properties {
+            additional = [
+                    description: "Core DeltaFi actions",
+                    actionKitVersion: "${project.version}"
+           ]
+        }
+    }
 }
 
-dependencies {
-    implementation project(':deltafi-action-kit')
-
-    implementation 'org.jetbrains:annotations:23.0.0'
-    implementation 'org.apache.commons:commons-compress:1.21'
-    implementation 'commons-io:commons-io:2.11.0'
-    implementation 'org.tukaani:xz:1.9'
-    implementation 'org.apache.nifi:nifi-flowfile-packager:1.16.2'
-    implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
-
-    testImplementation 'io.rest-assured:rest-assured:5.1.1'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.7.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+dockerPrepare {
+    dependsOn assemble
 }
 
 docker {
-    dependsOn bootJar
-    tag "local", "${localDockerRegistry}/${project.name}:latest"
     name "${project.name}:${project.version}"
+    tag "local", "${localDockerRegistry}/${project.name}:latest"
     copySpec.from(bootJar.archiveFile).into("build/libs/")
 }

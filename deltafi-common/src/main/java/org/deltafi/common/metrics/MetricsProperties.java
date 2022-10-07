@@ -21,17 +21,16 @@ package org.deltafi.common.metrics;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "metrics")
+@ConfigurationProperties("metrics")
 @Data
 public class MetricsProperties {
-    boolean enabled = true;
-    Integer periodSeconds = 10;
-
     @Data
     public static class StatsdProperties {
         String hostname = "deltafi-graphite";
         Integer port = 8125;
     }
 
+    boolean enabled = true;
+    Integer periodSeconds = 10;
     StatsdProperties statsd = new StatsdProperties();
 }

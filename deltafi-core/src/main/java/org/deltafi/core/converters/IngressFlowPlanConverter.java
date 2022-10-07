@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.converters;
 
-import org.deltafi.core.configuration.LoadActionConfiguration;
-import org.deltafi.core.configuration.TransformActionConfiguration;
+import org.deltafi.common.types.LoadActionConfiguration;
+import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.types.IngressFlow;
-import org.deltafi.core.types.IngressFlowPlan;
+import org.deltafi.common.types.IngressFlowPlan;
 
 import java.util.List;
 import java.util.Objects;

@@ -20,35 +20,34 @@ package org.deltafi.core.action;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
-import org.deltafi.common.http.HttpService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.Objects;
 
+@Component
 @Slf4j
-@Action
 public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParameters> {
     static final String FLOWFILE_V1_CONTENT_TYPE = "application/flowfile";
-    @Autowired
-    HttpService httpPostService;
 
     public FlowfileEgressAction() {
-        super(HttpEgressParameters.class);
-        log.info("constructing: {}", this.getClass().getName());
+        super(HttpEgressParameters.class,
+                "Egresses content and attributes in a NiFi V1 FlowFile (application/flowfile)");
     }
 
     protected Result doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {

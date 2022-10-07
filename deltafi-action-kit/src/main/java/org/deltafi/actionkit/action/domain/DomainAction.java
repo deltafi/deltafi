@@ -30,8 +30,8 @@ import java.util.Map;
  * @see SimpleDomainAction
  */
 public abstract class DomainAction<P extends ActionParameters> extends DomainActionBase<P> {
-    public DomainAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public DomainAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

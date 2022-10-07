@@ -18,11 +18,11 @@
 package org.deltafi.core.converters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.core.configuration.EgressActionConfiguration;
-import org.deltafi.core.configuration.FormatActionConfiguration;
-import org.deltafi.core.configuration.ValidateActionConfiguration;
+import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.FormatActionConfiguration;
+import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EgressFlowPlan;
+import org.deltafi.common.types.EgressFlowPlan;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -51,11 +51,11 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
         FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration();
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(formatActionConfiguration, formatActionTemplate);
 
-        // TODO - should we allow requiresEnrichment and requiresDomain to be replaced?
-        List<String> requiresEnrichment = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresEnrichment(), formatActionConfiguration.getName());
+        // TODO - should we allow requiresEnrichments and requiresDomain to be replaced?
+        List<String> requiresEnrichments = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresEnrichments(), formatActionConfiguration.getName());
         List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresDomains(), formatActionConfiguration.getName());
 
-        formatActionConfiguration.setRequiresEnrichment(requiresEnrichment);
+        formatActionConfiguration.setRequiresEnrichments(requiresEnrichments);
         formatActionConfiguration.setRequiresDomains(requiresDomains);
 
         return formatActionConfiguration;

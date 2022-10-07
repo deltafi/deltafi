@@ -17,15 +17,15 @@
  */
 package org.deltafi.core.types;
 
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAssignmentRule {
     public static final String INVALID_PRIORITY = "invalid priority";
@@ -52,15 +52,15 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
      */
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
-        if (isBlank(super.getId())) {
+        if (StringUtils.isBlank(super.getId())) {
             errors.add(MISSING_ID);
         }
 
-        if (isBlank(super.getName())) {
+        if (StringUtils.isBlank(super.getName())) {
             errors.add(MISSING_RULE_NAME);
         }
 
-        if (isBlank(super.getFlow())) {
+        if (StringUtils.isBlank(super.getFlow())) {
             errors.add(MISSING_FLOW_NAME);
         }
 
@@ -68,7 +68,7 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
             errors.add(INVALID_PRIORITY);
         }
 
-        boolean noRegex = isBlank(getFilenameRegex());
+        boolean noRegex = StringUtils.isBlank(getFilenameRegex());
         boolean noMeta = null == getRequiredMetadata() || getRequiredMetadata().isEmpty();
         if (noRegex && noMeta) {
             errors.add(MISSING_CRITERIA);
@@ -77,7 +77,7 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
     }
 
     boolean matchesRegex(String filename) {
-        if (!isBlank(getFilenameRegex())) {
+        if (!StringUtils.isBlank(getFilenameRegex())) {
             Pattern pattern = Pattern.compile(getFilenameRegex());
             Matcher matcher = pattern.matcher(filename);
             return matcher.matches();
@@ -91,7 +91,7 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
         } else if ((null == sourceMetadata) || (sourceMetadata.isEmpty())) {
             return false;
         } else {
-            return sourceMetadata.containsAll(getRequiredMetadata());
+            return new HashSet<>(sourceMetadata).containsAll(getRequiredMetadata());
         }
     }
 

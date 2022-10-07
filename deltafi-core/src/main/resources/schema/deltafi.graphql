@@ -441,7 +441,7 @@ type Query {
   sourceMetadataUnion(dids: [String!]!) : [UniqueKeyValues!]!
 
   deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
-  actionSchemas: [ActionSchema!]!
+  actionDescriptors: [ActionDescriptor!]!
   exportConfigAsYaml: String!
 
   plugins: [Plugin!]!
@@ -463,9 +463,6 @@ type Mutation {
   removeEnrichFlowPlan(name: String!) : Boolean!
   removeEgressFlowPlan(name: String!) : Boolean!
 
-  savePluginVariables(pluginVariablesInput: PluginVariablesInput!) : Boolean!
-  setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput]!) : Boolean!
-
   startIngressFlow(flowName: String!) : Boolean!
   stopIngressFlow(flowName: String!) : Boolean!
   startEgressFlow(flowName: String!) : Boolean!
@@ -481,9 +478,9 @@ type Mutation {
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [String!]!) : [CancelResult!]!
 
-  registerActions(actionRegistration: ActionRegistrationInput!): Int!
+  savePluginVariables(pluginVariablesInput: PluginVariablesInput!) : Boolean!
+  setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput]!) : Boolean!
 
-  registerPlugin(pluginInput: PluginInput!): Result!
   uninstallPlugin(dryRun: Boolean!, pluginCoordinatesInput: PluginCoordinatesInput!): Result!
 
   updateProperties(updates: [PropertyUpdate]!): Int!

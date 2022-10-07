@@ -23,12 +23,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
-import org.deltafi.core.configuration.EnrichActionConfiguration;
+import org.deltafi.common.types.EnrichActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.EnrichFlowPlan;
+import org.deltafi.common.types.EnrichFlowPlan;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -71,7 +71,7 @@ class EnrichFlowPlanConverterTest {
         enrichActionConfiguration.setName("passthrough.PassthroughEnrichAction");
         enrichActionConfiguration.setType("org.deltafi.passthrough.action.RoteEnrichAction");
         enrichActionConfiguration.setRequiresDomains(List.of("binary"));
-        enrichActionConfiguration.setRequiresEnrichment(List.of("binary"));
+        enrichActionConfiguration.setRequiresEnrichments(List.of("binary"));
         enrichActionConfiguration.setParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value")));
         return enrichActionConfiguration;
     }

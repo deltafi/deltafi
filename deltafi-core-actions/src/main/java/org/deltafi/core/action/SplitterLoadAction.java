@@ -18,25 +18,25 @@
 package org.deltafi.core.action;
 
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.load.MultipartLoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.Content;
+import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.SplitterLoadParameters;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@Component
 @SuppressWarnings("unused")
-@Action
 public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParameters> {
 
     public SplitterLoadAction() {
-        super(SplitterLoadParameters.class);
+        super(SplitterLoadParameters.class, "Splits content into multiple parts");
     }
 
     @Override

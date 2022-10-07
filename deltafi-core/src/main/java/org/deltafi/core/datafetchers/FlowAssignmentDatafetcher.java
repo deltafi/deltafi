@@ -53,7 +53,7 @@ public class FlowAssignmentDatafetcher {
     }
 
     @DgsMutation
-    public List<Result> loadFlowAssignmentRules(boolean replaceAll, @InputArgument(collectionType = FlowAssignmentRuleInput.class) List<FlowAssignmentRuleInput> rules) {
+    public List<Result> loadFlowAssignmentRules(boolean replaceAll, @InputArgument List<FlowAssignmentRuleInput> rules) {
         if (replaceAll) {
             flowAssignmentService.removeAll();
         }

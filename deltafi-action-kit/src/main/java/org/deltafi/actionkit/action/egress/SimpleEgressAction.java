@@ -33,8 +33,8 @@ import org.jetbrains.annotations.NotNull;
  * @see EgressAction
  */
 public abstract class SimpleEgressAction extends EgressAction<ActionParameters> {
-    public SimpleEgressAction() {
-        super(ActionParameters.class);
+    public SimpleEgressAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

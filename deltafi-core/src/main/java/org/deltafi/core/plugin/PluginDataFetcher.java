@@ -17,14 +17,12 @@
  */
 package org.deltafi.core.plugin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.generated.types.PluginInput;
 import org.deltafi.core.types.Result;
 
 import java.util.Collection;
@@ -32,8 +30,6 @@ import java.util.Collection;
 @DgsComponent
 @RequiredArgsConstructor
 public class PluginDataFetcher {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-
     private final PluginRegistryService pluginRegistryService;
 
     @DgsQuery
@@ -44,11 +40,6 @@ public class PluginDataFetcher {
     @DgsQuery
     public boolean verifyActionsAreRegistered(PluginCoordinates pluginCoordinates) {
         return pluginRegistryService.verifyActionsAreRegistered(pluginCoordinates);
-    }
-
-    @DgsMutation
-    public Result registerPlugin(PluginInput pluginInput) {
-        return pluginRegistryService.addPlugin(OBJECT_MAPPER.convertValue(pluginInput, Plugin.class));
     }
 
     @DgsMutation

@@ -13,7 +13,7 @@
       "requiresDomains": [
         "${domain.type}"
       ],
-      "requiresEnrichment": [
+      "requiresEnrichments": [
         "${domain.type}"
       ],
       "parameters": {

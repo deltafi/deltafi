@@ -38,8 +38,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class MultipartLoadAction<P extends ActionParameters> extends LoadActionBase<P> {
-    public MultipartLoadAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public MultipartLoadAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

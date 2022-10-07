@@ -20,12 +20,11 @@ package org.deltafi.actionkit.properties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "actions")
+@ConfigurationProperties("actions")
 @Data
 public class ActionsProperties {
     private long actionPollingInitialDelayMs = 3000L;
     private long actionPollingPeriodMs = 100L;
-    private long actionRegistrationPeriodMs = 10000L;
 
     private String hostname;
 }

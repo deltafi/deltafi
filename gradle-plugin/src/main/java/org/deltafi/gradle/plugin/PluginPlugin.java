@@ -136,17 +136,16 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             return;
         }
 
-        Plugin plugin = Plugin.newBuilder()
-                .pluginCoordinates(new PluginCoordinates(project.getGroup().toString(), project.getName(),
-                        project.getVersion().toString()))
-                .displayName(extension.displayName)
-                .description(extension.description)
-                .actionKitVersion(version)
-                .actions(projectActionDescriptorsMap.values().stream()
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toList()))
-                .dependencies(dependencies)
-                .build();
+        Plugin plugin = new Plugin();
+        plugin.setPluginCoordinates(new PluginCoordinates(project.getGroup().toString(), project.getName(),
+                project.getVersion().toString()));
+        plugin.setDisplayName(extension.displayName);
+        plugin.setDescription(extension.description);
+        plugin.setActionKitVersion(version);
+        plugin.setActions(projectActionDescriptorsMap.values().stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList()));
+        plugin.setDependencies(dependencies);
 
         try (FileWriter fileWriter = new FileWriter(new File(manifestDirectory, "plugin.json"))) {
             fileWriter.write(OBJECT_MAPPER.writeValueAsString(plugin));

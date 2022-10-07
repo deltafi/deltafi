@@ -39,13 +39,18 @@ import org.deltafi.core.services.IngressService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.metrics.MetricsUtil.*;
@@ -95,17 +100,17 @@ public class IngressRest {
 
             return ResponseEntity.ok(ingressResult.getContentReference().getDid());
         } catch (ObjectStorageException | IngressException exception) {
-            log.error("500 error for flow=" + flow + " filename=" + filename + " contentType=" + contentType + " username=" + username, exception);
+            log.error("500 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
-            return ResponseEntity.status(500).body(exception.getMessage());
+            return ResponseEntity.internalServerError().body(exception.getMessage());
         } catch (IngressMetadataException exception) {
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
-            log.error("400 error for flow=" + flow + " filename=" + filename + " contentType=" + contentType + " username=" + username, exception);
-            return ResponseEntity.status(400).body(exception.getMessage());
+            log.error("400 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
+            return ResponseEntity.badRequest().body(exception.getMessage());
         } catch (Throwable exception) {
-            log.error("Unexpected error for flow=" + flow + " filename=" + filename + " contentType=" + contentType + " username=" + username, exception);
+            log.error("500 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
-            return ResponseEntity.status(500).body(exception.getMessage());
+            return ResponseEntity.internalServerError().body(exception.getMessage());
         }
     }
 

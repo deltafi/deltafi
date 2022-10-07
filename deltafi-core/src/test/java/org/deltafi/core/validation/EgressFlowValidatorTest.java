@@ -18,10 +18,10 @@
 package org.deltafi.core.validation;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.EgressActionConfiguration;
-import org.deltafi.core.configuration.FormatActionConfiguration;
-import org.deltafi.core.configuration.ValidateActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.FormatActionConfiguration;
+import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.types.EgressFlow;

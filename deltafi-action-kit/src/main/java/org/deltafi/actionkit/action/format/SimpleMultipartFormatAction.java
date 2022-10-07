@@ -39,8 +39,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartFormatAction extends MultipartFormatAction<ActionParameters> {
-    public SimpleMultipartFormatAction() {
-        super(ActionParameters.class);
+    public SimpleMultipartFormatAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

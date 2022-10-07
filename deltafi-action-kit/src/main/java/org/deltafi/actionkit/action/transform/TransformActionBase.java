@@ -20,8 +20,6 @@ package org.deltafi.actionkit.action.transform;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.ActionRegistrationInput;
-import org.deltafi.common.types.TransformActionSchemaInput;
 
 /**
  * Specialization class for TRANSFORM actions.  This class should not be used directly, but instead use one of
@@ -33,17 +31,7 @@ import org.deltafi.common.types.TransformActionSchemaInput;
  * @see SimpleMultipartTransformAction
  */
 public abstract class TransformActionBase<P extends ActionParameters> extends Action<P> {
-    public TransformActionBase(Class<P> actionParametersClass) {
-        super(ActionType.TRANSFORM, actionParametersClass);
-    }
-
-    @Override
-    public void registerSchema(ActionRegistrationInput actionRegistrationInput) {
-        TransformActionSchemaInput input = TransformActionSchemaInput.newBuilder()
-                .id(getClassCanonicalName())
-                .paramClass(getParamClass())
-                .schema(getDefinition())
-                .build();
-        actionRegistrationInput.getTransformActions().add(input);
+    public TransformActionBase(Class<P> actionParametersClass, String description) {
+        super(ActionType.TRANSFORM, actionParametersClass, description);
     }
 }

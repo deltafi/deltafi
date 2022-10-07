@@ -120,12 +120,11 @@ class FlowAssignmentServiceTest {
     }
 
     private List<FlowAssignmentRule> getAllRules() {
-        List<FlowAssignmentRule> rules = List.of(
+        return List.of(
                 getRegexRule(),
                 getMetaRule(),
                 getMetaAndRegexRule(),
                 getPassDownRule());
-        return rules;
     }
 
     @Test

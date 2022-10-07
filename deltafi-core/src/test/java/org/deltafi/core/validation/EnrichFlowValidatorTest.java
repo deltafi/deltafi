@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.validation;
 
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.EnrichActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.EnrichActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.types.EnrichFlow;

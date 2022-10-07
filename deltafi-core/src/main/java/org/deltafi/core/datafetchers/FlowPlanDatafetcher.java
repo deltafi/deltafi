@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.datafetchers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
@@ -24,29 +25,28 @@ import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.configuration.DeltaFiConfiguration;
+import org.deltafi.common.types.DeltaFiConfiguration;
+import org.deltafi.common.types.*;
 import org.deltafi.core.converters.YamlRepresenter;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.services.*;
-import org.deltafi.core.types.*;
-import org.deltafi.core.types.EgressFlowPlanInput;
-import org.deltafi.core.types.EnrichFlowPlanInput;
-import org.deltafi.core.types.IngressFlowPlanInput;
+import org.deltafi.core.types.EgressFlow;
+import org.deltafi.core.types.EnrichFlow;
+import org.deltafi.core.types.Flow;
+import org.deltafi.core.types.IngressFlow;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.*;
 
-@Slf4j
 @DgsComponent
 @RequiredArgsConstructor
+@Slf4j
 public class FlowPlanDatafetcher {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static final ActionFamily INGRESS_FAMILY = ActionFamily.newBuilder().family("ingress").actionNames(List.of(DeltaFiConstants.INGRESS_ACTION)).build();
+    public static final ActionFamily INGRESS_FAMILY = ActionFamily.newBuilder().family("INGRESS").actionNames(List.of(DeltaFiConstants.INGRESS_ACTION)).build();
     private static final Yaml YAML_EXPORTER = new Yaml(new Constructor(), new YamlRepresenter());
 
     private final IngressFlowPlanService ingressFlowPlanService;
@@ -60,7 +60,7 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     public IngressFlow saveIngressFlowPlan(IngressFlowPlanInput ingressFlowPlan) {
-        return ingressFlowPlanService.saveFlowPlan(ingressFlowPlan);
+        return ingressFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(ingressFlowPlan, IngressFlowPlan.class));
     }
 
     @DgsMutation
@@ -80,7 +80,7 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     public EnrichFlow saveEnrichFlowPlan(EnrichFlowPlanInput enrichFlowPlan) {
-        return enrichFlowPlanService.saveFlowPlan(enrichFlowPlan);
+        return enrichFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(enrichFlowPlan, EnrichFlowPlan.class));
     }
 
     @DgsMutation
@@ -100,7 +100,7 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     public EgressFlow saveEgressFlowPlan(EgressFlowPlanInput egressFlowPlan) {
-        return egressFlowPlanService.saveFlowPlan(egressFlowPlan);
+        return egressFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(egressFlowPlan, EgressFlowPlan.class));
     }
 
     @DgsMutation
@@ -120,19 +120,19 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     public boolean savePluginVariables(PluginVariablesInput pluginVariablesInput) {
-        pluginVariableService.saveVariables(pluginVariablesInput);
+        pluginVariableService.saveVariables(pluginVariablesInput.getSourcePlugin(), pluginVariablesInput.getVariables());
         return true;
     }
 
     @DgsMutation
-    public boolean setPluginVariableValues(PluginCoordinates pluginCoordinates, @InputArgument(collectionType = KeyValue.class) List<KeyValue> variables) {
+    public boolean setPluginVariableValues(PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
         boolean updated = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (updated) {
             ingressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
             enrichFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
             egressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
         }
-        return  updated;
+        return updated;
     }
 
     @DgsQuery

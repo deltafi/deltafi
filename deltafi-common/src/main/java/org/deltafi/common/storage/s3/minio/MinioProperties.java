@@ -20,7 +20,7 @@ package org.deltafi.common.storage.s3.minio;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "minio")
+@ConfigurationProperties("minio")
 @Data
 public class MinioProperties {
     String url;

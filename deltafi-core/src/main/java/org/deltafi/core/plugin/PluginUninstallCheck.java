@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.plugin;
 
+import org.deltafi.common.types.Plugin;
+
 public interface PluginUninstallCheck {
 
     /**

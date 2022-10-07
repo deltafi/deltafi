@@ -37,8 +37,8 @@ import java.util.Map;
  * @see TransformAction
  */
 public abstract class MultipartTransformAction<P extends ActionParameters> extends TransformActionBase<P> {
-    public MultipartTransformAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public MultipartTransformAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

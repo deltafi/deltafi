@@ -19,13 +19,12 @@ package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.FormattedData;
+import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,14 +33,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-@Action
 public abstract class HttpEgressActionBase<P extends HttpEgressParameters> extends EgressAction<P> {
 
     @Autowired
     protected HttpService httpPostService;
 
-    public HttpEgressActionBase(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public HttpEgressActionBase(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @SuppressWarnings("BusyWait")
@@ -68,7 +66,6 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
     }
 
     abstract protected Result doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
-
 
     public Map<String, String> buildHeadersMap(String did, SourceInfo sourceInfo, FormattedData formattedData, String egressFlow) {
         Map<String, String> headersMap = new HashMap<>();

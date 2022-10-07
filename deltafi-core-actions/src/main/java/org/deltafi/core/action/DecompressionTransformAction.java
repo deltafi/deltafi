@@ -32,20 +32,20 @@ import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.MultipartTransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
-import org.deltafi.common.types.Content;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
@@ -55,10 +55,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Action @Slf4j
+@Component
+@Slf4j
 public class DecompressionTransformAction extends MultipartTransformAction<DecompressionTransformParameters> {
 
-    public DecompressionTransformAction() { super(DecompressionTransformParameters.class); }
+    public DecompressionTransformAction() {
+        super(DecompressionTransformParameters.class,
+                "Decompresses .tgz, .tar.Z, .tar.xz, .zip, .tar, .ar, .gz, .xz, .Z");
+    }
 
     @Override
     public Result transform(@NotNull ActionContext context,
@@ -69,7 +73,7 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
         TransformResult result = new TransformResult(context);
         String decompressionType = params.getDecompressionType().getValue();
 
-        try(InputStream content = loadContentAsInputStream(contentList.get(0).getContentReference())) {
+        try (InputStream content = loadContentAsInputStream(contentList.get(0).getContentReference())) {
             try {
                 switch (params.getDecompressionType()) {
                     case TAR_GZIP:
@@ -132,9 +136,8 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     private String decompressAutomatic(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String contentName) {
-
         String decompressionType;
-        try (BufferedInputStream buffer = new BufferedInputStream(stream)){
+        try (BufferedInputStream buffer = new BufferedInputStream(stream)) {
             try {
                 String compressionType = CompressorStreamFactory.detect(buffer);
                 try (BufferedInputStream decompressed = new BufferedInputStream(new CompressorStreamFactory().createCompressorInputStream(buffer))) {
@@ -202,7 +205,7 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     void decompressGzip(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
-        try (GzipCompressorInputStream decompressed = new GzipCompressorInputStream(stream)){
+        try (GzipCompressorInputStream decompressed = new GzipCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
             Content content = new Content(name, Collections.emptyList(), reference);
             result.addContent(content);
@@ -214,7 +217,7 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     void decompressXZ(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
-        try (XZCompressorInputStream decompressed = new XZCompressorInputStream(stream)){
+        try (XZCompressorInputStream decompressed = new XZCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
             Content content = new Content(name, Collections.emptyList(), reference);
             result.addContent(content);
@@ -226,7 +229,7 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     void decompressZ(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
-        try (ZCompressorInputStream decompressed = new ZCompressorInputStream(stream)){
+        try (ZCompressorInputStream decompressed = new ZCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
             Content content = new Content(name, Collections.emptyList(), reference);
             result.addContent(content);
@@ -237,7 +240,7 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
         }
     }
 
-    void unarchive( ArchiveInputStream archive, @NotNull TransformResult result, @NotNull String did) throws IOException, ObjectStorageException {
+    void unarchive(ArchiveInputStream archive, @NotNull TransformResult result, @NotNull String did) throws IOException, ObjectStorageException {
         ArchiveEntry entry;
         while ((entry = archive.getNextEntry()) != null) {
             if (entry.isDirectory()) continue;
@@ -248,8 +251,8 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     void unarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did) throws DecompressionTransformException {
-        try (TarArchiveInputStream archive = new TarArchiveInputStream(stream)){
-            unarchive( archive, result, did);
+        try (TarArchiveInputStream archive = new TarArchiveInputStream(stream)) {
+            unarchive(archive, result, did);
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to unarchive tar", e);
         } catch (ObjectStorageException e) {
@@ -258,8 +261,8 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     void unarchiveAR(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did) throws DecompressionTransformException {
-        try (ArArchiveInputStream archive = new ArArchiveInputStream(stream)){
-            unarchive( archive, result, did);
+        try (ArArchiveInputStream archive = new ArArchiveInputStream(stream)) {
+            unarchive(archive, result, did);
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to unarchive ar", e);
         } catch (ObjectStorageException e) {
@@ -268,7 +271,7 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     void unarchiveZip(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did) throws DecompressionTransformException {
-        try (ZipArchiveInputStream archive = new ZipArchiveInputStream(stream)){
+        try (ZipArchiveInputStream archive = new ZipArchiveInputStream(stream)) {
             unarchive(archive, result, did);
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to decompress zip", e);

@@ -20,26 +20,33 @@ package org.deltafi.core.types;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.core.configuration.*;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Document
 @Data
-@Document("ingressFlow")
 @EqualsAndHashCode(callSuper = true)
 public class IngressFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
 
     @Override
+    public ActionConfiguration findActionConfigByName(String actionNamed) {
+        ActionConfiguration transformActionConfiguration = actionNamed(transformActions, actionNamed);
+        if (transformActionConfiguration != null) {
+            return transformActionConfiguration;
+        }
+        return nameMatches(loadAction, actionNamed) ? loadAction : null;
+    }
+
+    @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>(transformActions);
         actionConfigurations.add(loadAction);
-        actionConfigurations.addAll(transformActions);
         return actionConfigurations;
     }
 
@@ -48,37 +55,27 @@ public class IngressFlow extends Flow {
         switch (configType) {
             case INGRESS_FLOW:
                 return List.of(asFlowConfiguration());
-            case LOAD_ACTION:
-                return List.of(loadAction);
             case TRANSFORM_ACTION:
                 return Objects.nonNull(transformActions) ? new ArrayList<>(transformActions) : Collections.emptyList();
+            case LOAD_ACTION:
+                return List.of(loadAction);
             default:
                 return Collections.emptyList();
         }
     }
 
     @Override
-    public ActionConfiguration findActionConfigByName(String actionNamed) {
-        if (nameMatches(loadAction, actionNamed)) {
-            return loadAction;
-        }
-
-        return actionNamed(transformActions, actionNamed);
+    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+        updateActionNamesByFamily(actionFamilyMap, ActionType.TRANSFORM, actionNames(transformActions));
+        updateActionNamesByFamily(actionFamilyMap, ActionType.LOAD, loadAction.getName());
     }
 
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
         IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.setName(this.getName());
-        ingressFlowConfiguration.setLoadAction(this.loadAction.getName());
-        ingressFlowConfiguration.setTransformActions(this.transformActions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()));
+        ingressFlowConfiguration.setName(name);
+        ingressFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()));
+        ingressFlowConfiguration.setLoadAction(loadAction.getName());
         return ingressFlowConfiguration;
     }
-
-    @Override
-    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
-        updateActionNamesByFamily(actionFamilyMap, ActionType.LOAD, loadAction.getName());
-        updateActionNamesByFamily(actionFamilyMap, ActionType.TRANSFORM, actionNames(transformActions));
-    }
-
 }

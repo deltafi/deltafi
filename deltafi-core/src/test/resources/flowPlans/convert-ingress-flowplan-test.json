@@ -6,15 +6,6 @@
     "artifactId": "deltafi-passthrough",
     "version": "0.17.0"
   },
-  "loadAction": {
-    "name": "PassthroughLoadAction",
-    "type": "org.deltafi.passthrough.action.RoteLoadAction",
-    "parameters": {
-      "domains": [
-        "${domain.type}"
-      ]
-    }
-  },
   "transformActions": [
     {
       "name": "PassthroughTransformAction",
@@ -23,5 +14,14 @@
         "resultType": "${transform.produces}"
       }
     }
-  ]
+  ],
+  "loadAction": {
+    "name": "PassthroughLoadAction",
+    "type": "org.deltafi.passthrough.action.RoteLoadAction",
+    "parameters": {
+      "domains": [
+        "${domain.type}"
+      ]
+    }
+  }
 }

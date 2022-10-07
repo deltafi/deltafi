@@ -37,8 +37,8 @@ import java.util.Map;
  * @see SimpleMultipartEnrichAction
  */
 public abstract class EnrichAction<P extends ActionParameters> extends EnrichActionBase<P> {
-    public EnrichAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public EnrichAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

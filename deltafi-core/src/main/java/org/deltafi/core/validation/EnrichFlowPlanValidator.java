@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.validation;
 
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.ActionRequiringDomainConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.RequiresDomainsActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.services.EnrichFlowPlanService;
-import org.deltafi.core.types.EnrichFlowPlan;
+import org.deltafi.common.types.EnrichFlowPlan;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -64,14 +64,14 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
      * @param flowPlanName name used in the error message if duplicates exist
      * @return list of errors if duplicate action types are found
      */
-    List<FlowConfigError> findDuplicateActionTypes(List<? extends ActionRequiringDomainConfiguration> actions, String flowPlanName) {
+    List<FlowConfigError> findDuplicateActionTypes(List<? extends RequiresDomainsActionConfiguration> actions, String flowPlanName) {
         if (null == actions || actions.size() <= 1) {
             return Collections.emptyList();
         }
 
         List<FlowConfigError> errors = new ArrayList<>();
-        List<? extends ActionRequiringDomainConfiguration> compareActions = new ArrayList<>(actions);
-        ActionRequiringDomainConfiguration action = compareActions.remove(0);
+        List<? extends RequiresDomainsActionConfiguration> compareActions = new ArrayList<>(actions);
+        RequiresDomainsActionConfiguration action = compareActions.remove(0);
         while (!compareActions.isEmpty()) {
             errors.addAll(checkForDuplicatesInOtherPlan(List.of(action), compareActions, flowPlanName, flowPlanName));
             action = compareActions.remove(0);
@@ -81,8 +81,7 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
     }
 
     /**
-     * Find any action types that are already configured in an existing
-     * flow plan.
+     * Find any action types that are already configured in an existing flow plan.
      * @param enrichFlowPlan to search for duplicate enrich action types that contain at least one of the same required domains
      * @return list of errors if new enrich action types already exist in other plans
      */
@@ -97,19 +96,25 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
 
     private List<FlowConfigError> checkForDuplicatesInOtherPlan(EnrichFlowPlan incomingPlan, EnrichFlowPlan otherPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
-        errors.addAll(checkForDuplicatesInOtherPlan(incomingPlan.getDomainActions(), otherPlan.getDomainActions(), incomingPlan.getName(), otherPlan.getName()));
-        errors.addAll(checkForDuplicatesInOtherPlan(incomingPlan.getEnrichActions(), otherPlan.getEnrichActions(), incomingPlan.getName(), otherPlan.getName()));
+        if (!blankList(incomingPlan.getDomainActions()) && !blankList(otherPlan.getDomainActions())) {
+            errors.addAll(checkForDuplicatesInOtherPlan(incomingPlan.getDomainActions(), otherPlan.getDomainActions(), incomingPlan.getName(), otherPlan.getName()));
+        }
+        if (!blankList(incomingPlan.getEnrichActions()) && !blankList(otherPlan.getEnrichActions())) {
+            errors.addAll(checkForDuplicatesInOtherPlan(incomingPlan.getEnrichActions(), otherPlan.getEnrichActions(), incomingPlan.getName(), otherPlan.getName()));
+        }
         return errors.stream().distinct().collect(Collectors.toList());
     }
 
-    private List<FlowConfigError> checkForDuplicatesInOtherPlan(List<? extends ActionRequiringDomainConfiguration> incomingActions, List<? extends ActionRequiringDomainConfiguration> existingActions, String incomingPlanName, String otherPlanName) {
-        return incomingActions != null ? findDuplicateActionConfig(incomingActions, existingActions).stream()
+    private List<FlowConfigError> checkForDuplicatesInOtherPlan(List<? extends RequiresDomainsActionConfiguration> incomingActions,
+                                                                List<? extends RequiresDomainsActionConfiguration> existingActions, String incomingPlanName, String otherPlanName) {
+        return findDuplicateActionConfig(incomingActions, existingActions).stream()
                 .map(dupeAction -> duplicateActionError(dupeAction, incomingPlanName, otherPlanName))
                 .distinct()
-                .collect(Collectors.toList()) : Collections.emptyList();
+                .collect(Collectors.toList());
     }
 
-    private List<ActionRequiringDomainConfiguration> findDuplicateActionConfig(List<? extends ActionRequiringDomainConfiguration> incomingActions, List<? extends ActionRequiringDomainConfiguration> existingActions) {
+    private List<RequiresDomainsActionConfiguration> findDuplicateActionConfig(List<? extends RequiresDomainsActionConfiguration> incomingActions,
+                                                                               List<? extends RequiresDomainsActionConfiguration> existingActions) {
         return incomingActions.stream()
                 .filter(action -> existingActions.stream()
                         .anyMatch(existingAction -> existingAction.getType().equals(action.getType())
@@ -117,7 +122,7 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
                 .collect(Collectors.toList());
     }
 
-    private FlowConfigError duplicateActionError(ActionRequiringDomainConfiguration actionConfiguration, String planName, String otherPlan) {
+    private FlowConfigError duplicateActionError(RequiresDomainsActionConfiguration actionConfiguration, String planName, String otherPlan) {
         return FlowConfigError.newBuilder().configName(planName).message("Action of type: " + actionConfiguration.getType() +
                 " is already configured in the enrich flow plan named: " + otherPlan +
                 " with overlapping domain" +

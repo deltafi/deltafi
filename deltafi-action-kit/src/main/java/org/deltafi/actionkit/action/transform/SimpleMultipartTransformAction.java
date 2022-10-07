@@ -37,8 +37,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartTransformAction extends MultipartTransformAction<ActionParameters> {
-    public SimpleMultipartTransformAction() {
-        super(ActionParameters.class);
+    public SimpleMultipartTransformAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

@@ -35,8 +35,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleTransformAction extends TransformAction<ActionParameters> {
-    public SimpleTransformAction() {
-        super(ActionParameters.class);
+    public SimpleTransformAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

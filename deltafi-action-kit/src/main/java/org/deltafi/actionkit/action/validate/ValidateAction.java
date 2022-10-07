@@ -34,8 +34,8 @@ import org.jetbrains.annotations.NotNull;
  * @see SimpleMultipartValidateAction
  */
 public abstract class ValidateAction<P extends ActionParameters> extends ValidateActionBase<P> {
-    public ValidateAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public ValidateAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

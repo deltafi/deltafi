@@ -33,8 +33,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleDomainAction extends DomainAction<ActionParameters> {
-    public SimpleDomainAction() {
-        super(ActionParameters.class);
+    public SimpleDomainAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

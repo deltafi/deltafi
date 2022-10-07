@@ -23,15 +23,16 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.AllArgsConstructor;
+import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
-import org.deltafi.core.plugin.Plugin;
+import org.deltafi.common.types.Plugin;
 import org.deltafi.core.plugin.PluginCleaner;
 import org.deltafi.core.repo.FlowPlanRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.types.*;
 import org.deltafi.core.validation.FlowPlanValidator;
 
 import java.util.List;
@@ -51,24 +52,22 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
 
     /**
      * Persist the FlowPlan and create a flow from the plan.
-     * @param flowPlanInput flow plan used to create a new flow
+     * @param flowPlan flow plan used to create a new flow
      * @return Flow that was created from the plan
      */
-    public FlowT saveFlowPlan(FlowPlanInput flowPlanInput) {
+    public FlowT saveFlowPlan(FlowPlanT flowPlan) {
         PluginCoordinates existingSourcePlugin = flowPlanRepo
-                .findById(flowPlanInput.getName())
+                .findById(flowPlan.getName())
                 .map(FlowPlan::getSourcePlugin)
-                .orElse(flowPlanInput.getSourcePlugin());
+                .orElse(flowPlan.getSourcePlugin());
 
-        if (!existingSourcePlugin.equalsIgnoreVersion(flowPlanInput.getSourcePlugin())) {
-            throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlanInput.getName() + " already exists from another source plugin: " + existingSourcePlugin);
+        if (!existingSourcePlugin.equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
+            throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingSourcePlugin);
         }
 
-        FlowPlanT flowPlanT = mapFromInput(flowPlanInput);
-        flowPlanValidator.validate(flowPlanT);
+        flowPlanValidator.validate(flowPlan);
 
-        FlowPlanT flowPlan = flowPlanRepo.save(flowPlanT);
-        return flowService.buildAndSaveFlow(flowPlan);
+        return flowService.buildAndSaveFlow(flowPlanRepo.save(flowPlan));
     }
 
     /**
@@ -141,11 +140,8 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
         return SnapshotRestoreOrder.FLOW_PLAN_ORDER;
     }
 
-    abstract FlowPlanT mapFromInput(FlowPlanInput flowPlanInput);
-
     @Override
     public void cleanupFor(Plugin plugin) {
         removeFlowsAndPlansBySourcePlugin(plugin.getPluginCoordinates());
     }
-
 }

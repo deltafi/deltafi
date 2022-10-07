@@ -18,11 +18,11 @@
 package org.deltafi.core.validation;
 
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.core.configuration.ActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.types.FlowPlan;
+import org.deltafi.common.types.FlowPlan;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,7 +75,7 @@ public abstract class FlowPlanValidator<T extends FlowPlan> {
         List<FlowConfigError> errors = new ArrayList<>();
         for (ActionConfiguration actionConfiguration : flowPlan.allActionConfigurations()) {
             if (StringUtils.isBlank(actionConfiguration.getName())) {
-                errors.add(FlowConfigError.newBuilder().configName(flowPlan.getName()).message("The plan cannot contain an action configuration with a name this is null or empty").build());
+                errors.add(FlowConfigError.newBuilder().configName(flowPlan.getName()).message("The plan cannot contain an action configuration with a name that is null or empty").build());
             } else {
                 List<String> actionList = nameToActionTypes.containsKey(actionConfiguration.getName()) ? nameToActionTypes.get(actionConfiguration.getName()) : new ArrayList<>();
                 actionList.add(actionConfiguration.getType());

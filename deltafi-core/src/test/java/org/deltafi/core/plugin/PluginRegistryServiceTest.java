@@ -18,7 +18,9 @@
 package org.deltafi.core.plugin;
 
 import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
@@ -45,7 +47,7 @@ class PluginRegistryServiceTest {
     private static final PluginCoordinates PLUGIN_COORDINATES_2 = new PluginCoordinates("org.mock", "plugin-2", "1.0.0");
 
     @Mock
-    ActionSchemaService actionSchemaService;
+    ActionDescriptorService actionDescriptorService;
 
     @Mock
     PluginRepository pluginRepository;
@@ -82,9 +84,11 @@ class PluginRegistryServiceTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, pluginVariableService, actionSchemaService, actionEventQueuePluginCleaner);
+        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
         List<PluginUninstallCheck> checkers = List.of(ingressFlowService, enrichFlowService, egressFlowService);
-        pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService, pluginVariableService, pluginRepository, pluginValidator, actionSchemaService, checkers, cleaners);
+        pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService,
+                pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
+                ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, checkers, cleaners);
     }
 
     @Test
@@ -93,7 +97,8 @@ class PluginRegistryServiceTest {
 
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
-        Result result = pluginRegistryService.addPlugin(plugin);
+        PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
+        Result result = pluginRegistryService.register(pluginRegistration);
 
         assertTrue(result.isSuccess());
         ArgumentCaptor<Plugin> pluginArgumentCaptor = ArgumentCaptor.forClass(Plugin.class);
@@ -107,7 +112,8 @@ class PluginRegistryServiceTest {
 
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
-        Result result = pluginRegistryService.addPlugin(plugin);
+        PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
+        Result result = pluginRegistryService.register(pluginRegistration);
 
         assertFalse(result.isSuccess());
         assertEquals(2, result.getErrors().size());
@@ -188,7 +194,7 @@ class PluginRegistryServiceTest {
 
         // none of the removal steps should run for a dry-run
         Mockito.verify(pluginRepository, Mockito.never()).deleteById(Mockito.any());
-        Mockito.verify(actionSchemaService, Mockito.never()).cleanupFor(Mockito.any());
+        Mockito.verify(actionDescriptorService, Mockito.never()).cleanupFor(Mockito.any());
         Mockito.verify(ingressFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
         Mockito.verify(enrichFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
         Mockito.verify(egressFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
@@ -209,7 +215,7 @@ class PluginRegistryServiceTest {
         Mockito.verify(enrichFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(egressFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
-        Mockito.verify(actionSchemaService).cleanupFor(plugin1);
+        Mockito.verify(actionDescriptorService).cleanupFor(plugin1);
         Mockito.verify(actionEventQueuePluginCleaner).cleanupFor(plugin1);
     }
 
@@ -237,13 +243,12 @@ class PluginRegistryServiceTest {
 
 
         Plugin inBoth = makePlugin();
-        PluginCoordinates oldVersion = PLUGIN_COORDINATES_2;
         PluginCoordinates inSnapshotOnly = new PluginCoordinates("org.unique", "custom-plugin", "1.0.0");
 
 
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(installedOnly, newVersion, inBoth));
 
-        systemSnapshot.setInstalledPlugins(Set.of(inBoth.getPluginCoordinates(), oldVersion, inSnapshotOnly));
+        systemSnapshot.setInstalledPlugins(Set.of(inBoth.getPluginCoordinates(), PLUGIN_COORDINATES_2, inSnapshotOnly));
 
         Result result = pluginRegistryService.resetFromSnapshot(systemSnapshot, true);
         assertThat(result.isSuccess()).isTrue();
@@ -257,8 +262,8 @@ class PluginRegistryServiceTest {
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(PLUGIN_COORDINATES_2);
         plugin.setActions(List.of(
-                ActionDescriptor.newBuilder().name("action-x").build(),
-                ActionDescriptor.newBuilder().name("action-y").build()));
+                ActionDescriptor.builder().name("action-x").build(),
+                ActionDescriptor.builder().name("action-y").build()));
         plugin.setDependencies(List.of(PLUGIN_COORDINATES_1));
         return plugin;
     }
@@ -267,8 +272,8 @@ class PluginRegistryServiceTest {
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(PLUGIN_COORDINATES_1);
         plugin.setActions(List.of(
-                ActionDescriptor.newBuilder().name("action-1").build(),
-                ActionDescriptor.newBuilder().name("action-2").build()));
+                ActionDescriptor.builder().name("action-1").build(),
+                ActionDescriptor.builder().name("action-2").build()));
         return plugin;
     }
 }

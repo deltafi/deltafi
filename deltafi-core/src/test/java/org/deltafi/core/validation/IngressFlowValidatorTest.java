@@ -18,9 +18,9 @@
 package org.deltafi.core.validation;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.LoadActionConfiguration;
-import org.deltafi.core.configuration.TransformActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.LoadActionConfiguration;
+import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.types.IngressFlow;

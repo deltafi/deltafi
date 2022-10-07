@@ -60,15 +60,12 @@ type IngressFlowPlan {
   loadAction: LoadActionConfiguration!
 }
 
-type EgressFlowPlan {
+input IngressFlowPlanInput {
   name: String!
   description: String!
-  sourcePlugin: PluginCoordinates!
-  egressAction: EgressActionConfiguration!
-  formatAction: FormatActionConfiguration!
-  validateActions: [ValidateActionConfiguration]
-  includeIngressFlows: [String]
-  excludeIngressFlows: [String]
+  sourcePlugin: PluginCoordinatesInput!
+  transformActions: [TransformActionConfigurationInput]
+  loadAction: LoadActionConfigurationInput!
 }
 
 type EnrichFlowPlan {
@@ -79,31 +76,34 @@ type EnrichFlowPlan {
   enrichActions: [EnrichActionConfiguration]
 }
 
-input IngressFlowPlanInput {
-  name: String!
-  description: String!
-  sourcePlugin: PluginCoordinatesInput!
-  transformActions: [TransformActionConfigurationInput]
-  loadAction: LoadActionConfigurationInput!
-}
-
-input EgressFlowPlanInput {
-  name: String!
-  description: String!
-  sourcePlugin: PluginCoordinatesInput!
-  egressAction: EgressActionConfigurationInput!
-  formatAction: FormatActionConfigurationInput!
-  validateActions: [ValidateActionConfigurationInput]
-  includeIngressFlows: [String]
-  excludeIngressFlows: [String]
-}
-
 input EnrichFlowPlanInput {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinatesInput!
   domainActions: [DomainActionConfigurationInput]
   enrichActions: [EnrichActionConfigurationInput]
+}
+
+type EgressFlowPlan {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  includeIngressFlows: [String]
+  excludeIngressFlows: [String]
+  formatAction: FormatActionConfiguration!
+  validateActions: [ValidateActionConfiguration]
+  egressAction: EgressActionConfiguration!
+}
+
+input EgressFlowPlanInput {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinatesInput!
+  includeIngressFlows: [String]
+  excludeIngressFlows: [String]
+  formatAction: FormatActionConfigurationInput!
+  validateActions: [ValidateActionConfigurationInput]
+  egressAction: EgressActionConfigurationInput!
 }
 
 enum FlowState {
@@ -176,11 +176,11 @@ type EgressFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
-  egressAction: EgressActionConfiguration!
-  formatAction: FormatActionConfiguration!
-  validateActions: [ValidateActionConfiguration]
   includeIngressFlows: [String]
   excludeIngressFlows: [String]
+  formatAction: FormatActionConfiguration!
+  validateActions: [ValidateActionConfiguration]
+  egressAction: EgressActionConfiguration!
   variables: [Variable]!
 }
 

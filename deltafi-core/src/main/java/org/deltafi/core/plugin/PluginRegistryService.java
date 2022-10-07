@@ -18,7 +18,8 @@
 package org.deltafi.core.plugin;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.common.types.PluginCoordinates;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.Flows;
 import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
@@ -35,20 +36,31 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class PluginRegistryService implements Snapshotter {
-
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
-    private final PluginVariableService pluginVariableService;
     private final PluginRepository pluginRepository;
     private final PluginValidator pluginValidator;
-    private final ActionSchemaService actionSchemaService;
+    private final ActionDescriptorService actionDescriptorService;
+    private final PluginVariableService pluginVariableService;
+    private final IngressFlowPlanService ingressFlowPlanService;
+    private final EnrichFlowPlanService enrichFlowPlanService;
+    private final EgressFlowPlanService egressFlowPlanService;
 
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
 
-    public Result addPlugin(Plugin plugin) {
+    public Result register(PluginRegistration pluginRegistration) {
+        Plugin plugin = new Plugin();
+        plugin.setPluginCoordinates(pluginRegistration.getPluginCoordinates());
+        plugin.setDisplayName(pluginRegistration.getDisplayName());
+        plugin.setDescription(pluginRegistration.getDescription());
+        plugin.setActionKitVersion(pluginRegistration.getActionKitVersion());
+        plugin.setActions(pluginRegistration.getActions());
+        plugin.setDependencies(pluginRegistration.getDependencies());
+
         List<String> validationErrors = pluginValidator.validate(plugin);
         if (!validationErrors.isEmpty()) {
             return Result.newBuilder().success(false).errors(validationErrors).build();
@@ -56,6 +68,30 @@ public class PluginRegistryService implements Snapshotter {
 
         pluginRepository.deleteOlderVersions(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
         pluginRepository.save(plugin);
+
+        actionDescriptorService.registerActions(plugin.getActions());
+
+        if (pluginRegistration.getVariables() != null) {
+            pluginVariableService.saveVariables(pluginRegistration.getPluginCoordinates(),
+                    pluginRegistration.getVariables());
+        }
+
+        if (pluginRegistration.getFlowPlans() != null) {
+            pluginRegistration.getFlowPlans().forEach(flowPlan -> {
+                flowPlan.setSourcePlugin(pluginRegistration.getPluginCoordinates());
+
+                log.info("Registering flow plan: {}", flowPlan.getName());
+                if (flowPlan instanceof IngressFlowPlan) {
+                    ingressFlowPlanService.saveFlowPlan((IngressFlowPlan) flowPlan);
+                } else if (flowPlan instanceof EnrichFlowPlan) {
+                    enrichFlowPlanService.saveFlowPlan((EnrichFlowPlan) flowPlan);
+                } else if (flowPlan instanceof EgressFlowPlan) {
+                    egressFlowPlanService.saveFlowPlan((EgressFlowPlan) flowPlan);
+                } else {
+                    log.warn("Unknown flow plan type: {}", flowPlan.getClass());
+                }
+            });
+        }
 
         return Result.newBuilder().success(true).build();
     }
@@ -68,13 +104,14 @@ public class PluginRegistryService implements Snapshotter {
         return pluginRepository.findAll();
     }
 
+    // TODO: Maybe variables should be stored with plugins???
     public List<Plugin> getPluginsWithVariables() {
         List<Plugin> plugins = getPlugins();
         plugins.forEach(this::addVariables);
         return plugins;
     }
 
-    public void addVariables(Plugin plugin) {
+    private void addVariables(Plugin plugin) {
         plugin.setVariables(pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates()));
     }
 
@@ -95,7 +132,7 @@ public class PluginRegistryService implements Snapshotter {
      */
     public boolean verifyActionsAreRegistered(PluginCoordinates pluginCoordinates) {
         Plugin plugin = getPlugin(pluginCoordinates).orElseThrow(() -> new IllegalArgumentException("No plugin is registered with coordinates of " + pluginCoordinates.toString()));
-        return actionSchemaService.verifyActionsExist(plugin.actionNames());
+        return actionDescriptorService.verifyActionsExist(plugin.actionNames());
     }
 
     private Flows toPluginFlows(Plugin plugin, Map<PluginCoordinates, List<IngressFlow>> ingressFlows, Map<PluginCoordinates, List<EnrichFlow>> enrichFlows, Map<PluginCoordinates, List<EgressFlow>> egressFlows) {

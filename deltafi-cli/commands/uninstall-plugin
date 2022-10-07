@@ -62,6 +62,7 @@ if [ ! -d "$PLUGIN_DIRECTORY" ]; then
   cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory not found${normal}"
   exit 1
 fi
+PLUGIN_DIRECTORY=$(cd $PLUGIN_DIRECTORY && pwd)
 
 CHARTS_DIRECTORY="$PLUGIN_DIRECTORY/charts"
 if [ ! -d "$CHARTS_DIRECTORY" ]; then
@@ -75,16 +76,12 @@ if [ ! -f "$CHART_YAML" ]; then
   exit 1
 fi
 
+PLUGIN_GROUP="$(grep -e '^\s*group:' ${CHART_YAML} | awk '{print $2}')"
 PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
-
-PLUGIN_MANIFEST="$CHARTS_DIRECTORY/files/plugin.json"
-if [ ! -f "$PLUGIN_MANIFEST" ]; then
-  cli_log "${red}$PLUGIN_DIRECTORY: Plugin manifest (plugin.json) not found in ${bold}.plugin${normal}${red} subdirectory. Make sure the project uses the generate-plugin-manifest gradle plugin.${normal}"
-  exit 1
-fi
+PLUGIN_VERSION="$(grep -e '^version:' ${CHART_YAML} | awk '{print $2}')"
 
 DGSVARDRYRUN=true
-PLUGIN_ID=$(cat ${PLUGIN_MANIFEST} | jq -r '.pluginCoordinates')
+PLUGIN_ID="{\"groupId\": \"$PLUGIN_GROUP\", \"artifactId\": \"$PLUGIN_NAME\", \"version\": \"$PLUGIN_VERSION\"}"
 
 uninstallPlugin() {
   MUTATION="uninstallPlugin"
@@ -122,12 +119,12 @@ uninstallPlugin
 
 if [[ $FORCEAFTERERROR == "true" ]]; then
   cli_log "Forcing removal of the plugin from the cluster"
-  helm uninstall ${PLUGIN_NAME} ${ARGS[@]:2}
+  helm uninstall --namespace $DELTAFICLI_K8S_NAMESPACE ${PLUGIN_NAME} ${ARGS[@]:2}
   cleanup
 fi
 
 cli_log "Removing the plugin from the cluster"
-helm uninstall ${PLUGIN_NAME} ${ARGS[@]:2}
+helm uninstall --namespace $DELTAFICLI_K8S_NAMESPACE ${PLUGIN_NAME} ${ARGS[@]:2}
 
 if [[ $HELMDRYRUN == "false" ]]; then
   cli_log "Removing the plugin from the DeltaFi Plugin registry"

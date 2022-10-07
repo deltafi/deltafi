@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.types.IngressFlowPlan;
+import org.deltafi.common.types.IngressFlowPlan;
 import org.springframework.stereotype.Repository;
 
 @Repository

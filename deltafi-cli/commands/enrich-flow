@@ -96,7 +96,7 @@ case "$SUBCOMMAND" in
                  name
                  type
                  requiresDomains
-                 requiresEnrichment
+                 requiresEnrichments
                  requiresMetadataKeyValues {
                    key
                    value

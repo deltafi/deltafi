@@ -22,6 +22,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * PluginCoordinates are used to uniquely identify a plugin.
  */
@@ -30,9 +33,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PluginCoordinates {
+  private static final Pattern PATTERN = Pattern.compile("(.+):(.+):(.+)");
+
   private String groupId;
   private String artifactId;
   private String version;
+
+  public PluginCoordinates(String pluginCoordinatesString) {
+    Matcher matcher = PATTERN.matcher(pluginCoordinatesString);
+    if (!matcher.matches()) {
+      throw new IllegalArgumentException("Invalid plugin coordinates: " + pluginCoordinatesString);
+    }
+
+    groupId = matcher.group(1);
+    artifactId = matcher.group(2);
+    version = matcher.group(3);
+  }
 
   public boolean equalsIgnoreVersion(PluginCoordinates pluginCoordinates) {
     return groupId.equals(pluginCoordinates.groupId) && artifactId.equals(pluginCoordinates.artifactId);

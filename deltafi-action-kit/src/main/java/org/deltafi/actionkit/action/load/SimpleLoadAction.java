@@ -35,8 +35,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleLoadAction extends LoadAction<ActionParameters> {
-    public SimpleLoadAction() {
-        super(ActionParameters.class);
+    public SimpleLoadAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

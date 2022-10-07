@@ -39,7 +39,7 @@ QUERY="fragment ActionFields on ActionConfiguration {
             enrichActions {
               ... ActionFields
               requiresDomains
-              requiresEnrichment
+              requiresEnrichments
               requiresMetadataKeyValues {
                 key
                 value

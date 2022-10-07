@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.plugin;
 
+import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

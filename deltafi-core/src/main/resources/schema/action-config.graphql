@@ -18,14 +18,16 @@
 
 interface ActionConfiguration {
     name: String!
+    apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
-    apiVersion: String
 }
 
 type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -33,6 +35,7 @@ type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfig
 input TransformActionConfigurationInput {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -40,6 +43,7 @@ input TransformActionConfigurationInput {
 type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -47,6 +51,7 @@ type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfigurati
 input LoadActionConfigurationInput {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -54,60 +59,67 @@ input LoadActionConfigurationInput {
 type DomainActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    requiresDomains: [String]!
+    actionType: String!
     type: String!
     parameters: JSON
+    requiresDomains: [String]!
 }
 
 input DomainActionConfigurationInput {
     name: String!
     apiVersion: String
-    requiresDomains: [String]!
+    actionType: String!
     type: String!
     parameters: JSON
+    requiresDomains: [String]!
 }
 
 type EnrichActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    requiresDomains: [String]!
-    requiresEnrichment: [String]
-    requiresMetadataKeyValues: [KeyValue]
+    actionType: String!
     type: String!
     parameters: JSON
+    requiresDomains: [String]!
+    requiresEnrichments: [String]
+    requiresMetadataKeyValues: [KeyValue]
 }
 
 input EnrichActionConfigurationInput {
     name: String!
     apiVersion: String
-    requiresDomains: [String]!
-    requiresEnrichment: [String]
-    requiresMetadataKeyValues: [KeyValueInput]
+    actionType: String!
     type: String!
     parameters: JSON
+    requiresDomains: [String]!
+    requiresEnrichments: [String]
+    requiresMetadataKeyValues: [KeyValueInput]
 }
 
 type FormatActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    requiresDomains: [String]!
-    requiresEnrichment: [String]
+    actionType: String!
     type: String!
     parameters: JSON
+    requiresDomains: [String]!
+    requiresEnrichments: [String]
 }
 
 input FormatActionConfigurationInput {
     name: String!
     apiVersion: String
-    requiresDomains: [String]!
-    requiresEnrichment: [String]
+    actionType: String!
     type: String!
     parameters: JSON
+    requiresDomains: [String]!
+    requiresEnrichments: [String]
 }
 
 type ValidateActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -115,6 +127,7 @@ type ValidateActionConfiguration implements ActionConfiguration & DeltaFiConfigu
 input ValidateActionConfigurationInput {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -122,6 +135,7 @@ input ValidateActionConfigurationInput {
 type EgressActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -129,6 +143,7 @@ type EgressActionConfiguration implements ActionConfiguration & DeltaFiConfigura
 input EgressActionConfigurationInput {
     name: String!
     apiVersion: String
+    actionType: String!
     type: String!
     parameters: JSON
 }

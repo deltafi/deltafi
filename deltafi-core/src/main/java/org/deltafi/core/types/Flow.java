@@ -21,9 +21,11 @@ import lombok.Data;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.configuration.ActionConfiguration;
-import org.deltafi.core.configuration.DeltaFiConfiguration;
-import org.deltafi.core.generated.types.*;
+import org.deltafi.common.types.DeltaFiConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.core.generated.types.ActionFamily;
+import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.generated.types.FlowStatus;
 import org.springframework.data.annotation.Id;
 
 import java.util.*;
@@ -33,12 +35,12 @@ import java.util.stream.Collectors;
 public abstract class Flow {
 
     @Id
-    private String name;
-    private String description;
-    private PluginCoordinates sourcePlugin;
-    private FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>());
+    protected String name;
+    protected String description;
+    protected PluginCoordinates sourcePlugin;
+    protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>());
     // list of variables that are applicable to this flow
-    private Set<Variable> variables = new HashSet<>();
+    protected Set<Variable> variables = new HashSet<>();
 
     /**
      * Get all the configurations in this flow, including itself
@@ -61,7 +63,7 @@ public abstract class Flow {
         if (actionFamilyMap.containsKey(actionType)) {
             actionFamilyMap.get(actionType).getActionNames().addAll(actionNames);
         } else {
-            ActionFamily newFamily = ActionFamily.newBuilder().family(actionType.getDisplay()).actionNames(new ArrayList<>(actionNames)).build();
+            ActionFamily newFamily = ActionFamily.newBuilder().family(actionType.name()).actionNames(new ArrayList<>(actionNames)).build();
             actionFamilyMap.put(actionType, newFamily);
         }
     }
@@ -91,6 +93,8 @@ public abstract class Flow {
      * @param actionFamilyMap map of family type to action families
      */
     public abstract void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap);
+
+    public abstract DeltaFiConfiguration asFlowConfiguration();
 
     /**
      * Add the given action name to an existing ActionFamily or create a
@@ -132,6 +136,4 @@ public abstract class Flow {
     public boolean nameMatches(ActionConfiguration action, String named) {
         return named.equals(action.getName());
     }
-
-    abstract DeltaFiConfiguration asFlowConfiguration();
 }

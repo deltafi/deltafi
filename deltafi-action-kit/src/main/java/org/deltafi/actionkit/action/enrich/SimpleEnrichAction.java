@@ -37,8 +37,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleEnrichAction extends EnrichAction<ActionParameters> {
-    public SimpleEnrichAction() {
-        super(ActionParameters.class);
+    public SimpleEnrichAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

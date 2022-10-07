@@ -57,9 +57,9 @@ type EnrichFlowConfiguration implements DeltaFiConfiguration {
 type EgressFlowConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    egressAction: String!
-    formatAction: String!
-    validateActions: [String]
     includeIngressFlows: [String]
     excludeIngressFlows: [String]
+    formatAction: String!
+    validateActions: [String]
+    egressAction: String!
 }

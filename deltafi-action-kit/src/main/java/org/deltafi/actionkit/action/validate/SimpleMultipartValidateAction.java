@@ -36,8 +36,8 @@ import java.util.List;
  */
 @SuppressWarnings("unused")
 public abstract class SimpleMultipartValidateAction extends MultipartValidateAction<ActionParameters> {
-    public SimpleMultipartValidateAction() {
-        super(ActionParameters.class);
+    public SimpleMultipartValidateAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

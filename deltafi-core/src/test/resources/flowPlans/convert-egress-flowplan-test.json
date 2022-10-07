@@ -6,6 +6,28 @@
     "artifactId": "deltafi-passthrough",
     "version": "0.17.0"
   },
+  "includeIngressFlows": [
+    "${passthrough.includeIngressFlows}"
+  ],
+  "excludeIngressFlows": [
+    "${passthrough.excludeIngressFlows}"
+  ],
+  "formatAction": {
+    "name": "PassthroughFormatAction",
+    "type": "org.deltafi.passthrough.action.RoteFormatAction",
+    "requiresDomains": [
+      "${domain.type}"
+    ],
+    "requiresEnrichments": [
+      "${domain.type}"
+    ]
+  },
+  "validateActions": [
+    {
+      "name": "PassthroughValidateAction",
+      "type": "org.deltafi.passthrough.action.RubberStampValidateAction"
+    }
+  ],
   "egressAction": {
     "name": "PassthroughEgressAction",
     "type": "org.deltafi.core.action.RestPostEgressAction",
@@ -14,27 +36,5 @@
       "metadataKey": "deltafiMetadata",
       "url": "${egressUrl}"
     }
-  },
-  "formatAction": {
-    "name": "PassthroughFormatAction",
-    "requiresDomains": [
-      "${domain.type}"
-    ],
-    "requiresEnrichment": [
-      "${domain.type}"
-    ],
-    "type": "org.deltafi.passthrough.action.RoteFormatAction"
-  },
-  "includeIngressFlows": [
-    "${passthrough.includeIngressFlows}"
-  ],
-  "excludeIngressFlows": [
-    "${passthrough.excludeIngressFlows}"
-  ],
-  "validateActions": [
-    {
-      "name": "PassthroughValidateAction",
-      "type": "org.deltafi.passthrough.action.RubberStampValidateAction"
-    }
-  ]
+  }
 }

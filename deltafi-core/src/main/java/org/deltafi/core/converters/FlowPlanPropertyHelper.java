@@ -18,10 +18,10 @@
 package org.deltafi.core.converters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.generated.types.ActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.springframework.util.PropertyPlaceholderHelper;

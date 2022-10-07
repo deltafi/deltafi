@@ -18,7 +18,7 @@
 package org.deltafi.core.validation;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.core.configuration.ActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.types.Flow;
 
@@ -57,7 +57,7 @@ public abstract class FlowValidator<T extends Flow> {
                 .collect(Collectors.toList());
     }
 
-    List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
+    private List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
         return schemaComplianceValidator.validate(actionConfiguration);
     }
 }

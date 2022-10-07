@@ -19,33 +19,34 @@ package org.deltafi.core.types;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.core.configuration.*;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 
+@Document
 @Data
-@Document("enrichFlow")
 @EqualsAndHashCode(callSuper = true)
 public class EnrichFlow extends Flow {
-
     private List<DomainActionConfiguration> domainActions = new ArrayList<>();
     private List<EnrichActionConfiguration> enrichActions = new ArrayList<>();
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {
-        ActionConfiguration found = actionNamed(domainActions, actionName);
-        return found != null ? found : actionNamed(enrichActions, actionName);
+        ActionConfiguration domainActionConfiguration = actionNamed(domainActions, actionName);
+        if (domainActionConfiguration != null) {
+            return domainActionConfiguration;
+        }
+        return actionNamed(enrichActions, actionName);
     }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
-        actionConfigurations.addAll(domainActions);
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>(domainActions);
         actionConfigurations.addAll(enrichActions);
         return actionConfigurations;
     }
@@ -60,7 +61,7 @@ public class EnrichFlow extends Flow {
             case ENRICH_ACTION:
                 return new ArrayList<>(enrichActions);
             default:
-                return List.of();
+                return Collections.emptyList();
         }
     }
 
@@ -71,7 +72,7 @@ public class EnrichFlow extends Flow {
     }
 
     @Override
-    DeltaFiConfiguration asFlowConfiguration() {
+    public DeltaFiConfiguration asFlowConfiguration() {
         EnrichFlowConfiguration enrichFlowConfiguration = new EnrichFlowConfiguration();
         enrichFlowConfiguration.setName(getName());
         enrichFlowConfiguration.setDomainActions(actionNames(domainActions));

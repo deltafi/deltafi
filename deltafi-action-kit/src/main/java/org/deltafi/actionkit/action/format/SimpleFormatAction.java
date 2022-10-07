@@ -36,8 +36,8 @@ import java.util.Map;
  * @see FormatAction
  */
 public abstract class SimpleFormatAction extends FormatAction<ActionParameters> {
-    public SimpleFormatAction() {
-        super(ActionParameters.class);
+    public SimpleFormatAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

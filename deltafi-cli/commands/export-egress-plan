@@ -35,7 +35,7 @@ QUERY="fragment ActionFields on ActionConfiguration {
             formatAction {
               ... ActionFields
               requiresDomains
-              requiresEnrichment
+              requiresEnrichments
             }
             validateActions {
               ... ActionFields

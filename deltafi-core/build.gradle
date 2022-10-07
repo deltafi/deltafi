@@ -1,7 +1,6 @@
 plugins {
 	id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 	id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
-	id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
 	id 'org.springframework.boot' version "${springBootVersion}"
 	id "com.palantir.docker" version "${palantirDockerVersion}"
 }
@@ -14,139 +13,119 @@ license {
 	excludes(excludeFromLicense)
 }
 
-bootJar {
-	archiveFileName = "${project.name}.jar"
-}
-
-jar {
-	archiveClassifier = '' // boot plugin sets this to plain, clear it
-	include('org/deltafi/core/api/**')
-	include('org/deltafi/core/generated/client/**')
-	include('org/deltafi/core/generated/types/**')
-}
-
-generateJava {
-    packageName = 'org.deltafi.core.generated'
-    generateClient = true
-    typeMapping = [
-	  "JSON": "java.util.Map<String, Object>",
-	  "Long": "java.lang.Long",
-	  "Action": "org.deltafi.common.types.Action",
-	  "ActionDescriptor": "org.deltafi.common.types.ActionDescriptor",
-	  "ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
-	  "ActionEventInput": "org.deltafi.common.types.ActionEventInput",
-	  "ActionEventType": "org.deltafi.common.types.ActionEventType",
-	  "ActionRegistrationInput": "org.deltafi.common.types.ActionRegistrationInput",
-	  "ActionSchema": "org.deltafi.core.types.ActionSchema",
-	  "ActionState": "org.deltafi.common.types.ActionState",
-	  "Content": "org.deltafi.common.types.Content",
-	  "ContentInput": "org.deltafi.common.types.Content",
-	  "ContentReference": "org.deltafi.common.content.ContentReference",
-	  "ContentReferenceInput": "org.deltafi.common.content.ContentReference",
-	  "DataType": "org.deltafi.common.types.VariableDataType",
-	  "DeletePolicy": "org.deltafi.core.types.DeletePolicy",
-	  "DeletePolicies": "org.deltafi.core.types.DeletePolicies",
-	  "DeletePoliciesInput": "org.deltafi.core.types.DeletePolicies",
-	  "DeltaFile": "org.deltafi.common.types.DeltaFile",
-	  "DeltaFileStage": "org.deltafi.common.types.DeltaFileStage",
-	  "DeltaFiles": "org.deltafi.core.types.DeltaFiles",
-	  "DiskSpaceDeletePolicy": "org.deltafi.core.types.DiskSpaceDeletePolicy",
-	  "DiskSpaceDeletePolicyInput": "org.deltafi.core.types.DiskSpaceDeletePolicy",
-	  "Domain": "org.deltafi.common.types.Domain",
-	  "DomainActionSchemaInput": "org.deltafi.common.types.DomainActionSchemaInput",
-	  "DomainInput": "org.deltafi.common.types.Domain",
-	  "DomainResultInput": "org.deltafi.common.types.DomainResultInput",
-	  "Egress": "org.deltafi.common.types.Egress",
-	  "EgressActionSchemaInput": "org.deltafi.common.types.EgressActionSchemaInput",
-	  "EgressFlow": "org.deltafi.core.types.EgressFlow",
-	  "EgressFlowPlan": "org.deltafi.core.types.EgressFlowPlan",
-	  "EnrichActionSchemaInput": "org.deltafi.common.types.EnrichActionSchemaInput",
-	  "EnrichFlow": "org.deltafi.core.types.EnrichFlow",
-	  "EnrichFlowPlan": "org.deltafi.core.types.EnrichFlowPlan",
-	  "EnrichInput": "org.deltafi.common.types.EnrichInput",
-	  "Enrichment": "org.deltafi.common.types.Enrichment",
-	  "EnrichmentInput": "org.deltafi.common.types.Enrichment",
-	  "ErrorDomain": "org.deltafi.common.types.ErrorDomain",
-	  "ErrorInput": "org.deltafi.common.types.ErrorInput",
-	  "FilterInput": "org.deltafi.common.types.FilterInput",
-	  "FormatActionSchemaInput": "org.deltafi.common.types.FormatActionSchemaInput",
-	  "FormatInput": "org.deltafi.common.types.FormatInput",
-	  "FormattedData": "org.deltafi.common.types.FormattedData",
-	  "FormattedDataInput": "org.deltafi.common.types.FormattedData",
-	  "IngressFlow": "org.deltafi.core.types.IngressFlow",
-	  "IngressFlowPlan": "org.deltafi.core.types.IngressFlowPlan",
-	  "IngressInput": "org.deltafi.common.types.IngressInput",
-	  "KeyValue": "org.deltafi.common.types.KeyValue",
-	  "KeyValueInput": "org.deltafi.common.types.KeyValue",
-	  "LoadActionSchemaInput": "org.deltafi.common.types.LoadActionSchemaInput",
-	  "LoadInput": "org.deltafi.common.types.LoadInput",
-	  "Plugin": "org.deltafi.common.types.Plugin",
-	  "Metadata": "java.util.Map<String, String>",
-	  "PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
-	  "PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
-	  "Property": "org.deltafi.common.types.Property",
-	  "PropertyId": "org.deltafi.core.types.PropertyId",
-	  "PropertyInput": "org.deltafi.core.types.Property",
-	  "PropertySet": "org.deltafi.common.types.PropertySet",
-	  "PropertySetInput": "org.deltafi.common.types.PropertySet",
-	  "PropertySource": "org.deltafi.core.types.PropertySource",
-	  "PropertyUpdate": "org.deltafi.core.types.PropertyUpdate",
-	  "ProtocolLayer": "org.deltafi.common.types.ProtocolLayer",
-	  "ProtocolLayerInput": "org.deltafi.common.types.ProtocolLayer",
-	  "Result": "org.deltafi.core.types.Result",
-	  "SourceInfo": "org.deltafi.common.types.SourceInfo",
-	  "SourceInfoInput": "org.deltafi.common.types.SourceInfo",
-	  "SplitInput": "org.deltafi.common.types.SplitInput",
-	  "TimedDeletePolicy": "org.deltafi.core.types.TimedDeletePolicy",
-	  "TimedDeletePolicyInput": "org.deltafi.core.types.TimedDeletePolicy",
-	  "TransformActionSchemaInput": "org.deltafi.common.types.TransformActionSchemaInput",
-	  "TransformInput": "org.deltafi.common.types.TransformInput",
-	  "UniqueKeyValues": "org.deltafi.core.types.UniqueKeyValues",
-	  "ValidateActionSchemaInput": "org.deltafi.common.types.ValidateActionSchemaInput",
-	  "Variable": "org.deltafi.common.types.Variable",
-	  "VariableInput": "org.deltafi.common.types.Variable"
-	]
-}
-
-dependencyManagement {
-	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-	}
-}
-
 dependencies {
-	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}")) {
-		because 'DGS BOM to automatically define versions of other packages below'
-	}
-
-	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
 	implementation project(':deltafi-common')
 
 	implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
-	implementation "org.springframework.boot:spring-boot-starter-aop"
-	implementation "org.springframework.retry:spring-retry"
+	implementation "org.springframework.boot:spring-boot-starter-web"
 	implementation "org.springframework.cloud:spring-cloud-config-server"
 
-	implementation 'com.squareup.okhttp3:okhttp:4.10.0'
-
 	implementation "com.networknt:json-schema-validator:1.0.72"
+
 	implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
 	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter"
-	implementation "org.springframework.boot:spring-boot-starter-web"
-
-	implementation "net.logstash.logback:logstash-logback-encoder:7.2"
-	implementation "ch.qos.logback:logback-classic"
-
-	testImplementation "org.springframework.boot:spring-boot-starter-test"
 
 	testImplementation project(':deltafi-common-test')
+	testImplementation "org.springframework.boot:spring-boot-starter-test"
 	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.16.2'
 	testImplementation 'org.awaitility:awaitility:4.2.0'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 	testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
 	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
+}
+
+generateJava {
+	packageName = 'org.deltafi.core.generated'
+	generateClient = true
+	typeMapping = [
+			"JSON": "java.util.Map<String, Object>",
+			"Long": "java.lang.Long",
+			"Metadata": "java.util.Map<String, String>",
+
+			"ContentReference": "org.deltafi.common.content.ContentReference",
+			"ContentReferenceInput": "org.deltafi.common.content.ContentReference",
+
+			"Action": "org.deltafi.common.types.Action",
+			"ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",
+			"ActionDescriptor": "org.deltafi.common.types.ActionDescriptor",
+			"ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
+			"ActionEventInput": "org.deltafi.common.types.ActionEventInput",
+			"ActionEventType": "org.deltafi.common.types.ActionEventType",
+			"ActionState": "org.deltafi.common.types.ActionState",
+			"Content": "org.deltafi.common.types.Content",
+			"ContentInput": "org.deltafi.common.types.Content",
+			"DataType": "org.deltafi.common.types.VariableDataType",
+			"DeltaFiConfiguration": "org.deltafi.common.types.DeltaFiConfiguration",
+			"DeltaFile": "org.deltafi.common.types.DeltaFile",
+			"DeltaFileStage": "org.deltafi.common.types.DeltaFileStage",
+			"Domain": "org.deltafi.common.types.Domain",
+			"DomainActionConfiguration": "org.deltafi.common.types.DomainActionConfiguration",
+			"DomainInput": "org.deltafi.common.types.Domain",
+			"DomainResultInput": "org.deltafi.common.types.DomainResultInput",
+			"Egress": "org.deltafi.common.types.Egress",
+			"EgressActionConfiguration": "org.deltafi.common.types.EgressActionConfiguration",
+			"EgressFlowConfiguration": "org.deltafi.common.types.EgressFlowConfiguration",
+			"EgressFlowPlan": "org.deltafi.common.types.EgressFlowPlan",
+			"EnrichActionConfiguration": "org.deltafi.common.types.EnrichActionConfiguration",
+			"EnrichFlowConfiguration": "org.deltafi.common.types.EnrichFlowConfiguration",
+			"EnrichFlowPlan": "org.deltafi.common.types.EnrichFlowPlan",
+			"EnrichInput": "org.deltafi.common.types.EnrichInput",
+			"Enrichment": "org.deltafi.common.types.Enrichment",
+			"EnrichmentInput": "org.deltafi.common.types.Enrichment",
+			"ErrorDomain": "org.deltafi.common.types.ErrorDomain",
+			"ErrorInput": "org.deltafi.common.types.ErrorInput",
+			"FilterInput": "org.deltafi.common.types.FilterInput",
+			"FormatActionConfiguration": "org.deltafi.common.types.FormatActionConfiguration",
+			"FormatInput": "org.deltafi.common.types.FormatInput",
+			"FormattedData": "org.deltafi.common.types.FormattedData",
+			"FormattedDataInput": "org.deltafi.common.types.FormattedData",
+			"IngressFlowConfiguration": "org.deltafi.common.types.IngressFlowConfiguration",
+			"IngressFlowPlan": "org.deltafi.common.types.IngressFlowPlan",
+			"IngressInput": "org.deltafi.common.types.IngressInput",
+			"KeyValue": "org.deltafi.common.types.KeyValue",
+			"KeyValueInput": "org.deltafi.common.types.KeyValue",
+			"LoadActionConfiguration": "org.deltafi.common.types.LoadActionConfiguration",
+			"LoadInput": "org.deltafi.common.types.LoadInput",
+			"Plugin": "org.deltafi.common.types.Plugin",
+			"PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
+			"PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
+			"Property": "org.deltafi.common.types.Property",
+			"PropertyInput": "org.deltafi.common.types.Property",
+			"PropertySet": "org.deltafi.common.types.PropertySet",
+			"PropertySetInput": "org.deltafi.common.types.PropertySet",
+			"PropertySource": "org.deltafi.common.types.PropertySource",
+			"ProtocolLayer": "org.deltafi.common.types.ProtocolLayer",
+			"ProtocolLayerInput": "org.deltafi.common.types.ProtocolLayer",
+			"SourceInfo": "org.deltafi.common.types.SourceInfo",
+			"SourceInfoInput": "org.deltafi.common.types.SourceInfo",
+			"SplitInput": "org.deltafi.common.types.SplitInput",
+			"TransformActionConfiguration": "org.deltafi.common.types.TransformActionConfiguration",
+			"TransformInput": "org.deltafi.common.types.TransformInput",
+			"ValidateActionConfiguration": "org.deltafi.common.types.ValidateActionConfiguration",
+			"Variable": "org.deltafi.common.types.Variable",
+			"VariableInput": "org.deltafi.common.types.Variable",
+
+			"DeletePolicy": "org.deltafi.core.types.DeletePolicy",
+			"DeletePolicies": "org.deltafi.core.types.DeletePolicies",
+			"DeletePoliciesInput": "org.deltafi.core.types.DeletePolicies",
+			"DeltaFiles": "org.deltafi.core.types.DeltaFiles",
+			"DiskSpaceDeletePolicy": "org.deltafi.core.types.DiskSpaceDeletePolicy",
+			"DiskSpaceDeletePolicyInput": "org.deltafi.core.types.DiskSpaceDeletePolicy",
+			"EgressFlow": "org.deltafi.core.types.EgressFlow",
+			"EnrichFlow": "org.deltafi.core.types.EnrichFlow",
+			"IngressFlow": "org.deltafi.core.types.IngressFlow",
+			"PropertyId": "org.deltafi.core.types.PropertyId",
+			"PropertyUpdate": "org.deltafi.core.types.PropertyUpdate",
+			"Result": "org.deltafi.core.types.Result",
+			"TimedDeletePolicy": "org.deltafi.core.types.TimedDeletePolicy",
+			"TimedDeletePolicyInput": "org.deltafi.core.types.TimedDeletePolicy",
+			"UniqueKeyValues": "org.deltafi.core.types.UniqueKeyValues"
+	]
+}
+
+jar {
+	// do not create the -plain.jar
+	enabled = false
 }
 
 task copyProbe(type: Copy) {
@@ -156,7 +135,6 @@ task copyProbe(type: Copy) {
 }
 
 dockerPrepare {
-    dependsOn compileJava
     dependsOn assemble
     finalizedBy copyProbe
 }
@@ -164,5 +142,5 @@ dockerPrepare {
 docker {
     name "${project.name}:${project.version}"
     tag "local", "${localDockerRegistry}/${project.name}:latest"
-    copySpec.from("build/libs/").into("build/libs/")
+	copySpec.from(bootJar.archiveFile).into("build/libs/")
 }

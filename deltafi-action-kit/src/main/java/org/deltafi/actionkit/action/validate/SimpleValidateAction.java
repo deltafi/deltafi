@@ -32,8 +32,8 @@ import org.jetbrains.annotations.NotNull;
  * @see ValidateAction
  */
 public abstract class SimpleValidateAction extends ValidateAction<ActionParameters> {
-    public SimpleValidateAction() {
-        super(ActionParameters.class);
+    public SimpleValidateAction(String description) {
+        super(ActionParameters.class, description);
     }
 
     @Override

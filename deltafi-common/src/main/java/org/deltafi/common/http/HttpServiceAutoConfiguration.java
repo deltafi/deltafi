@@ -23,13 +23,13 @@ import org.deltafi.common.ssl.SslProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import java.net.http.HttpClient;
 
 @AutoConfiguration
-@ConfigurationPropertiesScan
+@EnableConfigurationProperties
 @Slf4j
 public class HttpServiceAutoConfiguration {
     @Bean

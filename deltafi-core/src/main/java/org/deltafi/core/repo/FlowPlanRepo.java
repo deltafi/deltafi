@@ -18,7 +18,7 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.types.FlowPlan;
+import org.deltafi.common.types.FlowPlan;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 

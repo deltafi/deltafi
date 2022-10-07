@@ -19,14 +19,12 @@ package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
 import org.deltafi.common.converters.KeyValueConverter;
-import org.deltafi.common.types.ActionInput;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.core.configuration.*;
-import org.deltafi.core.exceptions.MissingEgressFlowException;
+import org.deltafi.common.types.*;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.configuration.*;
+import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -186,7 +184,7 @@ public class StateMachine {
     private boolean enrichActionReady(EnrichActionConfiguration enrichAction, DeltaFile deltaFile) {
         return !deltaFile.hasTerminalAction(enrichAction.getName()) &&
                 deltaFile.hasDomains(enrichAction.getRequiresDomains()) &&
-                deltaFile.hasEnrichments(enrichAction.getRequiresEnrichment()) &&
+                deltaFile.hasEnrichments(enrichAction.getRequiresEnrichments()) &&
                 hasMetadataMatches(deltaFile, enrichAction);
     }
 
@@ -217,7 +215,7 @@ public class StateMachine {
     private boolean formatActionReady(FormatActionConfiguration config, DeltaFile deltaFile) {
         return !deltaFile.hasTerminalAction(config.getName()) &&
                 deltaFile.hasDomains(config.getRequiresDomains()) &&
-                deltaFile.hasEnrichments(config.getRequiresEnrichment());
+                deltaFile.hasEnrichments(config.getRequiresEnrichments());
     }
 
     List<ActionConfiguration> getValidateActions(EgressFlow egressFlow, DeltaFile deltaFile) {

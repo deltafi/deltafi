@@ -23,13 +23,14 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.properties.ActionsProperties;
+import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.metrics.Metric;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionInput;
-import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,9 @@ public class ActionRunner {
     @Autowired
     MetricRepository metricService;
 
+    @Autowired
+    PluginRegistrar pluginRegistrar;
+
     private ExecutorService executor;
 
     /**
@@ -76,9 +80,11 @@ public class ActionRunner {
             return;
         }
 
+        pluginRegistrar.register();
+
         executor = Executors.newFixedThreadPool(actions.size());
         for (Action<?> action : actions) {
-            log.info("Starting action: {}", getFeedString(action));
+            log.info("Starting action: {}", action.getClassCanonicalName());
             executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
         }
     }
@@ -87,56 +93,51 @@ public class ActionRunner {
         try {
             Thread.sleep(delayMs);
             while (!Thread.currentThread().isInterrupted()) {
-                log.trace("{} listening", getFeedString(action));
-                ActionInput actionInput = actionEventQueue.takeAction(getFeedString(action));
-                OffsetDateTime now = OffsetDateTime.now();
+                log.trace("{} listening", action.getClassCanonicalName());
+                ActionInput actionInput = actionEventQueue.takeAction(action.getClassCanonicalName());
                 ActionContext context = actionInput.getActionContext();
                 context.setActionVersion(buildProperties.getVersion());
                 context.setHostname(hostnameService.getHostname());
-                context.setStartTime(now);
+                context.setStartTime(OffsetDateTime.now());
 
-                log.trace("Running action {} with input {}", getFeedString(action), actionInput);
+                log.trace("Running action {} with input {}", action.getClassCanonicalName(), actionInput);
                 DeltaFile deltaFile = actionInput.getDeltaFile();
 
                 executeAction(action, deltaFile, context, actionInput.getActionParams());
             }
         } catch (Throwable e) {
-            log.error("Unexpected exception caught at " + getFeedString(action) + " thread execution level: " + e.getMessage());
+            log.error("Unexpected exception caught at {} thread execution level: ", action.getClassCanonicalName(), e);
             executor.submit(() -> listen(action, actionsProperties.getActionPollingPeriodMs()));
         }
     }
 
     private void executeAction(Action<?> action, DeltaFile deltaFile, ActionContext context, Map<String, Object> params) throws JsonProcessingException {
-        try(MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
+        try (MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
             Result result = action.executeAction(deltaFile, context, params);
             if (Objects.isNull(result)) {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
             }
 
             actionEventQueue.putResult(result.toEvent());
-            postMetrics(result, action.getActionType());
+            postMetrics(result, action.getActionDescriptor());
         } catch (Throwable e) {
             ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
             actionEventQueue.putResult(errorResult.toEvent());
-            postMetrics(errorResult, action.getActionType());
+            postMetrics(errorResult, action.getActionDescriptor());
         }
     }
 
-    private void postMetrics(Result result, ActionType actionType) {
+    private void postMetrics(Result result, ActionDescriptor actionDescriptor) {
         String ingressFlow = result.getContext().getIngressFlow();
         String egressFlow = result.getContext().getEgressFlow();
         String source = result.getContext().getName();
         for (Metric metric: result.getMetrics()) {
-            metric.addTag("action", actionType.name().toLowerCase())
+            metric.addTag("action", actionDescriptor.getType().name().toLowerCase())
                     .addTag("source", source);
             if (ingressFlow != null) metric.addTag("ingressFlow", ingressFlow);
             if (egressFlow != null) metric.addTag("egressFlow", egressFlow);
 
             metricService.increment(metric);
         }
-    }
-
-    private String getFeedString(Action<?> action) {
-        return action.getClass().getCanonicalName();
     }
 }

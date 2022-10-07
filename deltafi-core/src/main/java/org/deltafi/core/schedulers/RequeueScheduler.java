@@ -37,7 +37,7 @@ public class RequeueScheduler implements ApplicationListener<RefreshScopeRefresh
     final DeltaFilesService deltaFilesService;
 
     // convert to milliseconds then divide each interval into 10 samples
-    @Scheduled(fixedDelayString = "#{deltaFiProperties.getRequeueSeconds() * 1000 / 10}")
+    @Scheduled(fixedDelayString = "#{@'deltafi-org.deltafi.core.configuration.DeltaFiProperties'.getRequeueSeconds() * 1000 / 10}")
     public void requeue() {
         deltaFilesService.requeue();
     }

@@ -1,0 +1,82 @@
+{
+  "name": "org.deltafi.core.action.RestPostEgressAction",
+  "type" : "EGRESS",
+  "paramClass" : "org.deltafi.test.actions.TestEgressParameters",
+  "schema" : {
+    "type" : "object",
+    "properties" : {
+      "egressFlow" : {
+        "type" : "string",
+        "description" : "Name of the egress flow the DeltaFile is flowing through"
+      },
+      "metadataKey" : {
+        "type" : "string",
+        "description" : "Send metadata as JSON in this HTTP header field"
+      },
+      "retryCount" : {
+        "type" : "integer",
+        "description" : "Number of times to retry a failing HTTP request"
+      },
+      "retryDelayMs" : {
+        "type" : "integer",
+        "description" : "Number milliseconds to wait for an HTTP retry"
+      },
+      "url" : {
+        "type" : "string",
+        "description" : "The URL to post the DeltaFile to"
+      },
+      "enableFeature": {
+        "type" : "boolean",
+        "description" : "Turn feature on or off"
+      },
+      "enrichments" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "Map of enrichment keys to enrichment values that will be added to the DeltaFile"
+      },
+      "someOptionalList" : {
+        "description" : "Some optional list parameter",
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        }
+      },
+      "someRequiredList" : {
+        "description" : "Required list parameter",
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        }
+      },
+      "complex" : {
+        "type": "object",
+        "description": "Sample embedded param",
+        "properties": {
+          "subKey": {
+            "type": "string",
+            "description": "sample nested field"
+          },
+          "subList": {
+            "type": "array",
+            "description": "sample nested list"
+          }
+        }
+      },
+      "complexList": {
+        "type" : "array",
+        "items" : {
+          "type" : "object"
+        }
+      }
+    },
+    "required" : [
+      "egressFlow",
+      "metadataKey",
+      "someRequiredList",
+      "url"
+    ],
+    "additionalProperties" : false
+  }
+}

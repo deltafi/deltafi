@@ -39,8 +39,8 @@ import java.util.Objects;
  */
 @SuppressWarnings("unused")
 public abstract class MultipartValidateAction<P extends ActionParameters> extends ValidateActionBase<P> {
-    public MultipartValidateAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public MultipartValidateAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

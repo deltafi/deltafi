@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * A collection of DeltaFile objects
- * This is the codegen generated class, except the generated DeltaFile is replaced with org.deltafi.core.api.types.DeltaFile
+ * This is the codegen generated class, except the generated DeltaFile is replaced with org.deltafi.core.types.DeltaFile
  */
 @Data
 @NoArgsConstructor

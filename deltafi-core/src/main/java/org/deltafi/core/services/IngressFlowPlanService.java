@@ -17,30 +17,15 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.core.repo.IngressFlowPlanRepo;
-import org.deltafi.core.types.FlowPlanInput;
 import org.deltafi.core.types.IngressFlow;
-import org.deltafi.core.types.IngressFlowPlan;
 import org.deltafi.core.validation.IngressFlowPlanValidator;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-
 @Service
 public class IngressFlowPlanService extends FlowPlanService<IngressFlowPlan, IngressFlow> {
-
     public IngressFlowPlanService(IngressFlowPlanValidator ingressFlowPlanValidator, IngressFlowPlanRepo flowPlanRepo, IngressFlowService flowService) {
         super(ingressFlowPlanValidator, flowPlanRepo, flowService, IngressFlowPlan.class);
-    }
-
-    @Override
-    IngressFlowPlan mapFromInput(FlowPlanInput flowPlanInput) {
-        IngressFlowPlan flowPlan = OBJECT_MAPPER.convertValue(flowPlanInput, IngressFlowPlan.class);
-
-        if (null == flowPlan.getTransformActions()) {
-            flowPlan.setTransformActions(new ArrayList<>());
-        }
-
-        return flowPlan;
     }
 }

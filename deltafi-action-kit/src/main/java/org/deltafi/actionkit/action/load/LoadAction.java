@@ -36,8 +36,8 @@ import java.util.Map;
  * @see SimpleMultipartLoadAction
  */
 public abstract class LoadAction<P extends ActionParameters> extends LoadActionBase<P> {
-    public LoadAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public LoadAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

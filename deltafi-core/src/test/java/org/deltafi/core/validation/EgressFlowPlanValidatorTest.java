@@ -18,11 +18,11 @@
 package org.deltafi.core.validation;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.configuration.EgressActionConfiguration;
-import org.deltafi.core.configuration.FormatActionConfiguration;
-import org.deltafi.core.configuration.ValidateActionConfiguration;
+import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.EgressFlowPlan;
+import org.deltafi.common.types.FormatActionConfiguration;
+import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
-import org.deltafi.core.types.EgressFlowPlan;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,8 +39,7 @@ class EgressFlowPlanValidatorTest {
 
     @Test
     void duplicateActionNameErrors() {
-        EgressFlowPlan egressFlow = new EgressFlowPlan();
-        egressFlow.setName("egressFlow");
+        EgressFlowPlan egressFlow = new EgressFlowPlan("egressFlow", null);
 
         FormatActionConfiguration format = new FormatActionConfiguration();
         format.setName("action");
@@ -68,7 +67,7 @@ class EgressFlowPlanValidatorTest {
 
         Assertions.assertThatThrownBy(() -> egressFlowPlanValidator.validate(egressFlow))
                 .isInstanceOf(DeltafiConfigurationException.class)
-                .hasMessage("Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.format.Action, org.deltafi.egress.Action, org.deltafi.validate.Action1; Config named: validate had the following error: The action name: validate is duplicated for the following action types: org.deltafi.validate.Action2, org.deltafi.validate.Action3");
+                .hasMessage("Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.format.Action, org.deltafi.validate.Action1, org.deltafi.egress.Action; Config named: validate had the following error: The action name: validate is duplicated for the following action types: org.deltafi.validate.Action2, org.deltafi.validate.Action3");
     }
 
 }

@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.configuration.server.repo;
 
-import org.deltafi.core.types.StateHolder;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;

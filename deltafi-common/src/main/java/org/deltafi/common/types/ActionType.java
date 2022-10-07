@@ -17,28 +17,6 @@
  */
 package org.deltafi.common.types;
 
-/**
- * Enumeration for action types
- */
 public enum ActionType {
-    INGRESS("ingress"),
-    TRANSFORM("transform"),
-    LOAD("load"),
-    DOMAIN("domain"),
-    ENRICH("enrich"),
-    FORMAT("format"),
-    VALIDATE("validate"),
-    EGRESS("egress"),
-    DELETE("delete"),
-    UNKNOWN("unknown");
-
-    final String display;
-
-    ActionType(String display) {
-        this.display = display;
-    }
-
-    public String getDisplay() {
-        return display;
-    }
+    INGRESS, TRANSFORM, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, DELETE, UNKNOWN
 }

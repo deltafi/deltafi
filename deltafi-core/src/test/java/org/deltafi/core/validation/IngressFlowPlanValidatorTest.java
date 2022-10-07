@@ -18,10 +18,10 @@
 package org.deltafi.core.validation;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.core.configuration.LoadActionConfiguration;
-import org.deltafi.core.configuration.TransformActionConfiguration;
+import org.deltafi.common.types.IngressFlowPlan;
+import org.deltafi.common.types.LoadActionConfiguration;
+import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
-import org.deltafi.core.types.IngressFlowPlan;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,8 +37,7 @@ class IngressFlowPlanValidatorTest {
 
     @Test
     void duplicateActionNameErrors() {
-        IngressFlowPlan ingressFlow = new IngressFlowPlan();
-        ingressFlow.setName("flow");
+        IngressFlowPlan ingressFlow = new IngressFlowPlan("flow", null);
 
         LoadActionConfiguration load = new LoadActionConfiguration();
         load.setName("action");
@@ -59,7 +58,7 @@ class IngressFlowPlanValidatorTest {
 
         Assertions.assertThatThrownBy(() -> ingressFlowPlanValidator.validate(ingressFlow))
                 .isInstanceOf(DeltafiConfigurationException.class)
-                .hasMessage("Config named: transform had the following error: The action name: transform is duplicated for the following action types: org.deltafi.transform.Action2, org.deltafi.transform.Action3; Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.load.Action, org.deltafi.transform.Action1");
+                .hasMessage("Config named: transform had the following error: The action name: transform is duplicated for the following action types: org.deltafi.transform.Action2, org.deltafi.transform.Action3; Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.transform.Action1, org.deltafi.load.Action");
     }
 
 }

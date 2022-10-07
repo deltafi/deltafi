@@ -22,16 +22,11 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.Variable;
-import org.deltafi.common.types.VariableDataType;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EgressFlowPlan;
 import org.deltafi.core.types.IngressFlow;
-import org.deltafi.core.types.IngressFlowPlan;
 
 import java.util.List;
 
@@ -86,7 +81,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static IngressFlow saveIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").type("org.deltafi.action.Loader").build();
+        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").actionType("LOAD").type("org.deltafi.action.Loader").build();
         IngressFlowPlanInput input = IngressFlowPlanInput.newBuilder()
                 .sourcePlugin(PLUGIN_COORDINATES)
                 .name("flowPlan")
@@ -98,8 +93,8 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static EgressFlow saveEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        FormatActionConfigurationInput format = FormatActionConfigurationInput.newBuilder().name("format").type("org.deltafi.actions.Formatter").requiresDomains(List.of("domain")).build();
-        EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
+        FormatActionConfigurationInput format = FormatActionConfigurationInput.newBuilder().name("format").actionType("FORMAT").type("org.deltafi.actions.Formatter").requiresDomains(List.of("domain")).build();
+        EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").actionType("EGRESS").type("org.deltafi.actions.EgressAction").build();
         EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .sourcePlugin(PLUGIN_COORDINATES)

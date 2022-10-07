@@ -38,8 +38,8 @@ import java.util.Map;
  * @see SimpleMultipartFormatAction
  */
 public abstract class FormatAction<P extends ActionParameters> extends FormatActionBase<P> {
-    public FormatAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public FormatAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override

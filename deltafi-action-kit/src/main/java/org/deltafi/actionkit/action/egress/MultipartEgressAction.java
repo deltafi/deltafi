@@ -38,8 +38,8 @@ import java.util.List;
  */
 @SuppressWarnings("unused")
 public abstract class MultipartEgressAction<P extends ActionParameters> extends EgressActionBase<P> {
-    public MultipartEgressAction(Class<P> actionParametersClass) {
-        super(actionParametersClass);
+    public MultipartEgressAction(Class<P> actionParametersClass, String description) {
+        super(actionParametersClass, description);
     }
 
     @Override
