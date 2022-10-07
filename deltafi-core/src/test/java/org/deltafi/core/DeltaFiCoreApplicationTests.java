@@ -3465,7 +3465,7 @@ class DeltaFiCoreApplicationTests {
 	static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
 	static final String USERNAME = "myname";
 	ContentReference CONTENT_REFERENCE = new ContentReference(FILENAME, 0, CONTENT.length(), "did", MEDIA_TYPE);
-	IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW);
+	IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW, FILENAME);
 
 	private ResponseEntity<String> ingress(String filename, String flow, String metadata, byte[] body, String contentType) {
 		HttpHeaders headers = new HttpHeaders();

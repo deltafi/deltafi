@@ -32,7 +32,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 
 @Component
 @Slf4j(topic = "AUDIT")
-public class DgsAuditLogger extends SimpleInstrumentation {
+public class CoreAuditLogger extends SimpleInstrumentation {
 
     private static final String UNKNOWN_USER = "system";
     private static final String IGNORABLE_PATH = "registerActions";
@@ -71,4 +71,9 @@ public class DgsAuditLogger extends SimpleInstrumentation {
         return "Mutation".equals(parent.getName());
     }
 
+    public void logIngress(String userName, String fileName) {
+        MDC.put("user", userName);
+        log.info("ingress {}", fileName);
+        MDC.remove("user");
+    }
 }

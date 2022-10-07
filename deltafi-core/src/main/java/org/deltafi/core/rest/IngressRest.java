@@ -28,11 +28,11 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.graphql.dgs.DeltafiGraphQLException;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.services.IngressService;
@@ -56,6 +56,7 @@ import static org.deltafi.common.metrics.MetricsUtil.*;
 public class IngressRest {
     private final IngressService ingressService;
     private final MetricRepository metricService;
+    private final CoreAuditLogger coreAuditLogger;
 
     ObjectMapper objectMapper = new ObjectMapper();
 
@@ -72,12 +73,11 @@ public class IngressRest {
                                               @RequestHeader(HttpHeaders.CONTENT_TYPE) String contentType,
                                               @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false) String username) {
         username = StringUtils.isNotBlank(username) ? username : "system";
-        // TODO: Audit log
-
-        log.debug("Ingressing: flow={} filename={} contentType={}",
+        log.debug("Ingressing: flow={} filename={} contentType={} username={}",
                 flow,
                 filename,
-                contentType);
+                contentType,
+                username);
 
         try {
             IngressService.IngressResult ingressResult;
@@ -87,21 +87,23 @@ public class IngressRest {
                 ingressResult = ingressBinary(dataStream, contentType, metadata, flow, filename);
             }
 
+            coreAuditLogger.logIngress(username, ingressResult.filename);
+
             Map<String, String> tags = tagsFor(ingressResult.getFlow());
             metricService.increment(FILES_IN, tags, 1);
             metricService.increment(BYTES_IN, tags, ingressResult.getContentReference().getSize());
 
             return ResponseEntity.ok(ingressResult.getContentReference().getDid());
-        } catch (ObjectStorageException | DeltafiGraphQLException | IngressException exception) {
-            log.error("500 error", exception);
+        } catch (ObjectStorageException | IngressException exception) {
+            log.error("500 error for flow=" + flow + " filename=" + filename + " contentType=" + contentType + " username=" + username, exception);
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             return ResponseEntity.status(500).body(exception.getMessage());
         } catch (IngressMetadataException exception) {
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
-            log.error("400 error", exception);
+            log.error("400 error for flow=" + flow + " filename=" + filename + " contentType=" + contentType + " username=" + username, exception);
             return ResponseEntity.status(400).body(exception.getMessage());
         } catch (Throwable exception) {
-            log.error("Unexpected error", exception);
+            log.error("Unexpected error for flow=" + flow + " filename=" + filename + " contentType=" + contentType + " username=" + username, exception);
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             return ResponseEntity.status(500).body(exception.getMessage());
         }

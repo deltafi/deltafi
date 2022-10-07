@@ -87,7 +87,7 @@ public class ActionRunner {
         try {
             Thread.sleep(delayMs);
             while (!Thread.currentThread().isInterrupted()) {
-                log.trace(getFeedString(action) + "listening");
+                log.trace("{} listening", getFeedString(action));
                 ActionInput actionInput = actionEventQueue.takeAction(getFeedString(action));
                 OffsetDateTime now = OffsetDateTime.now();
                 ActionContext context = actionInput.getActionContext();

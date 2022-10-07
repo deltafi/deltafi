@@ -52,6 +52,7 @@ public class IngressService {
     static public class IngressResult {
         public final ContentReference contentReference;
         public final String flow;
+        public final String filename;
     }
 
     public IngressResult ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, List<KeyValue> metadata, String mediaType) throws ObjectStorageException, IngressException {
@@ -80,7 +81,7 @@ public class IngressService {
             throw e;
         }
 
-        return new IngressResult(contentReference, flow);
+        return new IngressResult(contentReference, flow, sourceFileName);
     }
 
     public IngressResult ingressData(InputStream inputStream, String sourceFileName, String flow, Map<String, String> metadata, String mediaType) throws ObjectStorageException, IngressException {
