@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
 - Use Kubernetes node name in nodemonitor metrics
+- Merge ingress code into core. Start ingress as a separate core instance with most core services disabled. Remove the overhead of an internal HTTP call on ingress.
 
 ### Security
 
