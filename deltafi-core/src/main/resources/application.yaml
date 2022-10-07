@@ -27,3 +27,4 @@ spring:
       authentication-database: ${MONGO_DATABASE:deltafi}
   main:
     banner-mode: "off"
+    lazy-initialization: true
