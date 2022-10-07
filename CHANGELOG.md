@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Upgraded to Redis 7.0.5.  Air gapped installations will need the new Redis image
 
 ## [0.98.5] - 2022-10-03
 

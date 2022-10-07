@@ -133,7 +133,7 @@ mongodb:
 redis:
   image:
     repository: bitnami/redis
-    tag: 7.0.4
+    tag: 7.0.5
   architecture: standalone
   auth:
     existingSecret: redis-password
