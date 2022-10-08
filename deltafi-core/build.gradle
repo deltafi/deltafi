@@ -16,14 +16,15 @@ license {
 dependencies {
 	implementation project(':deltafi-common')
 
-	implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
-	implementation "org.springframework.boot:spring-boot-starter-web"
-	implementation "org.springframework.cloud:spring-cloud-config-server"
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.cloud:spring-cloud-config-server'
 
-	implementation "com.networknt:json-schema-validator:1.0.72"
+	implementation 'com.networknt:json-schema-validator:1.0.72'
 
-	implementation "com.netflix.graphql.dgs:graphql-dgs-extended-scalars"
-	implementation "com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter"
+	implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
+	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation "org.springframework.boot:spring-boot-starter-test"

@@ -19,6 +19,7 @@ package org.deltafi.core;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.metrics.buffering.BufferingApplicationStartup;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableAsync;
 
@@ -27,6 +28,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableRetry
 public class DeltaFiCoreApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(DeltaFiCoreApplication.class, args);
+		SpringApplication application = new SpringApplication(DeltaFiCoreApplication.class);
+		application.setApplicationStartup(new BufferingApplicationStartup(10000));
+		application.run(args);
 	}
 }
