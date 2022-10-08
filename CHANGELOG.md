@@ -27,6 +27,7 @@ been removed.
 - Fixed slow Monitor probe that was causing erroneous restarts
 - System Overview dashboard uniformly uses SI measurements for bytes
 - Errors on requeued DeltaFiles due to missing flows were not properly marked
+- Pod status probe no longer reports "undefined method `any?' for nil:NilClass" when scaling deployments
 
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio

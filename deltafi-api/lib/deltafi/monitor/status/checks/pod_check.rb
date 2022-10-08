@@ -33,7 +33,7 @@ module Deltafi
             pods = DF.k8s_client.api('v1').resource('pods', namespace: DF::Common::K8S_NAMESPACE).get('').items
             pods_with_issue = pods.select do |pod|
               container_statuses = pod.status.containerStatuses
-              container_statuses.any? do |container_status|
+              container_statuses.nil? || container_statuses.any? do |container_status|
                 !(container_status.started && container_status.ready)
               end
             end
