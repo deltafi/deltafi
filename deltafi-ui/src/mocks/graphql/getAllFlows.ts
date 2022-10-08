@@ -57,7 +57,7 @@ const getEnrichedData = () => {
           name: "smoke.SmokeEnrichAction",
           type: "org.deltafi.passthrough.action.RoteEnrichAction",
           requiresDomains: ["binary"],
-          requiresEnrichment: [],
+          requiresEnrichments: [],
           requiresMetadataKeyValues: [],
           parameters: {
             enrichments: {
@@ -260,7 +260,7 @@ const generateFlows = () => {
           name: "error.ErrorFormatAction",
           type: "org.deltafi.core.action.SimpleErrorFormatAction",
           requiresDomains: ["error"],
-          requiresEnrichment: [],
+          requiresEnrichments: [],
           parameters: null,
         },
         validateActions: [],
@@ -294,7 +294,7 @@ const generateFlows = () => {
           name: "passthrough.PassthroughFormatAction",
           type: "org.deltafi.passthrough.action.RoteFormatAction",
           requiresDomains: ["binary"],
-          requiresEnrichment: [],
+          requiresEnrichments: [],
           parameters: null,
         },
         validateActions: [
@@ -349,7 +349,7 @@ const generateFlows = () => {
             name: "smoke.SmokeEnrichAction",
             type: "org.deltafi.passthrough.action.RoteEnrichAction",
             requiresDomains: ["binary"],
-            requiresEnrichment: [],
+            requiresEnrichments: [],
             requiresMetadataKeyValues: [],
             parameters: {
               enrichments: {
@@ -362,7 +362,7 @@ const generateFlows = () => {
           name: "smoke.SmokeFormatAction",
           type: "org.deltafi.passthrough.action.RoteFormatAction",
           requiresDomains: ["binary"],
-          requiresEnrichment: ["smokeEnrichment"],
+          requiresEnrichments: ["smokeEnrichment"],
           parameters: null,
         },
         validateActions: [
@@ -410,7 +410,7 @@ const generateFlows = () => {
           name: "stix1_x.Stix1_xFormatAction",
           type: "org.deltafi.stix.actions.Stix1_XFormatAction",
           requiresDomains: ["stix"],
-          requiresEnrichment: [],
+          requiresEnrichments: [],
           parameters: null,
         },
         validateActions: [],
@@ -452,7 +452,7 @@ const generateFlows = () => {
           name: "stix2_1.Stix2_1FormatAction",
           type: "org.deltafi.stix.actions.Stix2_1FormatAction",
           requiresDomains: ["stix"],
-          requiresEnrichment: [],
+          requiresEnrichments: [],
           parameters: null,
         },
         validateActions: [],

@@ -36,7 +36,9 @@ export default function usePlugins() {
         },
         actions: {
           name: true,
+          description: true,
           requiresDomains: true,
+          requiresEnrichments: true,
         },
         variables: {
           name: true,

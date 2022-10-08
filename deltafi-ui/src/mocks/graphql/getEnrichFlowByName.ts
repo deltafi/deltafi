@@ -72,7 +72,7 @@ const generateData = () => {
         name: "artificial-enrichment.BinaryEnrichAction",
         type: "org.deltafi.passthrough.action.RoteEnrichAction",
         requiresDomains: ["binary"],
-        requiresEnrichment: [],
+        requiresEnrichments: [],
         requiresMetadataKeyValues: [],
         parameters: {
           enrichments: {

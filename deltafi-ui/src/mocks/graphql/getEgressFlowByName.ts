@@ -62,7 +62,7 @@ const generateData = () => {
       parameters: null,
       apiVersion: null,
       requiresDomains: ["binary"],
-      requiresEnrichment: [],
+      requiresEnrichments: [],
       type: "org.deltafi.passthrough.action.RoteFormatAction",
     },
     validateActions: [
