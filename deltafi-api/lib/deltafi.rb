@@ -39,9 +39,16 @@ module Deltafi
                   cached_system_properties['graphql.urls.core'] ||
                   'http://deltafi-core-service/graphql'
 
-    HTTParty.post(graphql_url,
+    response = HTTParty.post(graphql_url,
                   body: { query: query }.to_json,
                   headers: { 'Content-Type' => 'application/json' })
+
+    raise "#{response.code} error from core: #{response.message}" unless response.success?
+
+    errors = (response.parsed_response['errors'] || []).map { |e| e['message'] }
+    raise "Errors reported from core:\n#{errors.join("\n")}" unless errors.empty?
+
+    response
   end
 
   def self.redis_client
