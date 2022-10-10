@@ -12,17 +12,8 @@ data:
     deltaFileLinks:
 {{ .Values.deltafi.ui.deltaFileLinks | toYaml | indent 6 }}
 {{- end }}
-    externalLinks:
-      - url: /graphiql/
-        name: GraphiQL
-        description: GraphQL query interface
-      - url: https://k8s.{{ .Values.ingress.domain }}/#/workloads?namespace=deltafi
-        name: Kubernetes Dashboard
-        description: Kubernetes admin interface
-      - url: https://metrics.{{ .Values.ingress.domain }}/dashboards
-        name: Grafana Dashboards
-        description: Metrics and logging visualization
 {{- if .Values.deltafi.ui.externalLinks }}
+    externalLinks:
 {{ .Values.deltafi.ui.externalLinks | toYaml | indent 6 }}
 {{- end }}
 {{- if .Values.deltafi.ui.topBar }}

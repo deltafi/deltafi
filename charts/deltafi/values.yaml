@@ -63,12 +63,12 @@ deltafi:
     #   backgroundColor: "#003559"
     #   textColor: "#dddddd"
     # externalLinks:
-    #   - name: GraphQL Documentation
-    #     url: https://graphql.org/learn/
-    #     description: Introduction to GraphQL
+    #   - name: DeltaFi Documentation
+    #     url: https://docs.deltafi.org/
+    #     description: Official DeltaFi Documentation
     # deltaFileLinks:
     #   - name: "View in HTTPBin"
-    #     url: "https://httpbin.org/anything/${DID}"
+    #     url: "https://httpbin.org/anything/${did}"
   egress_sink:
     enabled: true
     image: deltafi/deltafi-egress-sink:0.98.5
