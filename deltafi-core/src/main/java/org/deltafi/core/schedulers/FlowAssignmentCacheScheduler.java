@@ -17,27 +17,23 @@
  */
 package org.deltafi.core.schedulers;
 
-import org.deltafi.core.services.FlowService;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.services.FlowAssignmentService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @ConditionalOnProperty(value = "schedule.flowSync", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
-public class FlowConfigurationCacheEvictScheduler {
+@RequiredArgsConstructor
+public class FlowAssignmentCacheScheduler {
 
-    List<FlowService> flowServices;
-
-    public FlowConfigurationCacheEvictScheduler(List<FlowService> flowServices) {
-        this.flowServices = flowServices;
-    }
+    private final FlowAssignmentService flowAssignmentService;
 
     @Scheduled(fixedDelay = 5000)
     public void cacheEvict() {
-        flowServices.forEach(FlowService::refreshCache);
+        flowAssignmentService.refreshCache();
     }
 }
