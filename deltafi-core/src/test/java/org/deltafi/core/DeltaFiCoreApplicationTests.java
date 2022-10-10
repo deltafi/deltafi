@@ -116,7 +116,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "schedule.actionEvents=false", "schedule.maintenance=false", "schedule.propertySync=false", "metrics.enabled=false"})
+@TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "schedule.actionEvents=false", "schedule.maintenance=false", "schedule.flowSync=false", "schedule.propertySync=false", "metrics.enabled=false"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
 
