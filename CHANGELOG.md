@@ -13,15 +13,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring
 - Optimize error detection when a split result does not match a running ingress flow
-- ActionDescriptor now contains the schema. All ActionSchema classes have been removed.
-- requiresEnrichment changed to requiresEnrichments.
+- ActionDescriptor now contains the schema. All ActionSchema classes have been removed
+- requiresEnrichment changed to requiresEnrichments
 
 ### Deprecated
-- The gradle-plugin is no longer needed to generate a plugin manifest. It is now generated on plugin startup.
+- The gradle-plugin is no longer needed to generate a plugin manifest. It is now generated on plugin startup
 
 ### Removed
 - The ActionProcessor annotation processor is no longer needed to discover @Action-annotated classes and has\
-been removed.
+been removed
 
 ### Fixed
 - Fixed slow Monitor probe that was causing erroneous restarts
@@ -33,8 +33,9 @@ been removed.
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
 - Use Kubernetes node name in nodemonitor metrics
-- Merge ingress code into core. Start ingress as a separate core instance with most core services disabled. Remove the overhead of an internal HTTP call on ingress.
-- Plugins now register themselves with their actions, variables, and flows on startup.
+- Merge ingress code into core. Start ingress as a separate core instance with most core services disabled. Remove the overhead of an internal HTTP call on ingress
+- Plugins now register themselves with their actions, variables, and flows on startup
+- Unused Spring Boot services disabled by configuration in core
 
 ### Security
 

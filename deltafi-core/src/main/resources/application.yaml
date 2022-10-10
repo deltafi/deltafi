@@ -1,12 +1,14 @@
-management:
-  endpoints:
-    web:
-      exposure:
-        include: 'startup'
+logging:
+  level:
+    org.springframework.boot.autoconfigure: DEBUG
 spring:
+  aop:
+    auto: false
   application:
     name: deltafi-core
   cloud:
+    compatibility-verifier:
+      enabled: false
     config:
       server:
         native.search-locations: ${NATIVE_SEARCH_LOCATIONS:file:./config/}
@@ -20,6 +22,8 @@ spring:
           strict-host-key-checking: ${STRICT_HOST_KEY_CHECKING:false}
         default-label: ${DEFAULT_LABEL:main}
         prefix: config
+    discovery:
+      enabled: false
   config:
     import: ${DELTAFI_CONFIG_IMPORT:~}
   data:
@@ -32,4 +36,13 @@ spring:
       authentication-database: ${MONGO_DATABASE:deltafi}
   main:
     banner-mode: "off"
-    lazy-initialization: true
+  sql:
+    init:
+      mode: never
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: false
+    metrics:
+      enabled: false

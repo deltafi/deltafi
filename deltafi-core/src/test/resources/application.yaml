@@ -1,4 +1,6 @@
 spring:
+  aop:
+    auto: false
   main:
     allow-bean-definition-overriding: true
   cloud:
@@ -13,6 +15,9 @@ spring:
       features:
         - SYNC_DELAY
         - NO_HTTP_INTERFACE_ARG
+  sql:
+    init:
+      mode: never
 
 deltafi:
   delete:
@@ -36,3 +41,11 @@ dgs:
 
 ssl:
   key-store-password: not-set
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: false
+    metrics:
+      enabled: false
