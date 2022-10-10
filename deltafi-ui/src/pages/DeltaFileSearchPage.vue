@@ -376,9 +376,9 @@ onMounted(async () => {
   fetchConfigTypes();
   fetchStages();
   fetchDomains();
-  fetchIndexedMetadataKeys();
   await getPersistedParams();
   await nextTick();
+  if (domainOptionSelected.value == null) fetchIndexedMetadataKeys();
   watchEnabled.value = true;
 });
 

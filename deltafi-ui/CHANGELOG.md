@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Filename filter on Search Page is now plain text and supports partial search (#266)
 
+### Fixed
+
+- Fixed bug where incorrect indexed metadata keys would be shown in search dropdown (#270)
+
 ## [0.98.5]
 
 ### Changed
