@@ -39,22 +39,22 @@
             <Menu id="config_menu" ref="optionMenu" :model="items" :popup="true" />
           </template>
 
-          <div class='search-options-wrapper'>
-            <div class='flex-row'>
-              <div class='flex-column'>
+          <div class="search-options-wrapper">
+            <div class="flex-row">
+              <div class="flex-column">
                 <label for="fileNameId">Filename:</label>
                 <InputText v-model="fileName" class="p-inputtext-sm" placeholder="Filename" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
                 <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="stageId" class="mt-2">Size:</label>
                 <div class="size-container">
-                  <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem;" class="deltafi-input-field mr-2" />
+                  <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
                   <InputNumber v-model="sizeMin" class="p-inputtext-sm" input-style="width: 6rem" placeholder="Min" /> -
                   <InputNumber v-model="sizeMax" class="p-inputtext-sm" input-style="width: 6rem" placeholder="Max" />
                   <Dropdown v-model="sizeUnitSelected" :options="sizeUnits" option-label="name" class="deltafi-input-field ml-2" />
                 </div>
               </div>
-              <div class='flex-column flex-column-small'>
+              <div class="flex-column flex-column-small">
                 <label for="stageId">Stage:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="stageId" v-model="stageOptionSelected" :placeholder="stageOptionSelected ? stageOptionSelected.name + ' ' : 'Select a Stage'" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
@@ -65,15 +65,13 @@
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="filteredState" v-model="filteredOptionSelected" :placeholder="filteredOptionSelected ? filteredOptionSelected.name + ' ' : 'Select if Filtered'" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
               </div>
-              <div class='flex-column'>
+              <div class="flex-column">
                 <label for="filteredState">Domain:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="domain" v-model="domainOptionSelected" :placeholder="domainOptionSelected ? domainOptionSelected.name + ' ' : 'Select a Domain'" :options="domainOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="metadataState" class="mt-2">Indexed Metadata:</label>
                 <div class="metadata-chips">
-                  <Chip v-for="item in metadataArray" :key="item" v-tooltip.top="{ value: invalidMetadataTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{'invalid-chip': !item.valid, 'valid-chip': item.valid}" @remove="removeMetadataItem(item)">
-                    {{item.key}}: {{item.value}}
-                  </Chip>
+                  <Chip v-for="item in metadataArray" :key="item" v-tooltip.top="{ value: invalidMetadataTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeMetadataItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
                   <Chip class="add-metadata-btn" @click="showIndexedMetadataOverlay">
                     &nbsp;
                     <i class="pi pi-plus"></i>
@@ -140,8 +138,8 @@ import Menu from "primevue/menu";
 import Panel from "primevue/panel";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
-import Chip from 'primevue/chip';
-import OverlayPanel from 'primevue/overlaypanel';
+import Chip from "primevue/chip";
+import OverlayPanel from "primevue/overlaypanel";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import Paginator from "primevue/paginator";
@@ -173,16 +171,22 @@ const defaultEndTimeDate = endTimeDate.value;
 const domainOptions = ref([]);
 const domainOptionSelected = ref(null);
 const metadataKeysOptions = ref([]);
-const newMetadataKey = ref(null)
-const newMetadataValue = ref(null)
+const newMetadataKey = ref(null);
+const newMetadataValue = ref(null);
 const fileName = ref(null);
 const flowOptions = ref([]);
 const flowOptionSelected = ref(null);
 const stageOptions = ref([]);
 const stageOptionSelected = ref(null);
-const egressedOptions = ref([{ name: "True", value: true }, { name: "False", value: false }])
+const egressedOptions = ref([
+  { name: "True", value: true },
+  { name: "False", value: false },
+]);
 const egressedOptionSelected = ref(null);
-const filteredOptions = ref([{ name: "True", value: true }, { name: "False", value: false }])
+const filteredOptions = ref([
+  { name: "True", value: true },
+  { name: "False", value: false },
+]);
 const filteredOptionSelected = ref(null);
 const loading = ref(true);
 const totalRecords = ref(0);
@@ -206,37 +210,37 @@ const sizeTypes = [
   { name: "Ingress", ingress: true },
   { name: "Total", total: true },
 ];
-const sizeTypeSelected = ref(sizeTypes[0])
-const sizeUnitSelected = ref(sizeUnits[0])
+const sizeTypeSelected = ref(sizeTypes[0]);
+const sizeUnitSelected = ref(sizeUnits[0]);
 
 const watchEnabled = ref(false);
 
-const ingressBytesMin = computed(() => sizeMin.value && sizeTypeSelected.value.ingress ? sizeMin.value * sizeUnitSelected.value.multiplier : null);
-const ingressBytesMax = computed(() => sizeMax.value && sizeTypeSelected.value.ingress ? sizeMax.value * sizeUnitSelected.value.multiplier : null);
-const totalBytesMin = computed(() => sizeMin.value && sizeTypeSelected.value.total ? sizeMin.value * sizeUnitSelected.value.multiplier : null);
-const totalBytesMax = computed(() => sizeMax.value && sizeTypeSelected.value.total ? sizeMax.value * sizeUnitSelected.value.multiplier : null);
-const egressed = computed(() => egressedOptionSelected.value ? egressedOptionSelected.value.value : null);
-const filtered = computed(() => filteredOptionSelected.value ? filteredOptionSelected.value.value : null);
-const stageName = computed(() => stageOptionSelected.value ? stageOptionSelected.value.name : null);
-const flowName = computed(() => flowOptionSelected.value ? flowOptionSelected.value.name : null);
+const ingressBytesMin = computed(() => (sizeMin.value && sizeTypeSelected.value.ingress ? sizeMin.value * sizeUnitSelected.value.multiplier : null));
+const ingressBytesMax = computed(() => (sizeMax.value && sizeTypeSelected.value.ingress ? sizeMax.value * sizeUnitSelected.value.multiplier : null));
+const totalBytesMin = computed(() => (sizeMin.value && sizeTypeSelected.value.total ? sizeMin.value * sizeUnitSelected.value.multiplier : null));
+const totalBytesMax = computed(() => (sizeMax.value && sizeTypeSelected.value.total ? sizeMax.value * sizeUnitSelected.value.multiplier : null));
+const egressed = computed(() => (egressedOptionSelected.value ? egressedOptionSelected.value.value : null));
+const filtered = computed(() => (filteredOptionSelected.value ? filteredOptionSelected.value.value : null));
+const stageName = computed(() => (stageOptionSelected.value ? stageOptionSelected.value.name : null));
+const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value.name : null));
 
 const metadata = computed(() => {
   return metadataArray.value.map((i) => {
     return {
       key: i.key,
-      value: i.value
+      value: i.value,
     };
   });
 });
 
 const selectedDomain = computed(() => {
-  return (domainOptionSelected.value) ? domainOptionSelected.value.name : null
+  return domainOptionSelected.value ? domainOptionSelected.value.name : null;
 });
 
 const indexedMetadataOverlay = ref(null);
 const showIndexedMetadataOverlay = (event) => {
-  indexedMetadataOverlay.value.toggle(event)
-}
+  indexedMetadataOverlay.value.toggle(event);
+};
 
 const removeMetadataItem = (item) => {
   let index = metadataArray.value.indexOf(item);
@@ -310,29 +314,26 @@ watch(selectedDomain, async (value) => {
 
 watch(
   metadataArray,
-  () => { if (watchEnabled.value) fetchDeltaFilesData() },
+  () => {
+    if (watchEnabled.value) fetchDeltaFilesData();
+  },
   { deep: true }
 );
 
-watch(
-  [
-    sizeMin,
-    sizeMax,
-    flowOptionSelected,
-    stageOptionSelected,
-    egressedOptionSelected,
-    filteredOptionSelected
-  ],
-  () => { if (watchEnabled.value) fetchDeltaFilesData() },
-);
+watch([sizeMin, sizeMax, flowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected], () => {
+  if (watchEnabled.value) fetchDeltaFilesData();
+});
 
 watch(
   fileName,
-  _.debounce(() => {
-    if (watchEnabled.value) fetchDeltaFilesData();
-  }, 500, { leading: false, trailing: true })
+  _.debounce(
+    () => {
+      if (watchEnabled.value) fetchDeltaFilesData();
+    },
+    500,
+    { leading: false, trailing: true }
+  )
 );
-
 
 watch([sizeTypeSelected, sizeUnitSelected], () => {
   if (sizeMin.value || sizeMax.value) {
@@ -342,18 +343,18 @@ watch([sizeTypeSelected, sizeUnitSelected], () => {
 });
 
 const validateMetadataArray = () => {
-  const validKeys = metadataKeysOptions.value.map((i) => i.key)
+  const validKeys = metadataKeysOptions.value.map((i) => i.key);
   for (const index of metadataArray.value.keys()) {
-    const key = metadataArray.value[index].key
-    metadataArray.value[index].valid = validKeys.includes(key)
+    const key = metadataArray.value[index].key;
+    metadataArray.value[index].valid = validKeys.includes(key);
   }
-}
+};
 
 const invalidMetadataTooltip = (key) => {
   if (domainOptionSelected.value) {
     return `${key} is not a valid indexed metadata key for the ${domainOptionSelected.value.name} domain.`;
   }
-}
+};
 
 const updateInputStartTime = async (e) => {
   await nextTick();
@@ -420,34 +421,19 @@ const fetchStages = async () => {
   stageOptions.value = enumsStageTypes.data.__type.enumValues;
 };
 
-const fetchDeltaFilesData = _.debounce(async () => {
-  setPersistedParams();
+const fetchDeltaFilesData = _.debounce(
+  async () => {
+    setPersistedParams();
 
-  loading.value = true;
-  let data = await getDeltaFileSearchData(
-    startDateISOString.value,
-    endDateISOString.value,
-    offset.value,
-    perPage.value,
-    sortField.value,
-    sortDirection.value,
-    fileName.value,
-    stageName.value,
-    null,
-    flowName.value,
-    egressed.value,
-    filtered.value,
-    selectedDomain.value,
-    metadata.value,
-    ingressBytesMin.value,
-    ingressBytesMax.value,
-    totalBytesMin.value,
-    totalBytesMax.value
-  );
-  tableData.value = data.data.deltaFiles.deltaFiles;
-  loading.value = false;
-  totalRecords.value = data.data.deltaFiles.totalCount;
-}, 500, { leading: true, trailing: false });
+    loading.value = true;
+    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value);
+    tableData.value = data.data.deltaFiles.deltaFiles;
+    loading.value = false;
+    totalRecords.value = data.data.deltaFiles.totalCount;
+  },
+  500,
+  { leading: true, trailing: false }
+);
 
 const results = computed(() => {
   return tableData.value.map((row) => {
@@ -480,15 +466,15 @@ const onPage = (event) => {
 const getPersistedParams = async () => {
   startTimeDate.value = new Date(state.value.startTimeDateState ? state.value.startTimeDateState : startTimeDate.value);
   endTimeDate.value = new Date(state.value.endTimeDateState ? state.value.endTimeDateState : endTimeDate.value);
-  sizeUnitSelected.value = state.value.sizeUnitState ? sizeUnits.find(i => i.name == state.value.sizeUnitState) : sizeUnits[0];
-  sizeTypeSelected.value = state.value.sizeTypeState ? sizeTypes.find(i => i.name == state.value.sizeTypeState) : sizeTypes[0];
+  sizeUnitSelected.value = state.value.sizeUnitState ? sizeUnits.find((i) => i.name == state.value.sizeUnitState) : sizeUnits[0];
+  sizeTypeSelected.value = state.value.sizeTypeState ? sizeTypes.find((i) => i.name == state.value.sizeTypeState) : sizeTypes[0];
 
   // Values that, if set, should expand Advanced Search Options.
   fileName.value = state.value.fileName;
   stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
   flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
-  egressedOptionSelected.value = state.value.egressedOptionState ? egressedOptions.value.find(i => i.name == state.value.egressedOptionState) : null;
-  filteredOptionSelected.value = state.value.filteredOptionState ? filteredOptions.value.find(i => i.name == state.value.filteredOptionState) : null;
+  egressedOptionSelected.value = state.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == state.value.egressedOptionState) : null;
+  filteredOptionSelected.value = state.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == state.value.filteredOptionState) : null;
   domainOptionSelected.value = state.value.domainOptionState ? { name: state.value.domainOptionState } : null;
   sizeMin.value = state.value.sizeMinState;
   sizeMax.value = state.value.sizeMaxState;
@@ -496,7 +482,7 @@ const getPersistedParams = async () => {
 
   // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
   // what search options are being used.
-  collapsedSearchOption.value = !_.some(Object.values(state.value).slice(4), (i) => !(i == null || i.length == 0))
+  collapsedSearchOption.value = !_.some(Object.values(state.value).slice(4), (i) => !(i == null || i.length == 0));
 };
 const state = useStorage("advanced-search-options-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 
@@ -516,9 +502,9 @@ const setPersistedParams = () => {
     domainOptionState: domainOptionSelected.value ? domainOptionSelected.value.name : null,
     sizeMinState: sizeMin.value,
     sizeMaxState: sizeMax.value,
-    metadataArrayState: metadataArray.value
+    metadataArrayState: metadataArray.value,
   };
-}
+};
 </script>
 
 <style lang="scss">

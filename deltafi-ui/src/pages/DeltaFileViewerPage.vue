@@ -50,10 +50,13 @@
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-6">
+        <div class="col-4">
           <DeltaFileDomainsPanel :delta-file-data="deltaFile" />
         </div>
-        <div class="col-6">
+        <div class="col-4">
+          <DeltaFileIndexedMetadataPanel :delta-file-data="deltaFile" />
+        </div>
+        <div class="col-4">
           <DeltaFileEnrichmentPanel :delta-file-data="deltaFile" />
         </div>
       </div>
@@ -87,6 +90,7 @@ import Dialog from "primevue/dialog";
 import ConfirmDialog from "primevue/confirmdialog";
 import Menu from "primevue/menu";
 import ProgressBar from "primevue/progressbar";
+import DeltaFileIndexedMetadataPanel from "@/components/DeltaFileIndexedMetadataPanel.vue";
 import MetadataViewer from "@/components/MetadataViewer.vue";
 import MetadataDialog from "@/components/MetadataDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
@@ -194,20 +198,20 @@ const deltaFileLinks = computed(() => {
       const deltaFilePath = v.match(/\$\{(.*)\}/)[1];
       let value;
       try {
-        value = deltaFilePath.split('.').reduce((o, i) => o[i], deltaFile);
+        value = deltaFilePath.split(".").reduce((o, i) => o[i], deltaFile);
       } catch {
-        value = undefined
+        value = undefined;
       }
-      if (value === undefined) undefinedFields.push(deltaFilePath)
+      if (value === undefined) undefinedFields.push(deltaFilePath);
       output.url = output.url.replace(v, value);
     }
 
     if (undefinedFields.length > 0) {
-      output.issue = `The following required fields are undefined on this DeltaFile: ${undefinedFields.join(', ')}`;
+      output.issue = `The following required fields are undefined on this DeltaFile: ${undefinedFields.join(", ")}`;
     }
     return output;
   });
-})
+});
 
 const menuItems = computed(() => {
   let items = staticMenuItems;
@@ -217,7 +221,7 @@ const menuItems = computed(() => {
       icon: "fas fa-external-link-alt fa-fw",
       command: () => {
         if (link.issue) {
-          notify.error("Unable To Resolve Link", link.issue)
+          notify.error("Unable To Resolve Link", link.issue);
         } else {
           window.open(link.url, "_blank");
         }
