@@ -21,6 +21,10 @@
     font-weight: 500;
   }
 
+  .input-area-height {
+    height: 32px;
+  }
+
   .p-panel-content {
     padding: 1.25rem 0.75rem 1.5rem;
   }
@@ -53,7 +57,7 @@
     align-items: center;
     justify-content: center;
     button {
-      width: 10rem
+      width: 10rem;
     }
   }
 
@@ -71,7 +75,7 @@
     cursor: pointer;
     background: var(--secondary);
     color: var(--primary-color-text);
-    padding: 0 .25rem;
+    padding: 0 0.25rem;
   }
 
   .time-range .form-control:disabled,

@@ -43,14 +43,14 @@
             <div class="flex-row">
               <div class="flex-column">
                 <label for="fileNameId">Filename:</label>
-                <InputText v-model="fileName" class="p-inputtext-sm" placeholder="Filename" />
+                <InputText v-model.trim="fileName" class="p-inputtext input-area-height" placeholder="Filename" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
                 <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="stageId" class="mt-2">Size:</label>
                 <div class="size-container">
                   <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
-                  <InputNumber v-model="sizeMin" class="p-inputtext-sm" input-style="width: 6rem" placeholder="Min" /> -
-                  <InputNumber v-model="sizeMax" class="p-inputtext-sm" input-style="width: 6rem" placeholder="Max" />
+                  <InputNumber v-model="sizeMin" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Min" /> -
+                  <InputNumber v-model="sizeMax" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Max" />
                   <Dropdown v-model="sizeUnitSelected" :options="sizeUnits" option-label="name" class="deltafi-input-field ml-2" />
                 </div>
               </div>

@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fixed bug where incorrect indexed metadata keys would be shown in search dropdown (#270)
 - Fixed inaccurate Progress Bar on batch error resume, acknowledged, and getting all metadata (#268)
+- Fixed Filename search option to trim inputed values (#271)
 
 ## [0.98.5]
 
