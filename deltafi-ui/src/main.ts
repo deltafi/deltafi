@@ -35,6 +35,7 @@ import 'primevue/resources/themes/bootstrap4-light-blue/theme.css';
 import 'primevue/resources/primevue.min.css';
 import 'primeicons/primeicons.css';
 import "@fortawesome/fontawesome-free/css/all.css";
+import "@/styles/icomoon.scss";
 import "@/styles/global.scss";
 
 if (process.env.NODE_ENV === 'development') {

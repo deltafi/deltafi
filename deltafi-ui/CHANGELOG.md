@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Filename filter on Search Page is now plain text and supports partial search (#266)
+- Integrated default external links into core menus (#269)
 
 ### Fixed
 

@@ -92,6 +92,11 @@ const staticMenuItems = ref([
         icon: "fas fa-chart-line fa-fw",
         path: "/metrics/action",
       },
+      {
+        name: "Grafana Dashboards",
+        icon: "icomoon grafana",
+        url: computed(() => `https://metrics.${uiConfig.domain}/dashboards`),
+      }
     ],
   },
   {
@@ -173,6 +178,16 @@ const staticMenuItems = ref([
         name: "Users",
         icon: "fas fa-users fa-fw",
         path: "/admin/users",
+      },
+      {
+        name: "Kubernetes Dashboard",
+        icon: "icomoon kubernetes",
+        url: computed(() => `https://k8s.${uiConfig.domain}/#/workloads?namespace=deltafi`)
+      },
+      {
+        name: "GraphiQL",
+        icon: "icomoon graphql",
+        url: computed(() => `https://${uiConfig.domain}/graphiql`)
       },
     ],
   },
