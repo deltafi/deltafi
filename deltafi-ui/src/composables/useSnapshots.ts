@@ -61,6 +61,20 @@ export default function useSystemSnapshots() {
             value: true
           }
         },
+        propertySets: {
+          id: true,
+          displayName: true,
+          description: true,
+          properties: {
+            key: true,
+            description: true,
+            defaultValue: true,
+            refreshable: true,
+            editable: true,
+            hidden: true,
+            value: true,
+          }
+        },
         installedPlugins: {
           groupId: true,
           artifactId: true,
@@ -103,6 +117,32 @@ export default function useSystemSnapshots() {
     await queryGraphQL(query, "postCreateSystemSnapshot", "mutation");
     mutationData.value = response.value.data.snapshotSystem.id;
   };
+  const revert = async (id: string) => {
+    const query = {
+      resetFromSnapshotWithId: {
+        __args: {
+          snapshotId: id,
+        },
+        success: true,
+        errors: true,
+      },
+    };
+    await queryGraphQL(query, "postRevertSystemSnapshot", "mutation");
+    mutationData.value = response.value.data.resetFromSnapshotWithId;
+  };
+  
+  const importSnapshot = async (snapShot: JSON) => {
+    const query = {
+      importSnapshot: {
+        __args: {
+          snapshot: snapShot
+        },
+        id: true,
+      },
+    };
+    await queryGraphQL(query, "postImportSystemSnapshot", "mutation");
+    mutationData.value = response.value.data.importSnapshot;
+  };
 
-  return { data, loading, loaded, fetch, create, mutationData, errors };
+  return { data, loading, loaded, fetch, create, revert, importSnapshot,mutationData, errors };
 }

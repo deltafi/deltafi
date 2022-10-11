@@ -20,6 +20,7 @@
   <div class="system-snapshots">
     <PageHeader heading="System Snapshots">
       <div class="d-flex mb-2">
+        <FileUpload ref="fileUploader" mode="basic" choose-label="Import Snapshot" class="p-button p-button-secondary p-button-outlined p-button-secondary-upload" :auto="true" :custom-upload="true" @uploader="onUpload" />
         <Button label="Create Snapshot" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="onCreateSnapshot()" />
       </div>
     </PageHeader>
@@ -44,9 +45,10 @@
             <Timestamp :timestamp="row.data.created" />
           </template>
         </Column>
-        <Column :style="{ width: '4rem', padding: 0 }">
+        <Column :style="{ width: '5rem', padding: 0 }">
           <template #body="data">
             <Button v-tooltip.left="'Download Snapshot'" icon="fas fa-download fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onDownload(data.data)" />
+            <Button v-tooltip.left="'Revert to Snapshot'" icon="fas fa-history fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onRevertClick(data.data)" />
           </template>
         </Column>
       </DataTable>
@@ -56,6 +58,10 @@
     <div v-if="snapshot != null">
       <HighlightedCode :code="JSON.stringify(snapshot, null, 2)" :style="{ width: '65vw' }" />
     </div>
+    <template #footer>
+      <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onDownload(snapshot)" />
+      <Button label="Revert to Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onRevertClick(snapshot)" />
+    </template>
   </Dialog>
   <Dialog v-model:visible="showCreateSnapshotDialog" header="Create Snapshot" :style="{ width: '25vw' }" :modal="true" :draggable="false" :dismissable-mask="true" @update:visible="close">
     <div class="p-fluid">
@@ -69,6 +75,7 @@
       <Button label="Create Snapshot" @click="confirmCreate()" />
     </template>
   </Dialog>
+  <ConfirmDialog />
 </template>
 
 <script setup>
@@ -85,11 +92,17 @@ import HighlightedCode from "@/components/HighlightedCode.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useNotifications from "@/composables/useNotifications";
 import { FilterMatchMode } from "primevue/api";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
+import FileUpload from "primevue/fileupload";
+import { EnumType } from "json-to-graphql-query";
 
-const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: createResponse } = useSystemSnapshots();
+const confirm = useConfirm();
+const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot } = useSystemSnapshots();
 const snapshot = ref(null);
 const notify = useNotifications();
 const reason = ref("");
+const fileUploader = ref();
 const showSnapshotDialog = ref(false);
 const showCreateSnapshotDialog = ref(false);
 const filters = ref({
@@ -111,6 +124,7 @@ const download = (content, fileName, contentType) => {
 const close = () => {
   showCreateSnapshotDialog.value = false;
   showSnapshotDialog.value = false;
+  fileUploader.value.files = [];
 };
 const onDownload = (snapshotData) => {
   download(JSON.stringify(snapshotData, null, 2), snapshotData.id, "application/json");
@@ -118,7 +132,65 @@ const onDownload = (snapshotData) => {
 const showSnapshot = (snapshotData) => {
   snapshot.value = snapshotData;
   showSnapshotDialog.value = true;
+};
 
+const onRevert = async (id) => {
+  await revertSnapshot(id);
+  close();
+  if (mutationResponse.value.success === true) {
+    notify.success("Successfully Reverted to Snapshot ", id);
+  } else {
+    notify.error("Failed to Revert to Snapshot");
+  }
+};
+
+const onRevertClick = (snapshotData) => {
+  confirm.require({
+    message: "Are you sure you want to revert to the system to this snapshot?",
+    header: "Confirm Revert",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "Revert",
+    rejectLabel: "Cancel",
+    accept: () => {
+      onRevert(snapshotData.id);
+    },
+    reject: () => { },
+  });
+};
+
+const onImport = async (snapShotData) => {
+  let clean = cleanUpSnapshot(snapshot);
+  await importSnapshot(clean);
+  if (mutationResponse.value.id === snapShotData.value.id) {
+    notify.success("Successfully Imported Snapshot", mutationResponse.value.id);
+    showSnapshot(clean);
+  } else {
+    close();
+    notify.error("Error Importing Snapshot");
+  }
+  await getSystemSnapshots();
+};
+
+const cleanUpSnapshot = (snapShotData) => {
+  let snap = JSON.parse(JSON.stringify(snapShotData.value));
+  for (let x = 0; x < snap.pluginVariables.length; x++) {
+    for (let y = 0; y < snap.pluginVariables[x].variables.length; y++) {
+      snap.pluginVariables[x].variables[y].dataType = new EnumType(snap.pluginVariables[x].variables[y].dataType);
+    }
+  }
+  return snap;
+};
+
+const onUpload = async (event) => {
+  let file = event.files[0];
+  let reader = new FileReader();
+  reader.readAsText(file);
+  reader.onload = function () {
+    let fileJSON = JSON.parse(reader.result);
+    snapshot.value = fileJSON;
+    onImport(snapshot);
+  };
+  fileUploader.value.files = [];
 };
 
 const onCreateSnapshot = () => {
@@ -129,8 +201,8 @@ const onCreateSnapshot = () => {
 const confirmCreate = async () => {
   await createSystemSnapshot(reason.value);
   close();
-  if (createResponse.value != null) {
-    notify.success("Successfully Created Snapshot ", createResponse.value);
+  if (mutationResponse.value != null) {
+    notify.success("Successfully Created Snapshot", mutationResponse.value);
     await getSystemSnapshots();
   } else {
     notify.error("Failed To Create Snapshot");
