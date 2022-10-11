@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Filename filter on Search Page is now plain text and supports partial search (#266)
 - Integrated default external links into core menus (#269)
 - Added support for displaying Indexed Metadata on DeltaFile Viewer page (#252)
+- Added New Dashboard Panels (#265)
 
 ### Fixed
 

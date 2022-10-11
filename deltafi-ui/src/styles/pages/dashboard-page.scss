@@ -17,8 +17,12 @@
 */
 
 .dashboard .row {
-  padding-left: 0.6rem !important;
-  padding-right: 0.6rem !important;
+  .col-6.one {
+    padding-right: 8px;
+  }
+  .col-6.two {
+    padding-left: 8px;
+  }
   .links-panel {
     .p-panel-content {
       padding: 0;

@@ -18,7 +18,6 @@
 
 import { ref } from "vue";
 import useGraphQL from "./useGraphQL";
-import { EnumType } from "json-to-graphql-query";
 export default function usePlugins() {
   const { response, queryGraphQL, loading, loaded } = useGraphQL();
   const data = ref(null);
