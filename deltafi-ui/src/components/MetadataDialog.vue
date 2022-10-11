@@ -134,8 +134,8 @@ const getAllMeta = async () => {
       let tmp = [...batchMetadata.value, ...allMetadata.value];
       allMetadata.value = tmp;
     }
-    ++completedBatches;
-    batchCompleteValue.value = Math.round((completedBatches / batchedDids.length) * 100);
+    completedBatches += dids.length;
+    batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
   }
 
   allMetadata.value = await getUniqueMetadataKeys(allMetadata.value);
@@ -270,8 +270,8 @@ const requestResumeReplay = async () => {
             successBatch = true;
           }
         }
-        ++completedBatches;
-        batchCompleteValue.value = Math.round((completedBatches / batchedDids.length) * 100);
+        completedBatches += dids.length;
+        batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
       }
       displayBatchingDialog.value = false;
       batchCompleteValue.value = 0;

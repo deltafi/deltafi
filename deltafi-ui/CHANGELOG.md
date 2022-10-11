@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Fixed bug where incorrect indexed metadata keys would be shown in search dropdown (#270)
+- Fixed inaccurate Progress Bar on batch error resume, acknowledged, and getting all metadata (#268)
 
 ## [0.98.5]
 
@@ -421,7 +422,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.5...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.5...main
 [0.98.5]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.4...0.98.5
 [0.98.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.3...0.98.4
 [0.98.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.2...0.98.3

@@ -62,23 +62,24 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["acknowledged", "update:visible"]);
+const { post: PostAcknowledgeErrors } = useAcknowledgeErrors();
 const { pluralize } = useUtilFunctions();
 const reason = ref("");
 const reasonInvalid = ref(false);
-
-const { post: PostAcknowledgeErrors } = useAcknowledgeErrors();
 
 const acknowledgeButtonLabel = computed(() => {
   if (props.dids.length === 1) return "Acknowledge Error";
   let pluralized = pluralize(props.dids.length, "Error");
   return `Acknowledge ${pluralized}`;
 });
+
 watch(
   () => props.visible,
   () => {
     displayAcknowledgeDialog.value = props.visible;
   }
 );
+
 const acknowledge = async () => {
   if (reason.value) {
     try {
@@ -93,8 +94,8 @@ const acknowledge = async () => {
       batchCompleteValue.value = 0;
       for (const dids of batchedDids) {
         await PostAcknowledgeErrors(dids, reason.value);
-        ++completedBatches;
-        batchCompleteValue.value = Math.round((completedBatches / batchedDids.length) * 100);
+        completedBatches += dids.length;
+        batchCompleteValue.value = Math.round((completedBatches / props.dids.length) * 100);
       }
       displayBatchingDialog.value = false;
       batchCompleteValue.value = 0;
