@@ -141,7 +141,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             "created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC),
-            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC));
+            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC),
+            "domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
@@ -807,7 +808,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<String> domains() {
-        return mongoTemplate.findDistinct(new Query(), DOMAINS_NAME, DeltaFile.class, String.class);
+        return mongoTemplate.findDistinct(new Query(Criteria.where(DOMAINS_NAME).ne(null)), DOMAINS_NAME, DeltaFile.class, String.class);
     }
 
     @Override

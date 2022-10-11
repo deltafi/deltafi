@@ -34,6 +34,7 @@ been removed
 - Pod status probe no longer reports "undefined method `any?' for nil:NilClass" when scaling deployments
 - Monitor correctly parses GraphQL errors
 - Ingress did not detect ingress routing or flow state changes unless restarted
+- Add index for domain names
 
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
