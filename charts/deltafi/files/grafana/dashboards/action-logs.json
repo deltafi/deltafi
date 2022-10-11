@@ -304,7 +304,7 @@
         },
         "datasource": {
           "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
+          "uid": "${datasource}"
         },
         "definition": "label_values(action)",
         "hide": 0,

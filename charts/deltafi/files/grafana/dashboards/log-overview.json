@@ -780,7 +780,7 @@
         },
         "datasource": {
           "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
+          "uid": "${datasource}"
         },
         "definition": "label_values({namespace=\"deltafi\"}, app)",
         "hide": 0,

@@ -712,7 +712,7 @@ loc() {
 
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
     _attention "Installing DeltaFi core"
-    install -f deltafi/charts/deltafi/values-local.yaml
+    install -f deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
     for plugin in ${PLUGINS[@]}; do
       _attention "Installing $plugin"
       run deltafi install-plugin $plugin -f $plugin/charts/values-local.yaml
@@ -770,7 +770,7 @@ _local_push() {
 _local_cluster() {
   local_build $@
   up
-  install -f deltafi/charts/deltafi/values-local.yaml
+  install -f deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
   for plugin in ${PLUGINS[@]}; do
     run deltafi install-plugin $plugin -f $plugin/charts/values-local.yaml
   done

@@ -169,7 +169,7 @@ kubernetes-dashboard:
 
 grafana:
   image:
-    tag: 9.1.1
+    tag: 9.1.7
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -188,6 +188,10 @@ grafana:
       enable_feedback_links: false
     dashboards:
       min_refresh_interval: "10s"
+    log:
+      mode: console
+    log.console:
+      format: json
     unified_alerting:
       enabled: true
     alerting:
@@ -209,14 +213,16 @@ grafana:
         url: http://deltafi-graphite:8080
         editable: false
         isDefault: true
-        version: 1
+        version: 2
+        uid: deltafi-graphite
       - name: Loki
         type: loki
         access: proxy
         url: http://deltafi-loki:3100
         editable: false
         isDefault: false
-        version: 1
+        version: 2
+        uid: deltafi-loki
 promtail:
   image:
     tag: 2.6.1

@@ -603,7 +603,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -657,7 +657,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "refCount": 0,
           "refId": "A",
@@ -666,7 +666,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "hide": false,
           "refCount": 0,
@@ -742,7 +742,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -796,7 +796,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "refCount": 0,
           "refId": "A",
@@ -805,7 +805,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "hide": false,
           "refCount": 0,
@@ -881,7 +881,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -937,7 +937,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "refId": "A",
           "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum'), 'ingressFlow')"

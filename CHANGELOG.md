@@ -9,10 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - DeltaFile contains egress flow name for each egress flow executed
 - Enable advanced alerting in Grafana
 - Enable iframe embedding from Grafana
+- `values-alerting-test.yaml` added to preconfigure some alerting rules in KinD
+- Added alert summary to System Overview dashboard
 
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring
 - Optimize error detection when a split result does not match a running ingress flow
+- Set explicit value for datasource UIDs in Grafana
 - ActionDescriptor now contains the schema. All ActionSchema classes have been removed
 - requiresEnrichment changed to requiresEnrichments
 
@@ -27,6 +30,7 @@ been removed
 - Fixed slow Monitor probe that was causing erroneous restarts
 - System Overview dashboard uniformly uses SI measurements for bytes
 - Errors on requeued DeltaFiles due to missing flows were not properly marked
+- Removed hard coded datasource references from Grafana dashboards
 - Pod status probe no longer reports "undefined method `any?' for nil:NilClass" when scaling deployments
 - Monitor correctly parses GraphQL errors
 - Ingress did not detect ingress routing or flow state changes unless restarted
@@ -41,7 +45,9 @@ been removed
 ### Security
 
 ### Upgrade and Migration
-- Upgraded to Redis 7.0.5.  Air gapped installations will need the new Redis image
+- Upgrade Grafana to 9.1.7
+- Upgrade Grafana helm chart to 6.40.3.  Air-gapped installs will need this new chart.
+- Upgraded to Redis 7.0.5.  Air-gapped installations will need the new Redis image
 - Plugins now require expanded Spring boot info in build.gradle (plugin dependencies are optional):
 ```
 springBoot {

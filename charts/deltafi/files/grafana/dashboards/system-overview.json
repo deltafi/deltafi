@@ -26,7 +26,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 110,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -114,7 +113,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -204,7 +203,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -378,7 +377,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -630,7 +629,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -688,7 +687,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -768,7 +767,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "refId": "A",
           "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'average', 'ingressFlow'), 'ingressFlow'), true, false)"
@@ -780,7 +779,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -861,7 +860,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "hide": false,
           "refCount": 0,
@@ -875,7 +874,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -957,7 +956,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "hide": false,
           "refCount": 0,
@@ -971,7 +970,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1053,7 +1052,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "hide": false,
           "refCount": 0,
@@ -1067,7 +1066,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1149,7 +1148,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "P1D261A8554D2DA69"
+            "uid": "${datasource}"
           },
           "hide": false,
           "refCount": 0,
@@ -1163,22 +1162,33 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 2,
-        "w": 24,
+        "h": 22,
+        "w": 8,
         "x": 0,
         "y": 35
       },
-      "id": 30,
+      "id": 43,
       "options": {
-        "content": "<br/><center><h1>Action Activity</h1></center>",
-        "mode": "html"
+        "alertInstanceLabelFilter": "",
+        "alertName": "",
+        "dashboardAlerts": false,
+        "groupBy": [],
+        "groupMode": "default",
+        "maxItems": 20,
+        "sortOrder": 4,
+        "stateFilter": {
+          "error": true,
+          "firing": true,
+          "noData": true,
+          "normal": false,
+          "pending": true
+        }
       },
-      "pluginVersion": "9.1.1",
-      "transparent": true,
-      "type": "text"
+      "title": "Active Alerts",
+      "type": "alertlist"
     },
     {
       "datasource": {
@@ -1239,10 +1249,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 37
+        "h": 9,
+        "w": 16,
+        "x": 8,
+        "y": 35
       },
       "id": 5,
       "interval": "10s",
@@ -1287,7 +1297,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -1343,10 +1353,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 14,
-        "w": 24,
-        "x": 0,
-        "y": 45
+        "h": 13,
+        "w": 16,
+        "x": 8,
+        "y": 44
       },
       "id": 17,
       "interval": "10s",
@@ -1381,7 +1391,27 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 57
+      },
+      "id": 30,
+      "options": {
+        "content": "<br/><center><h1>Action Activity</h1></center>",
+        "mode": "html"
+      },
+      "pluginVersion": "9.1.7",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 2,
@@ -1394,14 +1424,14 @@
         "content": "<br/><center><h1>Disk Status</h1></center>",
         "mode": "html"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "transparent": true,
       "type": "text"
     },
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -1495,7 +1525,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "P1D261A8554D2DA69"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -1556,7 +1586,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -1629,7 +1659,7 @@
         },
         "datasource": {
           "type": "graphite",
-          "uid": "P1D261A8554D2DA69"
+          "uid": "${datasource}"
         },
         "definition": "tag_values(ingressFlow)",
         "hide": 0,
@@ -1667,6 +1697,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }

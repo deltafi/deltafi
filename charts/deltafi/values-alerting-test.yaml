@@ -1,0 +1,138 @@
+# Test configuration for Grafana
+grafana:
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Admin
+    auth.basic:
+      enabled: false
+    # Enable SMTP for a test server.
+    # To see generated emails, go to https://www.wpoven.com/tools/free-smtp-server-for-testing#
+    smtp:
+      enabled: true
+      host: smtp.freesmtpservers.com:25
+      from_address: doofenshmirtz@local.deltafi.org
+      from_name: Dr. Doofenshmirtz
+  alerting:
+    rules.yaml:
+      groups:
+        - orgId: 1
+          name: deltafi
+          folder: DeltaFi
+          interval: 30s
+          rules:
+            - uid: smoke_detector
+              title: Smoke flow is down
+              for: 0s
+              annotations:
+                summary: Smoke has gone down in flames.
+              labels:
+                flow: smoke
+                severity: warning
+              condition: B
+              data:
+                - refId: A
+                  relativeTimeRange:
+                    from: 60
+                    to: 0
+                  datasourceUid: deltafi-graphite
+                  model:
+                    hide: false
+                    intervalMs: 10000
+                    maxDataPoints: 99999
+                    refId: A
+                    target: "seriesByTag('name=stats_counts.files_out','ingressFlow=smoke')"
+                - refId: B
+                  relativeTimeRange:
+                    from: 0
+                    to: 0
+                  datasourceUid: '-100'
+                  model:
+                    conditions:
+                      - evaluator:
+                          params:
+                            - 1
+                            - 0
+                          type: lt
+                        operator:
+                          type: and
+                        query:
+                          params:
+                            - A
+                        reducer:
+                          type: sum
+                          params: []
+                        type: query
+                    datasource:
+                      name: Expression
+                      type: __expr__
+                      uid: __expr__
+                    expression: A
+                    hide: false
+                    intervalMs: 10000
+                    maxDataPoints: 99999
+                    refId: B
+                    type: classic_conditions
+              dashboardUid: system-overview
+              noDataState: Alerting
+    contact_points.yaml:
+      apiVersion: 1
+      contactPoints:
+        - orgId: 1
+          name: AgentP
+          receivers:
+            - uid: contact1
+              type: email
+              settings:
+                addresses: agentp@deltafi.org
+        - orgId: 1
+          name: Doofenshmirtz
+          receivers:
+            - uid: contact2
+              type: email
+              settings:
+                addresses: doof@deltafi.org
+        - orgId: 1
+          name: DevOps-Mattermost
+          receivers:
+            - uid: contact3
+              type: slack
+              settings:
+                icon_emoji: "🧠"
+                url: https://chat.deltafi.org/hooks/REAL-UID-HERE
+                username: Jeremy local.deltafi.org
+    policies.yaml:
+      apiVersion: 1
+      policies:
+        - orgId: 1
+          receiver: Doofenshmirtz
+          group_by: ['grafana_folder', 'alertname']
+          group_wait: 30s
+          group_interval: 1m
+          repeat_interval: 12h
+          routes:
+            - orgId: 1
+              receiver: Doofenshmirtz
+              group_by: ['grafana_folder', 'alertname']
+              matchers:
+                - flow = smoke
+              group_wait: 1s
+              group_interval: 1s
+              repeat_interval: 10m
+              continue: true
+            - orgId: 1
+              receiver: AgentP
+              group_by: ['grafana_folder', 'alertname']
+              matchers:
+                - severity =~ "warning|critical|error|failure"
+              group_wait: 1s
+              group_interval: 1s
+              repeat_interval: 10m
+              continue: true
+            - orgId: 1
+              receiver: DevOps-Mattermost
+              group_by: ['grafana_folder', 'alertname']
+              group_wait: 1s
+              group_interval: 1m
+              repeat_interval: 12h
+              continue: true

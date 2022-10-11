@@ -276,7 +276,7 @@
         },
         "datasource": {
           "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
+          "uid": "${datasource}"
         },
         "definition": "label_values(app)",
         "hide": 0,
@@ -303,7 +303,7 @@
         },
         "datasource": {
           "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
+          "uid": "${datasource}"
         },
         "definition": "label_values({app=\"$container_name\"}, pod)",
         "hide": 0,
@@ -330,7 +330,7 @@
         },
         "datasource": {
           "type": "loki",
-          "uid": "P8E80F9AEF21F6940"
+          "uid": "${datasource}"
         },
         "definition": "label_values({app=\"$container_name\"}, stream)",
         "hide": 0,
