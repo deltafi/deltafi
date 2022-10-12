@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - DeltaFile contains egress flow name for each egress flow executed
 - Enable advanced alerting in Grafana
 - Enable iframe embedding from Grafana
+- Added ErrorByFiatTransformAction for erroring a flow
+- Added FilterByFiatTransformAction for filtering a flow
 - `values-alerting-test.yaml` added to preconfigure some alerting rules in KinD
 - Added alert summary to System Overview dashboard
 
