@@ -464,36 +464,34 @@ const onPage = (event) => {
 };
 
 const getPersistedParams = async () => {
-  startTimeDate.value = new Date(state.value.startTimeDateState ? state.value.startTimeDateState : startTimeDate.value);
-  endTimeDate.value = new Date(state.value.endTimeDateState ? state.value.endTimeDateState : endTimeDate.value);
-  sizeUnitSelected.value = state.value.sizeUnitState ? sizeUnits.find((i) => i.name == state.value.sizeUnitState) : sizeUnits[0];
-  sizeTypeSelected.value = state.value.sizeTypeState ? sizeTypes.find((i) => i.name == state.value.sizeTypeState) : sizeTypes[0];
+  // Values that, if set, should not expand Advanced Search Options.
+  startTimeDate.value = new Date(nonPanelState.value.startTimeDateState ? nonPanelState.value.startTimeDateState : startTimeDate.value);
+  endTimeDate.value = new Date(nonPanelState.value.endTimeDateState ? nonPanelState.value.endTimeDateState : endTimeDate.value);
+  sizeUnitSelected.value = nonPanelState.value.sizeUnitState ? sizeUnits.find((i) => i.name == nonPanelState.value.sizeUnitState) : sizeUnits[0];
+  sizeTypeSelected.value = nonPanelState.value.sizeTypeState ? sizeTypes.find((i) => i.name == nonPanelState.value.sizeTypeState) : sizeTypes[0];
+  perPage.value = nonPanelState.value.perPage || 10;
 
   // Values that, if set, should expand Advanced Search Options.
-  fileName.value = state.value.fileName;
-  stageOptionSelected.value = state.value.stageOptionState ? { name: state.value.stageOptionState } : null;
-  flowOptionSelected.value = state.value.flowOptionState ? { name: state.value.flowOptionState } : null;
-  egressedOptionSelected.value = state.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == state.value.egressedOptionState) : null;
-  filteredOptionSelected.value = state.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == state.value.filteredOptionState) : null;
-  domainOptionSelected.value = state.value.domainOptionState ? { name: state.value.domainOptionState } : null;
-  sizeMin.value = state.value.sizeMinState;
-  sizeMax.value = state.value.sizeMaxState;
-  metadataArray.value = state.value.metadataArrayState || [];
-  perPage.value = state.value.perPage || 10;
+  fileName.value = panelState.value.fileName;
+  stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
+  flowOptionSelected.value = panelState.value.flowOptionState ? { name: panelState.value.flowOptionState } : null;
+  egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
+  filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
+  domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
+  sizeMin.value = panelState.value.sizeMinState;
+  sizeMax.value = panelState.value.sizeMaxState;
+  metadataArray.value = panelState.value.metadataArrayState || [];
 
   // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
   // what search options are being used.
-  collapsedSearchOption.value = !_.some(Object.values(state.value).slice(4), (i) => !(i == null || i.length == 0));
+  collapsedSearchOption.value = !_.some(Object.values(panelState.value), (i) => !(i == null || i.length == 0));
 };
-const state = useStorage("advanced-search-options-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+
+const panelState = useStorage("panel-search-options", {}, sessionStorage, { serializer: StorageSerializers.object });
+const nonPanelState = useStorage("non-panel-search-options", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const setPersistedParams = () => {
-  state.value = {
-    startTimeDateState: startTimeDate.value ? startTimeDate.value : null,
-    endTimeDateState: endTimeDate.value ? endTimeDate.value : null,
-    sizeUnitState: sizeUnitSelected.value ? sizeUnitSelected.value.name : null,
-    sizeTypeState: sizeTypeSelected.value ? sizeTypeSelected.value.name : null,
-
+  panelState.value = {
     // Values that, if set, should expand Advanced Search Options.
     fileName: fileName.value,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
@@ -504,6 +502,14 @@ const setPersistedParams = () => {
     sizeMinState: sizeMin.value,
     sizeMaxState: sizeMax.value,
     metadataArrayState: metadataArray.value,
+  };
+
+  nonPanelState.value = {
+    // Values that, if set, should not expand Advanced Search Options.
+    startTimeDateState: startTimeDate.value ? startTimeDate.value : null,
+    endTimeDateState: endTimeDate.value ? endTimeDate.value : null,
+    sizeUnitState: sizeUnitSelected.value ? sizeUnitSelected.value.name : null,
+    sizeTypeState: sizeTypeSelected.value ? sizeTypeSelected.value.name : null,
     perPage: perPage.value,
   };
 };
