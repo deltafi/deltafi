@@ -24,7 +24,7 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="errorsMessage.length > 0" :rows="10" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="errorsMessage.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
     </template>
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsMessage" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
@@ -56,14 +56,15 @@ import MetadataDialog from "@/components/MetadataDialog.vue";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
-import { ref, onMounted, defineExpose, defineProps, watch, computed, defineEmits } from "vue";
+import { ref, onMounted, defineExpose, defineProps, watch, computed, defineEmits, nextTick } from "vue";
+import { useStorage, StorageSerializers } from "@vueuse/core";
 
 const loading = ref(true);
 const menu = ref();
 const errorsMessage = ref([]);
 const totalErrorsMessage = ref(0);
 const offset = ref(0);
-const perPage = ref(10);
+const perPage = ref();
 const sortField = ref("modified");
 const metadataDialog = ref();
 const sortDirection = ref("DESC");
@@ -129,6 +130,7 @@ const menuItems = ref([
 ]);
 
 onMounted(() => {
+  getPersistedParams();
   fetchErrorsMessages();
 });
 
@@ -153,6 +155,7 @@ const filterSelectedDids = computed(() => {
 });
 
 const fetchErrorsMessages = async () => {
+  getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName.name : null;
   let showAcknowled = props.awknowledged ? null : false;
   loading.value = true;
@@ -217,13 +220,26 @@ watch(
   }
 );
 
-const onPage = (event) => {
+const onPage = async (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
+  setPersistedParams();
+  await nextTick();
   fetchErrorsMessages();
+  emit("refreshErrors");
+};
+
+const getPersistedParams = async () => {
+  let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  perPage.value = state.value.perPage || 10;
+};
+
+const setPersistedParams = () => {
+  let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  state.value = {
+    perPage: perPage.value,
+  };
 };
 </script>
 
-<style lang="scss">
-
-</style>
+<style lang="scss"></style>

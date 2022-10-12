@@ -24,7 +24,7 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="errors.length > 0" :rows="10" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="errors.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
     </template>
     <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
@@ -108,7 +108,8 @@ import useNotifications from "@/composables/useNotifications";
 import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import useErrorsSummary from "@/composables/useErrorsSummary";
-import { ref, computed, onMounted, defineExpose, defineEmits, defineProps, watch } from "vue";
+import { ref, computed, onMounted, defineExpose, defineEmits, defineProps, watch, nextTick } from "vue";
+import { useStorage, StorageSerializers } from "@vueuse/core";
 
 const metadataDialog = ref();
 const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
@@ -122,7 +123,7 @@ const errors = ref([]);
 const expandedRows = ref([]);
 const totalErrors = ref(0);
 const offset = ref(0);
-const perPage = ref(10);
+const perPage = ref();
 const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const selectedErrors = ref([]);
@@ -199,7 +200,9 @@ const { data: response, fetch: getErrors } = useErrors();
 const filters = ref({
   last_error_cause: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
+
 const fetchErrors = async () => {
+  getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName.name : null;
   let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   let showAcknowled = props.awknowledged ? null : false;
@@ -271,10 +274,13 @@ const actionRowClick = (event) => {
   }
 };
 
-const onPage = (event) => {
+const onPage = async (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
+  setPersistedParams();
+  await nextTick();
   fetchErrors();
+  emit("refreshErrors");
 };
 
 const onSort = (event) => {
@@ -310,16 +316,31 @@ watch(
     fetchErrors();
   }
 );
+
 watch(
   () => filters.value.last_error_cause.value,
   () => {
     fetchErrors();
   }
 );
+
 onMounted(() => {
+  getPersistedParams();
   fetchErrors();
   getAllErrorsMessage();
 });
+
+const getPersistedParams = async () => {
+  let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  perPage.value = state.value.perPage || 10;
+};
+
+const setPersistedParams = () => {
+  let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  state.value = {
+    perPage: perPage.value,
+  };
+};
 </script>
 
 <style lang="scss">

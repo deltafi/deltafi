@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added support for displaying Indexed Metadata on DeltaFile Viewer page (#252)
 - Added New Dashboard Panels (#265)
 - Added Import and Rollback capabilities to System Snapshots page (#259)
+- Page size on Search and Errors pages is now persisted (#272)
 
 ### Fixed
 

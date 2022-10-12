@@ -90,7 +90,7 @@
     </div>
     <Panel header="Results" class="table-panel results">
       <template #icons>
-        <Paginator v-if="results.length > 0" :rows="10" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
       </template>
       <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>
@@ -193,7 +193,7 @@ const totalRecords = ref(0);
 const collapsedSearchOption = ref(true);
 const tableData = ref([]);
 const offset = ref(0);
-const perPage = ref(10);
+const perPage = ref();
 const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
@@ -479,6 +479,7 @@ const getPersistedParams = async () => {
   sizeMin.value = state.value.sizeMinState;
   sizeMax.value = state.value.sizeMaxState;
   metadataArray.value = state.value.metadataArrayState || [];
+  perPage.value = state.value.perPage || 10;
 
   // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
   // what search options are being used.
@@ -503,6 +504,7 @@ const setPersistedParams = () => {
     sizeMinState: sizeMin.value,
     sizeMaxState: sizeMax.value,
     metadataArrayState: metadataArray.value,
+    perPage: perPage.value,
   };
 };
 </script>
