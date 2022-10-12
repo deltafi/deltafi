@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed inaccurate Progress Bar on batch error resume, acknowledged, and getting all metadata (#268)
 - Fixed Filename search option to trim inputed values (#271)
 - Fixed issue with perPage variable on Search Page keeping search options panel always open (#276)
+- Fixed issue with Batching showing multiple toasts. (#275)
 
 ## [0.98.5]
 

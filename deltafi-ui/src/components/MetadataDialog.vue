@@ -265,8 +265,6 @@ const requestResumeReplay = async () => {
               successfulDids = successfulDids.slice(0, maxSuccessDisplay);
               successfulDids.push("...");
             }
-            let pluralized = pluralize(dids.length, "DeltaFile");
-            notify.success(`Resume request sent successfully for ${pluralized}`, successfulDids.join(", "));
             successBatch = true;
           }
         }
@@ -276,6 +274,8 @@ const requestResumeReplay = async () => {
       displayBatchingDialog.value = false;
       batchCompleteValue.value = 0;
       if (successBatch) {
+        let pluralized = pluralize(props.did.length, "DeltaFile");
+        notify.success(`Resume request sent successfully for ${pluralized}`);
         emit("update");
       }
     } else {
