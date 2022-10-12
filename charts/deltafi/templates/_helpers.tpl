@@ -29,8 +29,8 @@ nginx.ingress.kubernetes.io/auth-cache-key: $ssl_client_s_dn$http_authorization
 startupProbe:
   exec:
     command: ["/probe.sh"]
-  periodSeconds: 2
-  timeoutSeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 10
   failureThreshold: 30
 {{- end -}}
 
@@ -39,7 +39,7 @@ readinessProbe:
   exec:
     command: ["/probe.sh"]
   periodSeconds: 20
-  timeoutSeconds: 5
+  timeoutSeconds: 10
   failureThreshold: 2
 {{- end -}}
 

@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Set explicit value for datasource UIDs in Grafana
 - ActionDescriptor now contains the schema. All ActionSchema classes have been removed
 - requiresEnrichment changed to requiresEnrichments
+- Relaxed startup and readiness probe times
 
 ### Deprecated
 - The gradle-plugin is no longer needed to generate a plugin manifest. It is now generated on plugin startup
