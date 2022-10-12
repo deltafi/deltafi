@@ -51,7 +51,7 @@ public class StateMachine {
         List<ActionInput> enqueueActions = new ArrayList<>();
         switch (deltaFile.getStage()) {
             case INGRESS:
-                if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction()) {
+                if (deltaFile.hasErroredAction()) {
                     break;
                 }
                 IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
