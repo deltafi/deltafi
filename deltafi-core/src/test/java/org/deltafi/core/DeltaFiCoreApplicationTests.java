@@ -1207,21 +1207,37 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testFilterTransform() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postIngressDeltaFile(did), "Utf8TransformAction");
+	}
+
+	@Test
+	void testFilterLoad() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postTransformDeltaFile(did), "SampleLoadAction");
+	}
+
+	@Test
 	void testFilterEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
+		verifyFiltered(postValidateAuthorityDeltaFile(did), "SampleEgressAction");
+	}
+
+	private void verifyFiltered(DeltaFile deltaFile, String filteredAction) throws IOException {
+		deltaFileRepo.save(deltaFile);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("filter"), did, "SampleEgressAction"),
+				String.format(graphQL("filter"), deltaFile.getDid(), filteredAction),
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		Action lastAction = deltaFile.getActions().get(deltaFile.getActions().size()-1);
-		assertEquals("SampleEgressAction", lastAction.getName());
+		DeltaFile actual = deltaFilesService.getDeltaFile(deltaFile.getDid());
+		Action lastAction = actual.getActions().get(actual.getActions().size()-1);
+		assertEquals(filteredAction, lastAction.getName());
 		assertEquals(ActionState.FILTERED, lastAction.getState());
-		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
-		assertEquals(true, deltaFile.getFiltered());
+		assertEquals(DeltaFileStage.COMPLETE, actual.getStage());
+		assertEquals(true, actual.getFiltered());
 
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 	}
