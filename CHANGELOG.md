@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added FilterByFiatTransformAction for filtering a flow
 - `values-alerting-test.yaml` added to preconfigure some alerting rules in KinD
 - Added alert summary to System Overview dashboard
+- Docs pod enabled by default
 
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring

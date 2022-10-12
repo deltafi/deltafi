@@ -9,8 +9,8 @@ deltafi:
     image: localhost:5000/deltafi-core-actions:latest
   core:
     image: localhost:5000/deltafi-core:latest
-  doc:
-    image: localhost:5000/deltafi-doc:latest
+  docs:
+    image: localhost:5000/deltafi-docs:latest
   auth:
     image: localhost:5000/deltafi-auth:latest
     mode: disabled

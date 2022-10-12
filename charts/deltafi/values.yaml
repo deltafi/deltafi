@@ -38,9 +38,9 @@ deltafi:
     nativeConfigMap: config-server-configmap
     nativeConfigMountPath: /config
     # TODO should we allow nested yaml here and automatically create that config-map?
-  doc:
-    image: deltafi/deltafi-doc:0.98.5
-    enabled: false
+  docs:
+    image: deltafi/deltafi-docs:latest
+    enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
