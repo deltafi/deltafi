@@ -1,5 +1,80 @@
-apiVersion: v1
-data:
+# Default values for graphite.
+
+image:
+  repository: graphiteapp/graphite-statsd
+  tag: 1.1.10-3
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+  labels: {}
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - chart-example.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+env: {}
+# - name: example-name
+#   value: example-value
+
+persistence:
+  ## Enable storage persistence using Persistent Volume Claims.
+  ##
+  enabled: true
+  ## Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  # storageClass: "-"
+
+  ## A manually managed Persistent Volume and Claim
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  # existingClaim:
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+resources: {}
+  # limits:
+  #  cpu: 500m
+  #  memory: 1024Mi
+  # requests:
+  #  cpu: 200m
+  #  memory: 512Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+timeZone: Etc/UTC
+
+initContainers: []
+#  - name: init-sysctl
+#    image: busybox
+#    command:
+#      - sysctl
+#      - -w
+#      - net.core.somaxconn=65535
+#    securityContext:
+#      privileged: true
+
+configMaps:
   aggregation-rules.conf: |-
     # The form of each line in this file should be as follows:
     #
@@ -42,82 +117,6 @@ data:
     # match one of these expressions will be dropped
     # This file is reloaded automatically when changes are made
     ^some\.noisy\.metric\.prefix\..*
-  carbon.amqp.conf: |-
-    # This is a configuration file with AMQP enabled
-
-    [cache]
-    LOCAL_DATA_DIR =
-
-    # Specify the user to drop privileges to
-    # If this is blank carbon runs as the user that invokes it
-    # This user must have write access to the local data directory
-    USER =
-
-    # Limit the size of the cache to avoid swapping or becoming CPU bound.
-    # Sorts and serving cache queries gets more expensive as the cache grows.
-    # Use the value "inf" (infinity) for an unlimited cache size.
-    MAX_CACHE_SIZE = inf
-
-    # Limits the number of whisper update_many() calls per second, which effectively
-    # means the number of write requests sent to the disk. This is intended to
-    # prevent over-utilizing the disk and thus starving the rest of the system.
-    # When the rate of required updates exceeds this, then carbon's caching will
-    # take effect and increase the overall throughput accordingly.
-    MAX_UPDATES_PER_SECOND = 1000
-
-    # Softly limits the number of whisper files that get created each minute.
-    # Setting this value low (like at 50) is a good way to ensure your graphite
-    # system will not be adversely impacted when a bunch of new metrics are
-    # sent to it. The trade off is that it will take much longer for those metrics'
-    # database files to all get created and thus longer until the data becomes usable.
-    # Setting this value high (like "inf" for infinity) will cause graphite to create
-    # the files quickly but at the risk of slowing I/O down considerably for a while.
-    MAX_CREATES_PER_MINUTE = inf
-
-    LINE_RECEIVER_INTERFACE = 0.0.0.0
-    LINE_RECEIVER_PORT = 2003
-
-    UDP_RECEIVER_INTERFACE = 0.0.0.0
-    UDP_RECEIVER_PORT = 2003
-
-    PICKLE_RECEIVER_INTERFACE = 0.0.0.0
-    PICKLE_RECEIVER_PORT = 2004
-
-    CACHE_QUERY_INTERFACE = 0.0.0.0
-    CACHE_QUERY_PORT = 7002
-
-    # Enable AMQP if you want to receve metrics using you amqp broker
-    ENABLE_AMQP = True
-
-    # Verbose means a line will be logged for every metric received
-    # useful for testing
-    AMQP_VERBOSE = True
-
-    # your credentials for the amqp server
-    # AMQP_USER = guest
-    # AMQP_PASSWORD = guest
-
-    # the network settings for the amqp server
-    # AMQP_HOST = localhost
-    # AMQP_PORT = 5672
-
-    # if you want to include the metric name as part of the message body
-    # instead of as the routing key, set this to True
-    # AMQP_METRIC_NAME_IN_BODY = False
-
-    # NOTE: you cannot run both a cache and a relay on the same server
-    # with the default configuration, you have to specify a distinict
-    # interfaces and ports for the listeners.
-
-    [relay]
-    LINE_RECEIVER_INTERFACE = 0.0.0.0
-    LINE_RECEIVER_PORT = 2003
-
-    PICKLE_RECEIVER_INTERFACE = 0.0.0.0
-    PICKLE_RECEIVER_PORT = 2004
-
-    CACHE_SERVERS = server1, server2, server3
-    MAX_QUEUE_SIZE = 10000
   carbon.conf: |-
     [cache]
     # Configure carbon directories.
@@ -198,7 +197,7 @@ data:
     # until such point as a subsequent metric is received and fits within the
     # defined rate limit. Setting this value high (like "inf" for infinity) will
     # cause carbon to create the files quickly but at the risk of increased I/O.
-    MAX_CREATES_PER_MINUTE = 50
+    MAX_CREATES_PER_MINUTE = 200
 
     # Set the minimum timestamp resolution supported by this instance. This allows
     # internal optimisations by overwriting points with equal truncated timestamps
@@ -319,7 +318,7 @@ data:
     # allocation and zero-ing. Enabling this option may allow a large increase of
     # MAX_CREATES_PER_MINUTE. If enabled on an OS or filesystem that is unsupported
     # this option will gracefully fallback to standard POSIX file access methods.
-    WHISPER_FALLOCATE_CREATE = True
+    WHISPER_FALLOCATE_CREATE = False
 
     # Enabling this option will cause Whisper to lock each Whisper file it writes
     # to with an exclusive lock (LOCK_EX, see: man 2 flock). This is useful when
@@ -391,7 +390,7 @@ data:
 
     # Verbose means a line will be logged for every metric received
     # useful for testing
-    # AMQP_VERBOSE = False
+    AMQP_VERBOSE = False
 
     # AMQP_HOST = localhost
     # AMQP_PORT = 5672
@@ -441,7 +440,7 @@ data:
     #
     # In order to turn off logging of successful connections for the line
     # receiver, set this to False
-    # LOG_LISTENER_CONN_SUCCESS = True
+    LOG_LISTENER_CONN_SUCCESS = False
 
     [relay]
     LINE_RECEIVER_INTERFACE = 0.0.0.0
@@ -574,8 +573,7 @@ data:
     #
     # In order to turn off logging of successful connections for the line
     # receiver, set this to False
-    # LOG_LISTENER_CONN_SUCCESS = True
-
+    LOG_LISTENER_CONN_SUCCESS = False
     # If you're connecting from the relay to a destination that's over the
     # internet or similarly iffy connection, a backlog can develop because
     # of internet weather conditions, e.g. acks getting lost or similar issues.
@@ -695,8 +693,7 @@ data:
 
     # In order to turn off logging of successful connections for the line
     # receiver, set this to False
-    # LOG_LISTENER_CONN_SUCCESS = True
-
+    LOG_LISTENER_CONN_SUCCESS = False
     # In order to turn off logging of metrics with no corresponding
     # aggregation rules receiver, set this to False
     # LOG_AGGREGATOR_MISSES = False
@@ -713,6 +710,81 @@ data:
 
     # You can optionally set a ttl to this cache.
     # CACHE_METRIC_NAMES_TTL=600
+  carbon.amqp.conf: |-
+    # This is a configuration file with AMQP enabled
+
+    [cache]
+    LOCAL_DATA_DIR =
+
+    # Specify the user to drop privileges to
+    # If this is blank carbon runs as the user that invokes it
+    # This user must have write access to the local data directory
+    USER =
+
+    # Limit the size of the cache to avoid swapping or becoming CPU bound.
+    # Sorts and serving cache queries gets more expensive as the cache grows.
+    # Use the value "inf" (infinity) for an unlimited cache size.
+    MAX_CACHE_SIZE = inf
+
+    # Limits the number of whisper update_many() calls per second, which effectively
+    # means the number of write requests sent to the disk. This is intended to
+    # prevent over-utilizing the disk and thus starving the rest of the system.
+    # When the rate of required updates exceeds this, then carbon's caching will
+    # take effect and increase the overall throughput accordingly.
+    MAX_UPDATES_PER_SECOND = 1000
+
+    # Softly limits the number of whisper files that get created each minute.
+    # Setting this value low (like at 50) is a good way to ensure your graphite
+    # system will not be adversely impacted when a bunch of new metrics are
+    # sent to it. The trade off is that it will take much longer for those metrics'
+    # database files to all get created and thus longer until the data becomes usable.
+    # Setting this value high (like "inf" for infinity) will cause graphite to create
+    # the files quickly but at the risk of slowing I/O down considerably for a while.
+    MAX_CREATES_PER_MINUTE = inf
+
+    LINE_RECEIVER_INTERFACE = 0.0.0.0
+    LINE_RECEIVER_PORT = 2003
+
+    UDP_RECEIVER_INTERFACE = 0.0.0.0
+    UDP_RECEIVER_PORT = 2003
+
+    PICKLE_RECEIVER_INTERFACE = 0.0.0.0
+    PICKLE_RECEIVER_PORT = 2004
+
+    CACHE_QUERY_INTERFACE = 0.0.0.0
+    CACHE_QUERY_PORT = 7002
+
+    # Enable AMQP if you want to receve metrics using you amqp broker
+    ENABLE_AMQP = True
+
+    # Verbose means a line will be logged for every metric received
+    # useful for testing
+    AMQP_VERBOSE = False
+    # your credentials for the amqp server
+    # AMQP_USER = guest
+    # AMQP_PASSWORD = guest
+
+    # the network settings for the amqp server
+    # AMQP_HOST = localhost
+    # AMQP_PORT = 5672
+
+    # if you want to include the metric name as part of the message body
+    # instead of as the routing key, set this to True
+    # AMQP_METRIC_NAME_IN_BODY = False
+
+    # NOTE: you cannot run both a cache and a relay on the same server
+    # with the default configuration, you have to specify a distinict
+    # interfaces and ports for the listeners.
+
+    [relay]
+    LINE_RECEIVER_INTERFACE = 0.0.0.0
+    LINE_RECEIVER_PORT = 2003
+
+    PICKLE_RECEIVER_INTERFACE = 0.0.0.0
+    PICKLE_RECEIVER_PORT = 2004
+
+    CACHE_SERVERS = server1, server2, server3
+    MAX_QUEUE_SIZE = 10000
   dashboard.conf: |-
     # This configuration file controls the behavior of the Dashboard UI, available
     # at http://my-graphite-server/dashboard/.
@@ -771,6 +843,11 @@ data:
     # This defines a 'Sales' metric type that uses 3 dropdowns in the Context Selector
     # (the upper-left panel) while any deeper metrics (per-product counts or revenue, etc)
     # will be available in the Metric Selector (upper-right panel).
+  graphite.wsgi.example: |-
+    import sys
+    sys.path.append('/opt/graphite/webapp')
+
+    from graphite.wsgi import application
   graphTemplates.conf: |-
     [default]
     background = black
@@ -810,11 +887,6 @@ data:
     majorLine = grey
     minorLine = rose
     lineColors = 00ff00aa,ff000077,00337799
-  graphite.wsgi.example: |-
-    import sys
-    sys.path.append('/opt/graphite/webapp')
-
-    from graphite.wsgi import application
   relay-rules.conf: |-
     # Relay destination rules for carbon-relay. Entries are scanned in order,
     # and the first pattern a metric matches will cause processing to cease after sending
@@ -870,35 +942,15 @@ data:
     #  xFilesFactor: Ratio of valid data points required for aggregation to the next retention to occur
     #  aggregationMethod: function to apply to data points for aggregation
     #
-    [min]
-    pattern = \.lower$
-    xFilesFactor = 0.1
-    aggregationMethod = min
-
-    [max]
-    pattern = \.upper(_\d+)?$
-    xFilesFactor = 0.1
+    [gauge]
+    pattern = gauge.*
+    xFilesFactor = 0
     aggregationMethod = max
 
-    [sum]
-    pattern = \.sum$
-    xFilesFactor = 0
-    aggregationMethod = sum
-
-    [count]
-    pattern = \.count$
-    xFilesFactor = 0
-    aggregationMethod = sum
-
-    [count_legacy]
-    pattern = ^stats_counts.*
-    xFilesFactor = 0
-    aggregationMethod = sum
-
-    [default_average]
+    [default]
     pattern = .*
-    xFilesFactor = 0.3
-    aggregationMethod = average
+    xFilesFactor = 0
+    aggregationMethod = sum
   storage-schemas.conf: |-
     # Schema definitions for Whisper files. Entries are scanned in order,
     # and first match wins. This file is scanned for changes every 60 seconds.
@@ -921,11 +973,10 @@ data:
     # CARBON_METRIC_PREFIX and CARBON_METRIC_INTERVAL settings
     [carbon]
     pattern = ^carbon\.
-    retentions = 10s:2h,1m:14d
-
+    retentions = 10s:2h,1m:7d
     [default_1min_for_1day]
     pattern = .*
-    retentions = 10s:4h,1m:6d,10m:720d
+    retentions = 10s:3h,1m:6d,10m:90d,1h:365d,24h:720d
   whitelist.conf: |-
     # This file takes a single regular expression per line
     # If USE_WHITELIST is set to True in carbon.conf, only metrics received which
@@ -933,16 +984,32 @@ data:
     # missing, all metrics will pass through.
     # This file is reloaded automatically when changes are made
     .*
-kind: ConfigMap
-metadata:
-  annotations:
-    meta.helm.sh/release-name: deltafi
-    meta.helm.sh/release-namespace: deltafi
-  labels:
-    app: graphite
-    app.kubernetes.io/managed-by: Helm
-    chart: graphite-0.7.2
-    heritage: Helm
-    release: deltafi
-  name: deltafi-graphite-configmap
-  namespace: deltafi
+
+statsdConfigMaps:
+  config_tcp.js: |-
+    {
+      "graphiteHost": "127.0.0.1",
+      "graphitePort": 2003,
+      "port": 8125,
+      "flushInterval": 10000,
+      "servers": [{
+        "server": "./servers/tcp",
+        "address": "0.0.0.0",
+        "port": 8125
+      }]
+    }
+  config_udp.js: |-
+    {
+      "graphiteHost": "127.0.0.1",
+      "graphitePort": 2003,
+      "port": 8125,
+      "flushInterval": 10000,
+      "servers": [{
+        "server": "./servers/udp",
+        "address": "0.0.0.0",
+        "port": 8125
+      }]
+    }
+
+statsd:
+  interface: UDP

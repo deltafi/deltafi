@@ -1,0 +1,9 @@
+apiVersion: v1
+appVersion: 0.99.0
+description: Graphite metrics server with statsd for DeltaFi
+home: https://graphiteapp.org/
+icon: https://graphiteapp.org/img/graphite-logo_color.png
+keywords:
+- metrics
+name: graphite
+version: 0.99.0

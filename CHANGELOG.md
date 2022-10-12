@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - ActionDescriptor now contains the schema. All ActionSchema classes have been removed
 - requiresEnrichment changed to requiresEnrichments
 - Relaxed startup and readiness probe times
+- Graphite probe timings are relaxed to avoid overzealous restarts
+- Graphite helm chart is now a local chart
 
 ### Deprecated
 - The gradle-plugin is no longer needed to generate a plugin manifest. It is now generated on plugin startup
@@ -54,6 +56,7 @@ been removed
 ### Upgrade and Migration
 - Upgrade Grafana to 9.1.7
 - Upgrade Grafana helm chart to 6.40.3.  Air-gapped installs will need this new chart.
+- Graphite chart is now a local chart versioned as 0.99.0.  Air-gapped installs will need this new chart.
 - Upgraded to Redis 7.0.5.  Air-gapped installations will need the new Redis image
 - Plugins now require expanded Spring boot info in build.gradle (plugin dependencies are optional):
 ```

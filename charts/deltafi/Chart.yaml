@@ -39,12 +39,6 @@ dependencies:
     version: "5.7.0"
     repository: https://kubernetes.github.io/dashboard/
     condition: enable.kubernetes-dashboard
-  - name: graphite
-    version: 0.7.2
-    repository: https://kiwigrid.github.io
-    condition: enable.graphite
-    tags:
-      - metrics
   - name: promtail
     version: 6.0.0
     repository: https://grafana.github.io/helm-charts
@@ -57,6 +51,12 @@ dependencies:
     condition: enable.loki
     tags:
       - logs
+  - name: graphite
+    version: 0.99.0
+    repository: file://../graphite
+    condition: enable.graphite
+    tags:
+      - metrics
   - name: grafana
     version: 6.40.3
     repository: https://grafana.github.io/helm-charts
