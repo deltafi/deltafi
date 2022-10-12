@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.format;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -43,9 +42,9 @@ public abstract class FormatAction<P extends ActionParameters> extends FormatAct
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile,
-                                   @NotNull ActionContext context,
-                                   @NotNull P params) {
+    protected final FormatResultType execute(@NotNull DeltaFile deltaFile,
+                                             @NotNull ActionContext context,
+                                             @NotNull P params) {
         return format(context,
                 params,
                 deltaFile.getSourceInfo(),
@@ -71,11 +70,11 @@ public abstract class FormatAction<P extends ActionParameters> extends FormatAct
      * @see org.deltafi.actionkit.action.filter.FilterResult
      * @see FormatManyResult
      */
-    public abstract Result format(@NotNull ActionContext context,
-                                  @NotNull P params,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull Content content,
-                                  @NotNull Map<String, String> metadata,
-                                  @NotNull Map<String, Domain> domains,
-                                  @NotNull Map<String, Enrichment> enrichment);
+    public abstract FormatResultType format(@NotNull ActionContext context,
+                                            @NotNull P params,
+                                            @NotNull SourceInfo sourceInfo,
+                                            @NotNull Content content,
+                                            @NotNull Map<String, String> metadata,
+                                            @NotNull Map<String, Domain> domains,
+                                            @NotNull Map<String, Enrichment> enrichment);
 }

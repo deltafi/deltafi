@@ -19,9 +19,9 @@
 package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.transform.SimpleTransformAction;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SourceInfo;
@@ -38,7 +38,7 @@ public class FilterByFiatTransformAction extends SimpleTransformAction {
     }
 
     @Override
-    public Result transform(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, String> metadata) {
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, String> metadata) {
         return new FilterResult(context, "Filtered by fiat");
     }
 }

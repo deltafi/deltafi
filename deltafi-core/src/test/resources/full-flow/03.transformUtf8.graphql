@@ -20,13 +20,13 @@ mutation {
     actionEvent(
         event: {
             did: "%1$s"
-            action: "Utf8TransformAction"
+            action: "sampleIngress.Utf8TransformAction"
             start: "2021-07-11T13:44:22.183Z"
             stop: "2021-07-11T13:44:22.184Z"
             type: TRANSFORM
             transform: {
                 protocolLayer: {
-                    action: "Utf8TransformAction"
+                    action: "sampleIngress.Utf8TransformAction"
                     content: [
                         {
                             name: "file.json"

@@ -477,8 +477,6 @@ class StateMachineTest {
                         .build())
                 .build());
 
-        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(Collections.emptyList());
-        Mockito.when(egressFlowService.getMatchingFlows(INGRESS_FLOW)).thenReturn(Collections.emptyList());
         assertThat(stateMachine.advance(deltaFile)).isEmpty();
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.ERROR);
     }

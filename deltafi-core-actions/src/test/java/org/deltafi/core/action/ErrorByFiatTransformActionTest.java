@@ -18,8 +18,8 @@
 
 package org.deltafi.core.action;
 import lombok.SneakyThrows;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SourceInfo;
@@ -56,7 +56,7 @@ class ErrorByFiatTransformActionTest {
     @Test
     @SneakyThrows
     void transformTest() {
-        Result result = action.transform(ACTION_CONTEXT, sourceInfo(), new Content(), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, sourceInfo(), new Content(), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
 
     }

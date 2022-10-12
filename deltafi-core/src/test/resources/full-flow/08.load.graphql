@@ -20,14 +20,14 @@ mutation {
     actionEvent(
         event: {
             did: "%1$s"
-            action: "SampleLoadAction"
+            action: "sampleIngress.SampleLoadAction"
             start: "2021-07-11T13:44:22.183Z"
             stop: "2021-07-11T13:44:22.184Z"
             type: LOAD
             load: {
                 domains: [ { name: "sampleDomain", value: "sampleDomainValue", mediaType: "application/octet-stream" } ]
                 protocolLayer: {
-                    action: "SampleLoadAction"
+                    action: "sampleIngress.SampleLoadAction"
                     content: [
                         {
                             contentReference: {

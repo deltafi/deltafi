@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.load;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -43,9 +42,9 @@ public abstract class MultipartLoadAction<P extends ActionParameters> extends Lo
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile,
-                                   @NotNull ActionContext context,
-                                   @NotNull P params) {
+    protected final LoadResultType execute(@NotNull DeltaFile deltaFile,
+                                           @NotNull ActionContext context,
+                                           @NotNull P params) {
         return load(context,
                 params,
                 deltaFile.getSourceInfo(),
@@ -67,9 +66,9 @@ public abstract class MultipartLoadAction<P extends ActionParameters> extends Lo
      * @see org.deltafi.actionkit.action.filter.FilterResult
      * @see SplitResult
      */
-    public abstract Result load(@NotNull ActionContext context,
-                                @NotNull P params,
-                                @NotNull SourceInfo sourceInfo,
-                                @NotNull List<Content> contentList,
-                                @NotNull Map<String, String> metadata);
+    public abstract LoadResultType load(@NotNull ActionContext context,
+                                        @NotNull P params,
+                                        @NotNull SourceInfo sourceInfo,
+                                        @NotNull List<Content> contentList,
+                                        @NotNull Map<String, String> metadata);
 }

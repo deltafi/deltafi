@@ -39,7 +39,7 @@ import java.util.Map;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-public class FormatResult extends Result {
+public class FormatResult extends Result implements FormatResultType {
     private final String filename;
     protected ContentReference contentReference;
     protected List<KeyValue> metadata = new ArrayList<>();

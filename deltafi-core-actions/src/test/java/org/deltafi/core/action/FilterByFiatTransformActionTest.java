@@ -19,8 +19,8 @@
 package org.deltafi.core.action;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.filter.FilterResult;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SourceInfo;
@@ -60,7 +60,7 @@ class FilterByFiatTransformActionTest {
     @Test
     @SneakyThrows
     void transformTest() {
-        Result result = action.transform(ACTION_CONTEXT, sourceInfo(), new Content(), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, sourceInfo(), new Content(), Collections.emptyMap());
         assertThat(result, instanceOf(FilterResult.class));
 
     }

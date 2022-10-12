@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.domain;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Domain;
@@ -38,11 +37,11 @@ public abstract class SimpleDomainAction extends DomainAction<ActionParameters> 
     }
 
     @Override
-    public final Result extractAndValidate(@NotNull ActionContext context,
-                               @NotNull ActionParameters params,
-                               @NotNull SourceInfo sourceInfo,
-                               @NotNull Map<String, String> metadata,
-                               @NotNull Map<String, Domain> domains) {
+    public final DomainResultType extractAndValidate(@NotNull ActionContext context,
+                                                     @NotNull ActionParameters params,
+                                                     @NotNull SourceInfo sourceInfo,
+                                                     @NotNull Map<String, String> metadata,
+                                                     @NotNull Map<String, Domain> domains) {
         return extractAndValidate(context, sourceInfo, metadata, domains);
     }
 
@@ -58,8 +57,8 @@ public abstract class SimpleDomainAction extends DomainAction<ActionParameters> 
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result extractAndValidate(@NotNull ActionContext context,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull Map<String, String> metadata,
-                                  @NotNull Map<String, Domain> domains);
+    public abstract DomainResultType extractAndValidate(@NotNull ActionContext context,
+                                                        @NotNull SourceInfo sourceInfo,
+                                                        @NotNull Map<String, String> metadata,
+                                                        @NotNull Map<String, Domain> domains);
 }

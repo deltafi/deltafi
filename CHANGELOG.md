@@ -38,6 +38,8 @@ been removed
 - Monitor correctly parses GraphQL errors
 - Ingress did not detect ingress routing or flow state changes unless restarted
 - Add index for domain names
+- Fix FILTER command from TransformActions
+- Fix ERROR command from EnrichActions
 
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
@@ -45,6 +47,7 @@ been removed
 - Merge ingress code into core. Start ingress as a separate core instance with most core services disabled. Remove the overhead of an internal HTTP call on ingress
 - Plugins now register themselves with their actions, variables, and flows on startup
 - Unused Spring Boot services disabled by configuration in core
+- Restrict Result types for each Action type.
 
 ### Security
 

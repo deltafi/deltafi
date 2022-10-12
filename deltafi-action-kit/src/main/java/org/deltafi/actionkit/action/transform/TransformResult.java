@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class TransformResult extends DataAmendedResult {
+public class TransformResult extends DataAmendedResult implements TransformResultType{
     /**
      * @param context Context of executing action
      */

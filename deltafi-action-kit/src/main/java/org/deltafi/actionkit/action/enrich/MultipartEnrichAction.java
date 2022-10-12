@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.enrich;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -44,7 +43,7 @@ public abstract class MultipartEnrichAction<P extends ActionParameters> extends 
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+    protected final EnrichResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return enrich(context,
                 params,
                 deltaFile.getSourceInfo(),
@@ -69,11 +68,11 @@ public abstract class MultipartEnrichAction<P extends ActionParameters> extends 
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result enrich(@NotNull ActionContext context,
-                                  @NotNull P params,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull List<Content> contentList,
-                                  @NotNull Map<String, String> metadata,
-                                  @NotNull Map<String, Domain> domains,
-                                  @NotNull Map<String, Enrichment> enrichment);
+    public abstract EnrichResultType enrich(@NotNull ActionContext context,
+                                            @NotNull P params,
+                                            @NotNull SourceInfo sourceInfo,
+                                            @NotNull List<Content> contentList,
+                                            @NotNull Map<String, String> metadata,
+                                            @NotNull Map<String, Domain> domains,
+                                            @NotNull Map<String, Enrichment> enrichment);
 }

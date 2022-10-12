@@ -20,9 +20,9 @@ package org.deltafi.core.action;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -427,7 +427,7 @@ public class DecompressionTransformActionTest {
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Failed to load compressed binary from storage"));
     }
@@ -442,7 +442,7 @@ public class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         Mockito.when(contentStorageService.save(eq(DID), (InputStream) Mockito.any(), eq(CONTENT_TYPE))).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Unable to store content"));
     }
@@ -486,7 +486,7 @@ public class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -513,7 +513,7 @@ public class DecompressionTransformActionTest {
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
 
-        Result result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo(errorCause));
     }

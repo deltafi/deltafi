@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.action;
 
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.egress.SimpleEgressAction;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.common.types.ActionContext;
@@ -34,7 +34,7 @@ public class FilterEgressAction extends SimpleEgressAction {
     }
 
     @Override
-    public Result egress(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    public EgressResultType egress(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         return new FilterResult(context, "filtered");
     }
 }

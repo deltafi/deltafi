@@ -20,13 +20,13 @@ mutation {
     actionEvent(
         event: {
             did: "%1$s"
-            action: "SampleTransformAction"
+            action: "sampleIngress.SampleTransformAction"
             start: "2021-07-11T13:44:22.183Z"
             stop: "2021-07-11T13:44:22.184Z"
             type: TRANSFORM
             transform: {
                 protocolLayer: {
-                    action: "SampleTransformAction"
+                    action: "sampleIngress.SampleTransformAction"
                     content: [
                         {
                             contentReference: {

@@ -37,7 +37,7 @@ import static org.deltafi.common.metrics.MetricsUtil.FILES_OUT;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class EgressResult extends Result {
+public class EgressResult extends Result implements EgressResultType {
     private final String destination;
     private final long bytesEgressed;
 

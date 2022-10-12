@@ -15,31 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.validate;
+package org.deltafi.actionkit.action;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.common.metrics.Metric;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventType;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.common.types.ActionEventInput;
 
-/**
- * Specialized result class for VALIDATE actions
- */
-@Getter
-@EqualsAndHashCode(callSuper = true)
-public class ValidateResult extends Result implements ValidateResultType {
+import java.util.Collection;
 
-    /**
-     * @param context Context of executing action
-     */
-    public ValidateResult(@NotNull ActionContext context) {
-        super(context);
-    }
-
-    @Override
-    public final ActionEventType actionEventType() {
-        return ActionEventType.VALIDATE;
-    }
+public interface ResultType {
+    ActionEventInput toEvent();
+    ActionContext getContext();
+    Collection<Metric> getMetrics();
 }

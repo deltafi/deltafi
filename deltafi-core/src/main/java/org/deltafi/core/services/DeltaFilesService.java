@@ -33,10 +33,8 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
-import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.UniqueKeyValues;
-import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
@@ -353,13 +351,25 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile filter(DeltaFile deltaFile, ActionEventInput event) {
+    public DeltaFile filter(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
         if (deltaFile.noPendingAction(event.getAction())) {
             throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
         }
 
-        deltaFile.filterAction(event, event.getFilter().getMessage());
-        deltaFile.setFiltered(true);
+        ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
+        ActionType actionType = ActionType.UNKNOWN;
+        if (actionConfiguration != null) {
+            actionType = actionConfiguration.getActionType();
+        }
+
+        // Treat filter events from Domain and Enrich actions as errors
+        if (actionType.equals(ActionType.DOMAIN) || actionType.equals(ActionType.ENRICH)) {
+            event.setError(ErrorInput.newBuilder().cause("Illegal operation FILTER received from " + actionType + "Action " + event.getAction()).build());
+            return error(deltaFile, event);
+        } else {
+            deltaFile.filterAction(event, event.getFilter().getMessage());
+            deltaFile.setFiltered(true);
+        }
 
         return advanceAndSave(deltaFile);
     }
@@ -971,18 +981,13 @@ public class DeltaFilesService {
     }
 
     private ActionConfiguration actionConfiguration(String actionName, DeltaFile deltaFile) {
-        Optional<Action> action = deltaFile.actionNamed(actionName);
-        return action.map(value -> actionConfiguration(value, deltaFile)).orElse(null);
-    }
-
-    private ActionConfiguration actionConfiguration(Action action, DeltaFile deltaFile) {
         try {
             if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
-                return ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), action.getName());
+                return ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), actionName);
             } else if (DeltaFileStage.ENRICH.equals(deltaFile.getStage())) {
-                return enrichFlowService.findActionConfig(action.getName());
+                return enrichFlowService.findActionConfig(actionName);
             } else if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())) {
-                return egressFlowService.findActionConfig(action.getName());
+                return egressFlowService.findActionConfig(actionName);
             }
         } catch (IllegalArgumentException ignored) {}
 
@@ -1005,7 +1010,7 @@ public class DeltaFilesService {
     }
 
     private ActionInput toActionInput(Action action, DeltaFile deltaFile) {
-        ActionConfiguration actionConfiguration = actionConfiguration(action, deltaFile);
+        ActionConfiguration actionConfiguration = actionConfiguration(action.getName(), deltaFile);
         String egressFlow = egressFlow(action, deltaFile);
 
         if (Objects.isNull(actionConfiguration)) {

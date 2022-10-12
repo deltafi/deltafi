@@ -35,7 +35,7 @@ import java.util.Map;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class DomainResult extends Result implements HasIndexedMetadata  {
+public class DomainResult extends Result implements HasIndexedMetadata, DomainResultType {
     private Map<String, String> indexedMetadata = new HashMap<>();
 
     /**

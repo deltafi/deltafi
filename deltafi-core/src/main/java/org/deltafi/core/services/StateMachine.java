@@ -51,7 +51,7 @@ public class StateMachine {
         List<ActionInput> enqueueActions = new ArrayList<>();
         switch (deltaFile.getStage()) {
             case INGRESS:
-                if (deltaFile.hasErroredAction()) {
+                if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction()) {
                     break;
                 }
                 IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
@@ -75,6 +75,10 @@ public class StateMachine {
                 // if transform and load are complete, move to enrich stage
                 deltaFile.setStage(DeltaFileStage.ENRICH);
             case ENRICH:
+                if (deltaFile.hasErroredAction()) {
+                    break;
+                }
+
                 List<ActionInput> enrichActions = enrichFlowService.getRunningFlows().stream()
                         .map(enrichFlow -> advanceEnrichStage(enrichFlow, deltaFile))
                         .flatMap(Collection::stream)

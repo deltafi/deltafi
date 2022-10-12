@@ -20,6 +20,13 @@ package org.deltafi.actionkit.action.error;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.domain.DomainResultType;
+import org.deltafi.actionkit.action.egress.EgressResultType;
+import org.deltafi.actionkit.action.enrich.EnrichResultType;
+import org.deltafi.actionkit.action.format.FormatResultType;
+import org.deltafi.actionkit.action.load.LoadResultType;
+import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.validate.ValidateResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
@@ -35,7 +42,8 @@ import java.io.StringWriter;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class ErrorResult extends Result {
+public class ErrorResult extends Result implements
+        DomainResultType, EgressResultType, EnrichResultType, FormatResultType, LoadResultType, TransformResultType, ValidateResultType {
     private final String errorCause;
     private final String errorContext;
     private final String errorSummary;

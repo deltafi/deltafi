@@ -43,11 +43,11 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static IngressFlow validateIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build(), new ValidateIngressFlowProjectionRoot().name(), IngressFlow.class);
+        return executeQuery(dgsQueryExecutor, ValidateIngressFlowGraphQLQuery.newRequest().flowName("sampleIngress").build(), new ValidateIngressFlowProjectionRoot().name(), IngressFlow.class);
     }
 
     public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build(), new ValidateIngressFlowProjectionRoot().name(), EgressFlow.class);
+        return executeQuery(dgsQueryExecutor, ValidateEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateIngressFlowProjectionRoot().name(), EgressFlow.class);
     }
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
@@ -66,12 +66,12 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static IngressFlow getIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build(),
+        return executeQuery(dgsQueryExecutor, GetIngressFlowGraphQLQuery.newRequest().flowName("sampleIngress").build(),
                 new GetIngressFlowProjectionRoot().name(), IngressFlow.class);
     }
 
     public static EgressFlow getEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build(),
+        return executeQuery(dgsQueryExecutor, GetEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build(),
                 new GetEgressFlowProjectionRoot().name(), EgressFlow.class);
     }
 
@@ -114,19 +114,19 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static boolean startIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build());
+        return executeQuery(dgsQueryExecutor, StartIngressFlowGraphQLQuery.newRequest().flowName("sampleIngress").build());
     }
 
     public static boolean stopIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopIngressFlowGraphQLQuery.newRequest().flowName("ingressFlow").build());
+        return executeQuery(dgsQueryExecutor, StopIngressFlowGraphQLQuery.newRequest().flowName("sampleIngress").build());
     }
 
     public static boolean startEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build());
+        return executeQuery(dgsQueryExecutor, StartEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build());
     }
 
     public static boolean stopEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopEgressFlowGraphQLQuery.newRequest().flowName("egressFlow").build());
+        return executeQuery(dgsQueryExecutor, StopEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build());
     }
 
     public static boolean savePluginVariables(DgsQueryExecutor dgsQueryExecutor) {

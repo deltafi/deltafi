@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.enrich;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
@@ -42,13 +41,13 @@ public abstract class SimpleEnrichAction extends EnrichAction<ActionParameters> 
     }
 
     @Override
-    public final Result enrich(@NotNull ActionContext context,
-                               @NotNull ActionParameters params,
-                               @NotNull SourceInfo sourceInfo,
-                               @NotNull Content content,
-                               @NotNull Map<String, String> metadata,
-                               @NotNull Map<String, Domain> domains,
-                               @NotNull Map<String, Enrichment> enrichment) {
+    public final EnrichResultType enrich(@NotNull ActionContext context,
+                                         @NotNull ActionParameters params,
+                                         @NotNull SourceInfo sourceInfo,
+                                         @NotNull Content content,
+                                         @NotNull Map<String, String> metadata,
+                                         @NotNull Map<String, Domain> domains,
+                                         @NotNull Map<String, Enrichment> enrichment) {
         return enrich(context, sourceInfo, content, metadata, domains, enrichment);
     }
 
@@ -66,10 +65,10 @@ public abstract class SimpleEnrichAction extends EnrichAction<ActionParameters> 
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result enrich(@NotNull ActionContext context,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull Content content,
-                                  @NotNull Map<String, String> metadata,
-                                  @NotNull Map<String, Domain> domains,
-                                  @NotNull Map<String, Enrichment> enrichment);
+    public abstract EnrichResultType enrich(@NotNull ActionContext context,
+                                            @NotNull SourceInfo sourceInfo,
+                                            @NotNull Content content,
+                                            @NotNull Map<String, String> metadata,
+                                            @NotNull Map<String, Domain> domains,
+                                            @NotNull Map<String, Enrichment> enrichment);
 }

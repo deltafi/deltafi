@@ -18,8 +18,8 @@
 package org.deltafi.core.action;
 
 import org.apache.nifi.util.FlowFileUnpackagerV1;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
+import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.content.ContentReference;
@@ -110,7 +110,7 @@ class FlowfileEgressActionTest {
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
-        Result result = runTest(200, 1);
+        EgressResultType result = runTest(200, 1);
 
         assertThat(result, instanceOf(EgressResult.class));
         assertThat(result.toEvent().getDid(), equalTo(DID));
@@ -118,7 +118,7 @@ class FlowfileEgressActionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private Result runTest(int statusCode, int numTries) throws IOException {
+    private EgressResultType runTest(int statusCode, int numTries) throws IOException {
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
 
         final List<byte[]> posts = new ArrayList<>();
@@ -151,7 +151,7 @@ class FlowfileEgressActionTest {
                     };
                 }
         );
-        Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
@@ -175,7 +175,7 @@ class FlowfileEgressActionTest {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
 
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         verify(httpService, never()).post(any(), any(), any(), any());
 
@@ -198,14 +198,14 @@ class FlowfileEgressActionTest {
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new TestInputStream(CONTENT));
-        Result result = runTest(200, 1);
+        EgressResultType result = runTest(200, 1);
         assertThat(result, instanceOf(EgressResult.class));
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
-        Result result = runTest(505, 4);
+        EgressResultType result = runTest(505, 4);
 
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat(((ErrorResult) result).getErrorCause(), containsString("505"));

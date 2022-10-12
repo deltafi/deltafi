@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.validate;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -44,7 +43,7 @@ public abstract class MultipartValidateAction<P extends ActionParameters> extend
     }
 
     @Override
-    public final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+    public final ValidateResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return validate(context, params, deltaFile.getSourceInfo(), Objects.isNull(deltaFile.getFormattedData()) ? Collections.emptyList() : deltaFile.getFormattedData());
     }
 
@@ -60,5 +59,5 @@ public abstract class MultipartValidateAction<P extends ActionParameters> extend
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<FormattedData> formattedDataList);
+    public abstract ValidateResultType validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull List<FormattedData> formattedDataList);
 }

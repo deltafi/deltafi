@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.transform;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -42,9 +41,9 @@ public abstract class MultipartTransformAction<P extends ActionParameters> exten
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile,
-                                   @NotNull ActionContext context,
-                                   @NotNull P params) {
+    protected final TransformResultType execute(@NotNull DeltaFile deltaFile,
+                                                @NotNull ActionContext context,
+                                                @NotNull P params) {
         return transform(context,
                 params,
                 deltaFile.getSourceInfo(),
@@ -65,9 +64,9 @@ public abstract class MultipartTransformAction<P extends ActionParameters> exten
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result transform(@NotNull ActionContext context,
-                                     @NotNull P params,
-                                     @NotNull SourceInfo sourceInfo,
-                                     @NotNull List<Content> contentList,
-                                     @NotNull Map<String, String> metadata);
+    public abstract TransformResultType transform(@NotNull ActionContext context,
+                                                  @NotNull P params,
+                                                  @NotNull SourceInfo sourceInfo,
+                                                  @NotNull List<Content> contentList,
+                                                  @NotNull Map<String, String> metadata);
 }

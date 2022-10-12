@@ -20,9 +20,6 @@ package org.deltafi.actionkit.action.load;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.DataAmendedResult;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.ProtocolLayer;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,7 +31,7 @@ import java.util.List;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class LoadResult extends DataAmendedResult {
+public class LoadResult extends DataAmendedResult implements LoadResultType {
     private final List<Domain> domains = new ArrayList<>();
 
     /**

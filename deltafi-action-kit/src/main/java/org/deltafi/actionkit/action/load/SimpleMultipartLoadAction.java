@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.load;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
@@ -42,11 +41,11 @@ public abstract class SimpleMultipartLoadAction extends MultipartLoadAction<Acti
     }
 
     @Override
-    public final Result load(@NotNull ActionContext context,
-                             @NotNull ActionParameters params,
-                             @NotNull SourceInfo sourceInfo,
-                             @NotNull List<Content> contentList,
-                             @NotNull Map<String, String> metadata) {
+    public final LoadResultType load(@NotNull ActionContext context,
+                                     @NotNull ActionParameters params,
+                                     @NotNull SourceInfo sourceInfo,
+                                     @NotNull List<Content> contentList,
+                                     @NotNull Map<String, String> metadata) {
         return load(context, sourceInfo, contentList, metadata);
     }
 
@@ -63,8 +62,8 @@ public abstract class SimpleMultipartLoadAction extends MultipartLoadAction<Acti
      * @see org.deltafi.actionkit.action.filter.FilterResult
      * @see SplitResult
      */
-    public abstract Result load(@NotNull ActionContext context,
-                                @NotNull SourceInfo sourceInfo,
-                                @NotNull List<Content> contentList,
-                                @NotNull Map<String, String> metadata);
+    public abstract LoadResultType load(@NotNull ActionContext context,
+                                        @NotNull SourceInfo sourceInfo,
+                                        @NotNull List<Content> contentList,
+                                        @NotNull Map<String, String> metadata);
 }

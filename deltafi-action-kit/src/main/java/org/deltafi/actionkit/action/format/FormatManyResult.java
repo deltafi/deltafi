@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-public class FormatManyResult extends Result {
+public class FormatManyResult extends Result implements FormatResultType {
     private List<FormatResult> formatResults = new ArrayList<>();
 
     /**

@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.validate;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -39,7 +38,7 @@ public abstract class ValidateAction<P extends ActionParameters> extends Validat
     }
 
     @Override
-    public final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+    public final ValidateResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return validate(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData().get(0));
     }
 
@@ -55,5 +54,5 @@ public abstract class ValidateAction<P extends ActionParameters> extends Validat
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    public abstract ValidateResultType validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 }

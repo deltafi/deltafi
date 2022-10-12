@@ -25,7 +25,6 @@ import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.DeltaFiConfiguration;
 import org.deltafi.common.types.*;
 import org.deltafi.core.converters.YamlRepresenter;
 import org.deltafi.core.generated.types.*;

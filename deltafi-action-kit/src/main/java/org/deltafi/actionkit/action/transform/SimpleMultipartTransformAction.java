@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.transform;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
@@ -42,16 +41,16 @@ public abstract class SimpleMultipartTransformAction extends MultipartTransformA
     }
 
     @Override
-    public final Result transform(@NotNull ActionContext context,
-                                  @NotNull ActionParameters params,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull List<Content> contentList,
-                                  @NotNull Map<String, String> metadata) {
+    public final TransformResultType transform(@NotNull ActionContext context,
+                                               @NotNull ActionParameters params,
+                                               @NotNull SourceInfo sourceInfo,
+                                               @NotNull List<Content> contentList,
+                                               @NotNull Map<String, String> metadata) {
         return transform(context, sourceInfo, contentList, metadata);
     }
 
-    public abstract Result transform(@NotNull ActionContext context,
-                                     @NotNull SourceInfo sourceInfo,
-                                     @NotNull List<Content> contentList,
-                                     @NotNull Map<String, String> metadata);
+    public abstract TransformResultType transform(@NotNull ActionContext context,
+                                                  @NotNull SourceInfo sourceInfo,
+                                                  @NotNull List<Content> contentList,
+                                                  @NotNull Map<String, String> metadata);
 }

@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.egress;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -39,7 +38,7 @@ public abstract class EgressAction<P extends ActionParameters> extends EgressAct
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+    protected final EgressResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return egress(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData().get(0));
     }
 
@@ -55,5 +54,5 @@ public abstract class EgressAction<P extends ActionParameters> extends EgressAct
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result egress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    public abstract EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 }

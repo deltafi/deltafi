@@ -20,7 +20,7 @@ package org.deltafi.actionkit.action.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
@@ -113,7 +113,7 @@ public class ActionRunner {
 
     private void executeAction(Action<?> action, DeltaFile deltaFile, ActionContext context, Map<String, Object> params) throws JsonProcessingException {
         try (MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
-            Result result = action.executeAction(deltaFile, context, params);
+            ResultType result = action.executeAction(deltaFile, context, params);
             if (Objects.isNull(result)) {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
             }
@@ -127,7 +127,7 @@ public class ActionRunner {
         }
     }
 
-    private void postMetrics(Result result, ActionDescriptor actionDescriptor) {
+    private void postMetrics(ResultType result, ActionDescriptor actionDescriptor) {
         String ingressFlow = result.getContext().getIngressFlow();
         String egressFlow = result.getContext().getEgressFlow();
         String source = result.getContext().getName();

@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.egress;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
@@ -38,7 +37,7 @@ public abstract class SimpleEgressAction extends EgressAction<ActionParameters> 
     }
 
     @Override
-    public final Result egress(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    public final EgressResultType egress(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         return egress(context, sourceInfo, formattedData);
     }
 
@@ -53,5 +52,5 @@ public abstract class SimpleEgressAction extends EgressAction<ActionParameters> 
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result egress(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    public abstract EgressResultType egress(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 }

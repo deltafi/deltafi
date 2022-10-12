@@ -37,7 +37,7 @@ import static org.deltafi.common.metrics.MetricsUtil.*;
  */
 @Getter
 @EqualsAndHashCode
-public abstract class Result {
+public abstract class Result implements ResultType {
 
     protected final ActionContext context;
 

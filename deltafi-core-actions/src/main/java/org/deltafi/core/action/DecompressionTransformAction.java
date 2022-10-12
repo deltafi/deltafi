@@ -31,10 +31,10 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.MultipartTransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
@@ -65,11 +65,11 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
     }
 
     @Override
-    public Result transform(@NotNull ActionContext context,
-                            @NotNull DecompressionTransformParameters params,
-                            @NotNull SourceInfo sourceInfo,
-                            @NotNull List<Content> contentList,
-                            @NotNull Map<String, String> metadata) {
+    public TransformResultType transform(@NotNull ActionContext context,
+                                         @NotNull DecompressionTransformParameters params,
+                                         @NotNull SourceInfo sourceInfo,
+                                         @NotNull List<Content> contentList,
+                                         @NotNull Map<String, String> metadata) {
         TransformResult result = new TransformResult(context);
         String decompressionType = params.getDecompressionType().getValue();
 

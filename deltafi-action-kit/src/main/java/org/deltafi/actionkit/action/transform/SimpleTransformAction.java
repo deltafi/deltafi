@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.transform;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
@@ -40,11 +39,11 @@ public abstract class SimpleTransformAction extends TransformAction<ActionParame
     }
 
     @Override
-    public final Result transform(@NotNull ActionContext context,
-                                  @NotNull ActionParameters params,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull Content content,
-                                  @NotNull Map<String, String> metadata) {
+    public final TransformResultType transform(@NotNull ActionContext context,
+                                               @NotNull ActionParameters params,
+                                               @NotNull SourceInfo sourceInfo,
+                                               @NotNull Content content,
+                                               @NotNull Map<String, String> metadata) {
         return transform(context, sourceInfo, content, metadata);
     }
 
@@ -60,8 +59,8 @@ public abstract class SimpleTransformAction extends TransformAction<ActionParame
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result transform(@NotNull ActionContext context,
-                                     @NotNull SourceInfo sourceInfo,
-                                     @NotNull Content content,
-                                     @NotNull Map<String, String> metadata);
+    public abstract TransformResultType transform(@NotNull ActionContext context,
+                                                  @NotNull SourceInfo sourceInfo,
+                                                  @NotNull Content content,
+                                                  @NotNull Map<String, String> metadata);
 }

@@ -34,7 +34,7 @@ import java.util.Map;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class EnrichResult extends Result implements HasIndexedMetadata {
+public class EnrichResult extends Result implements HasIndexedMetadata, EnrichResultType {
     private final List<Enrichment> enrichments = new ArrayList<>();
     private final Map<String, String> indexedMetadata = new HashMap<>();
 

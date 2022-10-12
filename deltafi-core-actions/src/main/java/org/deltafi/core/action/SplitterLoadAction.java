@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.action;
 
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.load.MultipartLoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.common.types.ActionContext;
@@ -40,11 +40,11 @@ public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParamete
     }
 
     @Override
-    public Result load(@NotNull ActionContext context,
-                       @NotNull SplitterLoadParameters params,
-                       @NotNull SourceInfo sourceInfo,
-                       @NotNull List<Content> contentList,
-                       @NotNull Map<String, String> metadata) {
+    public LoadResultType load(@NotNull ActionContext context,
+                               @NotNull SplitterLoadParameters params,
+                               @NotNull SourceInfo sourceInfo,
+                               @NotNull List<Content> contentList,
+                               @NotNull Map<String, String> metadata) {
         SplitResult result = new SplitResult(context);
 
         for (Content content : contentList) {

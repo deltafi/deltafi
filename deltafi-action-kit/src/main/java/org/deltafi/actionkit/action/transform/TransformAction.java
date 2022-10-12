@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.transform;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFile;
@@ -41,9 +40,9 @@ public abstract class TransformAction<P extends ActionParameters> extends Transf
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile,
-                                   @NotNull ActionContext context,
-                                   @NotNull P params) {
+    protected final TransformResultType execute(@NotNull DeltaFile deltaFile,
+                                                @NotNull ActionContext context,
+                                                @NotNull P params) {
 
         return transform(context,
                 params,
@@ -52,9 +51,9 @@ public abstract class TransformAction<P extends ActionParameters> extends Transf
                 deltaFile.getLastProtocolLayerMetadataAsMap());
     }
 
-    public abstract Result transform(@NotNull ActionContext context,
-                                     @NotNull P params,
-                                     @NotNull SourceInfo sourceInfo,
-                                     @NotNull Content content,
-                                     @NotNull Map<String, String> metadata);
+    public abstract TransformResultType transform(@NotNull ActionContext context,
+                                                  @NotNull P params,
+                                                  @NotNull SourceInfo sourceInfo,
+                                                  @NotNull Content content,
+                                                  @NotNull Map<String, String> metadata);
 }

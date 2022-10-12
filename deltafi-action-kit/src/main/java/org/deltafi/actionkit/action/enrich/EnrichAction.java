@@ -17,12 +17,7 @@
  */
 package org.deltafi.actionkit.action.enrich;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,7 +37,7 @@ public abstract class EnrichAction<P extends ActionParameters> extends EnrichAct
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+    protected final EnrichResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return enrich(context,
                 params,
                 deltaFile.getSourceInfo(),
@@ -67,11 +62,11 @@ public abstract class EnrichAction<P extends ActionParameters> extends EnrichAct
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result enrich(@NotNull ActionContext context,
-                                  @NotNull P params,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull Content content,
-                                  @NotNull Map<String, String> metadata,
-                                  @NotNull Map<String, Domain> domains,
-                                  @NotNull Map<String, Enrichment> enrichment);
+    public abstract EnrichResultType enrich(@NotNull ActionContext context,
+                                            @NotNull P params,
+                                            @NotNull SourceInfo sourceInfo,
+                                            @NotNull Content content,
+                                            @NotNull Map<String, String> metadata,
+                                            @NotNull Map<String, Domain> domains,
+                                            @NotNull Map<String, Enrichment> enrichment);
 }

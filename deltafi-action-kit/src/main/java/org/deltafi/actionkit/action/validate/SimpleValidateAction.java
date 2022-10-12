@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.validate;
 
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SourceInfo;
@@ -37,7 +36,7 @@ public abstract class SimpleValidateAction extends ValidateAction<ActionParamete
     }
 
     @Override
-    public final Result validate(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    public final ValidateResultType validate(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         return validate(context, sourceInfo, formattedData);
     }
 
@@ -52,5 +51,5 @@ public abstract class SimpleValidateAction extends ValidateAction<ActionParamete
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result validate(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    public abstract ValidateResultType validate(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
 }

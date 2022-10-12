@@ -33,7 +33,7 @@ import java.util.Map;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class SplitResult extends Result {
+public class SplitResult extends Result implements LoadResultType {
     List<SplitInput> splitInputs = new ArrayList<>();
 
     /**

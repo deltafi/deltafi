@@ -116,7 +116,13 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {"deltafi.deltaFileTtl=3d", "schedule.actionEvents=false", "schedule.maintenance=false", "schedule.flowSync=false", "schedule.propertySync=false", "metrics.enabled=false"})
+@TestPropertySource(properties = {
+		"deltafi.deltaFileTtl=3d",
+		"schedule.actionEvents=false",
+		"schedule.maintenance=false",
+		"schedule.flowSync=false",
+		"schedule.propertySync=false",
+		"metrics.enabled=false" })
 @Testcontainers
 class DeltaFiCoreApplicationTests {
 
@@ -162,6 +168,9 @@ class DeltaFiCoreApplicationTests {
 	IngressFlowService ingressFlowService;
 
 	@Autowired
+	EgressFlowService egressFlowService;
+
+	@Autowired
 	IngressFlowRepo ingressFlowRepo;
 
 	@Autowired
@@ -178,6 +187,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	EnrichFlowRepo enrichFlowRepo;
+
+	@Autowired
+	EnrichFlowService enrichFlowService;
 
 	@Autowired
 	PluginVariableRepo pluginVariableRepo;
@@ -203,6 +215,9 @@ class DeltaFiCoreApplicationTests {
 	@MockBean
 	MetricRepository metricRepository;
 
+	@MockBean
+	ActionEventQueue actionEventQueue;
+
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	// mongo eats microseconds, jump through hoops
@@ -221,19 +236,6 @@ class DeltaFiCoreApplicationTests {
 	@TestConfiguration
 	@EnableConfigurationProperties(ConfigServerProperties.class)
 	public static class Configuration {
-		@Bean
-		public ActionEventQueue actionEventQueue() {
-			ActionEventQueue actionEventQueue = Mockito.mock(ActionEventQueue.class);
-			try {
-				// Allows the ActionEventScheduler to not hold up other scheduled tasks (by default, Spring Boot uses a
-				// single thread for all scheduled tasks). Throwing an exception here breaks it out of its tight loop.
-				Mockito.when(actionEventQueue.takeResult()).thenThrow(new RuntimeException());
-			} catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-				e.printStackTrace();
-			}
-			return actionEventQueue;
-		}
-
 		// Create the property related beans that are normally created in the DeltaFiConfigDataLocationResolver
 		@Bean
 		public StateHolderService stateHolderService() {
@@ -256,9 +258,6 @@ class DeltaFiCoreApplicationTests {
 			return new DeltaFiCompositeEnvironmentRepository(new ArrayList<>(List.of(mongoEnvironmentRepository)), false, stateHolderService);
 		}
 	}
-
-	@Autowired
-	ActionEventQueue actionEventQueue;
 
 	final static List <KeyValue> loadSampleMetadata = Arrays.asList(
 			new KeyValue("loadSampleType", "load-sample-type"),
@@ -290,25 +289,30 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void loadIngressConfig() {
+		ingressFlowRepo.deleteAll();
+
 		LoadActionConfiguration lc = new LoadActionConfiguration();
-		lc.setName("SampleLoadAction");
+		lc.setName("sampleIngress.SampleLoadAction");
 		TransformActionConfiguration tc = new TransformActionConfiguration();
-		tc.setName("Utf8TransformAction");
+		tc.setName("sampleIngress.Utf8TransformAction");
 		TransformActionConfiguration tc2 = new TransformActionConfiguration();
-		tc2.setName("SampleTransformAction");
+		tc2.setName("sampleIngress.SampleTransformAction");
 
 		IngressFlow sampleIngressFlow = buildRunningFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2));
 		IngressFlow retryFlow = buildRunningFlow("theFlow", lc, null);
 		IngressFlow childFlow = buildRunningFlow("childFlow", lc, List.of(tc2));
 
 		ingressFlowRepo.saveAll(List.of(sampleIngressFlow, retryFlow, childFlow));
+		ingressFlowService.refreshCache();
 	}
 
     void loadEgressConfig() {
+		egressFlowRepo.deleteAll();
+
 		ValidateActionConfiguration authValidate = new ValidateActionConfiguration();
-		authValidate.setName("AuthorityValidateAction");
+		authValidate.setName("sampleEgress.AuthorityValidateAction");
 		ValidateActionConfiguration sampleValidate = new ValidateActionConfiguration();
-		sampleValidate.setName("SampleValidateAction");
+		sampleValidate.setName("sampleEgress.SampleValidateAction");
 
 		FormatActionConfiguration sampleFormat = new FormatActionConfiguration();
 		sampleFormat.setName("sampleEgress.SampleFormatAction");
@@ -316,23 +320,26 @@ class DeltaFiCoreApplicationTests {
 		sampleFormat.setRequiresEnrichments(List.of("sampleEnrichment"));
 
 		EgressActionConfiguration sampleEgress = new EgressActionConfiguration();
-		sampleEgress.setName("SampleEgressAction");
+		sampleEgress.setName("sampleEgress.SampleEgressAction");
 
 		EgressFlow sampleEgressFlow = buildRunningFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress);
 		sampleEgressFlow.setValidateActions(List.of(authValidate, sampleValidate));
 
 		FormatActionConfiguration errorFormat = new FormatActionConfiguration();
-		errorFormat.setName("ErrorFormatAction");
+		errorFormat.setName("sampleEgress.ErrorFormatAction");
 		errorFormat.setRequiresDomains(List.of("error"));
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration();
-		errorEgress.setName("ErrorEgressAction");
+		errorEgress.setName("sampleEgress.ErrorEgressAction");
 		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress);
 
 		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
+		egressFlowService.refreshCache();
     }
 
 	void loadEnrichConfig() {
+		enrichFlowRepo.deleteAll();
 		enrichFlowRepo.save(buildEnrichFlow(FlowState.RUNNING));
+		enrichFlowService.refreshCache();
 	}
 
 	void loadTestProperties() {
@@ -589,7 +596,7 @@ class DeltaFiCoreApplicationTests {
 	DeltaFile postIngressDeltaFile(String did) {
 		DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
 		deltaFile.setIngressBytes(500L);
-		deltaFile.queueAction("Utf8TransformAction");
+		deltaFile.queueAction("sampleIngress.Utf8TransformAction");
 		deltaFile.setSourceInfo(new SourceInfo("input.txt", INGRESS_FLOW_NAME, new ArrayList<>(List.of(new KeyValue("AuthorizedBy", "XYZ"), new KeyValue("removeMe", "whatever")))));
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION, List.of(content), null));
@@ -605,16 +612,16 @@ class DeltaFiCoreApplicationTests {
 				DeltaFile.class);
 
 		assertEquals(did, deltaFileFromDgs.getDid());
-		verifyActionEventResults(postIngressDeltaFile(did), "Utf8TransformAction");
+		verifyActionEventResults(postIngressDeltaFile(did), "sampleIngress.Utf8TransformAction");
 	}
 
 	DeltaFile postTransformUtf8DeltaFile(String did) {
 		DeltaFile deltaFile = postIngressDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.INGRESS);
-		deltaFile.completeAction("Utf8TransformAction", START_TIME, STOP_TIME);
-		deltaFile.queueAction("SampleTransformAction");
+		deltaFile.completeAction("sampleIngress.Utf8TransformAction", START_TIME, STOP_TIME);
+		deltaFile.queueAction("sampleIngress.SampleTransformAction");
 		Content content = Content.newBuilder().name("file.json").contentReference(new ContentReference("utf8ObjectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("Utf8TransformAction", List.of(content), null));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.Utf8TransformAction", List.of(content), null));
 		return deltaFile;
 	}
 
@@ -628,16 +635,16 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		verifyActionEventResults(postTransformUtf8DeltaFile(did), "SampleTransformAction");
+		verifyActionEventResults(postTransformUtf8DeltaFile(did), "sampleIngress.SampleTransformAction");
 	}
 
 	DeltaFile postTransformDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.INGRESS);
-		deltaFile.completeAction("SampleTransformAction", START_TIME, STOP_TIME);
-		deltaFile.queueAction("SampleLoadAction");
+		deltaFile.completeAction("sampleIngress.SampleTransformAction", START_TIME, STOP_TIME);
+		deltaFile.queueAction("sampleIngress.SampleLoadAction");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleTransformAction", List.of(content), transformSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleTransformAction", List.of(content), transformSampleMetadata));
 		return deltaFile;
 	}
 
@@ -651,13 +658,13 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		verifyActionEventResults(postTransformDeltaFile(did), "SampleLoadAction");
+		verifyActionEventResults(postTransformDeltaFile(did), "sampleIngress.SampleLoadAction");
 	}
 
 	DeltaFile postTransformHadErrorDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR);
-		deltaFile.errorAction("SampleTransformAction", START_TIME, STOP_TIME, "transform failed", "message");
+		deltaFile.errorAction("sampleIngress.SampleTransformAction", START_TIME, STOP_TIME, "transform failed", "message");
 		/*
 		 * Even though this action is being used as an ERROR, fake its
 		 * protocol layer results so that we can verify the State Machine
@@ -665,7 +672,7 @@ class DeltaFiCoreApplicationTests {
 		 * and not attempt to queue the Load action, too.
 		 */
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleTransformAction", List.of(content), transformSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleTransformAction", List.of(content), transformSampleMetadata));
 		return deltaFile;
 	}
 
@@ -692,9 +699,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertTrue(retryResults.get(0).getSuccess());
 
-		DeltaFile expected = postRetryTransformDeltaFile(did, "SampleTransformAction");
+		DeltaFile expected = postRetryTransformDeltaFile(did, "sampleIngress.SampleTransformAction");
 		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
-		verifyActionEventResults(expected, "SampleTransformAction");
+		verifyActionEventResults(expected, "sampleIngress.SampleTransformAction");
 	}
 
 	@Test
@@ -718,11 +725,11 @@ class DeltaFiCoreApplicationTests {
 	DeltaFile postLoadDeltaFile(String did) {
 		DeltaFile deltaFile = postTransformDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ENRICH);
-		deltaFile.queueAction("SampleDomainAction");
-		deltaFile.completeAction("SampleLoadAction", START_TIME, STOP_TIME);
+		deltaFile.queueAction("sampleEnrich.SampleDomainAction");
+		deltaFile.completeAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sampleDomain", "sampleDomainValue", "application/octet-stream");
 		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
-		deltaFile.getProtocolStack().add(new ProtocolLayer("SampleLoadAction", List.of(content), loadSampleMetadata));
+		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleLoadAction", List.of(content), loadSampleMetadata));
 		return deltaFile;
 	}
 
@@ -737,12 +744,12 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		verifyActionEventResults(postLoadDeltaFile(did), "SampleDomainAction");
+		verifyActionEventResults(postLoadDeltaFile(did), "sampleEnrich.SampleDomainAction");
 	}
 
 	DeltaFile post09MissingEnrichDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
-		deltaFile.completeAction("SampleDomainAction", START_TIME, STOP_TIME);
+		deltaFile.completeAction("sampleEnrich.SampleDomainAction", START_TIME, STOP_TIME);
 		deltaFile.addIndexedMetadata(Map.of("domainKey", "domain metadata"));
 		deltaFile.setStage(DeltaFileStage.ERROR);
 		deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
@@ -810,15 +817,15 @@ class DeltaFiCoreApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEqualsIgnoringDates(child1.forQueue("SampleTransformAction"), actionInputs.get(0).getDeltaFile());
-		assertEqualsIgnoringDates(child2.forQueue("SampleTransformAction"), actionInputs.get(1).getDeltaFile());
+		assertEqualsIgnoringDates(child1.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(0).getDeltaFile());
+		assertEqualsIgnoringDates(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFile());
 	}
 
 	DeltaFile postDomainDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ENRICH);
-		deltaFile.queueAction("SampleEnrichAction");
-		deltaFile.completeAction("SampleDomainAction", START_TIME, STOP_TIME);
+		deltaFile.queueAction("sampleEnrich.SampleEnrichAction");
+		deltaFile.completeAction("sampleEnrich.SampleDomainAction", START_TIME, STOP_TIME);
 		deltaFile.addIndexedMetadata(Map.of("domainKey", "domain metadata"));
 		return deltaFile;
 	}
@@ -833,14 +840,14 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		verifyActionEventResults(postDomainDeltaFile(did), "SampleEnrichAction");
+		verifyActionEventResults(postDomainDeltaFile(did), "sampleEnrich.SampleEnrichAction");
 	}
 
 	DeltaFile postEnrichDeltaFile(String did) {
 		DeltaFile deltaFile = postDomainDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.queueAction("sampleEgress.SampleFormatAction");
-		deltaFile.completeAction("SampleEnrichAction", START_TIME, STOP_TIME);
+		deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
 		deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
 		deltaFile.addIndexedMetadata(Map.of("first", "one", "second", "two"));
 		deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
@@ -863,15 +870,15 @@ class DeltaFiCoreApplicationTests {
 	DeltaFile postFormatDeltaFile(String did) {
 		DeltaFile deltaFile = postEnrichDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
-		deltaFile.queueActionsIfNew(Arrays.asList("AuthorityValidateAction", "SampleValidateAction"));
+		deltaFile.queueActionsIfNew(Arrays.asList("sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction"));
 		deltaFile.completeAction("sampleEgress.SampleFormatAction", START_TIME, STOP_TIME);
 		deltaFile.getFormattedData().add(FormattedData.newBuilder()
 				.formatAction("sampleEgress.SampleFormatAction")
 				.filename("output.txt")
 				.metadata(Arrays.asList(new KeyValue("key1", "value1"), new KeyValue("key2", "value2")))
 				.contentReference(new ContentReference("formattedObjectName", 0, 1000, did, "application/octet-stream"))
-				.egressActions(Collections.singletonList("SampleEgressAction"))
-				.validateActions(List.of("AuthorityValidateAction", "SampleValidateAction"))
+				.egressActions(Collections.singletonList("sampleEgress.SampleEgressAction"))
+				.validateActions(List.of("sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction"))
 				.build());
 		return deltaFile;
 	}
@@ -886,7 +893,7 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		verifyActionEventResults(postFormatDeltaFile(did), "AuthorityValidateAction", "SampleValidateAction");
+		verifyActionEventResults(postFormatDeltaFile(did), "sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction");
 	}
 
 	@Test
@@ -931,7 +938,7 @@ class DeltaFiCoreApplicationTests {
 	DeltaFile postValidateDeltaFile(String did) {
 		DeltaFile deltaFile = postFormatDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
-		deltaFile.completeAction("SampleValidateAction", START_TIME, STOP_TIME);
+		deltaFile.completeAction("sampleEgress.SampleValidateAction", START_TIME, STOP_TIME);
 		return deltaFile;
 	}
 
@@ -955,7 +962,7 @@ class DeltaFiCoreApplicationTests {
 	DeltaFile postErrorDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR);
-		deltaFile.errorAction("AuthorityValidateAction", START_TIME, STOP_TIME, "Authority XYZ not recognized", "Dead beef feed face cafe");
+		deltaFile.errorAction("sampleEgress.AuthorityValidateAction", START_TIME, STOP_TIME, "Authority XYZ not recognized", "Dead beef feed face cafe");
 		return deltaFile;
 	}
 
@@ -999,7 +1006,7 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
-		verifyActionEventResults(postResumeDeltaFile(did, "AuthorityValidateAction"), "AuthorityValidateAction");
+		verifyActionEventResults(postResumeDeltaFile(did, "sampleEgress.AuthorityValidateAction"), "sampleEgress.AuthorityValidateAction");
 	}
 
 	@Test
@@ -1085,8 +1092,8 @@ class DeltaFiCoreApplicationTests {
 	DeltaFile postValidateAuthorityDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.EGRESS);
-		deltaFile.queueAction("SampleEgressAction");
-		deltaFile.completeAction("AuthorityValidateAction", START_TIME, STOP_TIME);
+		deltaFile.queueAction("sampleEgress.SampleEgressAction");
+		deltaFile.completeAction("sampleEgress.AuthorityValidateAction", START_TIME, STOP_TIME);
 		return deltaFile;
 	}
 
@@ -1100,14 +1107,14 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		verifyActionEventResults(postValidateAuthorityDeltaFile(did), "SampleEgressAction");
+		verifyActionEventResults(postValidateAuthorityDeltaFile(did), "sampleEgress.SampleEgressAction");
 	}
 
 	DeltaFile postEgressDeltaFile(String did) {
 		DeltaFile deltaFile = postValidateAuthorityDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.COMPLETE);
 		deltaFile.setEgressed(true);
-		deltaFile.completeAction("SampleEgressAction", START_TIME, STOP_TIME);
+		deltaFile.completeAction("sampleEgress.SampleEgressAction", START_TIME, STOP_TIME);
 		deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
 		return deltaFile;
 	}
@@ -1150,11 +1157,11 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile expected = postIngressDeltaFile(did);
 		expected.setDid(parent.getChildDids().get(0));
 		expected.setParentDids(List.of(did));
-		expected.getActions().get(1).setName("SampleLoadAction");
+		expected.getActions().get(1).setName("sampleIngress.SampleLoadAction");
 		expected.getSourceInfo().setFilename("newFilename");
 		expected.getSourceInfo().setFlow("theFlow");
 		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("sourceInfo.filename.original", "input.txt"), new KeyValue("sourceInfo.flow.original", INGRESS_FLOW_NAME), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
-		verifyActionEventResults(expected, "SampleLoadAction");
+		verifyActionEventResults(expected, "sampleIngress.SampleLoadAction");
 
 		List<RetryResult> secondResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("23.replay"), did),
@@ -1207,23 +1214,70 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testFilterTransform() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postIngressDeltaFile(did), "sampleIngress.Utf8TransformAction", true);
+	}
+
+	@Test
+	void testFilterLoad() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postTransformDeltaFile(did), "sampleIngress.SampleLoadAction", true);
+	}
+
+	@Test
+	void testFilterDomain() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postLoadDeltaFile(did), "sampleEnrich.SampleDomainAction", false);
+	}
+
+	@Test
+	void testFilterEnrich() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postDomainDeltaFile(did), "sampleEnrich.SampleEnrichAction", false);
+	}
+
+	@Test
+	void testFilterFormat() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postEnrichDeltaFile(did), "sampleEgress.SampleFormatAction", true);
+	}
+
+	@Test
+	void testFilterValidate() throws IOException {
+		String did = UUID.randomUUID().toString();
+		verifyFiltered(postValidateDeltaFile(did), "sampleEgress.AuthorityValidateAction", true);
+	}
+
+	@Test
 	void testFilterEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
+		verifyFiltered(postValidateAuthorityDeltaFile(did), "sampleEgress.SampleEgressAction", true);
+	}
+
+	private void verifyFiltered(DeltaFile deltaFile, String filteredAction, boolean filteringAllowed) throws IOException {
+		deltaFileRepo.save(deltaFile);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("filter"), did, "SampleEgressAction"),
+				String.format(graphQL("filter"), deltaFile.getDid(), filteredAction),
 				"data." + DgsConstants.MUTATION.ActionEvent,
 				DeltaFile.class);
 
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		Action lastAction = deltaFile.getActions().get(deltaFile.getActions().size()-1);
-		assertEquals("SampleEgressAction", lastAction.getName());
-		assertEquals(ActionState.FILTERED, lastAction.getState());
-		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
-		assertEquals(true, deltaFile.getFiltered());
+		DeltaFile actual = deltaFilesService.getDeltaFile(deltaFile.getDid());
+		Action action = actual.getActions().stream().filter(a -> a.getName().equals(filteredAction)).findFirst().orElse(null);
+		assert action != null;
 
-		Mockito.verify(actionEventQueue, never()).putActions(any());
+		if (filteringAllowed) {
+			assertEquals(ActionState.FILTERED, action.getState());
+			assertEquals(DeltaFileStage.COMPLETE, actual.getStage());
+			assertTrue(actual.getFiltered());
+
+			Mockito.verify(actionEventQueue, never()).putActions(any());
+		} else {
+			assertEquals(ActionState.ERROR, action.getState());
+			assertEquals(DeltaFileStage.ERROR, actual.getStage());
+			assertFalse(actual.getFiltered());
+		}
 	}
 
 	@Test
@@ -1250,7 +1304,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void findConfigsTest() {
-		String name = "SampleLoadAction";
+		String name = "sampleIngress.SampleLoadAction";
 
 		ConfigQueryInput configQueryInput = ConfigQueryInput.newBuilder().configType(ConfigType.LOAD_ACTION).name(name).build();
 
@@ -1358,8 +1412,8 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
-		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> "ingressFlow".equals(ingressFlows.get(0).getName()));
-		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> "egressFlow".equals(egressFlows.get(0).getName()));
+		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> INGRESS_FLOW_NAME.equals(ingressFlows.get(0).getName()));
+		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
 		assertThat(flows.getEnrich()).hasSize(0);
 
 		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
@@ -1373,40 +1427,40 @@ class DeltaFiCoreApplicationTests {
 	void getAllFlows() {
 		clearForFlowTests();
 		IngressFlow ingressFlow = new IngressFlow();
-		ingressFlow.setName("ingressFlow");
+		ingressFlow.setName(INGRESS_FLOW_NAME);
 
 		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName("egressFlow");
+		egressFlow.setName(EGRESS_FLOW_NAME);
 
 		ingressFlowRepo.save(ingressFlow);
 		egressFlowRepo.save(egressFlow);
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getAllFlows(dgsQueryExecutor);
-		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> "ingressFlow".equals(ingressFlows.get(0).getName()));
-		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> "egressFlow".equals(egressFlows.get(0).getName()));
+		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> INGRESS_FLOW_NAME.equals(ingressFlows.get(0).getName()));
+		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
 	}
 
 	@Test
 	void getIngressFlow() {
 		clearForFlowTests();
 		IngressFlow ingressFlow = new IngressFlow();
-		ingressFlow.setName("ingressFlow");
+		ingressFlow.setName(INGRESS_FLOW_NAME);
 		ingressFlowRepo.save(ingressFlow);
 
 		IngressFlow foundFlow = FlowPlanDatafetcherTestHelper.getIngressFlow(dgsQueryExecutor);
 		assertThat(foundFlow).isNotNull();
-		assertThat(foundFlow.getName()).isEqualTo("ingressFlow");
+		assertThat(foundFlow.getName()).isEqualTo(INGRESS_FLOW_NAME);
 	}
 
 	@Test
 	void getEgressFlow() {
 		clearForFlowTests();
 		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName("egressFlow");
+		egressFlow.setName(EGRESS_FLOW_NAME);
 		egressFlowRepo.save(egressFlow);
 		EgressFlow foundFlow = FlowPlanDatafetcherTestHelper.getEgressFlow(dgsQueryExecutor);
 		assertThat(foundFlow).isNotNull();
-		assertThat(foundFlow.getName()).isEqualTo("egressFlow");
+		assertThat(foundFlow.getName()).isEqualTo(EGRESS_FLOW_NAME);
 	}
 
 	@Test
@@ -1445,13 +1499,13 @@ class DeltaFiCoreApplicationTests {
 		assertThat(actionFamilies.size()).isEqualTo(8);
 
 		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains("IngressAction");
-		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
-		assertThat(getActionNames(actionFamilies, "LOAD")).hasSize(1).contains("SampleLoadAction");
-		assertThat(getActionNames(actionFamilies, "DOMAIN")).hasSize(1).contains("SampleDomainAction");
-		assertThat(getActionNames(actionFamilies, "ENRICH")).hasSize(1).contains("SampleEnrichAction");
+		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("sampleIngress.Utf8TransformAction", "sampleIngress.SampleTransformAction");
+		assertThat(getActionNames(actionFamilies, "LOAD")).hasSize(1).contains("sampleIngress.SampleLoadAction");
+		assertThat(getActionNames(actionFamilies, "DOMAIN")).hasSize(1).contains("sampleEnrich.SampleDomainAction");
+		assertThat(getActionNames(actionFamilies, "ENRICH")).hasSize(1).contains("sampleEnrich.SampleEnrichAction");
 		assertThat(getActionNames(actionFamilies, "FORMAT")).hasSize(1).contains("sampleEgress.SampleFormatAction");
 		assertThat(getActionNames(actionFamilies, "VALIDATE")).isEmpty();
-		assertThat(getActionNames(actionFamilies, "EGRESS")).hasSize(1).contains("SampleEgressAction");
+		assertThat(getActionNames(actionFamilies, "EGRESS")).hasSize(1).contains("sampleEgress.SampleEgressAction");
 	}
 
 	@Test
@@ -1808,7 +1862,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile second = deltaFilesService.ingress(INGRESS_INPUT_2);
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(input.getDid());
-		deltaFile.errorAction("SampleLoadAction", START_TIME, STOP_TIME, "blah", "blah");
+		deltaFile.errorAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME, "blah", "blah");
 		deltaFilesService.advanceAndSave(deltaFile);
 
 		DeltaFile erroredFile = deltaFilesService.getDeltaFile(input.getDid());
@@ -3078,13 +3132,13 @@ class DeltaFiCoreApplicationTests {
 
 	private IngressFlow buildIngressFlow(FlowState flowState) {
 		LoadActionConfiguration lc = new LoadActionConfiguration();
-		lc.setName("SampleLoadAction");
+		lc.setName("sampleIngress.SampleLoadAction");
 		TransformActionConfiguration tc = new TransformActionConfiguration();
-		tc.setName("Utf8TransformAction");
+		tc.setName("sampleIngress.Utf8TransformAction");
 		TransformActionConfiguration tc2 = new TransformActionConfiguration();
-		tc2.setName("SampleTransformAction");
+		tc2.setName("sampleIngress.SampleTransformAction");
 
-		return buildFlow("ingressFlow", lc, List.of(tc, tc2), flowState);
+		return buildFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), flowState);
 	}
 
 	private IngressFlow buildRunningFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms) {
@@ -3107,21 +3161,21 @@ class DeltaFiCoreApplicationTests {
 		sampleFormat.setRequiresEnrichments(List.of("sampleEnrichment"));
 
 		EgressActionConfiguration sampleEgress = new EgressActionConfiguration();
-		sampleEgress.setName("SampleEgressAction");
+		sampleEgress.setName("sampleEgress.SampleEgressAction");
 
-		return buildFlow("egressFlow", sampleFormat, sampleEgress, flowState);
+		return buildFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, flowState);
 	}
 
 	private EnrichFlow buildEnrichFlow(FlowState flowState) {
 		EnrichFlow enrichFlow = new EnrichFlow();
-		enrichFlow.setName("enrich");
+		enrichFlow.setName("sampleEnrich");
 
 		DomainActionConfiguration sampleDomain = new DomainActionConfiguration();
-		sampleDomain.setName("SampleDomainAction");
+		sampleDomain.setName("sampleEnrich.SampleDomainAction");
 		sampleDomain.setRequiresDomains(List.of("sampleDomain"));
 
 		EnrichActionConfiguration sampleEnrich = new EnrichActionConfiguration();
-		sampleEnrich.setName("SampleEnrichAction");
+		sampleEnrich.setName("sampleEnrich.SampleEnrichAction");
 		sampleEnrich.setRequiresDomains(List.of("sampleDomain"));
 		sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
 
@@ -3155,10 +3209,13 @@ class DeltaFiCoreApplicationTests {
 	void clearForFlowTests() {
 		ingressFlowRepo.deleteAll();
 		ingressFlowPlanRepo.deleteAll();
-		enrichFlowPlanRepo.deleteAll();
+		ingressFlowService.refreshCache();
 		enrichFlowRepo.deleteAll();
+		enrichFlowPlanRepo.deleteAll();
+		enrichFlowService.refreshCache();
 		egressFlowRepo.deleteAll();
 		egressFlowPlanRepo.deleteAll();
+		egressFlowService.refreshCache();
 		pluginVariableRepo.deleteAll();
 	}
 

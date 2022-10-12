@@ -71,9 +71,9 @@ public abstract class Action<P extends ActionParameters> {
      * @return An action result object.  If there is an error, an ErrorResult object should be returned.
      * @see ErrorResult
      */
-    protected abstract Result execute(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull P params);
+    protected abstract ResultType execute(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull P params);
 
-    public Result executeAction(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull Map<String, Object> params) {
+    public ResultType executeAction(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull Map<String, Object> params) {
         return execute(deltaFile, context, convertToParams(params));
     }
 

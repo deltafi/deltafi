@@ -19,8 +19,8 @@ package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.nifi.util.FlowFilePackagerV1;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
+import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -50,7 +50,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
                 "Egresses content and attributes in a NiFi V1 FlowFile (application/flowfile)");
     }
 
-    protected Result doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
             FlowFilePackagerV1 packager = new FlowFilePackagerV1();
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {

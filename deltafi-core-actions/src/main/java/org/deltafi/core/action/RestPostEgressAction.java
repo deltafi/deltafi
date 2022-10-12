@@ -21,8 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
+import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -49,7 +49,7 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
         super(RestPostEgressParameters.class, "Egresses to a REST endpoint");
     }
 
-    protected Result doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
         try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
                     buildHeadersMapString(context.getDid(), sourceInfo, formattedData, context.getEgressFlow())), inputStream, formattedData.getContentReference().getMediaType());

@@ -20,8 +20,8 @@ package org.deltafi.core.action;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.egress.EgressResult;
+import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.http.HttpService;
@@ -96,7 +96,7 @@ class RestPostEgressActionTest {
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
-        Result result = runTest(200, "good job", 1);
+        EgressResultType result = runTest(200, "good job", 1);
 
         assertTrue(result instanceof EgressResult);
         assertEquals(DID, result.toEvent().getDid());
@@ -104,7 +104,7 @@ class RestPostEgressActionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private Result runTest(int statusCode, String responseBody, int numTries) throws IOException {
+    private EgressResultType runTest(int statusCode, String responseBody, int numTries) throws IOException {
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
         HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
             @Override
@@ -152,7 +152,7 @@ class RestPostEgressActionTest {
         } else {
             when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
         }
-        Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
@@ -179,7 +179,7 @@ class RestPostEgressActionTest {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
 
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        Result result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
 
         verify(httpService, never()).post(any(), any(), any(), any());
 
@@ -191,14 +191,14 @@ class RestPostEgressActionTest {
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new TestInputStream(DATA));
-        Result result = runTest(200, "good job", 1);
+        EgressResultType result = runTest(200, "good job", 1);
         assertTrue(result instanceof EgressResult);
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
-        Result result = runTest(500, "uh oh", 4);
+        EgressResultType result = runTest(500, "uh oh", 4);
 
         assertTrue(result instanceof ErrorResult);
         assertTrue(((ErrorResult) result).getErrorCause().contains("500"));
@@ -208,7 +208,7 @@ class RestPostEgressActionTest {
     @Test
     public void badPost() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
-        Result result = runTest(-1, "uh oh", 4);
+        EgressResultType result = runTest(-1, "uh oh", 4);
 
         assertTrue(result instanceof ErrorResult);
         assertTrue(((ErrorResult) result).getErrorCause().contains("Service post failure"));

@@ -17,7 +17,7 @@
  */
 package org.deltafi.actionkit.action.domain;
 
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +35,7 @@ public abstract class DomainAction<P extends ActionParameters> extends DomainAct
     }
 
     @Override
-    protected final Result execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
+    protected final ResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return extractAndValidate(context,
                 params,
                 deltaFile.getSourceInfo(),
@@ -56,9 +56,9 @@ public abstract class DomainAction<P extends ActionParameters> extends DomainAct
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract Result extractAndValidate(@NotNull ActionContext context,
-                                  @NotNull P params,
-                                  @NotNull SourceInfo sourceInfo,
-                                  @NotNull Map<String, String> metadata,
-                                  @NotNull Map<String, Domain> domains);
+    public abstract DomainResultType extractAndValidate(@NotNull ActionContext context,
+                                                        @NotNull P params,
+                                                        @NotNull SourceInfo sourceInfo,
+                                                        @NotNull Map<String, String> metadata,
+                                                        @NotNull Map<String, Domain> domains);
 }
