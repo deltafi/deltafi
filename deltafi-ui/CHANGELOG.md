@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.99.0]
 
 ### Changed
 
@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added New Dashboard Panels (#265)
 - Added Import and Rollback capabilities to System Snapshots page (#259)
 - Page size on Search and Errors pages is now persisted (#272)
+- Added link to internal documentation (#280)
 
 ### Fixed
 
@@ -427,7 +428,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.5...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.0...main
+[0.99.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.5...0.99.0
 [0.98.5]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.4...0.98.5
 [0.98.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.3...0.98.4
 [0.98.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.2...0.98.3

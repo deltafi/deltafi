@@ -192,6 +192,7 @@ const staticMenuItems = ref([
     ],
   },
   { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions" },
+  { name: "Documentation", icon: "fas fa-book fa-fw", url: "/docs" },
 ]);
 
 const menuItems = computed(() => {
