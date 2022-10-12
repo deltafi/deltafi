@@ -1,4 +1,5 @@
 plugins {
+    id 'groovy-gradle-plugin'
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'com.gradle.plugin-publish' version '1.0.0'
@@ -9,11 +10,18 @@ description = 'DeltaFi gradle plugin'
 
 license {
     header(rootProject.file('HEADER'))
-	  excludes(excludeFromLicense)
+    excludes(excludeFromLicense)
+    exclude("DeltafiActionConventionPlugin.java")
+    exclude("DeltafiJavaConventionPlugin.java")
+    exclude("DeltafiTestSummaryPlugin.java")
+    exclude("DeltafiVersionReckoningPlugin.java")
 }
 
 dependencies {
     implementation project(':deltafi-common')
+
+    implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+    implementation "com.palantir.gradle.docker:gradle-docker:${palantirDockerVersion}"
 }
 
 group 'org.deltafi.gradle-plugin'
@@ -22,31 +30,40 @@ pluginBundle {
     website = 'https://deltafi.org'
     vcsUrl = 'https://github.com/deltafi-org/deltafi'
     tags = ['deltafi', 'DeltaFi']
-    description = 'Gradle plugin used to build DeltaFi plugins'
+    description = 'Gradle plugins used with DeltaFi'
 }
 
 gradlePlugin {
-    description = 'Gradle plugin used to build DeltaFi plugins'
     plugins {
         pluginPlugin {
             id = 'org.deltafi.plugin'
             implementationClass = 'org.deltafi.gradle.plugin.PluginPlugin'
-            displayName = 'Deltafi Plugin Gradle Plugins'
-            description = 'Gradle plugin used to build DeltaFi plugins'
+            displayName = 'Deltafi Plugin Tasks'
+            description = 'Tasks used to build DeltaFi plugins'
+        }
+        deltafiActionConvention {
+            id = 'org.deltafi.plugin.action-convention'
+            implementationClass = 'DeltafiActionConventionPlugin'
+            displayName = 'DeltaFi Action Plugin Convention'
+            description = 'Convention used to setup a set of DeltaFi actions'
+        }
+        deltafiJavaConvention {
+            id = 'org.deltafi.plugin.java-convention'
+            implementationClass = 'DeltafiJavaConventionPlugin'
+            displayName = 'DeltaFi Java Plugin Convention'
+            description = 'Convention used or Java projects'
+        }
+        deltafiTestSummary {
+            id = 'org.deltafi.plugin.test-summary'
+            implementationClass = 'DeltafiTestSummaryPlugin'
+            displayName = 'DeltaFi Test Summary Convention'
+            description = 'Pretty print test results'
+        }
+        deltafiVersioner {
+            id = 'org.deltafi.plugin.version-reckoning'
+            implementationClass = 'DeltafiVersionReckoningPlugin'
+            displayName = 'DeltaFi Version Convention'
+            description = 'Determine the version based on the git tag'
         }
     }
-}
-
-task generateResources {
-    ext {
-        propFile = file("$buildDir/generated/plugin.properties")
-    }
-    outputs.file propFile
-    doLast {
-        mkdir propFile.parentFile
-        propFile.text = "version=$project.version"
-    }
-}
-processResources {
-    from files(generateResources)
 }

@@ -3,7 +3,6 @@
     PROJECT_NAME: deltafi-nodemonitor
 
 nodemonitor:docker:
-  stage: docker
   extends:
     - .nodemonitor
     - .docker

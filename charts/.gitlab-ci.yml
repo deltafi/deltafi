@@ -1,6 +1,6 @@
 .helm-lint:
-  image: alpine:3.14
   stage: build
+  image: alpine:3.14
   script:
     - wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz --directory-prefix /opt
     - tar xvf /opt/helm-v3.6.0-linux-amd64.tar.gz -C /opt
@@ -21,6 +21,18 @@ update-helmchart:
   image: alpine:3.14
   # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
   resource_group: ci-helmchart
+  variables:
+    DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
+    PROJECT_LIST: "deltafi-core deltafi-core-actions deltafi-docs deltafi-auth deltafi-api deltafi-egress-sink deltafi-nodemonitor"
+    deltafi_config_server_HELM_IMAGE_PATH: deltafi.config_server.image
+    deltafi_core_HELM_IMAGE_PATH: deltafi.core.image
+    deltafi_core_actions_HELM_IMAGE_PATH: deltafi.core_actions.image
+    deltafi_ingress_HELM_IMAGE_PATH: deltafi.ingress.image
+    deltafi_auth_HELM_IMAGE_PATH: deltafi.auth.image
+    deltafi_api_HELM_IMAGE_PATH: deltafi.api.image
+    deltafi_egress_sink_HELM_IMAGE_PATH: deltafi.egress_sink.image
+    deltafi_nodemonitor_HELM_IMAGE_PATH: deltafi.nodemonitor.image
+    deltafi_docs_HELM_IMAGE_PATH: deltafi.docs.image
   before_script:
     - apk add bash openssh-client git unzip sshpass rsync
     - eval $(ssh-agent -s)

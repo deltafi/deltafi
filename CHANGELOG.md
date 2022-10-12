@@ -46,6 +46,14 @@ plugin's build.gradle by adding `id "org.deltafi.plugin" version "${deltafiVersi
 - New CLI commands: `list-plugins`, `system-property`, `plugin-customization`, `plugin-image-repo`
 - DeployerService in `deltafi-core` that manages plugin deployments
 - Common action deployment template in `deltafi-core` used by all plugins
+- Convention Gradle plugins were added to the DeltaFi Gradle plugin:
+  - `id 'org.deltafi.plugin.version-reckoning' version "${deltafiVersion}"` - add to a root-level project to set the
+  project version from git
+  - `id 'org.deltafi.plugin.test-summary' version "${deltafiVersion}"` - add to a root-level project to produce a
+  summary of test results for the project and all submodules
+  - `id "org.deltafi.plugin.java-convention" version "${deltafiVersion}"` - common Java conventions
+  - `id "org.deltafi.plugin.action-convention" version "${deltafiVersion}"` - add to a project containing actions for a
+  DeltaFi plugin
 
 ### Changed
 - FlowPlan and ActionConfiguration classes now enforce required fields. They are final and must be provided to the

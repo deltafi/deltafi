@@ -3,7 +3,6 @@
     PROJECT_NAME: deltafi-auth
 
 auth:docker:
-  stage: docker
   extends:
     - .auth
     - .docker

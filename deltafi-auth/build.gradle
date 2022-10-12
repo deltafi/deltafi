@@ -9,7 +9,7 @@ plugins {
 
 license {
     header(rootProject.file('HEADER'))
-	  excludes(excludeFromLicense)
+	excludes(excludeFromLicense)
 }
 
 docker {

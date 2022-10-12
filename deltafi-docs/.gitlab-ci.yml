@@ -21,7 +21,6 @@
     PROJECT_NAME: deltafi-docs
 
 docs:docker:
-  stage: docker
   extends:
     - .docs
     - .docker

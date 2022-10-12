@@ -3,7 +3,6 @@
     PROJECT_NAME: deltafi-core
 
 core:docker:
-  stage: docker
   extends:
     - .core
     - .docker

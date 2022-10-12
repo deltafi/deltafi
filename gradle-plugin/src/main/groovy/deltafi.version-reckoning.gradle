@@ -1,0 +1,54 @@
+/**
+ *    DeltaFi - Data transformation and enrichment platform
+ *
+ *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+class Versioner {
+
+    static String reckonedVersion
+
+    static String gitVersion() {
+        def sout = new StringBuilder()
+        def serr = new StringBuilder()
+        def proc = 'git describe --tags'.execute()
+
+        proc.waitForProcessOutput(sout, serr)
+
+        String result = sout
+        if (!result?.trim()) throw new Exception("Unable to determine git version ($serr)")
+        return result.trim()
+    }
+
+    static String reckon() {
+        reckonedVersion = gitVersion()
+
+        def snapshotMatcher = reckonedVersion =~ /(\d+)\.(\d+)\.\d+-.*/
+        if (snapshotMatcher.size() > 0) {
+            def major = snapshotMatcher[0][1]
+            def minor = snapshotMatcher[0][2] as Integer
+            minor++
+            reckonedVersion = major + "." + minor + ".0-SNAPSHOT"
+        }
+
+        return reckonedVersion
+    }
+
+}
+
+Versioner.reckon()
+
+allprojects { project ->
+    version Versioner.reckonedVersion
+}

@@ -258,7 +258,7 @@
     "description": "Properties shared across all installed actions.",
     "properties": [
       {
-        "key": "actions.core-url",
+        "key": "actions.coreUrl",
         "description": "The URL used to reach DeltaFi Core",
         "defaultValue": "http://deltafi-core-service",
         "hidden": true,

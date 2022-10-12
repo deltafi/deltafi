@@ -1,0 +1,67 @@
+/**
+ *    DeltaFi - Data transformation and enrichment platform
+ *
+ *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+plugins {
+    id 'org.deltafi.plugin'
+    id 'org.deltafi.plugin.java-convention'
+    id 'org.springframework.boot'
+    id 'com.palantir.docker'
+}
+
+dependencies {
+    implementation "org.deltafi:deltafi-action-kit:${deltafiVersion}"
+}
+
+jar {
+    // do not create the -plain.jar
+    enabled = false
+}
+
+springBoot {
+    buildInfo {
+        properties {
+            additional = [
+                    description: pluginDescription,
+                    actionKitVersion: deltafiVersion
+            ]
+        }
+    }
+}
+
+bootJar.dependsOn(checkDeltafiPlugin)
+
+// Copy the standard plugin Dockerfile from the gradle-plugin jar resources to the build directory after the bootJar is
+// built. Here it will be available to both the gradle docker plugin and the CI docker job.
+task copyPluginDockerfile(type: Copy) {
+    def pluginDockerfile = resources.text.fromUri(
+            Thread.currentThread().getContextClassLoader().getResource("PluginDockerfile").toURI()).asFile()
+    from pluginDockerfile
+    into buildDir
+    rename { fileName -> fileName.replace(pluginDockerfile.getName(), "Dockerfile") }
+}
+bootJar.finalizedBy(copyPluginDockerfile)
+
+dockerPrepare {
+    dependsOn assemble
+}
+
+docker {
+    name "${project.name}:${project.version}"
+    tag "local", "${localDockerRegistry}/${project.name}:latest"
+    copySpec.from(bootJar.archiveFile).into("build/libs/")
+    dockerfile file("${buildDir}/Dockerfile")
+}
