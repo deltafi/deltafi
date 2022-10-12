@@ -76,5 +76,5 @@ metadata:
   labels:
     grafana_dashboard: "1"
 data:
-  processing-report.json: |-
+  ui-charts.json: |-
 {{ .Files.Get "files/grafana/dashboards/ui-charts.json" | indent 4 }}
