@@ -26,6 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 1735,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -122,7 +123,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "alias(scale(scaleToSeconds(sum(seriesByTag('name=stats_counts.bytes_in', 'source=ingress', 'ingressFlow=~${flow:regex}')), 1), 8), 'Ingress')"
+          "target": "alias(scale(scaleToSeconds(sum(seriesByTag('name=stats_counts.bytes_in', 'ingressFlow=~${flow:regex}', 'action=ingress')), 1), 8), 'Ingress')"
         },
         {
           "datasource": {
@@ -135,7 +136,7 @@
           "target": "alias(scale(scaleToSeconds(sum(seriesByTag('name=stats_counts.bytes_out', 'ingressFlow=~${flow:regex}')), 1), 8), 'Egress')"
         }
       ],
-      "timeShift": "10s",
+      "timeShift": "20s",
       "transformations": [
         {
           "disabled": true,
@@ -1165,10 +1166,30 @@
         "uid": "${datasource}"
       },
       "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 30,
+      "options": {
+        "content": "<br/><center><h1>Action Activity</h1></center>",
+        "mode": "html"
+      },
+      "pluginVersion": "9.1.7",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
         "h": 22,
         "w": 8,
         "x": 0,
-        "y": 35
+        "y": 37
       },
       "id": 43,
       "options": {
@@ -1252,7 +1273,7 @@
         "h": 9,
         "w": 16,
         "x": 8,
-        "y": 35
+        "y": 37
       },
       "id": 5,
       "interval": "10s",
@@ -1270,16 +1291,6 @@
         }
       },
       "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "aliasByTags(groupByTags(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action!=ingress')), 'sum', 'source'), 'source')"
-        },
         {
           "datasource": {
             "type": "graphite",
@@ -1356,7 +1367,7 @@
         "h": 13,
         "w": 16,
         "x": 8,
-        "y": 44
+        "y": 46
       },
       "id": 17,
       "interval": "10s",
@@ -1387,26 +1398,6 @@
       ],
       "title": "Action Queue Depth",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 57
-      },
-      "id": 30,
-      "options": {
-        "content": "<br/><center><h1>Action Activity</h1></center>",
-        "mode": "html"
-      },
-      "pluginVersion": "9.1.7",
-      "transparent": true,
-      "type": "text"
     },
     {
       "datasource": {
@@ -1697,6 +1688,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }

@@ -47,7 +47,7 @@
         "content": "<center><h2>Flow Summary: ${flow}</h2></center>",
         "mode": "html"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "transparent": true,
       "type": "text"
     },
@@ -147,7 +147,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -436,7 +436,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -642,7 +642,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=files_in', 'metricattribute=count', 'action=ingress', 'ingressFlow=~${flow:regex}'))), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -727,6 +727,7 @@
           "fill": "dark-orange",
           "min": 0,
           "mode": "scheme",
+          "reverse": false,
           "scale": "exponential",
           "scheme": "Greens",
           "steps": 128
@@ -756,7 +757,7 @@
           "unit": "short"
         }
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -811,7 +812,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -877,7 +879,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -949,7 +951,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1053,7 +1056,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1164,7 +1168,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -1267,7 +1271,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",

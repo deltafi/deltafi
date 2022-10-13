@@ -47,7 +47,7 @@
         "content": "<center>\n  <h2>DeltaFi System Processing Report</h2>\n  <div style=\"margin-top:-10px\">${__from:date:YYYY-MM-DD} to ${__to:date:YYYY-MM-DD}</div>\n</center>\n",
         "mode": "html"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "transparent": true,
       "type": "text"
     },
@@ -103,7 +103,7 @@
         },
         "textMode": "value"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -203,7 +203,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -312,7 +312,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -458,7 +458,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=stats_counts.files_in', 'action=ingress'))), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress')), 'Ingress')"
         },
         {
           "datasource": {
@@ -468,7 +468,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(nonNegativeDerivative(seriesByTag('name=stats_counts.files_out', 'action=egress'))), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress')), 'Egress')"
         }
       ],
       "title": "Aggregate Processed Files",
@@ -652,7 +652,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -730,8 +730,8 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "ingress": "Ingress Bytes",
               "egress": "Egress Bytes",
+              "ingress": "Ingress Bytes",
               "ingressFlow\\action": "Flow"
             }
           }
@@ -791,7 +791,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.1.7",
       "targets": [
         {
           "datasource": {
@@ -869,8 +869,8 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "ingress": "Ingress Files",
               "egress": "Egress Files",
+              "ingress": "Ingress Files",
               "ingressFlow\\action": "Flow"
             }
           }
