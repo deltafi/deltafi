@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.0
+## [Unreleased] - Next release 0.99.1
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.0] - 2022-10-12
 
 ### Added
 - DeltaFile contains egress flow name for each egress flow executed
@@ -14,6 +32,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - `values-alerting-test.yaml` added to preconfigure some alerting rules in KinD
 - Added alert summary to System Overview dashboard
 - Docs pod enabled by default
+- UI dashboard added to Grafana
+- Thread count for the DeltaFilesService is a configurable property
+- Introduced a new `deltafi-core-worker` pod that can be scaled up to add capacity to the singleton `deltafi-core`
 
 ### Changed
 - SourceInfo filename in deltaFiles query matches on case insensitive substring
@@ -24,6 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Relaxed startup and readiness probe times
 - Graphite probe timings are relaxed to avoid overzealous restarts
 - Graphite helm chart is now a local chart
+- New plugin structure ("Plugins v2")
+- Zero byte files are no longer stored in Minio
 
 ### Deprecated
 - The gradle-plugin is no longer needed to generate a plugin manifest. It is now generated on plugin startup
@@ -43,6 +66,8 @@ been removed
 - Add index for domain names
 - Fix FILTER command from TransformActions
 - Fix ERROR command from EnrichActions
+- Bug in Graphite does not gracefully allow for null tags.  Removed Dropped Files metric from the report, since it may have null ingressFlow tags.
+- Improved initialization time for deltafi-core
 
 ### Tech-Debt/Refactor
 - Do not store 0-byte files in minio
@@ -51,8 +76,6 @@ been removed
 - Plugins now register themselves with their actions, variables, and flows on startup
 - Unused Spring Boot services disabled by configuration in core
 - Restrict Result types for each Action type.
-
-### Security
 
 ### Upgrade and Migration
 - Upgrade Grafana to 9.1.7
@@ -709,8 +732,9 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.5...main
-[0.98.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.4...0.98.5
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.0...main
+[0.99.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.5...0.99.0
+[0.98.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.4...0.98.5
 [0.98.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.3...0.98.4
 [0.98.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.2...0.98.3
 [0.98.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.1...0.98.2
