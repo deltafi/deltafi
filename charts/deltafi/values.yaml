@@ -25,7 +25,7 @@ deltafi:
           fieldPath: spec.nodeName
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
-    image: deltafi/deltafi-core-actions:0.98.5
+    image: deltafi/deltafi-core-actions:0.99.0
     keyStore:
       secret: keystore-secret
       passwordSecret: keystore-password-secret
@@ -33,25 +33,25 @@ deltafi:
       keyStoreName: keyStore.p12
       trustStoreName: trustStore.jks
   core:
-    image: deltafi/deltafi-core:0.98.5
+    image: deltafi/deltafi-core:0.99.0
     mongo_host: deltafi-mongodb
     nativeConfigMap: config-server-configmap
     nativeConfigMountPath: /config
     # TODO should we allow nested yaml here and automatically create that config-map?
   docs:
-    image: deltafi/deltafi-docs:latest
+    image: deltafi/deltafi-docs:0.99.0
     enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:0.98.5
+    image: deltafi/deltafi-auth:0.99.0
     mode: basic # basic, cert, or disabled
     secret: auth-secret
   api:
-    image: deltafi/deltafi-api:0.98.5
+    image: deltafi/deltafi-api:0.99.0
   ui:
-    image: deltafi/deltafi-ui:0.98.5
+    image: deltafi/deltafi-ui:0.99.0
     # UI Configuration
     # title: DeltaFi
     # securityBanner:
@@ -71,9 +71,9 @@ deltafi:
     #     url: "https://httpbin.org/anything/${did}"
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:0.98.5
+    image: deltafi/deltafi-egress-sink:0.99.0
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:0.98.5
+    image: deltafi/deltafi-nodemonitor:0.99.0
     envVars:
       - name: GRAPHITE_HOST
         value: deltafi-graphite
