@@ -80,6 +80,8 @@ been removed
 ### Upgrade and Migration
 - Upgrade Grafana to 9.1.7
 - Upgrade Grafana helm chart to 6.40.3.  Air-gapped installs will need this new chart.
+- Base docker image updated to `deltafi/deltafi-spring-base:0.99.0`
+- KinD: Node image updated to `deltafi/deltafi-kind-node:0.99.0`
 - Graphite chart is now a local chart versioned as 0.99.0.  Air-gapped installs will need this new chart.
 - Upgraded to Redis 7.0.5.  Air-gapped installations will need the new Redis image
 - Plugins now require expanded Spring boot info in build.gradle (plugin dependencies are optional):
