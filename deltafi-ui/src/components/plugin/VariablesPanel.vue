@@ -18,7 +18,7 @@
 
 <template>
   <CollapsiblePanel header="Variables" class="table-panel">
-    <DataTable :value="props.variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows>
+    <DataTable :value="props.variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true">
       <template #empty> No Variables Included </template>
       <Column field="name" header="Name">
         <template #body="{ data }">
@@ -75,30 +75,32 @@ const viewList = (value) => {
 </script>
 
 <style lang="scss">
-td.value-column {
-  padding: 0 !important;
-}
+.plugin-variables-table {
+  td.value-column {
+    padding: 0 !important;
+  }
 
-.value-clickable {
-  cursor: pointer;
-  padding: 0.5rem !important;
-  width: 100%;
-  display: flex;
-}
+  .value-clickable {
+    cursor: pointer;
+    padding: 0.5rem !important;
+    width: 100%;
+    display: flex;
+  }
 
-.value-clickable>* {
-  flex: 0 0 auto;
-}
+  .value-clickable>* {
+    flex: 0 0 auto;
+  }
 
-.override-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  .override-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-.list-item::before {
-  content: '•';
-  margin-right: 0.25rem;
-  font-weight: bold;
+  .list-item::before {
+    content: '•';
+    margin-right: 0.25rem;
+    font-weight: bold;
+  }
 }
 </style>

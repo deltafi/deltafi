@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Import and Rollback capabilities to System Snapshots page (#259)
 - Page size on Search and Errors pages is now persisted (#272)
 - Added link to internal documentation (#280)
+- Added row highlight to tables with an action column (#279)
 
 ### Fixed
 

@@ -41,7 +41,7 @@ a {
   }
 }
 
-.p-tabview .p-tabview-panels{
+.p-tabview .p-tabview-panels {
   padding: 1.25rem 0;
 }
 .table-panel {
@@ -125,4 +125,8 @@ td.did-column {
   background: transparent !important;
   color: #6c757d !important;
   border-color: #6c757d !important;
+}
+
+.p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
+  text-shadow: .02rem 0px black;
 }

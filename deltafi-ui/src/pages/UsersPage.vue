@@ -22,7 +22,7 @@
       <Button label="Add User" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newUser" />
     </PageHeader>
     <Panel header="Users" class="users-panel table-panel">
-      <DataTable :value="users" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines">
+      <DataTable :value="users" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
         <template #header>
           <div style="text-align:left">
             <MultiSelect :model-value="selectedColumns" :options="columns" option-label="header" placeholder="Select Columns" style="width: 22rem" @update:model-value="onToggle" />

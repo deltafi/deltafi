@@ -31,7 +31,7 @@
           <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="snapshots" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows>
+      <DataTable v-model:filters="filters" :value="snapshots" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true">
         <template #empty>No snapshots to display.</template>
         <template #loading>Loading. Please wait...</template>
         <Column field="id" header="ID">
