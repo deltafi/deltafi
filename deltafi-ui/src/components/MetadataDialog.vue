@@ -258,13 +258,6 @@ const requestResumeReplay = async () => {
             }
           }
           if (successResume.length > 0) {
-            let successfulDids = successResume.map((resumeStatus) => {
-              return resumeStatus.did;
-            });
-            if (successfulDids.length > maxSuccessDisplay) {
-              successfulDids = successfulDids.slice(0, maxSuccessDisplay);
-              successfulDids.push("...");
-            }
             successBatch = true;
           }
         }
@@ -274,8 +267,10 @@ const requestResumeReplay = async () => {
       displayBatchingDialog.value = false;
       batchCompleteValue.value = 0;
       if (successBatch) {
+        const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+        if (props.did.length > maxSuccessDisplay) links.push('...');
         let pluralized = pluralize(props.did.length, "DeltaFile");
-        notify.success(`Resume request sent successfully for ${pluralized}`);
+        notify.success(`Resume request sent successfully for ${pluralized}`, links.join(", "));
         emit("update");
       }
     } else {

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+- Nothing yet
+
+## [0.99.1]
+
+### Changed
+
+- Batch resume messages now show up links for up to 10 DIDs (#281)
+- Added row highlight to tables with an action column (#279)
+
 ## [0.99.0]
 
 ### Changed
@@ -15,7 +26,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Import and Rollback capabilities to System Snapshots page (#259)
 - Page size on Search and Errors pages is now persisted (#272)
 - Added link to internal documentation (#280)
-- Added row highlight to tables with an action column (#279)
 
 ### Fixed
 
@@ -430,7 +440,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.0...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.1...main
+[0.99.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.0...0.99.1
 [0.99.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.5...0.99.0
 [0.98.5]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.4...0.98.5
 [0.98.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.3...0.98.4
