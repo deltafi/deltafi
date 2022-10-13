@@ -69,6 +69,7 @@ class StateMachineTest {
     EgressFlowService egressFlowService;
 
     @Mock
+    @SuppressWarnings("unused")
     DeltaFiProperties deltaFiProperties;
 
     @Test
@@ -297,8 +298,9 @@ class StateMachineTest {
         Action dispatchedAction = Action.newBuilder().state(ActionState.QUEUED).name("ValidateAction2").build();
 
         deltaFile.setActions(new ArrayList<>(List.of(formatAction, completedAction, dispatchedAction)));
+        deltaFile.setEgress(Collections.singletonList(Egress.newBuilder().flow(EGRESS_FLOW).build()));
 
-        EgressFlow egressFlow = EgressFlowMaker.builder().validateActions(List.of("ValidateAction1", "ValidateAction2")).build().makeEgressFlow();
+        EgressFlow egressFlow = EgressFlowMaker.builder().name(EGRESS_FLOW).validateActions(List.of("ValidateAction1", "ValidateAction2")).build().makeEgressFlow();
 
         Mockito.when(egressFlowService.getMatchingFlows(INGRESS_FLOW)).thenReturn(List.of(egressFlow));
 
@@ -399,17 +401,20 @@ class StateMachineTest {
     void testAdvanceCompleteEgressAction_onePending() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.setEgress(List.of(Egress.newBuilder().flow(EGRESS_FLOW).build(), Egress.newBuilder().flow(EGRESS_FLOW + "2").build()));
 
         deltaFile.queueNewAction("EgressAction2");
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2", "EgressAction1");
 
         EgressFlow egress1 = EgressFlowMaker.builder()
+                .name(EGRESS_FLOW)
                 .egressActionName("EgressAction1")
                 .formatActionName("FormatAction1")
                 .validateActions(List.of("ValidateAction1"))
                 .build().makeEgressFlow();
 
         EgressFlow egress2 = EgressFlowMaker.builder()
+                .name(EGRESS_FLOW + "2")
                 .egressActionName("EgressAction2")
                 .formatActionName("FormatAction2")
                 .validateActions(List.of("ValidateAction2"))
@@ -428,16 +433,19 @@ class StateMachineTest {
     void testAdvanceCompleteEgressAction_allComplete() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.setEgress(List.of(Egress.newBuilder().flow(EGRESS_FLOW).build(), Egress.newBuilder().flow(EGRESS_FLOW + "2").build()));
 
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2", "EgressAction1", "EgressAction2");
 
         EgressFlow egress1 = EgressFlowMaker.builder()
+                .name(EGRESS_FLOW)
                 .egressActionName("EgressAction1")
                 .formatActionName("FormatAction1")
                 .validateActions(List.of("ValidateAction1"))
                 .build().makeEgressFlow();
 
         EgressFlow egress2 = EgressFlowMaker.builder()
+                .name(EGRESS_FLOW + "2")
                 .egressActionName("EgressAction2")
                 .formatActionName("FormatAction2")
                 .validateActions(List.of("ValidateAction2"))
@@ -484,15 +492,13 @@ class StateMachineTest {
     @Test
     void testNoEgressFlowRequiredForSplitLoadActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
-        deltaFile.setStage(DeltaFileStage.ENRICH);
+        deltaFile.setStage(DeltaFileStage.INGRESS);
         deltaFile.queueNewAction("SplitLoadAction");
         deltaFile.splitAction(ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())
                 .action("SplitLoadAction")
                 .build());
 
-        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(Collections.emptyList());
-        Mockito.when(egressFlowService.getMatchingFlows(INGRESS_FLOW)).thenReturn(Collections.emptyList());
         assertThat(stateMachine.advance(deltaFile)).isEmpty();
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
     }
@@ -500,15 +506,13 @@ class StateMachineTest {
     @Test
     void testNoEgressFlowRequiredForFilteredLoadActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
-        deltaFile.setStage(DeltaFileStage.ENRICH);
+        deltaFile.setStage(DeltaFileStage.INGRESS);
         deltaFile.queueNewAction("FilteredLoadAction");
         deltaFile.filterAction(ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())
                 .action("FilteredLoadAction")
-                .build(), "filterd");
+                .build(), "filtered");
 
-        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(Collections.emptyList());
-        Mockito.when(egressFlowService.getMatchingFlows(INGRESS_FLOW)).thenReturn(Collections.emptyList());
         assertThat(stateMachine.advance(deltaFile)).isEmpty();
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
     }

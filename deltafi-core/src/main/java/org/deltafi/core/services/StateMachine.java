@@ -47,11 +47,10 @@ public class StateMachine {
      * @throws MissingEgressFlowException when a DeltaFile advances into the EGRESS stage, but does not have an egress flow configured.
      */
     public List<ActionInput> advance(DeltaFile deltaFile) throws MissingEgressFlowException {
-        boolean firstEgressAttempt = false;
         List<ActionInput> enqueueActions = new ArrayList<>();
         switch (deltaFile.getStage()) {
             case INGRESS:
-                if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction()) {
+                if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasSplitAction()) {
                     break;
                 }
                 IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
@@ -90,20 +89,19 @@ public class StateMachine {
                     break;
                 }
 
-                // if all enrich actions are complete, move to egress stage
-                deltaFile.setStage(DeltaFileStage.EGRESS);
-                // Make sure when moving into EGRESS stage the first time we find
-                // at least one action, unless there was a FILTERED or SPLIT result
-                // from the ingress load action. Do not expect egress actions if the
-                // ENRICH stage encountered an error either.
-                firstEgressAttempt = !(deltaFile.hasSplitAction() || deltaFile.hasFilteredAction() || deltaFile.hasErroredAction());
+                // if all enrich actions are complete without errors, move to egress stage
+                if (!deltaFile.hasPendingActions() && !deltaFile.hasErroredAction()) {
+                    deltaFile.setStage(DeltaFileStage.EGRESS);
+                } else {
+                    break;
+                }
             case EGRESS:
                 List<ActionInput> egressActions = egressFlowService.getMatchingFlows(deltaFile.getSourceInfo().getFlow()).stream()
                         .map(egressFlow -> advanceEgress(egressFlow, deltaFile))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
 
-                if (firstEgressAttempt && egressActions.isEmpty()) {
+                if (deltaFile.getEgress().isEmpty() && egressActions.isEmpty()) {
                     throw new MissingEgressFlowException(deltaFile.getDid());
                 }
 
