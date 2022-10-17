@@ -34,7 +34,7 @@ variables:
   deltafi_egress_sink_HELM_IMAGE_PATH: deltafi.egress_sink.image
   deltafi_nodemonitor_HELM_IMAGE_PATH: deltafi.nodemonitor.image
 
-trigger_deltafi_stix:
+.trigger:
   stage: trigger
   only:
     refs:
@@ -42,25 +42,28 @@ trigger_deltafi_stix:
       - release/*
       - tags
   trigger:
-    project: systolic/deltafi/deltafi-stix
     branch: $CI_COMMIT_REF_NAME
     forward:
       yaml_variables: false
       pipeline_variables: false
 
+trigger_deltafi_json_validation:
+  extends:
+    - .trigger
+  trigger:
+    project: systolic/deltafi/deltafi-json-validation
+
+trigger_deltafi_stix:
+  extends:
+    - .trigger
+  trigger:
+    project: systolic/deltafi/deltafi-stix
+
 trigger_passthrough:
-  stage: trigger
-  only:
-    refs:
-      - main
-      - release/*
-      - tags
+  extends:
+    - .trigger
   trigger:
     project: systolic/deltafi/deltafi-passthrough
-    branch: $CI_COMMIT_REF_NAME
-    forward:
-      yaml_variables: false
-      pipeline_variables: false
 
 .gradle:
   image: gradle:7.3.3-jdk11
