@@ -1,0 +1,13 @@
+{
+  "name": "deltafi-doc",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "docute": "^4.23.3"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "~4.5.0"
+  }
+}

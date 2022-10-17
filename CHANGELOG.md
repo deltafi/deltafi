@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.99.1
 
 ### Added
+- Docs repo merged into DeltaFi monolith
 
 ### Changed
 
@@ -16,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - Flow summary dashboard ingress files query was incorrect
 - State machine did not block waiting for all enrichment to complete
+- KinD: deltafi-docs built during local build process
 
 ### Tech-Debt/Refactor
 
