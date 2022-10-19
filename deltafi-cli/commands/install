@@ -134,6 +134,8 @@ if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
   cd - > /dev/null
 fi
 
+ORIG_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
+
 cli_log "Installing DeltaFi"
 
 helm upgrade --install --wait \
@@ -172,7 +174,11 @@ else
   find $POLICIES_DIRECTORY -name "*.json" -exec bash -c "load_policies \"{}\"" \;
 fi
 
-cli_log "Running migrations"
-deltafi mongo-migrate
+NEW_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
+
+if ! [ "${ORIG_CORE_POD}" = "${NEW_CORE_POD}" ]; then
+  cli_log "Running migrations"
+  deltafi mongo-migrate
+fi
 
 cli_log "DeltaFi install complete"
