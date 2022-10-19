@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.99.1
 
 ### Added
+- New Grafana dashboard that shows last seen information for each flow
 - Docs repo merged into DeltaFi monolith
 
 ### Changed
