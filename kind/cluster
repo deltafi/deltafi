@@ -304,6 +304,12 @@ prerequisites() {
 
 describe up "Turn up a KinD cluster (or re-apply cluster settings)"
 up() {
+  if [ -z ${CLUSTER_UP+x} ]; then
+    export CLUSTER_UP=true
+  else
+    return 0
+  fi
+
   _attention "Initializing KinD cluster"
   _check_deltafi_cli
   _check_docker
@@ -615,7 +621,7 @@ EOF
 describe uninstall "Uninstall the DeltaFi instance, leaving cluster intact"
 uninstall() {
   _attention "Uninstalling DeltaFi"
-  deltafi uninstall
+  run deltafi uninstall
 }
 
 describe loc "Control local builds and local installation to the cluster"
@@ -759,12 +765,23 @@ _local_build() {
 
 }
 
+_local_push_one() {
+  docker push $1 1>/dev/null
+  run crictl pull $1 1>/dev/null
+  _ok "Push to cluster: $1"
+}
+
 _local_push() {
-  for img in $(docker images | grep localhost.*latest | cut -f1 -d' '); do
-    docker push $img 1>/dev/null
-    run crictl pull $img 1>/dev/null
-    _ok "Push to cluster: $img"
+  pids=()
+  for img in $(docker images | grep "localhost.*latest" | cut -f1 -d' '); do
+    _local_push_one $img &
+    pids+=($!)
   done
+
+  for pid in ${pids[*]}; do
+    wait "$pid"
+  done
+
 }
 
 _local_cluster() {
