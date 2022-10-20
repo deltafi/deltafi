@@ -19,14 +19,14 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import org.deltafi.common.constant.DeltaFiConstants;
 
 import java.util.*;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__typename")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = TransformActionConfiguration.class, name = "TransformActionConfiguration"),
@@ -38,13 +38,15 @@ import java.util.*;
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
 public abstract class ActionConfiguration extends DeltaFiConfiguration {
-    protected ActionType actionType;
+    protected final ActionType actionType;
+    protected final String type;
 
-    protected String type;
     protected Map<String, Object> parameters;
 
-    public ActionConfiguration(ActionType actionType) {
+    public ActionConfiguration(String name, ActionType actionType, String type) {
+        super(name);
         this.actionType = actionType;
+        this.type = type;
     }
 
     static boolean equalOrAny(List<String> schemaList, List<String> configList) {

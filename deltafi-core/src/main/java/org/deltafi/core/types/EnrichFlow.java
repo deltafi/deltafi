@@ -73,8 +73,7 @@ public class EnrichFlow extends Flow {
 
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
-        EnrichFlowConfiguration enrichFlowConfiguration = new EnrichFlowConfiguration();
-        enrichFlowConfiguration.setName(getName());
+        EnrichFlowConfiguration enrichFlowConfiguration = new EnrichFlowConfiguration(name);
         enrichFlowConfiguration.setDomainActions(actionNames(domainActions));
         enrichFlowConfiguration.setEnrichActions(actionNames(enrichActions));
         return enrichFlowConfiguration;

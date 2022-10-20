@@ -30,7 +30,13 @@ public class EgressFlowConfiguration extends DeltaFiConfiguration {
     private List<String> includeIngressFlows;
     private List<String> excludeIngressFlows;
 
-    private String formatAction;
+    private final String formatAction;
     private List<String> validateActions;
-    private String egressAction;
+    private final String egressAction;
+
+    public EgressFlowConfiguration(String name, String formatAction, String egressAction) {
+        super(name);
+        this.formatAction = formatAction;
+        this.egressAction = egressAction;
+    }
 }

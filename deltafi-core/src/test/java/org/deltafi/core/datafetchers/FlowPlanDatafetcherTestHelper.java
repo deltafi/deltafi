@@ -35,11 +35,11 @@ public class FlowPlanDatafetcherTestHelper {
     public static final PluginCoordinates PLUGIN_COORDINATES = PluginCoordinates.builder().artifactId("test-plugin").groupId("org.deltafi").version("1.0.0").build();
 
     public static IngressFlowPlan getIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetIngressFlowPlanGraphQLQuery.newRequest().planName("ingressPlan").build(), new GetIngressFlowPlanProjectionRoot().name(), IngressFlowPlan.class);
+        return executeQuery(dgsQueryExecutor, GetIngressFlowPlanGraphQLQuery.newRequest().planName("ingressPlan").build(), new GetIngressFlowPlanProjectionRoot().name().type().description().loadAction().name().actionType().type(), IngressFlowPlan.class);
     }
 
     public static EgressFlowPlan getEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name(), EgressFlowPlan.class);
+        return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name().type().description().formatAction().name().actionType().type().requiresDomains().parent().egressAction().name().actionType().type(), EgressFlowPlan.class);
     }
 
     public static IngressFlow validateIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -83,9 +83,10 @@ public class FlowPlanDatafetcherTestHelper {
     public static IngressFlow saveIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").actionType("LOAD").type("org.deltafi.action.Loader").build();
         IngressFlowPlanInput input = IngressFlowPlanInput.newBuilder()
-                .sourcePlugin(PLUGIN_COORDINATES)
                 .name("flowPlan")
+                .type("INGRESS")
                 .description("description")
+                .sourcePlugin(PLUGIN_COORDINATES)
                 .loadAction(loadActionConfigurationInput)
                 .build();
 
@@ -97,8 +98,9 @@ public class FlowPlanDatafetcherTestHelper {
         EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").actionType("EGRESS").type("org.deltafi.actions.EgressAction").build();
         EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
                 .name("flowPlan")
-                .sourcePlugin(PLUGIN_COORDINATES)
+                .type("EGRESS")
                 .description("description")
+                .sourcePlugin(PLUGIN_COORDINATES)
                 .formatAction(format)
                 .egressAction(egress)
                 .build();

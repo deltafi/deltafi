@@ -61,8 +61,7 @@ class IngressFlowPlanConverterTest {
 
     @Test
     void testUnresolvedPlaceholder() throws IOException {
-        IngressFlowPlan ingressFlowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-ingress-flowplan-test.json"), IngressFlowPlan.class);
-        ingressFlowPlan.getLoadAction().setName("${missing.placeholder:defaultignored}");
+        IngressFlowPlan ingressFlowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-ingress-flowplan-unresolved-test.json"), IngressFlowPlan.class);
 
         IngressFlow ingressFlow = ingressFlowPlanConverter.convert(ingressFlowPlan, variables());
 
@@ -76,17 +75,13 @@ class IngressFlowPlanConverterTest {
     }
 
     TransformActionConfiguration expectedTransform() {
-        TransformActionConfiguration expected = new TransformActionConfiguration();
-        expected.setName("passthrough.PassthroughTransformAction");
-        expected.setType("org.deltafi.passthrough.action.RoteTransformAction");
+        TransformActionConfiguration expected = new TransformActionConfiguration("passthrough.PassthroughTransformAction", "org.deltafi.passthrough.action.RoteTransformAction");
         expected.setParameters(Map.of("resultType", "passthrough-binary"));
         return expected;
     }
 
     LoadActionConfiguration expectedLoadAction() {
-        LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration();
-        loadActionConfiguration.setName("passthrough.PassthroughLoadAction");
-        loadActionConfiguration.setType("org.deltafi.passthrough.action.RoteLoadAction");
+        LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration("passthrough.PassthroughLoadAction", "org.deltafi.passthrough.action.RoteLoadAction");
         loadActionConfiguration.setParameters(Map.of("domains", List.of("binary")));
         return loadActionConfiguration;
     }

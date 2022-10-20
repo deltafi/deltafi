@@ -14,7 +14,7 @@
     "${passthrough.excludeIngressFlows}"
   ],
   "formatAction": {
-    "name": "PassthroughFormatAction",
+    "name": "${missing.placeholder:defaultignored}",
     "type": "org.deltafi.passthrough.action.RoteFormatAction",
     "requiresDomains": [
       "${domain.type}"

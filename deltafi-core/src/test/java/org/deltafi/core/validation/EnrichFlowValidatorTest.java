@@ -48,14 +48,8 @@ class EnrichFlowValidatorTest {
         EnrichFlow enrichFlow = new EnrichFlow();
         enrichFlow.setName("enrichFlow");
 
-        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
-        enrich1.setName("enrich1");
-        enrich1.setType("enrich1");
-
-        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
-        enrich2.setName("enrich2");
-        enrich2.setType("enrich2");
-
+        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration("enrich1", "enrich1", null);
+        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration("enrich2", "enrich2", null);
         enrichFlow.setEnrichActions(List.of(enrich1, enrich2));
 
         List<FlowConfigError> errors = enrichFlowValidator.validate(enrichFlow);
@@ -75,9 +69,7 @@ class EnrichFlowValidatorTest {
         EnrichFlow enrichFlow = new EnrichFlow();
         enrichFlow.setName("enrichFlow");
 
-        EnrichActionConfiguration enrich = new EnrichActionConfiguration();
-        enrich.setName("fail");
-        enrich.setType("enrich");
+        EnrichActionConfiguration enrich = new EnrichActionConfiguration("fail", "enrich", null);
         enrichFlow.setEnrichActions(List.of(enrich));
 
         FlowConfigError expected = expectedError();

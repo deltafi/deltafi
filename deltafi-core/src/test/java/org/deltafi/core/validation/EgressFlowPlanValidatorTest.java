@@ -36,38 +36,19 @@ class EgressFlowPlanValidatorTest {
     @InjectMocks
     EgressFlowPlanValidator egressFlowPlanValidator;
 
-
     @Test
     void duplicateActionNameErrors() {
-        EgressFlowPlan egressFlow = new EgressFlowPlan("egressFlow", null);
+        FormatActionConfiguration format = new FormatActionConfiguration("action", "org.deltafi.format.Action", null);
+        ValidateActionConfiguration validate1 = new ValidateActionConfiguration("action", "org.deltafi.validate.Action1");
+        ValidateActionConfiguration validate2 = new ValidateActionConfiguration("validate", "org.deltafi.validate.Action2");
+        ValidateActionConfiguration validate3 = new ValidateActionConfiguration("validate", "org.deltafi.validate.Action3");
+        EgressActionConfiguration egress = new EgressActionConfiguration("action", "org.deltafi.egress.Action");
 
-        FormatActionConfiguration format = new FormatActionConfiguration();
-        format.setName("action");
-        format.setType("org.deltafi.format.Action");
-
-        ValidateActionConfiguration validate1 = new ValidateActionConfiguration();
-        validate1.setName("action");
-        validate1.setType("org.deltafi.validate.Action1");
-
-        ValidateActionConfiguration validate2 = new ValidateActionConfiguration();
-        validate2.setName("validate");
-        validate2.setType("org.deltafi.validate.Action2");
-
-        ValidateActionConfiguration validate3 = new ValidateActionConfiguration();
-        validate3.setName("validate");
-        validate3.setType("org.deltafi.validate.Action3");
-
-        EgressActionConfiguration egress = new EgressActionConfiguration();
-        egress.setName("action");
-        egress.setType("org.deltafi.egress.Action");
-
-        egressFlow.setFormatAction(format);
+        EgressFlowPlan egressFlow = new EgressFlowPlan("egressFlow", null, format, egress);
         egressFlow.setValidateActions(List.of(validate1, validate2, validate3));
-        egressFlow.setEgressAction(egress);
 
         Assertions.assertThatThrownBy(() -> egressFlowPlanValidator.validate(egressFlow))
                 .isInstanceOf(DeltafiConfigurationException.class)
                 .hasMessage("Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.format.Action, org.deltafi.validate.Action1, org.deltafi.egress.Action; Config named: validate had the following error: The action name: validate is duplicated for the following action types: org.deltafi.validate.Action2, org.deltafi.validate.Action3");
     }
-
 }

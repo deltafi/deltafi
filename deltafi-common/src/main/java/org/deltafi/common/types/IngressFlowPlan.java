@@ -34,16 +34,21 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class IngressFlowPlan extends FlowPlan {
     private List<TransformActionConfiguration> transformActions;
-    private LoadActionConfiguration loadAction;
+    private final LoadActionConfiguration loadAction;
 
-    public IngressFlowPlan(String name) {
-        super(name, FlowType.INGRESS);
+    public IngressFlowPlan(String name, String description, LoadActionConfiguration loadAction) {
+        super(name, FlowType.INGRESS, description);
+        this.loadAction = loadAction;
     }
 
     @PersistenceCreator
     @JsonCreator
-    public IngressFlowPlan(@JsonProperty("name") String name, @JsonProperty("type") FlowType type) {
-        this(name);
+    @SuppressWarnings("unused")
+    public IngressFlowPlan(@JsonProperty(value = "name", required = true) String name,
+            @JsonProperty(value = "type") FlowType type,
+            @JsonProperty(value = "description", required = true) String description,
+            @JsonProperty(value = "loadAction", required = true) LoadActionConfiguration loadAction) {
+        this(name, description, loadAction);
     }
 
     @Override

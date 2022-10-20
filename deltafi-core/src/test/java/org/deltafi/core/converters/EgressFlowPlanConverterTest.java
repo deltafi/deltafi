@@ -63,8 +63,7 @@ class EgressFlowPlanConverterTest {
 
     @Test
     void testUnresolvedPlaceholder() throws IOException {
-        EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-test.json"), EgressFlowPlan.class);
-        flowPlan.getFormatAction().setName("${missing.placeholder:defaultignored}");
+        EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-unresolved-test.json"), EgressFlowPlan.class);
         EgressFlow egressFlow = egressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
@@ -105,25 +104,17 @@ class EgressFlowPlanConverterTest {
     }
 
     FormatActionConfiguration expectedFormatAction() {
-        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration();
-        formatActionConfiguration.setName("passthrough.PassthroughFormatAction");
-        formatActionConfiguration.setType("org.deltafi.passthrough.action.RoteFormatAction");
-        formatActionConfiguration.setRequiresDomains(List.of("binary"));
+        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration("passthrough.PassthroughFormatAction", "org.deltafi.passthrough.action.RoteFormatAction", List.of("binary"));
         formatActionConfiguration.setRequiresEnrichments(List.of("binary"));
         return formatActionConfiguration;
     }
 
     ValidateActionConfiguration expectedValidateAction() {
-        ValidateActionConfiguration validateActionConfiguration = new ValidateActionConfiguration();
-        validateActionConfiguration.setName("passthrough.PassthroughValidateAction");
-        validateActionConfiguration.setType("org.deltafi.passthrough.action.RubberStampValidateAction");
-        return validateActionConfiguration;
+        return new ValidateActionConfiguration("passthrough.PassthroughValidateAction", "org.deltafi.passthrough.action.RubberStampValidateAction");
     }
 
     EgressActionConfiguration expectedEgressAction() {
-        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration();
-        egressActionConfiguration.setName("passthrough.PassthroughEgressAction");
-        egressActionConfiguration.setType("org.deltafi.core.action.RestPostEgressAction");
+        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration("passthrough.PassthroughEgressAction", "org.deltafi.core.action.RestPostEgressAction");
         egressActionConfiguration.setParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
         return egressActionConfiguration;
     }

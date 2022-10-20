@@ -258,7 +258,7 @@ class DeltaFilesServiceTest {
         deltaFile.setStage(DeltaFileStage.EGRESS);
         deltaFile.getActions().add(Action.newBuilder().name("action").state(ActionState.QUEUED).modified(modified).build());
 
-        ActionConfiguration actionConfiguration = new FormatActionConfiguration();
+        ActionConfiguration actionConfiguration = new FormatActionConfiguration(null, null, null);
         Mockito.when(egressFlowService.findActionConfig("action")).thenReturn(actionConfiguration);
 
         List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
@@ -319,8 +319,7 @@ class DeltaFilesServiceTest {
     @Test
     void testSplitNoChildFlow() {
         IngressFlow flow = new IngressFlow();
-        LoadActionConfiguration actionConfig = new LoadActionConfiguration();
-        actionConfig.setName("loadAction");
+        LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
         flow.setName("loadAction");
         flow.setLoadAction(actionConfig);
 
@@ -358,8 +357,7 @@ class DeltaFilesServiceTest {
     @Test
     void testSplitCorrectChildFlow() {
         IngressFlow flow = new IngressFlow();
-        LoadActionConfiguration actionConfig = new LoadActionConfiguration();
-        actionConfig.setName("loadAction");
+        LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
         flow.setName("loadAction");
         flow.setLoadAction(actionConfig);
 

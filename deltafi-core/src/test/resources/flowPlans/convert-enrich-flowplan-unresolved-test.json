@@ -9,7 +9,7 @@
   },
   "enrichActions": [
     {
-      "name": "PassthroughEnrichAction",
+      "name": "${missing.placeholder:defaultignored}",
       "type": "org.deltafi.passthrough.action.RoteEnrichAction",
       "requiresDomains": [
         "${domain.type}"

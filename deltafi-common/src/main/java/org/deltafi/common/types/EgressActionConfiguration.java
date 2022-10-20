@@ -17,11 +17,23 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.springframework.data.annotation.PersistenceCreator;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class EgressActionConfiguration extends ActionConfiguration {
-    public EgressActionConfiguration() {
-        super(ActionType.EGRESS);
+    public EgressActionConfiguration(String name, String type) {
+        super(name, ActionType.EGRESS, type);
+    }
+
+    @PersistenceCreator
+    @JsonCreator
+    @SuppressWarnings("unused")
+    public EgressActionConfiguration(@JsonProperty(value = "name", required = true) String name,
+            @JsonProperty(value = "actionType") ActionType actionType,
+            @JsonProperty(value = "type", required = true) String type) {
+        this(name, type);
     }
 }

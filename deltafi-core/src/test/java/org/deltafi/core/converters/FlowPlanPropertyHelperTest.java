@@ -242,7 +242,7 @@ class FlowPlanPropertyHelperTest {
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables(), "action");
         Map<String, Object> mappedParameters = flowPlanPropertyHelper.replaceMapPlaceholders(parameters, "");
 
-        ActionConfiguration actionConfiguration = new EgressActionConfiguration();
+        ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
         actionConfiguration.setParameters(mappedParameters);
 
         ActionDescriptor egressActionDescriptor = Util.egressActionDescriptor("config-test/complex-parameter-action-descriptor.json");

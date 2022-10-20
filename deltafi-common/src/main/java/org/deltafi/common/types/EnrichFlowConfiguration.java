@@ -29,4 +29,8 @@ import java.util.List;
 public class EnrichFlowConfiguration extends DeltaFiConfiguration {
     private List<String> domainActions;
     private List<String> enrichActions;
+
+    public EnrichFlowConfiguration(String name) {
+        super(name);
+    }
 }

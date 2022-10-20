@@ -49,20 +49,12 @@ class EgressFlowValidatorTest {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName("egressFlow");
 
-        FormatActionConfiguration format = new FormatActionConfiguration();
-        format.setName("format");
-
-        ValidateActionConfiguration validate1 = new ValidateActionConfiguration();
-        validate1.setName("validate1");
-
-        ValidateActionConfiguration validate2 = new ValidateActionConfiguration();
-        validate2.setName("validate2");
-
-        EgressActionConfiguration egress = new EgressActionConfiguration();
-        egress.setName("egress");
-
+        FormatActionConfiguration format = new FormatActionConfiguration("format", null, null);
         egressFlow.setFormatAction(format);
+        ValidateActionConfiguration validate1 = new ValidateActionConfiguration("validate1", null);
+        ValidateActionConfiguration validate2 = new ValidateActionConfiguration("validate2", null);
         egressFlow.setValidateActions(List.of(validate1, validate2));
+        EgressActionConfiguration egress = new EgressActionConfiguration("egress", null);
         egressFlow.setEgressAction(egress);
 
         List<FlowConfigError> errors = egressFlowValidator.validate(egressFlow);
@@ -84,10 +76,9 @@ class EgressFlowValidatorTest {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName("egressFlow");
 
-        FormatActionConfiguration format = new FormatActionConfiguration();
-        format.setName("fail");
+        FormatActionConfiguration format = new FormatActionConfiguration("fail", null, null);
         egressFlow.setFormatAction(format);
-        egressFlow.setEgressAction(new EgressActionConfiguration());
+        egressFlow.setEgressAction(new EgressActionConfiguration(null, null));
 
         FlowConfigError expected = expectedError();
         Mockito.when(schemaComplianceValidator.validate(Mockito.argThat((action) -> "fail".equals(action.getName()))))

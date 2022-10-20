@@ -63,8 +63,7 @@ class SchemaComplianceValidatorTest {
         params.remove("url");
         params.put("url2", "https://egress");
 
-        EgressActionConfiguration config = egressConfig(params);
-        config.setName("egressName");
+        EgressActionConfiguration config = egressConfig("egressName", params);
 
         Mockito.when(actionDescriptorService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
@@ -78,9 +77,7 @@ class SchemaComplianceValidatorTest {
 
     @Test
     void runValidate_missingType() {
-        EgressActionConfiguration config = egressConfig(getRequiredEgressParams());
-        config.setName("egressName");
-        config.setType("   ");
+        EgressActionConfiguration config = egressConfig("egressName", "   ", getRequiredEgressParams());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
         Mockito.verifyNoInteractions(actionDescriptorService);
@@ -92,9 +89,7 @@ class SchemaComplianceValidatorTest {
 
     @Test
     void validateAgainstSchema_wrongInstanceType() {
-        EgressActionConfiguration config = egressConfig(getRequiredEgressParams());
-        config.setType(FORMAT_ACTION);
-        config.setName("egressAction");
+        EgressActionConfiguration config = egressConfig("egressAction", FORMAT_ACTION, getRequiredEgressParams());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(
                 ActionDescriptor.builder().type(ActionType.FORMAT).build(), config);
@@ -193,10 +188,16 @@ class SchemaComplianceValidatorTest {
     }
 
     private EgressActionConfiguration egressConfig(Map<String, Object> params) {
-        EgressActionConfiguration restEgressConfig = new EgressActionConfiguration();
-        restEgressConfig.setName("RestEgress");
+        return egressConfig("RestEgress", EGRESS_ACTION, params);
+    }
+
+    private EgressActionConfiguration egressConfig(String name, Map<String, Object> params) {
+        return egressConfig(name, EGRESS_ACTION, params);
+    }
+
+    private EgressActionConfiguration egressConfig(String name, String type, Map<String, Object> params) {
+        EgressActionConfiguration restEgressConfig = new EgressActionConfiguration(name, type);
         restEgressConfig.setApiVersion("0.19.0");
-        restEgressConfig.setType(EGRESS_ACTION);
         restEgressConfig.setParameters(params);
         return restEgressConfig;
     }
@@ -221,20 +222,15 @@ class SchemaComplianceValidatorTest {
     }
 
     private EnrichActionConfiguration enrichConfig() {
-        EnrichActionConfiguration config = new EnrichActionConfiguration();
-        config.setName("MyEnrich");
+        EnrichActionConfiguration config = new EnrichActionConfiguration("MyEnrich", ENRICH_ACTION, Collections.singletonList(DOMAIN_VALUE));
         config.setApiVersion("0.19.0");
-        config.setType(ENRICH_ACTION);
-        config.setRequiresDomains(Collections.singletonList(DOMAIN_VALUE));
         return config;
     }
 
     private EnrichActionConfiguration invalidEnrich() {
-        EnrichActionConfiguration config = new EnrichActionConfiguration();
-        config.setName("MyEnrich");
-        config.setApiVersion("0.19.0");
-        config.setType(ENRICH_ACTION);
         // missing: requiresDomains
+        EnrichActionConfiguration config = new EnrichActionConfiguration("MyEnrich", ENRICH_ACTION, null);
+        config.setApiVersion("0.19.0");
         // config has requiresEnrichments, but schema has an empty list.
         config.setRequiresEnrichments(Collections.singletonList(ENRICHMENT_VALUE));
         return config;
@@ -251,22 +247,16 @@ class SchemaComplianceValidatorTest {
     }
 
     private FormatActionConfiguration formatConfig() {
-        FormatActionConfiguration config = new FormatActionConfiguration();
-        config.setName("MyFormat");
+        FormatActionConfiguration config = new FormatActionConfiguration("MyFormat", FORMAT_ACTION, Collections.singletonList(DOMAIN_VALUE));
         config.setApiVersion("0.19.0");
-        config.setType(FORMAT_ACTION);
-        config.setRequiresDomains(Collections.singletonList(DOMAIN_VALUE));
         config.setRequiresEnrichments(Collections.singletonList(ENRICHMENT_VALUE));
         return config;
     }
 
     private FormatActionConfiguration invalidFormat() {
-        FormatActionConfiguration config = new FormatActionConfiguration();
-        config.setName("MyFormat");
-        config.setApiVersion("0.19.0");
-        config.setType(FORMAT_ACTION);
         // wrong requiresDomains value:
-        config.setRequiresDomains(Collections.singletonList("bogusDomain"));
+        FormatActionConfiguration config = new FormatActionConfiguration("MyFormat", FORMAT_ACTION, Collections.singletonList("bogusDomain"));
+        config.setApiVersion("0.19.0");
         // no requiresEnrichments here is ok because schema is ANY
         return config;
     }
@@ -280,10 +270,6 @@ class SchemaComplianceValidatorTest {
     }
 
     private TransformActionConfiguration transformConfig() {
-        TransformActionConfiguration config = new TransformActionConfiguration();
-        config.setName("MyTransform");
-        config.setApiVersion("0.19.0");
-        config.setType(TRANSFORM_ACTION);
-        return config;
+        return new TransformActionConfiguration("MyTransform", TRANSFORM_ACTION);
     }
 }

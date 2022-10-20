@@ -20,16 +20,16 @@ package org.deltafi.common.types;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class RequiresDomainsAndEnrichmentsActionConfiguration extends RequiresDomainsActionConfiguration {
     @Getter
     @Setter
-    private List<String> requiresEnrichments = new ArrayList<>();
+    private List<String> requiresEnrichments;
 
-    public RequiresDomainsAndEnrichmentsActionConfiguration(ActionType actionType) {
-        super(actionType);
+    public RequiresDomainsAndEnrichmentsActionConfiguration(String name, ActionType actionType, String type,
+                                                            List<String> requiresDomains) {
+        super(name, actionType, type, requiresDomains);
     }
 
     @Override

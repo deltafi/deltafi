@@ -111,7 +111,7 @@ public class PluginRegistrar {
         try {
             flowPlanResources = applicationContext.getResources("flows/*");
         } catch (IOException e) {
-            log.info("Unable to load flow plans", e);
+            log.warn("Unable to load flow plans", e);
             return Collections.emptyList();
         }
 
@@ -129,7 +129,7 @@ public class PluginRegistrar {
                 String flowJson = new String(flowPlanResource.getInputStream().readAllBytes());
                 flowPlans.add(OBJECT_MAPPER.readValue(flowJson, FlowPlan.class));
             } catch (IOException e) {
-                log.warn("Unable to load flow plan: " + e.getMessage());
+                log.warn("Unable to load flow plan ({})", flowPlanResource.getFilename(), e);
             }
         }
         return flowPlans;

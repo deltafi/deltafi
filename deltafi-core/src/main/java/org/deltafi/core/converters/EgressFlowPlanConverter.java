@@ -48,15 +48,13 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
      * @return FormatActionConfiguration with variable values substituted in
      */
     FormatActionConfiguration buildFormatAction(FormatActionConfiguration formatActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration();
+        String replacedName = flowPlanPropertyHelper.getReplacedName(formatActionTemplate);
+        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresDomains(), replacedName);
+        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration(replacedName, formatActionTemplate.getType(), requiresDomains);
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(formatActionConfiguration, formatActionTemplate);
 
-        // TODO - should we allow requiresEnrichments and requiresDomain to be replaced?
         List<String> requiresEnrichments = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresEnrichments(), formatActionConfiguration.getName());
-        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresDomains(), formatActionConfiguration.getName());
-
         formatActionConfiguration.setRequiresEnrichments(requiresEnrichments);
-        formatActionConfiguration.setRequiresDomains(requiresDomains);
 
         return formatActionConfiguration;
     }
@@ -74,9 +72,9 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
      * @return ValidateActionConfiguration with variable values substituted in
      */
     ValidateActionConfiguration buildValidateAction(ValidateActionConfiguration validateActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        ValidateActionConfiguration validateActionConfiguration = new ValidateActionConfiguration();
+        ValidateActionConfiguration validateActionConfiguration = new ValidateActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(validateActionTemplate), validateActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(validateActionConfiguration, validateActionTemplate);
-
         return validateActionConfiguration;
     }
 
@@ -87,10 +85,9 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
      * @return EgressActionConfiguration with variable values substituted in
      */
     EgressActionConfiguration buildEgressAction(EgressActionConfiguration egressActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-
-        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration();
+        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(egressActionTemplate), egressActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(egressActionConfiguration, egressActionTemplate);
-
         return egressActionConfiguration;
     }
 

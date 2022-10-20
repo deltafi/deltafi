@@ -54,8 +54,7 @@ class EnrichFlowPlanConverterTest {
 
     @Test
     void testUnresolvedPlaceholder() throws IOException {
-        EnrichFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-enrich-flowplan-test.json"), EnrichFlowPlan.class);
-        flowPlan.getEnrichActions().get(0).setName("${missing.placeholder:defaultignored}");
+        EnrichFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-enrich-flowplan-unresolved-test.json"), EnrichFlowPlan.class);
         EnrichFlow enrichFlow = enrichFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(enrichFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
@@ -67,10 +66,7 @@ class EnrichFlowPlanConverterTest {
     }
 
     EnrichActionConfiguration expectedEnrichAction() {
-        EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration();
-        enrichActionConfiguration.setName("passthrough.PassthroughEnrichAction");
-        enrichActionConfiguration.setType("org.deltafi.passthrough.action.RoteEnrichAction");
-        enrichActionConfiguration.setRequiresDomains(List.of("binary"));
+        EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration("passthrough.PassthroughEnrichAction", "org.deltafi.passthrough.action.RoteEnrichAction", List.of("binary"));
         enrichActionConfiguration.setRequiresEnrichments(List.of("binary"));
         enrichActionConfiguration.setParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value")));
         return enrichActionConfiguration;

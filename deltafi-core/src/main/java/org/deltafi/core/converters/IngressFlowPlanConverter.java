@@ -40,7 +40,8 @@ public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan,
      * @return LoadActionConfiguration with variable values substituted in
      */
     LoadActionConfiguration buildLoadAction(LoadActionConfiguration loadActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration();
+        LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(loadActionTemplate), loadActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(loadActionConfiguration, loadActionTemplate);
         return loadActionConfiguration;
     }
@@ -58,10 +59,9 @@ public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan,
      * @return TransformActionConfiguration with variable values substituted in
      */
     TransformActionConfiguration buildTransformAction(TransformActionConfiguration transformActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        TransformActionConfiguration transformActionConfiguration = new TransformActionConfiguration();
-
+        TransformActionConfiguration transformActionConfiguration = new TransformActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(transformActionTemplate), transformActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(transformActionConfiguration, transformActionTemplate);
-
         return transformActionConfiguration;
     }
 

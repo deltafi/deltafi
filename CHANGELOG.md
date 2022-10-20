@@ -8,12 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - New Grafana dashboard that shows last seen information for each flow
 - Docs repo merged into DeltaFi monolith
+- A checkDeltafiPlugin task that validates plugin variables and flow files has been added. It may be used in a
+plugin's build.gradle by adding `id "org.deltafi.plugin" version "${deltafiVersion}"` to plugins and including
+`bootJar.dependsOn(checkDeltafiPlugin)`.
 
 ### Changed
+- FlowPlan and ActionConfiguration classes now enforce required fields. They are final and must be provided to the
+constructor.
 
 ### Deprecated
 
 ### Removed
+- Plugin manifest generation has been removed from the DeltaFi Gradle plugin.
 
 ### Fixed
 - Flow summary dashboard ingress files query was incorrect

@@ -28,5 +28,10 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class IngressFlowConfiguration extends DeltaFiConfiguration {
     private List<String> transformActions;
-    private String loadAction;
+    private final String loadAction;
+
+    public IngressFlowConfiguration(String name, String loadAction) {
+        super(name);
+        this.loadAction = loadAction;
+    }
 }

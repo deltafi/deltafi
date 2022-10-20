@@ -54,6 +54,7 @@ input PluginVariablesInput {
 
 type IngressFlowPlan {
   name: String!
+  type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
   transformActions: [TransformActionConfiguration]
@@ -62,6 +63,7 @@ type IngressFlowPlan {
 
 input IngressFlowPlanInput {
   name: String!
+  type: String!
   description: String!
   sourcePlugin: PluginCoordinatesInput!
   transformActions: [TransformActionConfigurationInput]
@@ -70,6 +72,7 @@ input IngressFlowPlanInput {
 
 type EnrichFlowPlan {
   name: String!
+  type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
   domainActions: [DomainActionConfiguration]
@@ -78,6 +81,7 @@ type EnrichFlowPlan {
 
 input EnrichFlowPlanInput {
   name: String!
+  type: String!
   description: String!
   sourcePlugin: PluginCoordinatesInput!
   domainActions: [DomainActionConfigurationInput]
@@ -86,6 +90,7 @@ input EnrichFlowPlanInput {
 
 type EgressFlowPlan {
   name: String!
+  type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
   includeIngressFlows: [String]
@@ -97,6 +102,7 @@ type EgressFlowPlan {
 
 input EgressFlowPlanInput {
   name: String!
+  type: String!
   description: String!
   sourcePlugin: PluginCoordinatesInput!
   includeIngressFlows: [String]

@@ -53,12 +53,10 @@ public class EnrichFlowPlanConverter extends FlowPlanConverter<EnrichFlowPlan, E
      * @return DomainActionConfiguration with variable values substituted in
      */
     DomainActionConfiguration buildDomainAction(DomainActionConfiguration domainActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        DomainActionConfiguration domainActionConfiguration = new DomainActionConfiguration();
+        String replacedName = flowPlanPropertyHelper.getReplacedName(domainActionTemplate);
+        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(domainActionTemplate.getRequiresDomains(), replacedName);
+        DomainActionConfiguration domainActionConfiguration = new DomainActionConfiguration(replacedName, domainActionTemplate.getType(), requiresDomains);
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(domainActionConfiguration, domainActionTemplate);
-
-        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(domainActionTemplate.getRequiresDomains(), domainActionConfiguration.getName());
-        domainActionConfiguration.setRequiresDomains(requiresDomains);
-
         return domainActionConfiguration;
     }
 
@@ -69,15 +67,14 @@ public class EnrichFlowPlanConverter extends FlowPlanConverter<EnrichFlowPlan, E
      * @return EnrichActionConfiguration with variable values substituted in
      */
     EnrichActionConfiguration buildEnrichAction(EnrichActionConfiguration enrichActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration();
+        String replacedName = flowPlanPropertyHelper.getReplacedName(enrichActionTemplate);
+        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(enrichActionTemplate.getRequiresDomains(), replacedName);
+        EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration(replacedName, enrichActionTemplate.getType(), requiresDomains);
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(enrichActionConfiguration, enrichActionTemplate);
 
         List<String> requiresEnrichments = flowPlanPropertyHelper.replaceListOfPlaceholders(enrichActionTemplate.getRequiresEnrichments(), enrichActionConfiguration.getName());
-        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(enrichActionTemplate.getRequiresDomains(), enrichActionConfiguration.getName());
         List<KeyValue> requiresMetadata = flowPlanPropertyHelper.replaceKeyValuePlaceholders(enrichActionTemplate.getRequiresMetadataKeyValues(), enrichActionConfiguration.getName());
-
         enrichActionConfiguration.setRequiresEnrichments(requiresEnrichments);
-        enrichActionConfiguration.setRequiresDomains(requiresDomains);
         enrichActionConfiguration.setRequiresMetadataKeyValues(requiresMetadata);
 
         return enrichActionConfiguration;

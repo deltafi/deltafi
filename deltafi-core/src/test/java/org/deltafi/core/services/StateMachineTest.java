@@ -568,14 +568,11 @@ class StateMachineTest {
         private EgressFlow makeEgressFlow() {
             EgressFlow egressFlow = new EgressFlow();
             egressFlow.setName(name);
-            EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration();
-            egressActionConfiguration.setName(egressActionName);
+            EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration(egressActionName, null);
             egressFlow.setEgressAction(egressActionConfiguration);
 
-            FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration();
-            formatActionConfiguration.setName(formatActionName);
+            FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration(formatActionName, null, formatRequiresDomains);
             formatActionConfiguration.setRequiresEnrichments(formatRequiresEnrichment);
-            formatActionConfiguration.setRequiresDomains(formatRequiresDomains);
             egressFlow.setFormatAction(formatActionConfiguration);
             egressFlow.setValidateActions(validateActions.stream().map(this::named).collect(Collectors.toList()));
 
@@ -583,9 +580,7 @@ class StateMachineTest {
         }
 
         ValidateActionConfiguration named(String name) {
-            ValidateActionConfiguration validateActionConfiguration = new ValidateActionConfiguration();
-            validateActionConfiguration.setName(name);
-            return validateActionConfiguration;
+            return new ValidateActionConfiguration(name, null);
         }
     }
 
@@ -603,9 +598,7 @@ class StateMachineTest {
         private EnrichFlow makeEnrichFlow() {
             EnrichFlow enrichFlow = new EnrichFlow();
 
-            EnrichActionConfiguration enrich = new EnrichActionConfiguration();
-            enrich.setName(enrichActionName);
-            enrich.setRequiresDomains(enrichRequiresDomains);
+            EnrichActionConfiguration enrich = new EnrichActionConfiguration(enrichActionName, null, enrichRequiresDomains);
             enrich.setRequiresEnrichments(enrichRequiresEnrichment);
             enrich.setRequiresMetadataKeyValues(enrichRequiresMetadata);
             enrichFlow.setEnrichActions(List.of(enrich));

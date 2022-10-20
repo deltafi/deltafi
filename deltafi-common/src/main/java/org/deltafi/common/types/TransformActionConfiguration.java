@@ -17,11 +17,23 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.springframework.data.annotation.PersistenceCreator;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class TransformActionConfiguration extends ActionConfiguration {
-    public TransformActionConfiguration() {
-        super(ActionType.TRANSFORM);
+    public TransformActionConfiguration(String name, String type) {
+        super(name, ActionType.TRANSFORM, type);
+    }
+
+    @PersistenceCreator
+    @JsonCreator
+    @SuppressWarnings("unused")
+    public TransformActionConfiguration(@JsonProperty(value = "name", required = true) String name,
+            @JsonProperty(value = "actionType") ActionType actionType,
+            @JsonProperty(value = "type", required = true) String type) {
+        this(name, type);
     }
 }

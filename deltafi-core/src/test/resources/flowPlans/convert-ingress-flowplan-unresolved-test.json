@@ -17,7 +17,7 @@
     }
   ],
   "loadAction": {
-    "name": "PassthroughLoadAction",
+    "name": "${missing.placeholder:defaultignored}",
     "type": "org.deltafi.passthrough.action.RoteLoadAction",
     "parameters": {
       "domains": [

@@ -37,28 +37,17 @@ class IngressFlowPlanValidatorTest {
 
     @Test
     void duplicateActionNameErrors() {
-        IngressFlowPlan ingressFlow = new IngressFlowPlan("flow", null);
+        LoadActionConfiguration load = new LoadActionConfiguration("action", "org.deltafi.load.Action");
 
-        LoadActionConfiguration load = new LoadActionConfiguration();
-        load.setName("action");
-        load.setType("org.deltafi.load.Action");
-        ingressFlow.setLoadAction(load);
+        TransformActionConfiguration transform1 = new TransformActionConfiguration("action", "org.deltafi.transform.Action1");
+        TransformActionConfiguration transform2 = new TransformActionConfiguration("transform", "org.deltafi.transform.Action2");
+        TransformActionConfiguration transform3 = new TransformActionConfiguration("transform",  "org.deltafi.transform.Action3");
 
-        TransformActionConfiguration transform1 = new TransformActionConfiguration();
-        transform1.setName("action");
-        transform1.setType("org.deltafi.transform.Action1");
-        TransformActionConfiguration transform2 = new TransformActionConfiguration();
-        transform2.setName("transform");
-        transform2.setType("org.deltafi.transform.Action2");
-        TransformActionConfiguration transform3 = new TransformActionConfiguration();
-        transform3.setName("transform");
-        transform3.setType("org.deltafi.transform.Action3");
-
+        IngressFlowPlan ingressFlow = new IngressFlowPlan("flow", null, load);
         ingressFlow.setTransformActions(List.of(transform1, transform2, transform3));
 
         Assertions.assertThatThrownBy(() -> ingressFlowPlanValidator.validate(ingressFlow))
                 .isInstanceOf(DeltafiConfigurationException.class)
                 .hasMessage("Config named: transform had the following error: The action name: transform is duplicated for the following action types: org.deltafi.transform.Action2, org.deltafi.transform.Action3; Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.transform.Action1, org.deltafi.load.Action");
     }
-
 }

@@ -18,18 +18,17 @@
 package org.deltafi.common.types;
 
 import lombok.Getter;
-import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class RequiresDomainsActionConfiguration extends ActionConfiguration {
     @Getter
-    @Setter
-    private List<String> requiresDomains = new ArrayList<>();
+    private final List<String> requiresDomains;
 
-    public RequiresDomainsActionConfiguration(ActionType actionType) {
-        super(actionType);
+    public RequiresDomainsActionConfiguration(String name, ActionType actionType, String type,
+                                              List<String> requiresDomains) {
+        super(name, actionType, type);
+        this.requiresDomains = requiresDomains;
     }
 
     @Override

@@ -36,18 +36,26 @@ public class EgressFlowPlan extends FlowPlan {
     private List<String> includeIngressFlows;
     private List<String> excludeIngressFlows;
 
-    private FormatActionConfiguration formatAction;
+    private final FormatActionConfiguration formatAction;
     private List<ValidateActionConfiguration> validateActions;
-    private EgressActionConfiguration egressAction;
+    private final EgressActionConfiguration egressAction;
 
-    public EgressFlowPlan(String name) {
-        super(name, FlowType.EGRESS);
+    public EgressFlowPlan(String name, String description, FormatActionConfiguration formatAction,
+                          EgressActionConfiguration egressAction) {
+        super(name, FlowType.EGRESS, description);
+        this.formatAction = formatAction;
+        this.egressAction = egressAction;
     }
 
     @PersistenceCreator
     @JsonCreator
-    public EgressFlowPlan(@JsonProperty("name") String name, @JsonProperty("type") FlowType type) {
-        this(name);
+    @SuppressWarnings("unused")
+    public EgressFlowPlan(@JsonProperty(value = "name", required = true) String name,
+            @JsonProperty(value = "type") FlowType type,
+            @JsonProperty(value = "description", required = true) String description,
+            @JsonProperty(value = "formatAction", required = true) FormatActionConfiguration formatAction,
+            @JsonProperty(value = "egressAction", required = true) EgressActionConfiguration egressAction) {
+        this(name, description, formatAction, egressAction);
     }
 
     @Override

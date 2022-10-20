@@ -180,13 +180,13 @@ public class StateMachine {
 
     private boolean domainActionReady(DomainActionConfiguration domainAction, DeltaFile deltaFile) {
         return !deltaFile.hasTerminalAction(domainAction.getName()) &&
-                deltaFile.hasDomains(domainAction.getRequiresDomains());
+                (domainAction.getRequiresDomains() == null || deltaFile.hasDomains(domainAction.getRequiresDomains()));
     }
 
     private boolean enrichActionReady(EnrichActionConfiguration enrichAction, DeltaFile deltaFile) {
         return !deltaFile.hasTerminalAction(enrichAction.getName()) &&
-                deltaFile.hasDomains(enrichAction.getRequiresDomains()) &&
-                deltaFile.hasEnrichments(enrichAction.getRequiresEnrichments()) &&
+                (enrichAction.getRequiresDomains() == null || deltaFile.hasDomains(enrichAction.getRequiresDomains())) &&
+                (enrichAction.getRequiresEnrichments() == null || deltaFile.hasEnrichments(enrichAction.getRequiresEnrichments())) &&
                 hasMetadataMatches(deltaFile, enrichAction);
     }
 
@@ -216,8 +216,8 @@ public class StateMachine {
 
     private boolean formatActionReady(FormatActionConfiguration config, DeltaFile deltaFile) {
         return !deltaFile.hasTerminalAction(config.getName()) &&
-                deltaFile.hasDomains(config.getRequiresDomains()) &&
-                deltaFile.hasEnrichments(config.getRequiresEnrichments());
+                (config.getRequiresDomains() == null || deltaFile.hasDomains(config.getRequiresDomains())) &&
+                (config.getRequiresEnrichments() == null || deltaFile.hasEnrichments(config.getRequiresEnrichments()));
     }
 
     List<ActionConfiguration> getValidateActions(EgressFlow egressFlow, DeltaFile deltaFile) {

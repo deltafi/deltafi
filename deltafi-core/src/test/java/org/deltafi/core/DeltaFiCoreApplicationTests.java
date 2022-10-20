@@ -291,12 +291,9 @@ class DeltaFiCoreApplicationTests {
 	void loadIngressConfig() {
 		ingressFlowRepo.deleteAll();
 
-		LoadActionConfiguration lc = new LoadActionConfiguration();
-		lc.setName("sampleIngress.SampleLoadAction");
-		TransformActionConfiguration tc = new TransformActionConfiguration();
-		tc.setName("sampleIngress.Utf8TransformAction");
-		TransformActionConfiguration tc2 = new TransformActionConfiguration();
-		tc2.setName("sampleIngress.SampleTransformAction");
+		LoadActionConfiguration lc = new LoadActionConfiguration("sampleIngress.SampleLoadAction", "type");
+		TransformActionConfiguration tc = new TransformActionConfiguration("sampleIngress.Utf8TransformAction", "type");
+		TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleIngress.SampleTransformAction", "type");
 
 		IngressFlow sampleIngressFlow = buildRunningFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2));
 		IngressFlow retryFlow = buildRunningFlow("theFlow", lc, null);
@@ -309,27 +306,19 @@ class DeltaFiCoreApplicationTests {
     void loadEgressConfig() {
 		egressFlowRepo.deleteAll();
 
-		ValidateActionConfiguration authValidate = new ValidateActionConfiguration();
-		authValidate.setName("sampleEgress.AuthorityValidateAction");
-		ValidateActionConfiguration sampleValidate = new ValidateActionConfiguration();
-		sampleValidate.setName("sampleEgress.SampleValidateAction");
+		ValidateActionConfiguration authValidate = new ValidateActionConfiguration("sampleEgress.AuthorityValidateAction", "type");
+		ValidateActionConfiguration sampleValidate = new ValidateActionConfiguration("sampleEgress.SampleValidateAction", "type");
 
-		FormatActionConfiguration sampleFormat = new FormatActionConfiguration();
-		sampleFormat.setName("sampleEgress.SampleFormatAction");
-		sampleFormat.setRequiresDomains(List.of("sampleDomain"));
+		FormatActionConfiguration sampleFormat = new FormatActionConfiguration("sampleEgress.SampleFormatAction", "type", List.of("sampleDomain"));
 		sampleFormat.setRequiresEnrichments(List.of("sampleEnrichment"));
 
-		EgressActionConfiguration sampleEgress = new EgressActionConfiguration();
-		sampleEgress.setName("sampleEgress.SampleEgressAction");
+		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("sampleEgress.SampleEgressAction", "type");
 
 		EgressFlow sampleEgressFlow = buildRunningFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress);
 		sampleEgressFlow.setValidateActions(List.of(authValidate, sampleValidate));
 
-		FormatActionConfiguration errorFormat = new FormatActionConfiguration();
-		errorFormat.setName("sampleEgress.ErrorFormatAction");
-		errorFormat.setRequiresDomains(List.of("error"));
-		EgressActionConfiguration errorEgress = new EgressActionConfiguration();
-		errorEgress.setName("sampleEgress.ErrorEgressAction");
+		FormatActionConfiguration errorFormat = new FormatActionConfiguration("sampleEgress.ErrorFormatAction", "type", List.of("error"));
+		EgressActionConfiguration errorEgress = new EgressActionConfiguration("sampleEgress.ErrorEgressAction", "type");
 		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress);
 
 		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
@@ -1312,12 +1301,14 @@ class DeltaFiCoreApplicationTests {
 				.name()
 				.apiVersion()
 				.onLoadActionConfiguration()
+				.name()
+				.actionType()
+				.type()
 				.parent();
 
 		DeltaFiConfigsGraphQLQuery findConfig = DeltaFiConfigsGraphQLQuery.newRequest().configQuery(configQueryInput).build();
 
-		TypeRef<List<DeltaFiConfiguration>> listOfConfigs = new TypeRef<>() {
-		};
+		TypeRef<List<DeltaFiConfiguration>> listOfConfigs = new TypeRef<>() {};
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(findConfig, projection);
 		List<DeltaFiConfiguration> configs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQLQueryRequest.serialize(),
@@ -1328,14 +1319,13 @@ class DeltaFiCoreApplicationTests {
 
 		LoadActionConfiguration loadActionConfiguration = (LoadActionConfiguration) configs.get(0);
 		assertEquals(name, loadActionConfiguration.getName());
-		Assertions.assertNull(loadActionConfiguration.getType()); // not in the projection should be null
 	}
 
 	@Test
 	void testGetIngressFlowPlan() {
 		clearForFlowTests();
-		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("ingressPlan", null);
-		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b", null);
+		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("ingressPlan", "description", new LoadActionConfiguration("load", "type"));
+		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b", "description", new LoadActionConfiguration("load", "type"));
 		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB));
 		IngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("ingressPlan");
@@ -1344,8 +1334,8 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetEgressFlowPlan() {
 		clearForFlowTests();
-		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan("egressPlan", null);
-		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan("b", null);
+		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan("egressPlan", "description", new FormatActionConfiguration("format", "type", List.of("domain")), new EgressActionConfiguration("egress", "type"));
+		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan("b", "description", new FormatActionConfiguration("format", "type", List.of("domain")), new EgressActionConfiguration("egress", "type"));
 		egressFlowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB));
 		EgressFlowPlan plan = FlowPlanDatafetcherTestHelper.getEgressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("egressPlan");
@@ -1466,19 +1456,12 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testNullIncludeIngress() {
 		clearForFlowTests();
-		EgressFlowPlan egressFlowPlan = new EgressFlowPlan("withNullInclude");
+		FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration("format", "org.deltafi.actions.Formatter", List.of("domain"));
+		EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration("egress", "org.deltafi.actions.EgressAction");
+		EgressFlowPlan egressFlowPlan = new EgressFlowPlan("withNullInclude", null, formatActionConfiguration, egressActionConfiguration);
 		egressFlowPlan.setSourcePlugin(PluginCoordinates.builder().artifactId("test-actions").groupId("org.deltafi").version("1.0").build());
 		egressFlowPlan.setIncludeIngressFlows(null);
 		egressFlowPlan.setExcludeIngressFlows(List.of());
-		FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration();
-		formatActionConfiguration.setName("format");
-		formatActionConfiguration.setType("org.deltafi.actions.Formatter");
-		formatActionConfiguration.setRequiresDomains(List.of("domain"));
-        egressFlowPlan.setFormatAction(formatActionConfiguration);
-		EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration();
-		egressActionConfiguration.setName("egress");
-		egressActionConfiguration.setType("org.deltafi.actions.EgressAction");
-		egressFlowPlan.setEgressAction(egressActionConfiguration);
 
 		egressFlowPlanService.saveFlowPlan(egressFlowPlan);
 
@@ -1569,7 +1552,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testRemoveIngressFlowPlan() {
 		clearForFlowTests();
-		IngressFlowPlan ingressFlowPlan = new IngressFlowPlan("flowPlan", null);
+		IngressFlowPlan ingressFlowPlan = new IngressFlowPlan("flowPlan", null, null);
 		ingressFlowPlanRepo.save(ingressFlowPlan);
 		assertTrue(FlowPlanDatafetcherTestHelper.removeIngressFlowPlan(dgsQueryExecutor));
 	}
@@ -1577,7 +1560,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testRemoveEgressFlowPlan() {
 		clearForFlowTests();
-		EgressFlowPlan egressFlowPlan = new EgressFlowPlan("flowPlan", null);
+		EgressFlowPlan egressFlowPlan = new EgressFlowPlan("flowPlan", null, null, null);
 		egressFlowPlanRepo.save(egressFlowPlan);
 		assertTrue(FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor));
 	}
@@ -2501,11 +2484,11 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
 
-		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("a");
+		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("a", null, null);
 		ingressFlowPlanA.setSourcePlugin(pluginToDelete);
-		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b");
+		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b", null, null);
 		ingressFlowPlanB.setSourcePlugin(pluginToDelete);
-		IngressFlowPlan ingressFlowPlanC = new IngressFlowPlan("c");
+		IngressFlowPlan ingressFlowPlanC = new IngressFlowPlan("c", null, null);
 		ingressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
 		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC));
 		assertThat(ingressFlowPlanRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
@@ -2538,11 +2521,11 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
 
-		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan("a");
+		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan("a", null, null, null);
 		egressFlowPlanA.setSourcePlugin(pluginToDelete);
-		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan("b");
+		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan("b", null, null, null);
 		egressFlowPlanB.setSourcePlugin(pluginToDelete);
-		EgressFlowPlan egressFlowPlanC = new EgressFlowPlan("c");
+		EgressFlowPlan egressFlowPlanC = new EgressFlowPlan("c", null, null, null);
 		egressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
 		egressFlowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB, egressFlowPlanC));
 		assertThat(egressFlowPlanRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
@@ -3131,12 +3114,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	private IngressFlow buildIngressFlow(FlowState flowState) {
-		LoadActionConfiguration lc = new LoadActionConfiguration();
-		lc.setName("sampleIngress.SampleLoadAction");
-		TransformActionConfiguration tc = new TransformActionConfiguration();
-		tc.setName("sampleIngress.Utf8TransformAction");
-		TransformActionConfiguration tc2 = new TransformActionConfiguration();
-		tc2.setName("sampleIngress.SampleTransformAction");
+		LoadActionConfiguration lc = new LoadActionConfiguration("sampleIngress.SampleLoadAction", "type");
+		TransformActionConfiguration tc = new TransformActionConfiguration("sampleIngress.Utf8TransformAction", "type");
+		TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleIngress.SampleTransformAction", "type");
 
 		return buildFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), flowState);
 	}
@@ -3155,13 +3135,10 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	private EgressFlow buildEgressFlow(FlowState flowState) {
-		FormatActionConfiguration sampleFormat = new FormatActionConfiguration();
-		sampleFormat.setName("sampleEgress.SampleFormatAction");
-		sampleFormat.setRequiresDomains(List.of("sampleDomain"));
+		FormatActionConfiguration sampleFormat = new FormatActionConfiguration("sampleEgress.SampleFormatAction", "type", List.of("sampleDomain"));
 		sampleFormat.setRequiresEnrichments(List.of("sampleEnrichment"));
 
-		EgressActionConfiguration sampleEgress = new EgressActionConfiguration();
-		sampleEgress.setName("sampleEgress.SampleEgressAction");
+		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("sampleEgress.SampleEgressAction", "type");
 
 		return buildFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, flowState);
 	}
@@ -3170,13 +3147,9 @@ class DeltaFiCoreApplicationTests {
 		EnrichFlow enrichFlow = new EnrichFlow();
 		enrichFlow.setName("sampleEnrich");
 
-		DomainActionConfiguration sampleDomain = new DomainActionConfiguration();
-		sampleDomain.setName("sampleEnrich.SampleDomainAction");
-		sampleDomain.setRequiresDomains(List.of("sampleDomain"));
+		DomainActionConfiguration sampleDomain = new DomainActionConfiguration("sampleEnrich.SampleDomainAction", "type", List.of("sampleDomain"));
 
-		EnrichActionConfiguration sampleEnrich = new EnrichActionConfiguration();
-		sampleEnrich.setName("sampleEnrich.SampleEnrichAction");
-		sampleEnrich.setRequiresDomains(List.of("sampleDomain"));
+		EnrichActionConfiguration sampleEnrich = new EnrichActionConfiguration("sampleEnrich.SampleEnrichAction", "type", List.of("sampleDomain"));
 		sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
 
 		enrichFlow.setDomainActions(List.of(sampleDomain));

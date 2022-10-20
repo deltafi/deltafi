@@ -72,10 +72,8 @@ public class IngressFlow extends Flow {
 
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
-        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration();
-        ingressFlowConfiguration.setName(name);
+        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration(name, loadAction.getName());
         ingressFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()));
-        ingressFlowConfiguration.setLoadAction(loadAction.getName());
         return ingressFlowConfiguration;
     }
 }

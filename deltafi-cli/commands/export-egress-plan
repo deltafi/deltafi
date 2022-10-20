@@ -19,6 +19,7 @@ PLANNAME=${ARGS[@]:1}
 
 QUERY="fragment ActionFields on ActionConfiguration {
           name
+          actionType
           type
           parameters
         }
@@ -26,12 +27,15 @@ QUERY="fragment ActionFields on ActionConfiguration {
         query {
           getEgressFlowPlan(planName: \"$PLANNAME\") {
             name
+            type
             description
             sourcePlugin {
-              artifactId
               groupId
+              artifactId
               version
             }
+            includeIngressFlows
+            excludeIngressFlows
             formatAction {
               ... ActionFields
               requiresDomains
@@ -43,8 +47,6 @@ QUERY="fragment ActionFields on ActionConfiguration {
             egressAction {
               ... ActionFields
             }
-            includeIngressFlows
-            excludeIngressFlows
           }
         }
         "

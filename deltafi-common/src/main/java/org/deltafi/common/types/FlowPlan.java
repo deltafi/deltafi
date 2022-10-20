@@ -35,9 +35,9 @@ public abstract class FlowPlan {
     @Id
     private final String name;
     private final FlowType type;
+    private final String description;
 
     private PluginCoordinates sourcePlugin;
-    private String description;
 
     public abstract List<ActionConfiguration> allActionConfigurations();
 }

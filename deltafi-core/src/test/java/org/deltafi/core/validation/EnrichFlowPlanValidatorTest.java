@@ -113,20 +113,12 @@ class EnrichFlowPlanValidatorTest {
     void duplicateActionNameErrors() {
         EnrichFlowPlan enrichFlow = new EnrichFlowPlan("enrichFlow", null);
 
-        DomainActionConfiguration domain = new DomainActionConfiguration();
-        domain.setName("action");
-        domain.setType("org.deltafi.domain.Action1");
+        DomainActionConfiguration domain = new DomainActionConfiguration("action", "org.deltafi.domain.Action1", null);
         enrichFlow.setDomainActions(List.of(domain));
 
-        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration();
-        enrich1.setName("action");
-        enrich1.setType("org.deltafi.enrich.Action1");
-        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration();
-        enrich2.setName("enrich");
-        enrich2.setType("org.deltafi.enrich.Action2");
-        EnrichActionConfiguration enrich3 = new EnrichActionConfiguration();
-        enrich3.setName("enrich");
-        enrich3.setType("org.deltafi.enrich.Action3");
+        EnrichActionConfiguration enrich1 = new EnrichActionConfiguration("action", "org.deltafi.enrich.Action1", null);
+        EnrichActionConfiguration enrich2 = new EnrichActionConfiguration("enrich", "org.deltafi.enrich.Action2", null);
+        EnrichActionConfiguration enrich3 = new EnrichActionConfiguration("enrich", "org.deltafi.enrich.Action3", null);
         enrichFlow.setEnrichActions(List.of(enrich1, enrich2, enrich3));
 
         Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlow))
@@ -146,18 +138,10 @@ class EnrichFlowPlanValidatorTest {
     }
 
     DomainActionConfiguration domainAction(String name, String domain) {
-        DomainActionConfiguration domainActionConfiguration = new DomainActionConfiguration();
-        domainActionConfiguration.setName(name);
-        domainActionConfiguration.setType("org.deltafi.domain.Action");
-        domainActionConfiguration.setRequiresDomains(List.of(domain));
-        return domainActionConfiguration;
+        return new DomainActionConfiguration(name, "org.deltafi.domain.Action", List.of(domain));
     }
 
     EnrichActionConfiguration enrichAction(String name, String domain) {
-        EnrichActionConfiguration enrich = new EnrichActionConfiguration();
-        enrich.setName(name);
-        enrich.setType("org.deltafi.enrich.Action");
-        enrich.setRequiresDomains(List.of(domain));
-        return enrich;
+        return new EnrichActionConfiguration(name, "org.deltafi.enrich.Action", List.of(domain));
     }
 }

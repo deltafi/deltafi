@@ -36,14 +36,17 @@ public class EnrichFlowPlan extends FlowPlan {
     private List<DomainActionConfiguration> domainActions;
     private List<EnrichActionConfiguration> enrichActions;
 
-    public EnrichFlowPlan(String name) {
-        super(name, FlowType.ENRICH);
+    public EnrichFlowPlan(String name, String description) {
+        super(name, FlowType.ENRICH, description);
     }
 
     @PersistenceCreator
     @JsonCreator
-    public EnrichFlowPlan(@JsonProperty("name") String name, @JsonProperty("type") FlowType type) {
-        this(name);
+    @SuppressWarnings("unused")
+    public EnrichFlowPlan(@JsonProperty(value = "name", required = true) String name,
+            @JsonProperty(value = "type") FlowType type,
+            @JsonProperty(value = "description", required = true) String description) {
+        this(name, description);
     }
 
     @Override

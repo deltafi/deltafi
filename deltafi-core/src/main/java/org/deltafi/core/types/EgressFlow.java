@@ -85,13 +85,10 @@ public class EgressFlow extends Flow {
 
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
-        EgressFlowConfiguration egressFlowConfiguration = new EgressFlowConfiguration();
-        egressFlowConfiguration.setName(getName());
+        EgressFlowConfiguration egressFlowConfiguration = new EgressFlowConfiguration(name, formatAction.getName(), egressAction.getName());
         egressFlowConfiguration.setIncludeIngressFlows(includeIngressFlows);
         egressFlowConfiguration.setExcludeIngressFlows(excludeIngressFlows);
-        egressFlowConfiguration.setFormatAction(formatAction.getName());
         egressFlowConfiguration.setValidateActions(validateActionNames());
-        egressFlowConfiguration.setEgressAction(egressAction.getName());
 
         return egressFlowConfiguration;
     }

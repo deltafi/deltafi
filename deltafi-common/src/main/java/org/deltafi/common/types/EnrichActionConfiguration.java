@@ -17,21 +17,33 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.PersistenceCreator;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class EnrichActionConfiguration extends RequiresDomainsAndEnrichmentsActionConfiguration {
     @Getter
     @Setter
-    private List<KeyValue> requiresMetadataKeyValues = new ArrayList<>();
+    private List<KeyValue> requiresMetadataKeyValues;
 
-    public EnrichActionConfiguration() {
-        super(ActionType.ENRICH);
+    public EnrichActionConfiguration(String name, String type, List<String> requiresDomains) {
+        super(name, ActionType.ENRICH, type, requiresDomains);
+    }
+
+    @PersistenceCreator
+    @JsonCreator
+    @SuppressWarnings("unused")
+    public EnrichActionConfiguration(@JsonProperty(value = "name", required = true) String name,
+            @JsonProperty(value = "actionType") ActionType actionType,
+            @JsonProperty(value = "type", required = true) String type,
+            @JsonProperty(value = "requiresDomains", required = true) List<String> requiresDomains) {
+        this(name, type, requiresDomains);
     }
 
     @Override

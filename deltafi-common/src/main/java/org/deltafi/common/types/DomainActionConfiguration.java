@@ -17,11 +17,26 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.springframework.data.annotation.PersistenceCreator;
+
+import java.util.List;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class DomainActionConfiguration extends RequiresDomainsActionConfiguration {
-    public DomainActionConfiguration() {
-        super(ActionType.DOMAIN);
+    public DomainActionConfiguration(String name, String type, List<String> requiresDomains) {
+        super(name, ActionType.DOMAIN, type, requiresDomains);
+    }
+
+    @PersistenceCreator
+    @JsonCreator
+    @SuppressWarnings("unused")
+    public DomainActionConfiguration(@JsonProperty(value = "name", required = true) String name,
+            @JsonProperty(value = "actionType") ActionType actionType,
+            @JsonProperty(value = "type", required = true) String type,
+            @JsonProperty(value = "requiresDomains", required = true) List<String> requiresDomains) {
+        this(name, type, requiresDomains);
     }
 }

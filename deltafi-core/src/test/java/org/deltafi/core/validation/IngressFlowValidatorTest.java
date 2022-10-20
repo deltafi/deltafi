@@ -47,12 +47,9 @@ class IngressFlowValidatorTest {
     void validate() {
         IngressFlow ingressFlow = new IngressFlow();
         ingressFlow.setName("ingress");
-        TransformActionConfiguration transform1 = new TransformActionConfiguration();
-        transform1.setName("transform1");
-        TransformActionConfiguration transform2 = new TransformActionConfiguration();
-        transform1.setName("transform2");
-        LoadActionConfiguration load = new LoadActionConfiguration();
-        load.setName("load");
+        TransformActionConfiguration transform1 = new TransformActionConfiguration("transform1", null);
+        TransformActionConfiguration transform2 = new TransformActionConfiguration("transform2", null);
+        LoadActionConfiguration load = new LoadActionConfiguration("load", null);
 
         ingressFlow.setTransformActions(List.of(transform1, transform2));
         ingressFlow.setLoadAction(load);
@@ -73,8 +70,7 @@ class IngressFlowValidatorTest {
     void validate_createErrors() {
         IngressFlow ingressFlow = new IngressFlow();
         ingressFlow.setName("ingress");
-        LoadActionConfiguration load = new LoadActionConfiguration();
-        load.setName("fail");
+        LoadActionConfiguration load = new LoadActionConfiguration("fail", null);
         ingressFlow.setLoadAction(load);
 
         FlowConfigError expected = expectedError();

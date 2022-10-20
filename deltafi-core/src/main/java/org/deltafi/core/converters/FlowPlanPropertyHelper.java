@@ -52,10 +52,11 @@ public class FlowPlanPropertyHelper {
         return this.errors;
     }
 
+    public String getReplacedName(ActionConfiguration actionTemplate) {
+        return actionNamePrefix + "." + replaceValue(actionTemplate.getName(), actionTemplate.getName());
+    }
+
     public <C extends ActionConfiguration> void replaceCommonActionPlaceholders(C actionConfiguration, ActionConfiguration actionTemplate) {
-        String actionName = actionNamePrefix + "." + replaceValue(actionTemplate.getName(), actionTemplate.getName());
-        actionConfiguration.setName(actionName);
-        actionConfiguration.setType(actionTemplate.getType()); // type should never be templated
         actionConfiguration.setParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
     }
 
