@@ -5,6 +5,7 @@
 cli_help_command() {
   echo "
 Command: enrich-flow
+
 Subcommands:
   start
   stop

@@ -125,14 +125,9 @@ class PluginRegistryServiceTest {
     @Test
     void uninstallNotFound() {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.empty());
-        Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.isSuccess());
-        assertEquals(1, result.getErrors().size());
-        assertTrue(result.getErrors().contains("Plugin not found"));
+        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
-        Mockito.verifyNoInteractions(ingressFlowService);
-        Mockito.verifyNoInteractions(egressFlowService);
-        Mockito.verify(pluginRepository, Mockito.never()).deleteById(Mockito.any());
+        assertThat(errors).hasSize(1).contains("Plugin not found");
     }
 
     @Test
@@ -142,10 +137,9 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(ingressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
 
-        Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.isSuccess());
-        assertEquals(1, result.getErrors().size());
-        assertTrue(result.getErrors().contains("The plugin has created the following ingress flows which are still running: mockIngress"));
+        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
+
+        assertThat(errors).hasSize(1).contains("The plugin has created the following ingress flows which are still running: mockIngress");
     }
 
     @Test
@@ -156,10 +150,9 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
 
-        Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.isSuccess());
+        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
-        assertThat(result.getErrors()).hasSize(1).contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
+        assertThat(errors).hasSize(1).contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
     }
 
     @Test
@@ -173,32 +166,13 @@ class PluginRegistryServiceTest {
         Mockito.when(enrichFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
         Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
-        Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertFalse(result.isSuccess());
+        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
-        assertThat(result.getErrors()).hasSize(4)
+        assertThat(errors).hasSize(4)
                 .contains("The plugin has created the following ingress flows which are still running: mockIngress")
                 .contains("The plugin has created the following enrich flows which are still running: mockEnrich")
                 .contains("The plugin has created the following egress flows which are still running: mockEgress")
                 .contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
-    }
-
-    @Test
-    void uninstallDryRun() {
-        Plugin plugin1 = makePlugin();
-
-        Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
-
-        Result result = pluginRegistryService.uninstallPlugin(true, PLUGIN_COORDINATES_1);
-        assertTrue(result.isSuccess());
-
-        // none of the removal steps should run for a dry-run
-        Mockito.verify(pluginRepository, Mockito.never()).deleteById(Mockito.any());
-        Mockito.verify(actionDescriptorService, Mockito.never()).cleanupFor(Mockito.any());
-        Mockito.verify(ingressFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
-        Mockito.verify(enrichFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
-        Mockito.verify(egressFlowPlanService, Mockito.never()).cleanupFor(Mockito.any());
-        Mockito.verify(pluginVariableService, Mockito.never()).cleanupFor(Mockito.any());
     }
 
     @Test
@@ -207,8 +181,7 @@ class PluginRegistryServiceTest {
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
 
-        Result result = pluginRegistryService.uninstallPlugin(false, PLUGIN_COORDINATES_1);
-        assertTrue(result.isSuccess());
+        pluginRegistryService.uninstallPlugin(PLUGIN_COORDINATES_1);
 
         Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
         Mockito.verify(ingressFlowPlanService).cleanupFor(plugin1);

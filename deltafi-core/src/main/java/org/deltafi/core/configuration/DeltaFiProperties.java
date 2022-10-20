@@ -38,4 +38,5 @@ public class DeltaFiProperties {
     private DeleteProperties delete = new DeleteProperties();
     private String apiUrl;
     private String systemName;
+    private PluginConfig plugins;
 }

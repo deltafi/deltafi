@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: system-property
+
+Subcommands:
+  set [PROPERTY_NAME] [NEW_VALUE] [OPTIONS]
+  list
+
+Usage:
+  system-property [SUBCOMMAND] [OPTIONS]
+
+Options:
+  -h, --help          Show help
+  -p, --property-set  Specify the property set that holds the property, defaults to deltafi-common"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-system-property.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+log_failed() {
+  cli_log "${red}${BASENAME}: Failed to execute ${SUBCOMMAND}${normal}"
+  echo -e "${red}Error: ${1}${normal}"
+}
+
+trap cleanup INT
+
+PROPERTY_SET="deltafi-common"
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    -p|--property-set)
+      shift
+      PROPERTY_SET="$1"
+      shift
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+SUBCOMMAND=${ARGS[1]}
+
+ALL_PROPERTY_FIELDS="id
+                     displayName
+                     description
+                     properties {
+                       key
+                       description
+                       value
+                       defaultValue
+                       refreshable
+                       editable
+                     }"
+
+VARIABLES="{}"
+case "$SUBCOMMAND" in
+  set)
+    PROPERTY_KEY=${ARGS[2]}
+    PROPERTY_VALUE=${ARGS[3]}
+
+    if [[ -z "$PROPERTY_KEY" || -z "$PROPERTY_VALUE" ]]; then
+      cli_log "${red}The property key and property value must be provided${normal}"
+      exit
+    fi
+
+    EXTRACT_PATH=".data.updateProperties"
+    QUERY="mutation { updateProperties(updates: { propertySetId: \"$PROPERTY_SET\" key: \"$PROPERTY_KEY\" value: \"$PROPERTY_VALUE\" })}"
+    ;;
+  list)
+    EXTRACT_PATH=".data.getPropertySets"
+    QUERY="query { getPropertySets { $ALL_PROPERTY_FIELDS } } "
+    ;;
+  *)
+    cli_help_command
+    ;;
+esac
+
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
+
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  ERRORS=$(cat ${TMPFILE})
+  log_failed "$ERRORS"
+else
+  DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$DGS_ERRORS" != "" ]]; then
+    log_failed "$DGS_ERRORS"
+  elif [[ "$SUBCOMMAND" == "set" ]]; then
+    UPDATED=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}")
+    if [[ "$UPDATED" == "1" ]]; then
+      cli_log "${green}Successfully set ${bold}$PROPERTY_SET:$PROPERTY_KEY${normal}${green} to ${bold}$PROPERTY_VALUE${normal}"
+    else
+      cli_log "${yellow}Property $PROPERTY_KEY in property set $PROPERTY_SET was not updated${normal}"
+    fi
+  else
+    cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"
+  fi
+fi
+
+cleanup

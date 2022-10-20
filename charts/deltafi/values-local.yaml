@@ -7,6 +7,11 @@ deltafi:
     image: localhost:5000/deltafi-core-actions:latest
   core:
     image: localhost:5000/deltafi-core:latest
+    propertyOverrides:
+      deltafi-common.yaml: |-
+        deltafi:
+          plugins:
+            imageRepositoryBase: "localhost:5000"
   docs:
     image: localhost:5000/deltafi-docs:latest
   auth:

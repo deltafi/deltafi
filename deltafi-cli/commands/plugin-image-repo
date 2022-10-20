@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: plugin-image-repo
+
+Subcommands:
+  save [FILE]
+  remove [IMAGE_REPO_BASE]
+  list
+
+Usage:
+  plugin-image-repo [SUBCOMMAND] [OPTIONS]
+
+Options:
+  -h, --help     Show help"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-plugin-image-repo.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+SUBCOMMAND=${ARGS[1]}
+
+ALL_FIELDS="imageRepositoryBase pluginGroupIds imagePullSecret"
+
+VARIABLES="{}"
+case "$SUBCOMMAND" in
+  save)
+    EXTRACT_PATH=".data.savePluginImageRepository"
+    QUERY="mutation(\$config: PluginImageRepositoryInput!) { savePluginImageRepository(pluginImageRepository: \$config) {$ALL_FIELDS}}"
+
+    FILE=${ARGS[2]}
+    if [ ! -f "$FILE" ]; then
+      cli_log "${red}${FILE}: No such file${normal}"
+      exit 1
+    fi
+
+    JSON=$(cat "$FILE")
+    VARIABLES="{\"config\": $JSON }"
+    ;;
+  remove)
+    ID=${ARGS[2]}
+
+    if [[ -z "$ID" ]]; then
+      cli_log "${red}The id must be provided${normal}"
+      exit
+    fi
+
+    EXTRACT_PATH=".data.removePluginImageRepository"
+    QUERY="mutation { removePluginImageRepository(id: \"$ID\") {success info errors}}"
+    ;;
+  list)
+    EXTRACT_PATH=".data.getPluginImageRepositories"
+    QUERY="query { getPluginImageRepositories { $ALL_FIELDS }}"
+    ;;
+  *)
+    cli_help_command
+    ;;
+esac
+
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  cli_log "${red}Failed executing $SUBCOMMAND${normal}"
+  echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
+  exit
+fi
+
+DGS_ERRORS=$(cat $TMPFILE | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  cli_log "${red}Failed to execute $SUBCOMMAND ${normal}"
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
+else
+  cat "$TMPFILE" | jq "$EXTRACT_PATH"
+fi
+

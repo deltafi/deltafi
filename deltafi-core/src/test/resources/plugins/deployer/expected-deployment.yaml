@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plugin
+  labels:
+    group: deltafi-plugins
+    app: plugin
+    pluginGroup: org.deltafi
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      group: deltafi-plugins
+      app: plugin
+  template:
+    metadata:
+      labels:
+        group: deltafi-plugins
+        app: plugin
+        pluginGroup: org.deltafi
+    spec:
+      containers:
+        - name: plugin
+          image: docker.io/plugin:1.0.0
+          env:
+            - name: CONFIG_SERVER_URL
+              value: http://deltafi-core-service/config
+            - name: ACTIONS_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: redis-password
+                  name: redis-password
+            - name: MINIO_ACCESSKEY
+              valueFrom:
+                secretKeyRef:
+                  key: accesskey
+                  name: minio-keys
+            - name: MINIO_SECRETKEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretkey
+                  name: minio-keys
+          envFrom:
+            - secretRef:
+                name: keystore-password-secret
+                optional: true
+          volumeMounts:
+            - mountPath: /etc/pki/keyStore.p12
+              name: keystore
+              readOnly: true
+              subPath: keyStore.p12
+            - mountPath: /etc/pki/trustStore.p12
+              name: keystore
+              readOnly: true
+              subPath: trustStore.p12
+        - name: test
+          image: docker.io/sidecar:latest
+      volumes:
+        - name: keystore
+          secret:
+            secretName: keystore-secret
+            optional: true
+      imagePullSecrets:
+        - name: docker-cred

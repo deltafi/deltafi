@@ -7,26 +7,17 @@ cli_help_command() {
 Command: uninstall-plugin
 
 Usage:
-  uninstall-plugin PLUGIN_DIRECTORY [OPTIONS] [helm flags]
+  uninstall-plugin [GROUP_ID:ARTIFACT_ID:VERSION] [OPTIONS]
 
 Options:
-  --dry-run         Simulate the helm uninstall
-  -h, --help        Show help
-  -f, --force       Force helm uninstall"
+  -h, --help        Show help"
   exit 1
 }
-
-HELMDRYRUN=false
-FORCE=false
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
-    -f|--force)
-      FORCE=true
-      shift
-      ;;
     *)
       POSITIONAL+=("$1")
       shift
@@ -37,10 +28,8 @@ set -- "${POSITIONAL[@]}"
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
-[[ " ${ARGS[@]} " =~ " --dry-run " ]] && HELMDRYRUN=true
 
 TMPFILE="/tmp/.deltafi-uninstall-plugin.$$"
-FORCEAFTERERROR=false
 
 cleanup() {
   rm -f $TMPFILE
@@ -48,89 +37,51 @@ cleanup() {
 }
 
 log_failed() {
-  cli_log "${red}${BASENAME}: Plugin cannot be removed${normal}"
+  cli_log "${red}${2}: Plugin cannot be removed${normal}"
   echo -e "${red}Error: ${1}${normal}"
-  if [[ $FORCE == "true" ]]; then
-    FORCEAFTERERROR=true
-  else
-    cleanup
-  fi
 }
 
-PLUGIN_DIRECTORY=${ARGS[1]}
-if [ ! -d "$PLUGIN_DIRECTORY" ]; then
-  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory not found${normal}"
-  exit 1
-fi
-PLUGIN_DIRECTORY=$(cd $PLUGIN_DIRECTORY && pwd)
+GROUP_ID=$(echo "$2" | cut -d ":" -f 1)
+ARTIFACT_ID=$(echo "$2" | cut -d ":" -f 2)
+VERSION=$(echo "$2" | cut -d ":" -f 3)
 
-CHARTS_DIRECTORY="$PLUGIN_DIRECTORY/charts"
-if [ ! -d "$CHARTS_DIRECTORY" ]; then
-  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin directory does not include a ${bold}charts${normal}${red} subdirectory${normal}"
-  exit 1
+if [[ -z "$GROUP_ID" || -z "$ARTIFACT_ID" || -z "$VERSION" ]]; then
+  cli_log "${red}Invalid plugin coordinates: $2${normal}"
+  exit
 fi
 
-CHART_YAML="$CHARTS_DIRECTORY/Chart.yaml"
-if [ ! -f "$CHART_YAML" ]; then
-  cli_log "${red}${PLUGIN_DIRECTORY}: Plugin missing ${bold}charts/Chart.yaml${normal}"
-  exit 1
-fi
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
 
-PLUGIN_GROUP="$(grep -e '^\s*group:' ${CHART_YAML} | awk '{print $2}')"
-PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
-PLUGIN_VERSION="$(grep -e '^version:' ${CHART_YAML} | awk '{print $2}')"
+QUERY="mutation {
+         uninstallPlugin(pluginCoordinates: {groupId: \"$GROUP_ID\", artifactId: \"$ARTIFACT_ID\", version: \"$VERSION\"}) {
+           success
+           info
+           errors
+         }
+       }"
 
-DGSVARDRYRUN=true
-PLUGIN_ID="{\"groupId\": \"$PLUGIN_GROUP\", \"artifactId\": \"$PLUGIN_NAME\", \"version\": \"$PLUGIN_VERSION\"}"
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":{}}"
 
-uninstallPlugin() {
-  MUTATION="uninstallPlugin"
-  DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
-  QUERY="mutation (\$pluginId: PluginCoordinatesInput!) {$MUTATION(dryRun: $DGSVARDRYRUN, pluginCoordinatesInput: \$pluginId) {success errors}}"
-  VARIABLES=$(echo "{}" |  jq --argjson pluginId "$PLUGIN_ID" '. + {pluginId: $pluginId}')
-  POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
 
-  truncate --size 0 ${TMPFILE}
-  RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
-
-  if [[ "$RESPONSE_CODE" != "200" ]]; then
-    ERRORS=$(cat ${TMPFILE})
-    log_failed "$ERRORS"
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  ERRORS=$(cat ${TMPFILE})
+  log_failed "$ERRORS"
+else
+  DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$DGS_ERRORS" != "" ]]; then
+    log_failed "$DGS_ERRORS"
   else
-    DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
-    if [[ "$DGS_ERRORS" != "" ]]; then
-      log_failed "$DGS_ERRORS"
+    SUCCESS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.success')
+    if [[ $SUCCESS == "true" ]]; then
+      cli_log "Plugin $2 was successfully uninstalled"
     else
-      SUCCESS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.success')
-      if [[ $SUCCESS == "true" ]]; then
-        if [[ $DGSVARDRYRUN == "true" ]]; then
-          cli_log "Safe to remove plugin"
-        fi
-      else
-        ERRORS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.errors | join(",")')
-        log_failed "$ERRORS"
-      fi
+      ERRORS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.errors | join(",")')
+      log_failed "$ERRORS"
     fi
   fi
-}
-
-cli_log "Checking to see if plugin can be safely uninstalled"
-uninstallPlugin
-
-if [[ $FORCEAFTERERROR == "true" ]]; then
-  cli_log "Forcing removal of the plugin from the cluster"
-  helm uninstall --namespace $DELTAFICLI_K8S_NAMESPACE ${PLUGIN_NAME} ${ARGS[@]:2}
-  cleanup
-fi
-
-cli_log "Removing the plugin from the cluster"
-helm uninstall --namespace $DELTAFICLI_K8S_NAMESPACE ${PLUGIN_NAME} ${ARGS[@]:2}
-
-if [[ $HELMDRYRUN == "false" ]]; then
-  cli_log "Removing the plugin from the DeltaFi Plugin registry"
-  DGSVARDRYRUN=false
-  uninstallPlugin
-  cli_log "Plugin ${PLUGIN_NAME} has been successfully uninstalled"
 fi
 
 cleanup

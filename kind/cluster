@@ -192,7 +192,13 @@ readarray PLUGINS < <(yq '.plugins[].name' "${CONFIG}")
 
 _url_for_plugin() {
   local plugin=$1
-  yq ".plugins[] | select(.name == '$plugin') | .url" "${CONFIG}"
+  yq ".plugins[] | select(.name == \"$plugin\") | .url" "${CONFIG}"
+}
+
+_plugin_field() {
+  local plugin=$1
+  local field=$2
+  yq ".plugins[] | select(.name == \"$plugin\") | .$field" "${CONFIG}"
 }
 
 _are_you_sure() {
@@ -281,6 +287,33 @@ _create_registry() {
             registry:2
       _ok "Docker registry: $REGISTRY_NAME"
   fi
+}
+
+_install_plugins() {
+  for plugin in ${PLUGINS[@]}; do
+    local coordinates=$(_plugin_field "$plugin" "plugin_coordinates")
+    local imageRepo=$(_plugin_field "$plugin" "image_repository_base")
+    local imagePullSecret=$(_plugin_field "$plugin" "pull_secret")
+    local deploymentExtras=$(_plugin_field "$plugin" "deployment_extras_file")
+
+    local options=()
+
+    if [[ $imageRepo != null ]]; then
+      options=("${options[@]}" "--image-repository-base $imageRepo")
+    fi
+
+    if [[ $imagePullSecret != null ]]; then
+      options=("${options[@]}" "--pull-secret $imagePullSecret")
+    fi
+
+    if [[ $deploymentExtras != null ]]; then
+      options=("${options[@]}" "--deployment-extras-file $plugin/$deploymentExtras")
+    fi
+
+    _attention "Installing $plugin with coordinates $coordinates and options of \"${options[*]}\""
+
+    run deltafi install-plugin "$coordinates" "${options[@]}"
+  done
 }
 
 describe prerequisites "Install prerequisites for the KinD cluster.  MacOS only."
@@ -719,10 +752,7 @@ loc() {
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
     _attention "Installing DeltaFi core"
     install -f deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
-    for plugin in ${PLUGINS[@]}; do
-      _attention "Installing $plugin"
-      run deltafi install-plugin $plugin -f $plugin/charts/values-local.yaml
-    done
+    _install_plugins
   fi
 
   if [[ -n "$BOUNCE" ]]; then

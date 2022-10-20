@@ -5,6 +5,7 @@
 cli_help_command() {
   echo "
 Command: system-snapshot
+
 Subcommands:
   create [REASON]
   restore [SNAPSHOT_ID]

@@ -21,28 +21,9 @@ spec:
       containers:
       - name: deltafi-core-actions
         image: "{{ .Values.deltafi.core_actions.image }}"
-        {{- with .Values.deltafi.envVars }}
-        env:
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
-        envFrom:
-        - secretRef:
-            name: {{ .Values.deltafi.core_actions.keyStore.passwordSecret }}
-            optional: true
-        volumeMounts:
-          - mountPath: "{{ .Values.deltafi.core_actions.keyStore.mountPath }}/{{ .Values.deltafi.core_actions.keyStore.keyStoreName }}"
-            name: keystore
-            readOnly: true
-            subPath: {{ .Values.deltafi.core_actions.keyStore.keyStoreName }}
-          - mountPath: "{{ .Values.deltafi.core_actions.keyStore.mountPath }}/{{ .Values.deltafi.core_actions.keyStore.trustStoreName }}"
-            name: keystore
-            readOnly: true
-            subPath: {{ .Values.deltafi.core_actions.keyStore.trustStoreName }}
+        {{- include "actionContainerSpec" . | nindent 8 }}
       volumes:
-        - name: keystore
-          secret:
-            secretName: {{ .Values.deltafi.core_actions.keyStore.secret }}
-            optional: true
+      {{- include "keyVolumes" . | nindent 6 }}
       imagePullSecrets:
       - name: docker-secret
       nodeSelector:

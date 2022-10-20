@@ -1,9 +1,16 @@
 # DeltaFi config
 deltafi:
+  keyStore:
+    secret: keystore-secret
+    passwordSecret: keystore-password-secret
+    mountPath: /etc/pki
+    keyStoreName: keyStore.p12
+    trustStoreName: trustStore.jks
+  actions:
+    envVars:
+      - name: SPRING_CONFIG_IMPORT
+        value: configserver:http://deltafi-core-service/config
   envVars:
-    # notation needed spring-boot apps
-    - name: DELTAFI_CONFIG_IMPORT
-      value: deltafi:mongodb=true&git=false
     - name: REDIS_PASSWORD
       valueFrom:
         secretKeyRef:
@@ -26,18 +33,24 @@ deltafi:
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
     image: deltafi/deltafi-core-actions:0.99.0
-    keyStore:
-      secret: keystore-secret
-      passwordSecret: keystore-password-secret
-      mountPath: /etc/pki
-      keyStoreName: keyStore.p12
-      trustStoreName: trustStore.jks
   core:
     image: deltafi/deltafi-core:0.99.0
+    envVars:
+      - name: DELTAFI_CONFIG_IMPORT
+        value: deltafi:mongodb=true&git=false
+      - name: MONGO_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mongodb-passwords
+            key: mongodb-password
     mongo_host: deltafi-mongodb
     nativeConfigMap: config-server-configmap
     nativeConfigMountPath: /config
-    # TODO should we allow nested yaml here and automatically create that config-map?
+    # Properties that will be set externally prior to system startup
+    propertyOverrides: ~
+      # deltafi-common.yaml: |-
+      #  deltafi:
+      #    properties: here
   docs:
     image: deltafi/deltafi-docs:0.99.0
     enabled: true

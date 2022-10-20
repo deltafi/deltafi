@@ -89,3 +89,77 @@ input ActionDescriptorInput {
     requiresDomains: [String]
     requiresEnrichments: [String]
 }
+
+type PluginImageRepository {
+    "The base of the image repository to pull from for one or more plugin groups (i.e. docker.io/deltafi)"
+    imageRepositoryBase: String!
+    "The plugin groups whose images are hosted in this repository"
+    pluginGroupIds: [String]!
+    "An optional secret used to pull from this repository"
+    imagePullSecret: String
+}
+
+input PluginImageRepositoryInput {
+    "The base of the image repository to pull from for one or more plugin groups (i.e. docker.io/deltafi)"
+    imageRepositoryBase: String!
+    "The plugin groups whose images are hosted in this repository"
+    pluginGroupIds: [String]!
+    "An optional secret used to pull from this repository"
+    imagePullSecret: String
+}
+
+type PluginCustomizationConfig {
+    "The groupId for the plugin that uses this customization"
+    groupId: String!
+    "The artifactId of the plugin that uses this customization"
+    artifactId: String!
+    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/systolic/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
+    urlTemplate: String!
+    "An optional secret used if authentication is needed to read the resource"
+    secretName: String
+}
+
+input PluginCustomizationConfigInput {
+    "The groupId for the plugin that uses this customization"
+    groupId: String!
+    "The artifactId of the plugin that uses this customization"
+    artifactId: String!
+    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/systolic/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
+    urlTemplate: String!
+    "An optional secret used if authentication is needed to read the resource"
+    secretName: String
+}
+
+extend type Query {
+    "Get all of the configured plugin image repositories"
+    getPluginImageRepositories: [PluginImageRepository]!
+
+    "Get all of the plugin customization config"
+    getPluginCustomizationConfigs: [PluginCustomizationConfig]!
+}
+
+extend type Mutation {
+    "Add an image repository for one or more groups of plugins"
+    savePluginImageRepository(pluginImageRepository: PluginImageRepositoryInput!): PluginImageRepository!
+
+    "Remove an image repository for one or more groups of plugins"
+    removePluginImageRepository(id: String!): Result!
+
+    "Add config used to retrieve any extra deployment info needed for a plugin"
+    savePluginCustomizationConfig(pluginCustomizationConfigInput: PluginCustomizationConfigInput!): PluginCustomizationConfig!
+
+    "Remove config used to retrieve any extra deployment info needed for a plugin"
+    removePluginCustomizationConfig(id: String!): Result!
+
+    "Install the plugin with the given coordinates"
+    installPlugin(pluginCoordinates: PluginCoordinatesInput!): Result!
+
+    "Install the plugin with optional overrides for stored fields"
+    installPluginWithSettings(pluginCoordinates: PluginCoordinatesInput!, imageRepositoryOverride: String, imagePullSecretOverride: String, customDeploymentYaml: String): Result!
+
+    "Uninstall the plugin with the given coordinates"
+    uninstallPlugin(pluginCoordinates: PluginCoordinatesInput!): Result!
+
+    "Helper to create a basic opaque secret"
+    addBasicCredential(sourceName: String!, username: String!, password: String!): Result!
+}

@@ -11,10 +11,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - A checkDeltafiPlugin task that validates plugin variables and flow files has been added. It may be used in a
 plugin's build.gradle by adding `id "org.deltafi.plugin" version "${deltafiVersion}"` to plugins and including
 `bootJar.dependsOn(checkDeltafiPlugin)`.
+- New CLI commands: `list-plugins`, `system-property`, `plugin-customization`, `plugin-image-repo`
+- DeployerService in `deltafi-core` that manages plugin deployments
+- Common action deployment template in `deltafi-core` used by all plugins
 
 ### Changed
 - FlowPlan and ActionConfiguration classes now enforce required fields. They are final and must be provided to the
 constructor.
+- CLI commands `install-plugin` and `uninstall-plugin` now take `groupId:artifactid:version` of the plugin
+- The `uninstallPlugin` mutation no longer takes a dry-run flag
 
 ### Deprecated
 
@@ -31,6 +36,7 @@ constructor.
 ### Security
 
 ### Upgrade and Migration
+- The `kind/cluster.yaml` plugins section requires `plugin_coordinates` per plugin
 
 ## [0.99.0] - 2022-10-12
 

@@ -481,8 +481,6 @@ type Mutation {
   savePluginVariables(pluginVariablesInput: PluginVariablesInput!) : Boolean!
   setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput]!) : Boolean!
 
-  uninstallPlugin(dryRun: Boolean!, pluginCoordinatesInput: PluginCoordinatesInput!): Result!
-
   updateProperties(updates: [PropertyUpdate]!): Int!
   removePropertyOverrides(propertyIds: [PropertyId]!): Int!
 

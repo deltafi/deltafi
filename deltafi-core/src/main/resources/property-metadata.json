@@ -144,6 +144,21 @@
         "editable": true
       },
       {
+        "key": "deltafi.plugins.imageRepositoryBase",
+        "description": "Base of the default image repository used for plugins.",
+        "defaultValue": "docker.io/deltafi",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.plugins.imagePullSecret",
+        "description": "Default imagePullSecret used in plugin deployments",
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
         "key": "graphql.urls.core",
         "description": "URL of the core service",
         "defaultValue": "http://deltafi-core-service/graphql"

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: list-plugins
+
+Usage:
+  list-plugins
+
+Options:
+  -j, --json  Show the full json response including all the plugin information
+  -h, --help  Show help"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+QUERY="{
+         plugins {
+           displayName
+           description
+           actionKitVersion
+           pluginCoordinates {
+             groupId
+             artifactId
+             version
+           }
+           dependencies {
+             groupId
+             artifactId
+             version
+           }
+           actions {
+             name
+             type
+             description
+           }
+           variables {
+             name
+             description
+             dataType
+             value
+             defaultValue
+             required
+           }
+           propertySets {
+             displayName
+             description
+             properties {
+               key
+               description
+               value
+               defaultValue
+             }
+           }
+         }
+       }"
+RESULT=$(deltafi query "$QUERY")
+
+if [[ " ${ARGS[@]} " =~ " --json " || " ${ARGS[@]} " =~ " -j " ]]; then
+  echo "$RESULT" | jq -r ".data.plugins"
+else
+  echo "$RESULT" | jq -r "([\"Name\", \"Description\", \"Coordinates\"] | (., map(length*\"=\"))), (.data.plugins[] | [.displayName, .description, (.pluginCoordinates.groupId + \":\" + .pluginCoordinates.artifactId + \":\" + .pluginCoordinates.version)]) | @tsv" | column -ts $'\t'
+fi

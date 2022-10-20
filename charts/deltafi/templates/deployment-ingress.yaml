@@ -17,31 +17,25 @@ spec:
         app: deltafi-ingress
         group: deltafi-core
     spec:
-      {{- include "initContainersWaitForCore" . | nindent 6 }}
+      {{- include "initContainersWaitForMongo" . | nindent 6 }}
       containers:
       - name: deltafi-ingress
         image: {{ .Values.deltafi.core.image }}
-        {{- with .Values.deltafi.envVars }}
         env:
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
         - name: JDK_JAVA_OPTIONS
           value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=false"
-        - name: MONGO_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mongodb-passwords
-              key: mongodb-password
-                {{- with .Values.deltafi.envVars }}
-                {{- toYaml . | nindent 8 }}
-                {{- end }}
+        {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
+        volumeMounts:
+        {{- include "coreVolumeMounts" . | nindent 8 }}
+      volumes:
+      {{- include "coreVolumes" . | nindent 6 }}
       imagePullSecrets:
       - name: docker-secret
-      serviceAccountName: deltafi-auth
+      serviceAccountName: deltafi-core
       nodeSelector:
         node-role.deltafi.org/storage: "true"

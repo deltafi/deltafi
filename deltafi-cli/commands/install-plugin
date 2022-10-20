@@ -7,32 +7,63 @@ cli_help_command() {
 Command: install-plugin
 
 Usage:
-  install-plugin PLUGIN_DIRECTORY [OPTIONS] [helm flags]
+  install-plugin [GROUP_ID:ARTIFACT_ID:VERSION] [OPTIONS]
 
 Options:
-  -h, --help        Show help
-  -v, --verbose     Verbose output"
+  -h, --help                     Show help
+  -i, --image-repository-base    Image repository base to use instead of using configured base repository
+  -s, --pull-secret              Pull secret to use instead of using the configured pull secret
+  -d, --deployment-extras-file   Path to a file containing extra containers to include in the deployment"
+
   exit 1
 }
 
-TMP_SOURCE_PLUGIN_FILE="/tmp/.deltafi-source-plugin.$$"
+TMPFILE="/tmp/.deltafi-install-plugin.$$"
 
 cleanup() {
-  rm -f $TMP_SOURCE_PLUGIN_FILE
+  rm -f $TMPFILE
   exit
 }
 
 trap cleanup INT
 
-VERBOSE=false
+IMAGE_REPO="null"
+PULL_SECRET="null"
+DEPLOYMENT_YAML="null"
+IS_CUSTOM=false
+VARIABLES="{\"deploymentExtras\": null}"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
-    -v|--verbose)
-      VERBOSE=true
+    -i|--image-repository-base)
+      IS_CUSTOM=true
       shift
+      IMAGE_REPO="\"$1\""
+      shift
+      ;;
+    -s|--pull-secret)
+      IS_CUSTOM=true
+      shift
+      PULL_SECRET="\"$1\""
+      shift
+      ;;
+    -d|--deployment-extras-file)
+      IS_CUSTOM=true
+      shift
+      DEPLOYMENT_FILE=$1
+      if [ ! -f "$DEPLOYMENT_FILE" ]; then
+        cli_log "${red}${DEPLOYMENT_FILE}: No such file${normal}"
+        exit 1
+      fi
+
+      VARIABLES="{\"deploymentExtras\": $(cat "$DEPLOYMENT_FILE" |jq -Rsa .)}"
+      shift
+      ;;
+    -h|--help)
+      cli_help_command
+      shift # past argument
       ;;
     *)
       POSITIONAL+=("$1")
@@ -45,35 +76,69 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
-PLUGIN_DIRECTORY=${ARGS[1]}
-if [ ! -d "$PLUGIN_DIRECTORY" ]; then
-  cli_log "${red}$PLUGIN_DIRECTORY: Plugin directory not found${normal}"
-  exit 1
-fi
-PLUGIN_DIRECTORY=$(cd $PLUGIN_DIRECTORY && pwd)
+GROUP_ID=$(echo "$2" | cut -d ":" -f 1)
+ARTIFACT_ID=$(echo "$2" | cut -d ":" -f 2)
+VERSION=$(echo "$2" | cut -d ":" -f 3)
 
-CHARTS_DIRECTORY="$PLUGIN_DIRECTORY/charts"
-if [ ! -d "$CHARTS_DIRECTORY" ]; then
-  cli_log "${red}$PLUGIN_DIRECTORY: Plugin directory does not include a ${bold}charts${normal}${red} subdirectory${normal}"
-  exit 1
+if [[ -z "$GROUP_ID" || -z "$ARTIFACT_ID" || -z "$VERSION" ]]; then
+  cli_log "${red}Invalid plugin coordinates: $2${normal}"
+  exit
 fi
 
-CHART_YAML="$CHARTS_DIRECTORY/Chart.yaml"
-if [ ! -f "$CHART_YAML" ]; then
-  cli_log "${red}$PLUGIN_DIRECTORY: Plugin missing ${bold}charts/Chart.yaml${normal}"
-  exit 1
+if [[ $IS_CUSTOM != true ]]; then
+  EXTRACT_PATH=".data.installPlugin"
+  QUERY="mutation {
+           installPlugin(pluginCoordinates: {
+             groupId: \"${GROUP_ID}\"
+             artifactId: \"${ARTIFACT_ID}\"
+             version: \"${VERSION}\"
+           }) {
+             success
+             info
+             errors
+           }
+         }"
+else
+  EXTRACT_PATH=".data.installPluginWithSettings"
+  QUERY="mutation(\$deploymentExtras: String) {
+           installPluginWithSettings(pluginCoordinates: {
+             groupId: \"${GROUP_ID}\"
+             artifactId: \"${ARTIFACT_ID}\"
+             version: \"${VERSION}\"
+           },
+           imageRepositoryOverride: ${IMAGE_REPO}
+           imagePullSecretOverride: ${PULL_SECRET}
+           customDeploymentYaml: \$deploymentExtras) {
+             success
+             info
+             errors
+           }
+         }"
 fi
 
-PLUGIN_NAME="$(grep -e '^name:' ${CHART_YAML} | awk '{print $2}')"
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
 
-cli_log "${bold}$PLUGIN_NAME${normal}: Installing plugin"
-helm upgrade --install --wait \
-  --values $CHARTS_DIRECTORY/values.yaml \
-  --namespace $DELTAFICLI_K8S_NAMESPACE $PLUGIN_NAME $CHARTS_DIRECTORY \
-  --create-namespace ${ARGS[@]:2}
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
 
-HELM_RETURN_CODE=$?
-[[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
+truncate --size 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
 
-cli_log "${bold}$PLUGIN_NAME${normal}: Plugin install complete."
-cleanup
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  cli_log "${red}Installing "$2" failed${normal}"
+  echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
+else
+  ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$ERRORS" != "" ]]; then
+    cli_log "${red}Installing $2 failed${normal}"
+    echo -e "${red}Error: ${ERRORS}${normal}"
+  else
+    SUCCESS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.success")
+    if [[ $SUCCESS == "true" ]]; then
+      cli_log "${green}Plugin ${bold}$ARTIFACT_ID${normal}${green} was successfully installed${normal}"
+    else
+      ERRORS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.errors | join(\",\")")
+      cli_log "${red}$ERRORS${normal}"
+    fi
+  fi
+fi

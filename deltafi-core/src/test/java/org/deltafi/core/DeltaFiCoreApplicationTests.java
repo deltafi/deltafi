@@ -51,6 +51,10 @@ import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRepository;
+import org.deltafi.core.plugin.deployer.DeployerService;
+import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.FlowAssignmentRule;
@@ -99,6 +103,7 @@ import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 import static org.deltafi.common.metrics.MetricsUtil.*;
@@ -200,6 +205,9 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	EgressFlowPlanService egressFlowPlanService;
 
+	@Autowired
+	PluginImageRepositoryRepo pluginImageRepositoryRepo;
+
 	@MockBean
 	StorageConfigurationService storageConfigurationService;
 
@@ -217,6 +225,12 @@ class DeltaFiCoreApplicationTests {
 
 	@MockBean
 	ActionEventQueue actionEventQueue;
+
+	@MockBean
+	DeployerService deployerService;
+
+	@MockBean
+	CredentialProvider credentialProvider;
 
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -1979,82 +1993,19 @@ class DeltaFiCoreApplicationTests {
 
 		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class);
 		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
-				UninstallPluginGraphQLQuery.newRequest().dryRun(false)
-						.pluginCoordinatesInput(plugin.getPluginCoordinates()).build();
+				UninstallPluginGraphQLQuery.newRequest()
+						.pluginCoordinates(plugin.getPluginCoordinates()).build();
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
 
+
+		Result mockResult = Result.success();
+		Mockito.when(deployerService.uninstallPlugin(plugin.getPluginCoordinates())).thenReturn(mockResult);
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
 
-		assertTrue(result.isSuccess());
-		assertEquals(1, pluginRepository.count());
-		Mockito.verify(actionEventQueue).drop(any());
-	}
-
-	@Test
-	void uninstallPluginDryRun() throws IOException {
-		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), Plugin.class));
-
-		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class);
-		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
-				UninstallPluginGraphQLQuery.newRequest().dryRun(true)
-								.pluginCoordinatesInput(plugin.getPluginCoordinates()).build();
-
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
-
-		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
-				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
-
-		assertTrue(result.isSuccess());
-		assertEquals(2, pluginRepository.count());
-	}
-
-	@Test
-	void uninstallPluginNotFound() throws IOException {
-		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), Plugin.class));
-
-		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class);
-		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
-				UninstallPluginGraphQLQuery.newRequest().dryRun(false)
-						.pluginCoordinatesInput(plugin.getPluginCoordinates()).build();
-
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
-
-		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
-				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
-
-		assertFalse(result.isSuccess());
-		assertEquals(1, result.getErrors().size());
-		assertEquals("Plugin not found", result.getErrors().get(0));
-		assertEquals(2, pluginRepository.count());
-	}
-
-	@Test
-	void uninstallPluginFails() throws IOException {
-		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), Plugin.class));
-
-		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class);
-		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
-				UninstallPluginGraphQLQuery.newRequest().dryRun(false)
-						.pluginCoordinatesInput(plugin.getPluginCoordinates()).build();
-
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
-
-		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
-				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
-
-		assertFalse(result.isSuccess());
-		assertEquals(1, result.getErrors().size());
-		assertEquals("The following plugins depend on this plugin: org.deltafi:plugin-1:1.0.0", result.getErrors().get(0));
-		assertEquals(3, pluginRepository.count());
+		Mockito.verify(deployerService).uninstallPlugin(plugin.getPluginCoordinates());
+		assertThat(result).isEqualTo(mockResult);
 	}
 
     @Test
@@ -3467,6 +3418,35 @@ class DeltaFiCoreApplicationTests {
 
 		// TODO: EOF inputStream?
 		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
+	}
+
+	@Test
+	void testPluginImageRepository() {
+		pluginImageRepositoryRepo.deleteAll();
+		PluginImageRepository pluginImageRepository = new PluginImageRepository();
+		pluginImageRepository.setPluginGroupIds(List.of("a", "b"));
+
+		pluginImageRepositoryRepo.save(pluginImageRepository);
+
+		assertThat(pluginImageRepositoryRepo.findByPluginGroupIds("a")).isPresent().contains(pluginImageRepository);
+		assertThat(pluginImageRepositoryRepo.findByPluginGroupIds("b")).isPresent().contains(pluginImageRepository);
+		assertThat(pluginImageRepositoryRepo.findByPluginGroupIds("c")).isEmpty();
+	}
+
+	@Test
+	void testPluginImageRepository_duplicateGroupId() {
+		pluginImageRepositoryRepo.deleteAll();
+		PluginImageRepository pluginImageRepository = new PluginImageRepository();
+		pluginImageRepository.setImageRepositoryBase("docker");
+		pluginImageRepository.setPluginGroupIds(List.of("a", "b"));
+
+		pluginImageRepositoryRepo.save(pluginImageRepository);
+
+		PluginImageRepository pluginGroupB = new PluginImageRepository();
+		pluginGroupB.setImageRepositoryBase("gitlab");
+		pluginGroupB.setPluginGroupIds(List.of("b"));
+
+		assertThatThrownBy(() -> pluginImageRepositoryRepo.save(pluginGroupB));
 	}
 
 	@SneakyThrows

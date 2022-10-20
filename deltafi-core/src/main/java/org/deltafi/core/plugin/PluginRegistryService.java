@@ -153,22 +153,6 @@ public class PluginRegistryService implements Snapshotter {
         pluginRepository.deleteById(plugin.getPluginCoordinates());
     }
 
-    public Result uninstallPlugin(boolean dryRun, PluginCoordinates pluginCoordinates) {
-        Plugin plugin = getPlugin(pluginCoordinates).orElse(null);
-
-        List<String> errors = canBeUninstalled(plugin);
-
-        if (!errors.isEmpty()) {
-            return Result.newBuilder().success(false).errors(errors).build();
-        }
-
-        if (!dryRun) {
-            doUninstallPlugin(plugin);
-        }
-
-        return Result.newBuilder().success(true).build();
-    }
-
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         systemSnapshot.setInstalledPlugins(getInstalledPluginCoordinates());
@@ -217,7 +201,9 @@ public class PluginRegistryService implements Snapshotter {
         return getPlugins().stream().map(Plugin::getPluginCoordinates).collect(Collectors.toSet());
     }
 
-    private List<String> canBeUninstalled(Plugin plugin) {
+    public List<String> canBeUninstalled(PluginCoordinates pluginCoordinates) {
+        Plugin plugin = getPlugin(pluginCoordinates).orElse(null);
+
         if (Objects.isNull(plugin)) {
             return List.of("Plugin not found");
         }
@@ -227,7 +213,6 @@ public class PluginRegistryService implements Snapshotter {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        PluginCoordinates pluginCoordinates = plugin.getPluginCoordinates();
         List<String> errors = new ArrayList<>(blockers);
 
         // If this plugin is the dependency of another plugin, then it cannot be removed.
@@ -241,8 +226,9 @@ public class PluginRegistryService implements Snapshotter {
         return errors;
     }
 
-    private void doUninstallPlugin(Plugin plugin) {
+    public void uninstallPlugin(PluginCoordinates pluginCoordinates) {
         // TODO: TBD: remove plugin property sets
+        Plugin plugin = getPlugin(pluginCoordinates).orElseThrow();
         pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
         // remove the plugin from the registry
         removePlugin(plugin);
