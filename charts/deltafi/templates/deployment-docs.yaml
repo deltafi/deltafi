@@ -25,6 +25,8 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
+      imagePullSecrets:
+        - name: docker-secret
   strategy:
     type: Recreate
 {{- end -}}
