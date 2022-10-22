@@ -32,6 +32,9 @@ constructor.
 - KinD: deltafi-docs built during local build process
 
 ### Tech-Debt/Refactor
+- CLI: Clean up of output for migrations
+- CLI: Migrations will only run if the core pod has been replaced
+- KinD: Speed enhancements
 
 ### Security
 
