@@ -37,6 +37,7 @@ constructor.
 
 ### Upgrade and Migration
 - The `kind/cluster.yaml` plugins section requires `plugin_coordinates` per plugin
+- Upgraded to mongodb 5.0.13
 
 ## [0.99.0] - 2022-10-12
 

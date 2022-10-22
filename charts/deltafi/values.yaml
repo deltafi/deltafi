@@ -125,7 +125,7 @@ minio:
 mongodb:
   image:
     repository: bitnami/mongodb
-    tag: 5.0.6-debian-10-r0
+    tag: 5.0.13
   architecture: standalone
   useStatefulSet: false
   auth:
