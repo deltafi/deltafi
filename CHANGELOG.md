@@ -20,6 +20,7 @@ plugin's build.gradle by adding `id "org.deltafi.plugin" version "${deltafiVersi
 constructor.
 - CLI commands `install-plugin` and `uninstall-plugin` now take `groupId:artifactid:version` of the plugin
 - The `uninstallPlugin` mutation no longer takes a dry-run flag
+- Move delete policy "Preparing to execute" log messages to DEBUG level
 
 ### Deprecated
 
