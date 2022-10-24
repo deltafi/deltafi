@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -27,4 +27,6 @@ public class ActionsProperties {
     private long actionPollingPeriodMs = 100L;
 
     private String hostname;
+
+    private String coreUrl;
 }

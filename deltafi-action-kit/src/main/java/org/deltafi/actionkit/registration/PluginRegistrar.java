@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.PluginCoordinates;
@@ -51,12 +52,15 @@ public class PluginRegistrar {
     @Autowired
     ApplicationContext applicationContext;
 
+    @Autowired
+    ActionsProperties actionsProperties;
+
     public void register() {
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
 
-        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, "http://deltafi-core-service");
+        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, actionsProperties.getCoreUrl());
         coreClient.postPlugin(pluginRegistration);
     }
 

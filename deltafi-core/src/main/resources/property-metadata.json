@@ -258,6 +258,14 @@
     "description": "Properties shared across all installed actions.",
     "properties": [
       {
+        "key": "actions.coreUrl",
+        "description": "The URL used to reach DeltaFi Core",
+        "defaultValue": "http://deltafi-core-service",
+        "hidden": true,
+        "refreshable": false,
+        "editable": false
+      },
+      {
         "key": "actions.action-polling-initial-delay-ms",
         "description": "Initial delay before actions begin listening for work.",
         "defaultValue": "3000"
