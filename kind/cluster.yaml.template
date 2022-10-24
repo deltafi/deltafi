@@ -1,6 +1,5 @@
 fqdns:
   - local.deltafi.org
-  - docs.local.deltafi.org
   - graphite.local.deltafi.org
   - metrics.local.deltafi.org
   - minio.local.deltafi.org
@@ -11,7 +10,7 @@ plugins:
     plugin_coordinates: "org.deltafi.passthrough:deltafi-passthrough:latest"
     url: 'git@gitlab.com:systolic/deltafi/deltafi-passthrough'
   #- name: deltafi-stix                                                   # name of the plugin used as path when cloning and building the plugin locally
-  #  plugin_coordinates: "org.deltafi.stix:deltafi-stix-actions:0.99.0"   # plugin coordinates used in the install
+  #  plugin_coordinates: "org.deltafi.stix:deltafi-stix-actions:latest"   # plugin coordinates used in the install
   #  url: 'git@gitlab.com:systolic/deltafi/deltafi-stix'                  # url to clone, used for building local images
   #  image_repository_base: docker.io/deltafi                             # optional - image repository base to use
   #  deployment_extras_file: deltafi-stix-actions/deployment-extras.yaml  # optional - path to the file defining extra containers needed in the deployment

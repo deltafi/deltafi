@@ -36,6 +36,7 @@ constructor.
 - CLI: Clean up of output for migrations
 - CLI: Migrations will only run if the core pod has been replaced
 - KinD: Speed enhancements
+- KinD: Clean up the cluster script and make shellcheck 100% happy
 
 ### Security
 
