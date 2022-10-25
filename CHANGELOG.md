@@ -21,6 +21,7 @@ constructor.
 - CLI commands `install-plugin` and `uninstall-plugin` now take `groupId:artifactid:version` of the plugin
 - The `uninstallPlugin` mutation no longer takes a dry-run flag
 - Move delete policy "Preparing to execute" log messages to DEBUG level
+- Make action name an optional field on transform and load completion, and have the core fill it in (don't trust the action to fill it)
 
 ### Deprecated
 

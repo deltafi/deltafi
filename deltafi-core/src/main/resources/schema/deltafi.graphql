@@ -145,7 +145,7 @@ type ProtocolLayer {
 }
 
 input ProtocolLayerInput {
-  action: String!
+  action: String
   content: [ContentInput!]!
   metadata: [KeyValueInput!]
 }

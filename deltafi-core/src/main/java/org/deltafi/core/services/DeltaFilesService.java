@@ -271,7 +271,9 @@ public class DeltaFilesService {
 
     public DeltaFile transform(DeltaFile deltaFile, ActionEventInput event) {
         if (event.getTransform().getProtocolLayer() != null) {
-            deltaFile.getProtocolStack().add(event.getTransform().getProtocolLayer());
+            ProtocolLayer protocolLayer = event.getTransform().getProtocolLayer();
+            protocolLayer.setAction(event.getAction());
+            deltaFile.getProtocolStack().add(protocolLayer);
         }
         deltaFile.completeAction(event);
 
@@ -282,8 +284,10 @@ public class DeltaFilesService {
         deltaFile.completeAction(event);
 
         if (event.getLoad() != null) {
-            if (event.getLoad().getProtocolLayer() != null) {
-                deltaFile.getProtocolStack().add(event.getLoad().getProtocolLayer());
+            ProtocolLayer protocolLayer = event.getLoad().getProtocolLayer();
+            if (protocolLayer != null) {
+                protocolLayer.setAction(event.getAction());
+                deltaFile.getProtocolStack().add(protocolLayer);
             }
             if (event.getLoad().getDomains() != null) {
                 for (Domain domain : event.getLoad().getDomains()) {
