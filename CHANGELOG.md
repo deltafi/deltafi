@@ -33,6 +33,7 @@ constructor.
 - Flow summary dashboard ingress files query was incorrect
 - State machine did not block waiting for all enrichment to complete
 - KinD: deltafi-docs built during local build process
+- Intermittent redis failures could cause DeltaFiles to be incorrectly placed into an ERROR state 
 
 ### Tech-Debt/Refactor
 - CLI: Clean up of output for migrations

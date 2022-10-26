@@ -112,18 +112,26 @@ public class ActionRunner {
     }
 
     private void executeAction(Action<?> action, DeltaFile deltaFile, ActionContext context, Map<String, Object> params) throws JsonProcessingException {
+        ResultType result;
         try (MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
-            ResultType result = action.executeAction(deltaFile, context, params);
+            result = action.executeAction(deltaFile, context, params);
             if (Objects.isNull(result)) {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
             }
+        } catch (Throwable e) {
+            result = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
+        }
 
+        try {
             actionEventQueue.putResult(result.toEvent());
+        } catch (Throwable e) {
+            log.error("Error sending result to redis for did " + context.getDid(), e);
+        }
+
+        try (MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
             postMetrics(result, action.getActionDescriptor());
         } catch (Throwable e) {
-            ErrorResult errorResult = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
-            actionEventQueue.putResult(errorResult.toEvent());
-            postMetrics(errorResult, action.getActionDescriptor());
+            log.error("Error posting metrics for did " + context.getDid(), e);
         }
     }
 
