@@ -32,9 +32,9 @@ deltafi:
           fieldPath: spec.nodeName
   core_actions:
     egress_endpoint: http://deltafi-egress-sink-service
-    image: deltafi/deltafi-core-actions:0.99.0
+    image: deltafi/deltafi-core-actions:0.99.1
   core:
-    image: deltafi/deltafi-core:0.99.0
+    image: deltafi/deltafi-core:0.99.1
     envVars:
       - name: DELTAFI_CONFIG_IMPORT
         value: deltafi:mongodb=true&git=false
@@ -52,19 +52,19 @@ deltafi:
       #  deltafi:
       #    properties: here
   docs:
-    image: deltafi/deltafi-docs:0.99.0
+    image: deltafi/deltafi-docs:0.99.1
     enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:0.99.0
+    image: deltafi/deltafi-auth:0.99.1
     mode: basic # basic, cert, or disabled
     secret: auth-secret
   api:
-    image: deltafi/deltafi-api:0.99.0
+    image: deltafi/deltafi-api:0.99.1
   ui:
-    image: deltafi/deltafi-ui:0.99.0
+    image: deltafi/deltafi-ui:0.99.1
     # UI Configuration
     # title: DeltaFi
     # securityBanner:
@@ -84,9 +84,9 @@ deltafi:
     #     url: "https://httpbin.org/anything/${did}"
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:0.99.0
+    image: deltafi/deltafi-egress-sink:0.99.1
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:0.99.0
+    image: deltafi/deltafi-nodemonitor:0.99.1
     envVars:
       - name: GRAPHITE_HOST
         value: deltafi-graphite
