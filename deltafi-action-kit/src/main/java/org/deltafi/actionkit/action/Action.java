@@ -89,7 +89,6 @@ public abstract class Action<P extends ActionParameters> {
                 .name(getClassCanonicalName())
                 .description(description)
                 .type(actionType)
-                .paramClass(paramClass.getCanonicalName())
                 .schema(getDefinition())
                 .build();
     }

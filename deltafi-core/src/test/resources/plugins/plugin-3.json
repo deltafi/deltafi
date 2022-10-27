@@ -9,13 +9,11 @@
   "actionKitVersion": "1.1.0",
   "actions" : [ {
     "name" : "org.deltafi.test.actions.TestAction1",
-    "type" : "TRANSFORM",
-    "paramClass" : "org.deltafi.test.actions.TestTransformParameters"
+    "type" : "TRANSFORM"
   }, {
     "name" : "org.deltafi.test.actions.TestAction2",
     "description": "TestAction2",
     "type" : "LOAD",
-    "paramClass" : "org.deltafi.test.actions.TestLoadParameters",
     "requiresDomains" : [ "test" ]
   } ]
 }

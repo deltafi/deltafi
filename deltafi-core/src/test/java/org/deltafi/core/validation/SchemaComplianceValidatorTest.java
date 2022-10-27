@@ -215,7 +215,6 @@ class SchemaComplianceValidatorTest {
         return ActionDescriptor.builder()
                 .name(ENRICH_ACTION)
                 .type(ActionType.ENRICH)
-                .paramClass("paramClass")
                 .requiresDomains(Collections.singletonList(DOMAIN_VALUE))
                 .requiresEnrichments(Collections.emptyList())
                 .build();
@@ -240,7 +239,6 @@ class SchemaComplianceValidatorTest {
         return ActionDescriptor.builder()
                 .name(FORMAT_ACTION)
                 .type(ActionType.FORMAT)
-                .paramClass("paramClass")
                 .requiresDomains(Collections.singletonList(DOMAIN_VALUE))
                 .requiresEnrichments(Collections.singletonList(DeltaFiConstants.MATCHES_ANY))
                 .build();
@@ -265,7 +263,6 @@ class SchemaComplianceValidatorTest {
         return ActionDescriptor.builder()
                 .name(TRANSFORM_ACTION)
                 .type(ActionType.TRANSFORM)
-                .paramClass("paramClass")
                 .build();
     }
 

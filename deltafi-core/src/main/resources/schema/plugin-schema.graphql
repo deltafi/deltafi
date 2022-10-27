@@ -74,7 +74,8 @@ type ActionDescriptor {
     name: String!
     description: String
     type: String!
-    paramClass: String!
+    # deprecated
+    paramClass: String
     schema: JSON
     requiresDomains: [String]
     requiresEnrichments: [String]
@@ -84,7 +85,8 @@ input ActionDescriptorInput {
     name: String!
     description: String
     type: String!
-    paramClass: String!
+    # deprecated
+    paramClass: String
     schema: JSON
     requiresDomains: [String]
     requiresEnrichments: [String]

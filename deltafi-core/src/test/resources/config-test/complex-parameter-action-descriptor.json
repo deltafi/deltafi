@@ -1,7 +1,6 @@
 {
   "name": "org.deltafi.core.action.RestPostEgressAction",
   "type" : "EGRESS",
-  "paramClass" : "org.deltafi.test.actions.TestEgressParameters",
   "schema" : {
     "type" : "object",
     "properties" : {
