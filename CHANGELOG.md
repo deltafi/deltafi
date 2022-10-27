@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.1
+## [Unreleased] - Next release 0.99.2
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.1] - 2022-10-26
 
 ### Added
 - New Grafana dashboard that shows last seen information for each flow
@@ -24,8 +42,6 @@ constructor.
 - Make action name an optional field on transform and load completion, and have the core fill it in (don't trust the action to fill it)
 - Disk delete policy only deletes files that have completed processing or have been cancelled
 
-### Deprecated
-
 ### Removed
 - Plugin manifest generation has been removed from the DeltaFi Gradle plugin.
 
@@ -40,8 +56,6 @@ constructor.
 - CLI: Migrations will only run if the core pod has been replaced
 - KinD: Speed enhancements
 - KinD: Clean up the cluster script and make shellcheck 100% happy
-
-### Security
 
 ### Upgrade and Migration
 - The `kind/cluster.yaml` plugins section requires `plugin_coordinates` per plugin
@@ -761,6 +775,7 @@ No changes.  UI update only
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
 [Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.0...main
+[0.99.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.0...0.99.1
 [0.99.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.5...0.99.0
 [0.98.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.4...0.98.5
 [0.98.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.3...0.98.4
