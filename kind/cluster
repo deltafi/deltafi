@@ -781,17 +781,18 @@ loc() {
 }
 
 _local_build() {
-  if [[ $# -gt 0 && $1 == "clean" ]]; then
-    local BUILD_TARGETS=( clean assemble )
-    _attention "Building local images (clean)"
-  else
-    local BUILD_TARGETS=( assemble )
-    _attention "Building local images"
-  fi
 
-  _attention "Building deltafi"
+  _attention "Building local images"
+
+  local BUILD_TARGETS=( assemble )
+
   cd "$ROOT/deltafi"
   git pull || echo "Cannot pull latest"
+  if [[ $# -gt 0 && $1 == "clean" ]]; then
+    _attention "Cleaning deltafi build environment"
+    ./gradlew clean
+  fi
+  _attention "Building deltafi"
   ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal
 
   _attention "Building deltafi-ui"
@@ -803,12 +804,16 @@ _local_build() {
   docker push localhost:5000/deltafi-ui:latest
 
   for plugin in "${PLUGINS[@]}"; do
-    _attention "Building $plugin"
     if [[ ! -d $ROOT/$plugin ]]; then
       git clone "$(_url_for_plugin "$plugin")" "$ROOT/$plugin"
     fi
     cd "$ROOT/$plugin"
     git pull || echo "Cannot pull latest"
+    if [[ $# -gt 0 && $1 == "clean" ]]; then
+      _attention "Cleaning $plugin build environment"
+      ./gradlew clean
+    fi
+    _attention "Building $plugin"
     ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal
   done
 

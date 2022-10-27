@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- KinD: Fixed issue where `cluster loc clean build` had a race condition
 
 ### Tech-Debt/Refactor
 
