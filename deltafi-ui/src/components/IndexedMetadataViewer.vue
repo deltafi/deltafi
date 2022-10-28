@@ -54,7 +54,7 @@ const path = computed(() => {
   return "/deltafile/search";
 });
 
-const state = useStorage("advanced-search-options-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+const panelState = useStorage("panel-search-options", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const setSearchableIndexedMetadata = (rowData) => {
   let searchableIndexedMetadataArray = [];
@@ -62,11 +62,11 @@ const setSearchableIndexedMetadata = (rowData) => {
   searchableIndexedMetadataObject["key"] = rowData.key;
   searchableIndexedMetadataObject["value"] = rowData.value;
   searchableIndexedMetadataObject["valid"] = true;
-  if (!_.isEmpty(_.get(state.value, "metadataArrayState", null))) {
-    state.value["metadataArrayState"].push(searchableIndexedMetadataObject);
+  if (!_.isEmpty(_.get(panelState.value, "metadataArrayState", null))) {
+    panelState.value["metadataArrayState"].push(searchableIndexedMetadataObject);
   } else {
     searchableIndexedMetadataArray.push(searchableIndexedMetadataObject);
-    state.value["metadataArrayState"] = searchableIndexedMetadataArray;
+    panelState.value["metadataArrayState"] = searchableIndexedMetadataArray;
   }
 };
 </script>
