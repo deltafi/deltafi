@@ -140,7 +140,7 @@ import useFlows from "@/composables/useFlows";
 import useIngress from "@/composables/useIngress";
 import useNotifications from "@/composables/useNotifications";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import { ref, computed, onBeforeMount, watch } from "vue";
+import { ref, computed, onBeforeMount, onMounted, watch } from "vue";
 import _ from "lodash";
 
 const uploadedTimestamp = ref(new Date());
@@ -308,7 +308,9 @@ const uploadsRowClass = (data) => {
 };
 
 // Created
-fetchActiveIngressFlows();
+onMounted(async () => {
+  fetchActiveIngressFlows();
+});
 
 const formatMetadataforViewer = (filename, uploadedMetadata) => {
   let metaDataObject = {};

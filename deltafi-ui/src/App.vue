@@ -47,9 +47,10 @@ import CustomToast from "@/components/CustomToast";
 import Dialog from "primevue/dialog";
 import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
+import useCurrentUser from "@/composables/useCurrentUser";
 import useServerSentEvents from "@/composables/useServerSentEvents";
 import useNotifications from "@/composables/useNotifications";
-import { computed, onBeforeMount, watch, nextTick, onMounted, onBeforeUnmount, provide, ref } from "vue";
+import { computed, onBeforeMount, watch, nextTick, onBeforeUnmount, provide, ref, onMounted } from "vue";
 import { useTitle, useIdle } from "@vueuse/core";
 import { usePrimeVue } from "primevue/config";
 
@@ -59,6 +60,7 @@ const title = useTitle("DeltaFi");
 const notify = useNotifications();
 const { serverSentEvents } = useServerSentEvents();
 const { uiConfig, fetchUiConfig } = useUiConfig();
+const { fetchCurrentUser } = useCurrentUser();
 const idleTimeOut = (15 * 60 * 1000); // 15 min
 const { idle } = useIdle(idleTimeOut);
 const sidebarHidden = ref(false);
@@ -69,14 +71,17 @@ const sidebarClasses = computed(() => {
   return sidebarHidden.value ? "col sidebar hidden" : "col sidebar";
 });
 
-onBeforeMount(() => {
+onBeforeMount(async () => {
   fetchUiConfig();
   provide("uiConfig", uiConfig);
+  await fetchCurrentUser();
 });
 
 onMounted(async () => {
   primevue.config.locale.dateFormat = "yy-mm-dd";
-  await nextTick();
+
+  // Resize related
+  await nextTick()
   window.addEventListener("resize", onResize);
   onResize();
 });

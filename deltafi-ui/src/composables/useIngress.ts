@@ -18,11 +18,13 @@
 
 import { reactive } from "vue";
 import useNotifications from "./useNotifications";
+import useCurrentUser from "./useCurrentUser";
 import axios from "axios";
 import _ from "lodash";
 
 export default function useIngress() {
   const notify = useNotifications();
+  const { currentUser } = useCurrentUser();
 
   const ingressFile = (file: File, metadata: Record<string, string>, flow?: string) => {
     const result = reactive({
@@ -41,7 +43,10 @@ export default function useIngress() {
         headerObject["Flow"] = flow;
       }
       headerObject["Filename"] = file.name;
-      headerObject["Metadata"] = JSON.stringify(metadata);
+      headerObject["Metadata"] = JSON.stringify({
+        ...metadata,
+        uploadedBy: currentUser.name
+      });
       return headerObject;
     };
 
