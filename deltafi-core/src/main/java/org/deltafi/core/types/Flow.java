@@ -38,7 +38,7 @@ public abstract class Flow {
     protected String name;
     protected String description;
     protected PluginCoordinates sourcePlugin;
-    protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>());
+    protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false);
     // list of variables that are applicable to this flow
     protected Set<Variable> variables = new HashSet<>();
 
@@ -118,6 +118,12 @@ public abstract class Flow {
     public boolean isInvalid() {
         return FlowState.INVALID.equals(getFlowStatus().getState());
     }
+
+    public boolean isTestMode() {
+        return flowStatus.getTestMode();
+    }
+
+    public void setTestMode( boolean testMode ) { flowStatus.setTestMode(testMode); }
 
     public boolean hasErrors() {
         return !getFlowStatus().getErrors().isEmpty();

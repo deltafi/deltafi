@@ -62,6 +62,8 @@ public class DeltaFile {
   private String contentDeletedReason;
   private OffsetDateTime errorAcknowledged;
   private String errorAcknowledgedReason;
+  private Boolean testMode;
+  private String testModeReason;
   private Boolean egressed;
   private Boolean filtered;
   private OffsetDateTime replayed;
@@ -165,6 +167,11 @@ public class DeltaFile {
     action.setErrorCause(errorCause);
     action.setErrorContext(errorContext);
     setModified(now);
+  }
+
+  public void setTestMode(String reason) {
+    testMode = true;
+    testModeReason = reason;
   }
 
   public List<String> queuedActions() {

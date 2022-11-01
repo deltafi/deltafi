@@ -116,6 +116,8 @@ import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.rest.IngressRest.FLOWFILE_V1_MEDIA_TYPE;
+import org.hamcrest.MatcherAssert;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
@@ -309,12 +311,38 @@ class DeltaFiCoreApplicationTests {
 		TransformActionConfiguration tc = new TransformActionConfiguration("sampleIngress.Utf8TransformAction", "type");
 		TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleIngress.SampleTransformAction", "type");
 
-		IngressFlow sampleIngressFlow = buildRunningFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2));
-		IngressFlow retryFlow = buildRunningFlow("theFlow", lc, null);
-		IngressFlow childFlow = buildRunningFlow("childFlow", lc, List.of(tc2));
+		IngressFlow sampleIngressFlow = buildRunningFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), false);
+		IngressFlow retryFlow = buildRunningFlow("theFlow", lc, null, false);
+		IngressFlow childFlow = buildRunningFlow("childFlow", lc, List.of(tc2), false);
 
 		ingressFlowRepo.saveAll(List.of(sampleIngressFlow, retryFlow, childFlow));
 		ingressFlowService.refreshCache();
+	}
+
+	void configureTestIngress() {
+		LoadActionConfiguration lc = new LoadActionConfiguration("sampleIngress.SampleLoadAction", "type");
+		TransformActionConfiguration tc = new TransformActionConfiguration("sampleIngress.Utf8TransformAction", "type");
+		TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleIngress.SampleTransformAction", "type");
+
+		IngressFlow sampleIngressFlow = buildRunningFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), true);
+		ingressFlowRepo.save(sampleIngressFlow);
+		ingressFlowService.refreshCache();
+	}
+
+	void configureTestEgress() {
+			ValidateActionConfiguration authValidate = new ValidateActionConfiguration("sampleEgress.AuthorityValidateAction", "type");
+			ValidateActionConfiguration sampleValidate = new ValidateActionConfiguration("sampleEgress.SampleValidateAction", "type");
+
+			FormatActionConfiguration sampleFormat = new FormatActionConfiguration("sampleEgress.SampleFormatAction", "type", List.of("sampleDomain"));
+			sampleFormat.setRequiresEnrichments(List.of("sampleEnrichment"));
+
+			EgressActionConfiguration sampleEgress = new EgressActionConfiguration("sampleEgress.SampleEgressAction", "type");
+
+			EgressFlow sampleEgressFlow = buildRunningFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, true);
+			sampleEgressFlow.setValidateActions(List.of(authValidate, sampleValidate));
+
+			egressFlowRepo.save(sampleEgressFlow);
+			egressFlowService.refreshCache();
 	}
 
     void loadEgressConfig() {
@@ -328,12 +356,12 @@ class DeltaFiCoreApplicationTests {
 
 		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("sampleEgress.SampleEgressAction", "type");
 
-		EgressFlow sampleEgressFlow = buildRunningFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress);
+		EgressFlow sampleEgressFlow = buildRunningFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, false);
 		sampleEgressFlow.setValidateActions(List.of(authValidate, sampleValidate));
 
 		FormatActionConfiguration errorFormat = new FormatActionConfiguration("sampleEgress.ErrorFormatAction", "type", List.of("error"));
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration("sampleEgress.ErrorEgressAction", "type");
-		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress);
+		EgressFlow errorFlow = buildRunningFlow("error", errorFormat, errorEgress, false);
 
 		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
 		egressFlowService.refreshCache();
@@ -1100,6 +1128,17 @@ class DeltaFiCoreApplicationTests {
 		return deltaFile;
 	}
 
+	DeltaFile postValidateAuthorityDeltaFileInTestMode(String did, String expectedEgressActionName) {
+		DeltaFile deltaFile = postValidateDeltaFile(did);
+		deltaFile.setStage(DeltaFileStage.COMPLETE);
+		deltaFile.queueAction(expectedEgressActionName);
+		deltaFile.completeAction(expectedEgressActionName, START_TIME, STOP_TIME);
+		deltaFile.completeAction("sampleEgress.AuthorityValidateAction", START_TIME, STOP_TIME);
+		deltaFile.setTestMode(expectedEgressActionName);
+		deltaFile.setEgressed(false);
+		return deltaFile;
+	}
+
 	@Test
 	void test20ValidateAuthority() throws IOException {
 		String did = UUID.randomUUID().toString();
@@ -1135,6 +1174,51 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postEgressDeltaFile(did), deltaFile);
 
+		Mockito.verify(actionEventQueue, never()).putActions(any());
+	}
+
+	@Test
+	void testToEgressWithTestModeIngress() throws IOException {
+		configureTestIngress();
+
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postValidateDeltaFile(did));
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("20.validateAuthority"), did),
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class);
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+
+		assertEqualsIgnoringDates(
+				postValidateAuthorityDeltaFileInTestMode(did, "sampleEgress.SyntheticEgressActionForTestIngress"),
+				deltaFile
+		);
+		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(INGRESS_FLOW_NAME));
+
+		Mockito.verify(actionEventQueue, never()).putActions(any());
+	}
+
+	@Test
+	void testToEgressWithTestModeEgress() throws IOException {
+		configureTestEgress();
+
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postValidateDeltaFile(did));
+
+		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("20.validateAuthority"), did),
+				"data." + DgsConstants.MUTATION.ActionEvent,
+				DeltaFile.class);
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+
+		assertEqualsIgnoringDates(
+				postValidateAuthorityDeltaFileInTestMode(did, "sampleEgress.SyntheticEgressActionForTestEgress"),
+				deltaFile
+		);
+		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(EGRESS_FLOW_NAME));
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 	}
 
@@ -3072,19 +3156,20 @@ class DeltaFiCoreApplicationTests {
 		TransformActionConfiguration tc = new TransformActionConfiguration("sampleIngress.Utf8TransformAction", "type");
 		TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleIngress.SampleTransformAction", "type");
 
-		return buildFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), flowState);
+		return buildFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
 	}
 
-	private IngressFlow buildRunningFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms) {
-		return buildFlow(name, loadActionConfiguration, transforms, FlowState.RUNNING);
+	private IngressFlow buildRunningFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
+		return buildFlow(name, loadActionConfiguration, transforms, FlowState.RUNNING, testMode);
 	}
 
-	private IngressFlow buildFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState) {
+	private IngressFlow buildFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
 		IngressFlow ingressFlow = new IngressFlow();
 		ingressFlow.setName(name);
 		ingressFlow.getFlowStatus().setState(flowState);
 		ingressFlow.setLoadAction(loadActionConfiguration);
 		ingressFlow.setTransformActions(transforms);
+		ingressFlow.setTestMode(testMode);
 		return ingressFlow;
 	}
 
@@ -3094,7 +3179,7 @@ class DeltaFiCoreApplicationTests {
 
 		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("sampleEgress.SampleEgressAction", "type");
 
-		return buildFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, flowState);
+		return buildFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, flowState, false);
 	}
 
 	private EnrichFlow buildEnrichFlow(FlowState flowState) {
@@ -3112,17 +3197,18 @@ class DeltaFiCoreApplicationTests {
 		return enrichFlow;
 	}
 
-	private EgressFlow buildRunningFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction) {
-		return buildFlow(name, formatAction, egressAction, FlowState.RUNNING);
+	private EgressFlow buildRunningFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction, boolean testMode) {
+		return buildFlow(name, formatAction, egressAction, FlowState.RUNNING, testMode);
 	}
 
-	private EgressFlow buildFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction, FlowState flowState) {
+	private EgressFlow buildFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction, FlowState flowState, boolean testMode) {
 		EgressFlow egressFlow = new EgressFlow();
 		egressFlow.setName(name);
 		egressFlow.setFormatAction(formatAction);
 		egressFlow.setEgressAction(egressAction);
 		egressFlow.setIncludeIngressFlows(null);
 		egressFlow.getFlowStatus().setState(flowState);
+		egressFlow.setTestMode(testMode);
 		return egressFlow;
 	}
 

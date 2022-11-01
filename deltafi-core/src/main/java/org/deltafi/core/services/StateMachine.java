@@ -27,8 +27,12 @@ import org.deltafi.core.configuration.*;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS;
+import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS;
 
 @Service
 @AllArgsConstructor
@@ -54,7 +58,6 @@ public class StateMachine {
                     break;
                 }
                 IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
-
                 // transform
                 TransformActionConfiguration nextTransformAction = getTransformAction(ingressFlow, deltaFile);
                 if (nextTransformAction != null) {
@@ -109,6 +112,7 @@ public class StateMachine {
                     deltaFile.addEgressFlow(actionInput.getActionContext().getEgressFlow());
                     deltaFile.queueNewAction(actionInput.getActionContext().getName());
                 });
+
                 enqueueActions.addAll(egressActions);
 
                 break;
@@ -168,7 +172,20 @@ public class StateMachine {
         nextActions.addAll(getValidateActions(egressFlow, deltaFile));
 
         if (nextActions.isEmpty() && egressActionReady(egressFlow, deltaFile)) {
-            nextActions.add(egressFlow.getEgressAction());
+            IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+            if(egressFlow.isTestMode() || (ingressFlow != null && ingressFlow.isTestMode())) {
+                String action = egressFlow.getName() + "." + (egressFlow.isTestMode() ? SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS : SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS);
+                deltaFile.queueAction(action);
+                deltaFile.completeAction(action, OffsetDateTime.now(), OffsetDateTime.now());
+                deltaFile.addEgressFlow(egressFlow.getName());
+                if(egressFlow.isTestMode()) {
+                    deltaFile.setTestMode("Egress flow '" + egressFlow.getName() + "' in test mode");
+                } else {
+                    deltaFile.setTestMode("Ingress flow '" + ingressFlow.getName() + "' in test mode");
+                }
+            } else {
+                nextActions.add(egressFlow.getEgressAction());
+            }
         }
 
         return nextActions;
@@ -236,7 +253,9 @@ public class StateMachine {
     private boolean egressActionReady(EgressFlow egressFlow, DeltaFile deltaFile) {
         return deltaFile.hasCompletedAction(egressFlow.getFormatAction().getName()) &&
                 deltaFile.hasCompletedActions(egressFlow.validateActionNames()) &&
-                !deltaFile.hasTerminalAction(egressFlow.getEgressAction().getName());
+                !deltaFile.hasTerminalAction(egressFlow.getEgressAction().getName()) &&
+                !deltaFile.hasTerminalAction(egressFlow.getName() + "." + SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS) &&
+                !deltaFile.hasTerminalAction(egressFlow.getName() + "." + SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS);
     }
 
     private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile, String egressFlow) {

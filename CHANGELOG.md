@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.99.2
 
 ### Added
+- `testFlow` is now a property of `FlowStatus`.  This is used to indicate if a flow is in test mode, meaning that it is not intended to be egressed from the system
+- New mutations added to enable and disable test flows:
+  - `enableIngressTestFlow`
+  - `disableIngressTestFlow`
+  - `enableEgressTestFlow`
+  - `disableEgressTestFlow`
+- `DeltaFile`s now indicate if they were processed with a test flow by setting a `testMode` flag and populating a `testFlowReason` field to indicate the reason for being processed in test mode
+- System snapshots will snapshot the `testMode` status for a flow
 
 ### Changed
 
@@ -22,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Snapshot migration was added to add empty arrays for the new testFlow fields
 
 ## [0.99.1] - 2022-10-26
 

@@ -33,6 +33,7 @@ public abstract class BaseFlowRepoImpl<T extends Flow> implements FlowRepoCustom
     private static final String ID = "_id";
     private static final String SOURCE_PLUGIN = "sourcePlugin";
     private static final String FLOW_STATUS_STATE = "flowStatus.state";
+    private static final String TEST_MODE = "flowStatus.testMode";
 
     private final MongoTemplate mongoTemplate;
     private final Class<T> entityType;
@@ -56,9 +57,16 @@ public abstract class BaseFlowRepoImpl<T extends Flow> implements FlowRepoCustom
 
     @Override
     public boolean updateFlowState(String flowName, FlowState flowState) {
-        Query idMatches = Query.query(Criteria.where(ID).is(flowName));
+                Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(FLOW_STATUS_STATE).ne(flowState));
         Update flowStateUpdate = Update.update(FLOW_STATUS_STATE, flowState);
         return 1 == mongoTemplate.updateFirst(idMatches, flowStateUpdate, entityType).getModifiedCount();
+    }
+
+    @Override
+    public boolean updateFlowTestMode(String flowName, boolean testMode) {
+        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(TEST_MODE).is(!testMode));
+        Update testModeUpdate = Update.update(TEST_MODE, testMode);
+        return 1 == mongoTemplate.updateFirst(idMatches, testModeUpdate, entityType).getModifiedCount();
     }
 
 }

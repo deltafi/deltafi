@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EgressFlowServiceTest {
 
     private static final List<String> RUNNING_FLOWS = List.of("a", "b");
+    private static final List<String> TEST_FLOWS = List.of("c");
 
     @InjectMocks
     EgressFlowService egressFlowService;
@@ -47,33 +48,37 @@ class EgressFlowServiceTest {
 
     @Test
     void updateSnapshot() {
-        List<EgressFlow> flows = RUNNING_FLOWS.stream().map(this::runningFlow).collect(Collectors.toList());
+        List<EgressFlow> flows = RUNNING_FLOWS.stream().map(name -> runningFlow(name, false)).collect(Collectors.toList());
 
-        flows.add(egressFlow("c", FlowState.STOPPED));
+        flows.add(egressFlow("c", FlowState.STOPPED, true));
         Mockito.when(egressFlowRepo.findAll()).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         egressFlowService.updateSnapshot(systemSnapshot);
 
         assertThat(systemSnapshot.getRunningEgressFlows()).isEqualTo(RUNNING_FLOWS);
+        assertThat(systemSnapshot.getTestEgressFlows()).isEqualTo(TEST_FLOWS);
     }
 
     @Test
     void getRunningFromSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setRunningEgressFlows(List.of("a", "b"));
+        systemSnapshot.setTestEgressFlows(List.of("c", "d"));
         assertThat(egressFlowService.getRunningFromSnapshot(systemSnapshot)).isEqualTo(RUNNING_FLOWS);
+        assertThat(egressFlowService.getTestModeFromSnapshot(systemSnapshot)).isEqualTo(List.of("c", "d"));
     }
 
-    EgressFlow runningFlow(String name) {
-        return egressFlow(name, FlowState.RUNNING);
+    EgressFlow runningFlow(String name, boolean testMode) {
+        return egressFlow(name, FlowState.RUNNING, testMode);
     }
 
-    EgressFlow egressFlow(String name, FlowState flowState) {
+    EgressFlow egressFlow(String name, FlowState flowState, boolean testMode) {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName(name);
         FlowStatus flowStatus = new FlowStatus();
         flowStatus.setState(flowState);
+        flowStatus.setTestMode(testMode);
         egressFlow.setFlowStatus(flowStatus);
         return egressFlow;
     }

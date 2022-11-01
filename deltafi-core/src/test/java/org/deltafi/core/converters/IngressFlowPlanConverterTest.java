@@ -53,6 +53,7 @@ class IngressFlowPlanConverterTest {
         assertThat(ingressFlow.getName()).isEqualTo("passthrough");
         assertThat(ingressFlow.getDescription()).isEqualTo("Flow that passes data through unchanged");
         assertThat(ingressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
+        assertThat(ingressFlow.getFlowStatus().getTestMode()).isFalse();
         assertThat(ingressFlow.getFlowStatus().getErrors()).isEmpty();
         assertThat(ingressFlow.getSourcePlugin()).isEqualTo(expectedSourcePlugin());
         assertThat(ingressFlow.getTransformActions()).hasSize(1).contains(expectedTransform());

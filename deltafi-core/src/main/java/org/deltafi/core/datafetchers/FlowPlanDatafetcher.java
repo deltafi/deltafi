@@ -78,6 +78,18 @@ public class FlowPlanDatafetcher {
     }
 
     @DgsMutation
+    public boolean enableIngressTestMode(String flowName) { return ingressFlowService.enableTestMode(flowName); }
+
+    @DgsMutation
+    public boolean disableIngressTestMode(String flowName) { return ingressFlowService.disableTestMode(flowName); }
+
+    @DgsMutation
+    public boolean enableEgressTestMode(String flowName) { return egressFlowService.enableTestMode(flowName); }
+
+    @DgsMutation
+    public boolean disableEgressTestMode(String flowName) { return egressFlowService.disableTestMode(flowName); }
+
+    @DgsMutation
     public EnrichFlow saveEnrichFlowPlan(EnrichFlowPlanInput enrichFlowPlan) {
         return enrichFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(enrichFlowPlan, EnrichFlowPlan.class));
     }

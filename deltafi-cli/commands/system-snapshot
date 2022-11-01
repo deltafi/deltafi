@@ -134,6 +134,8 @@ ALL_SNAPSHOT_FIELDS="id
                 value
               }
             }
+            testIngressFlows
+            testEgressFlows
             runningIngressFlows
             runningEnrichFlows
             runningEgressFlows"

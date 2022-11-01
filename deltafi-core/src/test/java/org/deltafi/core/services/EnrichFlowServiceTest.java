@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EnrichFlowServiceTest {
 
     private static final List<String> RUNNING_FLOWS = List.of("a", "b");
+    private static final List<String> TEST_FLOWS = List.of();
 
     @InjectMocks
     EnrichFlowService enrichFlowService;
@@ -63,6 +64,7 @@ class EnrichFlowServiceTest {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setRunningEnrichFlows(List.of("a", "b"));
         assertThat(enrichFlowService.getRunningFromSnapshot(systemSnapshot)).isEqualTo(RUNNING_FLOWS);
+        assertThat(enrichFlowService.getTestModeFromSnapshot(systemSnapshot)).isEqualTo(TEST_FLOWS);
     }
 
     EnrichFlow runningFlow(String name) {

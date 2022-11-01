@@ -25,6 +25,7 @@ import org.deltafi.common.types.EnrichFlowPlan;
 import org.deltafi.core.validation.EnrichFlowValidator;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -45,5 +46,10 @@ public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow> {
     @Override
     List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
         return systemSnapshot.getRunningEnrichFlows();
+    }
+
+    @Override
+    List<String> getTestModeFromSnapshot(SystemSnapshot systemSnapshot) {
+        return Collections.emptyList();
     }
 }

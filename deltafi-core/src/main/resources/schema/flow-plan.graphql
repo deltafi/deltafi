@@ -135,6 +135,7 @@ type FlowConfigError {
 type FlowStatus {
   state: FlowState!
   errors: [FlowConfigError]
+  testMode: Boolean!
 }
 
 type Flows {

@@ -250,6 +250,8 @@ type DeltaFile {
   contentDeletedReason: String
   errorAcknowledged: DateTime
   errorAcknowledgedReason: String
+  testMode: Boolean
+  testModeReason: String
   egressed: Boolean
   filtered: Boolean
   replayed: DateTime
@@ -469,6 +471,11 @@ type Mutation {
   stopEgressFlow(flowName: String!) : Boolean!
   startEnrichFlow(flowName: String!) : Boolean!
   stopEnrichFlow(flowName: String!) : Boolean!
+
+  enableIngressTestMode(flowName: String!) : Boolean!
+  disableIngressTestMode(flowName: String!) : Boolean!
+  enableEgressTestMode(flowName: String!) : Boolean!
+  disableEgressTestMode(flowName: String!) : Boolean!
 
   ingress(input: IngressInput!): DeltaFile!
   actionEvent(event: ActionEventInput!): DeltaFile!

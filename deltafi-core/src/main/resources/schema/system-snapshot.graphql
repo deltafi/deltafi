@@ -28,6 +28,8 @@ type SystemSnapshot {
     runningIngressFlows: [String]!
     runningEnrichFlows: [String]!
     runningEgressFlows: [String]!
+    testIngressFlows: [String]!
+    testEgressFlows: [String]!
 }
 
 input SystemSnapshotInput {
@@ -42,6 +44,8 @@ input SystemSnapshotInput {
     runningIngressFlows: [String]!
     runningEnrichFlows: [String]!
     runningEgressFlows: [String]!
+    testIngressFlows: [String]!
+    testEgressFlows: [String]!
 }
 
 extend type Query {

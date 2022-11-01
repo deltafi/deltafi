@@ -68,10 +68,16 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         systemSnapshot.setRunningEgressFlows(getRunningFlowNames());
+        systemSnapshot.setTestEgressFlows(getTestFlowNames());
     }
 
     @Override
     List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
         return systemSnapshot.getRunningEgressFlows();
+    }
+
+    @Override
+    List<String> getTestModeFromSnapshot(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getTestEgressFlows();
     }
 }

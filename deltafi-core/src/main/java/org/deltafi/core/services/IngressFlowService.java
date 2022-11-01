@@ -39,12 +39,18 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         systemSnapshot.setRunningIngressFlows(getRunningFlowNames());
+        systemSnapshot.setTestIngressFlows(getTestFlowNames());
     }
 
 
     @Override
     List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
         return systemSnapshot.getRunningIngressFlows();
+    }
+
+    @Override
+    List<String> getTestModeFromSnapshot( SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getTestIngressFlows();
     }
 
 }

@@ -108,6 +108,27 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return updateAndRefresh(flowName, FlowState.STOPPED);
     }
 
+    public boolean enableTestMode(String flowName) {
+        FlowT flow = getFlowOrThrow(flowName);
+
+        if (flow.isTestMode()) {
+            log.warn("Tried to enable test mode on {} flow {} when already in test mode", flowType, flowName);
+            return false;
+        }
+
+        return updateAndRefreshTestMode(flowName, true);
+    }
+
+    public boolean disableTestMode(String flowName) {
+        FlowT flow = getFlowOrThrow(flowName);
+
+        if (!flow.isTestMode()) {
+            log.warn("Tried to disable test mode on {} flow {} when already in test mode", flowType, flowName);
+            return false;
+        }
+
+        return updateAndRefreshTestMode(flowName, false);
+    }
     /**
      * For each of the given flow plans, rebuild the flow from the plan and latest variables
      * @param flowPlans list of flow plans that need flows rebuilt
@@ -221,20 +242,31 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return getAll().stream().filter(Flow::isRunning).map(Flow::getName).collect(Collectors.toList());
     }
 
+    public List<String> getTestFlowNames() {
+        return getAll().stream().filter(Flow::isTestMode).map(Flow::getName).collect(Collectors.toList());
+    }
+
     abstract List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot);
+    abstract List<String> getTestModeFromSnapshot(SystemSnapshot systemSnapshot);
 
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         Result result = new Result();
         List<String> runningFlowsInSnapshot = getRunningFromSnapshot(systemSnapshot);
+        List<String> testModeFlowsInSnapshot = getTestModeFromSnapshot(systemSnapshot);
 
         if (hardReset) {
             getRunningFlowNames().forEach(this::stopFlow);
         }
 
+        for (String flow : testModeFlowsInSnapshot) {
+            flowRepo.findById(flow).ifPresentOrElse(this::setToTestMode,
+                    () -> result.getErrors().add("Flow: " + flow + " is no longer installed and cannot be set to test mode"));
+        }
+
         for (String flow : runningFlowsInSnapshot) {
             flowRepo.findById(flow).ifPresentOrElse(existingFlow -> resetFlowState(existingFlow, result),
-                    () -> result.getErrors().add("Flow: " + flow + " is no longer installed"));
+                    () -> result.getErrors().add("Flow: " + flow + " is no longer installed and cannot be started"));
         }
 
         result.setSuccess(result.getErrors().isEmpty());
@@ -252,6 +284,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         } else if (flow.isInvalid()) {
             result.getErrors().add("Flow: " + flow.getName() + " is invalid and cannot be started");
         }
+    }
+
+    void setToTestMode(FlowT flow) {
+        enableTestMode(flow.getName());
     }
 
     /**
@@ -389,6 +425,15 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     private boolean updateAndRefresh(String flowName, FlowState flowState) {
         if (flowRepo.updateFlowState(flowName, flowState)) {
+            refreshCache();
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean updateAndRefreshTestMode(String flowName, boolean testMode) {
+        if (flowRepo.updateFlowTestMode(flowName, testMode)) {
             refreshCache();
             return true;
         }

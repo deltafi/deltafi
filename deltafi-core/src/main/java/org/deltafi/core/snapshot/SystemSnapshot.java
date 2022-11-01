@@ -44,7 +44,9 @@ public class SystemSnapshot {
     private List<PropertySet> propertySets;
     private List<FlowAssignmentRule> flowAssignmentRules;
     private List<String> runningIngressFlows;
+    private List<String> testIngressFlows;
     private List<String> runningEnrichFlows;
     private List<String> runningEgressFlows;
+    private List<String> testEgressFlows;
     private Set<PluginCoordinates> installedPlugins;
 }

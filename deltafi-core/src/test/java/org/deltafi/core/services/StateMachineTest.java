@@ -24,8 +24,11 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.Util;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
+import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
+import org.deltafi.core.types.IngressFlow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,7 +44,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,6 +70,9 @@ class StateMachineTest {
 
     @Mock
     EgressFlowService egressFlowService;
+
+    @Mock
+    IngressFlowService ingressFlowService;
 
     @Mock
     @SuppressWarnings("unused")
@@ -398,6 +404,86 @@ class StateMachineTest {
     }
 
     @Test
+    void testAdvanceToEgressActionWhenInEgressTestMode() throws MissingEgressFlowException {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+
+        addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2");
+
+        EgressFlow egress1 = EgressFlowMaker.builder()
+                .name("TestEgressFlow")
+                .egressActionName("EgressAction1")
+                .formatActionName("FormatAction1")
+                .testMode(true)
+                .validateActions(List.of("ValidateAction1"))
+                .build().makeEgressFlow();
+
+        EgressFlow egress2 = EgressFlowMaker.builder()
+                .egressActionName("EgressAction2")
+                .formatActionName("FormatAction2")
+                .validateActions(List.of("ValidateAction2"))
+                .build().makeEgressFlow();
+
+        Mockito.when(egressFlowService.getMatchingFlows(INGRESS_FLOW)).thenReturn(List.of(egress1, egress2));
+
+        List<ActionInput> actionInputs = stateMachine.advance(deltaFile);
+        assertThat(actionInputs).hasSize(1);
+
+        String TEST_EGRESS_ACTION = "TestEgressFlow." + SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS;
+
+        assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.EGRESS);
+        assertThat(actionInputs.get(0)).matches(actionInput -> "EgressAction2".equals(actionInput.getActionContext().getName()));
+        assertThat(deltaFile.actionNamed(TEST_EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
+        assertThat(deltaFile.actionNamed("EgressAction2")).isPresent().get().matches(action -> ActionState.QUEUED.equals(action.getState()));
+        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
+        assertThat(deltaFile.getTestMode()).isTrue();
+        assertThat(deltaFile.getTestModeReason()).isEqualTo("Egress flow 'TestEgressFlow' in test mode");
+    }
+
+    @Test
+    void testAdvanceToEgressActionWhenInIngressTestMode() throws MissingEgressFlowException {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+
+        addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2");
+
+        IngressFlow ingress = IngressFlowMaker.builder()
+                .name(INGRESS_FLOW)
+                .testMode(true)
+                .flowState(FlowState.RUNNING).build().makeIngressFlow();
+
+        EgressFlow egress1 = EgressFlowMaker.builder()
+                .name("TestEgressFlow")
+                .egressActionName("EgressAction1")
+                .formatActionName("FormatAction1")
+                .testMode(false)
+                .validateActions(List.of("ValidateAction1"))
+                .build().makeEgressFlow();
+
+        EgressFlow egress2 = EgressFlowMaker.builder()
+                .egressActionName("EgressAction2")
+                .formatActionName("FormatAction2")
+                .validateActions(List.of("ValidateAction2"))
+                .build().makeEgressFlow();
+
+        Mockito.when(egressFlowService.getMatchingFlows(INGRESS_FLOW)).thenReturn(List.of(egress1, egress2));
+        Mockito.when(ingressFlowService.getRunningFlowByName(INGRESS_FLOW)).thenReturn(ingress);
+
+        List<ActionInput> actionInputs = stateMachine.advance(deltaFile);
+        assertThat(actionInputs).hasSize(0);
+
+        String TEST_EGRESS_ACTION = "TestEgressFlow." + SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS;
+        String EGRESS_ACTION = EGRESS_FLOW + "." + SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS;
+
+        assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
+        assertThat(deltaFile.actionNamed(TEST_EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
+        assertThat(deltaFile.actionNamed(EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
+        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
+        assertThat(deltaFile.getTestMode()).isTrue();
+        assertThat(deltaFile.getTestModeReason()).isEqualTo("Ingress flow 'TheIngressFlow' in test mode");
+    }
+
+    @Test
     void testAdvanceCompleteEgressAction_onePending() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.EGRESS);
@@ -551,6 +637,25 @@ class StateMachineTest {
     }
 
     @Builder
+    private static class IngressFlowMaker {
+        @Builder.Default
+        String name = INGRESS_FLOW;
+        @Builder.Default
+        FlowState flowState = FlowState.STOPPED;
+        @Builder.Default
+        boolean testMode = false;
+
+        private IngressFlow makeIngressFlow() {
+            IngressFlow ingressFlow = new IngressFlow();
+            ingressFlow.setName(name);
+            ingressFlow.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
+
+            return ingressFlow;
+        }
+
+    }
+
+    @Builder
     private static class EgressFlowMaker {
         @Singular
         List<String> formatRequiresDomains;
@@ -564,6 +669,10 @@ class StateMachineTest {
         String egressActionName = EGRESS_ACTION;
         @Builder.Default
         String name = EGRESS_FLOW;
+        @Builder.Default
+        FlowState flowState = FlowState.STOPPED;
+        @Builder.Default
+        boolean testMode = false;
 
         private EgressFlow makeEgressFlow() {
             EgressFlow egressFlow = new EgressFlow();
@@ -575,6 +684,8 @@ class StateMachineTest {
             formatActionConfiguration.setRequiresEnrichments(formatRequiresEnrichment);
             egressFlow.setFormatAction(formatActionConfiguration);
             egressFlow.setValidateActions(validateActions.stream().map(this::named).collect(Collectors.toList()));
+
+            egressFlow.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
 
             return egressFlow;
         }

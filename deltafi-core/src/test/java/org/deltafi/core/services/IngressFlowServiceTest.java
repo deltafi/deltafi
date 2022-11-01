@@ -40,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class IngressFlowServiceTest {
 
     private static final List<String> RUNNING_FLOWS = List.of("a", "b");
+    private static final List<String> TEST_FLOWS = List.of("a", "b");
 
     @InjectMocks
     IngressFlowService ingressFlowService;
@@ -51,28 +52,31 @@ class IngressFlowServiceTest {
     void updateSnapshot() {
         List<IngressFlow> flows = RUNNING_FLOWS.stream().map(this::runningFlow).collect(Collectors.toList());
 
-        flows.add(ingressFlow("c", FlowState.STOPPED));
+        flows.add(ingressFlow("c", FlowState.STOPPED, false));
         Mockito.when(ingressFlowRepo.findAll()).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         ingressFlowService.updateSnapshot(systemSnapshot);
 
         assertThat(systemSnapshot.getRunningIngressFlows()).isEqualTo(RUNNING_FLOWS);
+        assertThat(systemSnapshot.getTestIngressFlows()).isEqualTo(TEST_FLOWS);
     }
 
     @Test
     void testResetFromSnapshot() {
-        IngressFlow running = ingressFlow("running", FlowState.RUNNING);
-        IngressFlow stopped = ingressFlow("stopped", FlowState.STOPPED);
-        IngressFlow invalid = ingressFlow("invalid", FlowState.INVALID);
+        IngressFlow running = ingressFlow("running", FlowState.RUNNING, true);
+        IngressFlow stopped = ingressFlow("stopped", FlowState.STOPPED, false);
+        IngressFlow invalid = ingressFlow("invalid", FlowState.INVALID, false);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setRunningIngressFlows(List.of("running", "stopped", "invalid", "missing"));
+        systemSnapshot.setTestIngressFlows(List.of("stopped","missing"));
 
         Mockito.when(ingressFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
         Mockito.when(ingressFlowRepo.findById("running")).thenReturn(Optional.of(running));
         Mockito.when(ingressFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(ingressFlowRepo.findById("invalid")).thenReturn(Optional.of(invalid));
+        Mockito.when(ingressFlowRepo.findById("missing")).thenReturn(Optional.empty());
 
         Result result = ingressFlowService.resetFromSnapshot(systemSnapshot, true);
 
@@ -81,30 +85,36 @@ class IngressFlowServiceTest {
         // stopped flow should be restarted since it was marked as running in the snapshot
         Mockito.verify(ingressFlowRepo).updateFlowState("stopped", FlowState.RUNNING);
 
+        Mockito.verify(ingressFlowRepo).updateFlowTestMode("stopped", true);
+
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getInfo()).isEmpty();
-        assertThat(result.getErrors()).hasSize(2)
-                .contains("Flow: missing is no longer installed")
-                .contains("Flow: invalid is invalid and cannot be started");
+        assertThat(result.getErrors()).hasSize(3)
+                .contains("Flow: missing is no longer installed and cannot be started")
+                .contains("Flow: invalid is invalid and cannot be started")
+                .contains("Flow: missing is no longer installed and cannot be set to test mode");
     }
 
     @Test
     void getRunningFromSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setRunningIngressFlows(List.of("a", "b"));
+        systemSnapshot.setTestIngressFlows(List.of("c", "d"));
         assertThat(ingressFlowService.getRunningFromSnapshot(systemSnapshot)).isEqualTo(RUNNING_FLOWS);
+        assertThat(ingressFlowService.getTestModeFromSnapshot(systemSnapshot)).isEqualTo(List.of("c", "d"));
     }
 
     IngressFlow runningFlow(String name) {
-        return ingressFlow(name, FlowState.RUNNING);
+        return ingressFlow(name, FlowState.RUNNING, true);
     }
 
-    IngressFlow ingressFlow(String name, FlowState flowState) {
+    IngressFlow ingressFlow(String name, FlowState flowState, boolean testMode) {
         IngressFlow ingressFlow = new IngressFlow();
         ingressFlow.setName(name);
         FlowStatus flowStatus = new FlowStatus();
         flowStatus.setState(flowState);
+        flowStatus.setTestMode(testMode);
         ingressFlow.setFlowStatus(flowStatus);
         return ingressFlow;
     }

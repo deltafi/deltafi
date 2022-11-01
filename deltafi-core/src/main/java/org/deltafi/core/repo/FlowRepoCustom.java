@@ -30,4 +30,6 @@ public interface FlowRepoCustom<T extends Flow> {
     List<String> findRunningBySourcePlugin(PluginCoordinates sourcePlugin);
 
     boolean updateFlowState(String flowName, FlowState flowState);
+
+    boolean updateFlowTestMode(String flowName, boolean testMode);
 }
