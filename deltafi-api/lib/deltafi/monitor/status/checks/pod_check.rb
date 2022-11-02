@@ -34,7 +34,8 @@ module Deltafi
             pods_with_issue = pods.select do |pod|
               container_statuses = pod.status.containerStatuses
               container_statuses.nil? || container_statuses.any? do |container_status|
-                !(container_status.started && container_status.ready)
+                !((container_status.started && container_status.ready) ||
+                  (container_status.state.terminated && container_status.state.terminated.reason == 'Completed'))
               end
             end
 
