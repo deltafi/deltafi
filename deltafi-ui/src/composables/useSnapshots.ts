@@ -97,7 +97,9 @@ export default function useSystemSnapshots() {
         },
         runningIngressFlows: true,
         runningEnrichFlows: true,
-        runningEgressFlows: true
+        runningEgressFlows: true,
+        testIngressFlows: true,
+        testEgressFlows: true
       }
     };
     await queryGraphQL(query, "getSystemSnapshots");
