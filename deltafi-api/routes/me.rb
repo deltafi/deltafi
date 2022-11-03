@@ -23,8 +23,6 @@ class ApiServer < Sinatra::Base
 
   namespace '/api/v1' do
     get '/me' do
-      authorize! :UIAccess
-
       user_permissions = request.env['HTTP_X_USER_PERMISSIONS']&.split(',') || []
       user_name = request.env['HTTP_X_USER_NAME'] || 'Unknown'
       user_id = request.env['HTTP_X_USER_ID'] || -1
