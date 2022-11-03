@@ -81,6 +81,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -296,6 +301,13 @@ class DeltaFiCoreApplicationTests {
 		loadTestProperties();
 
 		Mockito.clearInvocations(actionEventQueue);
+
+		// Set the security context for the tests that DgsQueryExecutor
+		SecurityContextHolder.clearContext();
+		SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+		Authentication authentication = new PreAuthenticatedAuthenticationToken("name", "pass", List.of(new SimpleGrantedAuthority(DeltaFiConstants.ADMIN_PERMISSION)));
+		securityContext.setAuthentication(authentication);
+		SecurityContextHolder.setContext(securityContext);
 	}
 
 	void loadConfig() {
@@ -3369,6 +3381,7 @@ class DeltaFiCoreApplicationTests {
 		}
 		headers.add(HttpHeaders.CONTENT_TYPE, contentType);
 		headers.add(USER_HEADER, USERNAME);
+		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
 		HttpEntity<byte[]> request = new HttpEntity<>(body, headers);
 
 		return restTemplate.postForEntity("/deltafile/ingress", request, String.class);

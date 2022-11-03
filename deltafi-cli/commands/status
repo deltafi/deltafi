@@ -21,7 +21,7 @@ COLORS=($green $yellow $red)
 API_HOST=$(deltafi serviceip deltafi-api-service)
 API_URL="http://${API_HOST}/api/v1/status"
 
-STATUS=$(curl --connect-timeout 3 -s ${API_URL})
+STATUS=$(curl --connect-timeout 3 -s -H "$PERMISSION" ${API_URL})
 if [ $? -ne 0 ]; then
   echo -e "\nSystem State: ${red}Unhealthy\n\n ${ICONS[2]}${normal} Unable to communicate with API: ${API_URL}\n"
   exit 1

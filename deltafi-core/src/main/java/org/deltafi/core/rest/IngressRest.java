@@ -35,6 +35,7 @@ import org.deltafi.common.types.ActionType;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
+import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.IngressService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
@@ -70,6 +71,7 @@ public class IngressRest {
     public static final String FLOWFILE_MEDIA_TYPE = "application/flowfile";
     public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile-v1";
 
+    @NeedsPermission.DeltaFileIngress
     @PostMapping(value = "deltafile/ingress", consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
     public ResponseEntity<String> ingressData(InputStream dataStream,
                                               @RequestHeader(value = "Filename", required = false) String filename,

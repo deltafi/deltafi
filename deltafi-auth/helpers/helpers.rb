@@ -85,9 +85,8 @@ class AuthApi < Sinatra::Application
       { error: e }.to_json
     end
 
-    def audit(verb, target)
+    def audit(message)
       user = request.env['HTTP_X_USER_NAME'] || 'system'
-      message = "#{verb} user #{target.common_name || target.username}"
       audit_message = {
         timestamp: Time.now.utc.strftime('%FT%T.%3NZ'),
         loggerName: 'AUDIT',
@@ -96,6 +95,12 @@ class AuthApi < Sinatra::Application
         message: message
       }.to_json
       puts audit_message
+    end
+
+    def authorize!(permission)
+      user_permissions = request.env['HTTP_X_USER_PERMISSIONS']&.split(',') || []
+
+      raise Deltafi::AuthError.new(permission: permission) if ([permission.to_s, 'Admin'] & user_permissions).empty?
     end
   end
 end

@@ -26,6 +26,7 @@ import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.generated.types.FlowAssignmentRuleInput;
+import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.FlowAssignmentService;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.Result;
@@ -43,16 +44,19 @@ public class FlowAssignmentDatafetcher {
     private final FlowAssignmentService flowAssignmentService;
 
     @DgsQuery
+    @NeedsPermission.IngressRoutingRuleRead
     public Collection<FlowAssignmentRule> getAllFlowAssignmentRules() {
         return flowAssignmentService.getAll();
     }
 
     @DgsQuery
+    @NeedsPermission.IngressRoutingRuleRead
     public FlowAssignmentRule getFlowAssignmentRule(String id) {
         return flowAssignmentService.get(id).orElse(null);
     }
 
     @DgsMutation
+    @NeedsPermission.IngressRoutingRuleCreate
     public List<Result> loadFlowAssignmentRules(boolean replaceAll, @InputArgument List<FlowAssignmentRuleInput> rules) {
         if (replaceAll) {
             flowAssignmentService.removeAll();
@@ -61,16 +65,19 @@ public class FlowAssignmentDatafetcher {
     }
 
     @DgsMutation
+    @NeedsPermission.IngressRoutingRuleDelete
     public boolean removeFlowAssignmentRule(String id) {
         return flowAssignmentService.remove(id);
     }
 
     @DgsQuery
+    @NeedsPermission.IngressRoutingRuleRead
     public String resolveFlowFromFlowAssignmentRules(SourceInfo sourceInfo) {
         return flowAssignmentService.findFlow(sourceInfo);
     }
 
     @DgsMutation
+    @NeedsPermission.IngressRoutingRuleUpdate
     public Result updateFlowAssignmentRule(FlowAssignmentRuleInput rule) {
         FlowAssignmentRule flowAssignmentRule = OBJECT_MAPPER.convertValue(rule, FlowAssignmentRule.class);
         return flowAssignmentService.update(flowAssignmentRule);

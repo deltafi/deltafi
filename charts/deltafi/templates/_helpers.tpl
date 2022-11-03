@@ -6,9 +6,16 @@
 {{- include "basicAuthAnnotations" .}}
 {{- else if eq .Values.deltafi.auth.mode "cert" }}
 {{- include "certAuthAnnotations" .}}
+{{- else }}
+{{- include "noAuthAnnotations" .}}
 {{- end }}
 nginx.ingress.kubernetes.io/auth-cache-duration: 200 5m
-nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name
+nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name, X-User-Permissions
+{{- end -}}
+
+{{- define "noAuthAnnotations" -}}
+nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/no-auth
+nginx.ingress.kubernetes.io/auth-cache-key: no-auth
 {{- end -}}
 
 {{- define "basicAuthAnnotations" -}}

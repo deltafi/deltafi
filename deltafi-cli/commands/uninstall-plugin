@@ -64,7 +64,7 @@ QUERY=$(echo $QUERY | sed 's/"/\\"/g')
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":{}}"
 
 truncate --size 0 ${TMPFILE}
-RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
 
 if [[ "$RESPONSE_CODE" != "200" ]]; then
   ERRORS=$(cat ${TMPFILE})

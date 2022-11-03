@@ -56,6 +56,15 @@ public class SystemSnapshotService {
         return systemSnapshotRepo.save(systemSnapshot);
     }
 
+    public Result deleteSnapshot(String id) {
+        if (systemSnapshotRepo.existsById(id)) {
+            systemSnapshotRepo.deleteById(id);
+            return new Result();
+        }
+
+        return Result.newBuilder().success(false).errors(List.of("Could not find a snapshot with an ID of " + id)).build();
+    }
+
     private Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         Result baseResult = new Result();
         return snapshotters.stream()

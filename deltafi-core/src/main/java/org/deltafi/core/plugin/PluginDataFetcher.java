@@ -27,6 +27,7 @@ import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
+import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
 
 import java.util.Collection;
@@ -40,61 +41,73 @@ public class PluginDataFetcher {
     private final CredentialProvider credentialProvider;
 
     @DgsQuery
+    @NeedsPermission.PluginsView
     public Collection<Plugin> plugins() {
         return pluginRegistryService.getPluginsWithVariables();
     }
 
     @DgsQuery
+    @NeedsPermission.PluginsView
     public boolean verifyActionsAreRegistered(PluginCoordinates pluginCoordinates) {
         return pluginRegistryService.verifyActionsAreRegistered(pluginCoordinates);
     }
 
     @DgsQuery
+    @NeedsPermission.PluginImageRepoView
     public List<PluginImageRepository> getPluginImageRepositories() {
         return deployerService.getPluginImageRepositories();
     }
 
     @DgsQuery
+    @NeedsPermission.PluginCustomizationConfigView
     public List<PluginCustomizationConfig> getPluginCustomizationConfigs() {
         return deployerService.getPluginCustomizationConfigs();
     }
 
     @DgsMutation
+    @NeedsPermission.PluginImageRepoWrite
     public PluginImageRepository savePluginImageRepository(PluginImageRepository pluginImageRepository) {
         return deployerService.savePluginImageRepository(pluginImageRepository);
     }
 
     @DgsMutation
+    @NeedsPermission.PluginCustomizationConfigWrite
     public PluginCustomizationConfig savePluginCustomizationConfig(PluginCustomizationConfig pluginCustomizationConfigInput) {
         return deployerService.savePluginCustomizationConfig(pluginCustomizationConfigInput);
     }
 
     @DgsMutation
+    @NeedsPermission.PluginInstall
     public Result installPlugin(PluginCoordinates pluginCoordinates) {
         return deployerService.installOrUpgradePlugin(pluginCoordinates);
     }
 
     @DgsMutation
+    @NeedsPermission.PluginInstall
     public Result installPluginWithSettings(PluginCoordinates pluginCoordinates, String imageRepositoryOverride, String imagePullSecretOverride, String customDeploymentYaml) {
         return deployerService.installOrUpgradePlugin(pluginCoordinates, imageRepositoryOverride, imagePullSecretOverride, customDeploymentYaml);
     }
 
     @DgsMutation
+    @NeedsPermission.PluginUninstall
     public Result uninstallPlugin(PluginCoordinates pluginCoordinates) {
         return deployerService.uninstallPlugin(pluginCoordinates);
     }
 
     @DgsMutation
+    @NeedsPermission.PluginCustomizationConfigWrite
     public Result addBasicCredential(String sourceName, String username, String password) {
         return credentialProvider.createCredentials(sourceName, username, password);
     }
 
     @DgsMutation
+    @NeedsPermission.PluginImageRepoDelete
     public Result removePluginImageRepository(String id) {
         return deployerService.removePluginImageRepository(id);
     }
 
     @DgsMutation
+    @NeedsPermission.PluginCustomizationConfigDelete
     public Result removePluginCustomizationConfig(String id) {
         return deployerService.removePluginCustomizationConfig(id);
     }

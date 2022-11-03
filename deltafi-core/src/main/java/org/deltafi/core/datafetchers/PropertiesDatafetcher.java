@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.PropertyId;
 import org.deltafi.core.types.PropertyUpdate;
 import org.deltafi.core.configuration.server.constants.PropertyConstants;
@@ -39,21 +40,25 @@ public class PropertiesDatafetcher {
     }
 
     @DgsQuery
+    @NeedsPermission.SystemPropertiesRead
     public List<PropertySet> getPropertySets() {
         return propertiesService.getPopulatedProperties();
     }
 
     @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
     public int updateProperties(@InputArgument List<PropertyUpdate> updates) {
         return propertiesService.updateProperties(updates);
     }
 
     @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
     public int removePropertyOverrides(@InputArgument List<PropertyId> propertyIds) {
         return propertiesService.unsetProperties(propertyIds);
     }
 
     @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
     public boolean addPluginPropertySet(PropertySet propertySet) {
         validateMutation(propertySet.getId());
         propertiesService.saveProperties(propertySet);
@@ -61,6 +66,7 @@ public class PropertiesDatafetcher {
     }
 
     @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
     public boolean removePluginPropertySet(String propertySetId) {
         validateMutation(propertySetId);
         return propertiesService.removeProperties(propertySetId);

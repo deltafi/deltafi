@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
 
 import java.util.List;
@@ -33,27 +34,38 @@ public class SystemSnapshotDatafetcher {
     private final SystemSnapshotService systemSnapshotService;
 
     @DgsQuery
+    @NeedsPermission.SnapshotRead
     public SystemSnapshot getSystemSnapshot(String snapshotId) {
         return systemSnapshotService.get(snapshotId);
     }
 
     @DgsQuery
+    @NeedsPermission.SnapshotRead
     public List<SystemSnapshot> getSystemSnapshots() {
         return systemSnapshotService.getAll();
     }
 
     @DgsMutation
+    @NeedsPermission.SnapshotCreate
     public SystemSnapshot snapshotSystem(@InputArgument String reason) {
         return systemSnapshotService.createSnapshot(reason);
     }
 
     @DgsMutation
+    @NeedsPermission.SnapshotRevert
     public Result resetFromSnapshotWithId(String snapshotId, Boolean hardReset) {
         return systemSnapshotService.resetFromSnapshot(snapshotId, Boolean.TRUE.equals(hardReset));
     }
 
     @DgsMutation
+    @NeedsPermission.SnapshotCreate
     public SystemSnapshot importSnapshot(SystemSnapshot snapshot) {
         return systemSnapshotService.saveSnapshot(snapshot);
+    }
+
+    @DgsMutation
+    @NeedsPermission.SnapshotDelete
+    public Result deleteSnapshot(String snapshotId) {
+        return systemSnapshotService.deleteSnapshot(snapshotId);
     }
 }

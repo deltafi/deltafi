@@ -18,30 +18,17 @@
 
 # frozen_string_literal: true
 
-class ApiServer < Sinatra::Base
-  helpers do
-    def audit(message)
-      user = request.env['HTTP_X_USER_NAME'] || 'system'
-      audit_message = {
-        timestamp: Time.now.utc.strftime('%FT%T.%3NZ'),
-        loggerName: 'AUDIT',
-        level: 'INFO',
-        user: user,
-        message: message
-      }.to_json
-      puts audit_message
+module Deltafi
+  class AuthError < StandardError
+    attr_reader :permission
+
+    def initialize(msg: 'Access Denied.', permission:)
+      @permission = permission
+      super(msg)
     end
 
-    def auth_mode
-      ENV.fetch('AUTH_MODE')
-    rescue KeyError
-      raise 'AUTH_MODE environment variable must be set!'
-    end
-
-    def authorize!(permission)
-      user_permissions = request.env['HTTP_X_USER_PERMISSIONS']&.split(',') || []
-
-      raise Deltafi::AuthError.new(permission: permission) if ([permission.to_s, 'Admin'] & user_permissions).empty?
+    def http_status
+      403
     end
   end
 end

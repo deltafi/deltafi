@@ -20,10 +20,14 @@
 
 class AuthApi < Sinatra::Application
   get '/users/?' do
+    authorize! :UserRead
+
     User.all.map(&:to_api).to_json
   end
 
   get '/users/:id' do
+    authorize! :UserRead
+
     id = params['id'].to_i
     user = User[id]
 
@@ -36,6 +40,8 @@ class AuthApi < Sinatra::Application
   end
 
   post '/users' do
+    authorize! :UserCreate
+
     user = User.new(read_body)
 
     unless user.valid?
@@ -44,12 +50,14 @@ class AuthApi < Sinatra::Application
     end
 
     user.save
-    audit('created', user)
+    audit("created user #{user.common_name || user.username}")
 
     return user.to_api.to_json
   end
 
   put '/users/:id' do
+    authorize! :UserUpdate
+
     id = params['id'].to_i
     user = User[id]
 
@@ -66,12 +74,14 @@ class AuthApi < Sinatra::Application
     end
 
     user.save
-    audit('updated', user)
+    audit("updated user #{user.common_name || user.username}")
 
     return User[id].to_api.to_json
   end
 
   delete '/users/:id' do
+    authorize! :UserDelete
+
     id = params['id'].to_i
     if id == 1
       status 403
@@ -86,7 +96,7 @@ class AuthApi < Sinatra::Application
     end
 
     user.delete
-    audit('deleted', user)
+    audit("deleted user #{user.common_name || user.username}")
 
     return user.to_api.to_json
   end

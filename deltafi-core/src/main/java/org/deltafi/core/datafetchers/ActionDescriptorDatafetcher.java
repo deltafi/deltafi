@@ -21,6 +21,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.ActionDescriptorService;
 
 import java.util.Collection;
@@ -31,6 +32,7 @@ public class ActionDescriptorDatafetcher {
     private final ActionDescriptorService actionDescriptorService;
 
     @DgsQuery
+    @NeedsPermission.PluginsView
     public Collection<ActionDescriptor> actionDescriptors() {
         return actionDescriptorService.getAll();
     }

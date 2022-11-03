@@ -51,54 +51,78 @@ class ApiServer < Sinatra::Base
 
   namespace '/api/v1' do
     get '/config' do
+      authorize! :UIAccess
+
       config = { ui: DF::API::V1::Config::UI.config }
       build_response({ config: config })
     end
 
     get '/metrics/system/content' do
+      authorize! :MetricsView
+
       build_response({ content: DF::API::V1::Metrics::System.content })
     end
 
     get '/metrics/system/nodes' do
+      authorize! :MetricsView
+
       build_response({ nodes: DF::API::V1::Metrics::System.nodes })
     end
 
     get '/metrics/queues' do
+      authorize! :MetricsView
+
       build_response({ queues: DF::API::V1::Metrics::Action.queues })
     end
 
     get '/metrics/action' do
+      authorize! :MetricsView
+
       last = params[:last] || '5m'
       flow = params[:flowName]
       build_response({ actions: DF::API::V1::Metrics::Action.metrics_by_action_by_family(last: last, flow: flow) })
     end
 
     get '/metrics/flow(.json)?' do
+      authorize! :MetricsView
+
       build_response({ flow_report: DF::API::V1::Metrics::Flow.summary(params: params) })
     end
 
     get '/metrics/flow.csv' do
+      authorize! :MetricsView
+
       content_type 'text/csv'
       DF::API::V1::Metrics::Flow.summary_csv(params: params)
     end
 
     get '/metrics/graphite' do
+      authorize! :MetricsView
+
       DF::Metrics.graphite(params, raw: true)
     end
 
     get '/status' do
+      authorize! :StatusView
+
       build_response({ status: DF::API::V1::Status.status })
     end
 
     get '/versions' do
+      authorize! :VersionsView
+
       build_response({ versions: DF::API::V1::Versions.apps })
     end
 
     get '/content' do
+      authorize! :DeltaFileContentView
+
       stream_content(params)
     end
 
     post '/content' do
+      authorize! :DeltaFileContentView
+
       content_reference = JSON.parse(request.body.read, symbolize_names: true)
       stream_content(content_reference)
     rescue JSON::ParserError => e
@@ -106,6 +130,8 @@ class ApiServer < Sinatra::Base
     end
 
     get '/events' do
+      authorize! :UIAccess
+
       content_type 'text/event-stream'
       headers 'Access-Control-Allow-Origin' => '*'
       stream(:keep_open) do |conn|
@@ -116,11 +142,18 @@ class ApiServer < Sinatra::Base
   end
 
   error StandardError do
-    build_response({ error: env['sinatra.error'].message })
+    build_error_response(env['sinatra.error'].message)
   end
 
-  not_found do
-    build_response({ error: '404 Not Found' })
+  error Sinatra::NotFound do
+    build_error_response('404 Not Found')
+  end
+
+  error Deltafi::AuthError do
+    permission = env['sinatra.error'].permission
+    req = "#{request.request_method} #{request.env['PATH_INFO']}"
+    audit("request '#{req}' was denied due to missing permission '#{permission}'")
+    build_error_response(env['sinatra.error'].message)
   end
 
   def stream_content(content_reference)
@@ -149,6 +182,10 @@ class ApiServer < Sinatra::Base
   def build_response(object)
     object[:timestamp] = Time.now
     object.to_json
+  end
+
+  def build_error_response(message)
+    build_response({ error: message })
   end
 
   run! if __FILE__ == $PROGRAM_NAME

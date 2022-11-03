@@ -80,7 +80,7 @@ for FILE in "${@:3}"; do
 
   truncate --size 0 ${TMPFILE}
   RESPONSE_CODE=$(cat ${FILE} | curl -s -X POST -o ${TMPFILE} -w "%{http_code}" --data-binary @- \
-    -H "Content-Type: $CONTENT_TYPE" -H "Filename: ${BASENAME}" -H "Flow: ${FLOW}" ${INGRESS_URL})
+    -H "Content-Type: $CONTENT_TYPE" -H "$PERMISSION" -H "$CLI_USER" -H "Filename: ${BASENAME}" -H "Flow: ${FLOW}" ${INGRESS_URL})
 
   if [[ "$RESPONSE_CODE" != "200" ]]; then
     cli_log "${red}Ingress failed for file ${bold}${BASENAME}${normal}"

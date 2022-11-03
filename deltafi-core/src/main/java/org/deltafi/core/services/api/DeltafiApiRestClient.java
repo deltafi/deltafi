@@ -18,6 +18,7 @@
 package org.deltafi.core.services.api;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.services.api.model.DiskMetrics;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;
@@ -34,6 +35,7 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
     private final HttpClient httpClient;
 
     private final static String CONTENT_METRICS_ENDPOINT = "/api/v1/metrics/system/content";
+    private final static String METRIC_VIEW_PERMISSION = "MetricsView";
 
     public DeltafiApiRestClient(String url) {
         this.url = url;
@@ -48,7 +50,7 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
         try {
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url + CONTENT_METRICS_ENDPOINT))
                     .GET()
-                    .headers("accept", MediaType.APPLICATION_JSON.toString()).build();
+                    .headers("accept", MediaType.APPLICATION_JSON.toString(), DeltaFiConstants.PERMISSIONS_HEADER, METRIC_VIEW_PERMISSION).build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() / 100 != 2) {

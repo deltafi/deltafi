@@ -31,7 +31,10 @@ module Deltafi
         path = request.path.gsub('/api/v1', '')
         url = File.join(AUTH_URL, path)
         options = {
-          headers: { 'X-User-Name': request.env['HTTP_X_USER_NAME'] }
+          headers: {
+            'X-User-Name': request.env['HTTP_X_USER_NAME'],
+            'X-User-Permissions': request.env['HTTP_X_USER_PERMISSIONS']
+          }
         }
         options[:body] = request.body.read if %w[POST PUT].include?(request.request_method)
         response = HTTParty.send(request.request_method.downcase, url, options)

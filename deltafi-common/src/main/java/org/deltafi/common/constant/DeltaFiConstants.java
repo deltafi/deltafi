@@ -27,7 +27,6 @@ public class DeltaFiConstants {
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS = "SyntheticEgressActionForTestIngress";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS = "SyntheticEgressActionForTestEgress";
     public static final String USER_HEADER = "X-User-Name";
-
-
-
+    public static final String PERMISSIONS_HEADER = "X-User-Permissions";
+    public static final String ADMIN_PERMISSION = "Admin";
 }

@@ -21,12 +21,25 @@ import com.netflix.graphql.dgs.context.DgsContext;
 import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.schema.*;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import lombok.extern.slf4j.Slf4j;
+import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.MDC;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 
@@ -36,6 +49,8 @@ public class CoreAuditLogger extends SimpleInstrumentation {
 
     private static final String UNKNOWN_USER = "system";
     private static final String IGNORABLE_PATH = "registerActions";
+
+    private final Map<String, String> permissionMap = new HashMap<>();
 
     @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
@@ -76,4 +91,56 @@ public class CoreAuditLogger extends SimpleInstrumentation {
         log.info("ingress {}", fileName);
         MDC.remove("user");
     }
+
+    @EventListener
+    public void accessDeniedLogger(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
+        String username = extractUsername(authorizationDeniedEvent);
+        String methodCalled = extractMethodName(authorizationDeniedEvent);
+        String missingPermissions = extractMissingPermissions(authorizationDeniedEvent);
+
+        MDC.put("user", username);
+        log.info("request '{}' was denied due to missing permission '{}'", methodCalled, missingPermissions);
+        MDC.put("user", username);
+    }
+
+
+    private String extractUsername(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
+        Authentication authentication = authorizationDeniedEvent.getAuthentication().get();
+        Object rawUser = authentication.getPrincipal();
+        return rawUser instanceof User ? ((User) rawUser).getUsername() : rawUser.toString();
+    }
+
+    private String extractMethodName(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
+        Object rawMethodInvocation = authorizationDeniedEvent.getSource();
+        return rawMethodInvocation instanceof MethodInvocation ? ((MethodInvocation) rawMethodInvocation).getMethod().getName() : "unknownMethod";
+    }
+
+    private String extractMissingPermissions(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
+        String permissions = "unknownPermissions";
+        Object rawMethodInvocation = authorizationDeniedEvent.getSource();
+        if (rawMethodInvocation instanceof MethodInvocation) {
+            Method method = ((MethodInvocation) rawMethodInvocation).getMethod();
+            permissions = permissionMap.get(method.getName());
+            if (permissions == null) {
+                permissions = extractMissingPermissions(method);
+                permissionMap.put(method.getName(), permissions);
+            }
+        }
+
+        return permissions;
+    }
+
+    private String extractMissingPermissions(Method method) {
+        PreAuthorize preAuthorize = AnnotationUtils.findAnnotation(method, PreAuthorize.class);
+        if (preAuthorize != null) {
+            String permissions = preAuthorize.value();
+            permissions = permissions.substring(permissions.indexOf('(') + 1, permissions.indexOf(')'));
+            permissions = permissions.replace("'", "");
+            // do not include admin in the message, just take the first permission
+            return permissions.split(",")[0];
+        }
+
+        return null;
+    }
+
 }

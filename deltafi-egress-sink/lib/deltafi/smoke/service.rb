@@ -78,7 +78,7 @@ module Deltafi
 
       def smoke_running?
         begin
-          response = HTTParty.post(GRAPHQL_URL, body: GET_FLOWS, headers: { 'Content-Type' => 'application/json' })
+          response = HTTParty.post(GRAPHQL_URL, body: GET_FLOWS, headers: { 'Content-Type' => 'application/json', 'X-User-Name' => 'egress-sink', 'X-User-Permissions' => 'FlowView'})
           @connected_to_graphql = true
         rescue StandardError => e
           @logger.error "Error connecting to graphql:\n#{e.message}\n#{e.backtrace}" if @connected_to_graphql
@@ -114,7 +114,9 @@ module Deltafi
                                  body: uuid,
                                  headers: { 'Content-Type' => 'application/octet-stream',
                                             'Filename' => "smoke-#{uuid}",
-                                            'Flow' => 'smoke' })
+                                            'Flow' => 'smoke',
+                                            'X-User-Name' => 'egress-sink',
+                                            'X-User-Permissions' => 'DeltaFileIngress'})
         if response.code == 200
           did = response.body
           @smoke[did] = { filename: uuid, sent: Time.now }

@@ -32,10 +32,11 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
+import org.deltafi.core.generated.types.*;
+import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.UniqueKeyValues;
-import org.deltafi.core.generated.types.*;
-import org.deltafi.core.services.DeltaFilesService;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -55,7 +56,7 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public DeltaFile deltaFile(@InputArgument String did) {
     DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 
@@ -67,7 +68,7 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public String rawDeltaFile(@InputArgument String did, @InputArgument Boolean pretty) throws JsonProcessingException {
     String deltaFileJson = deltaFilesService.getRawDeltaFile(did, pretty == null || pretty);
 
@@ -79,7 +80,7 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public DeltaFiles deltaFiles(DataFetchingEnvironment dfe) {
     Integer offset = dfe.getArgument("offset");
     Integer limit = dfe.getArgument("limit");
@@ -98,31 +99,31 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public List<DeltaFile> lastCreated(@InputArgument Integer last) {
     return deltaFilesService.getLastCreatedDeltaFiles(Objects.requireNonNullElse(last, 10));
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public List<DeltaFile> lastModified(@InputArgument Integer last) {
     return deltaFilesService.getLastModifiedDeltaFiles(Objects.requireNonNullElse(last, 10));
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public List<DeltaFile> lastErrored(@InputArgument Integer last) {
     return deltaFilesService.getLastErroredDeltaFiles(Objects.requireNonNullElse(last, 10));
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public DeltaFile lastWithFilename(@InputArgument String filename) {
     return deltaFilesService.getLastWithFilename(filename);
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public ErrorsByFlow errorSummaryByFlow(
           @InputArgument Integer offset,
           @InputArgument Integer limit,
@@ -132,7 +133,7 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public ErrorsByMessage errorSummaryByMessage(
           @InputArgument Integer offset,
           @InputArgument Integer limit,
@@ -142,48 +143,49 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileIngress
   public DeltaFile ingress(@InputArgument IngressInput input) {
     return deltaFilesService.ingress(input);
   }
 
   @DgsMutation
-  @SuppressWarnings("unused")
+  @NeedsPermission.ActionEvent
   public DeltaFile actionEvent(@InputArgument ActionEventInput event) throws JsonProcessingException {
     return deltaFilesService.handleActionEvent(event);
   }
 
   @DgsMutation
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileResume
   public List<RetryResult> resume(@InputArgument List<String> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     return deltaFilesService.resume(dids, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
   @DgsMutation
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileReplay
   public List<RetryResult> replay(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     return deltaFilesService.replay(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
   @DgsMutation
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileAcknowledge
   public List<AcknowledgeResult> acknowledge(@InputArgument List<String> dids, @InputArgument String reason) {
     return deltaFilesService.acknowledge(dids, reason);
   }
 
   @DgsMutation
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileCancel
   public List<CancelResult> cancel(@InputArgument List<String> dids) {
     return deltaFilesService.cancel(dids);
   }
 
   @DgsQuery
-  @SuppressWarnings("unused")
+  @NeedsPermission.DeltaFileMetadataView
   public List<UniqueKeyValues> sourceMetadataUnion(@InputArgument List<String> dids) {
     return deltaFilesService.sourceMetadataUnion(dids);
   }
 
   @DgsMutation
+  @NeedsPermission.StressTest
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument List<KeyValue> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
     Random random = new Random();
     SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new ArrayList<>() : metadata);
@@ -220,11 +222,13 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
   public List<String> domains() {
     return deltaFilesService.domains();
   }
 
   @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
   public List<String> indexedMetadataKeys(@InputArgument String domain) {
     return deltaFilesService.indexedMetadataKeys(domain);
   }

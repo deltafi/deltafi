@@ -40,8 +40,12 @@ module Deltafi
                   'http://deltafi-core-service/graphql'
 
     response = HTTParty.post(graphql_url,
-                  body: { query: query }.to_json,
-                  headers: { 'Content-Type' => 'application/json' })
+                             body: { query: query }.to_json,
+                             headers: {
+                               'Content-Type' => 'application/json',
+                               'X-User-Permissions' => 'Admin',
+                               'X-User-Name' => 'Admin'
+                             })
 
     raise "#{response.code} error from core: #{response.message}" unless response.success?
 

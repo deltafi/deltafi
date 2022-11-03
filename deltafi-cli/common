@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 KUBECTL_BIN="kubectl --namespace ${DELTAFICLI_K8S_NAMESPACE}"
+CLI_USER="X-User-Name: deltafi-cli"
+PERMISSION="X-User-Permissions: Admin"
 
 cli_log() {
   timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

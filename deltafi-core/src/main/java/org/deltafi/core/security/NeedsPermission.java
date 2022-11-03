@@ -1,0 +1,309 @@
+/**
+ *    DeltaFi - Data transformation and enrichment platform
+ *
+ *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package org.deltafi.core.security;
+
+import org.deltafi.common.constant.DeltaFiConstants;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Holds all the permission annotations used in the system
+ */
+public class NeedsPermission {
+
+    private static final String OR_ADMIN = ", '" + DeltaFiConstants.ADMIN_PERMISSION + "')";
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('" + DeltaFiConstants.ADMIN_PERMISSION + "')")
+    public @interface Admin {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeletePolicyCreate'" + OR_ADMIN)
+    public @interface DeletePolicyCreate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeletePolicyDelete'" + OR_ADMIN)
+    public @interface DeletePolicyDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeletePolicyRead'" + OR_ADMIN)
+    public @interface DeletePolicyRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeletePolicyUpdate'" + OR_ADMIN)
+    public @interface DeletePolicyUpdate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileAcknowledge'" + OR_ADMIN)
+    public @interface DeltaFileAcknowledge {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileCancel'" + OR_ADMIN)
+    public @interface DeltaFileCancel {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileContentView'" + OR_ADMIN)
+    public @interface DeltaFileContentView {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileReplay'" + OR_ADMIN)
+    public @interface DeltaFileReplay {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileIngress'" + OR_ADMIN)
+    public @interface DeltaFileIngress {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileMetadataView'" + OR_ADMIN)
+    public @interface DeltaFileMetadataView {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileResume'" + OR_ADMIN)
+    public @interface DeltaFileResume {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('FlowPlanCreate'" + OR_ADMIN)
+    public @interface FlowPlanCreate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('FlowPlanDelete'" + OR_ADMIN)
+    public @interface FlowPlanDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('FlowView'" + OR_ADMIN)
+    public @interface FlowView {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('FlowStart'" + OR_ADMIN)
+    public @interface FlowStart {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('FlowStop'" + OR_ADMIN)
+    public @interface FlowStop {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('FlowUpdate'" + OR_ADMIN)
+    public @interface FlowUpdate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('FlowValidate'" + OR_ADMIN)
+    public @interface FlowValidate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleCreate'" + OR_ADMIN)
+    public @interface IngressRoutingRuleCreate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleDelete'" + OR_ADMIN)
+    public @interface IngressRoutingRuleDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleRead'" + OR_ADMIN)
+    public @interface IngressRoutingRuleRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleUpdate'" + OR_ADMIN)
+    public @interface IngressRoutingRuleUpdate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginsView'" + OR_ADMIN)
+    public @interface PluginsView {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginInstall'" + OR_ADMIN)
+    public @interface PluginInstall {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginUninstall'" + OR_ADMIN)
+    public @interface PluginUninstall {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginVariableUpdate'" + OR_ADMIN)
+    public @interface PluginVariableUpdate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginImageRepoView'" + OR_ADMIN)
+    public @interface PluginImageRepoView {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginImageRepoWrite'" + OR_ADMIN)
+    public @interface PluginImageRepoWrite {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginImageRepoDelete'" + OR_ADMIN)
+    public @interface PluginImageRepoDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginCustomizationConfigView'" + OR_ADMIN)
+    public @interface PluginCustomizationConfigView {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginCustomizationConfigWrite'" + OR_ADMIN)
+    public @interface PluginCustomizationConfigWrite {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginCustomizationConfigDelete'" + OR_ADMIN)
+    public @interface PluginCustomizationConfigDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('PluginRegistration'" + OR_ADMIN)
+    public @interface PluginRegistration {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RoleCreate'" + OR_ADMIN)
+    public @interface RoleCreate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RoleDelete'" + OR_ADMIN)
+    public @interface RoleDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RoleRead'" + OR_ADMIN)
+    public @interface RoleRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RoleUpdate'" + OR_ADMIN)
+    public @interface RoleUpdate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('SnapshotCreate'" + OR_ADMIN)
+    public @interface SnapshotCreate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('SnapshotDelete'" + OR_ADMIN)
+    public @interface SnapshotDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('SnapshotRead'" + OR_ADMIN)
+    public @interface SnapshotRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('SnapshotRevert'" + OR_ADMIN)
+    public @interface SnapshotRevert {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('StressTest'" + OR_ADMIN)
+    public @interface StressTest {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('SystemPropertiesRead'" + OR_ADMIN)
+    public @interface SystemPropertiesRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('SystemPropertiesUpdate'" + OR_ADMIN)
+    public @interface SystemPropertiesUpdate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('ActionEvent'" + OR_ADMIN)
+    public @interface ActionEvent {}
+}

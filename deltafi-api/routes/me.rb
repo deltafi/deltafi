@@ -23,12 +23,18 @@ class ApiServer < Sinatra::Base
 
   namespace '/api/v1' do
     get '/me' do
-      return { name: 'Anonymous' }.to_json if auth_mode == 'disabled'
+      authorize! :UIAccess
+
+      user_permissions = request.env['HTTP_X_USER_PERMISSIONS']&.split(',') || []
+      user_name = request.env['HTTP_X_USER_NAME'] || 'Unknown'
+      user_id = request.env['HTTP_X_USER_ID'] || -1
+
+      return { id: user_id, name: user_name, permissions: user_permissions }.to_json if auth_mode == 'disabled'
 
       id = request.env['HTTP_X_USER_ID'].to_i
       response = DF::Auth.get_user(id)
       status response.code
-      response.body
+      JSON.parse(response.body).merge({ permissions: user_permissions }).to_json
     end
   end
 end

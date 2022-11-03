@@ -20,4 +20,4 @@ QUERY=$(echo $QUERY | sed 's/"/\\"/g')
 GRAPHQL_IP=$(deltafi serviceip deltafi-core-service)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":null}"
 
-curl -s -X POST -H "Content-Type: application/json" -d "$POST_QUERY" http://$GRAPHQL_IP/graphql | jq '.'
+curl -s -X POST -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" http://$GRAPHQL_IP/graphql | jq '.'

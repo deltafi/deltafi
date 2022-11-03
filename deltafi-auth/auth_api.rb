@@ -46,7 +46,7 @@ class AuthApi < Sinatra::Application
   Sequel.extension :migration
   Sequel::Migrator.run(db, 'db/migrations')
 
-  %w[helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
+  %w[helpers models routes lib].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
 
   User.new(name: 'Admin', username: 'admin', domains: '*').save if User.count.zero?
 
@@ -55,7 +55,27 @@ class AuthApi < Sinatra::Application
   end
 
   error StandardError do
-    { error: env['sinatra.error'].message }.to_json
+    build_error_response(env['sinatra.error'].message)
+  end
+
+  error Sinatra::NotFound do
+    build_error_response('404 Not Found')
+  end
+
+  error Deltafi::AuthError do
+    permission = env['sinatra.error'].permission
+    req = "#{request.request_method} #{request.env['PATH_INFO']}"
+    audit("request '#{req}' was denied due to missing permission '#{permission}'")
+    build_error_response(env['sinatra.error'].message)
+  end
+
+  def build_response(object)
+    object[:timestamp] = Time.now
+    object.to_json
+  end
+
+  def build_error_response(message)
+    build_response({ error: message })
   end
 
   run! if app_file == $PROGRAM_NAME
