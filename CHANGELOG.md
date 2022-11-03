@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - KinD: Fixed issue where `cluster loc clean build` had a race condition
 - Pods that complete (seen when running cron jobs) were causing a degraded state
+- Properly close PushbackInputStream when saving content
 
 ### Tech-Debt/Refactor
 

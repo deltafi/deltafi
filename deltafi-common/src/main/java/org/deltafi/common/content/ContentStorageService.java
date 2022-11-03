@@ -50,23 +50,22 @@ public class ContentStorageService {
     }
 
     public ContentReference save(String did, InputStream inputStream, String mediaType) throws ObjectStorageException {
-        PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream);
+        ContentReference contentReference = new ContentReference(UUID.randomUUID().toString(), did, mediaType);
 
-        try {
+        try(PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream)) {
             int byTe = pushbackInputStream.read();
             if (byTe == -1) {
                 return emptyContentReference(did, mediaType);
             }
             pushbackInputStream.unread(byTe);
-        } catch (IOException e) {
-            throw new ObjectStorageException("Error peeking into stream", e);
-        }
 
-        ContentReference contentReference = new ContentReference(UUID.randomUUID().toString(), did, mediaType);
-        ObjectReference objectReference = objectStorageService.putObject(
-                buildObjectReference(contentReference), pushbackInputStream);
-        contentReference.setSize(objectReference.getSize());
-        return contentReference;
+            ObjectReference objectReference = objectStorageService.putObject(
+                    buildObjectReference(contentReference), pushbackInputStream);
+            contentReference.setSize(objectReference.getSize());
+            return contentReference;
+        } catch (IOException e) {
+            throw new ObjectStorageException("Error saving content " + contentReference.objectName(), e);
+        }
     }
 
     private ContentReference emptyContentReference(String did, String mediaType) {
