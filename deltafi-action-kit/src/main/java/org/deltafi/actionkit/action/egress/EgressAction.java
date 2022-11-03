@@ -29,8 +29,6 @@ import org.jetbrains.annotations.NotNull;
  * ActionParameters for configuration
  *
  * @see SimpleEgressAction
- * @see MultipartEgressAction
- * @see SimpleMultipartEgressAction
  */
 public abstract class EgressAction<P extends ActionParameters> extends EgressActionBase<P> {
     public EgressAction(Class<P> actionParametersClass, String description) {

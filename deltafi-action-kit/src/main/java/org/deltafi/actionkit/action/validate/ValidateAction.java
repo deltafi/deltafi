@@ -29,8 +29,6 @@ import org.jetbrains.annotations.NotNull;
  * ActionParameters for configuration
  *
  * @see SimpleValidateAction
- * @see MultipartValidateAction
- * @see SimpleMultipartValidateAction
  */
 public abstract class ValidateAction<P extends ActionParameters> extends ValidateActionBase<P> {
     public ValidateAction(Class<P> actionParametersClass, String description) {

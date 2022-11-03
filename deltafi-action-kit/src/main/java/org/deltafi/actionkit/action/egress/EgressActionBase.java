@@ -27,8 +27,6 @@ import org.deltafi.common.types.ActionType;
  * @param <P> Parameter class for configuring the egress action
  * @see EgressAction
  * @see SimpleEgressAction
- * @see MultipartEgressAction
- * @see SimpleMultipartEgressAction
  */
 public abstract class EgressActionBase<P extends ActionParameters> extends Action<P> {
     public EgressActionBase(Class<P> actionParametersClass, String description) {

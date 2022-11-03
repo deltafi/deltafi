@@ -27,8 +27,6 @@ import org.deltafi.common.types.ActionType;
  * @param <P> Parameter class for configuring the validate action
  * @see ValidateAction
  * @see SimpleValidateAction
- * @see MultipartValidateAction
- * @see SimpleMultipartValidateAction
  */
 public abstract class ValidateActionBase<P extends ActionParameters> extends Action<P> {
     public ValidateActionBase(Class<P> actionParametersClass, String description) {
