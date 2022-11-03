@@ -30,7 +30,7 @@ class AuthApi < Sinatra::Application
 
     response.headers['X-User-ID'] = @user.id.to_s
     response.headers['X-User-Name'] = @user.common_name
-    response.headers['X-User-Permissions'] = 'Admin'
+    response.headers['X-User-Permissions'] = @user.permissions.join(',')
     logger.info "Authorized: '#{@formatted_client_dn}' -> '#{@original_url}'"
     return
   end

@@ -80,6 +80,10 @@ class User < Sequel::Model
     end
   end
 
+  def permissions
+    ['Admin']
+  end
+
   def to_api
     {
       id: id,
@@ -88,7 +92,8 @@ class User < Sequel::Model
       username: username,
       domains: domains,
       created_at: created_at.utc.strftime('%FT%T.%3NZ'),
-      updated_at: updated_at.utc.strftime('%FT%T.%3NZ')
+      updated_at: updated_at.utc.strftime('%FT%T.%3NZ'),
+      permissions: permissions
     }
   end
 end
