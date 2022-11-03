@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Fixed broken Indexed Metadata links to Search page (#284)
+- Fixed blank error message Toast (#287)
 
 ## [0.99.1]
 

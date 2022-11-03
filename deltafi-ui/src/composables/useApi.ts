@@ -43,7 +43,7 @@ export default function useApi(version: Number = 1) {
     try {
       const res = await fetch(req);
       if (!res.ok) {
-        if ([500, 404].includes(res.status)) {
+        if ([500, 404, 403].includes(res.status)) {
           const body = await res.json();
           notify.error("Error Received from API", body.error);
           errors.value.push(body.error)
@@ -57,7 +57,7 @@ export default function useApi(version: Number = 1) {
       return Promise.resolve(res);
     } catch (error: any) {
       errors.value.push(error)
-      notify.error("Error Contacting API", error)
+      notify.error("Error Contacting API", error.message)
       return Promise.reject(error);
     } finally {
       loading.value = false;
