@@ -40,6 +40,8 @@ return a `507` error when there is not enough free content storage.
 - Ambiguous require ordering in deltafi-api service classes caused issues on Debian
 
 ### Tech-Debt/Refactor
+- Groundwork laid out for RBAC permissions.  Permissions are currently hard coded to "admin"
+- Removed invalid action types
 
 ### Security
 
