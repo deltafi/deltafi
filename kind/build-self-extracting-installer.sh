@@ -17,6 +17,7 @@
 #    limitations under the License.
 #
 
+# vim: filetype=bash
 set -e
 
 # _readlink()
@@ -107,25 +108,39 @@ _readlink() {
   fi
 }
 
-# Hack to allow non-sudo installs in docker containers
-SUDO=$(which sudo)
-export SUDO
+BASE_PATH="$( cd "$( dirname "$(_readlink -f "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
+export BASE_PATH
+DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
+TEMP_TREE=$BASE_PATH/deltafi
 
-WORKDIR=$(cd $(dirname $(_readlink -f $0)) && pwd)
-export WORKDIR
+rm -rf "$TEMP_TREE"
+mkdir -p "$TEMP_TREE"
+LATEST_RELEASE=$(git describe --tags --abbrev=0)
+echo "$LATEST_RELEASE" > "$TEMP_TREE/LATEST_RELEASE"
+cp -rf "$DELTAFI_PATH/charts" "$TEMP_TREE"
+cp -rf "$DELTAFI_PATH/deltafi-cli" "$TEMP_TREE"
+cp -rf "$DELTAFI_PATH/kind" "$TEMP_TREE"
+cp -rf "$DELTAFI_PATH/bootstrap.sh" "$TEMP_TREE"
+cp -rf "$DELTAFI_PATH/LICENSE" "$TEMP_TREE"
+rm -rf "$TEMP_TREE/kind/deltafi" "$TEMP_TREE/*/build" "$TEMP_TREE/kind/self-*.sh" "$TEMP_TREE/*/*/logs" "$TEMP_TREE/*/logs" "$TEMP_TREE/kind/data"
 
-export CLUSTER=${WORKDIR}/cluster
-if [[ $(_readlink /usr/local/bin/cluster) != "${CLUSTER}" ]]; then
-  [[ -L /usr/local/bin/cluster ]] && echo "    Replacing existing cluster CLI installation"
-  ${SUDO} ln -fs "${CLUSTER}" /usr/local/bin || ln -fs "${CLUSTER}" /usr/local/bin
-  echo "    $(ls -la /usr/local/bin/cluster)"
-else
-  echo "    Cluster CLI is up to date at $(which cluster)"
+cd "$BASE_PATH"
+tar -pczf archive.tar.gz deltafi
+
+cat <<EOF > "$BASE_PATH/kind-install.sh"
+#!/bin/sh
+if [ -e deltafi ]; then
+  echo "'deltafi' directory already exists here!"
+  echo "You might try running deltafi/bootstrap.sh"
+  exit 1
 fi
-if [[ $(_readlink /usr/local/bin/deltafi) != "${CLUSTER}" ]]; then
-  [[ -L /usr/local/bin/deltafi ]] && echo "    Replacing existing deltafi CLI installation"
-  ${SUDO} ln -fs "${CLUSTER}" /usr/local/bin/deltafi || ln -fs "${CLUSTER}" /usr/local/bin/deltafi
-  echo "    $(ls -la /usr/local/bin/deltafi)"
-else
-  echo "    DeltaFi CLI is up to date at $(which deltafi)"
-fi
+cat <<ARCHIVE | base64 -d | tar -pzxf -
+$(base64 < archive.tar.gz)
+ARCHIVE
+rm -f archive.tar.gz
+cd deltafi
+./bootstrap.sh
+EOF
+
+rm -rf "$BASE_PATH/archive.tar.gz" "$TEMP_TREE"
+chmod +x "$BASE_PATH/kind-install.sh"

@@ -119,7 +119,7 @@ _is_linux() {
 
 # Detect arm processor
 _is_arm() {
-  if [[ $(uname -p) == 'arm' ]]; then
+  if [[ $(uname -p) == 'arm' || $(uname -m) == 'aarch64' ]]; then
     return 0
   else
     return 1
@@ -414,7 +414,7 @@ EOF
   _k8s_add_namespace deltafi
 
   kubectl apply -f "${BASE_PATH}/files/kind-metrics-server-deployment.yaml" | while read -r line; do _debug " |  $line"; done
-  kubens deltafi
+  kubens deltafi || kubens deltafi # Repeated because kubens fails on first execution in Debian
   _install_node_cli
   _enable_ui
   _k8s_init

@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - `disableEgressTestFlow`
 - `DeltaFile`s now indicate if they were processed with a test flow by setting a `testMode` flag and populating a `testFlowReason` field to indicate the reason for being processed in test mode
 - System snapshots will snapshot the `testMode` status for a flow
+- Single-step bootstrap installer script added for MacOS, CentOS, and Rocky Linux
 
 ### Changed
 
@@ -25,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - KinD: Fixed issue where `cluster loc clean build` had a race condition
+- KinD: On MacOS arm64, the bitnami-shell installation was fixed
 - Pods that complete (seen when running cron jobs) were causing a degraded state
 - Properly close PushbackInputStream when saving content
 
