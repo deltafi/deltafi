@@ -20,7 +20,7 @@ This section describes how to set up a deltafi-ui development environment.
 
 #### Prerequisites
 
-- Node.js >= 16.x
+- Node.js = 16.x
 - [Visual Studio Code](https://code.visualstudio.com/)
   - [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar)
   - [SCSS Formatter](https://marketplace.visualstudio.com/items?itemName=sibiraj-s.vscode-scss-formatter)
