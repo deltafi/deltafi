@@ -47,6 +47,8 @@ generateJava {
 
 			"ContentReference": "org.deltafi.common.content.ContentReference",
 			"ContentReferenceInput": "org.deltafi.common.content.ContentReference",
+			"Segment": "org.deltafi.common.content.Segment",
+			"SegmentInput": "org.deltafi.common.content.Segment",
 
 			"Action": "org.deltafi.common.types.Action",
 			"ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",

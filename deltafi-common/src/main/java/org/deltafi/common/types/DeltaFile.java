@@ -19,7 +19,7 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
@@ -54,6 +54,7 @@ public class DeltaFile {
   @Builder.Default
   private Map<String, String> indexedMetadata = new HashMap<>();
   private List<Enrichment> enrichment;
+  @Builder.Default
   private List<Egress> egress = new ArrayList<>();
   private List<FormattedData> formattedData;
   private OffsetDateTime created;
@@ -176,10 +177,6 @@ public class DeltaFile {
 
   public List<String> queuedActions() {
     return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).collect(Collectors.toList());
-  }
-
-  public Domain getDomain(String domain) {
-    return domainMap().get(domain);
   }
 
   public Map<String, Domain> domainMap() {
@@ -360,16 +357,18 @@ public class DeltaFile {
     return builder.build();
   }
 
-  public List<ContentReference> storedContentReferences() {
-    List<ContentReference> contentReferences = getProtocolStack().stream()
+  public List<Segment> storedSegments() {
+    List<Segment> segments = getProtocolStack().stream()
             .flatMap(p -> p.getContent().stream()).map(Content::getContentReference)
-            .filter(c -> c.getDid().equals(getDid()))
+            .flatMap(c -> c.getSegments().stream())
+            .filter(s -> s.getDid().equals(getDid()))
             .collect(Collectors.toList());
-    contentReferences.addAll(getFormattedData().stream()
+    segments.addAll(getFormattedData().stream()
             .map(FormattedData::getContentReference)
-            .filter(c -> c.getDid().equals(getDid()))
+            .flatMap(f -> f.getSegments().stream())
+            .filter(s -> s.getDid().equals(getDid()))
             .collect(Collectors.toList()));
-    return contentReferences;
+    return segments;
   }
 
   public void cancelQueuedActions() {

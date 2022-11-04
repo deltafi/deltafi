@@ -30,6 +30,7 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
@@ -520,17 +521,17 @@ public class DeltaFilesService {
     }
 
     public static void calculateTotalBytes(DeltaFile deltaFile) {
-        List<ContentReference> contentReferences = deltaFile.storedContentReferences();
+        List<Segment> storedSegments = deltaFile.storedSegments();
 
         // keep track of the first and last offset for each unique uuid contentReference
         // make an assumption that we won't have disjoint segments
         Map<String, Pair<Long, Long>> segments = new HashMap<>();
-        contentReferences.forEach(c -> {
-            if (segments.containsKey(c.getUuid())) {
-                Pair<Long, Long> segment = segments.get(c.getUuid());
-                segments.put(c.getUuid(), Pair.of(Math.min(segment.getLeft(), c.getOffset()), Math.max(segment.getRight(), c.getOffset() + c.getSize())));
+        storedSegments.forEach(storedSegment -> {
+            if (segments.containsKey(storedSegment.getUuid())) {
+                Pair<Long, Long> segment = segments.get(storedSegment.getUuid());
+                segments.put(storedSegment.getUuid(), Pair.of(Math.min(segment.getLeft(), storedSegment.getOffset()), Math.max(segment.getRight(), storedSegment.getOffset() + storedSegment.getSize())));
             } else {
-                segments.put(c.getUuid(), Pair.of(c.getOffset(), c.getOffset() + c.getSize()));
+                segments.put(storedSegment.getUuid(), Pair.of(storedSegment.getOffset(), storedSegment.getOffset() + storedSegment.getSize()));
             }
         });
 
@@ -1080,7 +1081,7 @@ public class DeltaFilesService {
             deltaFile.markForDelete(policy);
         }
         contentStorageService.deleteAll(deltaFiles.stream()
-                .map(DeltaFile::storedContentReferences)
+                .map(DeltaFile::storedSegments)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList()));
     }

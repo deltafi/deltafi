@@ -29,25 +29,25 @@ module Deltafi
         MINIO_REGION = 'us-east-1'
 
         class << self
-          def get(content_reference, &block)
-            return empty_output(content_reference) if content_reference[:size].to_i < 1
+          def get_segment(content_segment, &block)
+            return empty_output(content_segment[:mediaType]) if content_segment[:size].to_i < 1
 
-            minio_options = minio_object_options(content_reference)
+            minio_options = minio_object_options(content_segment)
             minio_client.get_object(minio_options, &block)
           rescue Aws::S3::Errors::NoSuchKey => e
             raise "Content not found: #{e.message}"
           rescue Aws::S3::Errors::InvalidRange => e
-            raise "Invalid content reference: #{e.message}"
+            raise "Invalid content segment: #{e.message}"
           rescue Aws::S3::Errors::InvalidAccessKeyId => e
             raise "Invalid access key: #{e.message}"
           rescue Aws::S3::Errors::NoSuchBucket => e
             raise "Content storage not configured properly: #{e.message}"
           end
 
-          def head(content_reference)
-            return empty_output(content_reference) if content_reference[:size].to_i < 1
+          def head_segment(content_segment)
+            return empty_output(content_segment[:mediaType]) if content_segment[:size].to_i < 1
 
-            minio_options = minio_object_options(content_reference)
+            minio_options = minio_object_options(content_segment)
             minio_client.head_object(minio_options)
           rescue Aws::S3::Errors::NotFound => e
             raise e, "Content not found: #{e.message}"
@@ -55,17 +55,17 @@ module Deltafi
             raise e, "Access denied: #{e.message}"
           end
 
-          def empty_output(content_reference)
+          def empty_output(media_type)
             output = Aws::S3::Types::GetObjectOutput.new
             output.content_length = 0
-            output.content_type = content_reference[:mediaType]
+            output.content_type = media_type
             output
           end
 
-          def minio_object_options(content_reference)
-            key = File.join(content_reference[:did], content_reference[:uuid])
-            byte_start = content_reference[:offset].to_i
-            byte_end = byte_start + content_reference[:size].to_i - 1
+          def minio_object_options(content_segment)
+            key = File.join(content_segment[:did], content_segment[:uuid])
+            byte_start = content_segment[:offset].to_i
+            byte_end = byte_start + content_segment[:size].to_i - 1
             range = "bytes=#{byte_start}-#{byte_end}"
             {
               bucket: MINIO_BUCKET,
@@ -86,6 +86,22 @@ module Deltafi
               region: MINIO_REGION
             )
             @minio_client = Aws::S3::Client.new
+          end
+
+          def content_reference_size(content_reference)
+            content_reference[:segments].map { |segment| head_segment(segment).content_length }.sum
+          end
+
+          def verify_content_reference(content_reference)
+            %i[mediaType size segments].each do |key|
+              raise "Invalid content reference: #{key} required" unless content_reference[key]
+            end
+
+            content_reference[:segments].each do |segment|
+              %i[did uuid size offset].each do |key|
+                raise "Invalid content reference: #{key} required for each segment" unless segment[key]
+              end
+            end
           end
         end
       end

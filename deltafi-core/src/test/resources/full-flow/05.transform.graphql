@@ -30,10 +30,11 @@ mutation {
                     content: [
                         {
                             contentReference: {
-                                uuid: "objectName"
-                                offset: 0
-                                size: 500
-                                did: "%1$s"
+                                segments: [{
+                                    uuid: "objectName"
+                                    offset: 0
+                                    size: 500
+                                    did: "%1$s" }]
                                 mediaType: "application/octet-stream"
                             }
                         }

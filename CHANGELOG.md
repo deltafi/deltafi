@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Single-step bootstrap installer script added for MacOS, CentOS, and Rocky Linux
 
 ### Changed
+- ContentReferences are now composed of a list of on-disk segments
 
 ### Deprecated
 - paramClass parameter in action registration is no longer needed

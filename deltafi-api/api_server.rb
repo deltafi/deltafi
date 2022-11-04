@@ -20,6 +20,7 @@
 
 $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
 
+require 'base64'
 require 'deltafi'
 require 'sinatra/base'
 require 'sinatra/streaming'
@@ -117,7 +118,13 @@ class ApiServer < Sinatra::Base
     get '/content' do
       authorize! :DeltaFileContentView
 
-      stream_content(params)
+      raise 'Missing required parameter: reference' unless params[:reference]
+
+      content_reference_json = Base64.strict_decode64(params[:reference]).encode('UTF-8', invalid: :replace)
+      content_reference = JSON.parse(content_reference_json, symbolize_names: true)
+      stream_content(content_reference)
+    rescue ArgumentError, Encoding::UndefinedConversionError, JSON::ParserError => e
+      raise "Failed to parse content reference: #{e.message}"
     end
 
     post '/content' do
@@ -157,24 +164,32 @@ class ApiServer < Sinatra::Base
   end
 
   def stream_content(content_reference)
-    %i[did uuid size offset].each do |key|
-      raise "Invalid content reference: #{key} required" unless content_reference[key]
-    end
+    DF::API::V1::Content.verify_content_reference(content_reference)
 
-    audit("viewed content for DID #{content_reference['did']}")
-
-    head = DF::API::V1::Content.head(content_reference)
+    size = [
+      DF::API::V1::Content.content_reference_size(content_reference),
+      content_reference[:size]
+    ].min
 
     filename = content_reference[:filename] || content_reference[:uuid]
     headers['Content-Disposition'] = "attachment; filename=#{filename};"
     headers['Content-Transfer-Encoding'] = 'binary'
     headers['Cache-Control'] = 'no-cache'
     headers['Content-Type'] = content_reference[:mediaType]
-    headers['Content-Length'] = head.content_length.to_s
+    headers['Content-Length'] = size.to_s
+
+    bytes_left = content_reference[:size]
 
     stream do |out|
-      DF::API::V1::Content.get(params) do |chunk|
-        out.write(chunk)
+      content_reference[:segments].each do |segment|
+        break unless bytes_left.positive?
+
+        audit("viewed content for DID #{segment[:did]}")
+        segment[:size] = [segment[:size], bytes_left].min
+        DF::API::V1::Content.get_segment(segment) do |chunk|
+          out.write(chunk)
+        end
+        bytes_left -= segment[:size]
       end
     end
   end

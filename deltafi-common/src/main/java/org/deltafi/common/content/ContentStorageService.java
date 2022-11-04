@@ -22,10 +22,8 @@ import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
+import java.io.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,56 +35,75 @@ public class ContentStorageService {
     private final ObjectStorageService objectStorageService;
 
     public InputStream load(ContentReference contentReference) throws ObjectStorageException {
-        return contentReference.getSize() > 0 ? objectStorageService.getObject(buildObjectReference(contentReference)) :
-                InputStream.nullInputStream();
+        if (contentReference.getSize() > 0) {
+            if (contentReference.getSegments().size() == 1) {
+                return objectStorageService.getObject(buildObjectReference(contentReference.getSegments().get(0)));
+            } else {
+                try {
+                    return new SequenceInputStream(Collections.enumeration(contentReference.getSegments().stream()
+                            .map(s -> {
+                                try {
+                                    return objectStorageService.getObject(buildObjectReference(s));
+                                } catch (ObjectStorageException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            })
+                            .collect(Collectors.toList())));
+                } catch (RuntimeException e) {
+                    throw new ObjectStorageException(e);
+                }
+            }
+        } else {
+            return InputStream.nullInputStream();
+        }
+
     }
 
     public ContentReference save(String did, byte[] content, String mediaType) throws ObjectStorageException {
         if (content.length == 0) {
-            return emptyContentReference(did, mediaType);
+            return new ContentReference(mediaType);
         }
 
         return save(did, new ByteArrayInputStream(content), mediaType);
     }
 
     public ContentReference save(String did, InputStream inputStream, String mediaType) throws ObjectStorageException {
-        ContentReference contentReference = new ContentReference(UUID.randomUUID().toString(), did, mediaType);
+        Segment segment = new Segment(UUID.randomUUID().toString(), did);
 
         try(PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream)) {
             int byTe = pushbackInputStream.read();
             if (byTe == -1) {
-                return emptyContentReference(did, mediaType);
+                return new ContentReference(mediaType);
             }
             pushbackInputStream.unread(byTe);
 
-            ObjectReference objectReference = objectStorageService.putObject(
-                    buildObjectReference(contentReference), pushbackInputStream);
-            contentReference.setSize(objectReference.getSize());
-            return contentReference;
+            ObjectReference objectReference = objectStorageService.putObject(buildObjectReference(segment), pushbackInputStream);
+            segment.setSize(objectReference.getSize());
+            return new ContentReference(mediaType, segment);
         } catch (IOException e) {
-            throw new ObjectStorageException("Error saving content " + contentReference.objectName(), e);
+            throw new ObjectStorageException("Error saving content " + segment.objectName(), e);
         }
     }
 
-    private ContentReference emptyContentReference(String did, String mediaType) {
-        return new ContentReference(UUID.randomUUID().toString(), 0, 0, did, mediaType);
-    }
-
     public void delete(ContentReference contentReference) {
-        objectStorageService.removeObject(buildObjectReference(contentReference));
+        if (contentReference.getSegments().size() == 1) {
+            objectStorageService.removeObject(buildObjectReference(contentReference.getSegments().get(0)));
+        } else {
+            deleteAll(contentReference.getSegments());
+        }
     }
 
-    public void deleteAll(List<ContentReference> contentReferences) {
-        if (!contentReferences.isEmpty()) {
-            objectStorageService.removeObjects(CONTENT_BUCKET, contentReferences.stream()
-                    .map(ContentReference::objectName)
+    public void deleteAll(List<Segment> segments) {
+        if (!segments.isEmpty()) {
+            objectStorageService.removeObjects(CONTENT_BUCKET, segments.stream()
+                    .map(Segment::objectName)
                     .distinct()
                     .collect(Collectors.toList()));
         }
     }
 
-    private ObjectReference buildObjectReference(ContentReference contentReference) {
-        return new ObjectReference(CONTENT_BUCKET, contentReference.getDid() + "/" + contentReference.getUuid(),
-                contentReference.getOffset(), contentReference.getSize());
+    private ObjectReference buildObjectReference(Segment segment) {
+        return new ObjectReference(CONTENT_BUCKET, segment.getDid() + "/" + segment.getUuid(),
+                segment.getOffset(), segment.getSize());
     }
 }

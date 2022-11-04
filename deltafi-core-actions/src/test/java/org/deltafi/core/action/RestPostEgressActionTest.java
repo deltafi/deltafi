@@ -23,6 +23,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.content.ContentReference;
@@ -70,11 +71,11 @@ class RestPostEgressActionTest {
     private static final String URL = "https://url.com";
     private static final String METADATA_KEY = "theMetadataKey";
 
-    private static final String CONTENT_NAME = "contentName";
     private static final byte[] DATA = "data to be egressed".getBytes();
     private static final String CONTENT_TYPE = "application/json";
 
-    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_NAME, 0, DATA.length, DID, CONTENT_TYPE);
+    private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
+    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, SEGMENT);
     private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()
             .filename(POST_FILENAME)
             .contentReference(CONTENT_REFERENCE)

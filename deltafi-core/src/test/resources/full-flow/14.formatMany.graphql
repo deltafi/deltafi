@@ -30,10 +30,11 @@ mutation {
                     filename: "file1"
                     metadata: []
                     contentReference: {
-                        uuid: "objectName"
-                        offset: 0
-                        size: 250
-                        did: "%1$s"
+                        segments: [{
+                            uuid: "objectName"
+                            offset: 0
+                            size: 250
+                            did: "%1$s" }]
                         mediaType: "application/octet-stream"
                     }
                 },
@@ -41,10 +42,11 @@ mutation {
                     filename: "file2"
                     metadata: []
                     contentReference: {
-                        uuid: "objectName"
-                        offset: 250
-                        size: 250
-                        did: "%1$s"
+                        segments: [{
+                            uuid: "objectName"
+                            offset: 250
+                            size: 250
+                            did: "%1$s" }]
                         mediaType: "application/octet-stream"
                     }
                 }

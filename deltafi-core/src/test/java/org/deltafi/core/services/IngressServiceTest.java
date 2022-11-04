@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
@@ -64,7 +65,7 @@ class IngressServiceTest {
 
     @Test @SneakyThrows
     void ingressData() {
-        ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
+        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("fileName", "did"));
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         DeltaFile deltaFile = DeltaFile.newBuilder().sourceInfo(SourceInfo.builder().flow("namespace.flow").build()).build();
@@ -74,12 +75,12 @@ class IngressServiceTest {
 
         Mockito.verify(contentStorageService).save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
         Mockito.verify(deltaFilesService).ingress(any());
-        Assertions.assertNotNull(created.getContentReference().getDid());
+        Assertions.assertNotNull(created.getContentReference().getSegments().get(0).getDid());
     }
 
     @Test @SneakyThrows
     void ingressData_unexpectedException() {
-        ContentReference contentReference = new ContentReference("fileName", "did", "application/octet-stream");
+        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("fileName", "did"));
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         Mockito.when(deltaFilesService.ingress(any())).thenThrow(new RuntimeException("failed to send to dgs"));

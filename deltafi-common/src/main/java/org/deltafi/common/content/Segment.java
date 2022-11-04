@@ -15,14 +15,29 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.storage.s3;
+package org.deltafi.common.content;
 
-public class ObjectStorageException extends Exception {
-    public ObjectStorageException(Throwable cause) {
-        super(cause);
+import lombok.*;
+import org.deltafi.common.storage.s3.ObjectReference;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Segment {
+    private String uuid;
+    private long offset;
+    private long size;
+    private String did;
+
+    public Segment(Segment other) {
+        this(other.getUuid(), other.getOffset(), other.getSize(), other.getDid());
     }
 
-    public ObjectStorageException(String message, Throwable cause) {
-        super(message, cause);
+    public Segment(String uuid, String did) {
+        this(uuid, 0, ObjectReference.UNKNOWN_SIZE, did);
+    }
+
+    public String objectName() {
+        return did + "/" + uuid;
     }
 }

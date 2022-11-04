@@ -210,8 +210,8 @@ public class DeltaFilesDatafetcher {
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         ContentReference cr = crs.get(i);
         c.setContentReference(cr);
-        IngressInput ingressInput = new IngressInput(cr.getDid(), sourceInfo, List.of(c), OffsetDateTime.now());
-        log.info("Ingressing metadata for {} ({}/{})", cr.getDid(), i + (numFiles - remainingFiles) + 1, numFiles);
+        IngressInput ingressInput = new IngressInput(cr.getSegments().get(0).getDid(), sourceInfo, List.of(c), OffsetDateTime.now());
+        log.info("Ingressing metadata for {} ({}/{})", cr.getSegments().get(0).getDid(), i + (numFiles - remainingFiles) + 1, numFiles);
         ingress(ingressInput);
       }
 

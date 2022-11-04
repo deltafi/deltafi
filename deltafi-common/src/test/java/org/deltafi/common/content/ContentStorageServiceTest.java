@@ -46,7 +46,8 @@ public class ContentStorageServiceTest {
     public void loadsContent() throws ObjectStorageException, IOException {
         byte[] content = "test".getBytes();
 
-        ContentReference contentReference = new ContentReference("uuid", 0, content.length, "did", "mediaType");
+        Segment segment = new Segment("uuid", 0, content.length, "did");
+        ContentReference contentReference = new ContentReference("mediaType", segment);
 
         ObjectReference objectReference = new ObjectReference("storage", "did/uuid", 0, content.length);
         Mockito.when(objectStorageService.getObject(Mockito.eq(objectReference)))
@@ -58,7 +59,7 @@ public class ContentStorageServiceTest {
 
     @Test
     public void loadsZeroLengthContent() throws ObjectStorageException, IOException {
-        InputStream inputStream = contentStorageService.load(new ContentReference("uuid", 0, 0, "did", "mediaType"));
+        InputStream inputStream = contentStorageService.load(new ContentReference("mediaType"));
         assertEquals(0, inputStream.readAllBytes().length);
     }
 
@@ -72,9 +73,10 @@ public class ContentStorageServiceTest {
         ContentReference contentReference =
                 contentStorageService.save("did", new ByteArrayInputStream(content), "mediaType");
 
-        assertEquals(0, contentReference.getOffset());
+        assertEquals(1, contentReference.getSegments().size());
+        assertEquals(0, contentReference.getSegments().get(0).getOffset());
+        assertEquals("did", contentReference.getSegments().get(0).getDid());
         assertEquals(content.length, contentReference.getSize());
-        assertEquals("did", contentReference.getDid());
         assertEquals("mediaType", contentReference.getMediaType());
     }
 
@@ -85,9 +87,8 @@ public class ContentStorageServiceTest {
         ContentReference contentReference =
                 contentStorageService.save("did", new ByteArrayInputStream(content), "mediaType");
 
-        assertEquals(0, contentReference.getOffset());
+        assertEquals(0, contentReference.getSegments().size());
         assertEquals(0, contentReference.getSize());
-        assertEquals("did", contentReference.getDid());
         assertEquals("mediaType", contentReference.getMediaType());
     }
 
@@ -100,9 +101,10 @@ public class ContentStorageServiceTest {
 
         ContentReference contentReference = contentStorageService.save("did", content, "mediaType");
 
-        assertEquals(0, contentReference.getOffset());
+        assertEquals(1, contentReference.getSegments().size());
+        assertEquals(0, contentReference.getSegments().get(0).getOffset());
+        assertEquals("did", contentReference.getSegments().get(0).getDid());
         assertEquals(content.length, contentReference.getSize());
-        assertEquals("did", contentReference.getDid());
         assertEquals("mediaType", contentReference.getMediaType());
     }
 }

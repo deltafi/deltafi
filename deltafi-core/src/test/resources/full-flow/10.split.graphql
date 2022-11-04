@@ -34,19 +34,21 @@ mutation {
                     content: [
                         {
                             contentReference: {
-                                uuid: "objectName"
-                                offset: 0
-                                size: 250
-                                did: "%1$s"
+                                segments: [{
+                                    uuid: "objectName"
+                                    offset: 0
+                                    size: 250
+                                    did: "%1$s" }]
                                 mediaType: "application/octet-stream"
                             }
                         }
                         {
                             contentReference: {
-                                uuid: "objectName2"
-                                offset: 0
-                                size: 400
-                                did: "%1$s"
+                                segments: [{
+                                    uuid: "objectName2"
+                                    offset: 0
+                                    size: 400
+                                    did: "%1$s" }]
                                 mediaType: "application/xml"
                             }
                         }
@@ -61,10 +63,11 @@ mutation {
                     content: [
                         {
                             contentReference: {
-                                uuid: "objectName"
-                                offset: 250
-                                size: 250
-                                did: "%1$s"
+                                segments: [{
+                                    uuid: "objectName"
+                                    offset: 250
+                                    size: 250
+                                    did: "%1$s" }]
                                 mediaType: "application/octet-stream"
                             }
                         }

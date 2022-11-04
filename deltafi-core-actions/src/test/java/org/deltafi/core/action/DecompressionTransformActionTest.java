@@ -25,6 +25,7 @@ import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
@@ -458,7 +459,8 @@ public class DecompressionTransformActionTest {
                     String content = new String(is.readAllBytes());
                     long contentLength = content.length();
                     String contentType = (String) args[2];
-                    return new ContentReference(content, 0, contentLength, did, contentType);
+                    Segment segment = new Segment(content, 0, contentLength, did);
+                    return new ContentReference(contentType, segment);
                 });
     }
 
@@ -503,7 +505,7 @@ public class DecompressionTransformActionTest {
                 stream().map(ef -> new Content(
                         ef.getFilename(),
                         Collections.emptyList(),
-                        new ContentReference(ef.getContents(), 0, ef.getContents().length(), DID, MediaType.APPLICATION_OCTET_STREAM))).toArray()));
+                        new ContentReference(MediaType.APPLICATION_OCTET_STREAM, new Segment(ef.getContents(), 0, ef.getContents().length(), DID)))).toArray()));
     }
 
     @SneakyThrows
@@ -541,7 +543,7 @@ public class DecompressionTransformActionTest {
 
     @SneakyThrows
     Content content(String filename) {
-        ContentReference contentReference = new ContentReference(DID, 0, contentFor(filename).available(), DID, CONTENT_TYPE);
+        ContentReference contentReference = new ContentReference(CONTENT_TYPE, new Segment(DID, 0, contentFor(filename).available(), DID));
         return new Content(filename, Collections.emptyList(), contentReference);
     }
 }

@@ -21,6 +21,7 @@ import org.apache.nifi.util.FlowFileUnpackagerV1;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
@@ -74,7 +75,6 @@ class FlowfileEgressActionTest {
     private static final String EGRESS_FLOW = "outFlow";
     private static final String URL = "https://url.com";
 
-    private static final String CONTENT_NAME = "contentName";
     private static final String CONTENT_TYPE = FLOWFILE_V1_CONTENT_TYPE;
 
     private static final Map<String, String> ADDITIONAL_METADATA = Map.of(
@@ -85,7 +85,7 @@ class FlowfileEgressActionTest {
             "filename", POST_FILENAME
     );
 
-    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_NAME, 0, CONTENT.length, DID, CONTENT_TYPE);
+    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, CONTENT.length, DID));
 
     private static final SourceInfo SOURCE_INFO = new SourceInfo(ORIG_FILENAME, FLOW, List.of());
     private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()

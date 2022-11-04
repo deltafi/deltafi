@@ -116,19 +116,29 @@ input ContentInput {
 A ContentReference is a reference to stored content for a delta file.
 """
 type ContentReference {
-  uuid: String!
-  offset: Long!
-  size: Long!
-  did: String!
+  segments: [Segment!]!
   mediaType: String!
+  size: Long!
 }
 
 input ContentReferenceInput {
+  segments: [SegmentInput!]!
+  mediaType: String!
+  size: Long
+}
+
+type Segment {
   uuid: String!
   offset: Long!
   size: Long!
   did: String!
-  mediaType: String!
+}
+
+input SegmentInput {
+  uuid: String!
+  offset: Long!
+  size: Long!
+  did: String!
 }
 
 """

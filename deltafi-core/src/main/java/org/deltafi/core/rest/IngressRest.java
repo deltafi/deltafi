@@ -100,16 +100,13 @@ public class IngressRest {
             metricService.increment(FILES_IN, tags, 1);
             metricService.increment(BYTES_IN, tags, ingressResult.getContentReference().getSize());
 
-            return ResponseEntity.ok(ingressResult.getContentReference().getDid());
-        } catch (ObjectStorageException | IngressException exception) {
-            log.error("500 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
-            metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
-            return ResponseEntity.internalServerError().body(exception.getMessage());
+            return ResponseEntity.ok(ingressResult.getContentReference().getSegments().get(0).getDid());
         } catch (IngressMetadataException exception) {
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             log.error("400 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
             return ResponseEntity.badRequest().body(exception.getMessage());
         } catch (Throwable exception) {
+            // includes IngressException and ObjectStorageException
             log.error("500 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
             metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
             return ResponseEntity.internalServerError().body(exception.getMessage());

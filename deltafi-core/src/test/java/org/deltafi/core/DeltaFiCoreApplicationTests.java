@@ -29,6 +29,7 @@ import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
@@ -641,7 +642,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.setIngressBytes(500L);
 		deltaFile.queueAction("sampleIngress.Utf8TransformAction");
 		deltaFile.setSourceInfo(new SourceInfo("input.txt", INGRESS_FLOW_NAME, new ArrayList<>(List.of(new KeyValue("AuthorizedBy", "XYZ"), new KeyValue("removeMe", "whatever")))));
-		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
+		Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, did))).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION, List.of(content), null));
 		return deltaFile;
 	}
@@ -663,7 +664,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("sampleIngress.Utf8TransformAction", START_TIME, STOP_TIME);
 		deltaFile.queueAction("sampleIngress.SampleTransformAction");
-		Content content = Content.newBuilder().name("file.json").contentReference(new ContentReference("utf8ObjectName", 0, 500, did, "application/octet-stream")).build();
+		Content content = Content.newBuilder().name("file.json").contentReference(new ContentReference("application/octet-stream", new Segment("utf8ObjectName", 0, 500, did))).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.Utf8TransformAction", List.of(content), null));
 		return deltaFile;
 	}
@@ -686,7 +687,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.completeAction("sampleIngress.SampleTransformAction", START_TIME, STOP_TIME);
 		deltaFile.queueAction("sampleIngress.SampleLoadAction");
-		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
+		Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, did))).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleTransformAction", List.of(content), transformSampleMetadata));
 		return deltaFile;
 	}
@@ -714,7 +715,7 @@ class DeltaFiCoreApplicationTests {
 		 * will still recognize that Transform actions are incomplete,
 		 * and not attempt to queue the Load action, too.
 		 */
-		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
+		Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, did))).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleTransformAction", List.of(content), transformSampleMetadata));
 		return deltaFile;
 	}
@@ -771,7 +772,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.queueAction("sampleEnrich.SampleDomainAction");
 		deltaFile.completeAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME);
 		deltaFile.addDomain("sampleDomain", "sampleDomainValue", "application/octet-stream");
-		Content content = Content.newBuilder().contentReference(new ContentReference("objectName", 0, 500, did, "application/octet-stream")).build();
+		Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, did))).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleLoadAction", List.of(content), loadSampleMetadata));
 		return deltaFile;
 	}
@@ -846,14 +847,14 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("file1", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
+		assertEquals(0, child1.getLastProtocolLayerContent().get(0).getContentReference().getSegments().get(0).getOffset());
 		assertEquals(2, child1.getLastProtocolLayerContent().size());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("file2", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getOffset());
+		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getSegments().get(0).getOffset());
 		assertEquals(1, child2.getLastProtocolLayerContent().size());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
@@ -919,7 +920,7 @@ class DeltaFiCoreApplicationTests {
 				.formatAction("sampleEgress.SampleFormatAction")
 				.filename("output.txt")
 				.metadata(Arrays.asList(new KeyValue("key1", "value1"), new KeyValue("key2", "value2")))
-				.contentReference(new ContentReference("formattedObjectName", 0, 1000, did, "application/octet-stream"))
+				.contentReference(new ContentReference("application/octet-stream", new Segment("formattedObjectName", 0, 1000, did)))
 				.egressActions(Collections.singletonList("sampleEgress.SampleEgressAction"))
 				.validateActions(List.of("sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction"))
 				.build());
@@ -962,13 +963,13 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(DeltaFileStage.EGRESS, child1.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getFormattedData().get(0).getContentReference().getOffset());
+		assertEquals(0, child1.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getOffset());
+		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		assertEquals(4, actionInputListCaptor.getValue().size());
@@ -3365,7 +3366,7 @@ class DeltaFiCoreApplicationTests {
 			"fromFlowfile", "youbetcha");
 	static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
 	static final String USERNAME = "myname";
-	ContentReference CONTENT_REFERENCE = new ContentReference(FILENAME, 0, CONTENT.length(), "did", MEDIA_TYPE);
+	ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), "did"));
 	IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW, FILENAME);
 
 	private ResponseEntity<String> ingress(String filename, String flow, String metadata, byte[] body, String contentType) {
@@ -3394,7 +3395,7 @@ class DeltaFiCoreApplicationTests {
 
 		ResponseEntity<String> response = ingress(FILENAME, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(INGRESS_RESULT.getContentReference().getDid(), response.getBody());
+		assertEquals(INGRESS_RESULT.getContentReference().getSegments().get(0).getDid(), response.getBody());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
 		Mockito.verify(ingressService).ingressData(is.capture(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE));
@@ -3414,7 +3415,7 @@ class DeltaFiCoreApplicationTests {
 		ResponseEntity<String> response = ingress(FILENAME, null, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(INGRESS_RESULT.getContentReference().getDid(), response.getBody());
+		assertEquals(INGRESS_RESULT.getContentReference().getSegments().get(0).getDid(), response.getBody());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
 		Mockito.verify(ingressService).ingressData(is.capture(), eq(FILENAME), isNull(), eq(METADATA), eq(MEDIA_TYPE));
