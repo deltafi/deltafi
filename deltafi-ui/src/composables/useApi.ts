@@ -64,7 +64,7 @@ export default function useApi(version: Number = 1) {
     }
   }
 
-  const postPut = async (verb: string, endpoint: string, body: Record<string, string>) => {
+  const postPut = async (verb: string, endpoint: string, body: any, parseJSON: boolean = true) => {
     const url = buildURL(endpoint);
     try {
       const res = await fetch(url, {
@@ -76,7 +76,7 @@ export default function useApi(version: Number = 1) {
         body: JSON.stringify(body),
       });
       if (!res.ok) return Promise.reject(res);
-      response.value = await res.json();
+      response.value = (parseJSON) ? await res.json() : await res.blob()
       loaded.value = true;
       return Promise.resolve(res);
     } catch (error: any) {
@@ -88,12 +88,12 @@ export default function useApi(version: Number = 1) {
     }
   }
 
-  const put = async (endpoint: string, body: Record<string, string>) => {
-    return postPut('PUT', endpoint, body)
+  const put = async (endpoint: string, body: any, parseJSON: boolean = true) => {
+    return postPut('PUT', endpoint, body, parseJSON)
   }
 
-  const post = async (endpoint: string, body: Record<string, string>) => {
-    return postPut('POST', endpoint, body)
+  const post = async (endpoint: string, body: any, parseJSON: boolean = true) => {
+    return postPut('POST', endpoint, body, parseJSON)
   }
 
   const remove = async (endpoint: String, id: String) => {

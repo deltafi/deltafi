@@ -166,11 +166,16 @@ const generateData = () => {
         formatAction: "MockFormatAction",
         egressActions: ["MockEgressAction"],
         contentReference: {
-          did: "1480cb50-027b-4185-8a93-e5530ee38705",
-          uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-          offset: 0,
-          size: 24,
-          mediaType: "application/x-www-form-urlencoded",
+          "mediaType": "application/octet-stream",
+          "segments": [
+            {
+              "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+              "offset": 0,
+              "size": 36,
+              "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+            }
+          ],
+          "size": 36
         },
       },
     ],
@@ -182,11 +187,16 @@ const generateData = () => {
           {
             name: "testfile.zip",
             contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 24,
-              mediaType: "application/octet-stream",
+              "mediaType": "application/octet-stream",
+              "segments": [
+                {
+                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                  "offset": 0,
+                  "size": 36,
+                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+                }
+              ],
+              "size": 36
             },
           },
         ],
@@ -198,109 +208,14 @@ const generateData = () => {
           {
             name: "testfile1.txt",
             contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
+              "segments": [
+                {
+                  "uuid": "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                  "offset": 0,
+                  "size": 36,
+                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+                }
+              ],
               size: 45673,
               mediaType: "application/octet-stream",
             },
@@ -308,169 +223,14 @@ const generateData = () => {
           {
             name: "testfile2.txt",
             contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
-              size: 45673,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile1.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
-          },
-          {
-            name: "testfile2.txt",
-            contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "1f86165f-85f8-4df9-aee2-398a77f8c4d9",
-              offset: 0,
+              "segments": [
+                {
+                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                  "offset": 0,
+                  "size": 36,
+                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+                }
+              ],
               size: 45673,
               mediaType: "application/octet-stream",
             },
@@ -484,9 +244,14 @@ const generateData = () => {
           {
             name: "testfile1.txt",
             contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60936",
-              offset: 0,
+              "segments": [
+                {
+                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                  "offset": 0,
+                  "size": 36,
+                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+                }
+              ],
               size: 23423,
               mediaType: "application/octet-stream",
             },
@@ -500,9 +265,14 @@ const generateData = () => {
               },
             ],
             contentReference: {
-              did: "1480cb50-027b-4185-8a93-e5530ee38705",
-              uuid: "7f5133c9-cec9-4116-ac27-62e6e2b60931",
-              offset: 0,
+              "segments": [
+                {
+                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                  "offset": 0,
+                  "size": 36,
+                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+                }
+              ],
               size: 24,
               mediaType: "application/octet-stream",
             },

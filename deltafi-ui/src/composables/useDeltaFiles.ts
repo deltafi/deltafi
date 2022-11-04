@@ -79,9 +79,12 @@ export default function useDeltaFiles() {
           formatAction: true,
           egressActions: true,
           contentReference: {
-            did: true,
-            uuid: true,
-            offset: true,
+            segments: {
+              did: true,
+              uuid: true,
+              offset: true,
+              size: true,
+            },
             size: true,
             mediaType: true,
           },
@@ -99,11 +102,14 @@ export default function useDeltaFiles() {
               value: true
             },
             contentReference: {
-              did: true,
-              uuid: true,
-              offset: true,
+              segments: {
+                did: true,
+                uuid: true,
+                offset: true,
+                size: true,
+              },
               size: true,
-              mediaType: true
+              mediaType: true,
             }
           },
         },

@@ -212,7 +212,7 @@ onMounted(() => {
 });
 
 watch(
-  () => contentReference.value.uuid,
+  () => contentReference.value,
   () => {
     loadContent();
   }

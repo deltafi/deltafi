@@ -19,13 +19,18 @@
 import { ref, Ref } from 'vue'
 import useApi from './useApi'
 
-interface ContentReference {
+interface ContentSegment {
   did: string;
   uuid: number;
   size: number;
   offset: number;
+}
+
+interface ContentReference {
+  size: number;
   mediaType: string;
   filename: string;
+  segments: Array<ContentSegment>
 }
 
 export default function useContent() {
@@ -34,14 +39,20 @@ export default function useContent() {
   const data: Ref<Blob | undefined> = ref();
 
   const fetch = async (contentReference: ContentReference) => {
-    const params = new URLSearchParams(contentReference as any);
+    const params = buildParamString(contentReference)
     await get(endpoint, params, false);
     data.value = response.value;
+    return data.value;
   }
 
   const downloadURL = (contentReference: ContentReference) => {
-    const params = new URLSearchParams(contentReference as any);
+    const params = buildParamString(contentReference)
     return buildURL(endpoint, params);
+  }
+
+  const buildParamString = (contentReference: ContentReference) => {
+    const base64 = window.btoa(JSON.stringify(contentReference))
+    return new URLSearchParams({ reference: base64 });
   }
 
   return { data, loaded, loading, fetch, downloadURL, errors };
