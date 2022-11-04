@@ -19,6 +19,7 @@
 # frozen_string_literal: true
 
 require 'deltafi'
+require 'deltafi/monitor/status/check'
 
 module Deltafi
   module Monitor

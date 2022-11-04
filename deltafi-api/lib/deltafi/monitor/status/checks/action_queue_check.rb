@@ -19,7 +19,7 @@
 # frozen_string_literal: true
 
 require 'deltafi/common'
-require 'deltafi/monitor/status/service'
+require 'deltafi/monitor/status/check'
 
 module Deltafi
   module Monitor

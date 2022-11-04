@@ -39,6 +39,7 @@ import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.IngressService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -80,6 +81,19 @@ public class IngressRest {
                                               @RequestHeader(HttpHeaders.CONTENT_TYPE) String contentType,
                                               @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false) String username) {
         username = StringUtils.isNotBlank(username) ? username : "system";
+
+        if (! ingressService.isEnabled()) {
+            return errorResponse(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Ingress disabled for this instance of DeltaFi",
+                    flow, filename, contentType, username);
+        }
+
+        if (! ingressService.isStorageAvailable()) {
+            return errorResponse(HttpStatus.INSUFFICIENT_STORAGE,
+                    "Ingress temporarily disabled due to storage limits",
+                    flow, filename, contentType, username);
+        }
+
         log.debug("Ingressing: flow={} filename={} contentType={} username={}",
                 flow,
                 filename,
@@ -102,15 +116,17 @@ public class IngressRest {
 
             return ResponseEntity.ok(ingressResult.getContentReference().getSegments().get(0).getDid());
         } catch (IngressMetadataException exception) {
-            metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
-            log.error("400 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
-            return ResponseEntity.badRequest().body(exception.getMessage());
+            return errorResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), flow, filename, contentType, username);
         } catch (Throwable exception) {
             // includes IngressException and ObjectStorageException
-            log.error("500 error for flow={} filename={} contentType={} username={}", flow, filename, contentType, username, exception);
-            metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
-            return ResponseEntity.internalServerError().body(exception.getMessage());
+            return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), flow, filename, contentType, username);
         }
+    }
+
+    ResponseEntity<String> errorResponse(HttpStatus code, String explanation, String flow, String filename, String contentType, String username) {
+        log.error("{} error for flow={} filename={} contentType={} username={}: {}", code.value(), flow, filename, contentType, username, explanation);
+        metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
+        return ResponseEntity.status(code).body(explanation);
     }
 
     private Map<String, String> tagsFor(String ingressFlow) {

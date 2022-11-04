@@ -144,6 +144,22 @@
         "editable": true
       },
       {
+        "key": "deltafi.ingress.enabled",
+        "description": "Enables or disables all ingress for the DeltaFi instance.",
+        "defaultValue": true,
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
+        "key": "deltafi.ingress.diskSpaceRequirementInMb",
+        "description": "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.",
+        "defaultValue": 1000,
+        "hidden": false,
+        "refreshable": true,
+        "editable": true
+      },
+      {
         "key": "deltafi.plugins.imageRepositoryBase",
         "description": "Base of the default image repository used for plugins.",
         "defaultValue": "docker.io/deltafi",

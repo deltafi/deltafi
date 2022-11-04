@@ -135,6 +135,7 @@ import static org.mockito.Mockito.never;
 		"schedule.maintenance=false",
 		"schedule.flowSync=false",
 		"schedule.propertySync=false",
+		"deltafi.ingress.enabled=true",
 		"metrics.enabled=false" })
 @Testcontainers
 class DeltaFiCoreApplicationTests {
@@ -309,6 +310,9 @@ class DeltaFiCoreApplicationTests {
 		Authentication authentication = new PreAuthenticatedAuthenticationToken("name", "pass", List.of(new SimpleGrantedAuthority(DeltaFiConstants.ADMIN_PERMISSION)));
 		securityContext.setAuthentication(authentication);
 		SecurityContextHolder.setContext(securityContext);
+
+		Mockito.when(ingressService.isEnabled()).thenReturn(true);
+		Mockito.when(ingressService.isStorageAvailable()).thenReturn(true);
 	}
 
 	void loadConfig() {
@@ -3431,8 +3435,20 @@ class DeltaFiCoreApplicationTests {
 	void testIngress_missingFilename() {
 		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 		assertEquals(400, response.getStatusCodeValue());
+	}
 
-		Mockito.verifyNoInteractions(ingressService);
+	@Test
+	void testIngress_disabled() {
+		Mockito.when(ingressService.isEnabled()).thenReturn(false);
+		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
+		assertEquals(503, response.getStatusCodeValue());
+	}
+
+	@Test
+	void testIngress_storageLimit() {
+		Mockito.when(ingressService.isStorageAvailable()).thenReturn(false);
+		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
+		assertEquals(507, response.getStatusCodeValue());
 	}
 
 	@Test

@@ -40,4 +40,12 @@ public class DiskMetrics {
         long targetBytes = (long)((double) percent / 100 * limit);
         return usage - targetBytes;
     }
+
+    /**
+     * Number of bytes remaining for content storage
+     * @return available space remaining in content storage (in bytes)
+     */
+    public long bytesRemaining() {
+        return limit - usage;
+    }
 }

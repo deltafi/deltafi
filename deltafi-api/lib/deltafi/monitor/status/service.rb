@@ -20,6 +20,7 @@
 
 require 'benchmark'
 
+require "deltafi/monitor/status/check"
 Dir[File.join(File.dirname(__FILE__), 'checks', '*.rb')].each do |f|
   require "deltafi/monitor/status/checks/#{File.basename(f).split('.')[0]}"
 end

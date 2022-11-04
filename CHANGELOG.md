@@ -6,14 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.99.2
 
 ### Added
-- `testFlow` is now a property of `FlowStatus`.  This is used to indicate if a flow is in test mode, meaning that it is not intended to be egressed from the system
+- `testFlow` is now a property of `FlowStatus`.  This is used to indicate if a flow is in test mode, meaning that it 
+is not intended to be egressed from the system
 - New mutations added to enable and disable test flows:
   - `enableIngressTestFlow`
   - `disableIngressTestFlow`
   - `enableEgressTestFlow`
   - `disableEgressTestFlow`
-- `DeltaFile`s now indicate if they were processed with a test flow by setting a `testMode` flag and populating a `testFlowReason` field to indicate the reason for being processed in test mode
+- `DeltaFile`s now indicate if they were processed with a test flow by setting a `testMode` flag and populating a 
+`testFlowReason` field to indicate the reason for being processed in test mode
 - System snapshots will snapshot the `testMode` status for a flow
+- System configuration `deltafi.ingress.enabled` to globally enable or disable all ingress
+- System configuration `deltafi.ingress.diskSpaceRequirementInMb` to specify amount of disk space required to allow ingress
+- Ingress backpressure will occur when the content storage does not have the required free storage space.  Ingress will
+return a `507` error when there is not enough free content storage.
 - Single-step bootstrap installer script added for MacOS, CentOS, and Rocky Linux
 
 ### Changed
@@ -30,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: On MacOS arm64, the bitnami-shell installation was fixed
 - Pods that complete (seen when running cron jobs) were causing a degraded state
 - Properly close PushbackInputStream when saving content
+- Ambiguous require ordering in deltafi-api service classes caused issues on Debian
 
 ### Tech-Debt/Refactor
 

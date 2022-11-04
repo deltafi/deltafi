@@ -32,10 +32,17 @@ public class DeltaFiProperties {
         private int policyBatchSize = 1000;
     }
 
+    @Data
+    public static class IngressProperties {
+        private boolean enabled = true;
+        private long diskSpaceRequirementInMb = 1000;
+    }
+
     private int requeueSeconds = 30;
     private int coreServiceThreads = 16;
     private Duration deltaFileTtl = Duration.ofDays(14);
     private DeleteProperties delete = new DeleteProperties();
+    private IngressProperties ingress = new IngressProperties();
     private String apiUrl;
     private String systemName;
     private PluginConfig plugins;

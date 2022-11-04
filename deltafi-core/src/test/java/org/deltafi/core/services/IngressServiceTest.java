@@ -25,7 +25,9 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.IngressMetadataException;
+import org.deltafi.core.services.api.model.DiskMetrics;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,7 +59,13 @@ class IngressServiceTest {
     ContentStorageService contentStorageService;
 
     @Mock
+    DiskSpaceService diskSpaceService;
+
+    @Mock
     DeltaFilesService deltaFilesService;
+
+    @Spy
+    DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
 
     @Spy
     @SuppressWarnings("unused")
@@ -76,6 +84,26 @@ class IngressServiceTest {
         Mockito.verify(contentStorageService).save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
         Mockito.verify(deltaFilesService).ingress(any());
         Assertions.assertNotNull(created.getContentReference().getSegments().get(0).getDid());
+    }
+
+    @Test @SneakyThrows
+    void isEnabled() {
+        Assertions.assertTrue(ingressService.isEnabled());
+        deltaFiProperties.getIngress().setEnabled(false);
+        Assertions.assertFalse(ingressService.isEnabled());
+    }
+
+    @Test @SneakyThrows
+    void isStorageAvailable() {
+        Mockito.when(diskSpaceService.contentMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
+        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(1);
+        Assertions.assertTrue(ingressService.isStorageAvailable());
+        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(4);
+        Assertions.assertTrue(ingressService.isStorageAvailable());
+        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(5);
+        Assertions.assertFalse(ingressService.isStorageAvailable());
+        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(6);
+        Assertions.assertFalse(ingressService.isStorageAvailable());
     }
 
     @Test @SneakyThrows
