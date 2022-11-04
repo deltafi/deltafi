@@ -71,6 +71,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String EGRESSED = "egressed";
     public static final String EGRESS_FLOW = "egress.flow";
     public static final String FILTERED = "filtered";
+    public static final String TEST_MODE = "testMode";
     public static final String TOTAL_BYTES = "totalBytes";
     public static final String INGRESS_BYTES = "ingressBytes";
     public static final String REQUEUE_COUNT = "requeueCount";
@@ -538,6 +539,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (nonNull(filter.getFiltered())) {
             andCriteria.add(Criteria.where(FILTERED).is(filter.getFiltered()));
+        }
+
+        if (nonNull(filter.getTestMode())) {
+            if (filter.getTestMode()) {
+                andCriteria.add(Criteria.where(TEST_MODE).is(true));
+            } else {
+                andCriteria.add(Criteria.where(TEST_MODE).ne(true));
+            }
         }
 
         if (!andCriteria.isEmpty()) {

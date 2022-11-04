@@ -391,6 +391,7 @@ input DeltaFilesFilter {
   errorAcknowledged: Boolean
   egressed: Boolean
   filtered: Boolean
+  testMode: Boolean
 }
 
 type RetryResult {

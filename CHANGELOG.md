@@ -15,6 +15,7 @@ is not intended to be egressed from the system
   - `disableEgressTestFlow`
 - `DeltaFile`s now indicate if they were processed with a test flow by setting a `testMode` flag and populating a 
 `testFlowReason` field to indicate the reason for being processed in test mode
+- `deltaFiles` search filter for `testMode`
 - System snapshots will snapshot the `testMode` status for a flow
 - System configuration `deltafi.ingress.enabled` to globally enable or disable all ingress
 - System configuration `deltafi.ingress.diskSpaceRequirementInMb` to specify amount of disk space required to allow ingress

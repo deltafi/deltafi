@@ -2453,6 +2453,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
+		deltaFile1.setTestMode("TestModeReason");
 		deltaFileRepo.save(deltaFile1);
 
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
@@ -2470,6 +2471,8 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.addEgressFlow("MyEgressFlow2");
 		deltaFileRepo.save(deltaFile2);
 
+		testFilter(DeltaFilesFilter.newBuilder().testMode(true).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().testMode(false).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().createdAfter(MONGO_NOW).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().createdBefore(MONGO_NOW).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().domains(Collections.emptyList()).build(), deltaFile2, deltaFile1);
