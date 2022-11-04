@@ -48,6 +48,7 @@ export default function useFlowQueryBuilder() {
               errorType: true,
               message: true,
             },
+            testMode: true,
           },
           transformActions: {
             name: true,
@@ -103,6 +104,7 @@ export default function useFlowQueryBuilder() {
               errorType: true,
               message: true,
             },
+            testMode: true,
           },
           includeIngressFlows: true,
           excludeIngressFlows: true,
@@ -158,6 +160,7 @@ export default function useFlowQueryBuilder() {
               errorType: true,
               message: true,
             },
+            testMode: true,
           },
           transformActions: {
             name: true,
@@ -230,6 +233,7 @@ export default function useFlowQueryBuilder() {
               errorType: true,
               message: true,
             },
+            testMode: true,
           },
           includeIngressFlows: true,
           excludeIngressFlows: true,
@@ -287,6 +291,7 @@ export default function useFlowQueryBuilder() {
             message: true,
             errorType: true,
           },
+          testMode: true,
         },
         transformActions: {
           name: true,
@@ -379,6 +384,7 @@ export default function useFlowQueryBuilder() {
             errorType: true,
             message: true,
           },
+          testMode: true,
         },
         includeIngressFlows: true,
         excludeIngressFlows: true,
@@ -429,6 +435,7 @@ export default function useFlowQueryBuilder() {
             errorType: true,
             message: true,
           },
+          testMode: true,
         },
       },
     };
@@ -469,6 +476,7 @@ export default function useFlowQueryBuilder() {
             errorType: true,
             message: true,
           },
+          testMode: true,
         },
       },
     };
@@ -559,6 +567,55 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "stopEgressFlowByName", "mutation");
   };
 
+  // sets an ingress flow to test mode
+  const enableTestIngressFlowByName = (flowName: string) => {
+    const query = {
+      enableIngressTestMode: {
+        __args: {
+          flowName: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableTestIngressFlowByName", "mutation");
+  };
+
+    // sets an ingress flow to test mode
+  const disableTestIngressFlowByName = (flowName: string) => {
+    const query = {
+      disableIngressTestMode: {
+        __args: {
+          flowName: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableTestIngressFlowByName", "mutation");
+  };
+
+  // sets an ingress flow to test mode
+  const enableTestEgressFlowByName = (flowName: string) => {
+    const query = {
+      enableEgressTestMode: {
+        __args: {
+          flowName: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableEgressTestModeFlowByName", "mutation");
+  };
+
+    // sets an ingress flow to test mode
+  const disableTestEgressFlowByName = (flowName: string) => {
+    const query = {
+      disableEgressTestMode: {
+        __args: {
+          flowName: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
+  };
+
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
@@ -584,5 +641,9 @@ export default function useFlowQueryBuilder() {
     stopEnrichFlowByName,
     startEgressFlowByName,
     stopEgressFlowByName,
+    enableTestIngressFlowByName,
+    disableTestIngressFlowByName,
+    enableTestEgressFlowByName,
+    disableTestEgressFlowByName
   };
 }

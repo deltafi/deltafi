@@ -18,13 +18,13 @@
 
 <template>
   <CollapsiblePanel :header="FlowTypeTitle" class="table-panel pb-3">
-    <DataTable v-model:filters="filters" :value="flowDataByType" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" :global-filter-fields="['searchField', 'mvnCoordinates']" sort-field="name" :sort-order="1" :row-hover="true">
+    <DataTable v-model:filters="filters" :value="flowDataByType" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField', 'mvnCoordinates']" sort-field="name" :sort-order="1" :row-hover="true">
       <template #empty>No {{ FlowTypeTitle }} flows found.</template>
       <template #loading>Loading {{ FlowTypeTitle }} flows. Please wait.</template>
-      <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
+      <Column header="Name" field="name" class="name-column" :sortable="true">
         <template #body="{ data }">
           <div class="d-flex justify-content-start">
-            <DialogTemplate component-name="FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType" :variables="data.variables">
+            <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType" :variables="data.variables">
               <span class="cursor-pointer">
                 {{ data.name }}
                 <i v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" :class="infoIconClass(data)" />
@@ -36,13 +36,18 @@
           </div>
         </template>
       </Column>
-      <Column header="Bit Rate" :style="{ width: '10%' }">
+      <Column header="Bit Rate" class="bit-rate-column">
         <template #body="{ data }">
           <span class="text-muted">{{ bitRate(data.name) }}</span>
         </template>
       </Column>
-      <Column header="Description" field="description" :style="{ width: '45%' }" />
-      <Column class="flow-state-column">
+      <Column header="Description" field="description" />
+      <Column v-if="FlowTypeTitle !== 'Enrich'" header="Test Mode" class="test-mode-column">
+        <template #body="{ data }">
+          <FlowTestModeInputSwitchVue :row-data-prop="data"></FlowTestModeInputSwitchVue>
+        </template>
+      </Column>
+      <Column header="Active" class="flow-state-column">
         <template #body="{ data }">
           <template v-if="!_.isEmpty(data.flowStatus.errors)">
             <FlowStateValidationButton :row-data-prop="data"></FlowStateValidationButton>
@@ -59,8 +64,9 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import FlowStateInputSwitch from "@/components/FlowStateInputSwitch.vue";
-import FlowStateValidationButton from "@/components/FlowStateValidationButton.vue";
+import FlowStateInputSwitch from "@/components/flow/FlowStateInputSwitch.vue";
+import FlowStateValidationButton from "@/components/flow/FlowStateValidationButton.vue";
+import FlowTestModeInputSwitchVue from "@/components/flow/FlowTestModeInputSwitch.vue";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch } from "vue";
 

@@ -7,8 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Changed
+
 - Added `uploadedBy` field to metadata of all uploaded DeltaFiles (#283)
 - Added support for content segments (#288)
+- Added Test Mode for Flows. (#285)
 
 ### Fixed
 

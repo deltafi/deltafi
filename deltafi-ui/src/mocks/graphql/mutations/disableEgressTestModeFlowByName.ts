@@ -16,31 +16,6 @@
    limitations under the License.
 */
 
-.cursor-pointer {
-  cursor: pointer;
-}
-
-.flows-table {
-  th.name-column {
-    width: 25%;
-  }
-
-  th.bit-rate-column {
-    width: 10rem;
-  }
-
-  th.test-mode-column, th.flow-state-column {
-    width: 7rem !important;
-  }
-
-  td.test-mode-column, td.flow-state-column {
-    padding: 0 !important;
-    .p-inputswitch {
-      margin: 0.25rem 0 0 0.25rem !important;
-    }
-    .p-button {
-      padding: 0.25rem !important;
-      margin: 0 0 0 0.25rem !important;
-    }
-  }
-}
+export default {
+  disableEgressTestMode: true,
+};

@@ -44,6 +44,8 @@ export default function useDeltaFiles() {
           },
         },
         stage: true,
+        testMode: true,
+        testModeReason: true,
         created: true,
         modified: true,
         actions: {

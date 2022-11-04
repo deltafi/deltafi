@@ -117,7 +117,7 @@
 <script setup>
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import FlowVariableViewer from "@/components/FlowVariableViewer.vue";
+import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { computed, defineExpose, defineProps, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";

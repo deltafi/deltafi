@@ -55,9 +55,10 @@
                 </div>
               </div>
               <div class="flex-column flex-column-small">
-                <label for="stageId">Stage:</label>
+                <label for="testModeState">Test Mode:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-                <Dropdown id="stageId" v-model="stageOptionSelected" :placeholder="stageOptionSelected ? stageOptionSelected.name + ' ' : 'Select a Stage'" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <Dropdown id="testModeState" v-model="testModeOptionSelected" :placeholder="testModeOptionSelected ? testModeOptionSelected.name + ' ' : 'Select if in Test Mode'" :options="testModeOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
+
                 <label for="egressedState" class="mt-2">Egressed:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="egressState" v-model="egressedOptionSelected" :placeholder="egressedOptionSelected ? egressedOptionSelected.name + ' ' : 'Select if Egressed'" :options="egressedOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
@@ -66,7 +67,10 @@
                 <Dropdown id="filteredState" v-model="filteredOptionSelected" :placeholder="filteredOptionSelected ? filteredOptionSelected.name + ' ' : 'Select if Filtered'" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
               </div>
               <div class="flex-column">
-                <label for="filteredState">Domain:</label>
+                <label for="stageId">Stage:</label>
+                <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
+                <Dropdown id="stageId" v-model="stageOptionSelected" :placeholder="stageOptionSelected ? stageOptionSelected.name + ' ' : 'Select a Stage'" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <label for="filteredState" class="mt-2">Domain:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="domain" v-model="domainOptionSelected" :placeholder="domainOptionSelected ? domainOptionSelected.name + ' ' : 'Select a Domain'" :options="domainOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="metadataState" class="mt-2">Indexed Metadata:</label>
@@ -183,11 +187,17 @@ const egressedOptions = ref([
   { name: "False", value: false },
 ]);
 const egressedOptionSelected = ref(null);
+const testModeOptions = ref([
+  { name: "True", value: true },
+  { name: "False", value: false },
+]);
+
 const filteredOptions = ref([
   { name: "True", value: true },
   { name: "False", value: false },
 ]);
 const filteredOptionSelected = ref(null);
+const testModeOptionSelected = ref(null);
 const loading = ref(true);
 const totalRecords = ref(0);
 const collapsedSearchOption = ref(true);
@@ -221,6 +231,7 @@ const totalBytesMin = computed(() => (sizeMin.value && sizeTypeSelected.value.to
 const totalBytesMax = computed(() => (sizeMax.value && sizeTypeSelected.value.total ? sizeMax.value * sizeUnitSelected.value.multiplier : null));
 const egressed = computed(() => (egressedOptionSelected.value ? egressedOptionSelected.value.value : null));
 const filtered = computed(() => (filteredOptionSelected.value ? filteredOptionSelected.value.value : null));
+const testMode = computed(() => (testModeOptionSelected.value ? testModeOptionSelected.value.value : null));
 const stageName = computed(() => (stageOptionSelected.value ? stageOptionSelected.value.name : null));
 const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value.name : null));
 
@@ -287,6 +298,7 @@ const items = ref([
           stageOptionSelected.value = null;
           egressedOptionSelected.value = null;
           filteredOptionSelected.value = null;
+          testModeOptionSelected.value = null;
           sizeMax.value = null;
           sizeMin.value = null;
           domainOptionSelected.value = null;
@@ -320,7 +332,7 @@ watch(
   { deep: true }
 );
 
-watch([sizeMin, sizeMax, flowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected], () => {
+watch([sizeMin, sizeMax, flowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected], () => {
   if (watchEnabled.value) fetchDeltaFilesData();
 });
 
@@ -426,7 +438,7 @@ const fetchDeltaFilesData = _.debounce(
     setPersistedParams();
 
     loading.value = true;
-    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value);
+    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value);
     tableData.value = data.data.deltaFiles.deltaFiles;
     loading.value = false;
     totalRecords.value = data.data.deltaFiles.totalCount;
@@ -477,6 +489,7 @@ const getPersistedParams = async () => {
   flowOptionSelected.value = panelState.value.flowOptionState ? { name: panelState.value.flowOptionState } : null;
   egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
   filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
+  testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
   domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
   sizeMin.value = panelState.value.sizeMinState;
   sizeMax.value = panelState.value.sizeMaxState;
@@ -498,6 +511,7 @@ const setPersistedParams = () => {
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
     egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
     filteredOptionState: filteredOptionSelected.value ? filteredOptionSelected.value.name : null,
+    testModeOptionState: testModeOptionSelected.value ? testModeOptionSelected.value.name : null,
     domainOptionState: domainOptionSelected.value ? domainOptionSelected.value.name : null,
     sizeMinState: sizeMin.value,
     sizeMaxState: sizeMax.value,

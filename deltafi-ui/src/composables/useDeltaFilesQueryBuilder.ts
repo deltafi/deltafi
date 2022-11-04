@@ -22,7 +22,7 @@ import useGraphQL from './useGraphQL'
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number,testMode?: Boolean) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -31,6 +31,7 @@ export default function useDeltaFilesQueryBuilder() {
           filter: {
             egressed: egressed,
             filtered: filtered,
+            testMode: testMode,
             sourceInfo: {
               flow: flowName,
               filename: fileName
