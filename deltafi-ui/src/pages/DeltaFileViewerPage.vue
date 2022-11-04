@@ -39,7 +39,7 @@
     </div>
     <div v-else-if="loaded">
       <Message v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
-      <Message v-if="testMode" severity="info" :closable="false">DeltaFile was processed in test mode. Reason: {{ deltaFile.testModeReason }} </Message>
+      <Message v-if="testMode" severity="info" :closable="false">This DeltaFile was processed in test mode. Reason: {{ deltaFile.testModeReason }} </Message>
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileInfoPanel :delta-file-data="deltaFile" />
