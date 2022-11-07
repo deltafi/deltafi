@@ -46,6 +46,6 @@ const iconClass = (messageSeverity) => {
 };
 
 const formatString = (details) => {
-  return details.replace("\n", "<br/>");
+  return details.toString().replace("\n", "<br/>");
 };
 </script>

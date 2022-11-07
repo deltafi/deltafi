@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fixed broken Indexed Metadata links to Search page (#284)
 - Fixed blank error message Toast (#287)
+- Fixed issue with error resume on inactive flows (#290)
 
 ## [0.99.1]
 

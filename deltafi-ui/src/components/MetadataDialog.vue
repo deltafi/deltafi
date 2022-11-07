@@ -268,7 +268,7 @@ const requestResumeReplay = async () => {
       batchCompleteValue.value = 0;
       if (successBatch) {
         const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
-        if (props.did.length > maxSuccessDisplay) links.push('...');
+        if (props.did.length > maxSuccessDisplay) links.push("...");
         let pluralized = pluralize(props.did.length, "DeltaFile");
         notify.success(`Resume request sent successfully for ${pluralized}`, links.join(", "));
         emit("update");
@@ -300,7 +300,7 @@ const requestResumeReplay = async () => {
       }
     }
   } catch (error) {
-    notify.error("Resume request failed", error);
+    displayBatchingDialog.value = false;
   }
 };
 
