@@ -15,7 +15,4 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-@ParametersAreNonnullByDefault
-package org.deltafi.common.metrics.statsd;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+@javax.annotation.ParametersAreNonnullByDefault package org.deltafi.common.metrics.statsd;
