@@ -300,7 +300,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
-
         Query query = new Query(buildDeltaFilesCriteria(filter));
 
         if (nonNull(offset) && offset > 0) {
@@ -481,9 +480,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getErrorCause())) {
-            Criteria errorState = Criteria.where(STATE).is(ActionState.ERROR.name());
-            Criteria errorCauseRegex = Criteria.where(ERROR_CAUSE).regex(filter.getErrorCause());
-            Criteria actionElemMatch = new Criteria().andOperator(errorState, errorCauseRegex);
+            ActionState actionState = (nonNull(filter.getFiltered()) && filter.getFiltered()) ?
+                    ActionState.FILTERED : ActionState.ERROR;
+            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(actionState.name()),
+                    Criteria.where(ERROR_CAUSE).regex(filter.getErrorCause()));
             andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
         }
 

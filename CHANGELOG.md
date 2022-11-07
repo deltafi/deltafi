@@ -22,6 +22,7 @@ is not intended to be egressed from the system
 - Ingress backpressure will occur when the content storage does not have the required free storage space.  Ingress will
 return a `507` error when there is not enough free content storage.
 - Single-step bootstrap installer script added for MacOS, CentOS, and Rocky Linux
+- Allow DeltaFiles to be queried by filter message
 
 ### Changed
 - ContentReferences are now composed of a list of on-disk segments

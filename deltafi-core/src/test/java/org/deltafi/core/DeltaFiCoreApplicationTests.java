@@ -2538,6 +2538,36 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testQueryByFilterMessage() {
+		// Not filtered
+		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
+		deltaFileRepo.save(deltaFile1);
+		// Not filtered, with errorCause
+		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(1), MONGO_NOW.plusSeconds(1));
+		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Error reason 1").build()));
+		deltaFileRepo.save(deltaFile2);
+		// Filtered, reason 1
+		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
+		deltaFile3.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.FILTERED).errorCause("Filtered reason 1").build()));
+		deltaFile3.setFiltered(true);
+		deltaFileRepo.save(deltaFile3);
+		// Filtered, reason 2
+		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.plusSeconds(3));
+		deltaFile4.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.FILTERED).errorCause("Filtered reason 2").build()));
+		deltaFile4.setFiltered(true);
+		deltaFileRepo.save(deltaFile4);
+
+		testFilter(DeltaFilesFilter.newBuilder().filtered(true).errorCause("^Filtered reason .*").build(), deltaFile4, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().filtered(true).errorCause(".*reason 1.*").build(), deltaFile3);
+	}
+
+	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
+		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
+	}
+
+	@Test
 	void deleteIngressFlowPlanByPlugin() {
 		clearForFlowTests();
 		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
@@ -2609,11 +2639,6 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.saveAll(List.of(egressFlowA, egressFlowB, egressFlowC));
 		assertThat(egressFlowRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
 		assertThat(egressFlowRepo.count()).isEqualTo(1);
-	}
-
-	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
-		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
-		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
 	}
 
 	@Test
