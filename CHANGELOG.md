@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.2
+## [Unreleased] - Next release 0.99.3
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.2] - 2022-11-07
 
 ### Added
 - `testFlow` is now a property of `FlowStatus`.  This is used to indicate if a flow is in test mode, meaning that it 
@@ -23,6 +41,7 @@ is not intended to be egressed from the system
 return a `507` error when there is not enough free content storage.
 - Single-step bootstrap installer script added for MacOS, CentOS, and Rocky Linux
 - Allow DeltaFiles to be queried by filter message
+- Added saveMany to the content storage service
 
 ### Changed
 - ContentReferences are now composed of a list of on-disk segments
@@ -39,12 +58,11 @@ return a `507` error when there is not enough free content storage.
 - Pods that complete (seen when running cron jobs) were causing a degraded state
 - Properly close PushbackInputStream when saving content
 - Ambiguous require ordering in deltafi-api service classes caused issues on Debian
+- Fixed Minio issue with saving large numbers of files at a time in decompress stage by using saveMany/Minio snowball interface
 
 ### Tech-Debt/Refactor
 - Groundwork laid out for RBAC permissions.  Permissions are currently hard coded to "admin"
 - Removed invalid action types
-
-### Security
 
 ### Upgrade and Migration
 - Snapshot migration was added to add empty arrays for the new testFlow fields
@@ -810,7 +828,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.0...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.2...main
+[0.99.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.1...0.99.2
 [0.99.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.0...0.99.1
 [0.99.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.5...0.99.0
 [0.98.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.4...0.98.5
