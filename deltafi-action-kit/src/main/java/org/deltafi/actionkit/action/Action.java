@@ -29,15 +29,13 @@ import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionDescriptor;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -164,6 +162,17 @@ public abstract class Action<P extends ActionParameters> {
      */
     protected ContentReference saveContent(String did, InputStream content, String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
+    }
+
+    /**
+     * Save content associated with a DeltaFile to content storage
+     * @param did The DID for the DeltaFile associated with the saved content
+     * @param contentToBytes map of content objects to the bytes that need to be stored for the content
+     * @return an updated list of content that includes the new content references
+     * @throws ObjectStorageException when the content storage service fails to store content
+     */
+    protected List<Content> saveContent(String did, Map<Content, byte[]> contentToBytes) throws ObjectStorageException {
+        return contentStorageService.saveMany(did, contentToBytes);
     }
 
     /**

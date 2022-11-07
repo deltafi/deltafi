@@ -30,7 +30,6 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.MultipartTransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
@@ -51,9 +50,7 @@ import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -242,12 +239,17 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
 
     void unarchive(ArchiveInputStream archive, @NotNull TransformResult result, @NotNull String did) throws IOException, ObjectStorageException {
         ArchiveEntry entry;
+        Map<Content, byte[]> contentToBytes = new LinkedHashMap<>();
         while ((entry = archive.getNextEntry()) != null) {
             if (entry.isDirectory()) continue;
-            ContentReference reference = saveContent(did, CloseShieldInputStream.wrap(archive), MediaType.APPLICATION_OCTET_STREAM);
-            Content content = new Content(entry.getName(), Collections.singletonList(new KeyValue("lastModified", entry.getLastModifiedDate().toString())), reference);
-            result.addContent(content);
+            Content content = Content.newBuilder()
+                    .name(entry.getName())
+                    .metadata(List.of(new KeyValue("lastModified", entry.getLastModifiedDate().toString())))
+                    .build();
+
+            contentToBytes.put(content, archive.readAllBytes());
         }
+        result.getContent().addAll(saveContent(did, contentToBytes));
     }
 
     void unarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did) throws DecompressionTransformException {

@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 public interface ObjectStorageService {
     boolean bucketExists(String bucketName) throws ObjectStorageException;
@@ -38,6 +39,14 @@ public interface ObjectStorageService {
     }
 
     ObjectReference putObject(ObjectReference objectReference, InputStream inputStream) throws ObjectStorageException;
+
+    /**
+     * Writes the InputStream to object storage for each ObjectReference
+     * @param bucket where each ObjectReference should be stored
+     * @param objectsToSave map of the object references to the content input stream
+     * @throws ObjectStorageException when storing the objects fails
+     */
+    void putObjects(String bucket, Map<ObjectReference, InputStream> objectsToSave) throws ObjectStorageException;
 
     default ObjectReference putObjectAsByteArray(ObjectReference objectReference, byte[] object) throws ObjectStorageException {
         return putObject(objectReference, new ByteArrayInputStream(object));

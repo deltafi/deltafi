@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -129,9 +130,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public ObjectReference putObject(ObjectReference objectReference, InputStream inputStream) throws ObjectStorageException {
-        CountingInputStream countingInputStream = new CountingInputStream(inputStream);
-
-        try {
+        try (CountingInputStream countingInputStream = new CountingInputStream(inputStream)) {
             ObjectWriteResponse objectWriteResponse = minioClient.putObject(PutObjectArgs.builder()
                     .bucket(objectReference.getBucket())
                     .object(objectReference.getName())
@@ -151,6 +150,27 @@ public class MinioObjectStorageService implements ObjectStorageService {
                 log.error("Failed to close input stream: {}", e.getMessage());
             }
         }
+    }
+
+    @Override
+    public void putObjects(String bucket, Map<ObjectReference, InputStream> inputStreamMap) throws ObjectStorageException {
+        try {
+            minioClient.uploadSnowballObjects(UploadSnowballObjectsArgs
+                            .builder()
+                            .bucket(bucket)
+                            .objects(inputStreamMap.entrySet().stream().map(this::createSnowballObject).collect(Collectors.toList()))
+                            .build());
+        } catch (ErrorResponseException | InsufficientDataException | InternalException |
+                 InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
+                 ServerException | XmlParserException e) {
+            log.error("Failed to save incoming object", e);
+            throw new ObjectStorageException("Failed to send incoming data to minio", e);
+        }
+    }
+
+    private SnowballObject createSnowballObject(Map.Entry<ObjectReference, InputStream> objectReferenceInputStreamEntry) {
+        ObjectReference objectReference = objectReferenceInputStreamEntry.getKey();
+        return new SnowballObject(objectReference.getName(), objectReferenceInputStreamEntry.getValue(), objectReference.getSize(), null);
     }
 
     @Override

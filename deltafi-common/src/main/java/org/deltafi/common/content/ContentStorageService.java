@@ -21,11 +21,11 @@ import lombok.RequiredArgsConstructor;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.common.types.Content;
 
+import javax.ws.rs.core.MediaType;
 import java.io.*;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -67,8 +67,34 @@ public class ContentStorageService {
         return save(did, new ByteArrayInputStream(content), mediaType);
     }
 
+    public List<Content> saveMany(String did, Map<Content, byte[]> contentToBytes) throws ObjectStorageException {
+        List<Content> updatedContent = new ArrayList<>();
+
+        Map<ObjectReference, InputStream> objectsToSave = new LinkedHashMap<>();
+        for (Map.Entry<Content, byte[]> inputStreamEntry : contentToBytes.entrySet()) {
+            Content content = inputStreamEntry.getKey();
+            byte[] entryBytes = inputStreamEntry.getValue();
+
+            if (entryBytes.length == 0) {
+                content.setContentReference(new ContentReference(MediaType.APPLICATION_OCTET_STREAM));
+                updatedContent.add(content);
+                continue;
+            }
+
+            Segment segment = new Segment(did);
+            segment.setSize(entryBytes.length);
+            content.setContentReference(new ContentReference(MediaType.APPLICATION_OCTET_STREAM, segment));
+
+            objectsToSave.put(buildObjectReference(segment), new ByteArrayInputStream(entryBytes));
+            updatedContent.add(content);
+        }
+
+        objectStorageService.putObjects(CONTENT_BUCKET, objectsToSave);
+        return updatedContent;
+    }
+
     public ContentReference save(String did, InputStream inputStream, String mediaType) throws ObjectStorageException {
-        Segment segment = new Segment(UUID.randomUUID().toString(), did);
+        Segment segment = new Segment(did);
 
         try(PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream)) {
             int byTe = pushbackInputStream.read();
@@ -103,7 +129,7 @@ public class ContentStorageService {
     }
 
     private ObjectReference buildObjectReference(Segment segment) {
-        return new ObjectReference(CONTENT_BUCKET, segment.getDid() + "/" + segment.getUuid(),
+        return new ObjectReference(CONTENT_BUCKET, segment.objectName(),
                 segment.getOffset(), segment.getSize());
     }
 }

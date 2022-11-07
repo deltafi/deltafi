@@ -27,23 +27,22 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.deltafi.core.parameters.DecompressionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
 import javax.ws.rs.core.MediaType;
 import java.io.FilterInputStream;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -52,7 +51,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
-public class DecompressionTransformActionTest {
+class DecompressionTransformActionTest {
     private static final String CONTENT_TYPE = "application/octet-stream";
     private static final String DID = UUID.randomUUID().toString();
     private static final String FLOW = "theFlow";
@@ -71,10 +70,13 @@ public class DecompressionTransformActionTest {
     @InjectMocks
     DecompressionTransformAction action;
 
+    @Captor
+    ArgumentCaptor<Map<Content, byte[]>> contentMapCaptor;
+
     @Test
     @SneakyThrows
-    public void decompressTarGz() {
-        decompressionTest(
+    void decompressTarGz() {
+        unarchiveTest(
                 "things.tar.gz",
                 DecompressionType.TAR_GZIP,
                 List.of(
@@ -86,8 +88,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoDecompressTarGz() {
-        decompressionTest(
+   void autoDecompressTarGz() {
+        unarchiveTest(
                 "things.tar.gz",
                 DecompressionType.AUTO,
                 List.of(
@@ -100,8 +102,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoDecompressTarZ() {
-        decompressionTest(
+   void autoDecompressTarZ() {
+        unarchiveTest(
                 "things.tar.Z",
                 DecompressionType.AUTO,
                 List.of(
@@ -114,8 +116,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoDecompressTarXZ() {
-        decompressionTest(
+   void autoDecompressTarXZ() {
+        unarchiveTest(
                 "things.tar.xz",
                 DecompressionType.AUTO,
                 List.of(
@@ -128,8 +130,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void decompressTarXZ() {
-        decompressionTest(
+   void decompressTarXZ() {
+        unarchiveTest(
                 "things.tar.xz",
                 DecompressionType.TAR_XZ,
                 List.of(
@@ -142,8 +144,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void decompressTarZ() {
-        decompressionTest(
+   void decompressTarZ() {
+        unarchiveTest(
                 "things.tar.Z",
                 DecompressionType.TAR_Z,
                 List.of(
@@ -156,8 +158,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void decompressAR() {
-        decompressionTest(
+   void decompressAR() {
+        unarchiveTest(
                 "things.ar",
                 DecompressionType.AR,
                 List.of(
@@ -170,8 +172,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoDecompressAR() {
-        decompressionTest(
+   void autoDecompressAR() {
+        unarchiveTest(
                 "things.ar",
                 DecompressionType.AUTO,
                 List.of(
@@ -184,8 +186,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoDecompressZip() {
-        decompressionTest(
+   void autoDecompressZip() {
+        unarchiveTest(
                 "things.zip",
                 DecompressionType.AUTO,
                 List.of(
@@ -198,8 +200,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoDecompressTar() {
-        decompressionTest(
+   void autoDecompressTar() {
+        unarchiveTest(
                 "things.tar",
                 DecompressionType.AUTO,
                 List.of(
@@ -212,7 +214,7 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoDecompressGzip() {
+   void autoDecompressGzip() {
         decompressionTest(
                 "thing1.txt.gz",
                 DecompressionType.AUTO,
@@ -225,8 +227,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void decompressZip() {
-        decompressionTest(
+   void decompressZip() {
+        unarchiveTest(
                 "things.zip",
                 DecompressionType.ZIP,
                 List.of(
@@ -238,19 +240,20 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void decompressGzip() {
+   void decompressGzip() {
         decompressionTest(
                 "thing1.txt.gz",
                 DecompressionType.GZIP,
                 List.of(
                         new ExpectedFile("thing1.txt.gz", "thing1\n")
-                )
+                ),
+                "gz"
         );
     }
 
     @Test
     @SneakyThrows
-    public void autoDecompressXZ() {
+   void autoDecompressXZ() {
         decompressionTest(
                 "thing1.txt.xz",
                 DecompressionType.AUTO,
@@ -263,7 +266,7 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void decompressXZ() {
+   void decompressXZ() {
         decompressionTest(
                 "thing1.txt.xz",
                 DecompressionType.XZ,
@@ -276,19 +279,20 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void decompressZ() {
+   void decompressZ() {
         decompressionTest(
                 "thing1.txt.Z",
                 DecompressionType.Z,
                 List.of(
                         new ExpectedFile("thing1.txt.Z", "thing1\n")
-                )
+                ),
+                "z"
         );
     }
 
     @Test
     @SneakyThrows
-    public void autoDecompressZ() {
+   void autoDecompressZ() {
         decompressionTest(
                 "thing1.txt.Z",
                 DecompressionType.AUTO,
@@ -301,8 +305,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void unarchiveTar() {
-        decompressionTest(
+   void unarchiveTar() {
+        unarchiveTest(
                 "things.tar",
                 DecompressionType.TAR,
                 List.of(
@@ -314,8 +318,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoUnarchiveTarZ() {
-        decompressionTest(
+   void autoUnarchiveTarZ() {
+        unarchiveTest(
                 "things.tar.Z",
                 DecompressionType.AUTO,
                 List.of(
@@ -328,8 +332,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void autoUnarchiveTarXZ() {
-        decompressionTest(
+   void autoUnarchiveTarXZ() {
+        unarchiveTest(
                 "things.tar.xz",
                 DecompressionType.AUTO,
                 List.of(
@@ -342,8 +346,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void unarchiveSubdirectoryTar() {
-        decompressionTest(
+   void unarchiveSubdirectoryTar() {
+        unarchiveTest(
                 "foobar.tar",
                 DecompressionType.TAR,
                 List.of(
@@ -359,8 +363,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void unarchiveSubdirectoryZip() {
-        decompressionTest(
+   void unarchiveSubdirectoryZip() {
+        unarchiveTest(
                 "foobar.zip",
                 DecompressionType.ZIP,
                 List.of(
@@ -376,8 +380,8 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void unarchiveSubdirectoryAutoZip() {
-        decompressionTest(
+   void unarchiveSubdirectoryAutoZip() {
+        unarchiveTest(
                 "foobar.zip",
                 DecompressionType.AUTO,
                 List.of(
@@ -393,7 +397,7 @@ public class DecompressionTransformActionTest {
     }
 
     @Test @SneakyThrows
-    public void decompressionTypeMismatch() {
+   void decompressionTypeMismatch() {
         decompressionErrorTest(
                 "things.tar.gz",
                 DecompressionType.ZIP,
@@ -402,7 +406,7 @@ public class DecompressionTransformActionTest {
     }
 
     @Test @SneakyThrows
-    public void truncatedFile() {
+   void truncatedFile() {
         decompressionErrorTest(
                 "bad.things.tar.gz",
                 DecompressionType.TAR_GZIP,
@@ -411,7 +415,7 @@ public class DecompressionTransformActionTest {
     }
 
     @Test @SneakyThrows
-    public void autoNoCompression() {
+   void autoNoCompression() {
         decompressionErrorTest(
                 "thing1.txt",
                 DecompressionType.AUTO,
@@ -421,7 +425,7 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void loadFailure() {
+   void loadFailure() {
         String testFile = "things.tar.gz";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.GZIP);
         Content content = content(testFile);
@@ -435,46 +439,69 @@ public class DecompressionTransformActionTest {
 
     @Test
     @SneakyThrows
-    public void storeFailure() {
+   void storeFailure() {
         String testFile = "things.tar.gz";
         DecompressionTransformParameters params = new DecompressionTransformParameters(DecompressionType.TAR_GZIP);
         Content content = content(testFile);
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
-        Mockito.when(contentStorageService.save(eq(DID), (InputStream) Mockito.any(), eq(CONTENT_TYPE))).thenThrow(new ObjectStorageException("Boom", new Exception()));
+        Mockito.when(contentStorageService.saveMany(eq(DID), Mockito.anyMap())).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
         TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Unable to store content"));
     }
 
-
-    @SneakyThrows
-    void storeContent() {
-        Mockito.when(contentStorageService.save(eq(DID), (InputStream) Mockito.any(), eq(CONTENT_TYPE))).thenAnswer(
-                (Answer<ContentReference>) invocation -> {
-                    Object[] args = invocation.getArguments();
-                    String did = (String) args[0];
-                    InputStream is = (InputStream)args[1];
-                    String content = new String(is.readAllBytes());
-                    long contentLength = content.length();
-                    String contentType = (String) args[2];
-                    Segment segment = new Segment(content, 0, contentLength, did);
-                    return new ContentReference(contentType, segment);
-                });
-    }
-
     @Data @AllArgsConstructor
     static class ExpectedFile {
         String filename;
         String contents;
+
+        Content toContentWithOutReference() {
+            Content content = new Content();
+            content.setName(filename);
+            content.setMetadata(List.of());
+            return content;
+        }
     }
 
     @SneakyThrows
-    public void decompressionTest(String testFile,
-                                  DecompressionType decompressionType,
-                                  List<ExpectedFile> expectedFiles) {
-        decompressionTest(testFile, decompressionType, expectedFiles, decompressionType.getValue());
+    public void unarchiveTest(String testFile,
+                              DecompressionType decompressionType,
+                              List<ExpectedFile> expectedFiles) {
+        unarchiveTest(testFile, decompressionType, expectedFiles, decompressionType.getValue());
+    }
+
+    @SneakyThrows
+   void unarchiveTest(String testFile,
+                      DecompressionType decompressionType,
+                      List<ExpectedFile> expectedFiles,
+                      String expectedDecompressionType) {
+        DecompressionTransformParameters params = new DecompressionTransformParameters(decompressionType);
+        Content content = content(testFile);
+
+        Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
+
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+
+        assertThat(result, instanceOf(TransformResult.class));
+        TransformResult tr = (TransformResult) result;
+
+        Mockito.verify(contentStorageService).saveMany(Mockito.eq(ACTION_CONTEXT.getDid()), contentMapCaptor.capture());
+
+        assertThat(tr.getMetadata(), hasItem(new KeyValue("decompressionType", expectedDecompressionType)));
+
+        Map<Content, byte[]> contentMap = contentMapCaptor.getValue();
+        Set<Content> contentList = contentMap.keySet();
+        assertThat(contentMap.size(), equalTo(expectedFiles.size()));
+
+        // Ignore the metadata, just match the files
+        List<Content> normalizedContent = contentList.stream()
+                .map( c -> new Content(c.getName(), Collections.emptyList(), c.getContentReference()))
+                .collect(Collectors.toList());
+
+        assertThat(normalizedContent, containsInAnyOrder(expectedFiles.
+                stream().map(ExpectedFile::toContentWithOutReference).toArray()));
     }
 
     @SneakyThrows
@@ -509,7 +536,7 @@ public class DecompressionTransformActionTest {
     }
 
     @SneakyThrows
-    public void decompressionErrorTest(String testFile, DecompressionType decompressionType, String errorCause) {
+   void decompressionErrorTest(String testFile, DecompressionType decompressionType, String errorCause) {
         DecompressionTransformParameters params = new DecompressionTransformParameters(decompressionType);
         Content content = content(testFile);
 
@@ -545,5 +572,20 @@ public class DecompressionTransformActionTest {
     Content content(String filename) {
         ContentReference contentReference = new ContentReference(CONTENT_TYPE, new Segment(DID, 0, contentFor(filename).available(), DID));
         return new Content(filename, Collections.emptyList(), contentReference);
+    }
+
+    @SneakyThrows
+    void storeContent() {
+        Mockito.when(contentStorageService.save(eq(DID), (InputStream) Mockito.any(), eq(CONTENT_TYPE))).thenAnswer(
+                (Answer<ContentReference>) invocation -> {
+                    Object[] args = invocation.getArguments();
+                    String did = (String) args[0];
+                    InputStream is = (InputStream)args[1];
+                    String content = new String(is.readAllBytes());
+                    long contentLength = content.length();
+                    String contentType = (String) args[2];
+                    Segment segment = new Segment(content, 0, contentLength, did);
+                    return new ContentReference(contentType, segment);
+                });
     }
 }

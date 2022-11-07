@@ -20,6 +20,8 @@ package org.deltafi.common.content;
 import lombok.*;
 import org.deltafi.common.storage.s3.ObjectReference;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,6 +30,10 @@ public class Segment {
     private long offset;
     private long size;
     private String did;
+
+    public Segment(String did) {
+        this(UUID.randomUUID().toString(), did);
+    }
 
     public Segment(Segment other) {
         this(other.getUuid(), other.getOffset(), other.getSize(), other.getDid());

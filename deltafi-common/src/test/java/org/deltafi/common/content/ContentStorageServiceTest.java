@@ -17,19 +17,21 @@
  */
 package org.deltafi.common.content;
 
+import org.assertj.core.api.Assertions;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.common.types.Content;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,6 +43,9 @@ public class ContentStorageServiceTest {
 
     @InjectMocks
     private ContentStorageService contentStorageService;
+
+    @Captor
+    ArgumentCaptor<Map<ObjectReference, InputStream>> contentMapCaptor;
 
     @Test
     public void loadsContent() throws ObjectStorageException, IOException {
@@ -106,5 +111,33 @@ public class ContentStorageServiceTest {
         assertEquals("did", contentReference.getSegments().get(0).getDid());
         assertEquals(content.length, contentReference.getSize());
         assertEquals("mediaType", contentReference.getMediaType());
+    }
+
+    @Test
+    void saveContentMap() throws ObjectStorageException {
+        byte[] firstContentBytes = "first".getBytes();
+        byte[] secondContentBytes = "second".getBytes();
+        byte[] emptyContentBytes = "".getBytes();
+
+        Content first = Content.newBuilder().name("first").build();
+        Content second = Content.newBuilder().name("second").build();
+        Content empty = Content.newBuilder().name("empty").build();
+
+        List<Content> content = contentStorageService.saveMany("abc", Map.of(first, firstContentBytes, second, secondContentBytes, empty, emptyContentBytes));
+
+        Assertions.assertThat(content).hasSize(3);
+        Assertions.assertThat(first.getContentReference()).isNotNull();
+        Assertions.assertThat(first.getContentReference().getSegments()).hasSize(1);
+
+        Assertions.assertThat(second.getContentReference()).isNotNull();
+        Assertions.assertThat(first.getContentReference().getSegments()).hasSize(1);
+        Assertions.assertThat(empty.getContentReference()).isNotNull();
+        Assertions.assertThat(empty.getContentReference().getSegments()).isEmpty();
+
+
+        Mockito.verify(objectStorageService).putObjects(Mockito.eq("storage"), contentMapCaptor.capture());
+        Map<ObjectReference, InputStream> contentMap = contentMapCaptor.getValue();
+
+        Assertions.assertThat(contentMap).hasSize(2);
     }
 }
