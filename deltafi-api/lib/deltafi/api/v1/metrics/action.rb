@@ -26,6 +26,8 @@ module Deltafi
       module Metrics
         module Action
           class << self
+            DGS_QUEUE_NAME = 'dgs'
+
             def queues
               query = <<-QUERY
               sortBy(aliasByTags(groupByTags(seriesByTag('name=gauge.action_queue.queue_size'), 'last', 'queue_name'), 'queue_name'), 'max', true)
@@ -38,6 +40,7 @@ module Deltafi
                                                format: 'json'
                                              })
 
+              queue_names = [ DGS_QUEUE_NAME ] + action_names
               queue_list = []
 
               results.each do |metric|
@@ -45,7 +48,7 @@ module Deltafi
                   name: metric[:target],
                   size: metric[:datapoints].map(&:first).compact.last, # Use the oldest non-null datapoint for the gauge value
                   timestamp: metric[:datapoints].last.last.to_i * 1000
-                }
+                } if queue_names.include?(metric[:target])
               end
 
               queue_list
@@ -91,6 +94,13 @@ module Deltafi
               end
 
               output
+            end
+
+            def action_names
+              actions = DF.graphql('query { actionDescriptors { name } }')
+                          .parsed_response['data']['actionDescriptors']
+
+              actions.map { |action| action['name'] }.sort
             end
           end
         end

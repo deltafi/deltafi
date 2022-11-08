@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - `Plugin` upgrades no longer reset the replicas to 1
 - Issue with publishing plugins to gradle.org
 
+- Action queue API endpoint no longer shows inactive queues
+
 ### Tech-Debt/Refactor
 
 ### Security
@@ -26,14 +28,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [0.99.2] - 2022-11-07
 
 ### Added
-- `testFlow` is now a property of `FlowStatus`.  This is used to indicate if a flow is in test mode, meaning that it 
+- `testFlow` is now a property of `FlowStatus`.  This is used to indicate if a flow is in test mode, meaning that it
 is not intended to be egressed from the system
 - New mutations added to enable and disable test flows:
   - `enableIngressTestFlow`
   - `disableIngressTestFlow`
   - `enableEgressTestFlow`
   - `disableEgressTestFlow`
-- `DeltaFile`s now indicate if they were processed with a test flow by setting a `testMode` flag and populating a 
+- `DeltaFile`s now indicate if they were processed with a test flow by setting a `testMode` flag and populating a
 `testFlowReason` field to indicate the reason for being processed in test mode
 - `deltaFiles` search filter for `testMode`
 - System snapshots will snapshot the `testMode` status for a flow
@@ -105,7 +107,7 @@ constructor.
 - Flow summary dashboard ingress files query was incorrect
 - State machine did not block waiting for all enrichment to complete
 - KinD: deltafi-docs built during local build process
-- Intermittent redis failures could cause DeltaFiles to be incorrectly placed into an ERROR state 
+- Intermittent redis failures could cause DeltaFiles to be incorrectly placed into an ERROR state
 
 ### Tech-Debt/Refactor
 - CLI: Clean up of output for migrations
