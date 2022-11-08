@@ -28,6 +28,7 @@ import Tooltip from 'primevue/tooltip';
 import ToastService from 'primevue/toastservice';
 import BadgeDirective from 'primevue/badgedirective';
 import PageHeader from "@/components/PageHeader.vue";
+import useUiConfig from "@/composables/useUiConfig";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -46,12 +47,18 @@ if (process.env.NODE_ENV === 'development') {
   };
 }
 
-const app = createApp(App)
-app.use(router)
-app.use(PrimeVue)
-app.use(ConfirmationService)
-app.use(ToastService)
-app.directive('badge', BadgeDirective);
-app.directive('tooltip', Tooltip);
-app.component('PageHeader', PageHeader)
-app.mount('#app')
+const { fetchUiConfig } = useUiConfig();
+
+Promise.all([
+  fetchUiConfig()
+]).then(() => {
+  const app = createApp(App)
+  app.use(router)
+  app.use(PrimeVue)
+  app.use(ConfirmationService)
+  app.use(ToastService)
+  app.directive('badge', BadgeDirective);
+  app.directive('tooltip', Tooltip);
+  app.component('PageHeader', PageHeader)
+  app.mount('#app')
+});

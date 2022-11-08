@@ -60,11 +60,12 @@ const uiConfig: UiConfig = reactive({
 
 export default function useUiConfig(): {
   uiConfig: DeepReadonly<UiConfig>
-  fetchUiConfig: () => void
+  fetchUiConfig: () => Promise<UiConfig>
   setUiConfig: (uiConfig: UiConfig) => Object;
 } {
   const setUiConfig = ($uiConfig: UiConfig) => {
     if ($uiConfig.externalLinks) $uiConfig.externalLinks.sort((a, b) => (a.name > b.name) ? 1 : -1);
+    $uiConfig.useUTC = (($uiConfig.useUTC || "").toString() == "true")
     Object.assign(uiConfig, $uiConfig);
     return uiConfig;
   };
@@ -77,6 +78,7 @@ export default function useUiConfig(): {
     } catch {
       // Continue regardless of error
     }
+    return uiConfig;
   };
 
   return {

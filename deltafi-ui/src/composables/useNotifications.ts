@@ -17,6 +17,7 @@
 */
 
 import { useToast } from "primevue/usetoast";
+import _ from "lodash";
 
 const currentNotifications: Array<string> = [];
 
@@ -35,9 +36,13 @@ const defaultTTL = {
 };
 
 export default function useNotifications() {
-  const toast = useToast();
+  const showToast = (severity: Severity, summary: string, detail: string, ttl: number) => {
+    const mountPointSelector = "#app";
+    const mountPoint: any = document.querySelector(mountPointSelector);
+    const isAppMounted = _.get(mountPoint, "__vue_app__", null);
+    if (!isAppMounted) return;
 
-  const showToast = (severity: Severity, summary: string, detail: string, ttl: number ) => {
+    const toast = useToast();
     const hash = severity + summary + detail;
 
     // Check if message is in the list
@@ -46,35 +51,36 @@ export default function useNotifications() {
       return;
     } else {
       // If it's not, put message in the list
-      currentNotifications.push(hash)
+      currentNotifications.push(hash);
 
       // Remove message from the list after TTL seconds
       setTimeout(() => {
         const index = currentNotifications.indexOf(hash);
         currentNotifications.splice(index, 1);
-      }, ttl)
+      }, ttl);
 
-      toast.add({ severity: severity, summary, detail, life: ttl })
+      toast.add({ severity: severity, summary, detail, life: ttl });
     }
   };
 
   const success = (summary: string, detail: string = "", ttl: number = defaultTTL.success) => {
-    showToast(Severity.SUCCESS, summary, detail, ttl)
+    showToast(Severity.SUCCESS, summary, detail, ttl);
   };
 
   const info = (summary: string, detail: string = "", ttl: number = defaultTTL.info) => {
-    showToast(Severity.INFO, summary, detail, ttl)
+    showToast(Severity.INFO, summary, detail, ttl);
   };
 
   const warn = (summary: string, detail: string = "", ttl: number = defaultTTL.warn) => {
-    showToast(Severity.WARN, summary, detail, ttl)
+    showToast(Severity.WARN, summary, detail, ttl);
   };
 
   const error = (summary: string, detail: string = "", ttl: number = defaultTTL.error) => {
-    showToast(Severity.ERROR, summary, detail, ttl)
+    showToast(Severity.ERROR, summary, detail, ttl);
   };
 
   const clear = () => {
+    const toast = useToast();
     toast.removeAllGroups();
     currentNotifications.length = 0;
   };

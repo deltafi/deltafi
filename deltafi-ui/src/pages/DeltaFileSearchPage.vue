@@ -25,6 +25,7 @@
           <Calendar v-model="startTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field" @input="updateInputStartTime" />
           <span class="mt-2 ml-2">&mdash;</span>
           <Calendar v-model="endTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field ml-2" @input="updateInputEndTime" />
+          <Button class="p-button p-button-secondary p-button-outlined deltafi-input-field ml-3" icon="far fa-regular fa-calendar" label="Today" @click="setDateTimeToday()" />
           <Button class="p-button p-button-outlined deltafi-input-field ml-3" :icon="refreshButtonIcon" label="Refresh" @click="fetchDeltaFilesData()" />
         </div>
       </PageHeader>
@@ -153,25 +154,50 @@ import DidLink from "@/components/DidLink.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import useDomains from "@/composables/useDomains";
-import { ref, computed, watch, onMounted, nextTick, inject } from "vue";
+import { useRoute } from "vue-router";
+import { ref, computed, watch, onMounted, nextTick, inject, onBeforeMount } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
-
+import { useUrlSearchParams } from "@vueuse/core";
 dayjs.extend(utc);
 
+const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
-const { duration, formatTimestamp, shortTimezone, convertLocalDateToUTC } = useUtilFunctions();
+const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
 const { getDomains, getIndexedMetadataKeys } = useDomains();
-
+const route = useRoute();
+const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
-
 const optionMenu = ref();
-const startTimeDate = ref(new Date());
-const endTimeDate = ref(new Date());
-startTimeDate.value.setHours(0, 0, 0, 0);
-endTimeDate.value.setHours(23, 59, 59, 999);
-const defaultStartTimeDate = startTimeDate.value;
-const defaultEndTimeDate = endTimeDate.value;
+
+// Dates
+const defaultStartTimeDate = computed(() => {
+  const date = dayjs().utc();
+  return (uiConfig.useUTC ? date : date.local()).startOf('day')
+})
+const defaultEndTimeDate = computed(() => {
+  const date = dayjs().utc();
+  return (uiConfig.useUTC ? date : date.local()).endOf('day');
+})
+const startTimeDate = ref();
+const startTimeDateIsDefault = computed(() => {
+  return startTimeDate.value.getTime() === new Date(defaultStartTimeDate.value.format(timestampFormat)).getTime();
+})
+const endTimeDate = ref();
+const endTimeDateIsDefault = computed(() => {
+  return endTimeDate.value.getTime() === new Date(defaultEndTimeDate.value.format(timestampFormat)).getTime();
+})
+const setDateTimeToday = () => {
+  startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
+  endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
+};
+const startDateISOString = computed(() => {
+  return dayjs(startTimeDate.value).utc(uiConfig.useUTC).toISOString();
+});
+const endDateISOString = computed(() => {
+  return dayjs(endTimeDate.value).utc(uiConfig.useUTC).toISOString();
+});
+
 const domainOptions = ref([]);
 const domainOptionSelected = ref(null);
 const metadataKeysOptions = ref([]);
@@ -277,14 +303,6 @@ const refreshButtonIcon = computed(() => {
   return classes.join(" ");
 });
 
-const startDateISOString = computed(() => {
-  return uiConfig.useUTC ? convertLocalDateToUTC(startTimeDate.value).toISOString() : startTimeDate.value.toISOString();
-});
-
-const endDateISOString = computed(() => {
-  return uiConfig.useUTC ? convertLocalDateToUTC(endTimeDate.value).toISOString() : endTimeDate.value.toISOString();
-});
-
 const items = ref([
   {
     label: "Options",
@@ -373,7 +391,7 @@ const updateInputStartTime = async (e) => {
   if (dayjs(e.target.value.trim()).isValid()) {
     startTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
   } else {
-    startTimeDate.value = defaultStartTimeDate;
+    startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
   }
 };
 const updateInputEndTime = async (e) => {
@@ -381,11 +399,15 @@ const updateInputEndTime = async (e) => {
   if (dayjs(e.target.value.trim()).isValid()) {
     endTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
   } else {
-    endTimeDate.value = defaultEndTimeDate;
+    endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
   }
 };
+onBeforeMount(() => {
+  useURLSearch.value = route.fullPath.includes("search?");
+});
 
 onMounted(async () => {
+  setDateTimeToday();
   fetchConfigTypes();
   fetchStages();
   fetchDomains();
@@ -475,25 +497,53 @@ const onPage = (event) => {
   fetchDeltaFilesData();
 };
 
-const getPersistedParams = async () => {
-  // Values that, if set, should not expand Advanced Search Options.
-  startTimeDate.value = new Date(nonPanelState.value.startTimeDateState ? nonPanelState.value.startTimeDateState : startTimeDate.value);
-  endTimeDate.value = new Date(nonPanelState.value.endTimeDateState ? nonPanelState.value.endTimeDateState : endTimeDate.value);
-  sizeUnitSelected.value = nonPanelState.value.sizeUnitState ? sizeUnits.find((i) => i.name == nonPanelState.value.sizeUnitState) : sizeUnits[0];
-  sizeTypeSelected.value = nonPanelState.value.sizeTypeState ? sizeTypes.find((i) => i.name == nonPanelState.value.sizeTypeState) : sizeTypes[0];
-  perPage.value = nonPanelState.value.perPage || 10;
+const ISOStringToDate = (dateISOString) => {
+  return uiConfig.useUTC ?
+    dayjs(dateISOString).add(new Date().getTimezoneOffset(), 'minute').toDate() :
+    dayjs(dateISOString).toDate();
+}
 
-  // Values that, if set, should expand Advanced Search Options.
-  fileName.value = panelState.value.fileName;
-  stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
-  flowOptionSelected.value = panelState.value.flowOptionState ? { name: panelState.value.flowOptionState } : null;
-  egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
-  filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
-  testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
-  domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
-  sizeMin.value = panelState.value.sizeMinState;
-  sizeMax.value = panelState.value.sizeMaxState;
-  metadataArray.value = panelState.value.metadataArrayState || [];
+const getPersistedParams = async () => {
+  perPage.value = nonPanelState.value.perPage || 10;
+  if (useURLSearch.value) {
+    if (params.start) startTimeDate.value = ISOStringToDate(params.start);
+    if (params.end) endTimeDate.value = ISOStringToDate(params.end);
+    sizeUnitSelected.value = params.sizeUnit ? sizeUnits.find((i) => i.name == params.sizeUnit) : sizeUnits[0];
+    sizeTypeSelected.value = params.sizeType ? sizeTypes.find((i) => i.name == params.sizeType) : sizeTypes[0];
+    fileName.value = params.fileName != "" ? params.fileName : null;
+    stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
+    flowOptionSelected.value = params.ingressFlow ? { name: params.ingressFlow } : null;
+    egressedOptionSelected.value = params.egressed ? egressedOptions.value.find((i) => i.name == params.egressed) : null;
+    filteredOptionSelected.value = params.filtered ? filteredOptions.value.find((i) => i.name == params.filtered) : null;
+    testModeOptionSelected.value = params.testMode ? testModeOptions.value.find((i) => i.name == params.testMode) : null;
+    domainOptionSelected.value = params.domain ? { name: params.domain } : null;
+    sizeMin.value = params.sizeMin != null ? Number(params.sizeMin) : null;
+    sizeMax.value = params.sizeMax != null ? Number(params.sizeMax) : null;
+    if (params.metadata != null) {
+      const metadataArrayVal = ref(getMetadataArray(params.metadata));
+      metadataArray.value = metadataArrayVal.value || [];
+    } else {
+      metadataArray.value = [];
+    }
+  } else {
+    // Values that, if set, should not expand Advanced Search Options.
+    if (nonPanelState.value.startTimeDateState) startTimeDate.value = ISOStringToDate(nonPanelState.value.startTimeDateState);
+    if (nonPanelState.value.endTimeDateState) endTimeDate.value = ISOStringToDate(nonPanelState.value.endTimeDateState);
+    sizeUnitSelected.value = nonPanelState.value.sizeUnitState ? sizeUnits.find((i) => i.name == nonPanelState.value.sizeUnitState) : sizeUnits[0];
+    sizeTypeSelected.value = nonPanelState.value.sizeTypeState ? sizeTypes.find((i) => i.name == nonPanelState.value.sizeTypeState) : sizeTypes[0];
+
+    // Values that, if set, should expand Advanced Search Options.
+    fileName.value = panelState.value.fileName;
+    stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
+    flowOptionSelected.value = panelState.value.flowOptionState ? { name: panelState.value.flowOptionState } : null;
+    egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
+    filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
+    testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
+    domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
+    sizeMin.value = panelState.value.sizeMinState;
+    sizeMax.value = panelState.value.sizeMaxState;
+    metadataArray.value = panelState.value.metadataArrayState || [];
+  }
 
   // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
   // what search options are being used.
@@ -520,12 +570,48 @@ const setPersistedParams = () => {
 
   nonPanelState.value = {
     // Values that, if set, should not expand Advanced Search Options.
-    startTimeDateState: startTimeDate.value ? startTimeDate.value : null,
-    endTimeDateState: endTimeDate.value ? endTimeDate.value : null,
+    startTimeDateState: startTimeDateIsDefault.value ? null : startDateISOString.value,
+    endTimeDateState: startTimeDateIsDefault.value ? null : endDateISOString.value,
     sizeUnitState: sizeUnitSelected.value ? sizeUnitSelected.value.name : null,
     sizeTypeState: sizeTypeSelected.value ? sizeTypeSelected.value.name : null,
     perPage: perPage.value,
   };
+
+  params.start = startTimeDateIsDefault.value ? null : startDateISOString.value
+  params.end = endTimeDateIsDefault.value ? null : endDateISOString.value
+  params.sizeUnit = sizeMin.value != null || sizeMax.value != null ? sizeUnitSelected.value.name : null;
+  params.sizeType = sizeMin.value != null || sizeMax.value != null ? sizeTypeSelected.value.name : null;
+  params.fileName = fileName.value != "" ? fileName.value : null;
+  params.stage = stageOptionSelected.value ? stageOptionSelected.value.name : null;
+  params.ingressFlow = flowOptionSelected.value ? flowOptionSelected.value.name : null;
+  params.egressed = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
+  params.filtered = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
+  params.testMode = testModeOptionSelected.value ? testModeOptionSelected.value.name : null;
+  params.domain = domainOptionSelected.value ? domainOptionSelected.value.name : null;
+  params.sizeMin = sizeMin.value != null ? sizeMin.value : null;
+  params.sizeMax = sizeMax.value != null ? sizeMax.value : null;
+  params.metadata = metadataArray.value.length > 0 ? getMetadataString(metadataArray.value) : null;
+};
+
+const getMetadataString = (arrayData) => {
+  const metadataString = arrayData
+    .map((pair) => {
+      return pair.key.concat(":", pair.value);
+    })
+    .join(",");
+  return metadataString;
+};
+
+const getMetadataArray = (stringData) => {
+  const metadataArray = stringData.split(",");
+  return metadataArray.map((pair) => {
+    const keyValuePair = pair.split(":");
+    return {
+      key: keyValuePair[0],
+      value: keyValuePair[1],
+      valid: true
+    };
+  });
 };
 </script>
 
