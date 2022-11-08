@@ -525,6 +525,9 @@ const getPersistedParams = async () => {
     } else {
       metadataArray.value = [];
     }
+
+    const panelSearchKeys = Object.keys(params).filter((key) => !["start", "end"].includes(key))
+    collapsedSearchOption.value = panelSearchKeys.length == 0
   } else {
     // Values that, if set, should not expand Advanced Search Options.
     if (nonPanelState.value.startTimeDateState) startTimeDate.value = ISOStringToDate(nonPanelState.value.startTimeDateState);
@@ -543,11 +546,11 @@ const getPersistedParams = async () => {
     sizeMin.value = panelState.value.sizeMinState;
     sizeMax.value = panelState.value.sizeMaxState;
     metadataArray.value = panelState.value.metadataArrayState || [];
-  }
 
-  // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
-  // what search options are being used.
-  collapsedSearchOption.value = !_.some(Object.values(panelState.value), (i) => !(i == null || i.length == 0));
+    // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
+    // what search options are being used.
+    collapsedSearchOption.value = !_.some(Object.values(panelState.value), (i) => !(i == null || i.length == 0));
+  }
 };
 
 const panelState = useStorage("panel-search-options", {}, sessionStorage, { serializer: StorageSerializers.object });
