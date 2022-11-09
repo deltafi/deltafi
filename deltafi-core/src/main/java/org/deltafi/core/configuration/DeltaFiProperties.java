@@ -38,7 +38,7 @@ public class DeltaFiProperties {
         private long diskSpaceRequirementInMb = 1000;
     }
 
-    private int requeueSeconds = 30;
+    private int requeueSeconds = 300;
     private int coreServiceThreads = 16;
     private Duration deltaFileTtl = Duration.ofDays(14);
     private DeleteProperties delete = new DeleteProperties();

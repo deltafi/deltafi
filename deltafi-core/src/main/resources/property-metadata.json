@@ -98,7 +98,7 @@
       {
         "key": "deltafi.requeueSeconds",
         "description": "Time to wait for an action to finish processing a DeltaFile before requeuing the action.",
-        "defaultValue": "30",
+        "defaultValue": "300",
         "hidden": false,
         "refreshable": true,
         "editable": true
