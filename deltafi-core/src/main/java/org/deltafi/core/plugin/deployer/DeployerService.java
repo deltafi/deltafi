@@ -27,13 +27,6 @@ import java.util.List;
 public interface DeployerService {
 
     /**
-     * Install the plugin with given coordinates
-     * @param pluginCoordinates of the plugin to install
-     * @return result of the operation
-     */
-    Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates);
-
-    /**
      * Install the plugin with custom settings
      * @param pluginCoordinates of the plugin to install
      * @param imageRepoOverride docker repository to use for this install

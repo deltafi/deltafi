@@ -28,6 +28,7 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfigR
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationRepo;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
+import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
 import org.springframework.boot.cloud.CloudPlatform;
 import org.springframework.context.annotation.Bean;
@@ -57,8 +58,8 @@ public class K8sConfiguration {
     }
 
     @Bean
-    public DeployerService deployerService(DeltaFiProperties deltaFiProperties, KubernetesClient kubernetesClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService) {
-        return new K8sDeployerService(deltaFiProperties, kubernetesClient, imageRepositoryRepo, pluginCustomizationService, pluginRegistryService);
+    public DeployerService deployerService(DeltaFiProperties deltaFiProperties, KubernetesClient kubernetesClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService) {
+        return new K8sDeployerService(deltaFiProperties, kubernetesClient, imageRepositoryRepo, pluginCustomizationService, pluginRegistryService, systemSnapshotService);
     }
 
 }

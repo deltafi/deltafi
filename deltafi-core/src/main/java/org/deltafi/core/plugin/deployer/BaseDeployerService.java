@@ -25,7 +25,11 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
+import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 
 import java.util.List;
 
@@ -36,12 +40,20 @@ public abstract class BaseDeployerService implements DeployerService {
     private final PluginImageRepositoryRepo imageRepositoryRepo;
     private final PluginRegistryService pluginRegistryService;
     final PluginCustomizationService pluginCustomizationService;
+    private final SystemSnapshotService systemSnapshotService;
 
-    public BaseDeployerService(DeltaFiProperties deltaFiProperties, PluginImageRepositoryRepo imageRepositoryRepo, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService) {
+    public BaseDeployerService(DeltaFiProperties deltaFiProperties, PluginImageRepositoryRepo imageRepositoryRepo, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService) {
         this.deltaFiProperties = deltaFiProperties;
         this.imageRepositoryRepo = imageRepositoryRepo;
         this.pluginRegistryService = pluginRegistryService;
         this.pluginCustomizationService = pluginCustomizationService;
+        this.systemSnapshotService = systemSnapshotService;
+    }
+
+    @Override
+    public Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
+        systemSnapshotService.createSnapshot(preUpgradeMessage(pluginCoordinates));
+        return deploy(pluginCoordinates, imageRepoOverride, imagePullSecretOverride, customDeploymentOverride);
     }
 
     @Override
@@ -55,6 +67,8 @@ public abstract class BaseDeployerService implements DeployerService {
 
         return removeDeployment(pluginCoordinates);
     }
+
+    abstract Result deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride);
 
     abstract Result removeDeployment(PluginCoordinates pluginCoordinates);
 
@@ -109,6 +123,27 @@ public abstract class BaseDeployerService implements DeployerService {
             pluginImageRepository.setImagePullSecret(deltaFiProperties.getPlugins().getImagePullSecret());
         }
         return pluginImageRepository;
+    }
+
+    private String preUpgradeMessage(PluginCoordinates pluginCoordinates) {
+        String username = getUsername();
+        String reason = "Deploying plugin: " + pluginCoordinates.toString();
+        if (username != null) {
+            reason += " triggered by " + username;
+        }
+        return reason;
+    }
+
+    private String getUsername() {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+
+        if (securityContext == null || securityContext.getAuthentication() == null || securityContext.getAuthentication().getPrincipal() == null) {
+            return null;
+        }
+
+        Object principal = securityContext.getAuthentication().getPrincipal();
+
+        return principal instanceof User ? ((User) principal).getUsername() : principal.toString();
     }
 
 }

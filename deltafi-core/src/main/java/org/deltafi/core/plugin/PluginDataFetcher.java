@@ -79,7 +79,7 @@ public class PluginDataFetcher {
     @DgsMutation
     @NeedsPermission.PluginInstall
     public Result installPlugin(PluginCoordinates pluginCoordinates) {
-        return deployerService.installOrUpgradePlugin(pluginCoordinates);
+        return deployerService.installOrUpgradePlugin(pluginCoordinates, null, null, null);
     }
 
     @DgsMutation

@@ -32,6 +32,7 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
+import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -52,18 +53,13 @@ public class K8sDeployerService extends BaseDeployerService {
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiProperties deltaFiProperties, KubernetesClient k8sClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService) {
-        super(deltaFiProperties, imageRepositoryRepo, pluginRegistryService, pluginCustomizationService);
+    public K8sDeployerService(DeltaFiProperties deltaFiProperties, KubernetesClient k8sClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService) {
+        super(deltaFiProperties, imageRepositoryRepo, pluginRegistryService, pluginCustomizationService, systemSnapshotService);
         this.k8sClient = k8sClient;
     }
 
     @Override
-    public Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates) {
-        return installOrUpgradePlugin(pluginCoordinates, null, null, null);
-    }
-
-    @Override
-    public Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
+    public Result deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
         PluginImageRepository pluginImageRepository = findByGroupId(pluginCoordinates);
 
         if (imageRepoOverride != null) {
