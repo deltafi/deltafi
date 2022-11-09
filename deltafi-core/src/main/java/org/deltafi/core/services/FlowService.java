@@ -373,6 +373,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 .map(Flow::isRunning)
                 .orElse(false);
 
+        boolean flowWasInTestMode = flowRepo.findById(flowPlan.getName())
+                .map(Flow::isTestMode)
+                .orElse(false);
+
         FlowT flow = flowPlanConverter.convert(flowPlan, variables);
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
@@ -382,6 +386,8 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         } else if (flowWasRunning) {
             flow.getFlowStatus().setState(FlowState.RUNNING);
         }
+
+        flow.getFlowStatus().setTestMode(flowWasInTestMode);
 
         return flow;
     }

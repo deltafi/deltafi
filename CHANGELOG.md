@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Test mode will be preserved when plugins are registered
 - `Plugin` upgrades no longer reset the replicas to 1
 - Issue with publishing plugins to gradle.org
 

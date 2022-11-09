@@ -17,12 +17,15 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.IngressFlowPlan;
+import org.deltafi.common.types.LoadActionConfiguration;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.IngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.validation.IngressFlowValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,11 +46,34 @@ class IngressFlowServiceTest {
     private static final List<String> RUNNING_FLOWS = List.of("a", "b");
     private static final List<String> TEST_FLOWS = List.of("a", "b");
 
+    @Mock
+    IngressFlowRepo ingressFlowRepo;
+
+    @Mock
+    IngressFlowValidator flowValidator;
+
     @InjectMocks
     IngressFlowService ingressFlowService;
 
-    @Mock
-    IngressFlowRepo ingressFlowRepo;
+    @Test
+    void buildFlow() {
+        IngressFlow running = ingressFlow("running", FlowState.RUNNING, true);
+        IngressFlow stopped = ingressFlow("stopped", FlowState.STOPPED, false);
+        Mockito.when(ingressFlowRepo.findById("running")).thenReturn(Optional.of(running));
+        Mockito.when(ingressFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
+        Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
+
+        IngressFlowPlan runningFlowPlan = new IngressFlowPlan("running", "yep", new LoadActionConfiguration("LoadActionConfig", "LoadActionConfigType"));
+        IngressFlowPlan stoppedFlowPlan = new IngressFlowPlan("stopped", "naw", new LoadActionConfiguration("LoadActionConfig", "LoadActionConfigType"));
+
+        IngressFlow runningIngressFlow = ingressFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
+        IngressFlow stoppedIngressFlow = ingressFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());
+
+        assertThat(runningIngressFlow.isRunning()).isTrue();
+        assertThat(runningIngressFlow.isTestMode()).isTrue();
+        assertThat(stoppedIngressFlow.isRunning()).isFalse();
+        assertThat(stoppedIngressFlow.isTestMode()).isFalse();
+    }
 
     @Test
     void updateSnapshot() {
