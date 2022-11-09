@@ -104,7 +104,10 @@ public class K8sDeployerService extends BaseDeployerService {
     }
 
     private Result createOrReplace(Deployment deployment) {
+        preserveValuesIfUpgrade(deployment, k8sClient.apps().deployments().withName(deployment.getMetadata().getName()).get());
+
         Deployment installed = k8sClient.resource(deployment).createOrReplace();
+
         try {
             k8sClient.resource(installed).waitUntilReady(READY_TIMEOUT, TimeUnit.SECONDS);
         } catch (KubernetesClientTimeoutException timeoutException) {
@@ -142,6 +145,12 @@ public class K8sDeployerService extends BaseDeployerService {
         }
 
         return deployment;
+    }
+
+    void preserveValuesIfUpgrade(Deployment upgradedDeployment, Deployment existingDeployment) {
+        if (existingDeployment != null) {
+            upgradedDeployment.getSpec().setReplicas(existingDeployment.getSpec().getReplicas());
+        }
     }
 
     private Deployment loadBaseDeployment() throws IOException {

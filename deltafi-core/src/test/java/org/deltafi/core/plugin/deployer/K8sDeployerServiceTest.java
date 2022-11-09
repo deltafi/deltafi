@@ -49,9 +49,7 @@ class K8sDeployerServiceTest {
 
     @Test
     void testCreateDeployment() throws IOException {
-        PluginImageRepository pluginImageRepository = new PluginImageRepository();
-        pluginImageRepository.setImageRepositoryBase("docker.io/");
-        pluginImageRepository.setImagePullSecret("docker-cred");
+        PluginImageRepository pluginImageRepository = getPluginImageRepository();
 
         PluginCustomization pluginCustomization = new PluginCustomization();
 
@@ -66,6 +64,18 @@ class K8sDeployerServiceTest {
         Assertions.assertThat(deployment).isEqualTo(expectedDeployment("plugins/deployer/expected-deployment.yaml"));
     }
 
+    @Test
+    void testPreserveValuesIfUpgrade() throws IOException {
+        Deployment withReplicas = expectedDeployment("plugins/deployer/expected-deployment.yaml");
+        withReplicas.getSpec().setReplicas(2);
+
+        Deployment deployment = k8sDeployerService.createDeployment(PLUGIN_COORDINATES, getPluginImageRepository(), new PluginCustomization());
+
+        Assertions.assertThat(deployment.getSpec().getReplicas()).isNull();
+        k8sDeployerService.preserveValuesIfUpgrade(deployment, withReplicas);
+        Assertions.assertThat(deployment.getSpec().getReplicas()).isEqualTo(2);
+    }
+
     Deployment expectedDeployment(String path) {
         try {
             return Serialization.unmarshal(new ClassPathResource(path).getInputStream(), Deployment.class);
@@ -73,5 +83,12 @@ class K8sDeployerServiceTest {
             Assertions.fail("Could not read the file", exception);
             return null;
         }
+    }
+
+    private static PluginImageRepository getPluginImageRepository() {
+        PluginImageRepository pluginImageRepository = new PluginImageRepository();
+        pluginImageRepository.setImageRepositoryBase("docker.io/");
+        pluginImageRepository.setImagePullSecret("docker-cred");
+        return pluginImageRepository;
     }
 }
