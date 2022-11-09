@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Search criteria is now serialized to/from GET vars (#273)
 
+### Fixed
+
+- Fixed bug in notification service (#292)
+
 ## [0.99.2]
 
 ### Changed

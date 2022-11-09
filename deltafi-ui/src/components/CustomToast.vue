@@ -32,6 +32,20 @@
 
 <script setup>
 import Toast from "primevue/toast";
+import { useToast } from "primevue/usetoast";
+import { onMounted, watch } from "vue";
+import useNotifications from "@/composables/useNotifications";
+
+const { queue, queueSize } = useNotifications();
+const toast = useToast();
+
+watch(queueSize, (newValue) => {
+  if (newValue > 0) toast.add(queue.value.pop());
+})
+
+onMounted(() => {
+  if (queueSize.value > 0) toast.add(queue.value.pop());
+})
 
 const iconClass = (messageSeverity) => {
   return [

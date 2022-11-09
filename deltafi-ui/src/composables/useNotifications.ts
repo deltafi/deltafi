@@ -16,10 +16,7 @@
    limitations under the License.
 */
 
-import { useToast } from "primevue/usetoast";
-import _ from "lodash";
-
-const currentNotifications: Array<string> = [];
+import { ref, Ref, computed } from "vue";
 
 enum Severity {
   SUCCESS = "success",
@@ -35,14 +32,14 @@ const defaultTTL = {
   error: 10000,
 };
 
-export default function useNotifications() {
-  const showToast = (severity: Severity, summary: string, detail: string, ttl: number) => {
-    const mountPointSelector = "#app";
-    const mountPoint: any = document.querySelector(mountPointSelector);
-    const isAppMounted = _.get(mountPoint, "__vue_app__", null);
-    if (!isAppMounted) return;
+const currentNotifications: Array<string> = [];
+const queue: Ref<Array<Object>> = ref([]);
+const queueSize = computed(() => {
+  return queue.value.length;
+})
 
-    const toast = useToast();
+export default function useNotifications() {
+  const queueMessage = (severity: Severity, summary: string, detail: string, ttl: number) => {
     const hash = severity + summary + detail;
 
     // Check if message is in the list
@@ -59,31 +56,26 @@ export default function useNotifications() {
         currentNotifications.splice(index, 1);
       }, ttl);
 
-      toast.add({ severity: severity, summary, detail, life: ttl });
+      queue.value.push({ severity: severity, summary, detail, life: ttl })
+      console.debug(`[${severity.toUpperCase()}] ${summary} - ${detail}`)
     }
   };
 
   const success = (summary: string, detail: string = "", ttl: number = defaultTTL.success) => {
-    showToast(Severity.SUCCESS, summary, detail, ttl);
+    queueMessage(Severity.SUCCESS, summary, detail, ttl);
   };
 
   const info = (summary: string, detail: string = "", ttl: number = defaultTTL.info) => {
-    showToast(Severity.INFO, summary, detail, ttl);
+    queueMessage(Severity.INFO, summary, detail, ttl);
   };
 
   const warn = (summary: string, detail: string = "", ttl: number = defaultTTL.warn) => {
-    showToast(Severity.WARN, summary, detail, ttl);
+    queueMessage(Severity.WARN, summary, detail, ttl);
   };
 
   const error = (summary: string, detail: string = "", ttl: number = defaultTTL.error) => {
-    showToast(Severity.ERROR, summary, detail, ttl);
+    queueMessage(Severity.ERROR, summary, detail, ttl);
   };
 
-  const clear = () => {
-    const toast = useToast();
-    toast.removeAllGroups();
-    currentNotifications.length = 0;
-  };
-
-  return { success, info, warn, error, clear };
+  return { success, info, warn, error, queue, queueSize };
 }
