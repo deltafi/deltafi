@@ -41,29 +41,42 @@ gradlePlugin {
             displayName = 'Deltafi Plugin Tasks'
             description = 'Tasks used to build DeltaFi plugins'
         }
-        deltafiActionConvention {
-            id = 'org.deltafi.plugin.action-convention'
-            implementationClass = 'DeltafiActionConventionPlugin'
-            displayName = 'DeltaFi Action Plugin Convention'
-            description = 'Convention used to setup a set of DeltaFi actions'
-        }
-        deltafiJavaConvention {
-            id = 'org.deltafi.plugin.java-convention'
-            implementationClass = 'DeltafiJavaConventionPlugin'
-            displayName = 'DeltaFi Java Plugin Convention'
-            description = 'Convention used or Java projects'
-        }
-        deltafiTestSummary {
-            id = 'org.deltafi.plugin.test-summary'
-            implementationClass = 'DeltafiTestSummaryPlugin'
-            displayName = 'DeltaFi Test Summary Convention'
-            description = 'Pretty print test results'
-        }
-        deltafiVersioner {
-            id = 'org.deltafi.plugin.version-reckoning'
-            implementationClass = 'DeltafiVersionReckoningPlugin'
-            displayName = 'DeltaFi Version Convention'
-            description = 'Determine the version based on the git tag'
+    }
+}
+
+allprojects {
+    group 'org.deltafi.gradle-plugin'
+
+    afterEvaluate {
+        if (project.plugins.hasPlugin("groovy-gradle-plugin")) {
+            pluginDescriptors {
+                afterEvaluate {
+                    declarations.get().each { PluginDeclaration declaration ->
+                        switch (declaration.getId()) {
+                            case "deltafi.action-convention":
+                                declaration.setId("org.deltafi.plugin.action-convention")
+                                declaration.setDisplayName("DeltaFi Action Plugin Convention")
+                                declaration.setDescription("Convention used to setup a set of DeltaFi actions")
+                                break
+                            case "deltafi.java-convention":
+                                declaration.setId("org.deltafi.plugin.java-convention")
+                                declaration.setDisplayName("DeltaFi Java Plugin Convention")
+                                declaration.setDescription("Convention used or Java projects")
+                                break
+                            case "deltafi.test-summary":
+                                declaration.setId("org.deltafi.plugin.test-summary")
+                                declaration.setDisplayName("DeltaFi Test Summary Convention")
+                                declaration.setDescription("Pretty print test results")
+                                break
+                            case "deltafi.version-reckoning":
+                                declaration.setId("org.deltafi.plugin.version-reckoning")
+                                declaration.setDisplayName("DeltaFi Version Convention")
+                                declaration.setDescription("Determine the version based on the git tag")
+                                break
+                        }
+                    }
+                }
+            }
         }
     }
 }
