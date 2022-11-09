@@ -17,7 +17,12 @@
 -->
 
 <template>
-  <Button v-tooltip.left="'Rerun validation on ' + rowData.name" icon="fa fa-sync-alt" label="Revalidate" class="p-button p-button-sm p-button-warning validate-button-padding" @click="validationRetry(rowData.name, rowData.flowType)" />
+  <span v-if="$hasPermission('FlowValidate')">
+    <Button v-tooltip.left="'Rerun validation on ' + rowData.name" icon="fa fa-sync-alt" label="Revalidate" class="p-button p-button-sm p-button-warning validate-button-padding" @click="validationRetry(rowData.name, rowData.flowType)" />
+  </span>
+  <span v-else>
+    <Button label="ERROR" class="p-button-danger" style="width: 5.5rem" disabled />
+  </span>
 </template>
 
 <script setup>

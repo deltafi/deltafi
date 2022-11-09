@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span>
+  <span v-if="$hasPermission('DeletePolicyUpdate')" class="pr-2">
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.id + '_' + rowData.name">
       <template #message="slotProps">
@@ -31,6 +31,9 @@
     </ConfirmPopup>
     <InputSwitch v-tooltip.top="deletePolicyToolTip" :model-value="checked" class="p-button-sm" @click="confirmationPopup($event, rowData.id, rowData.name, checked)" />
   </span>
+  <span v-else class="pr-2 float-left">
+    <Button :label="deletePolicyToolTip" :class="buttonClass" style="width: 5.5rem" disabled />
+  </span>
 </template>
 
 <script setup>
@@ -38,6 +41,7 @@ import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuild
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineEmits, defineProps, reactive, ref } from "vue";
 
+import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";
 import InputSwitch from "primevue/inputswitch";
 import { useConfirm } from "primevue/useconfirm";
@@ -61,6 +65,10 @@ const checked = ref(rowData.enabled);
 
 const deletePolicyToolTip = computed(() => {
   return _.isEqual(checked.value, true) ? "Enabled" : "Disabled";
+});
+
+const buttonClass = computed(() => {
+  return _.isEqual(checked.value, true) ? "p-button-primary" : "p-button-secondary";
 });
 
 const confirmationPopup = (event, policyId, policyName, state) => {

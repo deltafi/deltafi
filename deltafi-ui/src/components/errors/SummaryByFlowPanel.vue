@@ -51,8 +51,11 @@ import MetadataDialog from "@/components/MetadataDialog.vue";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
-import { ref, onMounted, defineExpose, defineProps, watch, computed, defineEmits, nextTick } from "vue";
+import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
+
+const hasPermission = inject("hasPermission");
+const hasSomePermissions = inject("hasSomePermissions");
 
 const loading = ref(true);
 const menu = ref();
@@ -101,6 +104,7 @@ const menuItems = ref([
   },
   {
     separator: true,
+    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume")),
   },
   {
     label: "Acknowledge Selected",
@@ -108,9 +112,8 @@ const menuItems = ref([
     command: () => {
       acknowledgeClickConfirm();
     },
-    disabled: () => {
-      return selectedErrors.value.length == 0;
-    },
+    visible: computed(() => hasPermission("DeltaFileAcknowledge")),
+    disabled: computed(() => selectedErrors.value.length == 0),
   },
   {
     label: "Resume Selected",
@@ -118,9 +121,8 @@ const menuItems = ref([
     command: () => {
       metadataDialog.value.showConfirmDialog("Resume");
     },
-    disabled: () => {
-      return selectedErrors.value.length == 0;
-    },
+    visible: computed(() => hasPermission("DeltaFileResume")),
+    disabled: computed(() => selectedErrors.value.length == 0),
   },
 ]);
 
@@ -234,4 +236,6 @@ const setPersistedParams = () => {
 };
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+
+</style>

@@ -17,18 +17,20 @@
 -->
 
 <template>
-  <span class="delete-policy-import-file">
-    <FileUpload ref="fileUploader" auto mode="basic" choose-label="Import Policies" accept=".json,application/json" :file-limit="1" custom-upload class="p-button-sm p-button-secondary p-button-outlined mx-1" @uploader="preUploadValidation" @click="setOverlayPanelPosition" />
+  <span>
+    <span class="delete-policy-import-file">
+      <FileUpload ref="fileUploader" auto mode="basic" choose-label="Import Policies" accept=".json,application/json" :file-limit="1" custom-upload class="p-button-sm p-button-secondary p-button-outlined mx-1" @uploader="preUploadValidation" @click="setOverlayPanelPosition" />
+    </span>
+    <OverlayPanel ref="errorOverlayPanel" dismissable show-close-icon @hide="clearUploadErrors">
+      <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
+        <ul>
+          <div v-for="(error, key) in _.uniq(errorsList)" :key="key">
+            <li class="text-wrap text-break">{{ error }}</li>
+          </div>
+        </ul>
+      </Message>
+    </OverlayPanel>
   </span>
-  <OverlayPanel ref="errorOverlayPanel" dismissable show-close-icon @hide="clearUploadErrors">
-    <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
-      <ul>
-        <div v-for="(error, key) in _.uniq(errorsList)" :key="key">
-          <li class="text-wrap text-break">{{ error }}</li>
-        </div>
-      </ul>
-    </Message>
-  </OverlayPanel>
 </template>
 
 <script setup>

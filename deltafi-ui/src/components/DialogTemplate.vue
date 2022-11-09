@@ -28,9 +28,12 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, ref, useAttrs } from "vue";
+import { computed, defineAsyncComponent, inject, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
 import _ from "lodash";
+
+const hasPermission = inject("hasPermission");
+
 //View dynamic props being sent down
 const attrs = useAttrs();
 //console.log(attrs);
@@ -51,7 +54,17 @@ const dialogSize = computed(() => {
 
 const dialogVisible = ref(false);
 const showDialog = () => {
-  dialogVisible.value = true;
+  let requiredPermission = _.get(attrs, "required-permission", null);
+
+  if (requiredPermission) {
+    if (hasPermission(requiredPermission)) {
+      dialogVisible.value = true;
+    } else {
+      dialogVisible.value = false;
+    }
+  } else {
+    dialogVisible.value = true;
+  }
 };
 
 const closeDialog = () => {

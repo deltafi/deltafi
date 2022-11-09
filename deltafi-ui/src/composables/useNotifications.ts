@@ -36,7 +36,7 @@ const currentNotifications: Array<string> = [];
 const queue: Ref<Array<Object>> = ref([]);
 const queueSize = computed(() => {
   return queue.value.length;
-})
+});
 
 export default function useNotifications() {
   const queueMessage = (severity: Severity, summary: string, detail: string, ttl: number) => {
@@ -56,8 +56,8 @@ export default function useNotifications() {
         currentNotifications.splice(index, 1);
       }, ttl);
 
-      queue.value.push({ severity: severity, summary, detail, life: ttl })
-      console.debug(`[${severity.toUpperCase()}] ${summary} - ${detail}`)
+      queue.value.push({ severity: severity, summary, detail, life: ttl });
+      console.debug(`[${severity.toUpperCase()}] ${summary} - ${detail}`);
     }
   };
 

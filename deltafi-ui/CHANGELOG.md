@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Search criteria is now serialized to/from GET vars (#273)
 - Added loading screen on app startup (#207)
+- Secured UI with Permissions (#278)
 
 ### Fixed
 

@@ -16,110 +16,154 @@
    limitations under the License.
 */
 
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import Dashboard from '@/pages/DashboardPage.vue';
+import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
+import Dashboard from "@/pages/DashboardPage.vue";
+import _ from "lodash";
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: '/',
-    name: '',
+    path: "/",
+    name: "",
     component: Dashboard,
+    meta: {
+      permission: "DashboardView",
+    },
   },
   {
-    path: '/metrics/system',
-    name: 'System Metrics',
-    component: () => import('@/pages/SystemMetricsPage.vue')
+    path: "/metrics/system",
+    name: "System Metrics",
+    component: () => import("@/pages/SystemMetricsPage.vue"),
+    meta: {
+      permission: "MetricsView",
+    },
   },
   {
-    path: '/deltafile/search',
-    name: 'DeltaFile Search',
-    component: () => import('@/pages/DeltaFileSearchPage.vue'),
+    path: "/deltafile/search",
+    name: "DeltaFile Search",
+    component: () => import("@/pages/DeltaFileSearchPage.vue"),
+    meta: {
+      permission: "DeltaFileMetadataView",
+    },
   },
   {
-    path: '/deltafile/upload',
-    name: 'DeltaFile Upload',
-    component: () => import('@/pages/DeltaFileUploadPage.vue'),
+    path: "/deltafile/upload",
+    name: "DeltaFile Upload",
+    component: () => import("@/pages/DeltaFileUploadPage.vue"),
+    meta: {
+      permission: "DeltaFileIngress",
+    },
   },
   {
-    path: '/metrics/action',
-    name: 'Action Metrics',
-    component: () => import('@/pages/ActionMetricsPage.vue')
+    path: "/metrics/action",
+    name: "Action Metrics",
+    component: () => import("@/pages/ActionMetricsPage.vue"),
+    meta: {
+      permission: "MetricsView",
+    },
   },
   {
-    path: '/metrics/queue',
-    name: 'Queue Metrics',
-    component: () => import('@/pages/QueueMetricsPage.vue')
+    path: "/errors",
+    name: "Errors",
+    component: () => import("@/pages/ErrorsPage.vue"),
+    meta: {
+      permission: "DeltaFileMetadataView",
+    },
   },
   {
-    path: '/errors',
-    name: 'Errors',
-    component: () => import('@/pages/ErrorsPage.vue'),
-  },
-  {
-    path: '/deltafile/viewer/:did?',
-    name: 'DeltaFile Viewer',
-    component: () => import('@/pages/DeltaFileViewerPage.vue'),
+    path: "/deltafile/viewer/:did?",
+    name: "DeltaFile Viewer",
+    component: () => import("@/pages/DeltaFileViewerPage.vue"),
+    meta: {
+      permission: "DeltaFileMetadataView",
+    },
   },
   {
     path: "/config/system",
     name: "System Properties",
-    component: () => import('@/pages/SystemPropertiesPage.vue'),
-  },
-  {
-    path: "/config/flow",
-    name: "Flow Configuration",
-    component: () => import('@/pages/FlowConfigurationPage.vue'),
+    component: () => import("@/pages/SystemPropertiesPage.vue"),
+    meta: {
+      permission: "SystemPropertiesRead",
+    },
   },
   {
     path: "/config/plugins/:pluginCordinates?",
     name: "Plugins",
-    component: () => import('@/pages/PluginsPage.vue'),
+    component: () => import("@/pages/PluginsPage.vue"),
+    meta: {
+      permission: "PluginsView",
+    },
   },
   {
     path: "/config/delete-policies",
     name: "Delete Policies",
-    component: () => import('@/pages/DeletePoliciesPage.vue'),
+    component: () => import("@/pages/DeletePoliciesPage.vue"),
+    meta: {
+      permission: "DeletePolicyRead",
+    },
   },
   {
     path: "/config/ingress-routing",
     name: "Ingress Routing",
     component: () => import("@/pages/IngressRoutingPage.vue"),
+    meta: {
+      permission: "IngressRoutingRuleRead",
+    },
   },
   {
-    path: '/config/flows',
-    name: 'Flows',
-    component: () => import('@/pages/FlowPlansPage.vue'),
+    path: "/config/flows",
+    name: "Flows",
+    component: () => import("@/pages/FlowPlansPage.vue"),
+    meta: {
+      permission: "FlowView",
+    },
   },
-    {
-    path: '/config/snapshots',
-    name: 'System Snapshots',
-    component: () => import('@/pages/SystemSnapshotsPage.vue'),
+  {
+    path: "/config/snapshots",
+    name: "System Snapshots",
+    component: () => import("@/pages/SystemSnapshotsPage.vue"),
+    meta: {
+      permission: "SnapshotRead",
+    },
   },
   {
     path: "/versions",
     name: "Versions",
-    component: () => import('@/pages/VersionsPage.vue'),
-  },
-  {
-    path: "/:catchAll(.*)",
-    name: "404 Not Found",
-    component: () => import('@/pages/PageNotFound.vue')
+    component: () => import("@/pages/VersionsPage.vue"),
+    meta: {
+      permission: "VersionsView",
+    },
   },
   {
     path: "/admin/users",
     name: "Users",
-    component: () => import('@/pages/UsersPage.vue')
+    component: () => import("@/pages/UsersPage.vue"),
+    meta: {
+      permission: "UserRead",
+    },
   },
   {
     path: "/admin/audit",
     name: "Audit Log",
-    component: () => import('@/pages/AuditLogPage.vue')
-  }
-]
+    component: () => import("@/pages/AuditLogPage.vue"),
+    meta: {
+      permission: "Admin",
+    },
+  },
+  {
+    path: "/unauthorized",
+    name: "Unauthorized",
+    component: () => import("@/pages/UnauthorizedPage.vue"),
+  },
+  {
+    path: "/:catchAll(.*)",
+    name: "404 Not Found",
+    component: () => import("@/pages/PageNotFound.vue"),
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
-  routes
-})
+  routes,
+});
 
-export default router
+export default router;

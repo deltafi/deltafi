@@ -108,8 +108,11 @@ import useNotifications from "@/composables/useNotifications";
 import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import useErrorsSummary from "@/composables/useErrorsSummary";
-import { ref, computed, onMounted, defineExpose, defineEmits, defineProps, watch, nextTick } from "vue";
+import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
+
+const hasPermission = inject("hasPermission");
+const hasSomePermissions = inject("hasSomePermissions");
 
 const metadataDialog = ref();
 const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
@@ -168,6 +171,7 @@ const menuItems = ref([
   },
   {
     separator: true,
+    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume")),
   },
   {
     label: "Acknowledge Selected",
@@ -175,9 +179,8 @@ const menuItems = ref([
     command: () => {
       acknowledgeClickConfirm();
     },
-    disabled: () => {
-      return selectedErrors.value.length == 0;
-    },
+    visible: computed(() => hasPermission("DeltaFileAcknowledge")),
+    disabled: computed(() => selectedErrors.value.length == 0),
   },
   {
     label: "Resume Selected",
@@ -185,9 +188,8 @@ const menuItems = ref([
     command: () => {
       metadataDialog.value.showConfirmDialog("Resume");
     },
-    disabled: () => {
-      return selectedErrors.value.length == 0;
-    },
+    visible: computed(() => hasPermission("DeltaFileResume")),
+    disabled: computed(() => selectedErrors.value.length == 0),
   },
 ]);
 

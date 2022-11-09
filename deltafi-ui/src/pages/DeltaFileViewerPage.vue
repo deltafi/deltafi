@@ -111,6 +111,9 @@ import { useRoute, useRouter } from "vue-router";
 import ScrollTop from "primevue/scrolltop";
 import Message from "primevue/message";
 
+const hasPermission = inject("hasPermission");
+const hasSomePermissions = inject("hasSomePermissions");
+
 const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 const route = useRoute();
 const router = useRouter();
@@ -150,19 +153,19 @@ const staticMenuItems = reactive([
   {
     label: "Replay",
     icon: "fas fa-sync fa-fw",
-    visible: () => !beenReplayed.value,
+    visible: () => !beenReplayed.value && hasPermission("DeltaFileReplay"),
     command: () => {
       metadataDialog.value.showConfirmDialog("Replay");
     },
   },
   {
     separator: true,
-    visible: () => isError.value,
+    visible: computed(() => isError.value && (hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume"))),
   },
   {
     label: "Acknowledge Error",
     icon: "fas fa-check-circle fa-fw",
-    visible: () => isError.value,
+    visible: computed(() => isError.value && hasPermission("DeltaFileAcknowledge")),
     command: () => {
       ackErrorsDialog.visible = true;
     },
@@ -170,7 +173,7 @@ const staticMenuItems = reactive([
   {
     label: "Resume",
     icon: "fas fa-redo fa-fw",
-    visible: () => isError.value,
+    visible: computed(() => isError.value && hasPermission("DeltaFileResume")),
     command: () => {
       metadataDialog.value.showConfirmDialog("Resume");
     },

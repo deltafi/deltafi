@@ -41,11 +41,11 @@ const toast = useToast();
 
 watch(queueSize, (newValue) => {
   if (newValue > 0) toast.add(queue.value.pop());
-})
+});
 
 onMounted(() => {
   if (queueSize.value > 0) toast.add(queue.value.pop());
-})
+});
 
 const iconClass = (messageSeverity) => {
   return [

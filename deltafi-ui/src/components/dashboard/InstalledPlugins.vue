@@ -23,18 +23,19 @@
       <span class="p-2">No installed plugins</span>
     </div>
     <div v-else class="list-group list-group-flush">
-      <router-link v-for="plugin in pluginsList" :key="plugin" :to="{ path: '/config/plugins/' + plugin.mvnCoordinates }" class="list-group-item list-group-item-action">
+      <PermissionedRouterLink v-for="plugin in pluginsList" :key="plugin" :disabled="!$hasPermission('PluginsView')" :to="{ path: '/config/plugins/' + plugin.mvnCoordinates }" class="list-group-item list-group-item-action">
         <div class="d-flex w-100 justify-content-between">
           <strong class="mb-0">{{ plugin.displayName }}</strong>
           <i class="text-muted fas fa-plug fa-rotate-90 fa-fw" />
         </div>
         <small class="mb-1 text-muted">{{ plugin.pluginCoordinates.version }}</small>
-      </router-link>
+      </PermissionedRouterLink>
     </div>
   </Panel>
 </template>
 
 <script setup>
+import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import usePlugins from "@/composables/usePlugins";
 import Panel from "primevue/panel";
 import ProgressBar from "primevue/progressbar";

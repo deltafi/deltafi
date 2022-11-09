@@ -21,10 +21,10 @@
     <PageHeader heading="Delete Policies">
       <div class="d-flex mb-2">
         <Button label="Export Policies" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies" />
-        <DeletePolicyImportFile @reload-delete-policies="fetchDeletePolicies()" />
+        <DeletePolicyImportFile v-has-permission:DeletePolicyCreate @reload-delete-policies="fetchDeletePolicies()" />
         <div>
           <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Add New Delete Policy" dialog-width="25vw" @reload-delete-policies="fetchDeletePolicies()">
-            <Button label="Add Policy" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+            <Button v-has-permission:DeletePolicyCreate label="Add Policy" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
           </DialogTemplate>
         </div>
       </div>
@@ -36,7 +36,7 @@
           <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Flow'" placeholder="Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">
         <template #empty> No delete policies to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
@@ -56,14 +56,14 @@
             <i v-tooltip.right="deletePolicyLocked.get(data.locked).tooltip" :class="deletePolicyLocked.get(data.locked).class" />
           </template>
         </Column>
-        <Column :style="{ width: '10%' }" :body-style="{ padding: 0 }">
+        <Column :style="{ width: '10%' }" class="deletePolicy-state-column">
           <template #body="{ data }">
-            <div class="d-flex">
+            <div class="d-flex justify-content-between">
               <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Update Delete Policy" dialog-width="25vw" :row-data-prop="data" edit-delete-policy @reload-delete-policies="fetchDeletePolicies()">
-                <Button v-tooltip.top="`Edit Delete Policy`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
+                <Button v-has-permission:DeletePolicyUpdate v-tooltip.top="`Edit Delete Policy`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
               </DialogTemplate>
-              <DeletePolicyRemoveButton class="pl-2" :row-data-prop="data" @reload-delete-policies="fetchDeletePolicies()"></DeletePolicyRemoveButton>
-              <DeletePolicyStateInputSwitch class="pl-2 pt-1" :row-data-prop="data" @reload-delete-policies="fetchDeletePolicies()"></DeletePolicyStateInputSwitch>
+              <DeletePolicyRemoveButton v-has-permission:DeletePolicyDelete :row-data-prop="data" @reload-delete-policies="fetchDeletePolicies()" />
+              <DeletePolicyStateInputSwitch :row-data-prop="data" @reload-delete-policies="fetchDeletePolicies()" />
             </div>
           </template>
         </Column>

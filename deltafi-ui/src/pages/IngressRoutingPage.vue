@@ -21,9 +21,9 @@
     <PageHeader heading="Ingress Routing">
       <div class="d-flex mb-2">
         <Button label="Export Rules" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies()" />
-        <IngressRoutingImportFile @reload-ingress-routes="fetchIngressRoutes()" />
-        <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="Add New Ingress Route Rule" dialog-width="25vw" :row-data-prop="{}" @reload-ingress-routes="fetchIngressRoutes()">
-          <Button label="Add Rule" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+        <IngressRoutingImportFile v-has-permission:IngressRoutingRuleCreate @reload-ingress-routes="fetchIngressRoutes()" />
+        <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="Add New Ingress Route Rule" required-permission="IngressRoutingRuleCreate" dialog-width="25vw" :row-data-prop="{}" @reload-ingress-routes="fetchIngressRoutes()">
+          <Button v-has-permission:IngressRoutingRuleCreate label="Add Rule" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
     </PageHeader>
@@ -51,13 +51,13 @@
             <div v-for="item in viewList(data.requiredMetadata)" :key="item">{{ item }}</div>
           </template>
         </Column>
-        <Column :style="{ width: '5rem' }" :body-style="{ padding: 0 }">
+        <Column :style="{ width: '5rem' }" :body-style="{ padding: 0 }" :hidden="!$hasSomePermissions('IngressRoutingRuleUpdate', 'IngressRoutingRuleDelete')">
           <template #body="{ data }">
             <div class="d-flex">
-              <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="Edit Ingress Route Rule" dialog-width="25vw" :row-data-prop="data" @reload-ingress-routes="fetchIngressRoutes()">
-                <Button v-tooltip.top="`Edit Rule`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
+              <DialogTemplate component-name="ingressRouting/IngressRoutingConfigurationDialog" header="Edit Ingress Route Rule" required-permission="IngressRoutingRuleUpdate" dialog-width="25vw" :row-data-prop="data" @reload-ingress-routes="fetchIngressRoutes()">
+                <Button v-has-permission:IngressRoutingRuleUpdate v-tooltip.top="`Edit Rule`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
               </DialogTemplate>
-              <IngressRoutingRemoveButton class="pl-2" :row-data-prop="data" @reload-ingress-routes="fetchIngressRoutes()" />
+              <IngressRoutingRemoveButton v-has-permission:IngressRoutingRuleDelete class="pl-2" :row-data-prop="data" @reload-ingress-routes="fetchIngressRoutes()" />
             </div>
           </template>
         </Column>

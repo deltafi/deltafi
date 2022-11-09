@@ -19,7 +19,7 @@
 <template>
   <div>
     <PageHeader heading="User Management">
-      <Button label="Add User" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newUser" />
+      <Button :hidden="!$hasPermission('UserCreate')" label="Add User" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newUser" />
     </PageHeader>
     <Panel header="Users" class="users-panel table-panel">
       <DataTable :value="users" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
@@ -42,10 +42,10 @@
             <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
-        <Column style="width: 5rem; padding: 0;">
+        <Column style="width: 5rem; padding: 0;" :hidden="!$hasSomePermissions('UserUpdate', 'UserDelete')">
           <template #body="{ data }">
-            <Button icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editUser(data)" />
-            <Button icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteUser(data)" />
+            <Button v-tooltip.top="`Edit User ${data.name}`" :hidden="!$hasPermission('UserUpdate')" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editUser(data)" />
+            <Button v-tooltip.top="`Remove User ${data.name}`" :hidden="!$hasPermission('UserDelete')" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteUser(data)" />
           </template>
         </Column>
       </DataTable>

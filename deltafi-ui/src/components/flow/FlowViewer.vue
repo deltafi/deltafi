@@ -42,7 +42,7 @@
                             <dd class="d-flex">
                               <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
                               <template v-if="_.isEqual(actionInfoKey, 'name')">
-                                <a v-tooltip.top="`View logs`" class="cursor-pointer pl-1" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                                <a  v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
                                   <i class="ml-1 text-muted fa-regular fa-chart-bar" />
                                 </a>
                               </template>
@@ -75,7 +75,7 @@
                           <dd class="d-flex">
                             <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
                             <template v-if="_.isEqual(actionInfoKey, 'name')">
-                              <a v-tooltip.top="`View logs`" class="cursor-pointer pl-1" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                              <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
                                 <i class="ml-1 text-muted fa-regular fa-chart-bar" />
                               </a>
                             </template>
@@ -128,6 +128,8 @@ import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 
 import _ from "lodash";
+
+const hasPermission = inject("hasPermission");
 const isIdle = inject("isIdle");
 const uiConfig = inject("uiConfig");
 
@@ -209,6 +211,15 @@ const fetchFlows = async (paramFlowName, paramFlowType) => {
 
 const flowActions = computed(() => {
   return _.pick(flowData.value, actionsList);
+});
+
+const grafanaLogLink = computed(() => {
+  return [
+    "cursor-pointer pl-1",
+    {
+      "disable-grafana-link": !hasPermission('MetricsView')
+    },
+  ];
 });
 
 const panelHeader = (actionType) => {

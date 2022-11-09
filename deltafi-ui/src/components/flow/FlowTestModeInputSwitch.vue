@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span>
+  <span v-if="$hasPermission('FlowUpdate')">
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
@@ -31,13 +31,17 @@
     </ConfirmPopup>
     <InputSwitch v-tooltip.top="checkedTooltip" :model-value="checked" class="p-button-sm" @click="confirmationPopup($event, rowData.name, checked, rowData.flowType)" />
   </span>
+  <span v-else class="pr-2 float-left">
+    <Button :label="testModeToolTip" :class="testModeButtonClass" style="width: 5.5rem" disabled />
+  </span>
 </template>
 
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { defineProps, reactive, ref } from "vue";
+import { computed, defineProps, reactive, ref } from "vue";
 
+import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";
 import InputSwitch from "primevue/inputswitch";
 import { useConfirm } from "primevue/useconfirm";
@@ -58,6 +62,14 @@ const { rowDataProp: rowData } = reactive(props);
 const checked = ref(props.rowDataProp.flowStatus.testMode);
 const checkedTooltip = ref();
 checkedTooltip.value = props.rowDataProp.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";
+
+const testModeToolTip = computed(() => {
+  return _.isEqual(checked.value, true) ? "Enabled" : "Disabled";
+});
+
+const testModeButtonClass = computed(() => {
+  return _.isEqual(checked.value, true) ? "p-button-primary" : "p-button-secondary";
+});
 
 const confirmationPopup = (event, name, testMode, flowType) => {
   if (testMode) {

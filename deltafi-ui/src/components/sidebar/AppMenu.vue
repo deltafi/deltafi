@@ -21,7 +21,7 @@
     <div class="pt-3">
       <ul class="nav flex-column">
         <div v-for="item in menuItems" :key="item">
-          <div v-if="!item.hidden">
+          <div v-if="item.visible">
             <li v-tooltip.right="item.description" class="nav-item">
               <span v-if="item.children" :class="menuItemClass(item)" @click.prevent="item.expand = !item.expand">
                 <i :class="folderIcon(item)" />
@@ -37,7 +37,7 @@
               </a>
             </li>
             <div v-for="child in item.children" :key="child" :class="{ hidden: !item.expand, submenu: true }">
-              <li v-if="!child.hidden" v-tooltip.right="child.description" class="nav-item">
+              <li v-if="child.visible" v-tooltip.right="child.description" class="nav-item">
                 <router-link v-if="child.path" :to="child.path" :class="menuItemClass(child, true)">
                   <span class="d-flex justify-content-between">
                     <span>
@@ -68,6 +68,8 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 const { fetchErrorCount, errorCount } = useErrorCount();
 const uiConfig = inject("uiConfig");
+const hasPermission = inject("hasPermission");
+const hasSomePermissions = inject("hasSomePermissions");
 
 const externalLinks = computed(() => {
   return JSON.parse(JSON.stringify(uiConfig.externalLinks)).map((link) => {
@@ -77,72 +79,85 @@ const externalLinks = computed(() => {
 });
 
 const staticMenuItems = ref([
-  { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/" },
+  { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/", visible: computed(() => hasPermission("DashboardView")) },
   {
     name: "Metrics",
     expand: true,
+    visible: computed(() => hasPermission("MetricsView")),
     children: [
       {
         name: "System Metrics",
         icon: "far fa-chart-bar fa-fw",
         path: "/metrics/system",
+        visible: computed(() => hasPermission("MetricsView")),
       },
       {
         name: "Action Metrics",
         icon: "fas fa-chart-line fa-fw",
         path: "/metrics/action",
+        visible: computed(() => hasPermission("MetricsView")),
       },
       {
         name: "Grafana Dashboards",
         icon: "icomoon grafana",
         url: computed(() => `https://metrics.${uiConfig.domain}/dashboards`),
-      }
+        visible: computed(() => hasPermission("MetricsView")),
+      },
     ],
   },
   {
     name: "Configuration",
     expand: true,
+    visible: computed(() => hasSomePermissions("SystemPropertiesRead", "FlowView", "PluginsView", "DeletePolicyRead", "IngressRoutingRuleRead", "SnapshotRead")),
     children: [
       {
         name: "System Properties",
         icon: "fas fa-cogs fa-fw",
         path: "/config/system",
+        visible: computed(() => hasPermission("SystemPropertiesRead")),
       },
       {
         name: "Flows",
         icon: "fas fa-project-diagram fa-fw",
         path: "/config/flows",
+        visible: computed(() => hasPermission("FlowView")),
       },
       {
         name: "Plugins",
         icon: "fas fa-plug fa-rotate-90 fa-fw",
         path: "/config/plugins",
+        visible: computed(() => hasPermission("PluginsView")),
       },
       {
         name: "Delete Policies",
         icon: "fas fa-landmark fa-fw",
         path: "/config/delete-policies",
+        visible: computed(() => hasPermission("DeletePolicyRead")),
       },
       {
         name: "Ingress Routing",
         icon: "fas fa-route fa-fw",
         path: "/config/ingress-routing",
+        visible: computed(() => hasPermission("IngressRoutingRuleRead")),
       },
       {
         name: "System Snapshots",
         icon: "far fa-clock fa-fw",
         path: "/config/snapshots",
+        visible: computed(() => hasPermission("SnapshotRead")),
       },
     ],
   },
   {
     name: "DeltaFiles",
     expand: true,
+    visible: computed(() => hasSomePermissions("DeltaFileMetadataView", "DeltaFileIngress")),
     children: [
       {
         name: "Search",
         icon: "fas fa-search fa-fw",
         path: "/deltafile/search",
+        visible: computed(() => hasPermission("DeltaFileMetadataView")),
       },
       {
         name: "Errors",
@@ -151,48 +166,55 @@ const staticMenuItems = ref([
         badge: () => {
           return errorsBadge.value;
         },
+        visible: computed(() => hasPermission("DeltaFileMetadataView")),
       },
       {
         name: "Viewer",
         icon: "far fa-file fa-fw",
         path: "/deltafile/viewer/",
+        visible: computed(() => hasPermission("DeltaFileMetadataView")),
       },
       {
         name: "Upload",
         icon: "fas fa-upload fa-fw",
         path: "/deltafile/upload/",
+        visible: computed(() => hasPermission("DeltaFileIngress")),
       },
     ],
   },
   {
     name: "Administration",
     expand: true,
+    visible: computed(() => hasPermission("UserRead")),
     children: [
       {
         name: "Audit Log",
         icon: "fas fa-file-alt fa-fw",
         path: "/admin/audit",
-        hidden: true,
+        visible: false,
       },
       {
         name: "Users",
         icon: "fas fa-users fa-fw",
         path: "/admin/users",
+        visible: computed(() => hasPermission("UserRead")),
       },
       {
         name: "Kubernetes Dashboard",
         icon: "icomoon kubernetes",
-        url: computed(() => `https://k8s.${uiConfig.domain}/#/workloads?namespace=deltafi`)
+        url: computed(() => `https://k8s.${uiConfig.domain}/#/workloads?namespace=deltafi`),
+        visible: computed(() => hasPermission("Admin")),
       },
       {
         name: "GraphiQL",
         icon: "icomoon graphql",
-        url: computed(() => `https://${uiConfig.domain}/graphiql`)
+        url: computed(() => `https://${uiConfig.domain}/graphiql`),
+        visible: computed(() => hasPermission("Admin")),
       },
     ],
   },
-  { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions" },
-  { name: "Documentation", icon: "fas fa-book fa-fw", url: "/docs" },
+  { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions", visible: computed(() => hasPermission("VersionsView")) },
+  { name: "Documentation", icon: "fas fa-book fa-fw", url: "/docs", visible: true },
 ]);
 
 const menuItems = computed(() => {

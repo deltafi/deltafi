@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { inject, ref, defineProps, defineEmits, computed } from "vue";
+import { computed, defineProps, defineEmits, inject, ref } from "vue";
 
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
@@ -65,6 +65,8 @@ import MapEdit from "@/components/plugin/MapEdit";
 
 import usePlugins from "@/composables/usePlugins";
 import useNotifications from "@/composables/useNotifications";
+
+const hasPermission = inject("hasPermission")
 
 const props = defineProps({
   variable: {
@@ -102,8 +104,12 @@ const revertTooltip = computed(() => {
 });
 
 const show = () => {
-  errors.value = [];
-  dialogVisible.value = true;
+  if (hasPermission("PluginVariableUpdate")) {
+    errors.value = [];
+    dialogVisible.value = true;
+  } else {
+    notify.warn("Access Denied", "You are not authorized to perform this action");
+  }
 };
 
 const hide = () => {

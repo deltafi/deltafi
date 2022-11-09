@@ -16,34 +16,32 @@
    limitations under the License.
 */
 
-import { reactive, readonly } from "vue";
+import { ref, readonly, Ref } from "vue";
 import useApi from "./useApi";
 
-export type User = {
+export type Permission = {
   name: String;
-  permissions: Array<String>;
+  description: String;
+  category: String;
 };
 
-const currentUser: User = reactive({
-  name: "Unknown",
-  permissions: [],
-});
+const permissions: Ref<Array<Permission>> = ref([]);
 
-export default function useCurrentUser() {
-  const fetchCurrentUser = async () => {
+export default function usePermissions() {
+  const fetchAppPermissions = async () => {
     const { response, get } = useApi();
-    const endpoint = "me";
+    const endpoint = "permissions";
     try {
       await get(endpoint);
-      Object.assign(currentUser, response.value);
-      return currentUser;
+      permissions.value = response.value;
+      return permissions.value;
     } catch {
-      // Continue regardless of error
+      //
     }
   };
 
   return {
-    currentUser: readonly(currentUser),
-    fetchCurrentUser,
+    appPermissions: readonly(permissions.value),
+    fetchAppPermissions,
   };
 }

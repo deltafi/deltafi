@@ -18,47 +18,50 @@
 
 /* eslint vue/multi-word-component-names: 0 */
 
-import { createApp } from 'vue';
-import App from '@/App.vue';
-import router from '@/router';
+import { createApp } from "vue";
+import App from "@/App.vue";
+import router from "@/router";
 
-import PrimeVue from 'primevue/config';
-import ConfirmationService from 'primevue/confirmationservice';
-import Tooltip from 'primevue/tooltip';
-import ToastService from 'primevue/toastservice';
-import BadgeDirective from 'primevue/badgedirective';
+import PrimeVue from "primevue/config";
+import ConfirmationService from "primevue/confirmationservice";
+import Tooltip from "primevue/tooltip";
+import ToastService from "primevue/toastservice";
+import BadgeDirective from "primevue/badgedirective";
 import PageHeader from "@/components/PageHeader.vue";
+import useCurrentUser from "@/composables/useCurrentUser";
 import useUiConfig from "@/composables/useUiConfig";
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import 'primevue/resources/themes/bootstrap4-light-blue/theme.css';
-import 'primevue/resources/primevue.min.css';
-import 'primeicons/primeicons.css';
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "primevue/resources/themes/bootstrap4-light-blue/theme.css";
+import "primevue/resources/primevue.min.css";
+import "primeicons/primeicons.css";
 import "@fortawesome/fontawesome-free/css/all.css";
 import "@/styles/icomoon.scss";
 import "@/styles/global.scss";
 
-if (process.env.NODE_ENV === 'development') {
+import auth from "./plugins/auth";
+
+if (process.env.NODE_ENV === "development") {
   const responseType = process.env.VUE_APP_MOCK_RESPONSES ? process.env.VUE_APP_MOCK_RESPONSES : "";
   if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
-    const { worker } = require('./mocks/browser.ts')
-    worker.start()
-  };
+    const { worker } = require("./mocks/browser.ts");
+    worker.start();
+  }
 }
 
+const { fetchCurrentUser } = useCurrentUser();
 const { fetchUiConfig } = useUiConfig();
 
-Promise.all([
-  fetchUiConfig()
-]).then(() => {
-  const app = createApp(App)
-  app.use(router)
-  app.use(PrimeVue)
-  app.use(ConfirmationService)
-  app.use(ToastService)
-  app.directive('badge', BadgeDirective);
-  app.directive('tooltip', Tooltip);
-  app.component('PageHeader', PageHeader)
-  app.mount('#app')
+Promise.all([fetchCurrentUser(), fetchUiConfig()]).then((values) => {
+  const app = createApp(App);
+  app.use(auth, values[0], router);
+  app.use(router);
+  app.use(PrimeVue);
+  app.use(ConfirmationService);
+  app.use(ToastService);
+  app.directive("badge", BadgeDirective);
+  app.directive("tooltip", Tooltip);
+  app.component("PageHeader", PageHeader);
+  app.mount("#app");
 });

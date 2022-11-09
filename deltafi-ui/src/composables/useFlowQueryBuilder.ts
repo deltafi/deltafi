@@ -576,10 +576,10 @@ export default function useFlowQueryBuilder() {
         },
       },
     };
-    return sendGraphQLQuery(query, "enableTestIngressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "enableIngressTestModeFlowByName", "mutation");
   };
 
-    // sets an ingress flow to test mode
+  // sets an ingress flow to test mode
   const disableTestIngressFlowByName = (flowName: string) => {
     const query = {
       disableIngressTestMode: {
@@ -588,7 +588,7 @@ export default function useFlowQueryBuilder() {
         },
       },
     };
-    return sendGraphQLQuery(query, "disableTestIngressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "disableIngressTestModeFlowByName", "mutation");
   };
 
   // sets an ingress flow to test mode
@@ -603,7 +603,7 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "enableEgressTestModeFlowByName", "mutation");
   };
 
-    // sets an ingress flow to test mode
+  // sets an ingress flow to test mode
   const disableTestEgressFlowByName = (flowName: string) => {
     const query = {
       disableEgressTestMode: {
@@ -614,7 +614,6 @@ export default function useFlowQueryBuilder() {
     };
     return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
   };
-
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
@@ -644,6 +643,6 @@ export default function useFlowQueryBuilder() {
     enableTestIngressFlowByName,
     disableTestIngressFlowByName,
     enableTestEgressFlowByName,
-    disableTestEgressFlowByName
+    disableTestEgressFlowByName,
   };
 }

@@ -30,9 +30,9 @@
                 <i v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" :class="infoIconClass(data)" />
               </span>
             </DialogTemplate>
-            <router-link :to="{ path: 'plugins/' + data.mvnCoordinates }">
+            <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + data.mvnCoordinates }">
               <i v-tooltip.right="data.mvnCoordinates" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
-            </router-link>
+            </PermissionedRouterLink>
           </div>
         </template>
       </Column>
@@ -44,16 +44,16 @@
       <Column header="Description" field="description" />
       <Column v-if="FlowTypeTitle !== 'Enrich'" header="Test Mode" class="test-mode-column">
         <template #body="{ data }">
-          <FlowTestModeInputSwitchVue :row-data-prop="data"></FlowTestModeInputSwitchVue>
+          <FlowTestModeInputSwitch :row-data-prop="data" />
         </template>
       </Column>
       <Column header="Active" class="flow-state-column">
         <template #body="{ data }">
           <template v-if="!_.isEmpty(data.flowStatus.errors)">
-            <FlowStateValidationButton :row-data-prop="data"></FlowStateValidationButton>
+            <FlowStateValidationButton :row-data-prop="data" />
           </template>
           <template v-else>
-            <FlowStateInputSwitch :row-data-prop="data"></FlowStateInputSwitch>
+            <FlowStateInputSwitch :row-data-prop="data" />
           </template>
         </template>
       </Column>
@@ -66,7 +66,8 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import FlowStateInputSwitch from "@/components/flow/FlowStateInputSwitch.vue";
 import FlowStateValidationButton from "@/components/flow/FlowStateValidationButton.vue";
-import FlowTestModeInputSwitchVue from "@/components/flow/FlowTestModeInputSwitch.vue";
+import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch } from "vue";
 

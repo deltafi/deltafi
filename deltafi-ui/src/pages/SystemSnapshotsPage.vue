@@ -20,8 +20,8 @@
   <div class="system-snapshots">
     <PageHeader heading="System Snapshots">
       <div class="d-flex mb-2">
-        <FileUpload ref="fileUploader" mode="basic" choose-label="Import Snapshot" class="p-button p-button-secondary p-button-outlined p-button-secondary-upload" :auto="true" :custom-upload="true" @uploader="onUpload" />
-        <Button label="Create Snapshot" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="onCreateSnapshot()" />
+        <FileUpload ref="fileUploader" v-has-permission:SnapshotCreate mode="basic" choose-label="Import Snapshot" class="p-button p-button-secondary p-button-sm p-button-outlined p-button-secondary-upload" :auto="true" :custom-upload="true" @uploader="onUpload" />
+        <Button v-has-permission:SnapshotCreate label="Create Snapshot" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="onCreateSnapshot()" />
       </div>
     </PageHeader>
     <Panel header="Snapshots" class="table-panel system-snapshots-panel">
@@ -47,8 +47,10 @@
         </Column>
         <Column :style="{ width: '5rem', padding: 0 }">
           <template #body="data">
-            <Button v-tooltip.left="'Download Snapshot'" icon="fas fa-download fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onDownload(data.data)" />
-            <Button v-tooltip.left="'Revert to Snapshot'" icon="fas fa-history fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onRevertClick(data.data)" />
+            <span class="btn-group">
+              <Button v-tooltip.left="'Download Snapshot'" icon="fas fa-download fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onDownload(data.data)" />
+              <Button v-has-permission:SnapshotRevert v-tooltip.left="'Revert to Snapshot'" icon="fas fa-history fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onRevertClick(data.data)" />
+            </span>
           </template>
         </Column>
       </DataTable>
@@ -59,8 +61,10 @@
       <HighlightedCode :code="JSON.stringify(snapshot, null, 2)" :style="{ width: '65vw' }" />
     </div>
     <template #footer>
-      <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onDownload(snapshot)" />
-      <Button label="Revert to Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onRevertClick(snapshot)" />
+      <span class="btn-group">
+        <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onDownload(snapshot)" />
+        <Button v-has-permission:SnapshotRevert label="Revert to Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onRevertClick(snapshot)" />
+      </span>
     </template>
   </Dialog>
   <Dialog v-model:visible="showCreateSnapshotDialog" header="Create Snapshot" :style="{ width: '25vw' }" :modal="true" :draggable="false" :dismissable-mask="true" @update:visible="close">

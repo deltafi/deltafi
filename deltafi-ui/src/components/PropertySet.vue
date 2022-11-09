@@ -29,24 +29,25 @@
         <template #empty>No properties in this property set.</template>
         <Column header="Key" field="key" :sortable="true">
           <template #body="property">
-            <span :class="{ 'text-muted': !property.data.editable }">{{ property.data.key }}</span>
+            <span :class="{ 'text-muted': (!property.data.editable || !$hasPermission('SystemPropertiesUpdate')) }">{{ property.data.key }}</span>
             <i v-if="tooltipText(property.data)" v-tooltip.right="tooltipText(property.data)" class="ml-2 text-muted fas fa-info-circle fa-fw" />
           </template>
         </Column>
         <Column header="Value" field="value" :sortable="true" class="value-column">
           <template #body="property">
-            <span :class="{ 'value-clickable': property.data.editable }">
-              <span :class="{ 'text-muted': !property.data.editable }">{{ property.data.value }}</span>
+            <span :class="{ 'value-clickable': property.data.editable && $hasPermission('SystemPropertiesUpdate') }">
+              <span :class="{ 'text-muted': !property.data.editable || !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.value }}</span>
             </span>
           </template>
           <template #editor="{ data, field }">
-            <InputText v-if="data.editable" v-model="data[field]" class="p-inputtext-sm" autofocus />
+            <span v-if="!$hasPermission('SystemPropertiesUpdate')" class="text-muted">{{ data.value }}</span>
+            <InputText v-else-if="data.editable" v-model="data[field]" class="p-inputtext-sm" autofocus />
             <span v-else class="text-muted">{{ data.value }}</span>
           </template>
         </Column>
         <Column header="Source" field="propertySource" :sortable="true">
           <template #body="property">
-            <span :class="{ 'text-muted': !property.data.editable }">{{ property.data.propertySource }}</span>
+            <span :class="{ 'text-muted': !property.data.editable || !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.propertySource }}</span>
           </template>
         </Column>
       </DataTable>
@@ -61,7 +62,9 @@ import InputText from "primevue/inputtext";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import useNotifications from "@/composables/useNotifications";
 import usePropertySets from "@/composables/usePropertySets";
-import { computed, defineProps, defineEmits, reactive } from "vue";
+import { computed, defineProps, defineEmits, inject, reactive } from "vue";
+
+const hasPermission = inject("hasPermission")
 
 const props = defineProps({
   propSet: {
@@ -80,7 +83,7 @@ const visibleProperties = computed(() => propertySet.properties.filter((p) => !p
 const tooltipText = (property) => {
   let parts = [];
   if (property.description) parts.push(property.description);
-  if (!property.editable) parts.push("(Read-only)");
+  if (!property.editable || !hasPermission("SystemPropertiesUpdate")) parts.push("(Read-only)");
   return parts.join(" ");
 };
 

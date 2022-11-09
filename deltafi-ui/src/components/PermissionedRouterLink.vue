@@ -1,4 +1,4 @@
-/*
+<!--
    DeltaFi - Data transformation and enrichment platform
 
    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -14,36 +14,14 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-*/
+-->
 
-import { reactive, readonly } from "vue";
-import useApi from "./useApi";
+<template>
+  <router-link v-if="!$attrs.disabled" v-bind="$attrs">
+    <slot />
+  </router-link>
 
-export type User = {
-  name: String;
-  permissions: Array<String>;
-};
-
-const currentUser: User = reactive({
-  name: "Unknown",
-  permissions: [],
-});
-
-export default function useCurrentUser() {
-  const fetchCurrentUser = async () => {
-    const { response, get } = useApi();
-    const endpoint = "me";
-    try {
-      await get(endpoint);
-      Object.assign(currentUser, response.value);
-      return currentUser;
-    } catch {
-      // Continue regardless of error
-    }
-  };
-
-  return {
-    currentUser: readonly(currentUser),
-    fetchCurrentUser,
-  };
-}
+  <span v-else v-bind="$attrs">
+    <slot />
+  </span>
+</template>

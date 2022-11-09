@@ -35,7 +35,7 @@
         <Column field="elapsed" header="Elapsed" class="elapsed-column" :sortable="true">
           <template #body="action">{{ action.data.elapsed }}</template>
         </Column>
-        <Column v-if="!contentDeleted" header="Content" class="content-column">
+        <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Content" class="content-column">
           <template #body="{ data: action }">
             <span v-if="protocolLayersByAction.hasOwnProperty(action.name)">
               <ContentDialog :content="protocolLayersByAction[action.name].content" :action="action.name">
@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, defineProps } from "vue";
+import { computed, reactive, defineProps, inject } from "vue";
 
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -78,6 +78,8 @@ import ErrorViewerDialog from "@/components/errors/ViewerDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 
 import useUtilFunctions from "@/composables/useUtilFunctions";
+
+const hasPermission = inject("hasPermission");
 
 const props = defineProps({
   deltaFileData: {

@@ -1,4 +1,4 @@
-/*
+<!--
    DeltaFi - Data transformation and enrichment platform
 
    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -14,36 +14,15 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-*/
+-->
 
-import { reactive, readonly } from "vue";
-import useApi from "./useApi";
+<template>
+  <div>
+    <PageHeader heading="Access Denied" />
+    <p>You are not authorized to view the requested page.</p>
+  </div>
+</template>
 
-export type User = {
-  name: String;
-  permissions: Array<String>;
-};
-
-const currentUser: User = reactive({
-  name: "Unknown",
-  permissions: [],
-});
-
-export default function useCurrentUser() {
-  const fetchCurrentUser = async () => {
-    const { response, get } = useApi();
-    const endpoint = "me";
-    try {
-      await get(endpoint);
-      Object.assign(currentUser, response.value);
-      return currentUser;
-    } catch {
-      // Continue regardless of error
-    }
-  };
-
-  return {
-    currentUser: readonly(currentUser),
-    fetchCurrentUser,
-  };
-}
+<script setup>
+import PageHeader from "@/components/PageHeader.vue";
+</script>

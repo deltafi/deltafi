@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span>
+  <span v-if="(_.isEqual(checked, 'RUNNING') && $hasPermission('FlowStop')) || (_.isEqual(checked, 'STOPPED') && $hasPermission('FlowStart'))">
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
@@ -31,14 +31,18 @@
     </ConfirmPopup>
     <InputSwitch v-tooltip.top="checked" :model-value="checked" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, checked, rowData.flowType)" />
   </span>
+  <span v-else>
+    <Button :label="checked" :class="buttonClass" style="width: 5.5rem" disabled />
+  </span>
 </template>
 
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { defineProps, reactive, ref } from "vue";
+import { computed, defineProps, reactive, ref } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
+import Button from "primevue/button";
 import InputSwitch from "primevue/inputswitch";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
@@ -57,6 +61,10 @@ const props = defineProps({
 const { rowDataProp: rowData } = reactive(props);
 
 const checked = ref(props.rowDataProp.flowStatus.state);
+
+const buttonClass = computed(() => {
+  return _.isEqual(checked.value, "RUNNING") ? "p-button-primary" : "p-button-secondary";
+});
 
 const confirmationPopup = (event, name, state, flowType) => {
   if (_.isEqual(state, "RUNNING")) {

@@ -25,6 +25,10 @@
       margin-bottom: 1rem;
     }
   }
+  .disable-grafana-link{
+    pointer-events: none !important;
+  }
+
   .p-tabview-panels {
     padding: 1.25rem 0;
   }
