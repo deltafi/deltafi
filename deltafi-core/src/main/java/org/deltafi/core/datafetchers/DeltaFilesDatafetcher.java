@@ -200,18 +200,23 @@ public class DeltaFilesDatafetcher {
     while (remainingFiles > 0) {
       List<ContentReference> crs = new ArrayList<>();
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
-        String did = UUID.randomUUID().toString();
-        log.info("Saving content for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
-        byte[] contentBytes = new byte[contentSize];
-        random.nextBytes(contentBytes);
-        crs.add(contentStorageService.save(did, contentBytes, "application/octet-stream"));
+        if (contentSize > 0) {
+          String did = UUID.randomUUID().toString();
+          log.debug("Saving content for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
+          byte[] contentBytes = new byte[contentSize];
+          random.nextBytes(contentBytes);
+          crs.add(contentStorageService.save(did, contentBytes, "application/octet-stream"));
+        } else {
+          crs.add(new ContentReference("application/octet-stream", Collections.emptyList()));
+        }
       }
 
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         ContentReference cr = crs.get(i);
         c.setContentReference(cr);
-        IngressInput ingressInput = new IngressInput(cr.getSegments().get(0).getDid(), sourceInfo, List.of(c), OffsetDateTime.now());
-        log.info("Ingressing metadata for {} ({}/{})", cr.getSegments().get(0).getDid(), i + (numFiles - remainingFiles) + 1, numFiles);
+        String did = cr.getSegments().isEmpty() ? UUID.randomUUID().toString() : cr.getSegments().get(0).getDid();
+        IngressInput ingressInput = new IngressInput(did, sourceInfo, List.of(c), OffsetDateTime.now());
+        log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
         ingress(ingressInput);
       }
 
