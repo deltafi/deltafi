@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.99.3
 
 ### Added
+- Core API version is now discoverable via query
 
 ### Changed
 - Increase default requeueSeconds from 30 to 300

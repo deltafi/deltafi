@@ -462,6 +462,8 @@ type Query {
 
   domains: [String!]!
   indexedMetadataKeys(domain: String): [String!]!
+
+  version: String!
 }
 
 type Mutation {

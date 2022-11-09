@@ -153,3 +153,7 @@ docker {
     tag "local", "${localDockerRegistry}/${project.name}:latest"
 	copySpec.from(bootJar.archiveFile).into("build/libs/")
 }
+
+springBoot {
+	buildInfo()
+}

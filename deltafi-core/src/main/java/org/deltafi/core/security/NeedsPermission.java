@@ -306,4 +306,9 @@ public class NeedsPermission {
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('ActionEvent'" + OR_ADMIN)
     public @interface ActionEvent {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize("hasAnyAuthority('VersionsView'" + OR_ADMIN)
+    public @interface VersionsView {}
 }
