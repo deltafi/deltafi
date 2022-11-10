@@ -17,24 +17,24 @@
  */
 package org.deltafi.core.action;
 
+import org.deltafi.actionkit.action.egress.EgressAction;
+import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.actionkit.action.egress.SimpleEgressAction;
 import org.deltafi.actionkit.action.filter.FilterResult;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.FormattedData;
-import org.deltafi.common.types.SourceInfo;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
 @SuppressWarnings("unused")
-public class FilterEgressAction extends SimpleEgressAction {
+public class FilterEgressAction extends EgressAction<ActionParameters> {
     public FilterEgressAction() {
         super("Filters on egress");
     }
 
     @Override
-    public EgressResultType egress(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    public EgressResultType egress(@NotNull ActionContext context, @NotNull ActionParameters p, @NotNull EgressInput input) {
         return new FilterResult(context, "filtered");
     }
 }

@@ -21,15 +21,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.content.ContentReference;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class EnrichInput {
-  private List<Enrichment> enrichments;
-  private Map<String, String> indexedMetadata;
+public class FormatEvent {
+  private String filename;
+  private ContentReference contentReference;
+  private List<KeyValue> metadata;
 }

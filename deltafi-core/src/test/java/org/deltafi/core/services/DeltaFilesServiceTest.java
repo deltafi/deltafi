@@ -96,7 +96,7 @@ class DeltaFilesServiceTest {
         String did = UUID.randomUUID().toString();
 
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference("mediaType")).build());
-        IngressInput ingressInput = new IngressInput(did, sourceInfo, content, OffsetDateTime.now());
+        IngressEvent ingressInput = new IngressEvent(did, sourceInfo, content, OffsetDateTime.now());
 
         DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
 
@@ -110,7 +110,7 @@ class DeltaFilesServiceTest {
     void setThrowsOnMissingFlow() {
         SourceInfo sourceInfo = new SourceInfo(null, "nonsense", List.of());
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference("mediaType")).build());
-        IngressInput ingressInput = new IngressInput("did", sourceInfo, content, OffsetDateTime.now());
+        IngressEvent ingressInput = new IngressEvent("did", sourceInfo, content, OffsetDateTime.now());
 
         when(flowService.getRunningFlowByName(sourceInfo.getFlow())).thenThrow(new DgsEntityNotFoundException());
         assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.ingress(ingressInput));
@@ -339,11 +339,11 @@ class DeltaFilesServiceTest {
         deltaFilesService.split(deltaFile, ActionEventInput.newBuilder()
                 .action("loadAction")
                 .split(List.of(
-                        SplitInput.newBuilder().sourceInfo(
+                        SplitEvent.newBuilder().sourceInfo(
                                 SourceInfo.builder().flow("good").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
                                         .build())).build(),
-                        SplitInput.newBuilder().sourceInfo(
+                        SplitEvent.newBuilder().sourceInfo(
                                 SourceInfo.builder().flow("bad").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
                                         .build())).build())).build());
@@ -376,11 +376,11 @@ class DeltaFilesServiceTest {
         deltaFilesService.split(deltaFile, ActionEventInput.newBuilder()
                 .action("loadAction")
                 .split(List.of(
-                        SplitInput.newBuilder().sourceInfo(
+                        SplitEvent.newBuilder().sourceInfo(
                                         SourceInfo.builder().flow("good").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
                                         .build())).build(),
-                        SplitInput.newBuilder().sourceInfo(
+                        SplitEvent.newBuilder().sourceInfo(
                                         SourceInfo.builder().flow("good").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
                                         .build())).build()))

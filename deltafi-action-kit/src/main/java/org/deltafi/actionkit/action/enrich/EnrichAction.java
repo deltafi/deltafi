@@ -17,45 +17,64 @@
  */
 package org.deltafi.actionkit.action.enrich;
 
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Base class for a ENRICH action that will not process multi-part content, but needs to extend
- * ActionParameters for configuration
- *
- * @see SimpleEnrichAction
- * @see MultipartEnrichAction
- * @see SimpleMultipartEnrichAction
+ * Specialization class for ENRICH actions.
+ * @param <P> Parameter class for configuring the enrich action
  */
-public abstract class EnrichAction<P extends ActionParameters> extends EnrichActionBase<P> {
-    public EnrichAction(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+public abstract class EnrichAction<P extends ActionParameters> extends Action<P> {
+    public EnrichAction(String description) {
+        super(ActionType.ENRICH, description);
+    }
+
+    /**
+     * Implement to provide a list of required domains for enrichment to proceed
+     * @return List of domain name strings
+     */
+    public abstract List<String> getRequiresDomains();
+
+    /**
+     * Implement to provide a list of required enrichments for enrichment to proceed
+     * @return List of enrichment name strings
+     */
+    public List<String> getRequiresEnrichments() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public ActionDescriptor buildActionDescriptor() {
+        ActionDescriptor actionDescriptor = super.buildActionDescriptor();
+        actionDescriptor.setRequiresDomains(getRequiresDomains());
+        actionDescriptor.setRequiresEnrichments(getRequiresEnrichments());
+        return actionDescriptor;
     }
 
     @Override
     protected final EnrichResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return enrich(context,
-                params,
-                deltaFile.getSourceInfo(),
-                deltaFile.getLastProtocolLayerContent().get(0),
-                deltaFile.getLastProtocolLayerMetadataAsMap(),
-                deltaFile.domainMap(),
-                deltaFile.enrichmentMap());
+                params, EnrichInput.builder()
+                        .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                        .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                        .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                        .contentList(deltaFile.getLastProtocolLayerContent())
+                        .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                        .domains(deltaFile.domainMap())
+                        .enrichment(deltaFile.enrichmentMap())
+                        .build());
     }
 
     /**
      * Implements the enrichment execution function of an enrich action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
-     * @param sourceInfo The source info for this action execution
-     * @param content The content to be enriched by this action
-     * @param metadata The metadata for this enrich action
-     * @param domains A map of domain names with their associated domain values for this action
-     * @param enrichment A map of enrichment names with their associated domain values for this action
+     * @param enrichInput Action input from the DeltaFile
      * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
      * a EnrichResult
      * @see EnrichResult
@@ -64,9 +83,5 @@ public abstract class EnrichAction<P extends ActionParameters> extends EnrichAct
      */
     public abstract EnrichResultType enrich(@NotNull ActionContext context,
                                             @NotNull P params,
-                                            @NotNull SourceInfo sourceInfo,
-                                            @NotNull Content content,
-                                            @NotNull Map<String, String> metadata,
-                                            @NotNull Map<String, Domain> domains,
-                                            @NotNull Map<String, Enrichment> enrichment);
+                                            @NotNull EnrichInput enrichInput);
 }

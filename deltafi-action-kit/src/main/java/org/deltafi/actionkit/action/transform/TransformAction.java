@@ -17,43 +17,45 @@
  */
 package org.deltafi.actionkit.action.transform;
 
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.SourceInfo;
-import org.deltafi.common.types.Content;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
-
 /**
- * Base class for a TRANSFORM action that will not process multi-part content, but needs to extend
- * ActionParameters for configuration
- *
- * @see SimpleTransformAction
- * @see MultipartTransformAction
- * @see SimpleMultipartTransformAction
+ * Specialization class for TRANSFORM actions.
+ * @param <P> Parameter class for configuring the transform action
  */
-public abstract class TransformAction<P extends ActionParameters> extends TransformActionBase<P> {
-    public TransformAction(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+public abstract class TransformAction<P extends ActionParameters> extends Action<P> {
+    public TransformAction(String description) {
+        super(ActionType.TRANSFORM, description);
     }
 
     @Override
     protected final TransformResultType execute(@NotNull DeltaFile deltaFile,
                                                 @NotNull ActionContext context,
                                                 @NotNull P params) {
-
-        return transform(context,
-                params,
-                deltaFile.getSourceInfo(),
-                deltaFile.getLastProtocolLayerContent().get(0),
-                deltaFile.getLastProtocolLayerMetadataAsMap());
+        return transform(context, params, TransformInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .contentList(deltaFile.getLastProtocolLayerContent())
+                .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                .build());
     }
 
+    /**
+     * Implements the transform execution function of a transform action
+     * @param context The action configuration context object for this action execution
+     * @param params The parameter class that configures the behavior of this action execution
+     * @param transformInput Action input from the DeltaFile
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
+     * a TransformResult
+     * @see TransformResult
+     * @see org.deltafi.actionkit.action.error.ErrorResult
+     * @see org.deltafi.actionkit.action.filter.FilterResult
+     */
     public abstract TransformResultType transform(@NotNull ActionContext context,
                                                   @NotNull P params,
-                                                  @NotNull SourceInfo sourceInfo,
-                                                  @NotNull Content content,
-                                                  @NotNull Map<String, String> metadata);
+                                                  @NotNull TransformInput transformInput);
 }

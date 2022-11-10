@@ -17,40 +17,40 @@
  */
 package org.deltafi.actionkit.action.validate;
 
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.SourceInfo;
-import org.deltafi.common.types.FormattedData;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Base class for a VALIDATE action that will not process multi-part content, but needs to extend
- * ActionParameters for configuration
- *
- * @see SimpleValidateAction
+ * Specialization class for VALIDATE actions.
+ * @param <P> Parameter class for configuring the validate action
  */
-public abstract class ValidateAction<P extends ActionParameters> extends ValidateActionBase<P> {
-    public ValidateAction(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+public abstract class ValidateAction<P extends ActionParameters> extends Action<P> {
+    public ValidateAction(String description) {
+        super(ActionType.VALIDATE, description);
     }
 
     @Override
     public final ValidateResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return validate(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData().get(0));
+        return validate(context,params, ValidateInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .formattedData(deltaFile.getFormattedData().get(0))
+                .build());
     }
 
     /**
      * Implements the validate execution function of a validate action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
-     * @param sourceInfo The source info for this action execution
-     * @param formattedData The content to be validated by this action
+     * @param validateInput Action input from the DeltaFile
      * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
      * a ValidateResult
      * @see ValidateResult
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract ValidateResultType validate(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    public abstract ValidateResultType validate(@NotNull ActionContext context, @NotNull P params, @NotNull ValidateInput validateInput);
 }

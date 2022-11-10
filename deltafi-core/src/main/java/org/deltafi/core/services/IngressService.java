@@ -99,7 +99,7 @@ public class IngressService {
         ContentReference contentReference = contentStorageService.save(did, inputStream, mediaType);
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(contentReference).name(sourceFileName).build());
 
-        IngressInput ingressInput = IngressInput.newBuilder()
+        IngressEvent ingressInput = IngressEvent.newBuilder()
                 .did(did)
                 .sourceInfo(new SourceInfo(sourceFileName, flow, metadata))
                 .content(content)

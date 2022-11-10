@@ -19,12 +19,12 @@ package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.egress.EgressAction;
+import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,16 +38,16 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
     @Autowired
     protected HttpService httpPostService;
 
-    public HttpEgressActionBase(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+    public HttpEgressActionBase(String description) {
+        super(description);
     }
 
     @SuppressWarnings("BusyWait")
-    public EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
+    public EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input) {
         int tries = 0;
 
         while (true) {
-            EgressResultType result = doEgress(context, params, sourceInfo, formattedData);
+            EgressResultType result = doEgress(context, params, input);
             tries++;
 
             if (result instanceof ErrorResult) {
@@ -65,17 +65,17 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
         }
     }
 
-    abstract protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    abstract protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input);
 
-    public Map<String, String> buildHeadersMap(String did, SourceInfo sourceInfo, FormattedData formattedData, String egressFlow) {
+    public Map<String, String> buildHeadersMap(String did, String sourceFilename, String ingressFlow, FormattedData formattedData, String egressFlow) {
         Map<String, String> headersMap = new HashMap<>();
         if (formattedData.getMetadata() != null) {
             formattedData.getMetadata().forEach(pair -> headersMap.put(pair.getKey(), pair.getValue()));
         }
         headersMap.put("did", did);
-        headersMap.put("ingressFlow", sourceInfo.getFlow());
+        headersMap.put("ingressFlow", ingressFlow);
         headersMap.put("flow", egressFlow);
-        headersMap.put("originalFilename", sourceInfo.getFilename());
+        headersMap.put("originalFilename", sourceFilename);
         headersMap.put("filename", formattedData.getFilename());
 
         return headersMap;

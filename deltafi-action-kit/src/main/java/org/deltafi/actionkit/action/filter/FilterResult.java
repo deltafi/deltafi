@@ -28,7 +28,7 @@ import org.deltafi.actionkit.action.validate.ValidateResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.FilterInput;
+import org.deltafi.common.types.FilterEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -58,7 +58,7 @@ public class FilterResult extends Result implements
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setFilter(FilterInput.newBuilder().message(message).build());
+        event.setFilter(FilterEvent.newBuilder().message(message).build());
         return event;
     }
 }

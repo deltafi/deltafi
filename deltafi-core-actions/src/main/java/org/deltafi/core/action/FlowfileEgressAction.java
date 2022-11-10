@@ -19,14 +19,13 @@ package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.nifi.util.FlowFilePackagerV1;
+import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.FormattedData;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -46,17 +45,17 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
     static final String FLOWFILE_V1_CONTENT_TYPE = "application/flowfile";
 
     public FlowfileEgressAction() {
-        super(HttpEgressParameters.class,
-                "Egresses content and attributes in a NiFi V1 FlowFile (application/flowfile)");
+        super("Egresses content and attributes in a NiFi V1 FlowFile (application/flowfile)");
     }
 
-    protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData) {
-        try (InputStream inputStream = loadContentAsInputStream(formattedData.getContentReference())) {
+    protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull EgressInput input) {
+        try (InputStream inputStream = loadContentAsInputStream(input.getFormattedData().getContentReference())) {
             FlowFilePackagerV1 packager = new FlowFilePackagerV1();
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 packager.packageFlowFile(inputStream, out,
-                        buildHeadersMap(context.getDid(), sourceInfo, formattedData, context.getEgressFlow()),
-                        formattedData.getContentReference().getSize());
+                        buildHeadersMap(context.getDid(), input.getSourceFilename(), input.getIngressFlow(),
+                                input.getFormattedData(), context.getEgressFlow()),
+                                input.getFormattedData().getContentReference().getSize());
                 HttpResponse<InputStream> response;
                 try (ByteArrayInputStream flowfile = new ByteArrayInputStream(out.toByteArray())) {
                     response = httpPostService.post(params.getUrl(), Map.of(), flowfile, FLOWFILE_V1_CONTENT_TYPE);
@@ -78,7 +77,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
             return new ErrorResult(context, "Service post failure", e);
         }
 
-        return new EgressResult(context, params.getUrl(), formattedData.getContentReference().getSize());
+        return new EgressResult(context, params.getUrl(), input.getFormattedData().getContentReference().getSize());
     }
 
 }

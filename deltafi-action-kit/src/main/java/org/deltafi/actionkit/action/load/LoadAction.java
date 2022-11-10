@@ -17,46 +17,38 @@
  */
 package org.deltafi.actionkit.action.load;
 
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
-
 /**
- * Base class for a LOAD action that will not process multi-part content, but needs to extend
- * ActionParameters for configuration
- *
- * @see SimpleLoadAction
- * @see MultipartLoadAction
- * @see SimpleMultipartLoadAction
+ * Specialization class for LOAD actions.
+ * @param <P> Parameter class for configuring the Load action
  */
-public abstract class LoadAction<P extends ActionParameters> extends LoadActionBase<P> {
-    public LoadAction(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
+    public LoadAction(String description) {
+        super(ActionType.LOAD, description);
     }
 
     @Override
     protected final LoadResultType execute(@NotNull DeltaFile deltaFile,
                                            @NotNull ActionContext context,
                                            @NotNull P params) {
-        return load(context,
-                params,
-                deltaFile.getSourceInfo(),
-                deltaFile.getLastProtocolLayerContent().get(0),
-                deltaFile.getLastProtocolLayerMetadataAsMap());
+        return load(context, params, LoadInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .contentList(deltaFile.getLastProtocolLayerContent())
+                .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                .build());
     }
 
     /**
      * Implements the load execution function of a load action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
-     * @param sourceInfo The source info for this action execution
-     * @param content The content to be loaded by this action
-     * @param metadata The metadata to be applied to this action
+     * @param loadInput Action input from the DeltaFile
      * @return A result object containing results for the action execution.
      *         The result can be an ErrorResult, SplitResult, FilterResult, or LoadResult
      * @see LoadResult
@@ -66,7 +58,5 @@ public abstract class LoadAction<P extends ActionParameters> extends LoadActionB
      */
     public abstract LoadResultType load(@NotNull ActionContext context,
                                         @NotNull P params,
-                                        @NotNull SourceInfo sourceInfo,
-                                        @NotNull Content content,
-                                        @NotNull Map<String, String> metadata);
+                                        @NotNull LoadInput loadInput);
 }

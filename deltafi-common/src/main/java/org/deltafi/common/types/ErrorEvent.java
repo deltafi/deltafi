@@ -22,13 +22,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class LoadInput {
-  private List<Domain> domains;
-  private ProtocolLayer protocolLayer;
+public class ErrorEvent {
+  private String cause;
+  private String context;
 }

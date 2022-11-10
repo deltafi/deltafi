@@ -17,19 +17,32 @@
  */
 package org.deltafi.actionkit.action.validate;
 
-import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import org.deltafi.actionkit.exception.MissingSourceMetadataException;
+import org.deltafi.common.types.FormattedData;
 
-/**
- * Specialization class for VALIDATE actions.  This class should not be used directly, but instead use one of
- * the provided validate action implementation classes.
- * @param <P> Parameter class for configuring the validate action
- * @see ValidateAction
- * @see SimpleValidateAction
- */
-public abstract class ValidateActionBase<P extends ActionParameters> extends Action<P> {
-    public ValidateActionBase(Class<P> actionParametersClass, String description) {
-        super(ActionType.VALIDATE, actionParametersClass, description);
+import java.util.Map;
+
+@AllArgsConstructor
+@Builder
+@Data
+public class ValidateInput {
+    String sourceFilename;
+    String ingressFlow;
+    Map<String, String> sourceMetadata;
+    FormattedData formattedData;
+
+    public String sourceMetadata(String key) {
+        if (sourceMetadata.containsKey(key)) {
+            return sourceMetadata.get(key);
+        } else {
+            throw new MissingSourceMetadataException(key);
+        }
+    }
+
+    public String sourceMetadata(String key, String defaultValue) {
+        return sourceMetadata.getOrDefault(key, defaultValue);
     }
 }

@@ -18,6 +18,7 @@
 package org.deltafi.core.action;
 
 import org.apache.nifi.util.FlowFileUnpackagerV1;
+import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -29,7 +30,6 @@ import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -87,12 +87,12 @@ class FlowfileEgressActionTest {
 
     private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, CONTENT.length, DID));
 
-    private static final SourceInfo SOURCE_INFO = new SourceInfo(ORIG_FILENAME, FLOW, List.of());
     private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()
             .filename(POST_FILENAME)
             .contentReference(CONTENT_REFERENCE)
             .metadata(KeyValueConverter.fromMap(METADATA))
             .build();
+    private static final EgressInput EGRESS_INPUT = new EgressInput(ORIG_FILENAME, FLOW, Map.of(), FORMATTED_DATA);
 
     static Integer NUM_TRIES = 3;
     static Integer RETRY_WAIT = 10;
@@ -151,7 +151,7 @@ class FlowfileEgressActionTest {
                     };
                 }
         );
-        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
@@ -175,7 +175,7 @@ class FlowfileEgressActionTest {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
 
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
 
         verify(httpService, never()).post(any(), any(), any(), any());
 

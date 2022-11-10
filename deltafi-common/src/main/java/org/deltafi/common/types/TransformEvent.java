@@ -26,6 +26,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class TransformInput {
+public class TransformEvent {
   private ProtocolLayer protocolLayer;
 }

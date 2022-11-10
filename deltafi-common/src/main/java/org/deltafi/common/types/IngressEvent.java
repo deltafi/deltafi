@@ -22,12 +22,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Map;
+import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class DomainResultInput {
-  private Map<String, String> indexedMetadata;
+public class IngressEvent {
+  private String did;
+  private SourceInfo sourceInfo;
+  private List<Content> content;
+  private OffsetDateTime created;
 }

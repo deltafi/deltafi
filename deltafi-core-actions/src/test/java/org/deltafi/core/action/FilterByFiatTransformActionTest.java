@@ -20,10 +20,10 @@ package org.deltafi.core.action;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.filter.FilterResult;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.SourceInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,7 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -60,14 +60,8 @@ class FilterByFiatTransformActionTest {
     @Test
     @SneakyThrows
     void transformTest() {
-        TransformResultType result = action.transform(ACTION_CONTEXT, sourceInfo(), new Content(), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, new ActionParameters(), new TransformInput(FILE_NAME, FLOW, Map.of(), Collections.emptyList(), Collections.emptyMap()));
         assertThat(result, instanceOf(FilterResult.class));
 
     }
-
-    SourceInfo sourceInfo() {
-        return new SourceInfo(FILE_NAME, FLOW, List.of());
-    }
-
-
 }

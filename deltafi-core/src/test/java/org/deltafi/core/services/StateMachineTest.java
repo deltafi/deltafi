@@ -566,7 +566,7 @@ class StateMachineTest {
         deltaFile.errorAction(ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())
                 .action("ErrorEnrichAction")
-                .error(ErrorInput.newBuilder()
+                .error(ErrorEvent.newBuilder()
                         .context("context")
                         .cause("cause")
                         .build())

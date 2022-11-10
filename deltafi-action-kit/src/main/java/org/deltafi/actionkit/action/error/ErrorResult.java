@@ -30,7 +30,7 @@ import org.deltafi.actionkit.action.validate.ValidateResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.ErrorInput;
+import org.deltafi.common.types.ErrorEvent;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -95,7 +95,7 @@ public class ErrorResult extends Result implements
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setError(ErrorInput.newBuilder()
+        event.setError(ErrorEvent.newBuilder()
                 .cause(errorCause)
                 .context(errorContext)
                 .build());

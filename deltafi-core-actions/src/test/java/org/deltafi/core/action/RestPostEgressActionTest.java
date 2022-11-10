@@ -20,6 +20,7 @@ package org.deltafi.core.action;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -31,7 +32,6 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.RestPostEgressParameters;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,10 +49,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -80,7 +77,7 @@ class RestPostEgressActionTest {
             .filename(POST_FILENAME)
             .contentReference(CONTENT_REFERENCE)
             .build();
-    private static final SourceInfo SOURCE_INFO = new SourceInfo(ORIG_FILENAME, FLOW, List.of());
+    private static final EgressInput EGRESS_INPUT = new EgressInput(ORIG_FILENAME, FLOW, Collections.emptyMap(), FORMATTED_DATA);
     static Integer NUM_TRIES = 3;
     static Integer RETRY_WAIT = 10;
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
@@ -153,7 +150,7 @@ class RestPostEgressActionTest {
         } else {
             when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
         }
-        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
@@ -180,7 +177,7 @@ class RestPostEgressActionTest {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
 
         ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        EgressResultType result = action.egress(context, PARAMS, SOURCE_INFO, FORMATTED_DATA);
+        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
 
         verify(httpService, never()).post(any(), any(), any(), any());
 

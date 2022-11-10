@@ -62,7 +62,7 @@ public class LoadResult extends DataAmendedResult implements LoadResultType {
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setLoad(LoadInput.newBuilder()
+        event.setLoad(LoadEvent.newBuilder()
                 .domains(domains)
                 .protocolLayer(new ProtocolLayer(context.getName(), content, metadata))
                 .build());

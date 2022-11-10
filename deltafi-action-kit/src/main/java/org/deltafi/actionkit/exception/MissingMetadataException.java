@@ -15,21 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.egress;
+package org.deltafi.actionkit.exception;
 
-import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionType;
+public class MissingMetadataException extends IllegalArgumentException {
+    String key;
 
-/**
- * Specialization class for EGRESS actions.  This class should not be used directly, but instead use one of
- * the provided egress action implementation classes.
- * @param <P> Parameter class for configuring the egress action
- * @see EgressAction
- * @see SimpleEgressAction
- */
-public abstract class EgressActionBase<P extends ActionParameters> extends Action<P> {
-    public EgressActionBase(Class<P> actionParametersClass, String description) {
-        super(ActionType.EGRESS, actionParametersClass, description);
+    public MissingMetadataException(String key) {
+        this.key = key;
     }
+
+    public String getKey() { return key; }
 }

@@ -20,25 +20,23 @@ package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.filter.FilterResult;
-import org.deltafi.actionkit.action.transform.SimpleTransformAction;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.SourceInfo;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
-
 @Component
 @Slf4j
-public class FilterByFiatTransformAction extends SimpleTransformAction {
+public class FilterByFiatTransformAction extends TransformAction<ActionParameters> {
     public FilterByFiatTransformAction() {
         super("Transform Action that always filters");
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context, @NotNull SourceInfo sourceInfo, @NotNull Content content, @NotNull Map<String, String> metadata) {
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull TransformInput input) {
         return new FilterResult(context, "Filtered by fiat");
     }
 }

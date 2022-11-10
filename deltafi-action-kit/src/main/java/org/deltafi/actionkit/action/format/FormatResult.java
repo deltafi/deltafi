@@ -26,7 +26,7 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.FormatInput;
+import org.deltafi.common.types.FormatEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -89,6 +89,7 @@ public class FormatResult extends Result implements FormatResultType {
      * @param keyValues List of KeyValue object to add to metadata
      * @param prefix String to prepend to each key before adding to metadata
      */
+    @SuppressWarnings("unused")
     public void addMetadata(List<KeyValue> keyValues, String prefix) {
         if (keyValues == null) {
             return;
@@ -115,6 +116,16 @@ public class FormatResult extends Result implements FormatResultType {
         map.forEach(this::addMetadata);
     }
 
+    /**
+     * Add metadata by key/value map, prefixing each key with a fixed string
+     * @param map String pairs to add to metadata
+     * @param prefix String to prepend to each key before adding to metadata
+     */
+    @SuppressWarnings("unused")
+    public void addMetadata(@NotNull Map<String, String> map, @NotNull String prefix) {
+        map.forEach((k,v) -> addMetadata(prefix + k, v));
+    }
+
     @Override
     public final ActionEventType actionEventType() {
         return ActionEventType.FORMAT;
@@ -123,7 +134,7 @@ public class FormatResult extends Result implements FormatResultType {
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setFormat(FormatInput.newBuilder()
+        event.setFormat(FormatEvent.newBuilder()
                 .filename(filename)
                 .contentReference(contentReference)
                 .metadata(metadata)

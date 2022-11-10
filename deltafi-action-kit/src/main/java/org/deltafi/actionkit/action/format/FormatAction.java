@@ -17,28 +17,43 @@
  */
 package org.deltafi.actionkit.action.format;
 
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.SourceInfo;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.Domain;
-import org.deltafi.common.types.Enrichment;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Base class for a FORMAT action that will not process multi-part content, but needs to extend
- * ActionParameters for configuration
- *
- * @see SimpleFormatAction
- * @see MultipartFormatAction
- * @see SimpleMultipartFormatAction
+ * Specialization class for FORMAT actions.
+ * @param <P> Parameter class for configuring the format action
  */
-public abstract class FormatAction<P extends ActionParameters> extends FormatActionBase<P> {
-    public FormatAction(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+public abstract class FormatAction<P extends ActionParameters> extends Action<P> {
+    public FormatAction(String description) {
+        super(ActionType.FORMAT, description);
+    }
+
+    /**
+     * Implement to provide a list of required domains for formatting to proceed
+     * @return List of domain name strings
+     */
+    public abstract List<String> getRequiresDomains();
+
+    /**
+     * Implement to provide a list of required enrichments for formatting to proceed
+     * @return List of enrichment name strings
+     */
+    public List<String> getRequiresEnrichments() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public ActionDescriptor buildActionDescriptor() {
+        ActionDescriptor actionDescriptor = super.buildActionDescriptor();
+        actionDescriptor.setRequiresDomains(getRequiresDomains());
+        actionDescriptor.setRequiresEnrichments(getRequiresEnrichments());
+        return actionDescriptor;
     }
 
     @Override
@@ -46,23 +61,22 @@ public abstract class FormatAction<P extends ActionParameters> extends FormatAct
                                              @NotNull ActionContext context,
                                              @NotNull P params) {
         return format(context,
-                params,
-                deltaFile.getSourceInfo(),
-                deltaFile.getLastProtocolLayerContent().get(0),
-                deltaFile.getLastProtocolLayerMetadataAsMap(),
-                deltaFile.domainMap(),
-                deltaFile.enrichmentMap());
+                params, FormatInput.builder()
+                        .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                        .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                        .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                        .contentList(deltaFile.getLastProtocolLayerContent())
+                        .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                        .domains(deltaFile.domainMap())
+                        .enrichment(deltaFile.enrichmentMap())
+                        .build());
     }
 
     /**
      * Implements the format execution function of a format action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
-     * @param sourceInfo The source info for this action execution
-     * @param content The content to be formatted by this action
-     * @param metadata The metadata for this format action
-     * @param domains A map of domain names with their associated domain values for this action
-     * @param enrichment A map of enrichment names with their associated domain values for this action
+     * @param formatInput Action input from the DeltaFile
      * @return A result object containing results for the action execution.
      *         The result can be an ErrorResult, FilterResult, FormatResult, or FormatManyResult
      * @see FormatResult
@@ -72,9 +86,5 @@ public abstract class FormatAction<P extends ActionParameters> extends FormatAct
      */
     public abstract FormatResultType format(@NotNull ActionContext context,
                                             @NotNull P params,
-                                            @NotNull SourceInfo sourceInfo,
-                                            @NotNull Content content,
-                                            @NotNull Map<String, String> metadata,
-                                            @NotNull Map<String, Domain> domains,
-                                            @NotNull Map<String, Enrichment> enrichment);
+                                            @NotNull FormatInput formatInput);
 }

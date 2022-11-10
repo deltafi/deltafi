@@ -20,7 +20,7 @@ package org.deltafi.core.datafetchers;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.IngressInput;
+import org.deltafi.common.types.IngressEvent;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.generated.client.DeltaFileProjectionRoot;
@@ -51,9 +51,9 @@ public class DeltaFilesDatafetcherTestHelper {
     static final List<Content> CONTENT_2 = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE_2).build());
     static final SourceInfo SOURCE_INFO = new SourceInfo(FILENAME, FLOW, METADATA);
     static final SourceInfo SOURCE_INFO_EMPTY_METADATA = new SourceInfo(FILENAME, FLOW, Collections.emptyList());
-    public static final IngressInput INGRESS_INPUT_EMPTY_METADATA = new IngressInput(DID, SOURCE_INFO_EMPTY_METADATA, CONTENT, OffsetDateTime.now());
-    public static final IngressInput INGRESS_INPUT = new IngressInput(DID, SOURCE_INFO, CONTENT, OffsetDateTime.now());
-    public static final IngressInput INGRESS_INPUT_2 = new IngressInput(DID_2, SOURCE_INFO, CONTENT_2, OffsetDateTime.now());
+    public static final IngressEvent INGRESS_INPUT_EMPTY_METADATA = new IngressEvent(DID, SOURCE_INFO_EMPTY_METADATA, CONTENT, OffsetDateTime.now());
+    public static final IngressEvent INGRESS_INPUT = new IngressEvent(DID, SOURCE_INFO, CONTENT, OffsetDateTime.now());
+    public static final IngressEvent INGRESS_INPUT_2 = new IngressEvent(DID_2, SOURCE_INFO, CONTENT_2, OffsetDateTime.now());
 
     public static final DeltaFilesProjectionRoot DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot()
             .deltaFiles()

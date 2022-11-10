@@ -15,23 +15,34 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.actionkit.action.egress;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.deltafi.actionkit.exception.MissingSourceMetadataException;
+import org.deltafi.common.types.FormattedData;
 
-import java.time.OffsetDateTime;
-import java.util.List;
+import java.util.Map;
 
-@Data
-@NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class IngressInput {
-  private String did;
-  private SourceInfo sourceInfo;
-  private List<Content> content;
-  private OffsetDateTime created;
+@Builder
+@Data
+public class EgressInput {
+    String sourceFilename;
+    String ingressFlow;
+    Map<String, String> sourceMetadata;
+    FormattedData formattedData;
+
+    public String sourceMetadata(String key) {
+        if (sourceMetadata.containsKey(key)) {
+            return sourceMetadata.get(key);
+        } else {
+            throw new MissingSourceMetadataException(key);
+        }
+    }
+
+    public String sourceMetadata(String key, String defaultValue) {
+        return sourceMetadata.getOrDefault(key, defaultValue);
+    }
 }

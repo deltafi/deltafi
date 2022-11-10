@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.content.ContentReference;
@@ -30,7 +31,6 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.deltafi.core.parameters.DecompressionType;
 import org.junit.jupiter.api.Test;
@@ -432,7 +432,7 @@ class DecompressionTransformActionTest {
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, new TransformInput(testFile, FLOW, Map.of(), List.of(content), Collections.emptyMap()));
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Failed to load compressed binary from storage"));
     }
@@ -447,7 +447,7 @@ class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         Mockito.when(contentStorageService.saveMany(eq(DID), Mockito.anyMap())).thenThrow(new ObjectStorageException("Boom", new Exception()));
 
-        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, new TransformInput(testFile, FLOW, Map.of(), List.of(content), Collections.emptyMap()));
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo("Unable to store content"));
     }
@@ -482,7 +482,7 @@ class DecompressionTransformActionTest {
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
 
-        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, new TransformInput(testFile, FLOW, Map.of(), List.of(content), Collections.emptyMap()));
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -515,7 +515,7 @@ class DecompressionTransformActionTest {
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
         storeContent();
 
-        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, new TransformInput(testFile, FLOW, Map.of(), List.of(content), Collections.emptyMap()));
 
         assertThat(result, instanceOf(TransformResult.class));
         TransformResult tr = (TransformResult) result;
@@ -542,7 +542,7 @@ class DecompressionTransformActionTest {
 
         Mockito.when(contentStorageService.load(content.getContentReference())).thenReturn(contentFor(testFile));
 
-        TransformResultType result = action.transform(ACTION_CONTEXT, params, sourceInfo(testFile), List.of(content), Collections.emptyMap());
+        TransformResultType result = action.transform(ACTION_CONTEXT, params, new TransformInput(testFile, FLOW, Map.of(), List.of(content), Collections.emptyMap()));
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat( ((ErrorResult)result).getErrorCause(), equalTo(errorCause));
     }
@@ -562,10 +562,6 @@ class DecompressionTransformActionTest {
     @SneakyThrows
     InputStream contentFor(String filename) {
         return new UnmarkableInputStream(this.getClass().getResourceAsStream("/" + filename));
-    }
-
-    SourceInfo sourceInfo(String filename) {
-        return new SourceInfo(filename, FLOW, List.of());
     }
 
     @SneakyThrows

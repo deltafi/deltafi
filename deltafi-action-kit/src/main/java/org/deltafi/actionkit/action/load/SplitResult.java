@@ -34,7 +34,7 @@ import java.util.Map;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class SplitResult extends Result implements LoadResultType {
-    List<SplitInput> splitInputs = new ArrayList<>();
+    List<SplitEvent> splitInputs = new ArrayList<>();
 
     /**
      * @param context Execution context for the current action
@@ -51,7 +51,7 @@ public class SplitResult extends Result implements LoadResultType {
      * @param content Content of the new DeltaFile
      */
     public void addChild(String filename, String flow, List<KeyValue> metadata, List<Content> content) {
-        splitInputs.add(SplitInput.newBuilder()
+        splitInputs.add(SplitEvent.newBuilder()
                 .sourceInfo(new SourceInfo(filename, flow, metadata))
                 .content(content)
                 .build());

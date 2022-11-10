@@ -17,40 +17,40 @@
  */
 package org.deltafi.actionkit.action.egress;
 
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.SourceInfo;
-import org.deltafi.common.types.FormattedData;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Base class for an EGRESS action that will not process multi-part content, but needs to extend
- * ActionParameters for configuration
- *
- * @see SimpleEgressAction
+ * Specialization class for EGRESS actions.
+ * @param <P> Parameter class for configuring the egress action
  */
-public abstract class EgressAction<P extends ActionParameters> extends EgressActionBase<P> {
-    public EgressAction(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+public abstract class EgressAction<P extends ActionParameters> extends Action<P> {
+    public EgressAction(String description) {
+        super(ActionType.EGRESS, description);
     }
 
     @Override
     protected final EgressResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return egress(context, params, deltaFile.getSourceInfo(), deltaFile.getFormattedData().get(0));
+        return egress(context, params, EgressInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .formattedData(deltaFile.getFormattedData().get(0))
+                .build());
     }
 
     /**
      * Implements the egress execution function of an egress action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
-     * @param sourceInfo The source info for this action execution
-     * @param formattedData The content to be egressed by this action
+     * @param egressInput Action input from the DeltaFile
      * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
      * an EgressResult
      * @see EgressResult
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull SourceInfo sourceInfo, @NotNull FormattedData formattedData);
+    public abstract EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput egressInput);
 }

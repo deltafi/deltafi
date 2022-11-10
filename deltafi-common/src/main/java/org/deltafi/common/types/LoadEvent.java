@@ -28,7 +28,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class SplitInput {
-  private SourceInfo sourceInfo;
-  private List<Content> content;
+public class LoadEvent {
+  private List<Domain> domains;
+  private ProtocolLayer protocolLayer;
 }

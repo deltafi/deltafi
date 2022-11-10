@@ -17,40 +17,36 @@
  */
 package org.deltafi.core.action;
 
+import org.deltafi.actionkit.action.load.LoadInput;
 import org.deltafi.actionkit.action.load.LoadResultType;
-import org.deltafi.actionkit.action.load.MultipartLoadAction;
+import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.SplitterLoadParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 @Component
 @SuppressWarnings("unused")
-public class SplitterLoadAction extends MultipartLoadAction<SplitterLoadParameters> {
+public class SplitterLoadAction extends LoadAction<SplitterLoadParameters> {
 
     public SplitterLoadAction() {
-        super(SplitterLoadParameters.class, "Splits content into multiple parts");
+        super("Splits content into multiple parts");
     }
 
     @Override
     public LoadResultType load(@NotNull ActionContext context,
                                @NotNull SplitterLoadParameters params,
-                               @NotNull SourceInfo sourceInfo,
-                               @NotNull List<Content> contentList,
-                               @NotNull Map<String, String> metadata) {
+                               @NotNull LoadInput input) {
         SplitResult result = new SplitResult(context);
 
-        for (Content content : contentList) {
+        for (Content content : input.getContentList()) {
             result.addChild(content.getName(),
                     params.getReinjectFlow(),
-                    sourceInfo.getMetadata(),
+                    input.getSourceMetadata(),
                     Collections.singletonList(content));
         }
 

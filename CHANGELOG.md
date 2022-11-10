@@ -18,10 +18,14 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 
 ### Changed
 - Increase default requeueSeconds from 30 to 300
+- Create a snapshot prior to running a plugin deployment
+- Core API version is now discoverable via query
+- Consolidate Action input parameters: each action now takes a context, parameters, and a single action input (e.g. LoadInput, ValidateInput, etc) that contains the other members specific to that action
 
 ### Deprecated
 
 ### Removed
+- Remove simple- and multi- variants of Action interfaces
 
 ### Fixed
 - Test mode will be preserved when plugins are registered
@@ -36,6 +40,7 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 ### Security
 
 ### Upgrade and Migration
+- Plugins will need to be upgraded to the new action base classes
 
 ## [0.99.2] - 2022-11-07
 

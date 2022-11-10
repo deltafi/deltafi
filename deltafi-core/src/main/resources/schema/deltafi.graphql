@@ -227,15 +227,15 @@ input ActionEventInput {
   start: DateTime!
   stop: DateTime!
   type: ActionEventType!
-  transform: TransformInput
-  load: LoadInput
-  domain: DomainResultInput
-  enrich: EnrichInput
-  format: FormatInput
-  formatMany: [FormatInput]
-  error: ErrorInput
-  filter: FilterInput
-  split: [SplitInput]
+  transform: TransformEvent
+  load: LoadEvent
+  domain: DomainEvent
+  enrich: EnrichEvent
+  format: FormatEvent
+  formatMany: [FormatEvent]
+  error: ErrorEvent
+  filter: FilterEvent
+  split: [SplitEvent]
 }
 
 type DeltaFile {
@@ -268,47 +268,47 @@ type DeltaFile {
   replayDid: String
 }
 
-input IngressInput {
+input IngressEvent {
   did: String!
   sourceInfo: SourceInfoInput!
   content: [ContentInput!]!
   created: DateTime!
 }
 
-input TransformInput {
+input TransformEvent {
   protocolLayer: ProtocolLayerInput!
 }
 
-input LoadInput {
+input LoadEvent {
   domains: [DomainInput!]!
   protocolLayer: ProtocolLayerInput!
 }
 
-input DomainResultInput {
+input DomainEvent {
   indexedMetadata: Metadata
 }
 
-input EnrichInput {
+input EnrichEvent {
   enrichments: [EnrichmentInput!]!
   indexedMetadata: Metadata
 }
 
-input ErrorInput {
+input ErrorEvent {
   cause: String!
   context: String
 }
 
-input FormatInput {
+input FormatEvent {
   filename: String!
   contentReference: ContentReferenceInput!
   metadata: [KeyValueInput!]
 }
 
-input FilterInput {
+input FilterEvent {
   message: String!
 }
 
-input SplitInput {
+input SplitEvent {
   sourceInfo: SourceInfoInput!
   content: [ContentInput!]!
 }
@@ -490,7 +490,7 @@ type Mutation {
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
 
-  ingress(input: IngressInput!): DeltaFile!
+  ingress(input: IngressEvent!): DeltaFile!
   actionEvent(event: ActionEventInput!): DeltaFile!
 
   resume(dids: [String!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!

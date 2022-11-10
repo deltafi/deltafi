@@ -65,7 +65,7 @@ public class EnrichResult extends Result implements HasIndexedMetadata, EnrichRe
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setEnrich(EnrichInput.newBuilder().enrichments(enrichments).indexedMetadata(indexedMetadata).build());
+        event.setEnrich(EnrichEvent.newBuilder().enrichments(enrichments).indexedMetadata(indexedMetadata).build());
         return event;
     }
 }

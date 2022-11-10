@@ -35,6 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
@@ -52,8 +54,32 @@ public abstract class Action<P extends ActionParameters> {
     @Autowired
     protected ContentStorageService contentStorageService;
 
+    /**
+     * Deep introspection to get the ActionParameters type class.  This keeps subclasses
+     * from having to pass this type info as a constructor parameter.
+     */
+    private Class<P> getGenericParameterType() {
+
+        Class<?> clazz = getClass();
+        Type type = clazz.getGenericSuperclass();
+        while(type != null) {
+            try {
+                return (Class<P>)
+                        ((ParameterizedType) type)
+                                .getActualTypeArguments()[0];
+            } catch(Throwable t) {
+                // Must be a non-generic class in the inheritance tree
+            }
+            clazz = clazz.getSuperclass();
+            type = clazz.getGenericSuperclass();
+        }
+        throw new RuntimeException("Cannot instantiate" + getClass().toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    private final Class<P> paramClass = getGenericParameterType();
+
     private final ActionType actionType;
-    private final Class<P> paramClass;
     private final String description;
 
     private ActionDescriptor actionDescriptor;

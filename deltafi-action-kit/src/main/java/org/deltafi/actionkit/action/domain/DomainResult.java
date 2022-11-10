@@ -24,7 +24,7 @@ import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.DomainResultInput;
+import org.deltafi.common.types.DomainEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -53,7 +53,7 @@ public class DomainResult extends Result implements HasIndexedMetadata, DomainRe
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setDomain(DomainResultInput.newBuilder().indexedMetadata(indexedMetadata).build());
+        event.setDomain(DomainEvent.newBuilder().indexedMetadata(indexedMetadata).build());
         return event;
     }
 

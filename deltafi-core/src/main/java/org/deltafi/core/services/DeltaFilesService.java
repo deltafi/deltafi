@@ -165,12 +165,12 @@ public class DeltaFilesService {
         return matches.isEmpty() ? null : matches.get(0);
     }
 
-    public DeltaFile ingress(IngressInput input) {
+    public DeltaFile ingress(IngressEvent input) {
         return ingress(input, Collections.emptyList());
     }
 
     @MongoRetryable
-    public DeltaFile ingress(IngressInput input, List<String> parentDids) {
+    public DeltaFile ingress(IngressEvent input, List<String> parentDids) {
         SourceInfo sourceInfo = input.getSourceInfo();
         if (sourceInfo.getFlow().equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
             String flow = flowAssignmentService.findFlow(sourceInfo);
@@ -181,7 +181,7 @@ public class DeltaFilesService {
             sourceInfo.setFlow(flow);
         }
 
-        // ensure flow is running before excepting ingress
+        // ensure flow is running before accepting ingress
         ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -368,7 +368,7 @@ public class DeltaFilesService {
 
         // Treat filter events from Domain and Enrich actions as errors
         if (actionType.equals(ActionType.DOMAIN) || actionType.equals(ActionType.ENRICH)) {
-            event.setError(ErrorInput.newBuilder().cause("Illegal operation FILTER received from " + actionType + "Action " + event.getAction()).build());
+            event.setError(ErrorEvent.newBuilder().cause("Illegal operation FILTER received from " + actionType + "Action " + event.getAction()).build());
             return error(deltaFile, event);
         } else {
             deltaFile.filterAction(event, event.getFilter().getMessage());
@@ -411,7 +411,7 @@ public class DeltaFilesService {
                 .action(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION)
                 .start(now)
                 .stop(now)
-                .error(ErrorInput.newBuilder()
+                .error(ErrorEvent.newBuilder()
                         .cause(NO_EGRESS_CONFIGURED_CAUSE)
                         .context(NO_EGRESS_CONFIGURED_CONTEXT)
                         .build())
@@ -425,7 +425,7 @@ public class DeltaFilesService {
                 .action(action)
                 .start(now)
                 .stop(now)
-                .error(ErrorInput.newBuilder()
+                .error(ErrorEvent.newBuilder()
                         .cause(NO_CHILD_INGRESS_CONFIGURED_CAUSE)
                         .context(NO_CHILD_INGRESS_CONFIGURED_CONTEXT + flow)
                         .build())
@@ -434,7 +434,7 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
-        List<SplitInput> splits = event.getSplit();
+        List<SplitEvent> splits = event.getSplit();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<String> encounteredError = new ArrayList<>();
         List<ActionInput> enqueueActions = new ArrayList<>();
@@ -539,7 +539,7 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile formatMany(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
-        List<FormatInput> formatInputs = event.getFormatMany();
+        List<FormatEvent> formatInputs = event.getFormatMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
         List<ActionInput> enqueueActions = new ArrayList<>();
@@ -1020,7 +1020,7 @@ public class DeltaFilesService {
         if (Objects.isNull(actionConfiguration)) {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
             log.error(errorMessage);
-            ErrorInput error = ErrorInput.newBuilder().cause(errorMessage).build();
+            ErrorEvent error = ErrorEvent.newBuilder().cause(errorMessage).build();
             ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(action.getName()).error(error).build();
             try {
                 this.error(deltaFile, event);

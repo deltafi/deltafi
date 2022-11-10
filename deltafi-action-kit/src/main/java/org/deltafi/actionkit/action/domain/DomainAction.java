@@ -17,39 +17,54 @@
  */
 package org.deltafi.actionkit.action.domain;
 
+import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
+import java.util.List;
 
 /**
- * Base class for a DOMAIN action that needs to extend ActionParameters for configuration
- *
- * @see SimpleDomainAction
+ * Specialization class for DOMAIN actions.
+ * @param <P> Parameter class for configuring the domain action
  */
-public abstract class DomainAction<P extends ActionParameters> extends DomainActionBase<P> {
-    public DomainAction(Class<P> actionParametersClass, String description) {
-        super(actionParametersClass, description);
+public abstract class DomainAction<P extends ActionParameters> extends Action<P> {
+    public DomainAction(String description) {
+        super(ActionType.DOMAIN, description);
+    }
+
+    /**
+     * Implement to provide a list of required domains for the domain action to proceed
+     * @return List of domain name strings
+     */
+    public abstract List<String> getRequiresDomains();
+
+    @Override
+    public final ActionDescriptor buildActionDescriptor() {
+        ActionDescriptor actionDescriptor = super.buildActionDescriptor();
+        actionDescriptor.setRequiresDomains(getRequiresDomains());
+        return actionDescriptor;
     }
 
     @Override
     protected final ResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
         return extractAndValidate(context,
                 params,
-                deltaFile.getSourceInfo(),
-                deltaFile.getLastProtocolLayerMetadataAsMap(),
-                deltaFile.domainMap());
+                DomainInput.builder()
+                        .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                        .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                        .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                        .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                        .domains(deltaFile.domainMap())
+                        .build());
     }
 
     /**
      * Implements the extractAndValidate execution function of a domain action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
-     * @param sourceInfo The source info for this action execution
-     * @param metadata The metadata generated from the most recently executed action prior to this domain action
-     * @param domains A map of domain names with their associated domain values for this action
+     * @param domainInput Action input from the DeltaFile
      * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
      * a DomainResult
      * @see DomainResult
@@ -58,7 +73,5 @@ public abstract class DomainAction<P extends ActionParameters> extends DomainAct
      */
     public abstract DomainResultType extractAndValidate(@NotNull ActionContext context,
                                                         @NotNull P params,
-                                                        @NotNull SourceInfo sourceInfo,
-                                                        @NotNull Map<String, String> metadata,
-                                                        @NotNull Map<String, Domain> domains);
+                                                        @NotNull DomainInput domainInput);
 }

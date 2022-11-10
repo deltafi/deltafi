@@ -31,7 +31,8 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.MultipartTransformAction;
+import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.content.ContentReference;
@@ -39,11 +40,9 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
@@ -54,59 +53,57 @@ import java.util.*;
 
 @Component
 @Slf4j
-public class DecompressionTransformAction extends MultipartTransformAction<DecompressionTransformParameters> {
+public class DecompressionTransformAction extends TransformAction<DecompressionTransformParameters> {
 
     public DecompressionTransformAction() {
-        super(DecompressionTransformParameters.class,
-                "Decompresses .tgz, .tar.Z, .tar.xz, .zip, .tar, .ar, .gz, .xz, .Z");
+        super("Decompresses .tgz, .tar.Z, .tar.xz, .zip, .tar, .ar, .gz, .xz, .Z");
     }
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context,
                                          @NotNull DecompressionTransformParameters params,
-                                         @NotNull SourceInfo sourceInfo,
-                                         @NotNull List<Content> contentList,
-                                         @NotNull Map<String, String> metadata) {
+                                         @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
         String decompressionType = params.getDecompressionType().getValue();
+        Content content = input.firstContent();
 
-        try (InputStream content = loadContentAsInputStream(contentList.get(0).getContentReference())) {
+        try (InputStream contentStream = loadContentAsInputStream(content.getContentReference())) {
             try {
                 switch (params.getDecompressionType()) {
                     case TAR_GZIP:
-                        decompressTarGzip(content, result, context.getDid());
+                        decompressTarGzip(contentStream, result, context.getDid());
                         break;
                     case TAR_Z:
-                        decompressTarZ(content, result, context.getDid());
+                        decompressTarZ(contentStream, result, context.getDid());
                         break;
                     case TAR_XZ:
-                        decompressTarXZ(content, result, context.getDid());
+                        decompressTarXZ(contentStream, result, context.getDid());
                         break;
                     case ZIP:
-                        unarchiveZip(content, result, context.getDid());
+                        unarchiveZip(contentStream, result, context.getDid());
                         break;
                     case TAR:
-                        unarchiveTar(content, result, context.getDid());
+                        unarchiveTar(contentStream, result, context.getDid());
                         break;
                     case AR:
-                        unarchiveAR(content, result, context.getDid());
+                        unarchiveAR(contentStream, result, context.getDid());
                         break;
                     case GZIP:
-                        decompressGzip(content, result, context.getDid(), getContentName(contentList));
+                        decompressGzip(contentStream, result, context.getDid(), content.getName());
                         break;
                     case XZ:
-                        decompressXZ(content, result, context.getDid(), getContentName(contentList));
+                        decompressXZ(contentStream, result, context.getDid(), content.getName());
                         break;
                     case Z:
-                        decompressZ(content, result, context.getDid(), getContentName(contentList));
+                        decompressZ(contentStream, result, context.getDid(), content.getName());
                         break;
                     case AUTO:
-                        decompressionType = decompressAutomatic(content, result, context.getDid(), getContentName(contentList));
+                        decompressionType = decompressAutomatic(contentStream, result, context.getDid(), content.getName());
                         break;
                     default:
                         return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType()).logErrorTo(log);
                 }
-                content.close();
+                contentStream.close();
             } catch (DecompressionTransformException | IOException e) {
                 if (e.getCause() == null) {
                     return new ErrorResult(context, e.getMessage()).logErrorTo(log);
@@ -120,16 +117,6 @@ public class DecompressionTransformAction extends MultipartTransformAction<Decom
         result.addMetadata("decompressionType", decompressionType);
 
         return result;
-    }
-
-    @Nullable
-    private String getContentName(@NotNull List<Content> contentList) {
-        Content first = contentList.get(0);
-        String name = null;
-        if (first != null) {
-            name = first.getName();
-        }
-        return name;
     }
 
     private String decompressAutomatic(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String contentName) {

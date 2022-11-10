@@ -24,7 +24,7 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ProtocolLayer;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.TransformInput;
+import org.deltafi.common.types.TransformEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -48,7 +48,7 @@ public class TransformResult extends DataAmendedResult implements TransformResul
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setTransform(TransformInput.newBuilder()
+        event.setTransform(TransformEvent.newBuilder()
                 .protocolLayer(new ProtocolLayer(context.getName(), content, metadata))
                 .build());
         return event;

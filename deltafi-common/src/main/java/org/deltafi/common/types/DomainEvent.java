@@ -22,11 +22,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class ErrorInput {
-  private String cause;
-  private String context;
+public class DomainEvent {
+  private Map<String, String> indexedMetadata;
 }

@@ -22,6 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.exception.ExpectedContentException;
+import org.deltafi.actionkit.exception.MissingMetadataException;
+import org.deltafi.actionkit.exception.MissingSourceMetadataException;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
@@ -118,6 +121,12 @@ public class ActionRunner {
             if (Objects.isNull(result)) {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
             }
+        } catch (ExpectedContentException e) {
+            result = new ErrorResult(context, "Action received no content", e).logErrorTo(log);
+        } catch (MissingSourceMetadataException e) {
+            result = new ErrorResult(context, "Missing ingress metadata with key " + e.getKey(), e).logErrorTo(log);
+        } catch (MissingMetadataException e) {
+            result = new ErrorResult(context, "Missing metadata with key " + e.getKey(), e).logErrorTo(log);
         } catch (Throwable e) {
             result = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
         }

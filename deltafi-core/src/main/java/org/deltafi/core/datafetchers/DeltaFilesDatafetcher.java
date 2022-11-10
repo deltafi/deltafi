@@ -144,7 +144,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileIngress
-  public DeltaFile ingress(@InputArgument IngressInput input) {
+  public DeltaFile ingress(@InputArgument IngressEvent input) {
     return deltaFilesService.ingress(input);
   }
 
@@ -215,9 +215,9 @@ public class DeltaFilesDatafetcher {
         ContentReference cr = crs.get(i);
         c.setContentReference(cr);
         String did = cr.getSegments().isEmpty() ? UUID.randomUUID().toString() : cr.getSegments().get(0).getDid();
-        IngressInput ingressInput = new IngressInput(did, sourceInfo, List.of(c), OffsetDateTime.now());
+        IngressEvent ingressEvent = new IngressEvent(did, sourceInfo, List.of(c), OffsetDateTime.now());
         log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
-        ingress(ingressInput);
+        ingress(ingressEvent);
       }
 
       remainingFiles -= batchSize;

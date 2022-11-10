@@ -15,18 +15,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.actionkit.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-
-public class FilterInput {
-  private String message;
-}
+public class ExpectedContentException extends IndexOutOfBoundsException {}
