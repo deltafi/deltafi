@@ -33,7 +33,6 @@ dependencies {
     api 'org.springframework.boot:spring-boot-autoconfigure'
     api 'org.springframework.data:spring-data-mongodb'
     api "org.springframework.retry:spring-retry"
-    api(platform("org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"))
     api "redis.clients:jedis:${jedisVersion}"
 
     implementation 'ch.qos.logback:logback-core:1.2.11'
