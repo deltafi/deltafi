@@ -62,4 +62,7 @@ extend type Mutation {
 
     # import the given SystemSnapshot
     importSnapshot(snapshot: SystemSnapshotInput!) : SystemSnapshot!
+
+    # delete the snapshot with the given SnapshotId
+    deleteSnapshot(snapshotId: String!): Result
 }
