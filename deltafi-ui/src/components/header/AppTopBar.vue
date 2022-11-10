@@ -18,16 +18,21 @@
 
 <template>
   <nav class="navbar navbar-dark bg-dark p-0 shadow" :style="{ backgroundColor: backgroundColor, color: textColor }">
-    <div class="navbar-brand col mr-0 px-3">
-      <div class="row">
-        <div class="col title" :style="{ color: textColor }">{{ uiConfig.title }}</div>
-        <div class="col text-right">
-          <button v-tooltip.right="'Toggle sidebar menu'" class="navbar-toggler btn btn-sm" @click="toggleSidebar">
-            <i :class="toggleSidebarIcon" />
-          </button>
+    <span class="navbar-brand-wrapper">
+      <div class="navbar-brand col mr-0 px-3">
+        <div class="row">
+          <div class="col title" :style="{ color: textColor }">{{ uiConfig.title }}</div>
+          <div class="col text-right">
+            <button v-tooltip.right="'Toggle sidebar menu'" class="navbar-toggler btn btn-sm" @click="toggleSidebar">
+              <i :class="toggleSidebarIcon" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </span>
+    <span class="navbar-text col">
+      <Version style="font-size: 0.9rem;" />
+    </span>
     <span>
       <Clock class="mr-3" />
       <StatusBadge class="mr-3" />
@@ -40,6 +45,7 @@
 import Clock from "@/components/Clock";
 import StatusBadge from "@/components/StatusBadge";
 import UserBadge from "@/components/UserBadge.vue";
+import Version from "@/components/Version.vue";
 import { computed, inject } from "vue";
 
 const uiConfig = inject('uiConfig');

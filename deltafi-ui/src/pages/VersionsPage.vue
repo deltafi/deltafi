@@ -31,11 +31,13 @@ import ProgressBar from "primevue/progressbar";
 import VersionsPanel from "@/components/VersionsPanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useVersions from "@/composables/useVersions";
+import useVersion from "@/composables/useVersion";
 import { onMounted, computed, onUnmounted, inject } from "vue";
 import _ from 'lodash';
 
 const refreshInterval = 5000; // 5 seconds
 const { data: versions, loaded, loading, fetch: fetchVersions } = useVersions();
+const { fetchVersion } = useVersion();
 const isIdle = inject("isIdle");
 
 let autoRefresh;
@@ -58,9 +60,11 @@ const verionsByGroup = computed(() => {
 
 onMounted(() => {
   fetchVersions();
+  fetchVersion();
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !loading.value) {
       fetchVersions();
+      fetchVersion();
     }
   }, refreshInterval);
 });

@@ -48,6 +48,7 @@ import Dialog from "primevue/dialog";
 import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
 import useCurrentUser from "@/composables/useCurrentUser";
+import useVersion from '@/composables/useVersion';
 import useServerSentEvents from "@/composables/useServerSentEvents";
 import useNotifications from "@/composables/useNotifications";
 import { computed, onBeforeMount, watch, nextTick, onBeforeUnmount, provide, ref, onMounted } from "vue";
@@ -61,6 +62,8 @@ const notify = useNotifications();
 const { serverSentEvents } = useServerSentEvents();
 const { uiConfig, fetchUiConfig } = useUiConfig();
 const { fetchCurrentUser } = useCurrentUser();
+const { fetchVersion } = useVersion();
+
 const idleTimeOut = (15 * 60 * 1000); // 15 min
 const { idle } = useIdle(idleTimeOut);
 const sidebarHidden = ref(false);
@@ -73,6 +76,7 @@ const sidebarClasses = computed(() => {
 
 onBeforeMount(async () => {
   fetchUiConfig();
+  fetchVersion();
   provide("uiConfig", uiConfig);
   await fetchCurrentUser();
 });

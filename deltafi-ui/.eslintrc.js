@@ -9,7 +9,7 @@ module.exports = {
     "vue/max-attributes-per-line": "off",
     "vue/no-v-html": "off",
     "vue/multi-word-component-names": ["error", {
-      "ignores": ["Timestamp", "Clock"]
+      "ignores": ["Timestamp", "Clock", "Version"]
     }]
   },
   ignorePatterns: [
