@@ -41,6 +41,32 @@ gradlePlugin {
             displayName = 'Deltafi Plugin Tasks'
             description = 'Tasks used to build DeltaFi plugins'
         }
+        if (!project.hasProperty('publishToGradleOrg')) {
+            deltafiActionConvention {
+                id = 'org.deltafi.plugin.action-convention'
+                    implementationClass = 'DeltafiActionConventionPlugin'
+                    displayName = 'DeltaFi Action Plugin Convention'
+                    description = 'Convention used to setup a set of DeltaFi actions'
+            }
+            deltafiJavaConvention {
+                id = 'org.deltafi.plugin.java-convention'
+                    implementationClass = 'DeltafiJavaConventionPlugin'
+                    displayName = 'DeltaFi Java Plugin Convention'
+                    description = 'Convention used or Java projects'
+            }
+            deltafiTestSummary {
+                id = 'org.deltafi.plugin.test-summary'
+                    implementationClass = 'DeltafiTestSummaryPlugin'
+                    displayName = 'DeltaFi Test Summary Convention'
+                    description = 'Pretty print test results'
+            }
+            deltafiVersioner {
+                id = 'org.deltafi.plugin.version-reckoning'
+                    implementationClass = 'DeltafiVersionReckoningPlugin'
+                    displayName = 'DeltaFi Version Convention'
+                    description = 'Determine the version based on the git tag'
+            }
+        }
     }
 }
 
