@@ -27,7 +27,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 111,
+  "id": 56,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -166,7 +166,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -260,6 +260,30 @@
                 }
               }
             ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Egress"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
           }
         ]
       },
@@ -302,7 +326,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -455,7 +479,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -652,7 +676,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -898,7 +922,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -1034,7 +1058,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -1187,7 +1211,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -1399,7 +1423,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -1481,7 +1505,7 @@
         "definition": "tag_values(ingressFlow)",
         "hide": 0,
         "includeAll": false,
-        "label": "Flow",
+        "label": "Ingress Flow",
         "multi": true,
         "name": "flow",
         "options": [],
@@ -1490,6 +1514,39 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "graphite",
+          "uid": "deltafi-graphite"
+        },
+        "definition": "",
+        "description": "Filter egress graphs to only contain these egresses",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Egress Flow",
+        "multi": true,
+        "name": "egressFlow",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "tag_values(egressFlow, ingressFlow=~${flow:regex})"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 2,
         "type": "query"
       }
     ]
@@ -1514,6 +1571,6 @@
   "timezone": "",
   "title": "Flow Summary",
   "uid": "flow-summary",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

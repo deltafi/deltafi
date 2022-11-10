@@ -27,7 +27,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 112,
+  "id": 57,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -222,7 +222,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -331,7 +331,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Files",
@@ -468,7 +468,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
         }
       ],
       "title": "Aggregate Processed Files",
@@ -671,7 +671,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'ingressFlow')"
         }
       ],
       "title": "Processed Bytes by Flow",
@@ -810,7 +810,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'ingressFlow')"
         }
       ],
       "title": "Processed Files by Flow",
@@ -877,108 +877,6 @@
         }
       ],
       "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-BlPu"
-          },
-          "custom": {
-            "align": "left",
-            "displayMode": "auto",
-            "filterable": true,
-            "inspect": false
-          },
-          "decimals": 0,
-          "mappings": [],
-          "min": 0,
-          "noValue": "-",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 18,
-        "w": 12,
-        "x": 12,
-        "y": 33
-      },
-      "id": 36,
-      "options": {
-        "footer": {
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": true
-        },
-        "showHeader": true,
-        "sortBy": []
-      },
-      "pluginVersion": "9.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum'), 'ingressFlow')"
-        }
-      ],
-      "title": "Ingressed Files by Flow",
-      "transformations": [
-        {
-          "id": "reduce",
-          "options": {
-            "labelsToFields": false,
-            "reducers": [
-              "sum"
-            ]
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "Total"
-              }
-            ]
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "Field": "Flow",
-              "Total": "Ingressed Files"
-            }
-          }
-        }
-      ],
-      "type": "table"
     }
   ],
   "refresh": "1d",
@@ -1007,6 +905,39 @@
         "regex": "",
         "skipUrlSync": false,
         "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "graphite",
+          "uid": "deltafi-graphite"
+        },
+        "definition": "",
+        "description": "Include only these egress flows in egress metrics",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Egress Flow Filter",
+        "multi": true,
+        "name": "egressFlow",
+        "options": [],
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "tag_values(egressFlow)"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
       }
     ]
   },
@@ -1022,6 +953,6 @@
   "timezone": "",
   "title": "Processing Report",
   "uid": "processing-report",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }
