@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Create a snapshot prior to running a plugin deployment
 - Core API version is now discoverable via query
+- API: Flow metrics can be filtered by egress flow
+```
+example query:
+https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]=decompress-passthrough,decompress-and-merge&egressFlows[]=passthrough
+```
 
 ### Changed
 - Increase default requeueSeconds from 30 to 300
