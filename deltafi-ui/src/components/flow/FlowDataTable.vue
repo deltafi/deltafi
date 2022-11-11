@@ -44,16 +44,16 @@
       <Column header="Description" field="description" />
       <Column v-if="FlowTypeTitle !== 'Enrich'" header="Test Mode" class="test-mode-column">
         <template #body="{ data }">
-          <FlowTestModeInputSwitch :row-data-prop="data" />
+          <FlowTestModeInputSwitch :row-data-prop="data" @update-flows="emit('updateFlows')" />
         </template>
       </Column>
       <Column header="Active" class="flow-state-column">
         <template #body="{ data }">
           <template v-if="!_.isEmpty(data.flowStatus.errors)">
-            <FlowStateValidationButton :row-data-prop="data" />
+            <FlowStateValidationButton :row-data-prop="data" @update-flows="emit('updateFlows')" />
           </template>
           <template v-else>
-            <FlowStateInputSwitch :row-data-prop="data" />
+            <FlowStateInputSwitch :row-data-prop="data" @update-flows="emit('updateFlows')" />
           </template>
         </template>
       </Column>
@@ -69,7 +69,7 @@ import FlowStateValidationButton from "@/components/flow/FlowStateValidationButt
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
-import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch } from "vue";
+import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
 
 import filesize from "filesize";
 import { FilterMatchMode } from "primevue/api";
@@ -81,6 +81,7 @@ const refreshInterval = 5000; // 5 seconds
 let autoRefresh = null;
 const isIdle = inject("isIdle");
 const { data: metricsData, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate } = useGraphiteQueryBuilder();
+const emit = defineEmits(['updateFlows'])
 
 const props = defineProps({
   flowTypeProp: {

@@ -27,12 +27,13 @@
 
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { defineProps, nextTick, reactive } from "vue";
+import { defineProps, nextTick, toRefs, defineEmits } from "vue";
 
 import Button from "primevue/button";
 import _ from "lodash";
 
 const { validateIngressFlow, validateEnrichFlow, validateEgressFlow } = useFlowQueryBuilder();
+const emit = defineEmits(['updateFlows'])
 
 const props = defineProps({
   rowDataProp: {
@@ -41,7 +42,7 @@ const props = defineProps({
   },
 });
 
-const { rowDataProp: rowData } = reactive(props);
+const { rowDataProp: rowData } = toRefs(props);
 
 const validationRetry = async (flowName, flowType) => {
   let validatedFlowStatus = {};
@@ -56,6 +57,7 @@ const validationRetry = async (flowName, flowType) => {
     validatedFlowStatus = response.data.validateEgressFlow;
   }
   await nextTick();
-  Object.assign(rowData, { ...rowData, ...validatedFlowStatus });
+  Object.assign(rowData.value, { ...rowData.value, ...validatedFlowStatus });
+  emit('updateFlows');
 };
 </script>

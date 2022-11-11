@@ -39,7 +39,7 @@
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineProps, reactive, ref } from "vue";
+import { computed, defineProps, toRefs, ref, watch, defineEmits } from "vue";
 
 import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";
@@ -50,6 +50,7 @@ import _ from "lodash";
 const confirm = useConfirm();
 const { enableTestIngressFlowByName, disableTestIngressFlowByName, enableTestEgressFlowByName, disableTestEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
+const emit = defineEmits(['updateFlows'])
 
 const props = defineProps({
   rowDataProp: {
@@ -58,10 +59,17 @@ const props = defineProps({
   },
 });
 
-const { rowDataProp: rowData } = reactive(props);
-const checked = ref(props.rowDataProp.flowStatus.testMode);
+const { rowDataProp: rowData } = toRefs(props);
+const checked = ref(rowData.value.flowStatus.testMode);
 const checkedTooltip = ref();
 checkedTooltip.value = props.rowDataProp.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";
+
+watch(props,
+  () => {
+    checked.value = rowData.value.flowStatus.testMode;
+  },
+  { deep: true }
+)
 
 const testModeToolTip = computed(() => {
   return _.isEqual(checked.value, true) ? "Enabled" : "Disabled";
@@ -75,30 +83,32 @@ const confirmationPopup = (event, name, testMode, flowType) => {
   if (testMode) {
     confirm.require({
       target: event.currentTarget,
-      group: `${rowData.flowType}_${rowData.name}`,
+      group: `${rowData.value.flowType}_${rowData.value.name}`,
       message: `Disable Test Mode for ${name} flow?`,
       acceptLabel: "Disable Test Mode",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: () => {
+      accept: async () => {
         notify.info("Disabling Test Mode", `Disabling Test Mode for ${flowType} flow ${name}.`, 3000);
-        toggleFlowState(name, testMode, flowType);
+        await toggleFlowState(name, testMode, flowType);
+        emit('updateFlows')
       },
-      reject: () => {},
+      reject: () => { },
     });
   } else {
     confirm.require({
       target: event.currentTarget,
-      group: `${rowData.flowType}_${rowData.name}`,
+      group: `${rowData.value.flowType}_${rowData.value.name}`,
       message: `Enable Test Mode for ${name} flow?`,
       acceptLabel: "Enable Test Mode",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: () => {
+      accept: async () => {
         notify.info("Enable Test Mode", `Enable Test Mode for ${flowType} flow ${name}.`, 3000);
-        toggleFlowState(name, testMode, flowType);
+        await toggleFlowState(name, testMode, flowType);
+        emit('updateFlows')
       },
-      reject: () => {},
+      reject: () => { },
     });
   }
 };

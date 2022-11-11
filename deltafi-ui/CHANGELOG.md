@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-[unreleased]
+## [0.99.3]
 
 ### Changed
 
@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Fixed bug in notification service (#292)
+- Fixed toggle switch bug on Flows page (#299)
 
 ## [0.99.2]
 
@@ -463,7 +464,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.2...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.3...main
+[0.99.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.2...0.99.3
 [0.99.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.1...0.99.2
 [0.99.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.0...0.99.1
 [0.99.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.98.5...0.99.0

@@ -29,9 +29,9 @@
       </span>
     </div>
   </PageHeader>
-  <FlowDataTable flow-type-prop="ingress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText"></FlowDataTable>
-  <FlowDataTable flow-type-prop="enrich" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText"></FlowDataTable>
-  <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText"></FlowDataTable>
+  <FlowDataTable flow-type-prop="ingress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+  <FlowDataTable flow-type-prop="enrich" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+  <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
 </template>
 
 <script setup>

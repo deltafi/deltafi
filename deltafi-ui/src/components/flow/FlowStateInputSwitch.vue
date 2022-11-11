@@ -39,7 +39,7 @@
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineProps, reactive, ref } from "vue";
+import { computed, defineProps, toRefs, ref, watch, defineEmits } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
 import Button from "primevue/button";
@@ -50,6 +50,7 @@ import _ from "lodash";
 const confirm = useConfirm();
 const { startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
+const emit = defineEmits(['updateFlows'])
 
 const props = defineProps({
   rowDataProp: {
@@ -58,31 +59,40 @@ const props = defineProps({
   },
 });
 
-const { rowDataProp: rowData } = reactive(props);
+const { rowDataProp: rowData } = toRefs(props);
 
-const checked = ref(props.rowDataProp.flowStatus.state);
+const checked = ref(rowData.value.flowStatus.state);
+
+watch(props,
+  () => {
+    checked.value = rowData.value.flowStatus.state;
+  },
+  { deep: true }
+)
 
 const buttonClass = computed(() => {
   return _.isEqual(checked.value, "RUNNING") ? "p-button-primary" : "p-button-secondary";
 });
 
-const confirmationPopup = (event, name, state, flowType) => {
+const confirmationPopup = async (event, name, state, flowType) => {
   if (_.isEqual(state, "RUNNING")) {
     confirm.require({
       target: event.currentTarget,
-      group: `${rowData.flowType}_${rowData.name}`,
+      group: `${rowData.value.flowType}_${rowData.value.name}`,
       message: `Stop the ${name} flow?`,
       acceptLabel: "Stop",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: () => {
+      accept: async () => {
         notify.info("Stopping Flow", `Stopping ${flowType} flow ${name}.`, 3000);
-        toggleFlowState(name, state, flowType);
+        await toggleFlowState(name, state, flowType);
+        emit('updateFlows')
       },
-      reject: () => {},
+      reject: () => { },
     });
   } else {
-    toggleFlowState(name, state, flowType);
+    await toggleFlowState(name, state, flowType);
+    emit('updateFlows')
   }
 };
 
