@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Processing Report dashboard allows filtering by egress flow
 - Create a snapshot prior to running a plugin deployment
 - Core API version is now discoverable via query
+- Delete snapshot mutation
+- `GraphQLExecutor` and GraphQL client added to the common core library
 - API: Flow metrics can be filtered by egress flow
 ```
 example query:
@@ -32,7 +34,6 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 - `Plugin` upgrades no longer reset the replicas to 1
 - Issue with publishing plugins to gradle.org
 - Fix stressTest regression with 0 byte files
-
 - Action queue API endpoint no longer shows inactive queues
 
 ### Tech-Debt/Refactor
@@ -41,6 +42,11 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 
 ### Upgrade and Migration
 - Plugins will need to be upgraded to the new action base classes
+- Updated core Java dependencies:
+  - DGS version 5.4.3
+  - Jackson version 2.14.0
+  - Minio client 8.4.5
+  - Spring Boot 2.7.5
 
 ## [0.99.2] - 2022-11-07
 
