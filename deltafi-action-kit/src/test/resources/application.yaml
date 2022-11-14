@@ -12,9 +12,5 @@ minio:
   secret-key: empty
   access-key: empty
 
-graphql:
-  urls:
-    core: core
-
 redis:
   url: redis
