@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.3
+## [Unreleased] - Next release 0.99.4
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.3] - 2022-11-14
 
 ### Added
 - Flow Summary dashboard allows filtering by egress flow
@@ -24,8 +42,6 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 - Core API version is now discoverable via query
 - Consolidate Action input parameters: each action now takes a context, parameters, and a single action input (e.g. LoadInput, ValidateInput, etc) that contains the other members specific to that action
 
-### Deprecated
-
 ### Removed
 - Remove simple- and multi- variants of Action interfaces
 
@@ -35,10 +51,6 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 - Issue with publishing plugins to gradle.org
 - Fix stressTest regression with 0 byte files
 - Action queue API endpoint no longer shows inactive queues
-
-### Tech-Debt/Refactor
-
-### Security
 
 ### Upgrade and Migration
 - Plugins will need to be upgraded to the new action base classes
@@ -855,7 +867,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.2...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.3...main
+[0.99.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.2...0.99.3
 [0.99.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.1...0.99.2
 [0.99.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.0...0.99.1
 [0.99.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.98.5...0.99.0
