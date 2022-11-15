@@ -25,8 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
@@ -46,13 +46,13 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.MediaType;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.metrics.MetricsUtil.*;
@@ -192,22 +192,18 @@ public class IngressRest {
         }
     }
 
-    protected Map<String, String> extractFlowfileAttributes(final ArchiveInputStream stream) throws IOException {
-        final Properties props = new Properties();
-        props.loadFromXML(CloseShieldInputStream.wrap(stream));
+    private static final Pattern ENTRY_PATTERN = Pattern.compile("<entry key=\"([^\"]+)\">([^<]+)</entry>", Pattern.MULTILINE);
 
+    protected Map<String, String> extractFlowfileAttributes(final ArchiveInputStream stream) throws IOException {
         final Map<String, String> result = new HashMap<>();
-        for (final Map.Entry<Object, Object> entry : props.entrySet()) {
-            final Object keyObject = entry.getKey();
-            final Object valueObject = entry.getValue();
-            if (!(keyObject instanceof String)) {
-                throw new IOException("Flow file attributes object contains key of type "
-                        + keyObject.getClass().getCanonicalName()
-                        + " but expected java.lang.String");
-            }
-            final String key = (String) keyObject;
-            final String value = (String) valueObject;
-            result.put(key, value);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+
+        Matcher matcher = ENTRY_PATTERN.matcher(reader.lines().collect(Collectors.joining("\n")));
+        while(matcher.find()) {
+            final String escapedKey = matcher.group(1);
+            final String escapedValue = matcher.group(2);
+
+            result.put(StringEscapeUtils.unescapeXml(escapedKey), StringEscapeUtils.unescapeXml(escapedValue));
         }
 
         return result;

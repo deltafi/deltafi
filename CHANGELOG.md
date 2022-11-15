@@ -41,6 +41,7 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 - Create a snapshot prior to running a plugin deployment
 - Core API version is now discoverable via query
 - Consolidate Action input parameters: each action now takes a context, parameters, and a single action input (e.g. LoadInput, ValidateInput, etc) that contains the other members specific to that action
+- Flowfile-v1 metadata extraction now no longer uses the SAX parser--which doesn't like 4-byte encoded UTF-8--allowing more multi-lingual support
 
 ### Removed
 - Remove simple- and multi- variants of Action interfaces
