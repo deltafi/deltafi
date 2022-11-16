@@ -20,7 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
-
+- Upgrade base SpringBoot docker image to 0.99.4
+- Upgrade Kind node docker image to 0.99.4
 
 ## [0.99.3] - 2022-11-14
 
