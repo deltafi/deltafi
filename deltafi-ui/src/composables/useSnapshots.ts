@@ -146,5 +146,20 @@ export default function useSystemSnapshots() {
     mutationData.value = response.value.data.importSnapshot;
   };
 
-  return { data, loading, loaded, fetch, create, revert, importSnapshot,mutationData, errors };
+  const deleteSnapshot = async (id: string) => {
+    const query = {
+      deleteSnapshot: {
+        __args: {
+          snapshotId: id,
+        },
+        success: true,
+        errors: true,
+        info: true,
+      },
+    };
+    await queryGraphQL(query, "deleteSystemSnapshot", "mutation");
+    return response.value.data.deleteSnapshot;
+  };
+
+  return { data, loading, loaded, fetch, create, revert, importSnapshot, deleteSnapshot,mutationData, errors };
 }

@@ -31,7 +31,7 @@
           <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="snapshots" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true">
+      <DataTable v-model:filters="filters" :value="snapshots" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading">
         <template #empty>No snapshots to display.</template>
         <template #loading>Loading. Please wait...</template>
         <Column field="id" header="ID">
@@ -40,7 +40,7 @@
           </template>
         </Column>
         <Column field="reason" header="Reason" />
-        <Column field="created" header="Date Created">
+        <Column field="created" header="Date Created" class="date-column">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
           </template>
@@ -50,6 +50,7 @@
             <span class="btn-group">
               <Button v-tooltip.left="'Download Snapshot'" icon="fas fa-download fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onDownload(data.data)" />
               <Button v-has-permission:SnapshotRevert v-tooltip.left="'Revert to Snapshot'" icon="fas fa-history fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onRevertClick(data.data)" />
+              <Button v-has-permission:SnapshotDelete v-tooltip.left="'Delete Snapshot'" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onDeleteClick(data.data)" />
             </span>
           </template>
         </Column>
@@ -64,6 +65,7 @@
       <span class="btn-group">
         <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onDownload(snapshot)" />
         <Button v-has-permission:SnapshotRevert label="Revert to Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onRevertClick(snapshot)" />
+        <Button v-has-permission:SnapshotDelete v-tooltip.left="'Delete Snapshot'" label="Delete Snapshot" icon="pi pi-trash" class="p-button p-button-secondary p-button-outlined" @click="onDeleteClick(snapshot)" />
       </span>
     </template>
   </Dialog>
@@ -102,7 +104,7 @@ import FileUpload from "primevue/fileupload";
 import { EnumType } from "json-to-graphql-query";
 
 const confirm = useConfirm();
-const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot } = useSystemSnapshots();
+const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot, deleteSnapshot, loading } = useSystemSnapshots();
 const snapshot = ref(null);
 const notify = useNotifications();
 const reason = ref("");
@@ -150,7 +152,7 @@ const onRevert = async (id) => {
 
 const onRevertClick = (snapshotData) => {
   confirm.require({
-    message: "Are you sure you want to revert to the system to this snapshot?",
+    message: `Are you sure you want to revert the system to this snapshot (${snapshotData.id})?`,
     header: "Confirm Revert",
     icon: "pi pi-exclamation-triangle",
     acceptLabel: "Revert",
@@ -160,6 +162,31 @@ const onRevertClick = (snapshotData) => {
     },
     reject: () => { },
   });
+};
+
+const onDeleteClick = (snapshotData) => {
+  confirm.require({
+    message: `Are you sure you want to delete this snapshot (${snapshotData.id})?`,
+    header: "Confirm Delete",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "Delete",
+    rejectLabel: "Cancel",
+    accept: () => {
+      onDelete(snapshotData.id);
+    },
+    reject: () => { },
+  });
+};
+
+const onDelete = async (id) => {
+  const deleteResponse = await deleteSnapshot(id);
+  if (deleteResponse.success === true) {
+    notify.success("Successfully Deleted Snapshot ", id);
+    close();
+    await getSystemSnapshots();
+  } else {
+    notify.error("Failed to Delete Snapshot", deleteResponse.errors[0]);
+  }
 };
 
 const onImport = async (snapShotData) => {
@@ -222,6 +249,10 @@ const confirmCreate = async () => {
     .p-panel-title {
       padding: 1rem 0;
     }
+  }
+
+  .date-column {
+    width: 15rem;
   }
 }
 </style>
