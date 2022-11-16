@@ -110,6 +110,9 @@ import { reactive, ref, computed, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ScrollTop from "primevue/scrolltop";
 import Message from "primevue/message";
+import { useConfirm } from "primevue/useconfirm";
+
+const confirm = useConfirm();
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -118,7 +121,7 @@ const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][
 const route = useRoute();
 const router = useRouter();
 const uiConfig = inject("uiConfig");
-const { data: deltaFile, getDeltaFile, getRawDeltaFile, loaded, loading } = useDeltaFiles();
+const { data: deltaFile, getDeltaFile, getRawDeltaFile, cancelDeltaFile, loaded, loading } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
 const notify = useNotifications();
 const showForm = ref(true);
@@ -159,8 +162,16 @@ const staticMenuItems = reactive([
     },
   },
   {
+    label: "Cancel",
+    icon: "fas fa-power-off fa-fw",
+    visible: () => isRunning.value && hasPermission("DeltaFileCancel"),
+    command: () => {
+      onCancelClick();
+    },
+  },
+  {
     separator: true,
-    visible: computed(() => isError.value && (hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume"))),
+    visible: computed(() => isError.value && hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume")),
   },
   {
     label: "Acknowledge Error",
@@ -274,6 +285,10 @@ const hasMetadata = computed(() => {
   return Object.keys(allMetadata.value).length > 0;
 });
 
+const isRunning = computed(() => {
+  return !["COMPLETE", "ERROR"].includes(deltaFile.stage);
+});
+
 const pageHeader = computed(() => {
   let header = ["DeltaFile Viewer"];
   if (did.value && !showForm.value) header.push(did.value);
@@ -345,6 +360,30 @@ onMounted(() => {
     loadDeltaFileData();
   }
 });
+
+const onCancelClick = () => {
+  confirm.require({
+    message: "Are you sure you want to cancel this DeltaFile?",
+    header: "Confirm Cancel",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "Yes",
+    rejectLabel: "Cancel",
+    accept: () => {
+      onCancel();
+    },
+    reject: () => { },
+  });
+};
+
+const onCancel = async () => {
+  const cancelResponse = await cancelDeltaFile([did.value]);
+  if (cancelResponse[0].success) {
+    notify.success("Successfully Canceled DeltaFile");
+    loadDeltaFileData();
+  } else {
+    notify.error("Failed to Cancel DeltaFile", cancelResponse[0].error);
+  }
+};
 </script>
 
 <style lang="scss">

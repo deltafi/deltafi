@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Added delete button to System Snapshots page (#295)
+- Added Cancel menu option to DeltaFile Viewer (#293)
 
 ## [0.99.3]
 

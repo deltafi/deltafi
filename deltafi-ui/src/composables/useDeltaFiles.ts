@@ -143,5 +143,20 @@ export default function useDeltaFiles() {
     return response.value.data.rawDeltaFile;
   }
 
-  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, errors };
+  const cancelDeltaFile = async (dids: Array<string>) => {
+    const query = {
+      cancel: {
+        __args: {
+          dids: dids,
+        },
+        did: true,
+        success: true,
+        error: true
+      }
+    };
+    await queryGraphQL(query, "cancelDeltaFile", "mutation");
+    return response.value.data.cancel;
+  }
+
+  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, cancelDeltaFile, errors };
 }
