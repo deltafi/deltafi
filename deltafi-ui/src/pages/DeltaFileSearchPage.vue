@@ -47,6 +47,8 @@
                 <InputText v-model.trim="fileName" class="p-inputtext input-area-height" placeholder="Filename" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
                 <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <label for="egressFlowId" class="mt-2">Egress Flow:</label>
+                <Dropdown id="egressFlowId" v-model="egressFlowOptionSelected" :placeholder="egressFlowOptionSelected ? egressFlowOptionSelected.name + ' ' : 'Select an Egress Flow'" :options="egressFlowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="stageId" class="mt-2">Size:</label>
                 <div class="size-container">
                   <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
@@ -66,6 +68,8 @@
                 <label for="filteredState" class="mt-2">Filtered:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="filteredState" v-model="filteredOptionSelected" :placeholder="filteredOptionSelected ? filteredOptionSelected.name + ' ' : 'Select if Filtered'" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
+                <label for="requeueMinId" class="mt-2">Requeue Count:</label>
+                <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Min" />
               </div>
               <div class="flex-column">
                 <label for="stageId">Stage:</label>
@@ -173,20 +177,20 @@ const optionMenu = ref();
 // Dates
 const defaultStartTimeDate = computed(() => {
   const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).startOf('day')
-})
+  return (uiConfig.useUTC ? date : date.local()).startOf("day");
+});
 const defaultEndTimeDate = computed(() => {
   const date = dayjs().utc();
-  return (uiConfig.useUTC ? date : date.local()).endOf('day');
-})
+  return (uiConfig.useUTC ? date : date.local()).endOf("day");
+});
 const startTimeDate = ref();
 const startTimeDateIsDefault = computed(() => {
   return startTimeDate.value.getTime() === new Date(defaultStartTimeDate.value.format(timestampFormat)).getTime();
-})
+});
 const endTimeDate = ref();
 const endTimeDateIsDefault = computed(() => {
   return endTimeDate.value.getTime() === new Date(defaultEndTimeDate.value.format(timestampFormat)).getTime();
-})
+});
 const setDateTimeToday = () => {
   startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
   endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
@@ -204,8 +208,11 @@ const metadataKeysOptions = ref([]);
 const newMetadataKey = ref(null);
 const newMetadataValue = ref(null);
 const fileName = ref(null);
+const requeueMin = ref(null);
 const flowOptions = ref([]);
 const flowOptionSelected = ref(null);
+const egressFlowOptions = ref([]);
+const egressFlowOptionSelected = ref(null);
 const stageOptions = ref([]);
 const stageOptionSelected = ref(null);
 const egressedOptions = ref([
@@ -260,6 +267,7 @@ const filtered = computed(() => (filteredOptionSelected.value ? filteredOptionSe
 const testMode = computed(() => (testModeOptionSelected.value ? testModeOptionSelected.value.value : null));
 const stageName = computed(() => (stageOptionSelected.value ? stageOptionSelected.value.name : null));
 const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value.name : null));
+const egressFlowName = computed(() => (egressFlowOptionSelected.value ? egressFlowOptionSelected.value.name : null));
 
 const metadata = computed(() => {
   return metadataArray.value.map((i) => {
@@ -312,7 +320,9 @@ const items = ref([
         icon: "fas fa-times",
         command: () => {
           fileName.value = null;
+          requeueMin.value = null;
           flowOptionSelected.value = null;
+          egressFlowOptionSelected.value = null;
           stageOptionSelected.value = null;
           egressedOptionSelected.value = null;
           filteredOptionSelected.value = null;
@@ -350,7 +360,7 @@ watch(
   { deep: true }
 );
 
-watch([sizeMin, sizeMax, flowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected], () => {
+watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin], () => {
   if (watchEnabled.value) fetchDeltaFilesData();
 });
 
@@ -422,18 +432,24 @@ const optionMenuToggle = (event) => {
 };
 
 const fetchConfigTypes = async () => {
-  const flowTypes = ["INGRESS_FLOW"];
-  fetchFlows(flowTypes);
+  fetchIngressFlows();
+  fetchEgressFlows();
 };
 
-const fetchFlows = async (flowTypes) => {
-  for (const flowType of flowTypes) {
-    let flowData = await getConfigByType(flowType);
-    let flowDataValues = flowData.data.deltaFiConfigs;
-    flowOptions.value = _.concat(flowOptions.value, flowDataValues);
-    flowOptions.value = _.uniqBy(flowOptions.value, "name");
-    flowOptions.value = _.sortBy(flowOptions.value, ["name"]);
-  }
+const fetchIngressFlows = async () => {
+  let flowData = await getConfigByType("INGRESS_FLOW");
+  let flowDataValues = flowData.data.deltaFiConfigs;
+  flowOptions.value = _.concat(flowOptions.value, flowDataValues);
+  flowOptions.value = _.uniqBy(flowOptions.value, "name");
+  flowOptions.value = _.sortBy(flowOptions.value, ["name"]);
+};
+
+const fetchEgressFlows = async () => {
+  let flowData = await getConfigByType("EGRESS_FLOW");
+  let flowDataValues = flowData.data.deltaFiConfigs;
+  egressFlowOptions.value = _.concat(egressFlowOptions.value, flowDataValues);
+  egressFlowOptions.value = _.uniqBy(egressFlowOptions.value, "name");
+  egressFlowOptions.value = _.sortBy(egressFlowOptions.value, ["name"]);
 };
 
 const fetchDomains = async () => {
@@ -460,7 +476,7 @@ const fetchDeltaFilesData = _.debounce(
     setPersistedParams();
 
     loading.value = true;
-    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value);
+    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value);
     tableData.value = data.data.deltaFiles.deltaFiles;
     loading.value = false;
     totalRecords.value = data.data.deltaFiles.totalCount;
@@ -498,10 +514,8 @@ const onPage = (event) => {
 };
 
 const ISOStringToDate = (dateISOString) => {
-  return uiConfig.useUTC ?
-    dayjs(dateISOString).add(new Date().getTimezoneOffset(), 'minute').toDate() :
-    dayjs(dateISOString).toDate();
-}
+  return uiConfig.useUTC ? dayjs(dateISOString).add(new Date().getTimezoneOffset(), "minute").toDate() : dayjs(dateISOString).toDate();
+};
 
 const getPersistedParams = async () => {
   perPage.value = nonPanelState.value.perPage || 10;
@@ -511,8 +525,10 @@ const getPersistedParams = async () => {
     sizeUnitSelected.value = params.sizeUnit ? sizeUnits.find((i) => i.name == params.sizeUnit) : sizeUnits[0];
     sizeTypeSelected.value = params.sizeType ? sizeTypes.find((i) => i.name == params.sizeType) : sizeTypes[0];
     fileName.value = params.fileName != "" ? params.fileName : null;
+    requeueMin.value = params.requeueMin != null ? Number(params.requeueMin) : null;
     stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
     flowOptionSelected.value = params.ingressFlow ? { name: params.ingressFlow } : null;
+    egressFlowOptionSelected.value = params.egressFlow ? { name: params.egressFlow } : null;
     egressedOptionSelected.value = params.egressed ? egressedOptions.value.find((i) => i.name == params.egressed) : null;
     filteredOptionSelected.value = params.filtered ? filteredOptions.value.find((i) => i.name == params.filtered) : null;
     testModeOptionSelected.value = params.testMode ? testModeOptions.value.find((i) => i.name == params.testMode) : null;
@@ -526,8 +542,8 @@ const getPersistedParams = async () => {
       metadataArray.value = [];
     }
 
-    const panelSearchKeys = Object.keys(params).filter((key) => !["start", "end"].includes(key))
-    collapsedSearchOption.value = panelSearchKeys.length == 0
+    const panelSearchKeys = Object.keys(params).filter((key) => !["start", "end"].includes(key));
+    collapsedSearchOption.value = panelSearchKeys.length == 0;
   } else {
     // Values that, if set, should not expand Advanced Search Options.
     if (nonPanelState.value.startTimeDateState) startTimeDate.value = ISOStringToDate(nonPanelState.value.startTimeDateState);
@@ -537,8 +553,10 @@ const getPersistedParams = async () => {
 
     // Values that, if set, should expand Advanced Search Options.
     fileName.value = panelState.value.fileName;
+    requeueMin.value = panelState.value.requeueMin;
     stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
     flowOptionSelected.value = panelState.value.flowOptionState ? { name: panelState.value.flowOptionState } : null;
+    egressFlowOptionSelected.value = panelState.value.egressFlowOptionState ? { name: panelState.value.egressFlowOptionState } : null;
     egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
     filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
     testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
@@ -560,8 +578,10 @@ const setPersistedParams = () => {
   panelState.value = {
     // Values that, if set, should expand Advanced Search Options.
     fileName: fileName.value,
+    requeueMin: requeueMin.value,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
+    egressFlowOptionState: egressFlowOptionSelected.value ? egressFlowOptionSelected.value.name : null,
     egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
     filteredOptionState: filteredOptionSelected.value ? filteredOptionSelected.value.name : null,
     testModeOptionState: testModeOptionSelected.value ? testModeOptionSelected.value.name : null,
@@ -580,13 +600,15 @@ const setPersistedParams = () => {
     perPage: perPage.value,
   };
 
-  params.start = startTimeDateIsDefault.value ? null : startDateISOString.value
-  params.end = endTimeDateIsDefault.value ? null : endDateISOString.value
+  params.start = startTimeDateIsDefault.value ? null : startDateISOString.value;
+  params.end = endTimeDateIsDefault.value ? null : endDateISOString.value;
   params.sizeUnit = sizeMin.value != null || sizeMax.value != null ? sizeUnitSelected.value.name : null;
   params.sizeType = sizeMin.value != null || sizeMax.value != null ? sizeTypeSelected.value.name : null;
   params.fileName = fileName.value != "" ? fileName.value : null;
+  params.requeueMin = requeueMin.value != null ? requeueMin.value : null;
   params.stage = stageOptionSelected.value ? stageOptionSelected.value.name : null;
   params.ingressFlow = flowOptionSelected.value ? flowOptionSelected.value.name : null;
+  params.egressFlow = egressFlowOptionSelected.value ? egressFlowOptionSelected.value.name : null;
   params.egressed = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
   params.filtered = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
   params.testMode = testModeOptionSelected.value ? testModeOptionSelected.value.name : null;
@@ -612,7 +634,7 @@ const getMetadataArray = (stringData) => {
     return {
       key: keyValuePair[0],
       value: keyValuePair[1],
-      valid: true
+      valid: true,
     };
   });
 };

@@ -22,7 +22,7 @@ import useGraphQL from './useGraphQL'
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number,testMode?: Boolean) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: string, egressFlowName?: string, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number,testMode?: Boolean,requeueMin?:Number) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -36,6 +36,7 @@ export default function useDeltaFilesQueryBuilder() {
               flow: flowName,
               filename: fileName
             },
+            egressFlows: egressFlowName ? [egressFlowName] : [],
             stage: stageName ? new EnumType(stageName) : null,
             actions: actionName,
             modifiedAfter: startDateISOString,
@@ -45,7 +46,8 @@ export default function useDeltaFilesQueryBuilder() {
             ingressBytesMin: ingressBytesMin,
             ingressBytesMax: ingressBytesMax,
             totalBytesMin: totalBytesMin,
-            totalBytesMax: totalBytesMax
+            totalBytesMax: totalBytesMax,
+            requeueCountMin: requeueMin
           },
           orderBy: {
             direction: new EnumType(sortDirection),
