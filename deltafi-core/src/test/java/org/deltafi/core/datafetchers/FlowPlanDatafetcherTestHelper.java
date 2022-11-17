@@ -46,6 +46,11 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, ValidateIngressFlowGraphQLQuery.newRequest().flowName("sampleIngress").build(), new ValidateIngressFlowProjectionRoot().name(), IngressFlow.class);
     }
 
+    public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
+                new GetFlowNamesProjectionRoot().ingress().enrich().egress(), FlowNames.class);
+    }
+
     public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, ValidateEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateIngressFlowProjectionRoot().name(), EgressFlow.class);
     }

@@ -61,6 +61,7 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.*;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -122,7 +123,6 @@ import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.rest.IngressRest.FLOWFILE_V1_MEDIA_TYPE;
-import org.hamcrest.MatcherAssert;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -1504,6 +1504,41 @@ class DeltaFiCoreApplicationTests {
 		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
 		assertThat(pluginFlows.getIngressFlows().get(0).getName()).isEqualTo("ingress");
 		assertThat(pluginFlows.getEgressFlows().get(0).getName()).isEqualTo("egress");
+	}
+
+	@Test
+	void testGetFlowsByState() {
+		clearForFlowTests();
+		IngressFlow stoppedFlow = buildIngressFlow(FlowState.STOPPED);
+		stoppedFlow.setName("stopped");
+
+		IngressFlow invalidFlow = buildIngressFlow(FlowState.INVALID);
+		invalidFlow.setName("invalid");
+
+		IngressFlow runningFlow = buildIngressFlow(FlowState.RUNNING);
+		runningFlow.setName("running");
+
+		ingressFlowRepo.saveAll(List.of(stoppedFlow, invalidFlow, runningFlow));
+
+
+		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(3).contains("stopped", "invalid", "running");
+		assertThat(ingressFlowService.getFlowNamesByState(FlowState.STOPPED)).hasSize(1).contains("stopped");
+		assertThat(ingressFlowService.getFlowNamesByState(FlowState.INVALID)).hasSize(1).contains("invalid");
+		assertThat(ingressFlowService.getFlowNamesByState(FlowState.RUNNING)).hasSize(1).contains("running");
+	}
+
+	@Test
+	void testGetFlowsQuery() {
+		clearForFlowTests();
+
+		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
+		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+
+		FlowNames flows = FlowPlanDatafetcherTestHelper.getFlowNames(dgsQueryExecutor);
+		assertThat(flows.getIngress()).hasSize(1).contains(INGRESS_FLOW_NAME);
+		assertThat(flows.getEgress()).hasSize(1).contains(EGRESS_FLOW_NAME);
+		assertThat(flows.getEnrich()).isEmpty();
+
 	}
 
 	@Test

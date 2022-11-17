@@ -234,6 +234,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return new ArrayList<>(flowCache.values());
     }
 
+    public List<String> getFlowNamesByState(FlowState state) {
+        List<FlowT> flows = state == null ? getAll() : flowRepo.findByFlowStatusState(state);
+
+        return flows.stream().map(Flow::getName).collect(Collectors.toList());
+    }
+
     /**
      * Get the name of all running flows
      * @return list of names of the running flows

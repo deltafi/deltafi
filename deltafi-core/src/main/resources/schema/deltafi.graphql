@@ -428,6 +428,7 @@ type Query {
   validateIngressFlow(flowName: String!): IngressFlow!
   validateEgressFlow(flowName: String!): EgressFlow!
   validateEnrichFlow(flowName: String!): EnrichFlow!
+  getFlowNames(state: FlowState): FlowNames!
   getFlows: [Flows]!
   getRunningFlows: SystemFlows!
   getAllFlows: SystemFlows!

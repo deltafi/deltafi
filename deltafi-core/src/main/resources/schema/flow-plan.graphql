@@ -195,3 +195,9 @@ type ActionFamily {
   family: String!
   actionNames: [String]!
 }
+
+type FlowNames {
+  ingress: [String]!
+  enrich: [String]!
+  egress: [String]!
+}

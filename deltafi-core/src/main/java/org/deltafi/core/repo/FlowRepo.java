@@ -18,9 +18,12 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.Flow;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.repository.NoRepositoryBean;
+
+import java.util.List;
 
 @NoRepositoryBean
 public interface FlowRepo<T extends Flow> extends MongoRepository<T, String>, FlowRepoCustom<T> {
@@ -32,4 +35,11 @@ public interface FlowRepo<T extends Flow> extends MongoRepository<T, String>, Fl
      * @return - the number of flows deleted
      */
     int deleteBySourcePlugin(PluginCoordinates sourcePlugin);
+
+    /**
+     * Find a list of flows with the given flow state
+     * @param state to search for
+     * @return list of flows with the given flow state
+     */
+    List<T> findByFlowStatusState(FlowState state);
 }

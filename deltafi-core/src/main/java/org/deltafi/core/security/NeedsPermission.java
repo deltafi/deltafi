@@ -309,6 +309,11 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('UiAccess'" + OR_ADMIN)
+    public @interface UiAccess {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize("hasAnyAuthority('VersionsView'" + OR_ADMIN)
     public @interface VersionsView {}
 }
