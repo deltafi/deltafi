@@ -250,7 +250,7 @@ public class FlowPlanDatafetcher {
     }
 
     @DgsQuery
-    @NeedsPermission.UiAccess
+    @NeedsPermission.UIAccess
     public FlowNames getFlowNames(FlowState state) {
         return FlowNames.newBuilder()
                 .ingress(ingressFlowService.getFlowNamesByState(state))
