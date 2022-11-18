@@ -27,6 +27,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -65,9 +66,9 @@ public class CoreAuditLogger extends SimpleInstrumentation {
 
                 String userName = !id.isEmpty() ? id.get(0) : UNKNOWN_USER;
 
-                MDC.put("user", userName);
-                log.info("called mutation {}", path);
-                MDC.remove("user");
+                try (MDC.MDCCloseable mdc = MDC.putCloseable("user", userName)) {
+                    log.info("called mutation {}", path);
+                }
             }
 
             return dataFetcher.get(environment);
@@ -87,9 +88,9 @@ public class CoreAuditLogger extends SimpleInstrumentation {
     }
 
     public void logIngress(String userName, String fileName) {
-        MDC.put("user", userName);
-        log.info("ingress {}", fileName);
-        MDC.remove("user");
+        try (MDC.MDCCloseable mdc = MDC.putCloseable("user", userName)) {
+            log.info("ingress {}", fileName);
+        }
     }
 
     @EventListener
@@ -98,9 +99,9 @@ public class CoreAuditLogger extends SimpleInstrumentation {
         String methodCalled = extractMethodName(authorizationDeniedEvent);
         String missingPermissions = extractMissingPermissions(authorizationDeniedEvent);
 
-        MDC.put("user", username);
-        log.info("request '{}' was denied due to missing permission '{}'", methodCalled, missingPermissions);
-        MDC.put("user", username);
+        try (MDC.MDCCloseable mdc = MDC.putCloseable("user", username)) {
+            log.info("request '{}' was denied due to missing permission '{}'", methodCalled, missingPermissions);
+        }
     }
 
 
