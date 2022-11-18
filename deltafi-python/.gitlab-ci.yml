@@ -1,0 +1,13 @@
+.pythonkit:
+  variables:
+    PROJECT_NAME: deltafi-python
+
+pythonkit:publish:
+  extends:
+    - .pythonkit
+    - .publish-python
+
+pythonkit:pypipublish:
+  extends:
+    - .pythonkit
+    - .publish-python-pypi

@@ -1,0 +1,57 @@
+import com.hierynomus.gradle.license.tasks.LicenseCheck
+import com.hierynomus.gradle.license.tasks.LicenseFormat
+
+plugins {
+    id 'idea'
+    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+}
+
+task setupPoetry(type: Exec) {
+    commandLine 'pip3', '-q', 'install', 'poetry'
+}
+
+task poetryVersion(type: Exec) {
+    dependsOn setupPoetry
+    workingDir 'src'
+    String pythonVersion = version.replaceAll('-SNAPSHOT', "rc${new Date().getTime()}")
+    commandLine 'poetry', 'version', "${pythonVersion}"
+}
+
+task cleanDist(type: Delete) {
+    delete 'src/dist'
+}
+
+task poetryInstall(type: Exec) {
+    dependsOn setupPoetry
+    workingDir 'src'
+    commandLine 'poetry', 'install'
+}
+
+task poetryBuild(type: Exec) {
+    dependsOn cleanDist, setupPoetry, poetryVersion, poetryInstall
+    workingDir 'src'
+    commandLine 'poetry', 'build'
+}
+
+task publishToMavenLocal(type: Exec) {
+    dependsOn poetryBuild
+    workingDir 'src'
+    commandLine 'pip3', 'install', '.'
+}
+
+clean.dependsOn cleanDist
+build.dependsOn poetryBuild
+
+license {
+    header(rootProject.file('HEADER'))
+    excludes(excludeFromLicense)
+}
+
+task licenseLocal(type: LicenseCheck) {
+    source = fileTree(dir: ".").include("**/*.py")
+}
+
+task licenseFormatLocal(type: LicenseFormat) {
+    source = fileTree(dir: ".").include("**/*.py")
+}
+licenseFormat.dependsOn licenseFormatLocal

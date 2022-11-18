@@ -1,0 +1,11 @@
+# general things to ignore
+build/
+src/dist/
+*.py[cod]
+__pycache__/
+*.so
+*~
+
+# due to using tox and pytest
+.tox
+.cache

@@ -106,6 +106,41 @@ publish-gitlab:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
 
+.publish-python:
+  extends:
+    - .publish
+  only:
+    refs:
+      - tags
+      - main
+  image: gradle:7.3.3-jdk11
+  before_script:
+    - apt update
+    - apt-get install -y python3-pip
+    - python3 -m pip install --upgrade twine
+  script:
+    - ./gradlew $PROJECT_NAME:build
+    - export TWINE_PASSWORD=${CI_BUILD_TOKEN}
+    - export TWINE_USERNAME=gitlab-ci-token
+    - python3 -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi $PROJECT_NAME/src/dist/*
+
+.publish-python-pypi:
+  extends:
+    - .publish
+  only:
+    refs:
+      - tags
+  image: gradle:7.3.3-jdk11
+  before_script:
+    - apt update
+    - apt-get install -y python3-pip
+    - python3 -m pip install --upgrade twine
+  script:
+    - ./gradlew $PROJECT_NAME:build
+    - export TWINE_PASSWORD=${PYTHON_PYPI_PUBLISH_PASSWORD}
+    - export TWINE_USERNAME="__token__"
+    - python3 -m twine upload $PROJECT_NAME/src/dist/*
+
 hub_docker_quota_check:
   stage: build
   image: alpine:latest
