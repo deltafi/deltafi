@@ -1086,7 +1086,8 @@ public class DeltaFilesService {
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {
-        deltaFileRepo.deleteAll(deltaFiles);
+        deltaFileRepo.deleteByDidIn(deltaFiles.stream().map(DeltaFile::getDid).distinct().collect(Collectors.toList()));
+
     }
 
     public ErrorsByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {

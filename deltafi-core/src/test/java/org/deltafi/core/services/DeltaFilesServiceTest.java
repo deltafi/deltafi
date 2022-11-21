@@ -67,6 +67,9 @@ class DeltaFilesServiceTest {
     @Captor
     ArgumentCaptor<List<DeltaFile>> deltaFileListCaptor;
 
+    @Captor
+    ArgumentCaptor<List<String>> stringListCaptor;
+
     @SuppressWarnings("unused")
     @Spy
     DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
@@ -248,8 +251,8 @@ class DeltaFilesServiceTest {
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
         assertEquals(List.of(cr1.getSegments().get(0), cr2.getSegments().get(0)), segmentCaptor.getValue());
         verify(deltaFileRepo, never()).saveAll(any());
-        verify(deltaFileRepo).deleteAll(deltaFileListCaptor.capture());
-        assertEquals(List.of(deltaFile1, deltaFile2), deltaFileListCaptor.getValue());
+        verify(deltaFileRepo).deleteByDidIn(stringListCaptor.capture());
+        assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), stringListCaptor.getValue());
     }
 
     @Test

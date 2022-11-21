@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Issue in audit logger caused username to be tagged to logs erroneously
+- Issue with delete action performance
 
 ### Tech-Debt/Refactor
 
