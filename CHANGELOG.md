@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - `SplitResult::splitInputs` renamed to `splitEvents` by namin convention
+- DeltaFi Gradle convention plugin ids have been shortened to `org.deltafi.version-reckoning`,
+`org.deltafi.java-convention`, and `org.deltafi.test-summary`.
+- The DeltaFi Gradle action convention plugin id has changed to `org.deltafi.plugin-convention`.
 
 ### Deprecated
 - Deprecated `flow` field in DeltaFiles SourceInfo filtering; use 'ingressFlows' instead.  `flow` will still work at the moment, but will be removed in a future release.

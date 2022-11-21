@@ -1,0 +1,3 @@
+.gradle_conventions:
+  variables:
+    PROJECT_NAME: gradle-conventions

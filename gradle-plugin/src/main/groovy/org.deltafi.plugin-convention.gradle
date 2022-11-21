@@ -17,14 +17,52 @@
  */
 plugins {
     id 'org.deltafi.plugin'
-    id 'org.deltafi.plugin.java-convention'
+    id 'java'
+    id 'jacoco'
+    id 'maven-publish'
     id 'org.springframework.boot'
     id 'com.palantir.docker'
 }
 
 dependencies {
     implementation "org.deltafi:deltafi-action-kit:${deltafiVersion}"
+
+    compileOnly "org.projectlombok:lombok:1.18.24"
+    annotationProcessor "org.projectlombok:lombok:1.18.24"
+    testCompileOnly "org.projectlombok:lombok:1.18.24"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.24"
+
     testImplementation "org.deltafi:deltafi-action-kit-test:${deltafiVersion}"
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.8.2"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.8.2"
+    testImplementation "org.mockito:mockito-junit-jupiter:4.8.0"
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jacocoTestReport {
+    dependsOn test
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: ['**/generated/**', '**/*Application.class'])
+        }))
+    }
 }
 
 jar {
@@ -46,6 +84,26 @@ springBoot {
 bootJar {
     dependsOn checkDeltafiPlugin
     archiveName "deltafi-plugin.jar"
+}
+
+publishing {
+    publications {
+        mavenJarPublication(MavenPublication) {
+            artifact bootJar
+        }
+    }
+    repositories {
+        maven {
+            url projectMavenRepo
+            credentials(HttpHeaderCredentials) {
+                name = gitLabTokenType
+                value = gitLabToken
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
 }
 
 // Copy the standard plugin Dockerfile from the gradle-plugin jar resources to the build directory after the bootJar is
