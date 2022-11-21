@@ -952,12 +952,7 @@ public class DeltaFilesService {
         }
 
         log.info("Deleting " + deltaFiles.size() + " files for policy " + policy);
-        deleteContent(deltaFiles, policy);
-        if (deleteMetadata) {
-            deleteMetadata(deltaFiles);
-        } else {
-            deltaFileRepo.saveAll(deltaFiles);
-        }
+        deleteContent(deltaFiles, policy, deleteMetadata);
         log.info("Finished deleting " + deltaFiles.size() + " files for policy " + policy);
 
         return deltaFiles;
@@ -1075,14 +1070,30 @@ public class DeltaFilesService {
         }
     }
 
-    private void deleteContent(List<DeltaFile> deltaFiles, String policy) {
+    private void deleteContent(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
+        // As an optimization, only deltafiles requiring action updates will be saved
+        List<DeltaFile> requiringActionUpdates = new ArrayList<>();
         for (DeltaFile deltaFile : deltaFiles) {
-            deltaFile.markForDelete(policy);
+            if (deltaFile.markForDelete(policy)) {
+                requiringActionUpdates.add(deltaFile);
+            };
         }
+
         contentStorageService.deleteAll(deltaFiles.stream()
                 .map(DeltaFile::storedSegments)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList()));
+
+        if (deleteMetadata) {
+            deleteMetadata(deltaFiles);
+        } else {
+            deltaFileRepo.saveAll(requiringActionUpdates);
+            deltaFileRepo.setContentDeletedByDidIn(
+                    deltaFiles.stream().map(DeltaFile::getDid).distinct().collect(Collectors.toList()),
+                    OffsetDateTime.now(),
+                    policy);
+        }
+
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {

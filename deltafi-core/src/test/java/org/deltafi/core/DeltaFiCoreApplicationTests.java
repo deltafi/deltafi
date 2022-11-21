@@ -3639,4 +3639,28 @@ class DeltaFiCoreApplicationTests {
 				out, metadata, CONTENT.length());
 		return out.toByteArray();
 	}
+
+	@Test
+	void testSetContentDeletedByDidIn() {
+		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.minusSeconds(2));
+		deltaFileRepo.save(deltaFile1);
+		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
+		deltaFileRepo.save(deltaFile2);
+		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
+		deltaFileRepo.save(deltaFile3);
+
+		OffsetDateTime timestamp = MONGO_NOW;
+
+		deltaFileRepo.setContentDeletedByDidIn(List.of("1", "3", "4"), MONGO_NOW, "MyPolicy");
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
+		deltaFile1.setContentDeleted(MONGO_NOW);
+		deltaFile1.setContentDeletedReason("MyPolicy");
+		deltaFile1.setVersion(2);
+		deltaFile3.setContentDeleted(MONGO_NOW);
+		deltaFile3.setContentDeletedReason("MyPolicy");
+		deltaFile3.setVersion(2);
+		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile3, deltaFile2, deltaFile1));
+	}
+
+
 }

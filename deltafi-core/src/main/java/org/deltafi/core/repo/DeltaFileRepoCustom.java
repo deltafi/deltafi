@@ -151,4 +151,13 @@ public interface DeltaFileRepoCustom {
      * @return the indexed metadata
      */
     List<String> indexedMetadataKeys(String domain);
+
+    /**
+     * For each did in the list, update the corresponding DeltaFile contentDeleted to value
+     *
+     * @param dids List of dids for DeltaFiles to be updated
+     * @param now Timestamp for deletion
+     * @param reason Reason for deletion
+     */
+    void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason);
 }

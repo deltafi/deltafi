@@ -64,6 +64,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String DOMAINS_NAME = "domains.name";
     public static final String ENRICHMENT_NAME = "enrichment.name";
     public static final String CONTENT_DELETED = "contentDeleted";
+    public static final String CONTENT_DELETED_REASON = "contentDeletedReason";
     public static final String KEY = "key";
     public static final String VALUE = "value";
     public static final String ERROR_CAUSE = "errorCause";
@@ -843,5 +844,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Collections.sort(keys);
 
         return keys;
+    }
+
+    @Override
+    public void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason) {
+        Update update = new Update().set(CONTENT_DELETED, now).set(CONTENT_DELETED_REASON, reason);
+        for (List<String> batch : Lists.partition(dids, 1000)) {
+            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
+            mongoTemplate.updateMulti(query, update, DeltaFile.class);
+        }
     }
 }

@@ -28,6 +28,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -276,18 +277,21 @@ public class DeltaFile {
     return names.stream().allMatch(this::hasCompletedAction);
   }
 
-  public void markForDelete(String policy) {
+  public boolean markForDelete(String policy) {
     OffsetDateTime now = OffsetDateTime.now();
 
+    AtomicBoolean actionUpdated = new AtomicBoolean(false);
     getActions().stream()
             .filter(action -> action.getState().equals(ActionState.QUEUED))
             .forEach(action -> {
+              actionUpdated.set(true);
               action.setModified(now);
               action.setState(ActionState.ERROR);
               action.setErrorCause("DeltaFile marked for deletion by " + policy + " policy");
             });
     setContentDeleted(now);
     setContentDeletedReason(policy);
+    return actionUpdated.get();
   }
 
   public String sourceMetadata(String key) {
