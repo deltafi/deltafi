@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - New query `getFlowNames` that returns a list of flow names grouped by flow type and can be filtered by flow state
+- Grafana alerts will be displayed in the main UI monitor list and cause a degraded state
 - Add python action development kit
 
 ### Changed
