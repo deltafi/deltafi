@@ -1,0 +1,46 @@
+plugins {
+    id 'com.github.hierynomus.license' version "${hierynomusLicenseVersion}"
+    id 'jacoco'
+    id 'java-library'
+    id 'maven-publish'
+}
+
+description = 'DeltaFi Action Kit Test Harness - Test Action implementation SDK for DeltaFi actions'
+
+license {
+    header(rootProject.file('HEADER'))
+    excludes(excludeFromLicense)
+}
+
+jar {
+    enabled = true
+}
+
+configurations {
+    jars
+}
+
+artifacts {
+    jars jar
+}
+
+task renameJar (type: Copy) {
+    from ('build/libs/')
+    include "deltafi-action-kit-test-${project.version}.jar"
+    destinationDir file('build/libs')
+    rename "deltafi-action-kit-test-${project.version}.jar", 'deltafi-action-kit-test.jar'
+}
+
+assemble.finalizedBy(renameJar)
+
+dependencies {
+    annotationProcessor project(":deltafi-action-kit")
+
+    implementation project(":deltafi-action-kit")
+
+    implementation 'org.mockito:mockito-junit-jupiter:4.7.0'
+//        implementation 'junit:junit:4.13.2'
+    implementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    implementation 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+
+}

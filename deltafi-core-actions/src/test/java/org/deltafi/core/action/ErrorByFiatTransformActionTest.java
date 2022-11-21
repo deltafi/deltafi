@@ -17,47 +17,30 @@
  */
 
 package org.deltafi.core.action;
-import lombok.SneakyThrows;
-import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResultType;
-import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.action.IOContent;
+import org.deltafi.test.action.transform.TransformActionTest;
+import org.deltafi.test.action.transform.TransformActionTestCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(MockitoExtension.class)
-class ErrorByFiatTransformActionTest {
-
-    private static final String DID = UUID.randomUUID().toString();
-    private static final String FLOW = "theFlow";
-    private static final String ACTION_VERSION = "0.0";
-    private static final String FILE_NAME = "MyFileName";
-
-    ActionContext ACTION_CONTEXT = ActionContext.builder()
-            .actionVersion(ACTION_VERSION)
-            .did(DID)
-            .name("MyFilterByFiatTransformAction")
-            .ingressFlow(FLOW)
-            .build();
+class ErrorByFiatTransformActionTest extends TransformActionTest {
 
     @InjectMocks
     ErrorByFiatTransformAction action;
 
     @Test
-    @SneakyThrows
-    void transformTest() {
-        TransformResultType result = action.transform(ACTION_CONTEXT, new ActionParameters(), new TransformInput(FILE_NAME, FLOW, Map.of(), Collections.emptyList(), Collections.emptyMap()));
-        assertThat(result, instanceOf(ErrorResult.class));
-
+    void testTransform() {
+        TransformActionTestCase testCase = TransformActionTestCase.builder()
+                .testName("transform")
+                .action(action)
+                .inputs(Collections.singletonList(IOContent.builder().name("nonExistent").contentType("application/data").build()))
+                .expectError("Errored by fiat")
+                .build();
+        execute(testCase);
     }
 }

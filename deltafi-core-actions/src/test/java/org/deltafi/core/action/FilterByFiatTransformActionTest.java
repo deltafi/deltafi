@@ -17,13 +17,10 @@
  */
 
 package org.deltafi.core.action;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.filter.FilterResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResultType;
-import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.action.IOContent;
+import org.deltafi.test.action.transform.TransformActionTest;
+import org.deltafi.test.action.transform.TransformActionTestCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,37 +28,34 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @Component
 @Slf4j
 @ExtendWith(MockitoExtension.class)
-class FilterByFiatTransformActionTest {
-
-    private static final String DID = UUID.randomUUID().toString();
-    private static final String FLOW = "theFlow";
-    private static final String ACTION_VERSION = "0.0";
-    private static final String FILE_NAME = "MyFileName";
-
-    ActionContext ACTION_CONTEXT = ActionContext.builder()
-            .actionVersion(ACTION_VERSION)
-            .did(DID)
-            .name("MyFilterByFiatTransformAction")
-            .ingressFlow(FLOW)
-            .build();
+class FilterByFiatTransformActionTest extends TransformActionTest {
 
     @InjectMocks
     FilterByFiatTransformAction action;
 
     @Test
-    @SneakyThrows
-    void transformTest() {
-        TransformResultType result = action.transform(ACTION_CONTEXT, new ActionParameters(), new TransformInput(FILE_NAME, FLOW, Map.of(), Collections.emptyList(), Collections.emptyMap()));
-        assertThat(result, instanceOf(FilterResult.class));
+    void testTransform() {
+        execute(TransformActionTestCase.builder()
+                .action(action)
+                .expectFilter("Filtered by fiat")
+                .build());
 
     }
+
+    @Test
+    void transformTest2() {
+        TransformActionTestCase testCase = TransformActionTestCase.builder()
+                .testName("transform")
+                .action(action)
+                .inputs(Collections.singletonList(IOContent.builder().name("content").contentType("application/binary").build()))
+                .expectFilter("Filtered by fiat")
+                .build();
+        execute(testCase);
+    }
+
+
 }

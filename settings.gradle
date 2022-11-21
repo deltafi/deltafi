@@ -38,6 +38,7 @@ dependencyResolutionManagement {
 rootProject.name='deltafi'
 
 include 'deltafi-action-kit'
+include 'deltafi-action-kit-test'
 include 'deltafi-api'
 include 'deltafi-auth'
 include 'deltafi-cli'

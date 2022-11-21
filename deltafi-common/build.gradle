@@ -11,6 +11,10 @@ license {
 	  excludes(excludeFromLicense)
 }
 
+javadoc {
+    options.tags = ["ParametersAreNonnullByDefault"]
+}
+
 compileJava.dependsOn(processResources)
 
 dependencies {

@@ -11,6 +11,7 @@ license {
 
 dependencies {
     implementation project(':deltafi-action-kit')
+    testImplementation project(':deltafi-action-kit-test')
 
     implementation 'org.apache.commons:commons-compress:1.21'
     implementation 'org.tukaani:xz:1.9'

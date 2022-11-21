@@ -24,6 +24,7 @@ plugins {
 
 dependencies {
     implementation "org.deltafi:deltafi-action-kit:${deltafiVersion}"
+    testImplementation "org.deltafi:deltafi-action-kit-test:${deltafiVersion}"
 }
 
 jar {
