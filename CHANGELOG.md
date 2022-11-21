@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Add python action development kit
 
 ### Changed
+- Add fsGroupChangePolicy: OnRootMismatch to (dramatically) speed up minio pod startup
 
 ### Deprecated
 
@@ -27,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Upgrade base SpringBoot docker image to 0.99.4
 - Upgrade Kind node docker image to 0.99.4
 - Gradle upgraded to 7.5.1
+- minio upgraded to RELEASE.2022-11-17T23-20-09Z
 
 ## [0.99.3] - 2022-11-14
 
