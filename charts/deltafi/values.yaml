@@ -105,7 +105,7 @@ ingress:
 # MinIO config
 minio:
   image:
-    tag: RELEASE.2022-11-17T23-20-09Z
+    tag: RELEASE.2022-08-25T07-17-05Z
   existingSecret: minio-keys
   resources:
     requests:
