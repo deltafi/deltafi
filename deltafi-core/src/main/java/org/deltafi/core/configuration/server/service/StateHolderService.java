@@ -17,10 +17,12 @@
  */
 package org.deltafi.core.configuration.server.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.configuration.server.repo.StateHolderRepository;
 
 import java.util.UUID;
 
+@Slf4j
 public class StateHolderService {
 
     private final StateHolderRepository stateHolderRepository;
@@ -48,6 +50,7 @@ public class StateHolderService {
     public boolean needsSynced() {
         UUID latestState = stateHolderRepository.getCurrentState();
         boolean needsSynced = !configStateId.equals(latestState);
+        log.debug("App has stateId: {} vs stored stateId of {}: {}", configStateId, latestState, needsSynced);
         configStateId = latestState;
         return needsSynced;
     }

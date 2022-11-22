@@ -78,6 +78,14 @@ class PropertyServiceTest {
     }
 
     @Test
+    void testSyncProperties() {
+        propertyService.syncProperties();
+
+        // sync should not create a new stateId
+        Mockito.verify(stateHolderService, Mockito.times(0)).updateConfigStateId();
+    }
+
+    @Test
     void getAllProperties() {
         Set<String> ids = Set.of(DELTAFI_PROPERTY_SET, PLUGIN_APP);
         Mockito.when(propertyRepository.getIds()).thenReturn(ids);

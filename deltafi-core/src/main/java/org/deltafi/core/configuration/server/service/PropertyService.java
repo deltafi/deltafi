@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.configuration.server.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Property;
 import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.configuration.server.environment.DeltaFiNativeEnvironmentRepository;
@@ -41,6 +42,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.deltafi.common.types.PropertySource.*;
 
+@Slf4j
 public class PropertyService implements Snapshotter {
 
     private static final PropertySource EMPTY_SOURCE = new PropertySource("empty", new HashMap<>());
@@ -75,7 +77,7 @@ public class PropertyService implements Snapshotter {
     public void loadUpdatedPropertyMetadata() {
         List<PropertySet> mergedProperties = propertyMetadataLoader.loadPropertyMetadata(repo.findAll());
         repo.saveAll(mergedProperties);
-        reloadCacheOnly();
+        reloadCache();
     }
 
     /**
@@ -84,21 +86,29 @@ public class PropertyService implements Snapshotter {
      */
     public void syncProperties() {
         if (stateHolderService.needsSynced()) {
-            reloadCacheAndRefreshContext();
+            log.debug("Reloading the context");
+            reloadCache();
+            if (null != refresher) {
+                refresher.refresh();
+            }
         }
     }
 
     /**
      * Retrieve all the latest stored PropertySets and cache them
      */
-    public void reloadCacheOnly() {
+    public void reloadCache() {
         propertyCache = repo.findAll().stream()
                 .collect(Collectors.toMap(PropertySet::getId, Function.identity()));
     }
 
-    void reloadCacheAndRefreshContext() {
+    /**
+     * On a change to the properties create a new stateId to notify other instances of the change
+     * and refresh the context to load the changes
+     */
+    void handlePropertyChange() {
         stateHolderService.updateConfigStateId();
-        reloadCacheOnly();
+        reloadCache();
         if (null != refresher) {
             refresher.refresh();
         }
@@ -113,7 +123,7 @@ public class PropertyService implements Snapshotter {
         PropertySet propertySet = propertyCache.get(application);
 
         if (null == propertySet) {
-            reloadCacheOnly();
+            reloadCache();
             propertySet = propertyCache.get(application);
         }
 
@@ -156,7 +166,7 @@ public class PropertyService implements Snapshotter {
     public int updateProperties(List<PropertyUpdate> propertyUpdates) {
         int propertySetUpdated = repo.updateProperties(propertyUpdates);
         if (propertySetUpdated > 0) {
-            reloadCacheAndRefreshContext();
+            handlePropertyChange();
         }
         return propertySetUpdated;
     }
@@ -169,7 +179,7 @@ public class PropertyService implements Snapshotter {
     public int unsetProperties(List<PropertyId> propertyIds) {
         int propertySetUpdated = repo.unsetProperties(propertyIds);
         if (propertySetUpdated > 0) {
-            reloadCacheAndRefreshContext();
+            handlePropertyChange();
         }
         return propertySetUpdated;
     }
@@ -180,7 +190,7 @@ public class PropertyService implements Snapshotter {
      */
     public void saveProperties(PropertySet properties) {
         repo.save(properties);
-        reloadCacheAndRefreshContext();
+        handlePropertyChange();
     }
 
     /**
@@ -188,7 +198,7 @@ public class PropertyService implements Snapshotter {
      */
     public boolean removeProperties(String propertySetId) {
         if (repo.removeById(propertySetId)) {
-            reloadCacheAndRefreshContext();
+            handlePropertyChange();
             return true;
         }
         return false;
@@ -232,7 +242,7 @@ public class PropertyService implements Snapshotter {
         propertyMetadataLoader.keepOverriddenValues(propertySets, systemSnapshot.getPropertySets());
         repo.saveAll(propertySets);
 
-        reloadCacheAndRefreshContext();
+        handlePropertyChange();
         return new Result();
     }
 
