@@ -221,6 +221,12 @@ enum ActionEventType {
   SPLIT
 }
 
+input Metric {
+  name: String!
+  value: Long!
+  tags: [KeyValueInput!]
+}
+
 input ActionEventInput {
   did: String!
   action: String!
@@ -236,6 +242,7 @@ input ActionEventInput {
   error: ErrorEvent
   filter: FilterEvent
   split: [SplitEvent]
+  metrics: [Metric!]
 }
 
 type DeltaFile {

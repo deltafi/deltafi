@@ -292,7 +292,7 @@ class DeltaFilesServiceTest {
         Action action = maybeAction.get();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
         Assertions.assertThat(action.getErrorCause()).isEqualTo("Action named action is no longer running");
-        Mockito.verify(metricRepository).increment(FILES_ERRORED, MetricsUtil.tagsFor(ActionType.UNKNOWN, "action", deltaFile.getSourceInfo().getFlow(), null), 1);
+        Mockito.verify(metricRepository).increment(new Metric(FILES_ERRORED, 1).addTags(MetricsUtil.tagsFor("unknown", "action", deltaFile.getSourceInfo().getFlow(), null)));
     }
 
     @Test

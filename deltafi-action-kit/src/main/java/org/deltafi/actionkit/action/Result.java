@@ -19,18 +19,15 @@ package org.deltafi.actionkit.action;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.common.metrics.Metric;
+import org.deltafi.common.types.Metric;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-
-import static org.deltafi.common.metrics.MetricsUtil.*;
+import java.util.List;
 
 /**
  * Base class for all action results.  Specializations of the Result class are provided for each action type.
@@ -60,6 +57,7 @@ public abstract class Result implements ResultType {
                 .type(actionEventType())
                 .start(context.getStartTime())
                 .stop(OffsetDateTime.now())
+                .metrics(this.getCustomMetrics())
                 .build();
     }
 
@@ -74,29 +72,8 @@ public abstract class Result implements ResultType {
      * This method should be overridden to provide any custom metrics when the result is harvested.
      * @return collection of Metric objects
      */
-    public Collection<Metric> getCustomMetrics() {
+    public List<Metric> getCustomMetrics() {
         return Collections.emptyList();
     }
 
-    /**
-     * @return a collection of default metrics (based on the result event type) and custom metrics
-     */
-    public Collection<Metric> getMetrics() {
-        ArrayList<Metric> metrics = new ArrayList<>();
-        metrics.add(new Metric(FILES_IN, 1));
-
-        switch (actionEventType()) {
-            case ERROR:
-                metrics.add(new Metric(FILES_ERRORED, 1));
-                break;
-            case FILTER:
-                metrics.add(new Metric(FILES_FILTERED, 1));
-                break;
-            default:
-                metrics.add(new Metric(FILES_COMPLETED, 1));
-        }
-
-        metrics.addAll(getCustomMetrics());
-        return metrics;
-    }
 }

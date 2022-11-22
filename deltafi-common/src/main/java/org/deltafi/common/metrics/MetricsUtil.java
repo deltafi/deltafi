@@ -18,7 +18,7 @@
 
 package org.deltafi.common.metrics;
 
-import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -29,7 +29,6 @@ public class MetricsUtil {
     // Metric names
     static final public String FILES_ERRORED = "files_errored";
     static final public String FILES_DROPPED = "files_dropped";
-    static final public String FILES_COMPLETED = "files_completed";
     static final public String FILES_FILTERED = "files_filtered";
     static final public String FILES_IN = "files_in";
     static final public String FILES_OUT = "files_out";
@@ -42,7 +41,7 @@ public class MetricsUtil {
     static final public String INGRESS_FLOW = "ingressFlow";
     static final public String EGRESS_FLOW = "egressFlow";
 
-    /** Metrics are confusingly named! Assign the correct keys.
+    /** Helper for generating a default tag list for metrics
      *
      * @param actionType lowercased, becomes "action" tagged
      * @param actionName becomes "source" tagged
@@ -50,10 +49,22 @@ public class MetricsUtil {
      * @param egressFlow "egressFlow" tagged
      * @return the map
      */
-    static public Map<String, String> tagsFor(@NotNull ActionType actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
+    static public @NotNull Map<String, String> tagsFor(@NotNull ActionEventType actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
+        return tagsFor((actionType == null) ? "unknown" : actionType.name().toLowerCase(), actionName, ingressFlow, egressFlow);
+    }
+
+    /** Helper for generating a default tag list for metrics
+     *
+     * @param actionType lowercased, becomes "action" tagged
+     * @param actionName becomes "source" tagged
+     * @param ingressFlow "ingressFlow" tagged
+     * @param egressFlow "egressFlow" tagged
+     * @return the map
+     */
+    static public @NotNull Map<String, String> tagsFor(@NotNull String actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
         Map<String, String> tags = new HashMap<>();
 
-        tags.put(ACTION, actionType.name().toLowerCase());
+        tags.put(ACTION, actionType.toLowerCase());
         tags.put(SOURCE, actionName);
 
         if (ingressFlow != null) {

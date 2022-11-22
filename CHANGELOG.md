@@ -12,10 +12,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - Add fsGroupChangePolicy: OnRootMismatch to (dramatically) speed up minio pod startup
+- Metrics are now generated from the core for all actions.  Custom metrics are reported to the core via an addition to the ActionEventInput schema.
 
 ### Deprecated
 
 ### Removed
+- `files_completed` metric was removed.  It was redundant with other metric information and not used in dashboards.
 
 ### Fixed
 - Issue in audit logger caused username to be tagged to logs erroneously

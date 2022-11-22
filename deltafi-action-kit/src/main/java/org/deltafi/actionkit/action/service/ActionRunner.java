@@ -29,10 +29,7 @@ import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.common.metrics.Metric;
-import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionInput;
 import org.deltafi.common.types.DeltaFile;
 import org.slf4j.MDC;
@@ -64,9 +61,6 @@ public class ActionRunner {
 
     @Autowired
     BuildProperties buildProperties;
-
-    @Autowired
-    MetricRepository metricService;
 
     @Autowired
     PluginRegistrar pluginRegistrar;
@@ -116,7 +110,7 @@ public class ActionRunner {
 
     private void executeAction(Action<?> action, DeltaFile deltaFile, ActionContext context, Map<String, Object> params) throws JsonProcessingException {
         ResultType result;
-        try (MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("action", context.getName())) {
             result = action.executeAction(deltaFile, context, params);
             if (Objects.isNull(result)) {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
@@ -135,26 +129,6 @@ public class ActionRunner {
             actionEventQueue.putResult(result.toEvent());
         } catch (Throwable e) {
             log.error("Error sending result to redis for did " + context.getDid(), e);
-        }
-
-        try (MDC.MDCCloseable mdc = MDC.putCloseable("action", context.getName())) {
-            postMetrics(result, action.getActionDescriptor());
-        } catch (Throwable e) {
-            log.error("Error posting metrics for did " + context.getDid(), e);
-        }
-    }
-
-    private void postMetrics(ResultType result, ActionDescriptor actionDescriptor) {
-        String ingressFlow = result.getContext().getIngressFlow();
-        String egressFlow = result.getContext().getEgressFlow();
-        String source = result.getContext().getName();
-        for (Metric metric: result.getMetrics()) {
-            metric.addTag("action", actionDescriptor.getType().name().toLowerCase())
-                    .addTag("source", source);
-            if (ingressFlow != null) metric.addTag("ingressFlow", ingressFlow);
-            if (egressFlow != null) metric.addTag("egressFlow", egressFlow);
-
-            metricService.increment(metric);
         }
     }
 }

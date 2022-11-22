@@ -20,14 +20,14 @@ package org.deltafi.actionkit.action.egress;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.common.metrics.Metric;
+import org.deltafi.common.types.Metric;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 import static org.deltafi.common.metrics.MetricsUtil.BYTES_OUT;
 import static org.deltafi.common.metrics.MetricsUtil.FILES_OUT;
@@ -60,7 +60,7 @@ public class EgressResult extends Result implements EgressResultType {
     }
 
     @Override
-    public Collection<Metric> getCustomMetrics() {
+    public List<Metric> getCustomMetrics() {
         ArrayList<Metric> metrics = new ArrayList<>();
 
         metrics.add(new Metric(FILES_OUT, 1).addTag("endpoint", destination));

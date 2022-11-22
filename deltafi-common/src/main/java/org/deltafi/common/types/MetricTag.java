@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,6 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package org.deltafi.common.types;
 
 import lombok.AllArgsConstructor;
@@ -22,31 +23,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class ActionEventInput {
-  private String did;
-  private String action;
-  private OffsetDateTime start;
-  private OffsetDateTime stop;
-  private OffsetDateTime time;
-  private ActionEventType type;
-  private DomainEvent domain;
-  private TransformEvent transform;
-  private LoadEvent load;
-  private EnrichEvent enrich;
-  private FormatEvent format;
-  private List<FormatEvent> formatMany;
-  private ErrorEvent error;
-  private FilterEvent filter;
-  private List<SplitEvent> split;
-  private List<Metric> metrics;
+public class MetricTag {
+    private String key;
+    private String value;
 }

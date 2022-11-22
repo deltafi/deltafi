@@ -22,6 +22,7 @@ import com.codahale.metrics.MetricRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.metrics.statsd.StatsdDeltaReporter;
 import org.jetbrains.annotations.NotNull;
+import org.deltafi.common.types.Metric;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +57,7 @@ public class MetricRepository {
     }
 
     public void increment(@NotNull String name, @NotNull Map<String, String> tags, long value) {
-        Metric metric = new Metric(name, value).addTags(tags);
+        org.deltafi.common.types.Metric metric = new org.deltafi.common.types.Metric(name, value, tags);
         if (metrics != null) { metrics.counter(metric.metricName()).inc(value); }
         log.debug("{}", metric);
     }

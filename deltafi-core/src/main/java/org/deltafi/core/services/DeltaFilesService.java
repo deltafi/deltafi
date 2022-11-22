@@ -30,6 +30,7 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.types.Metric;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
-import static org.deltafi.common.metrics.MetricsUtil.FILES_ERRORED;
+import static org.deltafi.common.metrics.MetricsUtil.*;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
 @Service
@@ -241,32 +242,70 @@ public class DeltaFilesService {
             throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
         }
 
+        List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
+        metrics.add(new Metric(FILES_IN, 1));
+
+        DeltaFile returnVal;
         switch (event.getType()) {
             case TRANSFORM:
-                return transform(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = transform(deltaFile, event);
+                break;
             case LOAD:
-                return load(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = load(deltaFile, event);
+                break;
             case DOMAIN:
-                return domain(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = domain(deltaFile, event);
+                break;
             case ENRICH:
-                return enrich(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = enrich(deltaFile, event);
+                break;
             case FORMAT:
-                return format(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = format(deltaFile, event);
+                break;
             case VALIDATE:
-                return validate(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = validate(deltaFile, event);
+                break;
             case EGRESS:
-                return egress(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = egress(deltaFile, event);
+                break;
             case ERROR:
-                return error(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = error(deltaFile, event);
+                break;
             case FILTER:
-                return filter(deltaFile, event);
+                metrics.add(new Metric(FILES_FILTERED, 1));
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = filter(deltaFile, event);
+                break;
             case SPLIT:
-                return split(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = split(deltaFile, event);
+                break;
             case FORMAT_MANY:
-                return formatMany(deltaFile, event);
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = formatMany(deltaFile, event);
+                break;
+            default:
+                throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
         }
 
-        throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
+        return returnVal;
+    }
+
+    private void generateMetrics(List<Metric> metrics, ActionEventInput event, DeltaFile deltaFile) {
+        String egressFlow = egressFlow(event.getAction(), deltaFile);
+        Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), event.getAction(), deltaFile.getSourceInfo().getFlow(), egressFlow);
+        for(Metric metric : metrics) {
+            metric.addTags(defaultTags);
+            metricService.increment(metric);
+        }
     }
 
     public DeltaFile transform(DeltaFile deltaFile, ActionEventInput event) {
@@ -390,16 +429,7 @@ public class DeltaFilesService {
         }
 
         deltaFile.errorAction(event);
-
-        ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
-        ActionType actionType = ActionType.UNKNOWN;
-        if (actionConfiguration != null) {
-            actionType = actionConfiguration.getActionType();
-        }
-        String egressFlow = egressFlow(event.getAction(), deltaFile);
-        metricService.increment(FILES_ERRORED,
-                MetricsUtil.tagsFor(actionType, event.getAction(), deltaFile.getSourceInfo().getFlow(), egressFlow),
-                1);
+        generateMetrics(List.of(new Metric(FILES_ERRORED, 1)), event, deltaFile);
 
         return deltaFile;
     }

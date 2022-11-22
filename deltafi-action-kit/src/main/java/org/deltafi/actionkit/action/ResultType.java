@@ -17,14 +17,10 @@
  */
 package org.deltafi.actionkit.action;
 
-import org.deltafi.common.metrics.Metric;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
-
-import java.util.Collection;
 
 public interface ResultType {
     ActionEventInput toEvent();
     ActionContext getContext();
-    Collection<Metric> getMetrics();
 }

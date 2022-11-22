@@ -130,7 +130,7 @@ public class IngressRest {
     }
 
     private Map<String, String> tagsFor(String ingressFlow) {
-        return MetricsUtil.tagsFor(ActionType.INGRESS, INGRESS_ACTION, ingressFlow, null);
+        return MetricsUtil.tagsFor(ActionType.INGRESS.name(), INGRESS_ACTION, ingressFlow, null);
     }
 
     private IngressService.IngressResult ingressBinary(InputStream dataStream, String mediaType, String metadata, String flow, String filename) throws IngressMetadataException, IngressException, ObjectStorageException {
