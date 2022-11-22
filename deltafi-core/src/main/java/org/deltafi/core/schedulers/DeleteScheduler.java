@@ -21,33 +21,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.delete.DeleteRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-@RefreshScope
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
 @Slf4j
-public class DeleteScheduler implements ApplicationListener<RefreshScopeRefreshedEvent> {
+public class DeleteScheduler {
     private final DeleteRunner deleteRunner;
 
-    @Scheduled(fixedDelayString = "${deltafi.delete.frequency}")
+    @Scheduled(fixedDelayString = "${deltafi.delete.frequency}", initialDelayString = "PT10S")
     public void runDeletes() {
         try {
             deleteRunner.runDeletes();
         } catch (Throwable t) {
             log.error("Unexpected exception while executing scheduled deletes", t);
         }
-    }
-
-    @Override
-    public void onApplicationEvent(RefreshScopeRefreshedEvent event) {
-
     }
 }

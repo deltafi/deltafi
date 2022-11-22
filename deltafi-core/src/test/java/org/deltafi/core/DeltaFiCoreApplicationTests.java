@@ -2400,13 +2400,13 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testFindForDeleteDiskSpace() {
-		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().minusSeconds(5), OffsetDateTime.now());
 		deltaFile1.setTotalBytes(100L);
 		deltaFileRepo.save(deltaFile1);
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(2));
 		deltaFile2.setTotalBytes(300L);
 		deltaFileRepo.save(deltaFile2);
-		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(5), OffsetDateTime.now());
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
@@ -2430,7 +2430,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile4.setContentDeleted(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile4);
 		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
-		deltaFile4.setTotalBytes(0L);
+		deltaFile5.setTotalBytes(0L);
 		deltaFileRepo.save(deltaFile5);
 		DeltaFile deltaFile6 = buildDeltaFile("6", null, DeltaFileStage.EGRESS, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile6.setTotalBytes(50L);

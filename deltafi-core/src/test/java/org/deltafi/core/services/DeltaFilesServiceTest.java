@@ -65,9 +65,6 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<List<Segment>> segmentCaptor;
 
     @Captor
-    ArgumentCaptor<List<DeltaFile>> deltaFileListCaptor;
-
-    @Captor
     ArgumentCaptor<List<String>> stringListCaptor;
 
     @SuppressWarnings("unused")
@@ -229,13 +226,8 @@ class DeltaFilesServiceTest {
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
         assertEquals(List.of(cr1.getSegments().get(0), cr2.getSegments().get(0)), segmentCaptor.getValue());
-        verify(deltaFileRepo).saveAll(deltaFileListCaptor.capture());
         verify(deltaFileRepo).setContentDeletedByDidIn(stringListCaptor.capture(), any(), eq("policy"));
-        assertEquals(Collections.emptyList(), deltaFileListCaptor.getValue());
         assertEquals(List.of("1", "2"), stringListCaptor.getValue());
-        assertNotNull(deltaFile1.getContentDeleted());
-        assertNotNull(deltaFile2.getContentDeleted());
-        verify(deltaFileRepo, never()).deleteAll(any());
     }
 
     @Test

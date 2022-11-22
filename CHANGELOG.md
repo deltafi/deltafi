@@ -3,29 +3,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.4
+## [Unreleased] - Next release 0.99.5
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.4] - 2022-11-22
 
 ### Added
 - New query `getFlowNames` that returns a list of flow names grouped by flow type and can be filtered by flow state
 - Grafana alerts will be displayed in the main UI monitor list and cause a degraded state
-- Add python action development kit
+- Python action development kit
+- Enhanced test framework for plugins
 
 ### Changed
 - Add fsGroupChangePolicy: OnRootMismatch to (dramatically) speed up minio pod startup
 - Metrics are now generated from the core for all actions.  Custom metrics are reported to the core via an addition to the ActionEventInput schema.
 
-### Deprecated
-
 ### Removed
 - `files_completed` metric was removed.  It was redundant with other metric information and not used in dashboards.
 
 ### Fixed
-- Issue in audit logger caused username to be tagged to logs erroneously
+- Issue in audit logger causing username to be tagged to logs erroneously
 - Issue with delete action performance
-
-### Tech-Debt/Refactor
-
-### Security
+- Issue with delete action and requeue scheduling
 
 ### Upgrade and Migration
 - Upgrade base SpringBoot docker image to 0.99.4

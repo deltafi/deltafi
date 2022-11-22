@@ -419,7 +419,15 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public DeltaFile error(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
-        return advanceAndSave(processErrorEvent(deltaFile, event));
+        // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
+        if (deltaFile.getContentDeleted() != null) {
+            deltaFile.cancelQueuedActions();
+            deltaFile.setStage(DeltaFileStage.CANCELLED);
+            deltaFileRepo.save(deltaFile);
+            return deltaFile;
+        } else {
+            return advanceAndSave(processErrorEvent(deltaFile, event));
+        }
     }
 
     @MongoRetryable
@@ -973,7 +981,18 @@ public class DeltaFilesService {
     }
 
     public List<DeltaFile> delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata, int batchSize) {
-        return delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
+        List<DeltaFile> allDeleted = new ArrayList<>();
+        long bytesLeft = bytesToDelete;
+
+        int found;
+        do {
+            List<DeltaFile> deltaFiles = delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
+            found = deltaFiles.size();
+            allDeleted.addAll(deltaFiles);
+            bytesLeft = bytesLeft - deltaFiles.stream().map(DeltaFile::getTotalBytes).reduce(0L, Long::sum);
+        } while (found == batchSize && bytesLeft > 0);
+
+        return allDeleted;
     }
 
     public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
@@ -1101,14 +1120,6 @@ public class DeltaFilesService {
     }
 
     private void deleteContent(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
-        // As an optimization, only deltafiles requiring action updates will be saved
-        List<DeltaFile> requiringActionUpdates = new ArrayList<>();
-        for (DeltaFile deltaFile : deltaFiles) {
-            if (deltaFile.markForDelete(policy)) {
-                requiringActionUpdates.add(deltaFile);
-            };
-        }
-
         contentStorageService.deleteAll(deltaFiles.stream()
                 .map(DeltaFile::storedSegments)
                 .flatMap(Collection::stream)
@@ -1117,7 +1128,6 @@ public class DeltaFilesService {
         if (deleteMetadata) {
             deleteMetadata(deltaFiles);
         } else {
-            deltaFileRepo.saveAll(requiringActionUpdates);
             deltaFileRepo.setContentDeletedByDidIn(
                     deltaFiles.stream().map(DeltaFile::getDid).distinct().collect(Collectors.toList()),
                     OffsetDateTime.now(),
