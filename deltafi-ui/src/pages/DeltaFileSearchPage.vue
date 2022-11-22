@@ -46,9 +46,9 @@
                 <label for="fileNameId">Filename:</label>
                 <InputText v-model.trim="fileName" class="p-inputtext input-area-height" placeholder="Filename" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
-                <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="egressFlowId" class="mt-2">Egress Flow:</label>
-                <Dropdown id="egressFlowId" v-model="egressFlowOptionSelected" :placeholder="egressFlowOptionSelected ? egressFlowOptionSelected.name + ' ' : 'Select an Egress Flow'" :options="egressFlowOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <Dropdown id="egressFlowId" v-model="egressFlowOptionSelected" :placeholder="egressFlowOptionSelected ? egressFlowOptionSelected + ' ' : 'Select an Egress Flow'" :options="egressFlowOptions" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="stageId" class="mt-2">Size:</label>
                 <div class="size-container">
                   <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
@@ -162,13 +162,15 @@ import { useRoute } from "vue-router";
 import { ref, computed, watch, onMounted, nextTick, inject, onBeforeMount } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
+import useFlows from "@/composables/useFlows";
 import { useUrlSearchParams } from "@vueuse/core";
 dayjs.extend(utc);
 
 const params = useUrlSearchParams("history");
-const { getDeltaFileSearchData, getEnumValuesByEnumType, getConfigByType } = useDeltaFilesQueryBuilder();
+const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
 const { getDomains, getIndexedMetadataKeys } = useDomains();
+const { ingressFlows: flowOptions, fetchIngressFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
@@ -209,9 +211,7 @@ const newMetadataKey = ref(null);
 const newMetadataValue = ref(null);
 const fileName = ref(null);
 const requeueMin = ref(null);
-const flowOptions = ref([]);
 const flowOptionSelected = ref(null);
-const egressFlowOptions = ref([]);
 const egressFlowOptionSelected = ref(null);
 const stageOptions = ref([]);
 const stageOptionSelected = ref(null);
@@ -266,8 +266,8 @@ const egressed = computed(() => (egressedOptionSelected.value ? egressedOptionSe
 const filtered = computed(() => (filteredOptionSelected.value ? filteredOptionSelected.value.value : null));
 const testMode = computed(() => (testModeOptionSelected.value ? testModeOptionSelected.value.value : null));
 const stageName = computed(() => (stageOptionSelected.value ? stageOptionSelected.value.name : null));
-const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value.name : null));
-const egressFlowName = computed(() => (egressFlowOptionSelected.value ? egressFlowOptionSelected.value.name : null));
+const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value : null));
+const egressFlowName = computed(() => (egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null));
 
 const metadata = computed(() => {
   return metadataArray.value.map((i) => {
@@ -418,7 +418,8 @@ onBeforeMount(() => {
 
 onMounted(async () => {
   setDateTimeToday();
-  fetchConfigTypes();
+  await fetchIngressFlowNames();
+  await fetchEgressFlowNames();
   fetchStages();
   fetchDomains();
   await getPersistedParams();
@@ -429,27 +430,6 @@ onMounted(async () => {
 
 const optionMenuToggle = (event) => {
   optionMenu.value.toggle(event);
-};
-
-const fetchConfigTypes = async () => {
-  fetchIngressFlows();
-  fetchEgressFlows();
-};
-
-const fetchIngressFlows = async () => {
-  let flowData = await getConfigByType("INGRESS_FLOW");
-  let flowDataValues = flowData.data.deltaFiConfigs;
-  flowOptions.value = _.concat(flowOptions.value, flowDataValues);
-  flowOptions.value = _.uniqBy(flowOptions.value, "name");
-  flowOptions.value = _.sortBy(flowOptions.value, ["name"]);
-};
-
-const fetchEgressFlows = async () => {
-  let flowData = await getConfigByType("EGRESS_FLOW");
-  let flowDataValues = flowData.data.deltaFiConfigs;
-  egressFlowOptions.value = _.concat(egressFlowOptions.value, flowDataValues);
-  egressFlowOptions.value = _.uniqBy(egressFlowOptions.value, "name");
-  egressFlowOptions.value = _.sortBy(egressFlowOptions.value, ["name"]);
 };
 
 const fetchDomains = async () => {
@@ -527,8 +507,8 @@ const getPersistedParams = async () => {
     fileName.value = params.fileName != "" ? params.fileName : null;
     requeueMin.value = params.requeueMin != null ? Number(params.requeueMin) : null;
     stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
-    flowOptionSelected.value = params.ingressFlow ? { name: params.ingressFlow } : null;
-    egressFlowOptionSelected.value = params.egressFlow ? { name: params.egressFlow } : null;
+    flowOptionSelected.value = params.ingressFlow ? params.ingressFlow : null;
+    egressFlowOptionSelected.value = params.egressFlow ? params.egressFlow : null;
     egressedOptionSelected.value = params.egressed ? egressedOptions.value.find((i) => i.name == params.egressed) : null;
     filteredOptionSelected.value = params.filtered ? filteredOptions.value.find((i) => i.name == params.filtered) : null;
     testModeOptionSelected.value = params.testMode ? testModeOptions.value.find((i) => i.name == params.testMode) : null;
@@ -580,8 +560,8 @@ const setPersistedParams = () => {
     fileName: fileName.value,
     requeueMin: requeueMin.value,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
-    flowOptionState: flowOptionSelected.value ? flowOptionSelected.value.name : null,
-    egressFlowOptionState: egressFlowOptionSelected.value ? egressFlowOptionSelected.value.name : null,
+    flowOptionState: flowOptionSelected.value ? flowOptionSelected.value : null,
+    egressFlowOptionState: egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null,
     egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
     filteredOptionState: filteredOptionSelected.value ? filteredOptionSelected.value.name : null,
     testModeOptionState: testModeOptionSelected.value ? testModeOptionSelected.value.name : null,
@@ -607,8 +587,8 @@ const setPersistedParams = () => {
   params.fileName = fileName.value != "" ? fileName.value : null;
   params.requeueMin = requeueMin.value != null ? requeueMin.value : null;
   params.stage = stageOptionSelected.value ? stageOptionSelected.value.name : null;
-  params.ingressFlow = flowOptionSelected.value ? flowOptionSelected.value.name : null;
-  params.egressFlow = egressFlowOptionSelected.value ? egressFlowOptionSelected.value.name : null;
+  params.ingressFlow = flowOptionSelected.value ? flowOptionSelected.value : null;
+  params.egressFlow = egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null;
   params.egressed = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
   params.filtered = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
   params.testMode = testModeOptionSelected.value ? testModeOptionSelected.value.name : null;

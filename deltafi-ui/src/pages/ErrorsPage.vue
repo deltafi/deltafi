@@ -20,7 +20,7 @@
   <div class="errors">
     <PageHeader heading="Errors">
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3" />
+        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3" />
         <Button v-model="showAcknowledged" :icon="showAcknowledged ? 'fas fa-eye-slash' : 'fas fa-eye'" :label="showAcknowledged ? 'Hide Acknowledged' : 'Show Acknowledged'" class="p-button p-button-secondary p-button-outlined deltafi-input-field show-acknowledged-toggle ml-3" @click="toggleShowAcknowledged()" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
@@ -58,7 +58,7 @@ const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
 const errorSummaryFlowPanel = ref();
 const errorsSummaryPanel = ref();
-const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
+const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCountSince } = useErrorCount();
 const loading = ref(false);
@@ -103,7 +103,7 @@ const refreshButtonBadge = computed(() => {
   return newErrorsCount.value > 0 ? newErrorsCount.value.toString() : null;
 });
 
-fetchIngressFlows();
+fetchIngressFlowNames();
 
 const toggleShowAcknowledged = () => {
   showAcknowledged.value = !showAcknowledged.value;

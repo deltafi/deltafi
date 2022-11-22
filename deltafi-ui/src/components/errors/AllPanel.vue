@@ -205,7 +205,7 @@ const filters = ref({
 
 const fetchErrors = async () => {
   getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName.name : null;
+  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
   let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   let showAcknowled = props.awknowledged ? null : false;
   loading.value = true;

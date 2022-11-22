@@ -36,7 +36,7 @@
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("flow").header }}</dt>
           <dd>
-            <Dropdown v-model="selectedDeleteflow" :options="ingressFlowNames.map((a) => a.name)" :placeholder="deletePolicyConfigurationMap.get('flow').placeholder" :disabled="deletePolicyConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
+            <Dropdown v-model="selectedDeleteflow" :options="ingressFlowNames" :placeholder="deletePolicyConfigurationMap.get('flow').placeholder" :disabled="deletePolicyConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
           <dd>
@@ -146,7 +146,7 @@ const { rowDataProp: rowdata, editDeletePolicy, viewDeletePolicy, closeDialogCom
 const emit = defineEmits(["reloadDeletePolicies"]);
 const { validateDeletePolicyFile } = useDeletePolicyConfiguration();
 const { loadDeletePolicies } = useDeletePolicyQueryBuilder();
-const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
+const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
 const notify = useNotifications();
 
 const deletePolicyTypes = ref(["TimedDeletePolicy", "DiskSpaceDeletePolicy"]);
@@ -182,7 +182,7 @@ const selectedMaxPercent = ref(_.get(rowdata, "maxPercent", null));
 const isMounted = ref(useMounted());
 
 onMounted(async () => {
-  await fetchIngressFlows();
+  await fetchIngressFlowNames();
 });
 
 const createNewPolicy = () => {

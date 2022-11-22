@@ -24,43 +24,30 @@ import _ from "lodash";
 export default function useFlows() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const ingressFlows: Ref<Array<Record<string, string>>> = ref([]);
-  const activeIngressFlows: Ref<Array<Record<string, string>>> = ref([]);
   const egressFlows: Ref<Array<Record<string, string>>> = ref([]);
 
-  const buildQuery = (configType: EnumType) => {
+  const buildQuery = (enrich: Boolean, egress: Boolean, ingress: Boolean, state?: string) => {
     return {
-      deltaFiConfigs: {
+      getFlowNames: {
         __args: {
-          configQuery: {
-            configType: configType
-          }
+          state: state ? new EnumType(state) : null,
         },
-        name: true
+        enrich: enrich,
+        egress: egress,
+        ingress: ingress
       }
     };
   };
 
-  const fetchIngressFlows = async () => {
-    await queryGraphQL(buildQuery(new EnumType('INGRESS_FLOW')), "getIngressFlows");
-    ingressFlows.value = _.sortBy(response.value.data.deltaFiConfigs, ["name"]);
+  const fetchIngressFlowNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(false, false, true, state), "getIngressFlowNames");
+    ingressFlows.value = response.value.data.getFlowNames.ingress.sort();
   }
 
-  const fetchEgressFlows = async () => {
-    await queryGraphQL(buildQuery(new EnumType('EGRESS_FLOW')), "getEgressFlows");
-    egressFlows.value = _.sortBy(response.value.data.deltaFiConfigs, ["name"]);
+  const fetchEgressFlowNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(false, true, false, state), "getEgressFlowNames");
+    egressFlows.value = response.value.data.getFlowNames.egress.sort();
   }
 
-  const fetchActiveIngressFlows = async () => {
-    const buildQueryActive = {
-      getRunningFlows: {
-        ingress: {
-          name: true,
-        }
-      }
-    }
-    await queryGraphQL(buildQueryActive, "getRunningFlows");
-    activeIngressFlows.value = _.sortBy(response.value.data.getRunningFlows.ingress, ["name"]);
-  }
-
-  return { ingressFlows, egressFlows, fetchIngressFlows, fetchEgressFlows, loading, loaded, errors,fetchActiveIngressFlows,activeIngressFlows };
+  return { ingressFlows, egressFlows, fetchIngressFlowNames, fetchEgressFlowNames, loading, loaded, errors };
 }

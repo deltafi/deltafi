@@ -42,7 +42,7 @@
                             <dd class="d-flex">
                               <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
                               <template v-if="_.isEqual(actionInfoKey, 'name')">
-                                <a  v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                                <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
                                   <i class="ml-1 text-muted fa-regular fa-chart-bar" />
                                 </a>
                               </template>
@@ -189,7 +189,7 @@ const fetchActionMetrics = async () => {
   if (!isIdle.value && !loading.value) {
     let actionMetricsParams = { last: "5m" };
     if (ingressFlowNameSelected.value) {
-      actionMetricsParams["flowName"] = ingressFlowNameSelected.value.name;
+      actionMetricsParams["flowName"] = ingressFlowNameSelected.value;
     }
     await getActionMetrics(actionMetricsParams);
   }
@@ -217,7 +217,7 @@ const grafanaLogLink = computed(() => {
   return [
     "cursor-pointer pl-1",
     {
-      "disable-grafana-link": !hasPermission('MetricsView')
+      "disable-grafana-link": !hasPermission("MetricsView"),
     },
   ];
 });

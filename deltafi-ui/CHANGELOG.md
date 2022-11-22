@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Updated flow select dropdowns to use new getFlowNames endpoint (#301)
+
 ## [0.99.4]
 
 ### Changed
@@ -473,7 +479,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.4...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.4...main
 [0.99.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.3...0.99.4
 [0.99.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.2...0.99.3
 [0.99.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.1...0.99.2

@@ -25,7 +25,7 @@
     <div v-else-if="actionMetrics">
       <CollapsiblePanel header="Actions" class="action-metrics-panel table-panel mb-3">
         <template #icons>
-          <Dropdown v-model="ingressFlowNameSelected" placeholder="Select a Flow" :options="ingressFlowNames" option-label="name" show-clear :editable="false" class="deltafi-input-field mr-3" @change="flowChange" />
+          <Dropdown v-model="ingressFlowNameSelected" placeholder="Select a Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field mr-3" @change="flowChange" />
           <Dropdown v-model="timeRange" :options="timeRanges" option-label="name" placeholder="Time Range" class="deltafi-input-field mr-3" @change="timeRangeChange" />
         </template>
         <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="mb-3" @pause-timer="onPauseTimer" />
@@ -52,10 +52,10 @@ import { ref, computed, onUnmounted, onMounted, inject } from "vue";
 
 const refreshInterval = 5000; // 5 seconds
 const { data: actionMetrics, fetch: getActionMetrics, errors, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
-const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
+const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
 const isIdle = inject("isIdle");
 
-fetchIngressFlows();
+fetchIngressFlowNames();
 
 const timeRanges = [
   { name: "Last 5 minutes", code: "5m" },
@@ -97,7 +97,7 @@ const fetchActionMetrics = async () => {
   if (!isIdle.value && !loading.value) {
     let actionMetricsParams = { last: timeRange.value.code };
     if (ingressFlowNameSelected.value) {
-      actionMetricsParams["flowName"] = ingressFlowNameSelected.value.name;
+      actionMetricsParams["flowName"] = ingressFlowNameSelected.value;
     }
     await getActionMetrics(actionMetricsParams);
   }

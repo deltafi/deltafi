@@ -140,7 +140,7 @@ const { data: response, fetchByFlow: getErrorsByFlow } = useErrorsSummary();
 
 const fetchErrorsFlow = async () => {
   getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName.name : null;
+  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
   let showAcknowled = props.awknowledged ? null : false;
   loading.value = true;
   await getErrorsByFlow(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
@@ -236,6 +236,4 @@ const setPersistedParams = () => {
 };
 </script>
 
-<style lang="scss">
-
-</style>
+<style lang="scss"></style>

@@ -36,7 +36,7 @@
           </dd>
           <dt>{{ ingressRouteConfigurationMap.get("flow").header }}</dt>
           <dd>
-            <Dropdown v-model="selectedRuleFlow" :options="ingressFlowNames.map((a) => a.name)" :placeholder="ingressRouteConfigurationMap.get('flow').placeholder" :disabled="ingressRouteConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
+            <Dropdown v-model="selectedRuleFlow" :options="ingressFlowNames" :placeholder="ingressRouteConfigurationMap.get('flow').placeholder" :disabled="ingressRouteConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
           </dd>
           <dt>{{ ingressRouteConfigurationMap.get("priority").header }}</dt>
           <dd class="mb-0">
@@ -113,7 +113,7 @@ const { viewIngressRouteRule, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadIngressRoutes"]);
 const { validateIngressRouteFile } = useIngressRoutingConfiguration();
 const { loadFlowAssignmentRules } = useIngressRoutingQueryBuilder();
-const { ingressFlows: ingressFlowNames, fetchIngressFlows } = useFlows();
+const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
 const notify = useNotifications();
 const isMounted = ref(useMounted());
 
@@ -136,7 +136,7 @@ const selectedRulePriority = ref(_.get(rowdata, "priority", 500));
 const selectedFilenameRegex = ref(_.get(rowdata, "filenameRegex", null));
 
 onMounted(async () => {
-  fetchIngressFlows();
+  fetchIngressFlowNames();
 });
 
 const viewList = (value) => {

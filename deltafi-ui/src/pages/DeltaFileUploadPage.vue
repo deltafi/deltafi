@@ -45,7 +45,7 @@
             </div>
             <div class="col-5">
               <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" option-label="name" :placeholder="selectedFlow ? selectedFlow.name + ' ' : 'Select an Ingress Flow'" show-clear />
+              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" :placeholder="selectedFlow ? selectedFlow + ' ' : 'Select an Ingress Flow'" show-clear />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -149,7 +149,7 @@ const selectedFlow = ref(null);
 const metadata = ref([]);
 const fileUploader = ref();
 const deltaFiles = ref([]);
-const { fetchActiveIngressFlows, activeIngressFlows } = useFlows();
+const { fetchIngressFlowNames, ingressFlows: activeIngressFlows } = useFlows();
 const { ingressFile } = useIngress();
 const notify = useNotifications();
 const { validateMetadataFile } = useMetadataConfiguration();
@@ -309,7 +309,7 @@ const uploadsRowClass = (data) => {
 
 // Created
 onMounted(async () => {
-  fetchActiveIngressFlows();
+  fetchIngressFlowNames("RUNNING");
 });
 
 const formatMetadataforViewer = (filename, uploadedMetadata) => {
