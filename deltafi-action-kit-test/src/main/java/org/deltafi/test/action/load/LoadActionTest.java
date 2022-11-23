@@ -97,9 +97,9 @@ public abstract class LoadActionTest extends ActionTest {
                     ), testCase, "split."));
         });
 
-        List<SplitEvent> ordered = orderListByAnother(splitResult.getSplitInputs(), expectedResult.getSplitInputs(), (item) -> item.getSourceInfo().getFilename());
-        expectedResult.getSplitInputs().clear();
-        expectedResult.getSplitInputs().addAll(ordered);
+        List<SplitEvent> ordered = orderListByAnother(splitResult.getSplitEvents(), expectedResult.getSplitEvents(), (item) -> item.getSourceInfo().getFilename());
+        expectedResult.getSplitEvents().clear();
+        expectedResult.getSplitEvents().addAll(ordered);
 
         String expectedEvent = normalizeData(expectedResult.toEvent().toString());
         String outputEvent = normalizeData(splitResult.toEvent().toString());
