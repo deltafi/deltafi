@@ -221,7 +221,7 @@ const onUpload = (event) => {
 const ingressFiles = async (event) => {
   uploadedTimestamp.value = new Date();
   for (let file of event.files) {
-    const result = ingressFile(file, metadataRecord.value, _.get(selectedFlow.value, "name", null));
+    const result = ingressFile(file, metadataRecord.value, selectedFlow.value);
     result["uploadedTimestamp"] = uploadedTimestamp.value;
     result["uploadedMetadata"] = JSON.parse(JSON.stringify(metadata.value));
     deltaFiles.value.unshift(result);
@@ -294,7 +294,7 @@ const getSelectedFlowSession = () => {
 const replayMetadata = (value) => {
   metadata.value = JSON.parse(JSON.stringify(value.uploadedMetadata));
   let flowSelected = {};
-  flowSelected["name"] = value.flow;
+  flowSelected = value.flow;
   selectedFlow.value = flowSelected;
 };
 
@@ -309,8 +309,13 @@ const uploadsRowClass = (data) => {
 
 // Created
 onMounted(async () => {
-  fetchIngressFlowNames("RUNNING");
+  await fetchIngressFlowNames("RUNNING");
+  checkActiveFlows();
 });
+
+const checkActiveFlows = () => {
+  selectedFlow.value = activeIngressFlows.value.includes(selectedFlow.value) ? selectedFlow.value : null;
+};
 
 const formatMetadataforViewer = (filename, uploadedMetadata) => {
   let metaDataObject = {};
@@ -324,7 +329,7 @@ const onExportMetadata = () => {
     return;
   }
   if (!_.isEmpty(selectedFlow.value)) {
-    formattedMetadata["flow"] = selectedFlow.value.name;
+    formattedMetadata["flow"] = selectedFlow.value;
   }
   formattedMetadata["metadata"] = metadataRecord.value;
 
@@ -371,7 +376,7 @@ const uploadMetadataFile = async (file) => {
   let parseMetadataUpload = JSON.parse(validUpload.value);
   let flowSelected = {};
   if (!_.isEmpty(_.get(parseMetadataUpload, "flow"))) {
-    flowSelected["name"] = _.get(parseMetadataUpload, "flow");
+    flowSelected = _.get(parseMetadataUpload, "flow");
     selectedFlow.value = flowSelected;
   } else {
     selectedFlow.value = null;

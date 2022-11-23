@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Updated flow select dropdowns to use new getFlowNames endpoint (#301)
 
+### Fixed
+
+- Upload page could show an invalid ingress flow (#304)
+
 ## [0.99.4]
 
 ### Changed
@@ -479,7 +483,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.4...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.4...main
 [0.99.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.3...0.99.4
 [0.99.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.2...0.99.3
 [0.99.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.1...0.99.2
