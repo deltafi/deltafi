@@ -34,6 +34,7 @@ import org.deltafi.common.types.Metric;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.UniqueKeyValues;
 import org.deltafi.core.generated.types.*;
@@ -94,16 +95,17 @@ public class DeltaFilesService {
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
-    final IngressFlowService ingressFlowService;
-    final EnrichFlowService enrichFlowService;
-    final EgressFlowService egressFlowService;
-    final DeltaFiProperties properties;
-    final FlowAssignmentService flowAssignmentService;
-    final StateMachine stateMachine;
-    final DeltaFileRepo deltaFileRepo;
-    final ActionEventQueue actionEventQueue;
-    final ContentStorageService contentStorageService;
+    private final IngressFlowService ingressFlowService;
+    private final EnrichFlowService enrichFlowService;
+    private final EgressFlowService egressFlowService;
+    private final DeltaFiProperties properties;
+    private final FlowAssignmentService flowAssignmentService;
+    private final StateMachine stateMachine;
+    private final DeltaFileRepo deltaFileRepo;
+    private final ActionEventQueue actionEventQueue;
+    private final ContentStorageService contentStorageService;
     private final MetricRepository metricService;
+    private final CoreAuditLogger coreAuditLogger;
     private ExecutorService executor;
 
     @PostConstruct
@@ -1134,6 +1136,9 @@ public class DeltaFilesService {
                     policy);
         }
 
+        for (DeltaFile deltaFile : deltaFiles) {
+            coreAuditLogger.logDelete(policy, deltaFile.getDid(), deleteMetadata);
+        }
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {

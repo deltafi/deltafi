@@ -22,6 +22,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.types.*;
 import org.deltafi.core.Util;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Assertions;
@@ -47,7 +48,7 @@ import java.util.Optional;
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, DeltaFiProperties.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
-@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class})
+@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class})
 @EnableRetry
 public class IngressServiceRetryTest {
 

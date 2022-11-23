@@ -88,8 +88,14 @@ public class CoreAuditLogger extends SimpleInstrumentation {
     }
 
     public void logIngress(String userName, String fileName) {
-        try (MDC.MDCCloseable mdc = MDC.putCloseable("user", userName)) {
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", userName)) {
             log.info("ingress {}", fileName);
+        }
+    }
+
+    public void logDelete(String policy, String did, boolean metadata) {
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", UNKNOWN_USER)) {
+            log.info("policy {} deleted {} content{}", policy, did, (metadata ? " and metadata" : ""));
         }
     }
 

@@ -28,6 +28,7 @@ import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.core.Util;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
@@ -81,6 +82,10 @@ class DeltaFilesServiceTest {
     @SuppressWarnings("unused")
     @Mock
     ActionEventQueue actionEventQueue;
+
+    @Mock
+    @SuppressWarnings("unused")
+    CoreAuditLogger coreAuditLogger;
 
     @InjectMocks
     DeltaFilesService deltaFilesService;
