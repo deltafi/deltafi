@@ -22,6 +22,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.actionkit.exception.MissingSourceMetadataException;
+import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.Domain;
 
 import java.util.Map;
@@ -62,5 +63,15 @@ public class DomainInput {
 
     public String metadata(String key, String defaultValue) {
         return metadata.getOrDefault(key, defaultValue);
+    }
+
+    public static DomainInput fromDeltaFile(DeltaFile deltaFile) {
+        return DomainInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                .domains(deltaFile.domainMap())
+                .build();
     }
 }

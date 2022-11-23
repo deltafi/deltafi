@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.deltafi.actionkit.exception.MissingSourceMetadataException;
+import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.FormattedData;
 
 import java.util.Map;
@@ -44,5 +45,14 @@ public class ValidateInput {
 
     public String sourceMetadata(String key, String defaultValue) {
         return sourceMetadata.getOrDefault(key, defaultValue);
+    }
+
+    public static ValidateInput fromDeltaFile(DeltaFile deltaFile) {
+        return ValidateInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .formattedData(deltaFile.getFormattedData().get(0))
+                .build();
     }
 }

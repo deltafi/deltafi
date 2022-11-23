@@ -24,6 +24,7 @@ import org.deltafi.actionkit.exception.ExpectedContentException;
 import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.actionkit.exception.MissingSourceMetadataException;
 import org.deltafi.common.types.Content;
+import org.deltafi.common.types.DeltaFile;
 
 import java.util.List;
 import java.util.Map;
@@ -75,5 +76,15 @@ public class TransformInput {
             throw new ExpectedContentException();
         }
         return contentAt(0);
+    }
+
+    public static TransformInput fromDeltaFile(DeltaFile deltaFile) {
+        return TransformInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .contentList(deltaFile.getLastProtocolLayerContent())
+                .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                .build();
     }
 }
