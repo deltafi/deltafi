@@ -78,7 +78,9 @@ input SourceInfoInput {
 
 input SourceInfoFilter {
   filename: String
+  # deprecated: use ingressFlows
   flow: String
+  ingressFlows: [String!]
   metadata: [KeyValueInput!]
 }
 

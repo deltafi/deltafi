@@ -439,6 +439,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getSourceInfo().getFlow()));
             }
 
+            if(nonNull(filter.getSourceInfo().getIngressFlows())) {
+                andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).in(filter.getSourceInfo().getIngressFlows()));
+            }
+
             if (nonNull(filter.getSourceInfo().getMetadata())) {
                 filter.getSourceInfo().getMetadata().forEach(m -> andCriteria.add(Criteria.where(SOURCE_INFO_METADATA).elemMatch(Criteria.where(KEY).is(m.getKey()).and(VALUE).is(m.getValue()))));
             }

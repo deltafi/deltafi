@@ -7,10 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Audit entries for deleted dids
+- Added new `ingressFlows` field to SourceInfo for DeltaFiles filter
 
 ### Changed
 
 ### Deprecated
+- Deprecated `flow` field in DeltaFiles SourceInfo filtering; use 'ingressFlows' instead.  `flow` will still work at the moment, but will be removed in a future release.
 
 ### Removed
 
