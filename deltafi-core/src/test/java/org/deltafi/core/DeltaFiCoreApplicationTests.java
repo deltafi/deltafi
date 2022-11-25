@@ -3513,8 +3513,9 @@ class DeltaFiCoreApplicationTests {
 			"fromFlowfile", "youbetcha");
 	static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
 	static final String USERNAME = "myname";
-	ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), "did"));
-	IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW, FILENAME);
+	static final String DID = "did";
+	ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), DID));
+	IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW, FILENAME, DID);
 
 	private ResponseEntity<String> ingress(String filename, String flow, String metadata, byte[] body, String contentType) {
 		HttpHeaders headers = new HttpHeaders();
@@ -3542,7 +3543,7 @@ class DeltaFiCoreApplicationTests {
 
 		ResponseEntity<String> response = ingress(FILENAME, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(INGRESS_RESULT.getContentReference().getSegments().get(0).getDid(), response.getBody());
+		assertEquals(INGRESS_RESULT.getDid(), response.getBody());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
 		Mockito.verify(ingressService).ingressData(is.capture(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE));

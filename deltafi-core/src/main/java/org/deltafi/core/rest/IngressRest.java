@@ -114,10 +114,12 @@ public class IngressRest {
             metricService.increment(FILES_IN, tags, 1);
             metricService.increment(BYTES_IN, tags, ingressResult.getContentReference().getSize());
 
-            return ResponseEntity.ok(ingressResult.getContentReference().getSegments().get(0).getDid());
+            return ResponseEntity.ok(ingressResult.getDid());
         } catch (IngressMetadataException exception) {
+            log.error("Exception thrown: ", exception);
             return errorResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), flow, filename, contentType, username);
         } catch (Throwable exception) {
+            log.error("Exception thrown: ", exception);
             // includes IngressException and ObjectStorageException
             return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), flow, filename, contentType, username);
         }
