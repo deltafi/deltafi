@@ -27,7 +27,6 @@ pydantic = "1.10.2"
 redis = "4.3.4"
 requests = "2.28.1"
 urllib3 = "1.26.12"
-cleo = "^0.8"
 
 [tool.poetry.urls]
 'Source Code' = "https://gitlab.com/systolic/deltafi/deltafi"
