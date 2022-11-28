@@ -18,40 +18,80 @@
 
 <template>
   <div class="plugins-page">
-    <PageHeader heading="Plugins" />
+    <PageHeader heading="Plugins">
+      <div class="d-flex mb-2">
+        <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="{}" @reload-plugins="loadPlugins()">
+          <Button v-has-permission:PluginInstall label="Install Plugin" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+        </DialogTemplate>
+      </div>
+    </PageHeader>
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
-    <div v-else class="plugin-container">
-      <div class="plugin-row">
-        <div class="plugin-column plugin-column-left">
-          <Listbox v-model="selectedPlugin" :options="listItems" option-label="label" empty-message="No plugins found" />
-        </div>
-        <div class="plugin-column plugin-column-right">
-          <div v-if="selectedPlugin !== null && selectedPlugin !== undefined" class="col ml-0 pl-0">
-            <PluginInfoPanel :info="selectedPlugin" class="mb-3" />
+    <Panel v-else header="Plugins" class="table-panel">
+      <Splitter style="height: 77vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
+        <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
+          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false">
+            <template #empty>No Plugins found.</template>
+            <template #loading>Loading Plugins. Please wait.</template>
+            <Column header="Name" field="displayName" :sortable="true" />
+            <Column header="Description" field="description" />
+            <Column header="Version" field="pluginCoordinates.version" />
+            <Column header="Action Kit Version" field="actionKitVersion" />
+            <Column :style="{ width: '5%' }" class="plugin-actions-column">
+              <template #body="{ data }">
+                <div class="d-flex justify-content-between">
+                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="data" @reload-plugins="loadPlugins()">
+                    <Button v-has-permission:PluginInstall v-tooltip.top="`Edit Plugin`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
+                  </DialogTemplate>
+                  <PluginRemoveButton v-has-permission:PluginUninstall :row-data-prop="data" @reload-plugins="loadPlugins()" />
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </SplitterPanel>
+        <SplitterPanel :size="startingPanelTwoSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelTwoSize}`">
+          <div v-if="selectedPlugin !== null && selectedPlugin !== undefined" class="pt-4 pb-4 col">
+            <div>
+              <h4>{{ selectedPlugin.displayName }}</h4>
+            </div>
             <PluginActionsPanel :actions="selectedPlugin.actions" class="mb-3" />
             <PluginVariablesPanel :variables="selectedPlugin.variables" class="mb-3" @updated="loadPlugins" />
           </div>
-        </div>
-      </div>
-    </div>
+        </SplitterPanel>
+      </Splitter>
+    </Panel>
   </div>
 </template>
 
 <script setup>
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import { onMounted, ref, computed, watch, provide } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import usePlugins from "@/composables/usePlugins";
-import Listbox from "primevue/listbox";
-import ProgressBar from "primevue/progressbar";
-import useNotifications from "@/composables/useNotifications";
 import PluginActionsPanel from "@/components/plugin/ActionsPanel.vue";
-import PluginInfoPanel from "@/components/plugin/InfoPanel.vue";
+import PluginRemoveButton from "@/components/plugin/PluginRemoveButton.vue";
 import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
-import _ from "lodash";
+import usePlugins from "@/composables/usePlugins";
+import useNotifications from "@/composables/useNotifications";
+import { computed, nextTick, onMounted, provide, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+import Button from "primevue/button";
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import Panel from "primevue/panel";
+import ProgressBar from "primevue/progressbar";
+import Splitter from "primevue/splitter";
+import SplitterPanel from "primevue/splitterpanel";
 
 const selectedPlugin = ref(null);
-provide('selectedPlugin', selectedPlugin);
+provide("selectedPlugin", selectedPlugin);
+
+const dataTableIdRef = ref();
+const rowIndex = ref(0);
+const startingPanelOneSize = ref(99);
+const startingPanelTwoSize = ref(1);
+const panelOneSize = ref(null);
+const panelTwoSize = ref(null);
+const userResized = ref(false);
+const firstMounted = ref(true);
 
 const route = useRoute();
 const router = useRouter();
@@ -60,27 +100,27 @@ const { data: plugins, fetch: fetchPlugins, loading, loaded } = usePlugins();
 
 const showLoading = computed(() => !loaded.value && loading.value);
 
-const listItems = computed(() => {
-  let items = [];
+const pluginsList = computed(() => {
   if (plugins.value) {
-    items = plugins.value.plugins.map((plugin) => {
-      return {
-        label: `${plugin.displayName} - ${plugin.pluginCoordinates.version}`,
-        id: buildId(plugin.pluginCoordinates),
-        ...plugin,
-      };
+    plugins.value.plugins.forEach((plugin) => {
+      let combinedPluginCoordinates = "";
+      plugin["combinedPluginCoordinates"] = combinedPluginCoordinates.concat(plugin.pluginCoordinates.groupId, ":", plugin.pluginCoordinates.artifactId, ":", plugin.pluginCoordinates.version);
     });
+    return plugins.value.plugins;
+  } else {
+    return [];
   }
-  return _.orderBy(items, ["label"], ["asc"]);
 });
 
 const loadPlugins = async () => {
   await fetchPlugins();
-  selectedPlugin.value = route.params.pluginCordinates ? listItems.value.find((e) => e.id == route.params.pluginCordinates) : null;
-}
+  selectedPlugin.value = null;
+  await nextTick();
+  selectedPlugin.value = route.params.pluginCordinates ? pluginsList.value.find((e) => e.combinedPluginCoordinates == route.params.pluginCordinates) : null;
+};
 
 onMounted(async () => {
-  loadPlugins()
+  loadPlugins();
 });
 
 watch(route, () => {
@@ -89,13 +129,55 @@ watch(route, () => {
   }
 });
 
-watch(selectedPlugin, (newItem) => {
-  if (newItem === undefined) notify.error("Plugin Not Found", route.params.pluginCordinates);
-  const path = newItem === null || newItem === undefined ? "/config/plugins" : `/config/plugins/${selectedPlugin.value.id}`;
+watch(selectedPlugin, async (newItem) => {
+  if (newItem === undefined) {
+    notify.error("Plugin Not Found", route.params.pluginCordinates);
+  }
+  let path = null;
+  if (newItem === null || newItem === undefined) {
+    panelOneSize.value = !userResized.value ? splitterSize(99) : panelOneSize.value;
+    panelTwoSize.value = !userResized.value ? splitterSize(1) : panelTwoSize.value;
+
+    path = "/config/plugins";
+  } else {
+    panelOneSize.value = !userResized.value ? splitterSize(50) : panelOneSize.value;
+    panelTwoSize.value = !userResized.value ? splitterSize(50) : panelTwoSize.value;
+
+    path = `/config/plugins/${newItem.combinedPluginCoordinates}`;
+
+    scrollToRow(newItem);
+  }
   router.push({ path });
 });
 
-const buildId = (pluginCoordinates) => [pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version].join(":");
+const customSpitterSize = async (event) => {
+  console.log("in here");
+  console.log("event: ", event);
+  userResized.value = true;
+  await nextTick();
+  panelOneSize.value = splitterSize(event.sizes[0]);
+  panelTwoSize.value = splitterSize(event.sizes[1]);
+};
+
+const scrollToRow = async (pluginSelected) => {
+  if (firstMounted.value) {
+    if (route.params.pluginCordinates) {
+      rowIndex.value = dataTableIdRef.value.processedData.findIndex((obj) => obj.combinedPluginCoordinates == route.params.pluginCordinates);
+    }
+    firstMounted.value = false;
+  }
+  if (pluginSelected) {
+    rowIndex.value = dataTableIdRef.value.processedData.findIndex((obj) => obj.combinedPluginCoordinates == pluginSelected.combinedPluginCoordinates);
+  }
+  const dataTableElement = document.getElementById("splitterPanelId");
+  await nextTick();
+  dataTableElement.getElementsByClassName("p-selectable-row")[rowIndex.value].scrollIntoView();
+  document.documentElement.scrollTop = 0;
+};
+
+const splitterSize = (slitSize) => {
+  return `flex-basis: calc(${slitSize}% - 10px);`;
+};
 </script>
 
 <style lang="scss">

@@ -16,6 +16,7 @@
    limitations under the License.
 */
 
+import version from "@/mocks/graphql/version";
 import { ref } from "vue";
 import useGraphQL from "./useGraphQL";
 export default function usePlugins() {
@@ -23,7 +24,7 @@ export default function usePlugins() {
   const data = ref(null);
 
   const fetch = async () => {
-    const searchParams = {
+    const query = {
       plugins: {
         displayName: true,
         description: true,
@@ -61,19 +62,109 @@ export default function usePlugins() {
         },
       },
     };
-    await queryGraphQL(searchParams, "getPlugin");
-    data.value = response.value.data;
+    return sendGraphQLQuery(query, "getPlugin");
   };
 
   const setPluginVariableValues = async (update: Object) => {
     const query = {
       setPluginVariableValues: {
         __args: update,
-      }
+      },
+    };
+    return sendGraphQLQuery(query, "updatePluginVariable", "mutation");
+  };
+
+  const installPlugin = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      installPlugin: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+        },
+        success: true,
+        info: true,
+        errors: true,
+      },
+    };
+    return sendGraphQLQuery(query, "installPlugin", "mutation");
+  };
+
+  const installPluginWithSettings = async (groupId: String, artifactId: String, version: String, imageRepositoryOverride: String, imagePullSecretOverride: String, customDeploymentYaml: String) => {
+    const query = {
+      installPluginWithSettings: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+          imageRepositoryOverride: imageRepositoryOverride,
+          imagePullSecretOverride: imagePullSecretOverride,
+          customDeploymentYaml: customDeploymentYaml,
+        },
+        success: true,
+        info: true,
+        errors: true,
+      },
+    };
+    return sendGraphQLQuery(query, "installPluginWithSettings", "mutation");
+  };
+
+  const uninstallPlugin = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      uninstallPlugin: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+        },
+        success: true,
+        info: true,
+        errors: true,
+      },
+    };
+    return sendGraphQLQuery(query, "uninstallPlugin", "mutation");
+  };
+
+  const verifyActionsAreRegistered = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      verifyActionsAreRegistered: {
+        pluginCoordinates: {
+          groupId: groupId,
+          artifactId: artifactId,
+          version: version,
+        },
+      },
     };
     await queryGraphQL(query, "updatePluginVariable", "mutation");
     return;
-  }
+  };
 
-  return { data, loading, loaded, fetch, setPluginVariableValues, response };
+  const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
+    try {
+      await queryGraphQL(query, operationName, queryType);
+      data.value = response.value.data;
+      return response.value.data;
+    } catch {
+      // Continue regardless of error
+    }
+  };
+
+  return {
+    data,
+    loading,
+    loaded,
+    response,
+    installPlugin,
+    installPluginWithSettings,
+    uninstallPlugin,
+    fetch,
+    setPluginVariableValues,
+    verifyActionsAreRegistered,
+  };
 }

@@ -44,10 +44,10 @@ const props = defineProps({
 
 const infoFields = computed(() => {
   return {
-    "Name": props.info.displayName,
-    "Version": props.info.pluginCoordinates.version,
-    "Description": props.info.description,
-    "Action Kit Version": props.info.actionKitVersion
-  }
-})
+    "Group Id": props.info.pluginCoordinates.groupId,
+    Version: props.info.pluginCoordinates.version,
+    Description: props.info.description,
+    "Action Kit Version": props.info.actionKitVersion,
+  };
+});
 </script>

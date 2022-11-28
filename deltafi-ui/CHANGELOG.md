@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Updated flow select dropdowns to use new getFlowNames endpoint (#301)
+- Added ability to install, update, and uninstall on the Plugins page (#297)
 
 ### Fixed
 

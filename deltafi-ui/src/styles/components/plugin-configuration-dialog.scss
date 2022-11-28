@@ -15,40 +15,24 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-
-.sidebar {
-  transition: all 0.3s;
-}
-
-.sidebar {
-  -ms-flex: 0 0 300px;
-  flex: 0 0 300px;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar.hidden {
-  margin-left: -300px;
-}
-
-.wrapper {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-}
-
-.wrapper .content-wrapper {
-  overflow-x: hidden;
-  width: 100%;
-  padding: 0.25rem 1rem 2rem 1rem;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    -ms-flex: 0 0 150px !important;
-    flex: 0 0 150px !important;
+.install-plugin-configuration-body {
+  width: 98%;
+  .install-plugin-panel {
+    dt {
+      margin-bottom: 0.5rem;
+    }
+    dd {
+      margin-bottom: 1.2rem;
+    }
+    dl {
+      margin-bottom: 1rem;
+    }
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
   }
-  .sidebar.hidden {
-    margin-left: -150px !important;
+
+  .inputWidth {
+    width: 90% !important;
   }
 }
