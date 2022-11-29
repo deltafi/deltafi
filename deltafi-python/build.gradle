@@ -10,8 +10,14 @@ task setupPoetry(type: Exec) {
     commandLine 'pip3', '-q', 'install', 'poetry'
 }
 
+task copyTemplate(type: Copy) {
+    from file('src/pyproject.toml.template')
+    into 'src'
+    rename {  'pyproject.toml' }
+}
+
 task poetryVersion(type: Exec) {
-    dependsOn setupPoetry
+    dependsOn copyTemplate, setupPoetry
     workingDir 'src'
     String pythonVersion = version.replaceAll('-SNAPSHOT', "rc${new Date().getTime()}")
     commandLine 'poetry', 'version', "${pythonVersion}"
@@ -22,13 +28,13 @@ task cleanDist(type: Delete) {
 }
 
 task poetryInstall(type: Exec) {
-    dependsOn setupPoetry
+    dependsOn poetryVersion
     workingDir 'src'
     commandLine 'poetry', 'install'
 }
 
 task poetryBuild(type: Exec) {
-    dependsOn cleanDist, setupPoetry, poetryVersion, poetryInstall
+    dependsOn cleanDist, poetryInstall
     workingDir 'src'
     commandLine 'poetry', 'build'
 }

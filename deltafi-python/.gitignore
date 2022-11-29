@@ -1,6 +1,7 @@
 # general things to ignore
 build/
 src/dist/
+pyproject.toml
 *.py[cod]
 __pycache__/
 *.so
