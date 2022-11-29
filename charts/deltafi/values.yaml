@@ -1,48 +1,18 @@
 # DeltaFi config
 deltafi:
-  keyStore:
+  ssl:
     secret: keystore-secret
     passwordSecret: keystore-password-secret
     mountPath: /etc/pki
+    protocol: TLSv1.2
     keyStoreName: keyStore.p12
+    keyStoreType: PKCS12
     trustStoreName: trustStore.jks
-  actions:
-    envVars:
-      - name: SPRING_CONFIG_IMPORT
-        value: configserver:http://deltafi-core-service/config
-  envVars:
-    - name: REDIS_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: redis-password
-          key: redis-password
-    - name: MINIO_ACCESSKEY
-      valueFrom:
-        secretKeyRef:
-          name: minio-keys
-          key: accesskey
-    - name: MINIO_SECRETKEY
-      valueFrom:
-        secretKeyRef:
-          name: minio-keys
-          key: secretkey
-    - name: ACTIONS_HOSTNAME
-      valueFrom:
-        fieldRef:
-          fieldPath: spec.nodeName
+    trustStoreType: JKS
   core_actions:
-    egress_endpoint: http://deltafi-egress-sink-service
     image: deltafi/deltafi-core-actions:0.99.4
   core:
     image: deltafi/deltafi-core:0.99.4
-    envVars:
-      - name: DELTAFI_CONFIG_IMPORT
-        value: deltafi:mongodb=true&git=false
-      - name: MONGO_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: mongodb-passwords
-            key: mongodb-password
     mongo_host: deltafi-mongodb
     nativeConfigMap: config-server-configmap
     nativeConfigMountPath: /config

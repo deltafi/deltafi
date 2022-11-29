@@ -28,6 +28,7 @@ module Deltafi
 
   REDIS_RECONNECT_ATTEMPTS = 1_000_000_000
   REDIS_RETRY_COUNT = 30
+  BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
   @@system_properties = nil
 
   def self.k8s_client
@@ -35,9 +36,7 @@ module Deltafi
   end
 
   def self.graphql(query)
-    graphql_url = ENV['DELTAFI_GRAPHQL_URL'] ||
-                  cached_system_properties['graphql.urls.core'] ||
-                  'http://deltafi-core-service/graphql'
+    graphql_url = File.join(BASE_URL, 'graphql')
 
     response = HTTParty.post(graphql_url,
                              body: { query: query }.to_json,
@@ -57,9 +56,7 @@ module Deltafi
 
   def self.redis_client
     redis_password = ENV['REDIS_PASSWORD']
-    redis_url = ENV['REDIS_URL'] ||
-                cached_system_properties['redis.url']&.gsub(/^http/, 'redis') ||
-                'redis://deltafi-redis-master:6379'
+    redis_url = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
 
     retries = 0
     begin
@@ -93,8 +90,7 @@ module Deltafi
     @@system_properties ||= {}
     return @@system_properties unless running_in_cluster?
 
-    base_url = ENV['DELTAFI_CONFIG_URL'] || 'http://deltafi-core-service'
-    config_url = File.join(base_url, 'config/application/default')
+    config_url = File.join(BASE_URL, 'config/application/default')
 
     begin
       response = HTTParty.get(config_url,

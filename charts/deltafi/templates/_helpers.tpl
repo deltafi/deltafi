@@ -92,38 +92,93 @@ initContainers:
       fieldPath: spec.nodeName
 {{- end -}}
 
+{{- define "commonEnvVars" -}}
+- name: CORE_URL
+  value: http://deltafi-core-service
+- name: MINIO_URL
+  value: http://deltafi-minio:9000
+- name: MINIO_PARTSIZE
+  value: "100000000"
+- name: METRICS_STATSD_HOSTNAME
+  value: "deltafi-graphite"
+- name: METRICS_STATSD_PORT
+  value: "8125"
+- name: METRICS_PERIODSECONDS
+  value: "10"
+- name: REDIS_URL
+  value: http://deltafi-redis-master:6379
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: redis-password
+      key: redis-password
+- name: MINIO_ACCESSKEY
+  valueFrom:
+    secretKeyRef:
+      name: minio-keys
+      key: accesskey
+- name: MINIO_SECRETKEY
+  valueFrom:
+    secretKeyRef:
+      name: minio-keys
+      key: secretkey
+{{- end -}}
+
+{{- define "sslEnvVars" -}}
+- name: SSL_KEYSTORE
+  value: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.keyStoreName }}"
+- name: SSL_KEYSTORETYPE
+  value: {{ .Values.deltafi.ssl.keyStoreType }}
+- name: SSL_PROTOCOL
+  value: {{ .Values.deltafi.ssl.protocol }}
+- name: SSL_TRUSTSTORE
+  value: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.trustStoreName }}"
+- name: SSL_TRUSTSTORETYPE
+  value: {{ .Values.deltafi.ssl.trustStoreType }}
+{{- end -}}
+
+{{- define "mongoEnvVars" -}}
+- name: MONGO_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: mongodb-passwords
+      key: mongodb-password
+{{- end -}}
+
 {{- define "keyStorePasswordSecret"  -}}
 - secretRef:
-    name: {{ .Values.deltafi.keyStore.passwordSecret }}
+    name: {{ .Values.deltafi.ssl.passwordSecret }}
     optional: true
 {{- end -}}
 
 {{- define "keyVolumeMounts" -}}
-- mountPath: "{{ .Values.deltafi.keyStore.mountPath }}/{{ .Values.deltafi.keyStore.keyStoreName }}"
+- mountPath: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.keyStoreName }}"
   name: keystore
   readOnly: true
-  subPath: {{ .Values.deltafi.keyStore.keyStoreName }}
-- mountPath: "{{ .Values.deltafi.keyStore.mountPath }}/{{ .Values.deltafi.keyStore.trustStoreName }}"
+  subPath: {{ .Values.deltafi.ssl.keyStoreName }}
+- mountPath: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.trustStoreName }}"
   name: keystore
   readOnly: true
-  subPath: {{ .Values.deltafi.keyStore.trustStoreName }}
+  subPath: {{ .Values.deltafi.ssl.trustStoreName }}
 {{- end -}}
 
 {{- define "keyVolumes" -}}
 - name: keystore
   secret:
-    secretName: {{ .Values.deltafi.keyStore.secret }}
+    secretName: {{ .Values.deltafi.ssl.secret }}
     optional: true
 {{- end -}}
 
 {{- define "actionContainerSpec" -}}
 env:
-{{- with .Values.deltafi.actions.envVars }}
-{{- toYaml . | nindent 2 }}
-{{- end }}
-{{- with .Values.deltafi.envVars }}
-{{- toYaml . | nindent 2 }}
-{{- end }}
+  - name: ACTIONS_HOSTNAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  - name: SPRING_CONFIG_IMPORT
+    value: configserver:http://deltafi-core-service/config
+{{- include "commonEnvVars" . | nindent 2 }}
+{{- include "sslEnvVars" . | nindent 2 }}
 envFrom:
 {{- include "keyStorePasswordSecret" . | nindent 2 }}
 volumeMounts:
@@ -131,13 +186,14 @@ volumeMounts:
 {{- end -}}
 
 {{- define "coreEnvVars" -}}
-{{- with .Values.deltafi.envVars }}
-{{- toYaml . }}
-{{ end }}
-{{- with .Values.deltafi.core.envVars }}
-{{- toYaml . }}
+- name: DELTAFI_API_URL
+  value: "http://deltafi-api-service"
+- name: DELTAFI_CONFIG_IMPORT
+  value: deltafi:mongodb=true&git=false
+{{ include "commonEnvVars" . }}
+{{ include "sslEnvVars" . }}
+{{ include "mongoEnvVars" . }}
 {{- end }}
-{{- end -}}
 
 {{- define "coreVolumeMounts" -}}
 {{- include "keyVolumeMounts" . }}

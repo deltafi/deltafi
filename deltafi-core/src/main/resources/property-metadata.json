@@ -13,71 +13,9 @@
         "editable": true
       },
       {
-        "key": "metrics.periodSeconds",
-        "description": "Enable reporting of metrics to statsd/graphite",
-        "defaultValue": "10",
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "metrics.statsd.hostname",
-        "description": "Host name for statsd collector endpoint",
-        "defaultValue": "deltafi-graphite",
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "metrics.statsd.port",
-        "description": "Port for statsd collector endpoint",
-        "defaultValue": "8125",
-        "hidden": false,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "spring.data.mongodb.host",
-        "description": "Mongo server host. Cannot be set with URI.",
-        "defaultValue": "deltafi-mongodb"
-      },
-      {
-        "key": "spring.data.mongodb.port",
-        "description": "Mongo server port. Cannot be set with URI.",
-        "defaultValue": "27017"
-      },
-      {
-        "key": "spring.data.mongodb.database",
-        "description": "Database name.",
-        "defaultValue": "deltafi"
-      },
-      {
-        "key": "spring.data.mongodb.username",
-        "description": "Login user of the mongo server. Cannot be set with URI.",
-        "defaultValue": "mongouser"
-      },
-      {
-        "key": "spring.data.mongodb.password",
-        "description": "Login password of the mongo server. Cannot be set with URI.",
-        "defaultValue": "${MONGO_PASSWORD}"
-      },
-      {
-        "key": "spring.data.mongodb.authentication-database",
-        "description": "Authentication database name.",
-        "defaultValue": "deltafi"
-      },
-      {
         "key": "spring.task.scheduling.pool.size",
         "description": "Maximum allowed number of threads.",
         "defaultValue": "32"
-      },
-      {
-        "key": "deltafi.apiUrl",
-        "description": "The URL used to reach the DeltaFi API",
-        "defaultValue": "http://deltafi-api-service",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
       },
       {
         "key": "deltafi.checks.actionQueue.sizeThreshold",
@@ -175,31 +113,6 @@
         "editable": true
       },
       {
-        "key": "graphql.urls.core",
-        "description": "URL of the core service",
-        "defaultValue": "http://deltafi-core-service/graphql"
-      },
-      {
-        "key": "minio.url",
-        "description": "The URL used to reach MinIO",
-        "defaultValue": "http://deltafi-minio:9000"
-      },
-      {
-        "key": "minio.access-key",
-        "description": "The access-key used to access MinIO",
-        "defaultValue": "${MINIO_ACCESSKEY}"
-      },
-      {
-        "key": "minio.secret-key",
-        "description": "The secret-key used to access MinIO",
-        "defaultValue": "${MINIO_SECRETKEY}"
-      },
-      {
-        "key": "minio.part-size",
-        "description": "Limit the upload size to MinIO to the given size.",
-        "defaultValue": "100000000"
-      },
-      {
         "key": "minio.expiration-days",
         "description": "Maximum number of days to keep objects in minio",
         "defaultValue": "13",
@@ -208,93 +121,11 @@
         "editable": true
       },
       {
-        "key": "redis.url",
-        "description": "The URL used to reach redis",
-        "defaultValue": "http://deltafi-redis-master:6379"
-      },
-      {
-        "key": "redis.password",
-        "description": "The password used to access redis",
-        "defaultValue": "${REDIS_PASSWORD}"
-      },
-      {
         "key": "deltafi.systemName",
         "description": "Name of the DeltaFi cluster",
         "defaultValue": "deltafi",
         "editable": true,
         "refreshable": true
-      },
-      {
-        "key": "ssl.protocol",
-        "description": "The SSL protocol to use.",
-        "editable": true,
-        "defaultValue": "TLSv1.2"
-      },
-      {
-        "key": "ssl.key-store",
-        "description": "The path to the key store that holds the SSL certificate.",
-        "editable": true,
-        "defaultValue": "/etc/pki/keyStore.p12"
-      },
-      {
-        "key": "ssl.key-store-password",
-        "description": "The password used to access the key store. This should be set via the KEYSTORE_PASSWORD environment variable.",
-        "editable": false,
-        "defaultValue": "${KEYSTORE_PASSWORD:not-set}"
-      },
-      {
-        "key": "ssl.key-store-type",
-        "description": "The type of the key store.",
-        "editable": true,
-        "defaultValue": "PKCS12"
-      },
-      {
-        "key": "ssl.trust-store",
-        "description": "The path to the trust store that holds SSL certificates.",
-        "editable": true,
-        "defaultValue": "/etc/pki/trustStore.jks"
-      },
-      {
-        "key": "ssl.trust-store-password",
-        "description": "The password used to access the trust store. This should be set via the TRUSTSTORE_PASSWORD environment variable.",
-        "editable": false,
-        "defaultValue": "${TRUSTSTORE_PASSWORD:not-set}"
-      },
-      {
-        "key": "ssl.trust-store-type",
-        "description": "The type of the trust store.",
-        "editable": true,
-        "defaultValue": "JKS"
-      }
-    ]
-  },
-  {
-    "id": "action-kit",
-    "displayName": "Action-Kit Properties",
-    "description": "Properties shared across all installed actions.",
-    "properties": [
-      {
-        "key": "actions.coreUrl",
-        "description": "The URL used to reach DeltaFi Core",
-        "defaultValue": "http://deltafi-core-service",
-        "hidden": true,
-        "refreshable": false,
-        "editable": false
-      },
-      {
-        "key": "actions.action-polling-initial-delay-ms",
-        "description": "Initial delay before actions begin listening for work.",
-        "defaultValue": "3000"
-      },
-      {
-        "key": "actions.action-polling-period-ms",
-        "description": "Set how often actions should listen for new work.",
-        "defaultValue": "100"
-      },
-      {
-        "key": "actions.hostname",
-        "description": "Hostname of the server running the action.",
-        "defaultValue": null
       }
     ]
   }

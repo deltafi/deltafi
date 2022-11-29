@@ -23,6 +23,8 @@ spec:
         image: {{ .Values.deltafi.core.image }}
         env:
         {{- include "coreEnvVars" . | nindent 8 }}
+        envFrom:
+        {{- include "keyStorePasswordSecret" . | nindent 8 }}
         ports:
         - containerPort: 8080
         {{- include "defaultStartupProbe" . | nindent 8 }}

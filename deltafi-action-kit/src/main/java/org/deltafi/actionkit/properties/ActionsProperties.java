@@ -27,6 +27,4 @@ public class ActionsProperties {
     private long actionPollingPeriodMs = 100L;
 
     private String hostname;
-
-    private String coreUrl;
 }

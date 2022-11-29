@@ -46,22 +46,23 @@ def _coordinates():
     }
 
 
-def _setup_config_client(core_host):
-    client = ConfigServerClient(f"http://{core_host}/config")
+def _setup_config_client(core_url):
+    client = ConfigServerClient(f"{core_url}/config")
     client.sync()
     return client
 
 
-def _setup_queue(config_client, max_connections):
-    redis_url = os.getenv('DELTAFI_REDIS_MASTER_PORT')
-    password = config_client.deltafi_common('redis.password')
+def _setup_queue(max_connections):
+    redis_url = os.getenv('REDIS_URL', 'http://deltafi-redis-master:6379')
+    password = os.getenv('REDIS_PASSWORD')
     return ActionEventQueue(redis_url, max_connections, password)
 
 
-def _setup_content_service(config_client):
-    return ContentService(config_client.deltafi_common('minio.url'),
-                          config_client.deltafi_common('minio.access-key'),
-                          config_client.deltafi_common('minio.secret-key'))
+def _setup_content_service():
+    minio_url = os.getenv('MINIO_URL', 'http://deltafi-minio:9000')
+    return ContentService(minio_url,
+                          os.getenv('MINIO_ACCESSKEY'),
+                          os.getenv('MINIO_SECRETKEY'))
 
 
 class Plugin(object):
@@ -70,10 +71,9 @@ class Plugin(object):
         self.description = description
         self.coordinates = _coordinates()
 
-        self.core_host = os.getenv('DELTAFI_CORE_SERVICE_SERVICE_HOST')
-        self.config_client = _setup_config_client(self.core_host)
-        self.queue = _setup_queue(self.config_client, len(self.actions))
-        self.content_service = _setup_content_service(self.config_client)
+        self.core_url = os.getenv('CORE_URL')
+        self.queue = _setup_queue(len(self.actions))
+        self.content_service = _setup_content_service()
 
         if os.getenv('ACTIONS_HOSTNAME'):
             self.hostname = os.getenv('ACTIONS_HOSTNAME')
@@ -113,7 +113,7 @@ class Plugin(object):
         flows = [json.load(open(join(flows_path, f))) for f in flow_files]
         actions = [self._action_json(action) for action in self.actions]
 
-        url = f"http://{self.core_host}/plugins"
+        url = f"{self.core_url}/plugins"
         headers = {'Content-type': 'application/json'}
         registration_json = \
             {

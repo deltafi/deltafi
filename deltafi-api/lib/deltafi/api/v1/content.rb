@@ -77,11 +77,14 @@ module Deltafi
           def minio_client
             return @minio_client unless @minio_client.nil?
 
-            properties = DF.system_properties
+            minio_url = ENV['MINIO_URL'] || 'http://deltafi-minio:9000'
+            minio_access_key = ENV['MINIO_ACCESSKEY']
+            minio_secret_key = ENV['MINIO_SECRETKEY']
+
             Aws.config.update(
-              endpoint: properties['minio.url'],
-              access_key_id: properties['minio.access-key'],
-              secret_access_key: properties['minio.secret-key'],
+              endpoint: minio_url,
+              access_key_id: minio_access_key,
+              secret_access_key: minio_secret_key,
               force_path_style: true,
               region: MINIO_REGION
             )

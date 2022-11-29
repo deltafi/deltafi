@@ -28,6 +28,7 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
@@ -55,12 +56,15 @@ public class PluginRegistrar {
     @Autowired
     ActionsProperties actionsProperties;
 
+    @Value("${CORE_URL:http://deltafi-core-service}")
+    private String coreUrl;
+
     public void register() {
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
 
-        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, actionsProperties.getCoreUrl());
+        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl);
         coreClient.postPlugin(pluginRegistration);
     }
 
