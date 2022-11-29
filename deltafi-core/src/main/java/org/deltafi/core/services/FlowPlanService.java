@@ -98,7 +98,17 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     }
 
     /**
-     * Remove all the flows and flow pPlans with the given sourcePlugin
+     * Remove flows and flows plans that were created for a different version
+     * of this plugin
+     * @param pluginCoordinates current coordinates
+     */
+    public void pruneFlowsAndPlans(PluginCoordinates pluginCoordinates) {
+        flowPlanRepo.deleteOtherVersions(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion());
+        flowService.pruneFlows(pluginCoordinates);
+    }
+
+    /**
+     * Remove all the flows and flow plans with the given sourcePlugin
      * @param pluginCoordinates sourcePlugin whose flows and flow plans should be removed
      * @return number of plan that were removed
      */

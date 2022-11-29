@@ -93,6 +93,8 @@ public class PluginRegistryService implements Snapshotter {
             });
         }
 
+        pruneFlowsAndPlans(pluginRegistration.getPluginCoordinates());
+
         return Result.newBuilder().success(true).build();
     }
 
@@ -224,6 +226,12 @@ public class PluginRegistryService implements Snapshotter {
         }
 
         return errors;
+    }
+
+    void pruneFlowsAndPlans(PluginCoordinates pluginCoordinates) {
+        ingressFlowPlanService.pruneFlowsAndPlans(pluginCoordinates);
+        enrichFlowPlanService.pruneFlowsAndPlans(pluginCoordinates);
+        egressFlowPlanService.pruneFlowsAndPlans(pluginCoordinates);
     }
 
     public void uninstallPlugin(PluginCoordinates pluginCoordinates) {

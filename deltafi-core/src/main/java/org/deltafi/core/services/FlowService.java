@@ -320,6 +320,15 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
+     * Remove flow plans and flows that were created for a different version
+     * of this plugin
+     * @param pluginCoordinates current coordinates
+     */
+    public void pruneFlows(PluginCoordinates pluginCoordinates) {
+        flowRepo.deleteOtherVersions(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion());
+    }
+
+    /**
      * Determine if there are any running flows created from this plugin
      * @param plugin that will be removed if there are no blockers
      * @return null if there are no running flows, otherwise an error message with list

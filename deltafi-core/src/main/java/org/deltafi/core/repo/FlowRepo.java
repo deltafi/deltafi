@@ -20,6 +20,7 @@ package org.deltafi.core.repo;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.Flow;
+import org.springframework.data.mongodb.repository.DeleteQuery;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 
@@ -35,6 +36,16 @@ public interface FlowRepo<T extends Flow> extends MongoRepository<T, String>, Fl
      * @return - the number of flows deleted
      */
     int deleteBySourcePlugin(PluginCoordinates sourcePlugin);
+
+
+    /**
+     * Remove flow for this groupId:artifactId where the version is different
+     * @param groupId of flow to remove
+     * @param artifactId of flow to remove
+     * @param version current version that should be preserved
+     */
+    @DeleteQuery("{ 'sourcePlugin.groupId': ?0, 'sourcePlugin.artifactId': ?1 , 'sourcePlugin.version': {$ne: ?2}}")
+    void deleteOtherVersions(String groupId, String artifactId, String version);
 
     /**
      * Find a list of flows with the given flow state

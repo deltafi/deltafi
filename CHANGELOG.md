@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - Issue where syncing properties was thrashing between multiple instances of `deltafi-core`
 - Ingressing zero-byte file returned an error code, despite successful processing
+- Remove flow plans and flows that are no longer part of a plugin on upgrade
 
 ### Tech-Debt/Refactor
 

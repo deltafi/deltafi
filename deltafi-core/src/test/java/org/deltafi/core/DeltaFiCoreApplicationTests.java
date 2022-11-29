@@ -183,6 +183,9 @@ class DeltaFiCoreApplicationTests {
 	IngressFlowService ingressFlowService;
 
 	@Autowired
+	IngressFlowPlanService ingressFlowPlanService;
+
+	@Autowired
 	EgressFlowService egressFlowService;
 
 	@Autowired
@@ -2754,6 +2757,42 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.saveAll(List.of(egressFlowA, egressFlowB, egressFlowC));
 		assertThat(egressFlowRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
 		assertThat(egressFlowRepo.count()).isEqualTo(1);
+	}
+
+	@Test
+	void testDeleteByOtherVersions() {
+		clearForFlowTests();
+		PluginCoordinates newCoordinates = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("2.0.0").build();
+
+		IngressFlow ingressFlowA = new IngressFlow();
+		ingressFlowA.setName("a");
+		ingressFlowA.setSourcePlugin(newCoordinates);
+
+		IngressFlow ingressFlowB = new IngressFlow();
+		ingressFlowB.setName("b");
+		ingressFlowB.setSourcePlugin(newCoordinates);
+
+		// flow c has a different version and should be removed
+		IngressFlow ingressFlowC = new IngressFlow();
+		ingressFlowC.setName("c");
+		ingressFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build());
+		ingressFlowRepo.saveAll(List.of(ingressFlowA, ingressFlowB, ingressFlowC));
+
+		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("a", null, null);
+		ingressFlowPlanA.setSourcePlugin(newCoordinates);
+		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b", null, null);
+		ingressFlowPlanB.setSourcePlugin(newCoordinates);
+		IngressFlowPlan ingressFlowPlanC = new IngressFlowPlan("c", null, null);
+		ingressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build());
+		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC));
+
+		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(3).contains("a", "b", "c");
+		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).collect(Collectors.toList())).hasSize(3).contains("a", "b", "c");
+
+		ingressFlowPlanService.pruneFlowsAndPlans(newCoordinates);
+
+		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(2).contains("a", "b");
+		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).collect(Collectors.toList())).hasSize(2).contains("a", "b");
 	}
 
 	@Test
