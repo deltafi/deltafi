@@ -175,7 +175,8 @@ class Plugin(object):
                     'action': event.context.action_name,
                     'start': time.time(),
                     'stop': time.time(),
-                    'type': result.result_type
+                    'type': result.result_type,
+                    'metrics': [metric.json() for metric in result.metrics]
                 }
                 if result.result_key is not None:
                     response[result.result_key] = result.response()

@@ -18,6 +18,7 @@
 from deltafi.domain import *
 from deltafi.exception import MissingMetadataException, MissingSourceMetadataException, ExpectedContentException, \
     MissingDomainException, MissingEnrichmentException
+from typing import Dict, List, NamedTuple
 
 
 class DomainInput(NamedTuple):

@@ -19,6 +19,7 @@ import abc
 from typing import Dict, List
 
 from deltafi.domain import Content
+from deltafi.metric import Metric
 from deltafi.storage import ContentReference
 
 
@@ -28,10 +29,14 @@ class Result:
     def __init__(self, result_key, result_type):
         self.result_key = result_key
         self.result_type = result_type
+        self.metrics = []
 
     @abc.abstractmethod
     def response(self):
         pass
+
+    def add_metric(self, metric: Metric):
+        self.metrics.append(metric)
 
 
 class DomainResult(Result):
