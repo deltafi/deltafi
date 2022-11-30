@@ -16,21 +16,91 @@
    limitations under the License.
 */
 
-import { faker } from "@faker-js/faker";
-faker.seed(123);
-
-const generateData = (count: number) => {
-  return Array.from(Array(count)).map(() => {
-    return {
-      id: faker.random.numeric(),
-      name: faker.name.findName(),
-      dn: null,
-      username: faker.internet.userName(),
-      domains: "*",
-      created_at: "2022-06-16 03:16:08 +0000",
-      updated_at: "2022-06-16 03:18:15 +0000",
-    };
-  });
+const generateData = () => {
+  return [
+    {
+      id: 1,
+      name: "Admin",
+      dn: "CN=Admin, C=US",
+      username: "admin",
+      created_at: "2022-11-28T18:27:26.534Z",
+      updated_at: "2022-11-28T18:40:05.194Z",
+      roles: [
+        {
+          id: 1,
+          name: "Admin",
+          permissions: [
+            "Admin"
+          ],
+          created_at: "2022-11-28T18:27:26.243Z",
+          updated_at: "2022-11-28T18:27:26.243Z"
+        }
+      ],
+      permissions: [
+        "Admin"
+      ]
+    },
+    {
+      id: 2,
+      name: "John Doe",
+      dn: "CN=John Doe",
+      username: "johndoe",
+      created_at: "2022-11-30T19:57:58.074Z",
+      updated_at: "2022-11-30T19:57:58.109Z",
+      roles: [
+        {
+          id: 2,
+          name: "Ingress Only",
+          permissions: [
+            "DeltaFileIngress"
+          ],
+          created_at: "2022-11-28T18:27:26.318Z",
+          updated_at: "2022-11-28T18:27:26.318Z"
+        },
+        {
+          id: 3,
+          name: "Read Only",
+          permissions: [
+            "DashboardView",
+            "DeletePolicyRead",
+            "DeltaFileContentView",
+            "DeltaFileMetadataView",
+            "FlowView",
+            "IngressRoutingRuleRead",
+            "MetricsView",
+            "PluginCustomizationConfigView",
+            "PluginImageRepoView",
+            "PluginsView",
+            "SnapshotRead",
+            "StatusView",
+            "SystemPropertiesRead",
+            "UIAccess",
+            "VersionsView"
+          ],
+          created_at: "2022-11-28T18:27:26.435Z",
+          updated_at: "2022-11-28T18:27:26.435Z"
+        }
+      ],
+      permissions: [
+        "DashboardView",
+        "DeletePolicyRead",
+        "DeltaFileContentView",
+        "DeltaFileIngress",
+        "DeltaFileMetadataView",
+        "FlowView",
+        "IngressRoutingRuleRead",
+        "MetricsView",
+        "PluginCustomizationConfigView",
+        "PluginImageRepoView",
+        "PluginsView",
+        "SnapshotRead",
+        "StatusView",
+        "SystemPropertiesRead",
+        "UIAccess",
+        "VersionsView"
+      ]
+    }
+  ]
 };
 
-export default generateData(100);
+export default generateData();

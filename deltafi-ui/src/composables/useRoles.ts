@@ -20,56 +20,53 @@ import { ref, Ref } from 'vue'
 import useApi from './useApi'
 import useNotifications from "./useNotifications";
 
-export default function useUsers() {
+export default function useRoles() {
   const notify = useNotifications();
-  const { response, get, put, remove: deleteUser, post, loading, loaded } = useApi();
-  const endpoint: string = 'users';
+  const { response, get, put, remove: deleteRole, post, loading, loaded } = useApi();
+  const endpoint: string = 'roles';
   const data: Ref<Array<any>> = ref([]);
   const errors: Ref<Array<string>> = ref([]);
 
   const fetch = async () => {
     try {
       await get(endpoint);
-      data.value = response.value.map((user: any) => {
-        user.role_ids = user.roles.map((role: any) => role.id)
-        return user;
-      });
+      data.value = response.value;
     } catch (response: any) {
       processErrorResponse(response);
       return Promise.reject(response);
     }
   }
 
-  const update = async (id: number, userObject: Record<string, any>) => {
+  const update = async (id: number, roleObject: Record<string, any>) => {
     const path = `${endpoint}/${id}`;
 
-    for (const property in userObject) {
-      if (userObject[property] === "") userObject[property] = null;
+    for (const property in roleObject) {
+      if (roleObject[property] === "") roleObject[property] = null;
     }
 
     try {
-      await put(path, userObject);
-      notify.info("User Updated", userObject.name)
+      await put(path, roleObject);
+      notify.info("Role Updated", roleObject.name)
     } catch (response: any) {
       processErrorResponse(response);
       return Promise.reject(response);
     }
   }
 
-  const remove = async (userObject: Record<string, string>) => {
+  const remove = async (roleObject: Record<string, string>) => {
     try {
-      await deleteUser(endpoint, userObject.id);
-      notify.warn("User Deleted", userObject.name)
+      await deleteRole(endpoint, roleObject.id);
+      notify.warn("Role Deleted", roleObject.name)
     } catch (response: any) {
       processErrorResponse(response);
       return Promise.reject(response);
     }
   }
 
-  const create = async (userObject: Record<string, string>) => {
+  const create = async (roleObject: Record<string, string>) => {
     try {
-      await post(endpoint, userObject);
-      notify.info("User Created", userObject.name)
+      await post(endpoint, roleObject);
+      notify.info("Role Created", roleObject.name)
     } catch (response: any) {
       processErrorResponse(response);
       return Promise.reject(response);

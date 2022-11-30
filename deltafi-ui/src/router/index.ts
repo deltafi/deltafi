@@ -142,6 +142,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: "/admin/roles",
+    name: "Roles",
+    component: () => import("@/pages/RolesPage.vue"),
+    meta: {
+      permission: "RoleRead",
+    },
+  },
+  {
     path: "/admin/audit",
     name: "Audit Log",
     component: () => import("@/pages/AuditLogPage.vue"),

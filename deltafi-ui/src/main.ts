@@ -30,6 +30,7 @@ import BadgeDirective from "primevue/badgedirective";
 import PageHeader from "@/components/PageHeader.vue";
 import useCurrentUser from "@/composables/useCurrentUser";
 import useUiConfig from "@/composables/useUiConfig";
+import usePermissions from "@/composables/usePermissions";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -52,8 +53,9 @@ if (process.env.NODE_ENV === "development") {
 
 const { fetchCurrentUser } = useCurrentUser();
 const { fetchUiConfig } = useUiConfig();
+const { fetchAppPermissions } = usePermissions();
 
-Promise.all([fetchCurrentUser(), fetchUiConfig()]).then((values) => {
+Promise.all([fetchCurrentUser(), fetchUiConfig(), fetchAppPermissions()]).then((values) => {
   const app = createApp(App);
   app.use(auth, values[0], router);
   app.use(router);

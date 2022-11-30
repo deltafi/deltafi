@@ -185,7 +185,7 @@ const staticMenuItems = ref([
   {
     name: "Administration",
     expand: true,
-    visible: computed(() => hasPermission("UserRead")),
+    visible: computed(() => hasSomePermissions("UserRead", "RoleRead")),
     children: [
       {
         name: "Audit Log",
@@ -198,6 +198,12 @@ const staticMenuItems = ref([
         icon: "fas fa-users fa-fw",
         path: "/admin/users",
         visible: computed(() => hasPermission("UserRead")),
+      },
+      {
+        name: "Roles",
+        icon: "far fa-id-badge fa-fw",
+        path: "/admin/roles",
+        visible: computed(() => hasPermission("RoleRead")),
       },
       {
         name: "Kubernetes Dashboard",

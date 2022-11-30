@@ -1,4 +1,4 @@
-/*
+<!--
    DeltaFi - Data transformation and enrichment platform
 
    Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
@@ -14,31 +14,37 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-*/
+-->
 
-.users-panel {
-  td.id-col {
-    width: 1rem;
-  }
-  td.dn-col {
-    font-family: monospace;
-    font-size: 90%;
-  }
-  td.timestamp-col {
-    font-size: 90%;
-    width: 12rem;
-  }
-  td.domains-col {
-    .badge {
-      background-color: #dee2e6;
-      font-size: 90%;
-      font-weight: normal;
-    }
-  }
-}
+<template>
+  <span v-tooltip.top="props.permission.description" :class="classes">{{ props.permission.name }}</span>
+</template>
 
-.user-dialog {
-  .p-tabview .p-tabview-panels {
-    padding: 1rem 0 0 0;
+<script setup>
+import { computed, defineProps } from 'vue';
+
+const props = defineProps({
+  permission: {
+    type: Object,
+    required: true,
+  },
+  enabled: {
+    type: Boolean,
+    required: false,
+    default: true
   }
+});
+
+const classes = computed(() => {
+  const classes = ["badge", "badge-pill"];
+  classes.push(props.enabled ? "badge-primary" : "badge-disabled");
+  return classes.join(" ");
+})
+</script>
+
+<style lang="scss">
+.badge-disabled {
+  background-color: #919ca6;
+  color: #FFFFFF;
 }
+</style>

@@ -33,11 +33,17 @@
         </template>
         <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :field="col.field" :header="col.header" :sortable="col.sortable" :class="col.class">
           <template #body="{ data, field }">
-            <span v-if="field == 'domains'">
-              <span v-for="domain in data.domains.split(',')" :key="domain" class="badge badge-pill mr-2">{{ domain }}</span>
+            <span v-if="field == 'roles'">
+              <RolePill v-for="role in data.roles" :key="role.id" class="mr-1" :role="role" />
+            </span>
+            <span v-else-if="field == 'permissions'">
+              <PermissionPill v-for="permissionName in data.permissions" :key="permissionName" class="mr-1" :permission="appPermissionsByName[permissionName]" />
             </span>
             <span v-else-if="['created_at', 'updated_at'].includes(field)">
               <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss"></Timestamp>
+            </span>
+            <span v-else-if="['name'].includes(field)">
+              <span class="cursor-pointer" @click="showUser(data)">{{ data.name }}</span>
             </span>
             <span v-else>{{ data[field] }}</span>
           </template>
@@ -50,46 +56,59 @@
         </Column>
       </DataTable>
     </Panel>
-    <Dialog v-model:visible="userDialog" :style="{ width: '50vw' }" header="User Details" :modal="true" class="p-fluid user-dialog">
+    <Dialog v-model:visible="userDialog" :style="{ width: '60vw' }" header="User Details" :modal="true" class="p-fluid user-dialog">
       <Message v-if="errors.length" severity="error">
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
-      <h5>Name</h5>
-      <div class="field mb-2">
-        <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" autocomplete="off" placeholder="e.g. Jane Doe" />
+      <div class="mb-3">
+        <h5>Name</h5>
+        <div class="field mb-2">
+          <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" autocomplete="off" placeholder="e.g. Jane Doe" :disabled="isReadOnly" />
+        </div>
       </div>
-      <h5 class="mt-3">Domains</h5>
-      <div class="field mb-2">
-        <Chips v-model="domains" :add-on-blur="true" />
+      <div class="mb-3">
+        <h5>Authentication</h5>
+        <TabView :active-index="activeTabIndex">
+          <TabPanel header="Basic">
+            <Message v-if="uiConfig.authMode != 'basic' && !isReadOnly" severity="warn">
+              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
+              This must be set to <strong>basic</strong> before changes to this section will take effect.
+            </Message>
+            <div class="field mb-2">
+              <label for="dn">Username</label>
+              <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" :disabled="isReadOnly" />
+            </div>
+            <div v-if="!isReadOnly" class="field mb-2">
+              <label for="dn">Password</label>
+              <Password v-model="user.password" autocomplete="off" toggle-mask></Password>
+            </div>
+          </TabPanel>
+          <TabPanel header="Certificate">
+            <Message v-if="uiConfig.authMode != 'cert' && !isReadOnly" severity="warn">
+              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
+              This must be set to <strong>cert</strong> before changes to this section will take effect.
+            </Message>
+            <div class="field mb-2">
+              <label for="dn">Distinguished Name (DN)</label>
+              <InputText id="DN" v-model="user.dn" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" :disabled="isReadOnly" />
+            </div>
+          </TabPanel>
+        </TabView>
       </div>
-      <h5 class="mt-3">Authentication</h5>
-      <TabView :active-index="activeTabIndex">
-        <TabPanel header="Basic">
-          <Message v-if="uiConfig.authMode != 'basic'" severity="warn">
-            Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
-            This must be set to <strong>basic</strong> before changes to this section will take effect.
-          </Message>
-          <div class="field mb-2">
-            <label for="dn">Username</label>
-            <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" />
-          </div>
-          <div class="field mb-2">
-            <label for="dn">Password</label>
-            <Password v-model="user.password" autocomplete="off" toggle-mask></Password>
-          </div>
-        </TabPanel>
-        <TabPanel header="Certificate">
-          <Message v-if="uiConfig.authMode != 'cert'" severity="warn">
-            Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
-            This must be set to <strong>cert</strong> before changes to this section will take effect.
-          </Message>
-          <div class="field mb-2">
-            <label for="dn">Distinguished Name (DN)</label>
-            <InputText id="DN" v-model="user.dn" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" />
-          </div>
-        </TabPanel>
-      </TabView>
-      <template #footer>
+      <div class="mb-3">
+        <h5>Roles</h5>
+        <div v-for="role in roles" :key="role.id" class="field-checkbox">
+          <Checkbox v-model="user.role_ids" :input-id="role.name" name="role" :value="role.id" :disabled="isReadOnly" />
+          <label :for="role.name">
+            <RolePill :role="role" :enabled="user.role_ids.includes(role.id)" />
+          </label>
+        </div>
+      </div>
+      <div v-if="isReadOnly" class="mb-3">
+        <h5>Permissions</h5>
+        <PermissionCheckboxes v-model="user.permissions" :read-only="true" />
+      </div>
+      <template v-if="!isReadOnly" #footer>
         <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
         <Button label="Save" icon="pi pi-check" class="p-button-text" @click="saveUser" />
       </template>
@@ -114,47 +133,50 @@ import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
-import Chips from "primevue/chips";
 import Message from "primevue/message";
 import Button from "primevue/button";
 import PageHeader from "@/components/PageHeader.vue";
+import RolePill from "@/components/RolePill.vue";
 import Panel from "primevue/panel";
 import useUsers from "@/composables/useUsers";
+import useRoles from "@/composables/useRoles";
 import Timestamp from "@/components/Timestamp.vue";
 import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import MultiSelect from 'primevue/multiselect'
+import Checkbox from 'primevue/checkbox';
+import usePermissions from "@/composables/usePermissions";
+import PermissionPill from "@/components/PermissionPill.vue";
+import PermissionCheckboxes from "@/components/PermissionCheckboxes.vue";
 
 const submitted = ref(false);
-const user = ref({});
+const user = ref({ role_ids: [] });
 const userDialog = ref(false);
 const deleteUserDialog = ref(false);
 const isNew = ref(false);
+const isReadOnly = ref(false);
 const { data: users, fetch: fetchUsers, create, remove: removeUser, update: updateUser, errors } = useUsers();
+const { data: roles, fetch: fetchRoles } = useRoles();
+const { appPermissionsByName } = usePermissions();
 const uiConfig = inject('uiConfig');
-const domains = ref();
 const activeTabIndex = ref(0);
 const selectedColumns = ref([]);
 const columns = ref([
-  { field: "id", header: "ID", sortable: true, class: "id-col" },
   { field: "name", header: "Name", sortable: true },
   { field: "dn", header: "DN", sortable: true, class: "dn-col", hideInAuthMode: 'basic' },
   { field: "username", header: "Username", sortable: true, hideInAuthMode: 'cert' },
-  { field: "domains", header: "Domains", sortable: true, class: "domains-col" },
+  { field: "roles", header: "Roles", sortable: true },
+  { field: "permissions", header: "Permissions", sortable: true, hidden: true },
   { field: "created_at", header: "Added", sortable: true, class: "timestamp-col" },
   { field: "updated_at", header: "Updated", sortable: true, class: "timestamp-col" },
 ]);
-
-watch(uiConfig, () => {
-  selectedColumns.value = columns.value.filter(col => col.hideInAuthMode !== uiConfig.authMode);
-});
 
 const onToggle = (val) => {
   selectedColumns.value = columns.value.filter(col => val.includes(col));
 };
 
 const hideDialog = () => {
-  user.value = {};
+  user.value = { role_ids: [] };
   userDialog.value = false;
   isNew.value = false;
   deleteUserDialog.value = false;
@@ -163,23 +185,29 @@ const hideDialog = () => {
 const editUser = (userInfo) => {
   errors.value.splice(0, errors.value.length)
   user.value = { ...userInfo };
-  domains.value = user.value.domains.split(',')
   isNew.value = false;
+  isReadOnly.value = false;
+  userDialog.value = true;
+};
+
+const showUser = (userInfo) => {
+  user.value = { ...userInfo };
+  isNew.value = false;
+  isReadOnly.value = true;
   userDialog.value = true;
 };
 
 const newUser = () => {
   errors.value.splice(0, errors.value.length)
-  user.value = {};
-  domains.value = [uiConfig.domain];
+  user.value = { role_ids: [] };
   isNew.value = true;
+  isReadOnly.value = false;
   submitted.value = false
   userDialog.value = true;
 };
 
 const saveUser = async () => {
-  user.value.domains = domains.value.join(',');
-  const { id, created_at, updated_at, ...saveParams } = user.value; // eslint-disable-line no-unused-vars
+  const { id, created_at, updated_at, roles, permissions, ...saveParams } = user.value; // eslint-disable-line no-unused-vars
   try {
     isNew.value ? await create(saveParams) : await updateUser(user.value.id, saveParams)
     await fetchUsers();
@@ -203,7 +231,8 @@ const deleteUser = async () => {
 
 onMounted(() => {
   fetchUsers();
-  selectedColumns.value = columns.value.filter(col => col.hideInAuthMode !== uiConfig.authMode);;
+  fetchRoles();
+  selectedColumns.value = columns.value.filter(col => col.hideInAuthMode !== uiConfig.authMode && !col.hidden);;
 });
 
 watch(() => userDialog.value, (newValue) => {
@@ -214,5 +243,44 @@ watch(() => userDialog.value, (newValue) => {
 </script>
 
 <style lang="scss">
-@import "@/styles/pages/users-page.scss";
+.users-panel {
+  td.id-col {
+    width: 1rem;
+  }
+
+  td.dn-col {
+    font-family: monospace;
+    font-size: 90%;
+  }
+
+  td.timestamp-col {
+    font-size: 90%;
+    width: 12rem;
+  }
+
+  td.domains-col {
+    .badge {
+      background-color: #dee2e6;
+      font-size: 90%;
+      font-weight: normal;
+    }
+  }
+}
+
+.user-dialog {
+  .p-tabview .p-tabview-panels {
+    padding: 1rem 0 0 0;
+  }
+
+  .field-checkbox {
+    display: flex;
+
+    label {
+      display: flex;
+      align-items: center;
+      margin-top: .15rem;
+      margin-left: 0.4rem;
+    }
+  }
+}
 </style>

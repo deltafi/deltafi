@@ -45,24 +45,15 @@ The app should then be available at http://localhost:8080/.
 
 ##### API/GraphQL Proxy
 
-By default, the internal Dev Server is configured to proxy `/api` and `/graphql` requests to dev.deltafi.org. This can be overridden using the environment variables described in the table below.
+By default, the internal Dev Server is configured to proxy `/api` and `/graphql` requests to dev.deltafi.org. This can be overridden using the `DELTAFI_DOMAIN` environment variable.
 
-| Path                 | Default Proxy Destination       | Override Environment Variable |
-| -------------------- | ------------------------------- | ----------------------------- |
-| `/api`               | https://dev.deltafi.org         | `DELTAFI_API_URL`             |
-| `/graphql`           | https://gateway.dev.deltafi.org | `DELTAFI_GATEWAY_URL`         |
-| `/deltafile/ingress` | https://ingress.dev.deltafi.org | `DELTAFI_INGRESS_URL`         |
+For example, to run the app and point the proxy at your local DeltaFi instance, run:
 
-For example, to run the app and point the proxy at your local DeltaFi instance, you could run:
-
-    export DELTAFI_API_URL="http://$(deltafi serviceip deltafi-api)"
-    export DELTAFI_GATEWAY_URL="http://$(deltafi serviceip deltafi-gateway)"
-    export DELTAFI_INGRESS_URL="http://$(deltafi serviceip deltafi-ingress)"
-    npm run dev
+    DELTAFI_DOMAIN=local.deltafi.org npm run dev
 
 ##### Mocking
 
-`TODO`
+    VUE_APP_MOCK_RESPONSES=successResponse npm run dev
 
 #### ESLint
 

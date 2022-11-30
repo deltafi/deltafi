@@ -26,6 +26,8 @@ export type Permission = {
 };
 
 const permissions: Ref<Array<Permission>> = ref([]);
+const permissionsByName: Ref<Record<string, Permission>> = ref({});
+const permissionsByCategory: Ref<Record<string, Array<Permission>>> = ref({});
 
 export default function usePermissions() {
   const fetchAppPermissions = async () => {
@@ -34,6 +36,18 @@ export default function usePermissions() {
     try {
       await get(endpoint);
       permissions.value = response.value;
+
+      permissionsByName.value = permissions.value.reduce((r: any, p: any) => {
+        r[p.name] = p;
+        return r;
+      }, {});
+
+      permissionsByCategory.value = permissions.value.reduce((r: any, p: any) => {
+        if (r[p.category] === undefined) r[p.category] = []
+        r[p.category].push(p);
+        return r;
+      }, {})
+
       return permissions.value;
     } catch {
       //
@@ -41,7 +55,9 @@ export default function usePermissions() {
   };
 
   return {
-    appPermissions: readonly(permissions.value),
+    appPermissions: readonly(permissions),
+    appPermissionsByName: readonly(permissionsByName),
+    appPermissionsByCategory: readonly(permissionsByCategory),
     fetchAppPermissions,
   };
 }
