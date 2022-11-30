@@ -183,12 +183,16 @@ public abstract class ActionTest {
                 .build();
     }
 
+    protected void beforeExecuteAction(DeltaFile deltaFile, TestCaseBase<?> testCase) {
+    }
+
     protected ResultType callAction(TestCaseBase<?> testCase) {
         List<Content> inputs = getContents(testCase.getInputs(), testCase, "input.");
         DeltaFile deltaFile = deltaFile(testCase.getSourceMetadata(), inputs);
 
         Mockito.lenient().when(actionsProperties.getHostname()).thenReturn(HOSTNAME);
 
+        beforeExecuteAction(deltaFile, testCase);
         return testCase.getAction().executeAction(deltaFile, context(), testCase.getParameters());
     }
 

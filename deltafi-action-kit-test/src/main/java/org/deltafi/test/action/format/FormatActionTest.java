@@ -20,11 +20,14 @@ package org.deltafi.test.action.format;
 import lombok.SneakyThrows;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.types.DeltaFile;
 import org.deltafi.test.action.IOContent;
 import org.deltafi.test.action.ActionTest;
+import org.deltafi.test.action.TestCaseBase;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.InputStream;
+import java.util.stream.Collectors;
 
 public class FormatActionTest extends ActionTest {
 
@@ -37,6 +40,24 @@ public class FormatActionTest extends ActionTest {
         else {
             super.execute(testCase);
         }
+    }
+
+    @Override
+    protected void beforeExecuteAction(DeltaFile deltaFile, TestCaseBase<?> testCase) {
+        // Add enrichments to deltaFile
+        FormatActionTestCase formatActionTestCase = (FormatActionTestCase) testCase;
+
+        deltaFile.setEnrichment(
+            formatActionTestCase.getEnrichments().stream().map(this::readEnrichment).collect(Collectors.toList())
+        );
+    }
+
+    private org.deltafi.common.types.Enrichment readEnrichment(org.deltafi.test.action.Enrichment enrichment) {
+        return org.deltafi.common.types.Enrichment.newBuilder()
+                .value(enrichment.getValue())
+                .name(enrichment.getName())
+                .mediaType(enrichment.getContentType())
+                .build();
     }
 
     public void assertFormatResult(FormatActionTestCase testCase, FormatResult result) {

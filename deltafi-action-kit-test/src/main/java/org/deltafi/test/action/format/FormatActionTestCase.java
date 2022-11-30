@@ -17,21 +17,27 @@
  */
 package org.deltafi.test.action.format;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.format.FormatAction;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.test.action.Enrichment;
 import org.deltafi.test.action.IOContent;
 import org.deltafi.test.action.TestCaseBase;
 
 import java.util.Collections;
+import java.util.List;
 
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class FormatActionTestCase extends TestCaseBase<FormatAction<? extends ActionParameters>> {
+
+    @Builder.Default
+    List<Enrichment> enrichments = Collections.emptyList();
 
     public static abstract class FormatActionTestCaseBuilder<C extends FormatActionTestCase, B extends FormatActionTestCase.FormatActionTestCaseBuilder<C, B>> extends TestCaseBase.TestCaseBaseBuilder<FormatAction<? extends ActionParameters>, C, B> {
 
