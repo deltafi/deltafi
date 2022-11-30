@@ -20,12 +20,10 @@ package org.deltafi.common.storage.s3.minio;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.DeleteError;
-import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
@@ -34,33 +32,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MinioObjectStorageServiceTest {
+class MinioObjectStorageServiceTest {
     private static final String BUCKET = "bucket";
-
-    @AllArgsConstructor
-    private static class TestItem extends Item {
-        private String objectName;
-        private ZonedDateTime lastModified;
-        private boolean isDir;
-
-        public String objectName() {
-            return objectName;
-        }
-
-        public ZonedDateTime lastModified() {
-            return lastModified;
-        }
-
-        public boolean isDir() {
-            return isDir;
-        }
-    }
 
     @Test
     void testGetObject() throws ObjectStorageException, IOException, ServerException, InsufficientDataException,
@@ -73,7 +51,7 @@ public class MinioObjectStorageServiceTest {
 
         GetObjectResponse getObjectResponse = new GetObjectResponse(null, null, null, null, null);
         Mockito.when(minioClient.getObject(
-                Mockito.eq(GetObjectArgs.builder().bucket(BUCKET).object("objectName").offset(0L).length(10L).build())))
+                GetObjectArgs.builder().bucket(BUCKET).object("objectName").offset(0L).length(10L).build()))
                 .thenReturn(getObjectResponse)
                 .thenThrow(IOException.class);
 
@@ -133,7 +111,7 @@ public class MinioObjectStorageServiceTest {
         minioObjectStorageService.removeObject(new ObjectReference(BUCKET, "objectName"));
 
         Mockito.verify(minioClient).removeObject(
-                Mockito.eq(RemoveObjectArgs.builder().bucket(BUCKET).object("objectName").build()));
+                RemoveObjectArgs.builder().bucket(BUCKET).object("objectName").build());
     }
 
     @AllArgsConstructor
@@ -169,69 +147,6 @@ public class MinioObjectStorageServiceTest {
 
         assertTrue(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
         assertFalse(minioObjectStorageService.removeObjects(BUCKET, Collections.singletonList("did-1")));
-    }
-
-    @Test
-    void testBucketExists() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        MinioClient minioClient = Mockito.mock(MinioClient.class);
-
-        MinioProperties minioProperties = new MinioProperties();
-        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
-                minioProperties);
-
-        Mockito.when(minioClient.bucketExists(Mockito.any())).thenReturn(true);
-        assertTrue(minioObjectStorageService.bucketExists(BUCKET));
-    }
-
-    @Test
-    void testBucketExistsThrows() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        MinioClient minioClient = Mockito.mock(MinioClient.class);
-
-        MinioProperties minioProperties = new MinioProperties();
-        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
-                minioProperties);
-
-        Mockito.when(minioClient.bucketExists(Mockito.any())).thenThrow(ServerException.class);
-        assertThrows(ObjectStorageException.class, () ->
-                minioObjectStorageService.bucketExists(BUCKET));
-    }
-
-    @Test
-    void testCreateBucket() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        ArgumentCaptor<MakeBucketArgs> captureArgs = ArgumentCaptor.forClass(MakeBucketArgs.class);
-
-        MinioClient minioClient = Mockito.mock(MinioClient.class);
-
-        MinioProperties minioProperties = new MinioProperties();
-
-        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
-                minioProperties);
-
-        Mockito.doThrow(new ServerException("test", 0, "test"))
-                .when(minioClient).makeBucket(captureArgs.capture());
-
-        Mockito.when(minioClient.bucketExists(Mockito.any())).thenReturn(false);
-        assertThrows(ObjectStorageException.class, () ->
-                minioObjectStorageService.createBucket(BUCKET));
-    }
-
-    @Test
-    void testSetExpiration() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        ArgumentCaptor<SetBucketLifecycleArgs> captureArgs = ArgumentCaptor.forClass(SetBucketLifecycleArgs.class);
-
-        MinioClient minioClient = Mockito.mock(MinioClient.class);
-
-        MinioProperties minioProperties = new MinioProperties();
-        minioProperties.setExpirationDays(3);
-
-        MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient,
-                minioProperties);
-
-        Mockito.doThrow(new ServerException("test", 0, "test"))
-                .when(minioClient).setBucketLifecycle(captureArgs.capture());
-
-        assertThrows(ObjectStorageException.class, () ->
-                minioObjectStorageService.setExpiration(BUCKET));
     }
 
 }

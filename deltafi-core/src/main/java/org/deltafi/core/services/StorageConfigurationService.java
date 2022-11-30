@@ -17,38 +17,137 @@
  */
 package org.deltafi.core.services;
 
+import io.minio.*;
+import io.minio.messages.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.storage.s3.ObjectStorageService;
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.time.ZonedDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class StorageConfigurationService {
-    private final ObjectStorageService objectStorageService;
+
+    private static final String AGE_OFF = "AgeOff";
+    public static final String GET_BUCKET_LIFECYCLE_ERROR = "Unable to get bucket lifecycle";
+
+    private final MinioClient minioClient;
+    private final DeltaFiProperties deltaFiProperties;
+
+    private Integer expirationDayCache = null;
 
     @PostConstruct
     public void ensureBucket() throws ObjectStorageException {
-        if (!objectStorageService.bucketExists(ContentStorageService.CONTENT_BUCKET)) {
-            objectStorageService.createBucket(ContentStorageService.CONTENT_BUCKET);
-            objectStorageService.setExpiration(ContentStorageService.CONTENT_BUCKET);
-        } else if (!objectStorageService.expectedConfiguration(ContentStorageService.CONTENT_BUCKET)) {
-            objectStorageService.setExpiration(ContentStorageService.CONTENT_BUCKET);
+        if (!bucketExists(ContentStorageService.CONTENT_BUCKET)) {
+            createBucket(ContentStorageService.CONTENT_BUCKET);
+            setExpiration(ContentStorageService.CONTENT_BUCKET);
+        } else if (expirationChanged()) {
+            setExpiration(ContentStorageService.CONTENT_BUCKET);
         }
     }
 
     @EventListener
     public void onEnvChange(final EnvironmentChangeEvent event) throws ObjectStorageException {
-        if (event.getKeys().contains("minio.expiration-days")) {
-            objectStorageService.setExpiration(ContentStorageService.CONTENT_BUCKET);
+        if (event.getKeys().contains("deltafi.delete.ageOffDays")) {
+            setExpiration(ContentStorageService.CONTENT_BUCKET);
         }
+    }
+
+    boolean bucketExists(String bucketName) throws ObjectStorageException {
+        try {
+            return minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+        } catch (Exception e) {
+            log.error("Unable to check bucket existence");
+            throw new ObjectStorageException("Unable to check bucket existence", e);
+        }
+    }
+
+    void createBucket(String bucketName) throws ObjectStorageException {
+        if (!bucketExists(bucketName)) {
+            try {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+                log.info("Created the bucket: " + bucketName);
+            } catch (Exception e) {
+                log.error("Unable to create bucket");
+                throw new ObjectStorageException("Unable to create bucket", e);
+            }
+        }
+    }
+
+    boolean expirationChanged() throws ObjectStorageException {
+        try {
+            Integer expiration = getCurrentExpiration();
+            return expiration == null || expiration != deltaFiProperties.getDelete().getAgeOffDays();
+        } catch (Exception e) {
+            log.error(GET_BUCKET_LIFECYCLE_ERROR);
+            throw new ObjectStorageException(GET_BUCKET_LIFECYCLE_ERROR, e);
+        }
+    }
+
+    void setExpiration(String bucketName) throws ObjectStorageException {
+        try {
+            minioClient.setBucketLifecycle(SetBucketLifecycleArgs.builder()
+                    .bucket(bucketName)
+                    .config(buildLifeCycleConfig()).build());
+            expirationDayCache = deltaFiProperties.getDelete().getAgeOffDays();
+            log.info("Set bucket age-off days: " + deltaFiProperties.getDelete().getAgeOffDays());
+        } catch (Exception e) {
+            log.error("Unable to set bucket lifecycle");
+            throw new ObjectStorageException("Unable to set bucket lifecycle", e);
+        }
+    }
+
+    private LifecycleConfiguration buildLifeCycleConfig() {
+        return new LifecycleConfiguration(List.of(
+                new LifecycleRule(
+                        Status.ENABLED,
+                        null,
+                        new Expiration((ZonedDateTime) null, deltaFiProperties.getDelete().getAgeOffDays(), null),
+                        new RuleFilter(""),
+                        AGE_OFF,
+                        null,
+                        null,
+                        null)));
+    }
+
+    Integer getCurrentExpiration() throws ObjectStorageException {
+        if (expirationDayCache == null) {
+            expirationDayCache = getExpirationFromMinio();
+        }
+
+        return expirationDayCache;
+    }
+
+    Integer getExpirationFromMinio() throws ObjectStorageException {
+        try {
+            return getExpirationFromRule(minioClient.getBucketLifecycle(GetBucketLifecycleArgs.builder().bucket(ContentStorageService.CONTENT_BUCKET).build()));
+        } catch (Exception e) {
+            log.error(GET_BUCKET_LIFECYCLE_ERROR);
+            throw new ObjectStorageException(GET_BUCKET_LIFECYCLE_ERROR, e);
+        }
+    }
+
+    Integer getExpirationFromRule(LifecycleConfiguration lifecycleConfiguration) {
+        if (lifecycleConfiguration == null || lifecycleConfiguration.rules() == null || lifecycleConfiguration.rules().size() != 1) {
+            return null;
+        }
+
+        LifecycleRule lifecycleRule = lifecycleConfiguration.rules().get(0);
+
+        if (!Status.ENABLED.equals(lifecycleRule.status()) || !AGE_OFF.equals(lifecycleRule.id())) {
+            return null;
+        }
+
+        return lifecycleRule.expiration().days();
     }
 
 }

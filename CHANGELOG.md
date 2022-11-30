@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Remove flow plans and flows that are no longer part of a plugin on upgrade
 
 ### Tech-Debt/Refactor
+- Move MinIO bucket setup from common to core
+- Use a single age off property under delete properties for both content and metadata
 
 ### Security
 

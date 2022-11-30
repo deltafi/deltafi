@@ -24,13 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface ObjectStorageService {
-    boolean bucketExists(String bucketName) throws ObjectStorageException;
-
-    void createBucket(String bucketName) throws ObjectStorageException;
-
-    boolean expectedConfiguration(String bucketName) throws ObjectStorageException;
-
-    void setExpiration(String bucketName) throws ObjectStorageException;
 
     InputStream getObject(ObjectReference objectReference) throws ObjectStorageException;
 

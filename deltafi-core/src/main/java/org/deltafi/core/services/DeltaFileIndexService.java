@@ -25,6 +25,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.time.Duration;
 
 @Service
 @Slf4j
@@ -40,14 +41,14 @@ public class DeltaFileIndexService {
 
     @EventListener
     public void onEnvChange(final EnvironmentChangeEvent event) {
-        if (event.getKeys().contains("deltafi.deltaFileTtl")) {
-            this.deltaFileRepo.setExpirationIndex(deltaFiProperties.getDeltaFileTtl());
+        if (event.getKeys().contains("deltafi.delete.ageOffDays")) {
+            this.deltaFileRepo.setExpirationIndex(Duration.ofDays(deltaFiProperties.getDelete().getAgeOffDays()));
         }
     }
 
     @PostConstruct
     public void ensureAllIndices() {
-        this.deltaFileRepo.ensureAllIndices(deltaFiProperties.getDeltaFileTtl());
+        this.deltaFileRepo.ensureAllIndices(Duration.ofDays(deltaFiProperties.getDelete().getAgeOffDays()));
     }
 
 }

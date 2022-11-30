@@ -20,7 +20,7 @@ package org.deltafi.core.configuration;
 import lombok.Data;
 
 @Data
-public class PluginConfig {
-    private String imageRepositoryBase;
-    private String imagePullSecret;
+public class IngressProperties {
+    private boolean enabled = true;
+    private long diskSpaceRequirementInMb = 1000;
 }

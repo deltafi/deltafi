@@ -50,9 +50,9 @@
         "editable": true
       },
       {
-        "key": "deltafi.deltaFileTtl",
-        "description": "Duration that a DeltaFile should live, any records older will be removed.",
-        "defaultValue": "14d",
+        "key": "deltafi.delete.ageOffDays",
+        "description": "Number of days that a DeltaFile should live, any records older will be removed.",
+        "defaultValue": "13",
         "hidden": false,
         "refreshable": true,
         "editable": true
@@ -108,14 +108,6 @@
       {
         "key": "deltafi.plugins.imagePullSecret",
         "description": "Default imagePullSecret used in plugin deployments",
-        "hidden": false,
-        "refreshable": true,
-        "editable": true
-      },
-      {
-        "key": "minio.expiration-days",
-        "description": "Maximum number of days to keep objects in minio",
-        "defaultValue": "13",
         "hidden": false,
         "refreshable": true,
         "editable": true

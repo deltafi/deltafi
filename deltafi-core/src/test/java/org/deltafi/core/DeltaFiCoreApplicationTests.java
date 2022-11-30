@@ -131,7 +131,7 @@ import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
-		"deltafi.deltaFileTtl=3d",
+		"deltafi.delete.ageOffDays=3",
 		"schedule.actionEvents=false",
 		"schedule.maintenance=false",
 		"schedule.flowSync=false",

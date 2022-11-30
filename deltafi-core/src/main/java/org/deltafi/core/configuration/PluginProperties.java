@@ -18,17 +18,9 @@
 package org.deltafi.core.configuration;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("deltafi")
 @Data
-public class DeltaFiProperties {
-
-    private int requeueSeconds = 300;
-    private int coreServiceThreads = 16;
-    private DeleteProperties delete = new DeleteProperties();
-    private IngressProperties ingress = new IngressProperties();
-    private String apiUrl;
-    private String systemName;
-    private PluginProperties plugins;
+public class PluginProperties {
+    private String imageRepositoryBase;
+    private String imagePullSecret;
 }

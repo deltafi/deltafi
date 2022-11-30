@@ -18,17 +18,13 @@
 package org.deltafi.core.configuration;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("deltafi")
+import java.time.Duration;
+
 @Data
-public class DeltaFiProperties {
-
-    private int requeueSeconds = 300;
-    private int coreServiceThreads = 16;
-    private DeleteProperties delete = new DeleteProperties();
-    private IngressProperties ingress = new IngressProperties();
-    private String apiUrl;
-    private String systemName;
-    private PluginProperties plugins;
+public class DeleteProperties {
+    private int ageOffDays = 13;
+    private Duration frequency = Duration.ofMinutes(10);
+    private boolean onCompletion = false;
+    private int policyBatchSize = 1000;
 }
