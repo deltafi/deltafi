@@ -22,9 +22,9 @@ import org.deltafi.common.action.ActionEventQueueProperties;
 import org.deltafi.core.services.api.DeltafiApiClient;
 import org.deltafi.core.services.api.DeltafiApiRestClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.task.TaskSchedulerCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.URISyntaxException;
 
@@ -40,5 +40,10 @@ public class DeltaFiConfiguration {
     @Bean
     public DeltafiApiClient deltafiApiClient(DeltaFiProperties properties) {
         return new DeltafiApiRestClient(properties.getApiUrl());
+    }
+
+    @Bean
+    public TaskSchedulerCustomizer taskSchedulerCustomizer(DeltaFiProperties deltaFiProperties) {
+        return taskScheduler ->  taskScheduler.setPoolSize(deltaFiProperties.getScheduledServiceThreads());
     }
 }

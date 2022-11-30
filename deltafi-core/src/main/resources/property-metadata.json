@@ -13,9 +13,12 @@
         "editable": true
       },
       {
-        "key": "spring.task.scheduling.pool.size",
+        "key": "deltafi.scheduledServiceThreads",
         "description": "Maximum allowed number of threads.",
-        "defaultValue": "32"
+        "defaultValue": "32",
+        "hidden": false,
+        "refreshable": false,
+        "editable": true
       },
       {
         "key": "deltafi.checks.actionQueue.sizeThreshold",
