@@ -43,6 +43,15 @@ build:
       - "**/build/tmp"
       - "**/build/classes"
 
+.test-python:
+  stage: build
+  image: gradle:7.3.3-jdk11
+  before_script:
+    - apt update
+    - apt-get install -y python3-pip
+  script:
+    - ./gradlew $PROJECT_NAME:build
+
 .docker:
   stage: docker
   image: docker:latest

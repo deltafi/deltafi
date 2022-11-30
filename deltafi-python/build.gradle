@@ -30,13 +30,19 @@ task cleanDist(type: Delete) {
 task poetryInstall(type: Exec) {
     dependsOn poetryVersion
     workingDir 'src'
-    commandLine 'poetry', 'install'
+    commandLine 'poetry', 'install', '--with', 'test'
 }
 
 task poetryBuild(type: Exec) {
     dependsOn cleanDist, poetryInstall
     workingDir 'src'
     commandLine 'poetry', 'build'
+}
+
+task testPython(type: Exec) {
+    dependsOn poetryBuild
+    workingDir 'src'
+    commandLine 'poetry', 'run', 'pytest', '--junit-xml=../build/test-results/test/TEST-results.xml'
 }
 
 task publishToMavenLocal(type: Exec) {
@@ -46,7 +52,7 @@ task publishToMavenLocal(type: Exec) {
 }
 
 clean.dependsOn cleanDist
-build.dependsOn poetryBuild
+build.dependsOn testPython, poetryBuild
 
 license {
     header(rootProject.file('HEADER'))

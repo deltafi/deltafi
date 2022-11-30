@@ -2,6 +2,11 @@
   variables:
     PROJECT_NAME: deltafi-python
 
+pythonkit:testPython:
+  extends:
+    - .pythonkit
+    - .test-python
+
 pythonkit:publish:
   extends:
     - .pythonkit
