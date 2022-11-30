@@ -22,11 +22,29 @@ spec:
           persistentVolumeClaim:
             claimName: deltafi-auth
       containers:
-      - name: deltafi-auth
-        image: {{ .Values.deltafi.auth.image }}
+      {{ if .Values.deltafi.auth.entityResolver.enabled }}
+      - name: deltafi-entity-resolver
+        image: {{ .Values.deltafi.auth.entityResolver.image }}
+        volumeMounts:
+          - name: deltafi-auth
+            mountPath: /data
         env:
         - name: DATA_DIR
           value: /data
+      {{ end }}
+      - name: deltafi-auth
+        image: {{ .Values.deltafi.auth.image }}
+        env:
+        - name: DOMAIN
+          value: {{ .Values.ingress.domain }}
+        - name: DATA_DIR
+          value: /data
+        {{ if .Values.deltafi.auth.entityResolver.enabled }}
+        - name: ENTITY_RESOLVER_ENABLED
+          value: "true"
+        - name: ENTITY_RESOLVER_URL
+          value: {{ .Values.deltafi.auth.entityResolver.url | default "http://127.0.0.1:8080/" }}
+        {{ end }}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292

@@ -95,7 +95,7 @@ class AuthApi < Sinatra::Application
       return error("User with ID #{id} not found.")
     end
 
-    user.delete
+    user.destroy
     audit("deleted user #{user.common_name || user.username}")
 
     return user.to_api.to_json

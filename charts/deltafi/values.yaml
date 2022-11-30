@@ -31,6 +31,10 @@ deltafi:
     image: deltafi/deltafi-auth:0.99.4
     mode: basic # basic, cert, or disabled
     secret: auth-secret
+    entityResolver:
+      enabled: false
+      image: deltafi/deltafi-entity-resolver:0.0.1
+      url: http://127.0.0.1:8080/
   api:
     image: deltafi/deltafi-api:0.99.4
   ui:

@@ -21,17 +21,48 @@
 require 'bcrypt'
 
 class User < Sequel::Model
+  many_to_many :roles
+
   include BCrypt
   plugin :timestamps, update_on_create: true
   plugin :validation_helpers
 
-  FIELDS = %i[name dn domains username password].freeze
+  FIELDS = %i[name dn username password role_ids].freeze
+
+  def initialize(**args)
+    @role_ids = args.delete(:role_ids)
+    super(args)
+  end
+
+  def after_save
+    super
+    update_roles(@role_ids) unless @role_ids.nil?
+  end
+
+  def before_destroy
+    remove_all_roles
+    super
+  end
 
   def update(updates)
     updates.each do |field, value|
       raise "Unknown field '#{field}'" unless FIELDS.include?(field)
 
-      send("#{field}=", value)
+      if field == :role_ids
+        update_roles(value)
+      else
+        send("#{field}=", value)
+      end
+    end
+  end
+
+  def update_roles(new_role_ids)
+    current_role_ids = roles.map(&:id)
+    (current_role_ids - new_role_ids).each { |id| remove_role(id) }
+    (new_role_ids - current_role_ids).each do |id|
+      add_role(id)
+    rescue Sequel::NoMatchingRow
+      raise "No such role with id #{id}"
     end
   end
 
@@ -63,25 +94,24 @@ class User < Sequel::Model
       end
     end
 
-    validates_presence %i[name domains], message: 'cannot be empty'
-    validates_type String, %i[name domains]
+    validates_presence :name, message: 'cannot be empty'
+    validates_type String, :name
     validates_unique %i[dn username], message: 'must be unique'
     validates_unique :dn, message: 'must be unique'
     validates_unique :name, message: 'must be unique'
     validates_unique :username, message: 'must be unique'
   end
 
-  def can_access?(url)
-    domain = url.split('/')[2].split(':')[0]
-    domains.split(',').any? do |dp|
-      escaped = Regexp.escape(dp.lstrip).gsub('\*', '.*?')
-      regexp = Regexp.new("^#{escaped}$", Regexp::IGNORECASE)
-      regexp.match?(domain)
-    end
+  def permissions
+    roles.map(&:permissions).flatten.uniq.sort
   end
 
-  def permissions
-    ['Admin']
+  def permissions_csv
+    permissions.join(',')
+  end
+
+  def has_permission?(permission)
+    return !([permission, 'Admin'] & permissions).empty?
   end
 
   def to_api
@@ -90,9 +120,9 @@ class User < Sequel::Model
       name: name,
       dn: dn,
       username: username,
-      domains: domains,
       created_at: created_at.utc.strftime('%FT%T.%3NZ'),
       updated_at: updated_at.utc.strftime('%FT%T.%3NZ'),
+      roles: roles.map(&:to_api),
       permissions: permissions
     }
   end

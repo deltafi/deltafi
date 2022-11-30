@@ -16,22 +16,23 @@
 #    limitations under the License.
 #
 
+# !/usr/bin/env ruby
+
 # frozen_string_literal: true
 
-class AuthApi < Sinatra::Application
-  get '/cert-auth/?' do
-    content_type 'text/plain'
+require 'sinatra'
+require 'sinatra/quiet_logger'
+require 'sequel'
+require 'json'
+require 'openssl'
+require 'yaml'
+require 'pry'
 
-    verify_headers(%w[SSL_CLIENT_SUBJECT_DN X_ORIGINAL_URL])
-    @client_dn = request.env['HTTP_SSL_CLIENT_SUBJECT_DN']
-    @original_url = request.env['HTTP_X_ORIGINAL_URL']
+db_location = File.join(ENV['DATA_DIR'] || 'db', 'auth.sqlite3')
+db = ENV['RACK_ENV'] == 'test' ? Sequel.sqlite : Sequel.connect("sqlite://#{db_location}")
+Sequel.extension :migration
+Sequel::Migrator.run(db, 'db/migrations')
 
-    cert_auth!
+%w[lib helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
 
-    response.headers['X-User-ID'] = @user.dn
-    response.headers['X-User-Name'] = @user.common_name
-    response.headers['X-User-Permissions'] = @user.permissions_csv
-    logger.info "Authorized: '#{@user.dn}' -> '#{@original_url}'"
-    return
-  end
-end
+binding.pry

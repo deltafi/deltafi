@@ -9,7 +9,7 @@
 {{- else }}
 {{- include "noAuthAnnotations" .}}
 {{- end }}
-nginx.ingress.kubernetes.io/auth-cache-duration: 200 5m
+nginx.ingress.kubernetes.io/auth-cache-duration: 200 1m
 nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name, X-User-Permissions
 {{- end -}}
 
@@ -25,7 +25,7 @@ nginx.ingress.kubernetes.io/auth-cache-key: $remote_user$http_authorization
 {{- end -}}
 
 {{- define "certAuthAnnotations" -}}
-nginx.ingress.kubernetes.io/auth-tls-verify-client: "yes"
+nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
 nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Values.deltafi.auth.secret }}
 nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
 nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/cert-auth

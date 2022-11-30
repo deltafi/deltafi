@@ -18,20 +18,42 @@
 
 # frozen_string_literal: true
 
-class AuthApi < Sinatra::Application
-  get '/cert-auth/?' do
-    content_type 'text/plain'
+class CertUser
+  include Deltafi::EntityResolver
 
-    verify_headers(%w[SSL_CLIENT_SUBJECT_DN X_ORIGINAL_URL])
-    @client_dn = request.env['HTTP_SSL_CLIENT_SUBJECT_DN']
-    @original_url = request.env['HTTP_X_ORIGINAL_URL']
+  attr_reader :dn, :identifiers
 
-    cert_auth!
+  def initialize(dn)
+    begin
+      @dn = OpenSSL::X509::Name.parse(dn).to_s(OpenSSL::X509::Name::COMPAT)
+    rescue StandardError
+      raise 'Error parsing DN'
+    end
 
-    response.headers['X-User-ID'] = @user.dn
-    response.headers['X-User-Name'] = @user.common_name
-    response.headers['X-User-Permissions'] = @user.permissions_csv
-    logger.info "Authorized: '#{@user.dn}' -> '#{@original_url}'"
-    return
+    @identifiers = resolve(dn)
+  end
+
+  def common_name
+    OpenSSL::X509::Name.parse(dn).to_a.find { |p| p[0] == 'CN' }[1]
+  end
+
+  def name
+    common_name
+  end
+
+  def roles
+    identifiers.map { |identifier| User[{ dn: identifier }]&.roles }.compact.flatten
+  end
+
+  def permissions
+    roles.map(&:permissions).flatten.uniq.sort
+  end
+
+  def permissions_csv
+    permissions.join(',')
+  end
+
+  def has_permission?(permission)
+    return !([permission, 'Admin'] & permissions).empty?
   end
 end

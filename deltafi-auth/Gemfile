@@ -4,6 +4,7 @@ source 'https://rubygems.org'
 
 gem 'bcrypt'
 gem 'eventmachine'
+gem 'httparty'
 gem 'rainbows'
 gem 'sequel'
 gem 'sinatra'

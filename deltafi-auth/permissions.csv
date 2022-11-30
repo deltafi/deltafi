@@ -1,0 +1,52 @@
+Category,Name,Description
+Administration,Admin,One permission to rule them all
+General,UIAccess,Grants access to the UI
+General,StatusView,Grants the ability to view system status
+General,DashboardView,Grants the ability to view the UI dashboard
+General,VersionsView,Grants the ability to view running versions
+General,MetricsView,Grants the ability to view metrics
+DeltaFiles,DeltaFileMetadataView,Grants the ability to query for and view DeltaFiles
+DeltaFiles,DeltaFileContentView,Grants the ability to view DeltaFile content
+DeltaFiles,DeltaFileReplay,Grants the ability to replay DeltaFiles
+DeltaFiles,DeltaFileResume,Grants the ability to resume DeltaFiles in an ERROR stage
+DeltaFiles,DeltaFileAcknowledge,Grants the ability to acknowledge DeltaFiles in an ERROR stage
+DeltaFiles,DeltaFileCancel,Grants the ability to cancel processing a DeltaFile
+DeltaFiles,DeltaFileIngress,Grants the ability to ingress DeltaFiles
+Flows,FlowView,Grants the ability to view flows
+Flows,FlowStart,Grants the ability to start flows
+Flows,FlowStop,Grants the ability to stop flows
+Flows,FlowValidate,Grants the ability to validate flows
+Flows,FlowUpdate,Grants the ability to update flows
+Plugins,PluginsView,Grants the ability to view installed Plugins
+Plugins,PluginInstall,Grants the ability to install Plugins
+Plugins,PluginUninstall,Grants the ability to uninstall Plugins
+Plugins,PluginVariableUpdate,Grants the ability to edit plugin variables
+Plugins,PluginImageRepoView,Grants the ability to view Plugin Image Repo Configuration
+Plugins,PluginImageRepoWrite,Grants the ability to create or update Plugin Image Repo Configuration
+Plugins,PluginImageRepoDelete,Grants the ability to delete Plugin Image Repo Configuration
+Plugins,PluginCustomizationConfigView,Grants the ability to view Plugin Customization Configuration
+Plugins,PluginCustomizationConfigWrite,Grants the ability to create or update Plugin Customization Configuration
+Plugins,PluginCustomizationConfigDelete,Grants the ability to delete Plugin Customization Configuration
+System Properties,SystemPropertiesRead,Grants the ability to view System Properties
+System Properties,SystemPropertiesUpdate,Grants the ability to edit System Properties
+Delete Policies,DeletePolicyCreate,Grants the ability to create Delete Policies
+Delete Policies,DeletePolicyRead,Grants the ability to view Delete Policies
+Delete Policies,DeletePolicyUpdate,Grants the ability to edit Delete Policies
+Delete Policies,DeletePolicyDelete,Grants the ability to delete Delete Policies
+Ingress Routing,IngressRoutingRuleCreate,Grants the ability to created Ingress Routing Rules
+Ingress Routing,IngressRoutingRuleRead,Grants the ability to view Ingress Routing Rules
+Ingress Routing,IngressRoutingRuleUpdate,Grants the ability to edit Ingress Routing Rules
+Ingress Routing,IngressRoutingRuleDelete,Grants the ability to delete Ingress Routing Rules
+Snapshots,SnapshotCreate,Grants the ability to delete Snapshots
+Snapshots,SnapshotRead,Grants the ability to view Snapshots
+Snapshots,SnapshotDelete,Grants the ability to delete Snapshots
+Snapshots,SnapshotRevert,Grants the ability to revert the system to a Snapshot
+Users,UserCreate,Grants the ability to create Users
+Users,UserRead,Grants the ability to view Users
+Users,UserUpdate,Grants the ability to edit Users
+Users,UserDelete,Grants the ability to delete Users
+Roles,RoleCreate,Grants the ability to create Roles
+Roles,RoleRead,Grants the ability to view Roles
+Roles,RoleUpdate,Grants the ability to edit Roles
+Roles,RoleDelete,Grants the ability to delete Roles
+Stress Tests,StressTest,Grants the ability to execute Stress Tests

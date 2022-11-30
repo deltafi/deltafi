@@ -18,20 +18,41 @@
 
 # frozen_string_literal: true
 
-class AuthApi < Sinatra::Application
-  get '/cert-auth/?' do
-    content_type 'text/plain'
+require 'forwardable'
 
-    verify_headers(%w[SSL_CLIENT_SUBJECT_DN X_ORIGINAL_URL])
-    @client_dn = request.env['HTTP_SSL_CLIENT_SUBJECT_DN']
-    @original_url = request.env['HTTP_X_ORIGINAL_URL']
+class BasicUser
+  include Deltafi::EntityResolver
+  extend Forwardable
 
-    cert_auth!
+  attr_reader :user, :identifiers
 
-    response.headers['X-User-ID'] = @user.dn
-    response.headers['X-User-Name'] = @user.common_name
-    response.headers['X-User-Permissions'] = @user.permissions_csv
-    logger.info "Authorized: '#{@user.dn}' -> '#{@original_url}'"
-    return
+  def_delegators :@user, :username, :name, :id
+
+  def initialize(username, password)
+    user = User[{ username: username }]
+    return unless user&.password == password
+
+    @user = user
+    @identifiers = resolve(username)
+  end
+
+  def authenticated?
+    !@user.nil?
+  end
+
+  def roles
+    identifiers.map { |identifier| User[{ username: identifier }]&.roles }.compact.flatten
+  end
+
+  def permissions
+    roles.map(&:permissions).flatten.uniq.sort
+  end
+
+  def permissions_csv
+    permissions.join(',')
+  end
+
+  def has_permission?(permission)
+    return !([permission, 'Admin'] & permissions).empty?
   end
 end

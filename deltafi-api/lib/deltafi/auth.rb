@@ -42,16 +42,5 @@ module Deltafi
         return response.body
       end
     end
-
-    def self.get_user(id)
-      raise 'User ID must be a number greater than zero.' unless (id || 0).positive?
-
-      url = File.join(AUTH_URL, 'users', id.to_s)
-      HTTParty.send('get', url, {
-        headers: {
-          'X-User-Permissions': 'Admin'
-        }
-      })
-    end
   end
 end

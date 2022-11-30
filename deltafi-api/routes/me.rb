@@ -25,13 +25,13 @@ class ApiServer < Sinatra::Base
     get '/me' do
       user_permissions = request.env['HTTP_X_USER_PERMISSIONS']&.split(',') || []
       user_name = request.env['HTTP_X_USER_NAME'] || 'Unknown'
-      user_id = (request.env['HTTP_X_USER_ID'] || -1).to_i
+      user_id = (request.env['HTTP_X_USER_ID'] || -1)
 
-      return { id: user_id, name: user_name, permissions: user_permissions }.to_json if auth_mode == 'disabled'
-
-      response = DF::Auth.get_user(user_id)
-      status response.code
-      JSON.parse(response.body).to_json
+      return {
+        id: user_id,
+        name: user_name,
+        permissions: user_permissions
+      }.to_json
     end
   end
 end

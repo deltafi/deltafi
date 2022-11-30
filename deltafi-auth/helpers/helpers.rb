@@ -38,7 +38,11 @@ class AuthApi < Sinatra::Application
     end
 
     def authorized?
-      @user.can_access?(@original_url)
+      domain = @original_url&.split('/')&.dig(2)&.split(':')&.first
+      permission = DOMAIN_PERMISSIONS[domain]
+      return false if permission.nil?
+
+      @user.has_permission?(permission)
     end
 
     def basic_authenticated?
@@ -48,10 +52,8 @@ class AuthApi < Sinatra::Application
         deny('401 Unauthorized', 401)
       end
 
-      @user = User[{ username: @auth.credentials[0] }]
-      return false if @user.nil?
-
-      @user.password == @auth.credentials[1]
+      @user = BasicUser.new(@auth.credentials[0], @auth.credentials[1])
+      @user.authenticated?
     end
 
     def cert_authenticated?
@@ -61,8 +63,7 @@ class AuthApi < Sinatra::Application
         deny("401 Unauthorized: Invalid Distinguished Name: #{@client_dn}", 401)
       end
 
-      @user = User[{ dn: @formatted_client_dn }]
-      !@user.nil?
+      @user = CertUser.new(@formatted_client_dn)
     end
 
     def verify_headers(headers)
@@ -94,7 +95,7 @@ class AuthApi < Sinatra::Application
         user: user,
         message: message
       }.to_json
-      puts audit_message
+      puts audit_message + "\n" unless ENV['RACK_ENV'] == 'test'
     end
 
     def authorize!(permission)

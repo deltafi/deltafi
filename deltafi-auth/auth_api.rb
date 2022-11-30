@@ -18,13 +18,27 @@
 
 # frozen_string_literal: true
 
+$LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
+
 require 'sinatra'
 require 'sinatra/quiet_logger'
 require 'sequel'
 require 'json'
 require 'openssl'
+require 'yaml'
 
 class AuthApi < Sinatra::Application
+  DOMAIN = ENV['DOMAIN']
+  raise 'DOMAIN environment variable must be set.' if DOMAIN.nil?
+
+  DOMAIN_PERMISSIONS = {
+    "graphite.#{DOMAIN}" => 'MetricsView',
+    "ingress.#{DOMAIN}" => 'DeltaFileIngress',
+    "k8s.#{DOMAIN}" => 'Admin',
+    "metrics.#{DOMAIN}" => 'MetricsView',
+    DOMAIN => 'UIAccess'
+  }.freeze
+
   set :show_exceptions, :after_handler
   set :protection, except: [:json_csrf]
 
@@ -46,9 +60,32 @@ class AuthApi < Sinatra::Application
   Sequel.extension :migration
   Sequel::Migrator.run(db, 'db/migrations')
 
-  %w[helpers models routes lib].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
+  %w[lib helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
 
-  User.new(name: 'Admin', username: 'admin', domains: '*').save if User.count.zero?
+  # Default users and roles
+  if Role.count.zero?
+    Role.new(name: 'Admin', permissions: %w[Admin]).save
+    Role.new(name: 'Ingress Only', permissions: %w[DeltaFileIngress]).save
+    Role.new(name: 'Read Only', permissions: %w[
+               DashboardView
+               DeletePolicyRead
+               DeltaFileContentView
+               DeltaFileMetadataView
+               FlowView
+               IngressRoutingRuleRead
+               MetricsView
+               PluginCustomizationConfigView
+               PluginImageRepoView
+               PluginsView
+               SnapshotRead
+               StatusView
+               SystemPropertiesRead
+               UIAccess
+               VersionsView
+             ]).save
+  end
+
+  User.new(name: 'Admin', username: 'admin', role_ids: [1]).save if User.count.zero?
 
   error JSON::ParserError do
     { error: 'Error parsing JSON' }.to_json

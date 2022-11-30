@@ -18,20 +18,23 @@
 
 # frozen_string_literal: true
 
-class AuthApi < Sinatra::Application
-  get '/cert-auth/?' do
-    content_type 'text/plain'
+require 'csv'
 
-    verify_headers(%w[SSL_CLIENT_SUBJECT_DN X_ORIGINAL_URL])
-    @client_dn = request.env['HTTP_SSL_CLIENT_SUBJECT_DN']
-    @original_url = request.env['HTTP_X_ORIGINAL_URL']
+class Permission
+  extend Deltafi::Logger
 
-    cert_auth!
+  def self.all
+    CSV.table('permissions.csv').map do |row|
+      unless row.size == 3 && row[1].match?(/^[a-zA-Z]*$/)
+        warn "Ignoring malformed permission: #{row}"
+        next
+      end
 
-    response.headers['X-User-ID'] = @user.dn
-    response.headers['X-User-Name'] = @user.common_name
-    response.headers['X-User-Permissions'] = @user.permissions_csv
-    logger.info "Authorized: '#{@user.dn}' -> '#{@original_url}'"
-    return
+      row.to_hash
+    end.compact
+  end
+
+  def self.all_names
+    all.map { |p| p[:name] }
   end
 end
