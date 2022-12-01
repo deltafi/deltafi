@@ -20,10 +20,13 @@ package org.deltafi.core.schedulers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.delete.DeleteRunner;
+import org.deltafi.core.schedulers.trigger.DeleteTrigger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
@@ -31,9 +34,16 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class DeleteScheduler {
-    private final DeleteRunner deleteRunner;
 
-    @Scheduled(fixedDelayString = "${deltafi.delete.frequency}", initialDelayString = "PT10S")
+    private final DeleteRunner deleteRunner;
+    private final TaskScheduler taskScheduler;
+    private final DeleteTrigger deleteTrigger;
+
+    @PostConstruct
+    public void scheduleTask() {
+        taskScheduler.schedule(this::runDeletes, deleteTrigger);
+    }
+
     public void runDeletes() {
         try {
             deleteRunner.runDeletes();

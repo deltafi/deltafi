@@ -18,11 +18,14 @@
 package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.schedulers.trigger.RequeueTrigger;
 import org.deltafi.core.services.DeltaFilesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
@@ -30,11 +33,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RequeueScheduler {
 
-    final DeltaFilesService deltaFilesService;
+    private final DeltaFilesService deltaFilesService;
+    private final TaskScheduler taskScheduler;
+    private final RequeueTrigger requeueTrigger;
 
-    // convert to milliseconds
-    @Scheduled(fixedDelayString = "#{@'deltafi-org.deltafi.core.configuration.DeltaFiProperties'.getRequeueSeconds() * 1000}")
+    @PostConstruct
     public void requeue() {
-        deltaFilesService.requeue();
+        taskScheduler.schedule(deltaFilesService::requeue, requeueTrigger);
     }
 }
