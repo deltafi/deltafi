@@ -25,6 +25,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @ExtendWith(MockitoExtension.class)
 class HttpServiceAutoConfigurationTest {
 
@@ -47,12 +49,25 @@ class HttpServiceAutoConfigurationTest {
     void httpClient_sslNotConfigured() {
         try (MockedStatic<SslContextFactory> mockSslContextFactory = Mockito.mockStatic(SslContextFactory.class)) {
             SslProperties sslProperties = sslProperties();
-            sslProperties.setKeyStorePassword("not-set");
+            sslProperties.setKeyStorePassword(SslProperties.NOT_SET);
 
             autoConfiguration.httpClient(sslProperties);
 
             mockSslContextFactory.verifyNoInteractions();
         }
+    }
+
+    @Test
+    void testTryAlternativeEnvVariables() {
+        SslProperties sslProperties = new SslProperties();
+        sslProperties.setKeyStorePassword(null);
+        sslProperties.setTrustStorePassword(null);
+
+        autoConfiguration.tryAlternativeEnvVariables(sslProperties);
+
+        // null passwords are replaced with not-set by readEnvVar
+        assertEquals(SslProperties.NOT_SET, sslProperties.getKeyStorePassword());
+        assertEquals(SslProperties.NOT_SET, sslProperties.getTrustStorePassword());
     }
 
     SslProperties sslProperties() {

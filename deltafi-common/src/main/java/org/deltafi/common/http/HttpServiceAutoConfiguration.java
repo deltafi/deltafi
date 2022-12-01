@@ -22,26 +22,21 @@ import org.deltafi.common.ssl.SslContextFactory;
 import org.deltafi.common.ssl.SslProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import java.net.http.HttpClient;
 
 @AutoConfiguration
-@EnableConfigurationProperties
+@EnableConfigurationProperties(SslProperties.class)
 @Slf4j
 public class HttpServiceAutoConfiguration {
-    @Bean
-    @ConfigurationProperties("ssl")
-    public SslProperties sslProperties() {
-        return new SslProperties();
-    }
 
     @Bean
     public HttpClient httpClient(SslProperties sslProperties) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
 
+        tryAlternativeEnvVariables(sslProperties);
         if (isConfigured(sslProperties)) {
             try {
                 httpClientBuilder.sslContext(SslContextFactory.buildSslContext(sslProperties));
@@ -68,7 +63,27 @@ public class HttpServiceAutoConfiguration {
         return true;
     }
 
+    /**
+     * SslProperties will bind to the SSL_KEYSTOREPASSWORD and SSL_TRUSTSTOREPASSWORD env variables by default,
+     * if those are not set attempt to bind to KEYSTORE_PASSWORD and TRUSTSTORE_PASSWORD to remain backwards compatible
+     * @param sslProperties that may need passwords set
+     */
+    void tryAlternativeEnvVariables(SslProperties sslProperties) {
+        if (sslProperties.getKeyStorePassword() == null || sslProperties.getKeyStorePassword().equals(SslProperties.NOT_SET)) {
+            sslProperties.setKeyStorePassword(readEnvVar("KEYSTORE_PASSWORD"));
+        }
+
+        if (sslProperties.getTrustStorePassword() == null || sslProperties.getTrustStorePassword().equals(SslProperties.NOT_SET)) {
+            sslProperties.setTrustStorePassword(readEnvVar("TRUSTSTORE_PASSWORD"));
+        }
+    }
+
     private boolean isPasswordNotSet(String password) {
-        return null != password && "not-set".equals(password);
+        return null != password && SslProperties.NOT_SET.equals(password);
+    }
+
+    String readEnvVar(String key) {
+        String password = System.getenv(key);
+        return password != null ? password : SslProperties.NOT_SET;
     }
 }

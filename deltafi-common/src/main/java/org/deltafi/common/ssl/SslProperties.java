@@ -18,16 +18,20 @@
 package org.deltafi.common.ssl;
 
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
+@ConfigurationProperties("ssl")
 public class SslProperties {
+    public static final String NOT_SET = "not-set";
+
     private String protocol;
 
     private String keyStore;
-    private String keyStorePassword;
+    private String keyStorePassword = NOT_SET;
     private String keyStoreType;
 
     private String trustStore;
-    private String trustStorePassword;
+    private String trustStorePassword = NOT_SET;
     private String trustStoreType;
 }

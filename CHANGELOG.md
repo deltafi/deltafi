@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Issue where syncing properties was thrashing between multiple instances of `deltafi-core`
 - Ingressing zero-byte file returned an error code, despite successful processing
 - Remove flow plans and flows that are no longer part of a plugin on upgrade
+- Setup SSL properties to bind to the `KEYSTORE_PASSWORD` and `TRUSTSTORE_PASSWORD` environment variables to remain backwards compatible
 
 ### Tech-Debt/Refactor
 - Move MinIO bucket setup from common to core
