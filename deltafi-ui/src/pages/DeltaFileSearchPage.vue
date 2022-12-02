@@ -39,16 +39,15 @@
             </Button>
             <Menu id="config_menu" ref="optionMenu" :model="items" :popup="true" />
           </template>
-
           <div class="search-options-wrapper">
             <div class="flex-row">
               <div class="flex-column">
                 <label for="fileNameId">Filename:</label>
-                <InputText v-model.trim="fileName" class="p-inputtext input-area-height" placeholder="Filename" />
+                <InputText v-model.trim="fileName" class="p-inputtext input-area-height responsive-width" placeholder="Filename" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
-                <Dropdown id="flowId" v-model="flowOptionSelected" :placeholder="flowOptionSelected ? flowOptionSelected.name + ' ' : 'Select an Ingress Flow'" :options="flowOptions" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <MultiSelect id="flowId" v-model="flowOptionSelected" :options="flowOptions" :placeholder="flowOptionSelected.length > 0 ? flowOptionSelected + ' ' : 'Select an Ingress Flow'" class="deltafi-input-field responsive-width" />
                 <label for="egressFlowId" class="mt-2">Egress Flow:</label>
-                <Dropdown id="egressFlowId" v-model="egressFlowOptionSelected" :placeholder="egressFlowOptionSelected ? egressFlowOptionSelected + ' ' : 'Select an Egress Flow'" :options="egressFlowOptions" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <MultiSelect id="egressFlowId" v-model="egressFlowOptionSelected" :options="egressFlowOptions" :placeholder="egressFlowOptionSelected.length > 0 ? egressFlowOptionSelected + ' ' : 'Select an Egress Flow'" class="deltafi-input-field responsive-width" />
                 <label for="stageId" class="mt-2">Size:</label>
                 <div class="size-container">
                   <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
@@ -61,7 +60,6 @@
                 <label for="testModeState">Test Mode:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="testModeState" v-model="testModeOptionSelected" :placeholder="testModeOptionSelected ? testModeOptionSelected.name + ' ' : 'Select if in Test Mode'" :options="testModeOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
-
                 <label for="egressedState" class="mt-2">Egressed:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="egressState" v-model="egressedOptionSelected" :placeholder="egressedOptionSelected ? egressedOptionSelected.name + ' ' : 'Select if Egressed'" :options="egressedOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
@@ -143,6 +141,7 @@ import Calendar from "primevue/calendar";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
+import MultiSelect from "primevue/multiselect";
 import Menu from "primevue/menu";
 import Panel from "primevue/panel";
 import InputNumber from "primevue/inputnumber";
@@ -164,6 +163,7 @@ import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
 import useFlows from "@/composables/useFlows";
 import { useUrlSearchParams } from "@vueuse/core";
+
 dayjs.extend(utc);
 
 const params = useUrlSearchParams("history");
@@ -211,8 +211,8 @@ const newMetadataKey = ref(null);
 const newMetadataValue = ref(null);
 const fileName = ref(null);
 const requeueMin = ref(null);
-const flowOptionSelected = ref(null);
-const egressFlowOptionSelected = ref(null);
+const flowOptionSelected = ref([]);
+const egressFlowOptionSelected = ref([]);
 const stageOptions = ref([]);
 const stageOptionSelected = ref(null);
 const egressedOptions = ref([
@@ -321,8 +321,8 @@ const items = ref([
         command: () => {
           fileName.value = null;
           requeueMin.value = null;
-          flowOptionSelected.value = null;
-          egressFlowOptionSelected.value = null;
+          flowOptionSelected.value = [];
+          egressFlowOptionSelected.value = [];
           stageOptionSelected.value = null;
           egressedOptionSelected.value = null;
           filteredOptionSelected.value = null;
@@ -507,8 +507,8 @@ const getPersistedParams = async () => {
     fileName.value = params.fileName != "" ? params.fileName : null;
     requeueMin.value = params.requeueMin != null ? Number(params.requeueMin) : null;
     stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
-    flowOptionSelected.value = params.ingressFlow ? params.ingressFlow : null;
-    egressFlowOptionSelected.value = params.egressFlow ? params.egressFlow : null;
+    flowOptionSelected.value = params.ingressFlow ? params.ingressFlow.split(",") : [];
+    egressFlowOptionSelected.value = params.egressFlow ? params.egressFlow.split(",") : [];
     egressedOptionSelected.value = params.egressed ? egressedOptions.value.find((i) => i.name == params.egressed) : null;
     filteredOptionSelected.value = params.filtered ? filteredOptions.value.find((i) => i.name == params.filtered) : null;
     testModeOptionSelected.value = params.testMode ? testModeOptions.value.find((i) => i.name == params.testMode) : null;
@@ -535,8 +535,8 @@ const getPersistedParams = async () => {
     fileName.value = panelState.value.fileName;
     requeueMin.value = panelState.value.requeueMin;
     stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
-    flowOptionSelected.value = panelState.value.flowOptionState ? { name: panelState.value.flowOptionState } : null;
-    egressFlowOptionSelected.value = panelState.value.egressFlowOptionState ? { name: panelState.value.egressFlowOptionState } : null;
+    flowOptionSelected.value = panelState.value.flowOptionState ? panelState.value.flowOptionState : [];
+    egressFlowOptionSelected.value = panelState.value.egressFlowOptionState ? panelState.value.egressFlowOptionState : [];
     egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
     filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
     testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
@@ -587,8 +587,8 @@ const setPersistedParams = () => {
   params.fileName = fileName.value != "" ? fileName.value : null;
   params.requeueMin = requeueMin.value != null ? requeueMin.value : null;
   params.stage = stageOptionSelected.value ? stageOptionSelected.value.name : null;
-  params.ingressFlow = flowOptionSelected.value ? flowOptionSelected.value : null;
-  params.egressFlow = egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null;
+  params.ingressFlow = flowOptionSelected.value.length > 0 ? String(flowOptionSelected.value) : null;
+  params.egressFlow = egressFlowOptionSelected.value.length > 0 ? String(egressFlowOptionSelected.value) : null;
   params.egressed = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
   params.filtered = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
   params.testMode = testModeOptionSelected.value ? testModeOptionSelected.value.name : null;
