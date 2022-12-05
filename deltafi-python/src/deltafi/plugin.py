@@ -29,7 +29,6 @@ import traceback
 from typing import List
 
 from deltafi.actioneventqueue import ActionEventQueue
-from deltafi.configserver import ConfigServerClient
 from deltafi.domain import Event
 from deltafi.exception import ExpectedContentException, MissingDomainException, MissingEnrichmentException, \
     MissingSourceMetadataException, MissingMetadataException
@@ -44,12 +43,6 @@ def _coordinates():
         'artifactId': os.getenv('PROJECT_NAME'),
         'version': os.getenv('PROJECT_VERSION')
     }
-
-
-def _setup_config_client(core_url):
-    client = ConfigServerClient(f"{core_url}/config")
-    client.sync()
-    return client
 
 
 def _setup_queue(max_connections):
