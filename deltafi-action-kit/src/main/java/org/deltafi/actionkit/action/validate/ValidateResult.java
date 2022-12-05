@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class ValidateResult extends Result implements ValidateResultType {
+public class ValidateResult extends Result<ValidateResult> implements ValidateResultType {
 
     /**
      * @param context Context of executing action

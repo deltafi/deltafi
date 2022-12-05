@@ -26,7 +26,7 @@ import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,9 +34,12 @@ import java.util.List;
  */
 @Getter
 @EqualsAndHashCode
-public abstract class Result implements ResultType {
+public abstract class Result<T extends Result<T>> implements ResultType {
 
     protected final ActionContext context;
+
+    protected ArrayList<Metric> metrics = new ArrayList<>();
+
 
     public Result(@NotNull ActionContext context) {
         this.context = context;
@@ -69,11 +72,22 @@ public abstract class Result implements ResultType {
     }
 
     /**
-     * This method should be overridden to provide any custom metrics when the result is harvested.
+     * Return a list of custom metrics
      * @return collection of Metric objects
      */
     public List<Metric> getCustomMetrics() {
-        return Collections.emptyList();
+        return metrics;
+    }
+
+    /**
+     * Add a custom metric to the result
+     * @param metric Metric object to add to the list of custom metrics in the result
+     * @return this instance of Result base class
+     */
+    public T add(Metric metric) {
+        metrics.add(metric);
+        //noinspection unchecked
+        return (T) this;
     }
 
 }

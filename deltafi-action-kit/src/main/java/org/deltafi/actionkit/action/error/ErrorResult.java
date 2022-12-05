@@ -42,7 +42,7 @@ import java.io.StringWriter;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class ErrorResult extends Result implements
+public class ErrorResult extends Result<ErrorResult> implements
         DomainResultType, EgressResultType, EnrichResultType, FormatResultType, LoadResultType, TransformResultType, ValidateResultType {
     private final String errorCause;
     private final String errorContext;

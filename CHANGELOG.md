@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Audit entries for deleted dids
 - Added new `ingressFlows` field to SourceInfo for DeltaFiles filter
 - Allow custom metrics to be returned in responses from python actions
+- All Java Action Kit result classes have a custom metric `add` method for adding custom metrics to a result
 
 ### Changed
 - `SplitResult::splitInputs` renamed to `splitEvents` to match naming convention

@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class FilterResult extends Result implements
+public class FilterResult extends Result<FilterResult> implements
         EgressResultType, FormatResultType, LoadResultType, TransformResultType, ValidateResultType {
     private final String message;
 

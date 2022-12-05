@@ -26,9 +26,6 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.deltafi.common.metrics.MetricsUtil.BYTES_OUT;
 import static org.deltafi.common.metrics.MetricsUtil.FILES_OUT;
 
@@ -37,10 +34,7 @@ import static org.deltafi.common.metrics.MetricsUtil.FILES_OUT;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class EgressResult extends Result implements EgressResultType {
-    private final String destination;
-    private final long bytesEgressed;
-
+public class EgressResult extends Result<EgressResult> implements EgressResultType {
     /**
      * @param context Context of the executed action
      * @param destination Location where data was egressed
@@ -50,22 +44,12 @@ public class EgressResult extends Result implements EgressResultType {
     public EgressResult(@NotNull ActionContext context, String destination, long bytesEgressed) {
         super(context);
 
-        this.destination = destination;
-        this.bytesEgressed = bytesEgressed;
+        add(new Metric(FILES_OUT, 1).addTag("endpoint", destination));
+        add(new Metric(BYTES_OUT, bytesEgressed).addTag("endpoint", destination));
     }
 
     @Override
     public final ActionEventType actionEventType() {
         return ActionEventType.EGRESS;
-    }
-
-    @Override
-    public List<Metric> getCustomMetrics() {
-        ArrayList<Metric> metrics = new ArrayList<>();
-
-        metrics.add(new Metric(FILES_OUT, 1).addTag("endpoint", destination));
-        metrics.add(new Metric(BYTES_OUT, bytesEgressed).addTag("endpoint", destination));
-
-        return metrics;
     }
 }

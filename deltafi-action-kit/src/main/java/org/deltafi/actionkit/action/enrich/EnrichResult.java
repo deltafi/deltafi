@@ -34,7 +34,7 @@ import java.util.Map;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class EnrichResult extends Result implements HasIndexedMetadata, EnrichResultType {
+public class EnrichResult extends Result<EnrichResult> implements HasIndexedMetadata, EnrichResultType {
     private final List<Enrichment> enrichments = new ArrayList<>();
     private final Map<String, String> indexedMetadata = new HashMap<>();
 
@@ -53,6 +53,7 @@ public class EnrichResult extends Result implements HasIndexedMetadata, EnrichRe
      * @param value String value of the applied enrichment
      * @param mediaType Media type of the applied enrichment
      */
+    @SuppressWarnings("unused")
     public void addEnrichment(@NotNull String enrichmentName, String value, @NotNull String mediaType) {
         enrichments.add(new Enrichment(enrichmentName, value, mediaType));
     }

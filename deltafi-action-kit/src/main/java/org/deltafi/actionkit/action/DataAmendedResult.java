@@ -38,7 +38,7 @@ import java.util.Map;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-public abstract class DataAmendedResult extends Result {
+public abstract class DataAmendedResult extends Result<DataAmendedResult> {
     protected List<Content> content = new ArrayList<>();
     protected List<KeyValue> metadata = new ArrayList<>();
 
