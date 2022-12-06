@@ -15,7 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- Upload page could show an invalid ingress flow (#304)
+- Fixed bug allowing disabled ingress flow to be shown on the Upload page (#304)
+- Fixed bug when viewing formatted XML/JSON content (#282)
 
 ## [0.99.4]
 

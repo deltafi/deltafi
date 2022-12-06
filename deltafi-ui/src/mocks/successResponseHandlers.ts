@@ -46,6 +46,21 @@ export default [
     }
   }),
 
+  rest.get("/api/v1/content", (req, res, ctx) => {
+    try {
+      const referenceBase64: string = req.url.searchParams.get("reference") || "";
+      const referenceJson = window.atob(referenceBase64);
+      const reference = JSON.parse(referenceJson);
+
+      const mockContentModule = require(`.${req.url.pathname}`);
+      const responseData = mockContentModule.default(reference);
+      return res(ctx.delay(100), ctx.status(200, "Mocked status"), ctx.body(responseData));
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+  }),
+
   rest.get("/api/v1/*", (req, res, ctx) => {
     try {
       if (require.resolve(`.${req.url.pathname}`)) {

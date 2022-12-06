@@ -206,7 +206,7 @@ const generateData = () => {
         metadata: [],
         content: [
           {
-            name: "testfile1.txt",
+            name: "TestFile.json",
             contentReference: {
               "segments": [
                 {
@@ -216,12 +216,12 @@ const generateData = () => {
                   "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
                 }
               ],
-              size: 45673,
-              mediaType: "application/octet-stream",
+              size: 488,
+              mediaType: "application/json",
             },
           },
           {
-            name: "testfile2.txt",
+            name: "TestFile.xml",
             contentReference: {
               "segments": [
                 {
@@ -231,10 +231,40 @@ const generateData = () => {
                   "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
                 }
               ],
-              size: 45673,
+              size: 718,
+              mediaType: "application/xml",
+            },
+          },
+          {
+            name: "TestFile.bin",
+            contentReference: {
+              "segments": [
+                {
+                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                  "offset": 0,
+                  "size": 128,
+                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+                }
+              ],
+              size: 128,
               mediaType: "application/octet-stream",
             },
           },
+          {
+            name: "TestFile.txt",
+            contentReference: {
+              "segments": [
+                {
+                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                  "offset": 0,
+                  "size": 32,
+                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+                }
+              ],
+              size: 32,
+              mediaType: "text/plain",
+            },
+          }
         ],
       },
       {

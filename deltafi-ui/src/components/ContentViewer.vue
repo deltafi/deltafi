@@ -193,30 +193,6 @@ const items = ref([
     },
   },
 ]);
-const renderFormats = ref([
-  { name: "Hexdump", id: 'hex', highlight: false },
-  { name: "UTF-8", id: 'utf8', highlight: true }
-]);
-const selectedRenderFormat = ref(renderFormats.value[1]);
-
-onMounted(() => {
-  loadContent();
-  if (prettyPrintFormats.includes(language.value)) {
-    renderFormats.value.push({
-      name: `Formatted ${language.value.toUpperCase()}`,
-      id: 'formatted',
-      highlight: true
-    })
-    renderFormats.value = _.sortBy(renderFormats.value, 'name')
-  }
-});
-
-watch(
-  () => contentReference.value,
-  () => {
-    loadContent();
-  }
-);
 
 const language = computed(() => {
   try {
@@ -225,6 +201,41 @@ const language = computed(() => {
     return null;
   }
 });
+
+const renderFormats = computed(() => {
+  const formats = [
+    { name: "Hexdump", id: 'hex', highlight: false },
+    { name: "UTF-8", id: 'utf8', highlight: true }
+  ];
+
+  if (prettyPrintFormats.includes(language.value)) {
+    formats.push({
+      name: `Formatted ${language.value.toUpperCase()}`,
+      id: 'formatted',
+      highlight: true
+    })
+  }
+
+  return _.sortBy(formats, 'name');
+});
+
+const selectedRenderFormat = ref(renderFormats.value.find((f) => f.id === 'utf8'));
+
+onMounted(() => {
+  loadContent();
+});
+
+watch(
+  () => contentReference.value,
+  () => {
+    loadContent();
+    if (renderFormats.value.find((f) => f.id == selectedRenderFormat.value.id)) {
+      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === selectedRenderFormat.value.id)
+    } else {
+      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === 'utf8')
+    }
+  }
+);
 
 const partialContent = computed(() => contentReference.value.size > maxPreviewSize);
 
