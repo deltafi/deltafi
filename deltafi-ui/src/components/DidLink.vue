@@ -47,7 +47,7 @@ const onCopy = (event) => {
     copy(props.did);
     notify.info("DID Copied to Clipboard", props.did, 1500);
   }
-  console.log(event)
+  console.debug(event)
 }
 
 const copyLinkIconClass = computed(() => {

@@ -78,19 +78,27 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/config/system",
-    name: "System Properties",
-    component: () => import("@/pages/SystemPropertiesPage.vue"),
-    meta: {
-      permission: "SystemPropertiesRead",
-    },
-  },
-  {
     path: "/config/plugins/:pluginCordinates?",
     name: "Plugins",
     component: () => import("@/pages/PluginsPage.vue"),
     meta: {
       permission: "PluginsView",
+    },
+  },
+  {
+    path: "/config/plugin-repositories",
+    name: "Repositories",
+    component: () => import("@/pages/PluginRepositoryPage.vue"),
+    meta: {
+      permission: "PluginImageRepoView",
+    },
+  },
+  {
+    path: "/config/system",
+    name: "System Properties",
+    component: () => import("@/pages/SystemPropertiesPage.vue"),
+    meta: {
+      permission: "SystemPropertiesRead",
     },
   },
   {

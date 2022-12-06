@@ -16,7 +16,6 @@
    limitations under the License.
 */
 
-import version from "@/mocks/graphql/version";
 import { ref } from "vue";
 import useGraphQL from "./useGraphQL";
 export default function usePlugins() {
@@ -145,6 +144,49 @@ export default function usePlugins() {
     return;
   };
 
+  const getPluginImageRepositories = async () => {
+    const query = {
+      getPluginImageRepositories: {
+        imageRepositoryBase: true,
+        pluginGroupIds: true,
+        imagePullSecret: true,
+      },
+    };
+    return sendGraphQLQuery(query, "getPluginImageRepositories");
+  };
+
+  const savePluginImageRepository = async (imageRepoBase: String, pluginGroupIdsList: Array<String>, newImagePullSecret: String | null) => {
+    const query = {
+      savePluginImageRepository: {
+        __args: {
+          pluginImageRepository: {
+            imageRepositoryBase: imageRepoBase,
+            pluginGroupIds: pluginGroupIdsList,
+            imagePullSecret: newImagePullSecret,
+          },
+        },
+        imageRepositoryBase: true,
+        pluginGroupIds: true,
+        imagePullSecret: true,
+      },
+    };
+    return sendGraphQLQuery(query, "savePluginImageRepository", "mutation");
+  };
+
+  const removePluginImageRepository = async (pluginImageRepositoryId: String) => {
+    const query = {
+      removePluginImageRepository: {
+        __args: {
+          id: pluginImageRepositoryId,
+        },
+        success: true,
+        info: true,
+        errors: true,
+      },
+    };
+    return sendGraphQLQuery(query, "removePluginImageRepository", "mutation");
+  };
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
@@ -166,5 +208,8 @@ export default function usePlugins() {
     fetch,
     setPluginVariableValues,
     verifyActionsAreRegistered,
+    getPluginImageRepositories,
+    savePluginImageRepository,
+    removePluginImageRepository,
   };
 }

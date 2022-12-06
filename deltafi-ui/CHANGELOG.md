@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Ingress and egress flows dropdowns on the Search page are now multi-select (#291)
 - Added ability to install, update, and uninstall on the Plugins page (#297)
 - Added Role management (#303)
+- Added Plugin Repositories page (#298)
 
 ### Fixed
 
