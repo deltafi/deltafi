@@ -32,31 +32,32 @@
         <dl>
           <dt>{{ pluginConfigurationMap.get("groupId").header }}</dt>
           <dd>
-            <InputText v-model="selectedGroupId" :placeholder="pluginConfigurationMap.get('groupId').placeholder" :disabled="pluginConfigurationMap.get('groupId').disabled" class="inputWidth" />
+            <InputText v-model="model.groupId" :placeholder="pluginConfigurationMap.get('groupId').placeholder" :disabled="pluginConfigurationMap.get('groupId').disabled" class="inputWidth" />
           </dd>
           <dt>{{ pluginConfigurationMap.get("artifactId").header }}</dt>
           <dd>
-            <InputText v-model="selectedArtifactId" :placeholder="pluginConfigurationMap.get('artifactId').placeholder" :disabled="pluginConfigurationMap.get('artifactId').disabled" class="inputWidth" />
+            <InputText v-model="model.artifactId" :placeholder="pluginConfigurationMap.get('artifactId').placeholder" :disabled="pluginConfigurationMap.get('artifactId').disabled" class="inputWidth" />
           </dd>
           <dt>{{ pluginConfigurationMap.get("version").header }}</dt>
           <dd>
-            <InputText v-model="selectedVersion" :placeholder="pluginConfigurationMap.get('version').placeholder" :disabled="pluginConfigurationMap.get('version').disabled" class="inputWidth" />
+            <InputText v-model="model.version" :placeholder="pluginConfigurationMap.get('version').placeholder" :disabled="pluginConfigurationMap.get('version').disabled" class="inputWidth" />
           </dd>
         </dl>
       </div>
     </div>
     <teleport v-if="isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">
-        <Button label="Submit" @click="submit()" />
+        <Button label="Submit" :disabled="disableSubmit" @click="submit()" />
       </div>
     </teleport>
   </div>
 </template>
 
 <script setup>
+import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import { useMounted } from "@vueuse/core";
-import { defineEmits, defineProps, nextTick, onMounted, reactive, ref } from "vue";
+import { computed, defineEmits, defineProps, nextTick, reactive, ref } from "vue";
 
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
@@ -67,7 +68,7 @@ const props = defineProps({
   rowDataProp: {
     type: Object,
     required: false,
-    default: Object,
+    default: null,
   },
   closeDialogCommand: {
     type: Object,
@@ -75,29 +76,42 @@ const props = defineProps({
   },
 });
 
-const { installPlugin, uninstallPlugin } = usePlugins();
+const pluginCoordinates = {
+  groupId: null,
+  artifactId: null,
+  version: null,
+};
 
-const rowdata = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
+const notify = useNotifications();
+const { installPlugin, uninstallPlugin } = usePlugins();
 const { closeDialogCommand } = reactive(props);
+const rowData = ref(Object.assign({}, props.rowDataProp || pluginCoordinates));
 const emit = defineEmits(["reloadPlugins"]);
 const isMounted = ref(useMounted());
-
 const errorsList = ref([]);
+const model = computed({
+  get() {
+    return new Proxy(rowData.value, {
+      set(obj, key, value) {
+        model.value = { ...obj, [key]: value };
+        return true;
+      },
+    });
+  },
+  set(newValue) {
+    Object.assign(
+      rowData.value,
+      _.mapValues(newValue, (v) => (v === "" ? null : v))
+    );
+  },
+});
+const originalModel = Object.assign({}, model.value);
 
 const pluginConfigurationMap = new Map([
-  ["groupId", { header: "Group Id", placeholder: "e.g. org.deltafi.stix", type: "string" }],
-  ["artifactId", { header: "Artifact Id", placeholder: "e.g. stix, passthrough", type: "string" }],
-  ["version", { header: "Version", placeholder: "e.g. 1.0.1, <commit hash>", type: "string" }],
+  ["groupId", { header: "Group Id", placeholder: "e.g. org.deltafi.passthrough" }],
+  ["artifactId", { header: "Artifact Id", placeholder: "e.g. passthrough" }],
+  ["version", { header: "Version", placeholder: "e.g. 1.0.1, <commit hash>" }],
 ]);
-
-const selectedGroupId = ref(_.get(rowdata, "pluginCoordinates.groupId", null));
-const originalGroupId = selectedGroupId.value;
-const selectedArtifactId = ref(_.get(rowdata, "pluginCoordinates.artifactId", null));
-const originalArtifactId = selectedArtifactId.value;
-const selectedVersion = ref(_.get(rowdata, "pluginCoordinates.version", null));
-const originalVersion = selectedVersion.value;
-
-onMounted(async () => {});
 
 const clearErrors = () => {
   errorsList.value = [];
@@ -114,23 +128,40 @@ const submit = async () => {
 
 const pluginUpdateFlow = async () => {
   clearErrors();
-  if (!selectedGroupId.value || !selectedArtifactId.value || !selectedVersion.value) {
+  // Check to see if all required fields have values, is not return out
+  if (!Object.values(model.value).every((x) => x)) {
     errorsList.value.push("You must provide a Group Id, Artifact Id, and Version");
     await nextTick();
     return;
   }
 
-  if (!originalGroupId && !originalArtifactId && !originalVersion) {
-    await installPlugin(selectedGroupId.value, selectedArtifactId.value, selectedVersion.value);
+  // Check to see if this is a new plugin, if so install it and return out
+  if (!Object.values(originalModel).every((x) => x)) {
+    await installPlugin(model.value.groupId, model.value.artifactId, model.value.version);
     return;
   }
 
-  if (!_.isEqual(originalGroupId, selectedGroupId.value) || !_.isEqual(originalArtifactId, selectedArtifactId.value)) {
-    await uninstallPlugin(selectedGroupId.value, selectedArtifactId.value, selectedVersion.value);
+  // Check to see if this is updating an existing plugins groupId or artifactId, if so uninstall the plugin and continue
+  if (!_.isEqual(originalModel.groupId, model.value.groupId) || !_.isEqual(originalModel.artifactId, model.value.artifactId)) {
+    let response = await uninstallPlugin(originalModel.groupId, originalModel.artifactId, originalModel.version);
+    let responseErrors = _.get(response.uninstallPlugin, "errors", null);
+    if (!_.isEmpty(responseErrors)) {
+      for (let errorMessages of responseErrors) {
+        errorsList.value.push(errorMessages);
+      }
+      notify.error(`Removing plugin ${originalModel.artifactId} failed`, `Plugin ${originalModel.artifactId} was not removed.`, 4000);
+      return;
+    } else {
+      notify.success(`Removed ${originalModel.artifactId}}`, `Successfully Removed ${originalModel.artifactId}}.`, 4000);
+    }
   }
 
-  await installPlugin(selectedGroupId.value, selectedArtifactId.value, selectedVersion.value);
+  await installPlugin(model.value.groupId, model.value.artifactId, model.value.version);
 };
+
+const disableSubmit = computed(() => {
+  return _.isEqual(model.value, originalModel) || !Object.values(model.value).every((x) => x);
+});
 </script>
 
 <style lang="scss">

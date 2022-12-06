@@ -20,7 +20,7 @@
   <div class="plugins-page">
     <PageHeader heading="Plugins">
       <div class="d-flex mb-2">
-        <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="{}" @reload-plugins="loadPlugins()">
+        <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="25vw" @reload-plugins="loadPlugins()">
           <Button v-has-permission:PluginInstall label="Install Plugin" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
@@ -36,13 +36,13 @@
             <Column header="Description" field="description" />
             <Column header="Version" field="pluginCoordinates.version" />
             <Column header="Action Kit Version" field="actionKitVersion" />
-            <Column :style="{ width: '5%' }" class="plugin-actions-column">
+            <Column :style="{ width: '5%' }" class="plugin-actions-column" :hidden="!$hasSomePermissions('PluginInstall', 'PluginUninstall')">
               <template #body="{ data }">
                 <div class="d-flex justify-content-between">
-                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="data" @reload-plugins="loadPlugins()">
-                    <Button v-has-permission:PluginInstall v-tooltip.top="`Edit Plugin`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
+                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="data.pluginCoordinates" @reload-plugins="loadPlugins()">
+                    <Button v-has-permission:PluginInstall v-tooltip.top="`Update Plugin`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
                   </DialogTemplate>
-                  <PluginRemoveButton v-has-permission:PluginUninstall :row-data-prop="data" @reload-plugins="loadPlugins()" />
+                  <PluginRemoveButton v-has-permission:PluginUninstall :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" />
                 </div>
               </template>
             </Column>
@@ -60,6 +60,15 @@
       </Splitter>
     </Panel>
   </div>
+  <Dialog v-model:visible="errorOverlayDialog" :style="{ width: '750px' }" header="Errors" :modal="true" @hide="hideErrorsDialog()">
+    <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
+      <ul>
+        <div v-for="(error, key) in _.uniq(errorsList)" :key="key">
+          <li class="text-wrap text-break">{{ error }}</li>
+        </div>
+      </ul>
+    </Message>
+  </Dialog>
 </template>
 
 <script setup>
@@ -73,9 +82,13 @@ import useNotifications from "@/composables/useNotifications";
 import { computed, nextTick, onMounted, provide, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import _ from "lodash";
+
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
+import Dialog from "primevue/dialog";
+import Message from "primevue/message";
 import Panel from "primevue/panel";
 import ProgressBar from "primevue/progressbar";
 import Splitter from "primevue/splitter";
@@ -92,6 +105,9 @@ const panelOneSize = ref(null);
 const panelTwoSize = ref(null);
 const userResized = ref(false);
 const firstMounted = ref(true);
+
+const errorsList = ref([]);
+const errorOverlayDialog = ref(false);
 
 const route = useRoute();
 const router = useRouter();
@@ -151,8 +167,6 @@ watch(selectedPlugin, async (newItem) => {
 });
 
 const customSpitterSize = async (event) => {
-  console.log("in here");
-  console.log("event: ", event);
   userResized.value = true;
   await nextTick();
   panelOneSize.value = splitterSize(event.sizes[0]);
@@ -177,6 +191,23 @@ const scrollToRow = async (pluginSelected) => {
 
 const splitterSize = (slitSize) => {
   return `flex-basis: calc(${slitSize}% - 10px);`;
+};
+
+const pluginRemovalErrors = (removalErrors) => {
+  clearUploadErrors();
+  for (let errorMessages of removalErrors) {
+    errorsList.value.push(errorMessages);
+  }
+  errorOverlayDialog.value = true;
+};
+
+const hideErrorsDialog = () => {
+  errorOverlayDialog.value = false;
+  clearUploadErrors();
+};
+
+const clearUploadErrors = () => {
+  errorsList.value = [];
 };
 </script>
 

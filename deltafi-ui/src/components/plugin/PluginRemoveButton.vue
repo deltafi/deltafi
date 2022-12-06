@@ -38,12 +38,14 @@ import usePlugins from "@/composables/usePlugins";
 import useNotifications from "@/composables/useNotifications";
 import { defineEmits, defineProps, reactive } from "vue";
 
+import _ from "lodash";
+
 import ConfirmPopup from "primevue/confirmpopup";
 import Button from "primevue/button";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
-const emit = defineEmits(["reloadPlugins"]);
+const emit = defineEmits(["reloadPlugins", "pluginRemovalErrors"]);
 const { uninstallPlugin } = usePlugins();
 const notify = useNotifications();
 
@@ -67,14 +69,21 @@ const confirmationPopup = (event, combinedPluginCoordinates, displayName, plugin
     icon: "pi pi-exclamation-triangle",
     accept: () => {
       notify.info("Removing Plugin", `Removing Plugin ${displayName}.`, 3000);
-      confirmedRemovePlugin(pluginCoordinates);
+      confirmedRemovePlugin(displayName, pluginCoordinates);
     },
     reject: () => {},
   });
 };
 
-const confirmedRemovePlugin = async (pluginCoordinates) => {
-  await uninstallPlugin(pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version);
-  emit("reloadPlugins");
+const confirmedRemovePlugin = async (displayName, pluginCoordinates) => {
+  let response = await uninstallPlugin(pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version);
+  let responseErrors = _.get(response.uninstallPlugin, "errors", null);
+  if (!_.isEmpty(responseErrors)) {
+    notify.error(`Removing plugin ${displayName} failed`, `Plugin ${displayName} was not removed.`, 4000);
+    emit("pluginRemovalErrors", responseErrors);
+  } else {
+    notify.success(`Removed ${displayName}`, `Successfully Removed ${displayName}.`, 4000);
+    emit("reloadPlugins");
+  }
 };
 </script>
