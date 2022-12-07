@@ -16,21 +16,12 @@
  *    limitations under the License.
  */
 
-package org.deltafi.common.metrics;
+package org.deltafi.core.configuration;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("metrics")
+
 @Data
 public class MetricsProperties {
-    @Data
-    public static class StatsdProperties {
-        String hostname = "deltafi-graphite";
-        Integer port = 8125;
-    }
-
-    boolean enabled = true;
-    Integer periodSeconds = 10;
-    StatsdProperties statsd = new StatsdProperties();
+    private boolean enabled = true;
 }

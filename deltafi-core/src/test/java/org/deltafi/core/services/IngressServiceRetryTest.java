@@ -19,7 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.common.types.*;
 import org.deltafi.core.Util;
 import org.deltafi.core.audit.CoreAuditLogger;

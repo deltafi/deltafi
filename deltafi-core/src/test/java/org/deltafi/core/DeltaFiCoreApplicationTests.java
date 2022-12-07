@@ -30,9 +30,8 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
-import org.deltafi.common.types.Metric;
-import org.deltafi.common.metrics.MetricRepository;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.common.types.Metric;
 import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.server.constants.PropertyConstants;
@@ -52,6 +51,7 @@ import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.plugin.PluginRepository;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
@@ -112,9 +112,7 @@ import java.util.stream.Stream;
 import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
-import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
-import static org.deltafi.common.metrics.MetricsUtil.*;
+import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.core.Util.assertEqualsIgnoringDates;
 import static org.deltafi.core.Util.buildDeltaFile;
@@ -122,6 +120,7 @@ import static org.deltafi.core.configuration.server.constants.PropertyConstants.
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
+import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.rest.IngressRest.FLOWFILE_V1_MEDIA_TYPE;
 import static org.hamcrest.Matchers.containsString;
@@ -691,7 +690,7 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postTransformUtf8DeltaFile(did), "sampleIngress.SampleTransformAction");
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleIngress.Utf8TransformAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
@@ -718,7 +717,7 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postTransformDeltaFile(did), "sampleIngress.SampleLoadAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleIngress.SampleTransformAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 
 	}
@@ -814,7 +813,7 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postLoadDeltaFile(did), "sampleEnrich.SampleDomainAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.LOAD, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
@@ -850,9 +849,9 @@ class DeltaFiCoreApplicationTests {
 
 		assertEqualsIgnoringDates(post09MissingEnrichDeltaFile(did), deltaFile);
 		Map<String, String> tags = tagsFor(ActionEventType.DOMAIN, "sampleEnrich.SampleDomainAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Map<String, String> tags2 = tagsFor("unknown", "NoEgressFlowConfiguredAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_ERRORED, 1).addTags(tags2));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags2));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 
 	}
@@ -898,7 +897,7 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFile());
 
 		Map<String, String> tags = tagsFor(ActionEventType.SPLIT, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
@@ -924,7 +923,7 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postDomainDeltaFile(did), "sampleEnrich.SampleEnrichAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.DOMAIN, "sampleEnrich.SampleDomainAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 
 	}
@@ -952,7 +951,7 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postEnrichDeltaFile(did), "sampleEgress.SampleFormatAction");
 		Map<String, String> tags = tagsFor(ActionEventType.ENRICH, "sampleEnrich.SampleEnrichAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
@@ -984,7 +983,7 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postFormatDeltaFile(did), "sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction");
 		Map<String, String> tags = tagsFor(ActionEventType.FORMAT, "sampleEgress.SampleFormatAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 
 	}
@@ -1028,7 +1027,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(3).getActionContext().getDid());
 
 		Map<String, String> tags = tagsFor(ActionEventType.FORMAT_MANY, "sampleEgress.SampleFormatAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
@@ -1056,7 +1055,7 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.SampleValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 
 	}
@@ -1084,8 +1083,8 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(expected, actual);
 
 		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
-		Mockito.verify(metricRepository).increment(new Metric(FILES_ERRORED, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 
 	}
@@ -1234,7 +1233,7 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postValidateAuthorityDeltaFile(did), "sampleEgress.SampleEgressAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 
 	}
@@ -1263,9 +1262,9 @@ class DeltaFiCoreApplicationTests {
 
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "sampleEgress.SampleEgressAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
-		Mockito.verify(metricRepository).increment(new Metric(FILES_OUT, 1).addTag("destination", "final").addTags(tags));
-		Mockito.verify(metricRepository).increment(new Metric(BYTES_OUT, 42).addTag("destination", "final").addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_OUT, 1).addTag("destination", "final").addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.BYTES_OUT, 42).addTag("destination", "final").addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
@@ -1313,7 +1312,7 @@ class DeltaFiCoreApplicationTests {
 		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(EGRESS_FLOW_NAME));
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
@@ -3590,8 +3589,8 @@ class DeltaFiCoreApplicationTests {
 		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
 		Map<String, String> tags = tagsFor("ingress", INGRESS_ACTION, FLOW, null);
-		Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
-		Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
+		Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_IN, tags, 1);
+		Mockito.verify(metricRepository).increment(DeltaFiConstants.BYTES_IN, tags, CONTENT.length());
 	}
 
 	@Test
@@ -3610,8 +3609,8 @@ class DeltaFiCoreApplicationTests {
 		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
 		Map<String, String> tags = tagsFor("ingress", INGRESS_ACTION, FLOW, null);
-		Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
-		Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
+		Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_IN, tags, 1);
+		Mockito.verify(metricRepository).increment(DeltaFiConstants.BYTES_IN, tags, CONTENT.length());
 	}
 
 	@Test
@@ -3654,8 +3653,8 @@ class DeltaFiCoreApplicationTests {
 		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 
 		Map<String, String> tags = tagsFor("ingress", INGRESS_ACTION, FLOW, null);
-		Mockito.verify(metricRepository).increment(FILES_IN, tags, 1);
-		Mockito.verify(metricRepository).increment(BYTES_IN, tags, CONTENT.length());
+		Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_IN, tags, 1);
+		Mockito.verify(metricRepository).increment(DeltaFiConstants.BYTES_IN, tags, CONTENT.length());
 	}
 
 	@Test

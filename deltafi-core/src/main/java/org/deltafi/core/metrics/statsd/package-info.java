@@ -15,19 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.metrics;
+@ParametersAreNonnullByDefault
+package org.deltafi.core.metrics.statsd;
 
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-
-@AutoConfiguration
-@EnableConfigurationProperties(MetricsProperties.class)
-public class MetricsAutoConfiguration {
-    @Bean
-    @ConditionalOnMissingBean
-    public MetricRepository metricRepository(MetricsProperties metricsProperties) {
-        return new MetricRepository(metricsProperties);
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

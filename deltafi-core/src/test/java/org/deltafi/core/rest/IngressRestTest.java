@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.rest;
 
-import org.deltafi.common.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.services.IngressService;

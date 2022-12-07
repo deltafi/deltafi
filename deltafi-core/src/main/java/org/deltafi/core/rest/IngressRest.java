@@ -28,8 +28,8 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.metrics.MetricRepository;
-import org.deltafi.common.metrics.MetricsUtil;
+import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.core.audit.CoreAuditLogger;
@@ -55,7 +55,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
-import static org.deltafi.common.metrics.MetricsUtil.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -111,8 +110,8 @@ public class IngressRest {
             coreAuditLogger.logIngress(username, ingressResult.filename);
 
             Map<String, String> tags = tagsFor(ingressResult.getFlow());
-            metricService.increment(FILES_IN, tags, 1);
-            metricService.increment(BYTES_IN, tags, ingressResult.getContentReference().getSize());
+            metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
+            metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.getContentReference().getSize());
 
             return ResponseEntity.ok(ingressResult.getDid());
         } catch (IngressMetadataException exception) {
@@ -127,7 +126,7 @@ public class IngressRest {
 
     ResponseEntity<String> errorResponse(HttpStatus code, String explanation, String flow, String filename, String contentType, String username) {
         log.error("{} error for flow={} filename={} contentType={} username={}: {}", code.value(), flow, filename, contentType, username, explanation);
-        metricService.increment(FILES_DROPPED, tagsFor(flow), 1);
+        metricService.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(flow), 1);
         return ResponseEntity.status(code).body(explanation);
     }
 

@@ -16,34 +16,39 @@
  *    limitations under the License.
  */
 
-package org.deltafi.common.metrics;
+package org.deltafi.core.metrics;
 
 import com.codahale.metrics.MetricRegistry;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.metrics.statsd.StatsdDeltaReporter;
-import org.jetbrains.annotations.NotNull;
 import org.deltafi.common.types.Metric;
+import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.metrics.statsd.StatsdDeltaReporter;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
+@Service
 public class MetricRepository {
 
-    final private MetricRegistry metrics;
+    private final MetricRegistry metrics;
 
-    public MetricRepository(MetricsProperties metricsProperties) {
-        if (metricsProperties.isEnabled()) {
+    public MetricRepository(@Value("${STATSD_HOSTNAME:deltafi-graphite}") String statsdHostname,
+                            @Value("${STATSD_PORT:8125}") int statsdPort,
+                            @Value("${METRICS_PERIOD_SECONDS:10}") int periodSeconds,
+                            DeltaFiProperties deltaFiProperties) {
+        if (deltaFiProperties.getMetrics().isEnabled()) {
             log.info("Creating metric service");
             metrics = new MetricRegistry();
 
-            log.info("Starting statsd reporter");
+            log.info("Starting statsd reporter connecting to {}:{}", statsdHostname, statsdPort);
             StatsdDeltaReporter
-                    .builder(metricsProperties.getStatsd().getHostname(),
-                            metricsProperties.getStatsd().getPort(),
-                            metrics)
+                    .builder(statsdHostname, statsdPort, metrics)
                     .build()
-                    .start(10, TimeUnit.SECONDS);
+                    .start(periodSeconds, TimeUnit.SECONDS);
             log.info("MetricService initialized.");
         } else {
             log.warn("Metrics are disabled");

@@ -16,7 +16,7 @@
  *    limitations under the License.
  */
 
-package org.deltafi.common.metrics.statsd;
+package org.deltafi.core.metrics.statsd;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,10 +28,10 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.MissingResourceException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class StatsdClientTest {

@@ -16,8 +16,9 @@
  *    limitations under the License.
  */
 
-package org.deltafi.common.metrics;
+package org.deltafi.core.metrics;
 
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,21 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MetricsUtil {
-
-    // Metric names
-    static final public String FILES_ERRORED = "files_errored";
-    static final public String FILES_DROPPED = "files_dropped";
-    static final public String FILES_FILTERED = "files_filtered";
-    static final public String FILES_IN = "files_in";
-    static final public String FILES_OUT = "files_out";
-    static final public String BYTES_IN = "bytes_in";
-    static final public String BYTES_OUT = "bytes_out";
-
-    // Tag names
-    static final public String ACTION = "action";
-    static final public String SOURCE = "source";
-    static final public String INGRESS_FLOW = "ingressFlow";
-    static final public String EGRESS_FLOW = "egressFlow";
 
     /** Helper for generating a default tag list for metrics
      *
@@ -64,15 +50,15 @@ public class MetricsUtil {
     static public @NotNull Map<String, String> tagsFor(@NotNull String actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
         Map<String, String> tags = new HashMap<>();
 
-        tags.put(ACTION, actionType.toLowerCase());
-        tags.put(SOURCE, actionName);
+        tags.put(DeltaFiConstants.ACTION, actionType.toLowerCase());
+        tags.put(DeltaFiConstants.SOURCE, actionName);
 
         if (ingressFlow != null) {
-            tags.put(INGRESS_FLOW, ingressFlow);
+            tags.put(DeltaFiConstants.INGRESS_FLOW, ingressFlow);
         }
 
         if (egressFlow != null) {
-            tags.put(EGRESS_FLOW, egressFlow);
+            tags.put(DeltaFiConstants.EGRESS_FLOW, egressFlow);
         }
 
         return tags;

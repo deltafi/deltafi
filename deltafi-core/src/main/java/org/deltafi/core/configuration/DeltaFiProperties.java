@@ -27,6 +27,7 @@ public class DeltaFiProperties {
     private int requeueSeconds = 300;
     private int coreServiceThreads = 16;
     private int scheduledServiceThreads = 32;
+    private MetricsProperties metrics = new MetricsProperties();
     private DeleteProperties delete = new DeleteProperties();
     private IngressProperties ingress = new IngressProperties();
     private String apiUrl;

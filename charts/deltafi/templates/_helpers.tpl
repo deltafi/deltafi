@@ -99,12 +99,6 @@ initContainers:
   value: http://deltafi-minio:9000
 - name: MINIO_PARTSIZE
   value: "100000000"
-- name: METRICS_STATSD_HOSTNAME
-  value: "deltafi-graphite"
-- name: METRICS_STATSD_PORT
-  value: "8125"
-- name: METRICS_PERIODSECONDS
-  value: "10"
 - name: REDIS_URL
   value: http://deltafi-redis-master:6379
 - name: REDIS_PASSWORD
@@ -190,6 +184,12 @@ volumeMounts:
   value: "http://deltafi-api-service"
 - name: DELTAFI_CONFIG_IMPORT
   value: deltafi:mongodb=true&git=false
+- name: STATSD_HOSTNAME
+  value: "deltafi-graphite"
+- name: STATSD_PORT
+  value: "8125"
+- name: METRICS_PERIOD_SECONDS
+  value: "10"
 {{ include "commonEnvVars" . }}
 {{ include "sslEnvVars" . }}
 {{ include "mongoEnvVars" . }}

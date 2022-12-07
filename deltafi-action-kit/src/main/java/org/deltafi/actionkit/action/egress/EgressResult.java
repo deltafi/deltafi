@@ -26,8 +26,8 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
-import static org.deltafi.common.metrics.MetricsUtil.BYTES_OUT;
-import static org.deltafi.common.metrics.MetricsUtil.FILES_OUT;
+import static org.deltafi.common.constant.DeltaFiConstants.BYTES_OUT;
+import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
 
 /**
  * Specialized result class for EGRESS actions

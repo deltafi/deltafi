@@ -31,8 +31,8 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Metric;
-import org.deltafi.common.metrics.MetricRepository;
-import org.deltafi.common.metrics.MetricsUtil;
+import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.types.EgressFlow;
@@ -65,7 +65,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
-import static org.deltafi.common.metrics.MetricsUtil.*;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
 @Service
@@ -245,7 +244,7 @@ public class DeltaFilesService {
         }
 
         List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
-        metrics.add(new Metric(FILES_IN, 1));
+        metrics.add(new Metric(DeltaFiConstants.FILES_IN, 1));
 
         DeltaFile returnVal;
         switch (event.getType()) {
@@ -282,7 +281,7 @@ public class DeltaFilesService {
                 returnVal = error(deltaFile, event);
                 break;
             case FILTER:
-                metrics.add(new Metric(FILES_FILTERED, 1));
+                metrics.add(new Metric(DeltaFiConstants.FILES_FILTERED, 1));
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = filter(deltaFile, event);
                 break;
@@ -439,7 +438,7 @@ public class DeltaFilesService {
         }
 
         deltaFile.errorAction(event);
-        generateMetrics(List.of(new Metric(FILES_ERRORED, 1)), event, deltaFile);
+        generateMetrics(List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile);
 
         return deltaFile;
     }

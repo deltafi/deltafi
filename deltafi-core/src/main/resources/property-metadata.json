@@ -5,7 +5,7 @@
     "description": "Properties used across all parts of the system.",
     "properties": [
       {
-        "key": "metrics.enabled",
+        "key": "deltafi.metrics.enabled",
         "description": "Enable reporting of metrics to statsd/graphite",
         "defaultValue": "true",
         "hidden": false,

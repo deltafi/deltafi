@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Tech-Debt/Refactor
 - Move MinIO bucket setup from common to core
 - Use a single age off property under delete properties for both content and metadata
+- Move metrics out of common into core to prevent Java based actions from connecting to `graphite` 
 
 ### Security
 

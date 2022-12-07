@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.metrics.statsd;
+package org.deltafi.core.metrics.statsd;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
