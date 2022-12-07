@@ -59,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Issue in audit logger causing username to be tagged to logs erroneously
 - Issue with delete action performance
 - Issue with delete action and requeue scheduling
+- Action metrics API updated to use `files_in` instead of `files_completed` metric
 
 ### Upgrade and Migration
 - Upgrade base SpringBoot docker image to 0.99.4
