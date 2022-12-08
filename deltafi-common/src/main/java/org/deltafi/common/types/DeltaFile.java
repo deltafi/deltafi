@@ -123,7 +123,7 @@ public class DeltaFile {
   public void filterAction(ActionEventInput event, String filterMessage) {
     getActions().stream()
             .filter(action -> action.getName().equals(event.getAction()) && !terminalState(action.getState()))
-            .forEach(action -> setActionState(action, ActionState.FILTERED, event.getStart(), event.getStop(), filterMessage, null));
+            .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage));
   }
 
   public void splitAction(ActionEventInput event) {
@@ -155,6 +155,11 @@ public class DeltaFile {
 
   private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop) {
     setActionState(action, actionState, start, stop, null, null);
+  }
+
+  private void setFilteredActionState(Action action, OffsetDateTime start, OffsetDateTime stop, String filteredCause) {
+    action.setFilteredCause(filteredCause);
+    setActionState(action, ActionState.FILTERED, start, stop);
   }
 
   private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext) {

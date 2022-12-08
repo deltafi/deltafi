@@ -38,4 +38,5 @@ public class Action {
   private OffsetDateTime modified;
   private String errorCause;
   private String errorContext;
+  private String filteredCause;
 }

@@ -207,6 +207,7 @@ type Action {
   modified: DateTime!
   errorCause: String
   errorContext: String
+  filteredCause: String
 }
 
 enum ActionEventType {

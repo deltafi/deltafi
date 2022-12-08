@@ -240,8 +240,8 @@ public abstract class ActionTest {
     public void executeFilter(TestCaseBase<?> testCase) {
         FilterResult result = execute(testCase, FilterResult.class);
 
-        if(!testCase.getRegex().matcher(result.getMessage()).find()) {
-            Assertions.fail("FilterResult message does not match expected regex: expected(" + testCase.getRegex().pattern() + ") actual(" + result.getMessage() + ")");
+        if(!testCase.getRegex().matcher(result.getFilteredCause()).find()) {
+            Assertions.fail("FilterResult message does not match expected regex: expected(" + testCase.getRegex().pattern() + ") actual(" + result.getFilteredCause() + ")");
         }
     }
 

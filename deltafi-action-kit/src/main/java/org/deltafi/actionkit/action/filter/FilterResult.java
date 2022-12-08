@@ -38,16 +38,17 @@ import org.jetbrains.annotations.NotNull;
 @EqualsAndHashCode(callSuper = true)
 public class FilterResult extends Result<FilterResult> implements
         EgressResultType, FormatResultType, LoadResultType, TransformResultType, ValidateResultType {
-    private final String message;
+
+    private final String filteredCause;
 
     /**
      * @param context Execution context of the filtered action
-     * @param message Message explaining the reason for the filtered action
+     * @param filteredCause Message explaining the reason for the filtered action
      */
-    public FilterResult(@NotNull ActionContext context, @NotNull String message) {
+    public FilterResult(@NotNull ActionContext context, @NotNull String filteredCause) {
         super(context);
 
-        this.message = message;
+        this.filteredCause = filteredCause;
     }
 
     @Override
@@ -58,7 +59,7 @@ public class FilterResult extends Result<FilterResult> implements
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setFilter(FilterEvent.newBuilder().message(message).build());
+        event.setFilter(FilterEvent.newBuilder().message(filteredCause).build());
         return event;
     }
 }

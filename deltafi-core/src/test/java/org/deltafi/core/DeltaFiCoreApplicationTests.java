@@ -1455,6 +1455,7 @@ class DeltaFiCoreApplicationTests {
 			assertEquals(ActionState.FILTERED, action.getState());
 			assertEquals(DeltaFileStage.COMPLETE, actual.getStage());
 			assertTrue(actual.getFiltered());
+			assertEquals("you got filtered", actual.getActions().stream().filter(a -> a.getState() == ActionState.FILTERED).findFirst().orElse(null).getFilteredCause());
 
 			Mockito.verify(actionEventQueue, never()).putActions(any());
 		} else {

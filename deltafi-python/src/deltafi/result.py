@@ -107,13 +107,13 @@ class ErrorResult(Result):
 
 
 class FilterResult(Result):
-    def __init__(self, message: str):
+    def __init__(self, filtered_cause: str):
         super().__init__('filter', 'FILTER')
-        self.message = message
+        self.filtered_cause = filtered_cause
 
     def response(self):
         return {
-            'message': self.message
+            'message': self.filtered_cause
         }
 
 

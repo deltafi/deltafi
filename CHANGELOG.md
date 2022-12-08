@@ -14,15 +14,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - `SplitResult::splitInputs` renamed to `splitEvents` to match naming convention
 - DeltaFi Gradle convention plugin ids have been shortened to `org.deltafi.version-reckoning`,
-`org.deltafi.java-convention`, and `org.deltafi.test-summary`.
-- The DeltaFi Gradle action convention plugin id has changed to `org.deltafi.plugin-convention`.
+`org.deltafi.java-convention`, and `org.deltafi.test-summary`
+- The DeltaFi Gradle action convention plugin id has changed to `org.deltafi.plugin-convention`
 ||||||| parent of 5018f852 (Allow custom metrics to be returned in responses from python actions)
 - `SplitResult::splitInputs` renamed to `splitEvents` by namin convention
 - Make the scheduled service thread pool size property editable
 - Changed Python `EgressResult` to require `destination` and `bytes_egressed` in order to produce metrics
+- Filtered DeltaFile cause is now recorded in the action `filteredCause` field instead of the `errorCause` field
 
 ### Deprecated
-- Deprecated `flow` field in DeltaFiles SourceInfo filtering; use 'ingressFlows' instead.  `flow` will still work at the moment, but will be removed in a future release.
+- Deprecated `flow` field in DeltaFiles SourceInfo filtering; use 'ingressFlows' instead.  `flow` will still work at the moment, but will be removed in a future release
 
 ### Removed
 
@@ -42,6 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Upgrade and Migration
 - MinIO helm chart updated to `8.0.10-deltafi-r1`
+- Filtered DeltaFile cause migrated from `errorCause` field to `filteredCause` field
 
 ## [0.99.4] - 2022-11-22
 
@@ -53,10 +55,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - Add fsGroupChangePolicy: OnRootMismatch to (dramatically) speed up minio pod startup
-- Metrics are now generated from the core for all actions.  Custom metrics are reported to the core via an addition to the ActionEventInput schema.
+- Metrics are now generated from the core for all actions.  Custom metrics are reported to the core via an addition to the ActionEventInput schema
 
 ### Removed
-- `files_completed` metric was removed.  It was redundant with other metric information and not used in dashboards.
+- `files_completed` metric was removed.  It was redundant with other metric information and not used in dashboards
 
 ### Fixed
 - Issue in audit logger causing username to be tagged to logs erroneously
