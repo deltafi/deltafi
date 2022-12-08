@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ||||||| parent of 5018f852 (Allow custom metrics to be returned in responses from python actions)
 - `SplitResult::splitInputs` renamed to `splitEvents` by namin convention
 - Make the scheduled service thread pool size property editable
+- Changed Python `EgressResult` to require `destination` and `bytes_egressed` in order to produce metrics
 
 ### Deprecated
 - Deprecated `flow` field in DeltaFiles SourceInfo filtering; use 'ingressFlows' instead.  `flow` will still work at the moment, but will be removed in a future release.

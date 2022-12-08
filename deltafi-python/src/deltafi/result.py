@@ -22,6 +22,10 @@ from deltafi.domain import Content
 from deltafi.metric import Metric
 from deltafi.storage import ContentReference
 
+ENDPOINT_TAG = "endpoint"
+FILES_OUT = "files_out"
+BYTES_OUT = "bytes_out"
+
 
 class Result:
     __metaclass__ = abc.ABCMeta
@@ -55,8 +59,10 @@ class DomainResult(Result):
 
 
 class EgressResult(Result):
-    def __init__(self):
+    def __init__(self, destination: str, bytes_egressed: int):
         super().__init__(None, 'EGRESS')
+        self.add_metric(Metric(FILES_OUT, 1, {ENDPOINT_TAG: destination}))
+        self.add_metric(Metric(BYTES_OUT, bytes_egressed, {ENDPOINT_TAG: destination}))
 
     def response(self):
         return None
