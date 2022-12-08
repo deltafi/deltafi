@@ -26,7 +26,7 @@ dependencies:
   - name: minio
     # this is a local version that we forked from 8.0.10 in order to add fsGroupChangePolicy: "OnRootMismatch"
     # there are newer versions of the chart but they won't work with our existing minio-secrets
-    version: "8.0.99"
+    version: "8.0.10-deltafi-r1"
     repository: file://../minio
     condition: enable.minio
   - name: mongodb

@@ -30,15 +30,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Ingressing zero-byte file returned an error code, despite successful processing
 - Remove flow plans and flows that are no longer part of a plugin on upgrade
 - Setup SSL properties to bind to the `KEYSTORE_PASSWORD` and `TRUSTSTORE_PASSWORD` environment variables to remain backwards compatible
+- Issue with local Minio forked chart not setting fsGroupChangePolicy
 
 ### Tech-Debt/Refactor
 - Move MinIO bucket setup from common to core
 - Use a single age off property under delete properties for both content and metadata
-- Move metrics out of common into core to prevent Java based actions from connecting to `graphite` 
+- Move metrics out of common into core to prevent Java based actions from connecting to `graphite`
 
 ### Security
 
 ### Upgrade and Migration
+- MinIO helm chart updated to `8.0.10-deltafi-r1`
 
 ## [0.99.4] - 2022-11-22
 
