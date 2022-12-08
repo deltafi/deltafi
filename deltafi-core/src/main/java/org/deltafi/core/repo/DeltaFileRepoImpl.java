@@ -69,6 +69,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String KEY = "key";
     public static final String VALUE = "value";
     public static final String ERROR_CAUSE = "errorCause";
+    public static final String FILTERED_CAUSE = "filteredCause";
     public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
     public static final String EGRESS_FLOW = "egress.flow";
@@ -453,10 +454,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getErrorCause())) {
-            ActionState actionState = (nonNull(filter.getFiltered()) && filter.getFiltered()) ?
-                    ActionState.FILTERED : ActionState.ERROR;
-            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(actionState.name()),
+            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.ERROR),
                     Criteria.where(ERROR_CAUSE).regex(filter.getErrorCause()));
+            andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
+        }
+
+        if (filter.getFilteredCause() != null) {
+            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED),
+                    Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
             andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
         }
 

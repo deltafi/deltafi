@@ -397,6 +397,7 @@ input DeltaFilesFilter {
   stage: DeltaFileStage
   actions: [String!]
   errorCause: String
+  filteredCause: String
   formattedData: FormattedDataFilter
   errorAcknowledged: Boolean
   egressed: Boolean
