@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.5
+## [Unreleased] - Next release 0.99.6
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.5] - 2022-12-08
 
 ### Added
 - Audit entries for deleted dids
@@ -25,8 +43,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Deprecated
 - Deprecated `flow` field in DeltaFiles SourceInfo filtering; use 'ingressFlows' instead.  `flow` will still work at the moment, but will be removed in a future release
 
-### Removed
-
 ### Fixed
 - Issue where syncing properties was thrashing between multiple instances of `deltafi-core`
 - Ingressing zero-byte file returned an error code, despite successful processing
@@ -38,8 +54,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Move MinIO bucket setup from common to core
 - Use a single age off property under delete properties for both content and metadata
 - Move metrics out of common into core to prevent Java based actions from connecting to `graphite`
-
-### Security
 
 ### Upgrade and Migration
 - MinIO helm chart updated to `8.0.10-deltafi-r1`
@@ -918,7 +932,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.4...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.5...main
+[0.99.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.4...0.99.5
 [0.99.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.3...0.99.4
 [0.99.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.2...0.99.3
 [0.99.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.1...0.99.2
