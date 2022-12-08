@@ -61,19 +61,33 @@ export default function useSystemSnapshots() {
             value: true
           }
         },
-        propertySets: {
-          id: true,
-          displayName: true,
-          description: true,
-          properties: {
-            key: true,
-            description: true,
-            defaultValue: true,
-            refreshable: true,
-            editable: true,
-            hidden: true,
-            value: true,
-          }
+        deltaFiProperties: {
+          systemName: true,
+          requeueSeconds: true,
+          coreServiceThreads: true,
+          scheduledServiceThreads: true,
+          delete: {
+            ageOffDays: true,
+            frequency: true,
+            onCompletion: true,
+            policyBatchSize: true,
+          },
+          ingress: {
+            enabled: true,
+            diskSpaceRequirementInMb: true
+          },
+          metrics: {
+            enabled: true
+          },
+          plugins: {
+            imageRepositoryBase: true,
+            imagePullSecret: true
+          },
+          checks: {
+            actionQueueSizeThreshold: true,
+            contentStoragePercentThreshold: true
+          },
+          setProperties: true
         },
         installedPlugins: {
           groupId: true,
