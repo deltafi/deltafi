@@ -119,6 +119,7 @@ const generateData = () => {
         queued: "2022-09-24T22:17:58.541Z",
         start: "2022-09-24T22:17:58.543Z",
         stop: "2022-09-24T22:17:58.561Z",
+        filteredCause: "Because I'm Batman! 🦇",
         errorCause: null,
         errorContext: null,
       },

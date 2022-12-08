@@ -39,8 +39,14 @@
       </div>
       <div v-if="action.errorCause" class="error-row">
         <div class="error-col">
-          <strong>Cause</strong>
+          <strong>Error Cause</strong>
           <HighlightedCode :highlight="false" :code="action.errorCause" />
+        </div>
+      </div>
+      <div v-if="action.filteredCause" class="error-row">
+        <div class="error-col">
+          <strong>Filtered Cause</strong>
+          <HighlightedCode :highlight="false" :code="action.filteredCause" />
         </div>
       </div>
       <div v-if="action.errorContext" class="error-row">

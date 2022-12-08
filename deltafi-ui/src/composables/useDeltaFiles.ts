@@ -56,6 +56,7 @@ export default function useDeltaFiles() {
           queued: true,
           start: true,
           stop: true,
+          filteredCause: true,
           errorCause: true,
           errorContext: true,
         },

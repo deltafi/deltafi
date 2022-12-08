@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Cancel menu option to DeltaFile Viewer (#293)
 - Added Requeue Count minimum filter to DeltaFile Search Page (#294)
 - Added Egress Flow filter to DeltaFile Search Page (#302)
+- Added display of `filteredCause` DeltaFile field (#307)
 
 ## [0.99.3]
 

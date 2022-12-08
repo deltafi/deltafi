@@ -23,7 +23,7 @@ export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
 
-  const fetch = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, errorCause?: string) => {
+  const fetch = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, errorCause?: string, filteredCause?: string) => {
     const searchParams = {
       deltaFiles: {
         __args: {
@@ -36,6 +36,7 @@ export default function useErrors() {
             stage: new EnumType('ERROR'),
             errorAcknowledged: showAcknowledged,
             errorCause: errorCause,
+            filteredCause: filteredCause,
           },
           orderBy: {
             direction: new EnumType(sortDirection),
@@ -54,6 +55,7 @@ export default function useErrors() {
             name: true,
             created: true,
             modified: true,
+            filteredCause: true,
             errorCause: true,
             errorContext: true,
             state: true,
