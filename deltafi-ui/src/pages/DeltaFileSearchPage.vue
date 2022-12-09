@@ -66,11 +66,13 @@
                 <label for="filteredState" class="mt-2">Filtered:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="filteredState" v-model="filteredOptionSelected" :placeholder="filteredOptionSelected ? filteredOptionSelected.name + ' ' : 'Select if Filtered'" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
-                <label for="requeueMinId" class="mt-2">Requeue Count:</label>
-                <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Min" />
+                <label for="filteredReasonId" class="mt-2">Filtered Cause:</label>
+                <InputText v-model="filteredCause" class="p-inputtext input-area-height" placeholder="Filtered Cause" />
               </div>
               <div class="flex-column">
-                <label for="stageId">Stage:</label>
+                <label for="requeueMinId">Requeue Count:</label>
+                <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Min" />
+                <label for="stageId" class="mt-2">Stage:</label>
                 <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
                 <Dropdown id="stageId" v-model="stageOptionSelected" :placeholder="stageOptionSelected ? stageOptionSelected.name + ' ' : 'Select a Stage'" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="filteredState" class="mt-2">Domain:</label>
@@ -210,6 +212,7 @@ const metadataKeysOptions = ref([]);
 const newMetadataKey = ref(null);
 const newMetadataValue = ref(null);
 const fileName = ref(null);
+const filteredCause = ref(null);
 const requeueMin = ref(null);
 const flowOptionSelected = ref([]);
 const egressFlowOptionSelected = ref([]);
@@ -320,6 +323,7 @@ const items = ref([
         icon: "fas fa-times",
         command: () => {
           fileName.value = null;
+          filteredCause.value = null;
           requeueMin.value = null;
           flowOptionSelected.value = [];
           egressFlowOptionSelected.value = [];
@@ -369,6 +373,23 @@ watch(
   _.debounce(
     () => {
       if (watchEnabled.value) fetchDeltaFilesData();
+    },
+    500,
+    { leading: false, trailing: true }
+  )
+);
+
+watch(
+  filteredCause,
+  _.debounce(
+    () => {
+      if (watchEnabled.value) {
+        if (filteredCause.value == "") {
+          filteredCause.value = null;
+        } else {
+          fetchDeltaFilesData();
+        }
+      }
     },
     500,
     { leading: false, trailing: true }
@@ -456,7 +477,7 @@ const fetchDeltaFilesData = _.debounce(
     setPersistedParams();
 
     loading.value = true;
-    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value);
+    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value);
     tableData.value = data.data.deltaFiles.deltaFiles;
     loading.value = false;
     totalRecords.value = data.data.deltaFiles.totalCount;
@@ -505,6 +526,7 @@ const getPersistedParams = async () => {
     sizeUnitSelected.value = params.sizeUnit ? sizeUnits.find((i) => i.name == params.sizeUnit) : sizeUnits[0];
     sizeTypeSelected.value = params.sizeType ? sizeTypes.find((i) => i.name == params.sizeType) : sizeTypes[0];
     fileName.value = params.fileName != "" ? params.fileName : null;
+    filteredCause.value = params.filteredCause != "" ? params.filteredCause : null;
     requeueMin.value = params.requeueMin != null ? Number(params.requeueMin) : null;
     stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
     flowOptionSelected.value = params.ingressFlow ? params.ingressFlow.split(",") : [];
@@ -533,6 +555,7 @@ const getPersistedParams = async () => {
 
     // Values that, if set, should expand Advanced Search Options.
     fileName.value = panelState.value.fileName;
+    filteredCause.value = panelState.value.filteredCause;
     requeueMin.value = panelState.value.requeueMin;
     stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
     flowOptionSelected.value = panelState.value.flowOptionState ? panelState.value.flowOptionState : [];
@@ -558,6 +581,7 @@ const setPersistedParams = () => {
   panelState.value = {
     // Values that, if set, should expand Advanced Search Options.
     fileName: fileName.value,
+    filteredCause: filteredCause.value,
     requeueMin: requeueMin.value,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value : null,
@@ -585,6 +609,7 @@ const setPersistedParams = () => {
   params.sizeUnit = sizeMin.value != null || sizeMax.value != null ? sizeUnitSelected.value.name : null;
   params.sizeType = sizeMin.value != null || sizeMax.value != null ? sizeTypeSelected.value.name : null;
   params.fileName = fileName.value != "" ? fileName.value : null;
+  params.filteredCause = filteredCause.value != "" ? filteredCause.value : null;
   params.requeueMin = requeueMin.value != null ? requeueMin.value : null;
   params.stage = stageOptionSelected.value ? stageOptionSelected.value.name : null;
   params.ingressFlow = flowOptionSelected.value.length > 0 ? String(flowOptionSelected.value) : null;

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.99.5]
 
 ### Changed
 
@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added ability to install, update, and uninstall on the Plugins page (#297)
 - Added Role management (#303)
 - Added Plugin Repositories page (#298)
+- Added display of `filteredCause` DeltaFile field (#307)
+- Added Filtered Cause field to DeltaFile Search page (#306)
 
 ### Fixed
 
@@ -27,7 +29,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Cancel menu option to DeltaFile Viewer (#293)
 - Added Requeue Count minimum filter to DeltaFile Search Page (#294)
 - Added Egress Flow filter to DeltaFile Search Page (#302)
-- Added display of `filteredCause` DeltaFile field (#307)
 
 ## [0.99.3]
 
@@ -489,7 +490,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.4...main
+[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.5...main
+[0.99.5]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.4...0.99.5
 [0.99.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.3...0.99.4
 [0.99.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.2...0.99.3
 [0.99.2]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.1...0.99.2

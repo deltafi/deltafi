@@ -22,7 +22,7 @@ import useGraphQL from './useGraphQL'
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number,testMode?: Boolean,requeueMin?:Number) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -47,7 +47,8 @@ export default function useDeltaFilesQueryBuilder() {
             ingressBytesMax: ingressBytesMax,
             totalBytesMin: totalBytesMin,
             totalBytesMax: totalBytesMax,
-            requeueCountMin: requeueMin
+            requeueCountMin: requeueMin,
+            filteredCause: filteredCause
           },
           orderBy: {
             direction: new EnumType(sortDirection),
