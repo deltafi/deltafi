@@ -588,7 +588,9 @@ install() {
   local EXTRA=
   _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
   _kind_deltafi install "$@" "$EXTRA" 2>&1 | while read -r line; do [[ "$line" =~ "deprecated" ]] || echo " |  $line"; done
-  _ok "DeltaFi core"
+  _kind_deltafi set-admin-password password
+  _ok "DeltaFi core installed"
+  _warn echo "If basic_auth is enabled user is 'admin', password is 'password'"
 }
 
 _k8s_init() {

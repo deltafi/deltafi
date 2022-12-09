@@ -368,7 +368,7 @@ install_cluster() {
   require_tools cluster deltafi
   bullet "Installing a DeltaFi KinD cluster"
   deltafi install
-  deltafi set-admin-password deltafi123
+  deltafi set-admin-password password
   deltafi install-plugin "org.deltafi.passthrough:deltafi-passthrough:$LATEST_RELEASE"
   deltafi versions
 }
@@ -420,12 +420,12 @@ if [[ -n "${DELTAFI_ON_MACOS-}" ]]; then
   info "If you have 'Your connection is not private' on the Chrome browser, type 'thisisunsafe'"
   info "If you have certificate warnings in other browsers, you may have to work through security dialogs"
   info "    username: admin"
-  info "    password: deltafi123"
+  info "    password: password"
   echo
   info "Now you can enable flows, upload content to the passthrough flow, etc."
 fi
 
-# Linux install (Debian, CentOS) 
+# Linux install (Debian, CentOS)
 if [[ -n "${DELTAFI_ON_LINUX-}" ]]; then
   require_docker
   install_linux_packages
