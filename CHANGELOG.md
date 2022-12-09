@@ -6,8 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.99.6
 
 ### Added
+- Alternate `bootstrap-dev.sh` script to bootstrap a dev environment
+- Bootstrap installer supports Debian and Ubuntu
 
 ### Changed
+- `cluster prerequisites` will install python and attempt to install Fedora/Debian dependencies
 
 ### Deprecated
 

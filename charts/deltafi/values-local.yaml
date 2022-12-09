@@ -24,4 +24,4 @@ deltafi:
   nodemonitor:
     image: localhost:5000/deltafi-nodemonitor:latest
 blackhole:
-  enabled: true
+  enabled: false

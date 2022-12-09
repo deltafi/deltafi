@@ -242,6 +242,14 @@ configure_install() {
   info "You may be prompted for your administrator password..."
   "${ROOT_PATH}/kind/install.sh"
   require_tools deltafi cluster
+
+  bullet "Adding GitLab Gradle configuration"
+  if [[ ! -f $HOME/.gradle/gradle.properties ]]; then
+    mkdir -p "$HOME/.gradle"
+    touch "$HOME/.gradle/gradle.properties"
+  fi
+  grep "gitLabTokenType=" "$HOME/.gradle/gradle.properties" || echo "gitLabTokenType=Private-Token" >> "$HOME/.gradle/gradle.properties"
+  grep "gitLabToken=" "$HOME/.gradle/gradle.properties" || echo "gitLabToken=PutYourTokenHere" >> "$HOME/.gradle/gradle.properties"
 }
 
 install_brew_packages() {
@@ -293,7 +301,7 @@ install_linux_packages() {
   bullet "Installing required packages"
   if tool_exists yum; then
     info "Checking for necessary packages via yum"
-    ${SUDO} yum install -y git curl wget
+    ${SUDO} yum install -y git curl wget java-11-openjdk java-11-openjdk-devel python3 python3-pip
     if ! tool_exists kubectl; then
       cat <<EOF | ${SUDO} tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -305,12 +313,13 @@ gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
       ${SUDO} yum install -y kubectl
     fi
+    ${SUDO} pip3 install --upgrade -q poetry
   elif tool_exists apt; then
     info "Checking for necessary packages via apt/snap"
     wait_for_user
     ${SUDO} apt-get install -y ca-certificates curl
     ${SUDO} apt-get update
-    ${SUDO} apt-get install -y uidmap dbus-user-session fuse-overlayfs slirp4netns git wget snapd vim tig
+    ${SUDO} apt-get install -y uidmap dbus-user-session fuse-overlayfs slirp4netns git wget snapd vim tig tmux openjdk-11-jdk python3 python3-pip
     if ! tool_exists kubectl; then
       ${SUDO} snap install --classic kubectl
       mkdir -p ~/.kube/kubens
@@ -324,12 +333,14 @@ EOF
     if ! tool_exists yq; then
       ${SUDO} snap install yq
     fi
+    ${SUDO} pip3 install --upgrade -q poetry
     ${SUDO} ln -s /snap/bin/* /usr/local/bin || warn "All tools may not be configured correctly"
   elif tool_exists apk; then
     info "Checking for necessary packages via apk"
     wait_for_user
-    ${SUDO} apk add ncurses curl git wget vim tig tmux kubectx helm yq
+    ${SUDO} apk add ncurses curl git wget vim tig tmux python3 py3-pip openjdk11-jdk kubectx helm yq
     ${SUDO} apk add kubectl --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+    ${SUDO} pip3 install --upgrade -q poetry
   fi
 
   if ! tool_exists kubens; then
@@ -367,9 +378,8 @@ EOF
 install_cluster() {
   require_tools cluster deltafi
   bullet "Installing a DeltaFi KinD cluster"
-  deltafi install
+  deltafi loc build install
   deltafi set-admin-password deltafi123
-  deltafi install-plugin "org.deltafi.passthrough:deltafi-passthrough:$LATEST_RELEASE"
   deltafi versions
 }
 

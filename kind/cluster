@@ -108,6 +108,10 @@ _readlink() {
   fi
 }
 
+_tool_exists() {
+    command -v "$1" &> /dev/null
+}
+
 # Detect linux OS
 _is_linux() {
   if [[ $(uname) == 'Linux' ]]; then
@@ -325,21 +329,43 @@ _install_plugins() {
   done
 }
 
-describe prerequisites "Install prerequisites for the KinD cluster.  MacOS only."
+describe prerequisites "Install or warn about prerequisites for the KinD cluster"
 prerequisites() {
   _check_docker
-  if ! type -p brew > /dev/null; then
-    _attention "Installing homebrew"
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  if _is_linux; then
+    if _tool_exists yum; then
+      $SUDO yum install -y curl wget java-11-openjdk java-11-openjdk-devel python3 python3-pip kubectl
+    elif _tool_exists apt; then
+      $SUDO apt-get install -y curl uidmap dbus-user-session fuse-overlayfs slirp4netns snapd openjdk-11-jdk python3 python3-pip
+      if ! _tool_exists kubectl; then
+        $SUDO snap install --classic kubectl
+        mkdir -p ~/.kube/kubens
+      fi
+      if ! _tool_exists helm; then
+        $SUDO snap install --classic helm
+      fi
+      if ! _tool_exists yq; then
+        $SUDO snap install yq
+      fi
+      if ! _tool_exists kubectx; then
+        $SUDO snap install kubectx
+      fi
+    fi
+  else
+    if ! type -p brew > /dev/null; then
+      _attention "Installing homebrew"
+      bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    _ok "Homebrew"
+    brew bundle install --file "$BASE_PATH"/Brewfile
+    _attention "Setting up JDK (may require your system password)"
+    sudo ln -sfn /opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk
+    _ok "OpenJDK 11"
+    _warn echo "In order to use JDK 11, you may need to update your path like this:"
+    echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@11/bin:\$PATH\"' >> ~/.zshrc"
+    echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@11/bin:\$PATH\"' >> ~/.bashrc"
   fi
-  _ok "Homebrew"
-  brew bundle install --file "$BASE_PATH"/Brewfile
-  _attention "Setting up JDK (may require your system password)"
-  sudo ln -sfn /opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk
-  _ok "OpenJDK 11"
-  _warn echo "In order to use JDK 11, you may need to update your path like this:"
-  echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@11/bin:\$PATH\"' >> ~/.zshrc"
-  echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@11/bin:\$PATH\"' >> ~/.bashrc"
   _check_java
 }
 
@@ -797,7 +823,7 @@ _local_build() {
 
   _attention "Building deltafi-ui"
   if [[ ! -d "$ROOT/deltafi-ui" ]]; then
-    git clone git@gitlab.com:systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui"
+    git clone git@gitlab.com:systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui" || git clone https://gitlab.com/systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui"
   fi
   cd "$ROOT/deltafi-ui"
   docker build -t localhost:5000/deltafi-ui:latest .
