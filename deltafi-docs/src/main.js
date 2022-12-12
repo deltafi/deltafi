@@ -128,6 +128,10 @@ new Docute({
           title: 'Configuration',
           link: '/operating/configuration'
         },
+        {
+          title: 'Metrics',
+          link: '/operating/metrics'
+        },
       ]
     },
     {
