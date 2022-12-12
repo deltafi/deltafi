@@ -38,9 +38,8 @@ dependencies {
 
     implementation project(":deltafi-action-kit")
 
-    implementation 'org.mockito:mockito-junit-jupiter:4.7.0'
-//        implementation 'junit:junit:4.13.2'
-    implementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
-    implementation 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+    implementation 'org.mockito:mockito-junit-jupiter:4.9.0'
+    implementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
+    implementation 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
 
 }

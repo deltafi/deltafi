@@ -22,17 +22,17 @@ dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-config-server'
 	implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-fabric8'
 
-	implementation 'com.networknt:json-schema-validator:1.0.73'
+	implementation 'com.networknt:json-schema-validator:1.0.74'
 
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter'
 	implementation 'org.apache.commons:commons-text:1.10.0'
-	implementation 'io.dropwizard.metrics:metrics-core:4.2.11'
+	implementation 'io.dropwizard.metrics:metrics-core:4.2.13'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation "org.springframework.boot:spring-boot-starter-test"
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.18.0'
+	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.19.1'
 	testImplementation 'org.awaitility:awaitility:4.2.0'
 	testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 	testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"

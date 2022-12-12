@@ -34,9 +34,9 @@ dependencies {
 
     testImplementation "org.deltafi:deltafi-action-kit-test:${deltafiVersion}"
     testImplementation 'org.hamcrest:hamcrest:2.2'
-    testImplementation "org.junit.jupiter:junit-jupiter-api:5.8.2"
-    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.8.2"
-    testImplementation "org.mockito:mockito-junit-jupiter:4.8.0"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.9.1"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.9.1"
+    testImplementation "org.mockito:mockito-junit-jupiter:4.9.0"
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_11

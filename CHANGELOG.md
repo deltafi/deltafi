@@ -23,6 +23,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Java dependency updates:
+  - DGS 5.5.0
+  - DGS Codegen 5.6.3
+  - Jackson 2.14.1
+  - Jedis 4.3.1
+  - Minio 8.4.6
+  - Spring Boot 2.7.6
+  - OpenFeign 12.1
+  - nifi-flowfile-packager 1.19.1
+  - dropwizard metrics-core 4.2.13
+  - json-schema-validator 1.0.74
+  - slf4j-api 1.7.36
+  - maven-artifact 3.8.6
+  - org.json json 20220924
+- Java test dependency updates:
+  - TestContainers 1.17.6
+  - mockito-junit-jupiter 4.9.0
+  - junit-jupiter-api 5.9.1
+  - junit-jupiter-engine 5.9.1
 
 ## [0.99.5] - 2022-12-08
 
