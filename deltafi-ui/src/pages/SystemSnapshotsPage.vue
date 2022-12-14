@@ -30,8 +30,9 @@
           <i class="pi pi-search" />
           <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
+        <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage"></Paginator>
       </template>
-      <DataTable v-model:filters="filters" :value="snapshots" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading">
+      <DataTable v-model:filters="filters" :value="snapshots" :paginator="true" :first="pageFirst" :rows="pageRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading">
         <template #empty>No snapshots to display.</template>
         <template #loading>Loading. Please wait...</template>
         <Column field="id" header="ID">
@@ -40,7 +41,7 @@
           </template>
         </Column>
         <Column field="reason" header="Reason" />
-        <Column field="created" header="Date Created" class="date-column">
+        <Column field="created" header="Date Created" class="date-column" :sortable="true">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
           </template>
@@ -102,14 +103,18 @@ import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import FileUpload from "primevue/fileupload";
 import { EnumType } from "json-to-graphql-query";
+import Paginator from "primevue/paginator";
 
 const confirm = useConfirm();
+const pageRows = ref(10);
+const pageFirst = ref(0);
 const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot, deleteSnapshot, loading } = useSystemSnapshots();
 const snapshot = ref(null);
 const notify = useNotifications();
 const reason = ref("");
 const fileUploader = ref();
 const showSnapshotDialog = ref(false);
+const totalSnaps = ref(0);
 const showCreateSnapshotDialog = ref(false);
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -117,6 +122,8 @@ const filters = ref({
 
 onMounted(async () => {
   await getSystemSnapshots();
+  totalSnaps.value = snapshots.value.length;
+  console.log("snaps", snapshots.value.length);
 });
 
 const download = (content, fileName, contentType) => {
@@ -138,6 +145,11 @@ const onDownload = (snapshotData) => {
 const showSnapshot = (snapshotData) => {
   snapshot.value = snapshotData;
   showSnapshotDialog.value = true;
+};
+
+const onPage = (event) => {
+  pageFirst.value = event.first;
+  pageRows.value = event.rows;
 };
 
 const onRevert = async (id) => {
@@ -243,6 +255,10 @@ const confirmCreate = async () => {
 
 <style lang="scss">
 .system-snapshots-panel {
+  .p-datatable .p-paginator {
+    display: none;
+  }
+
   .p-panel-header {
     padding: 0 1.25rem;
 
@@ -253,6 +269,31 @@ const confirmCreate = async () => {
 
   .date-column {
     width: 15rem;
+  }
+
+  .p-paginator {
+    border: none !important;
+    padding: 0.2rem 0 !important;
+    font-size: inherit !important;
+
+    .p-paginator-current {
+      background: unset;
+      color: unset;
+      border: unset;
+    }
+  }
+
+  .p-input-icon-left {
+    padding-top: 0.2rem;
+
+    i {
+      margin-top: -0.4rem;
+    }
+
+    .p-inputtext {
+      padding-top: 6px;
+      padding-bottom: 5px;
+    }
   }
 }
 </style>
