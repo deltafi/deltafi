@@ -52,7 +52,11 @@ task publishToMavenLocal(type: Exec) {
 }
 
 clean.dependsOn cleanDist
-build.dependsOn testPython, poetryBuild
+build.dependsOn poetryBuild
+
+test {
+    it.dependsOn testPython
+}
 
 license {
     header(rootProject.file('HEADER'))

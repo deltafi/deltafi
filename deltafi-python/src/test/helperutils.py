@@ -15,14 +15,17 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-import os
-import sys
-PROJECT_PATH = os.getcwd()
-SOURCE_PATH = os.path.join(
-    PROJECT_PATH,"src"
-)
-sys.path.append(SOURCE_PATH)
-TEST_PATH = os.path.join(
-    PROJECT_PATH,"src/test"
-)
-sys.path.append(TEST_PATH)
+from deltafi.storage import ContentReference, Segment
+
+TEST_DID = "123"
+
+
+def make_segment(seg_id):
+    segment = Segment(uuid=seg_id, offset=0, size=100, did=TEST_DID)
+    return segment
+
+
+def make_content_reference(seg_id):
+    segment = make_segment(seg_id)
+    content_reference = ContentReference(segments=[segment], media_type="xml")
+    return content_reference
