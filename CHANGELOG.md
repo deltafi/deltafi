@@ -22,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added unit testing for several python modules
 
 ### Security
+- Added CVE patches for commons-text, snakeyaml, kubernetes-client
+- New Ubuntu base image for Spring apps with clean CVE record
 
 ### Upgrade and Migration
 - Java dependency updates:
@@ -43,7 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - mockito-junit-jupiter 4.9.0
   - junit-jupiter-api 5.9.1
   - junit-jupiter-engine 5.9.1
-- Docker base image updated to 0.99.6
+- Docker base image updated to 0.99.6-1
 
 ## [0.99.5] - 2022-12-08
 

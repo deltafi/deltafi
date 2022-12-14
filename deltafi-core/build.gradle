@@ -22,6 +22,13 @@ dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-config-server'
 	implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-fabric8'
 
+	implementation 'io.fabric8:kubernetes-client'
+	constraints {
+		implementation('io.fabric8:kubernetes-client:5.11.2') {
+			because 'CVE-2021-4178 https://security.snyk.io/vuln/SNYK-JAVA-IOFABRIC8-2331709'
+		}
+	}
+
 	implementation 'com.networknt:json-schema-validator:1.0.74'
 
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'

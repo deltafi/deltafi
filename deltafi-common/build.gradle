@@ -39,6 +39,19 @@ dependencies {
     api "org.springframework.retry:spring-retry"
     api "redis.clients:jedis:${jedisVersion}"
 
+    implementation 'org.apache.commons:commons-text'
+    constraints {
+        implementation('org.apache.commons:commons-text:1.10.0') {
+            because 'CVE-2022-42889 https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHECOMMONS-3043138'
+        }
+    }
+    implementation 'org.yaml:snakeyaml'
+    constraints {
+        implementation('org.yaml:snakeyaml:1.33') {
+            because 'CVE-2022-25857 https://security.snyk.io/vuln/SNYK-JAVA-ORGYAML-2806360'
+        }
+    }
+
     implementation 'ch.qos.logback:logback-core:1.2.11'
     implementation 'ch.qos.logback:logback-classic:1.2.11'
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
