@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.configuration;
 
+import org.deltafi.core.converters.DurationReadConverter;
 import org.deltafi.core.converters.OffsetDateTimeReadConverter;
 import org.deltafi.core.converters.OffsetDateTimeWriteConverter;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,6 @@ public class MongoConfiguration {
 
     @Bean
     public MongoCustomConversions mongoCustomConversions() {
-        return new MongoCustomConversions(Arrays.asList(new OffsetDateTimeReadConverter(), new OffsetDateTimeWriteConverter()));
+        return new MongoCustomConversions(Arrays.asList(new OffsetDateTimeReadConverter(), new OffsetDateTimeWriteConverter(), new DurationReadConverter()));
     }
 }

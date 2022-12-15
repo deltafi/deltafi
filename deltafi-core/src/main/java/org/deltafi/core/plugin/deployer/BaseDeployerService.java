@@ -25,6 +25,7 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 import org.springframework.security.core.context.SecurityContext;
@@ -36,14 +37,14 @@ import java.util.List;
 @Slf4j
 public abstract class BaseDeployerService implements DeployerService {
 
-    private final DeltaFiProperties deltaFiProperties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final PluginImageRepositoryRepo imageRepositoryRepo;
     private final PluginRegistryService pluginRegistryService;
     final PluginCustomizationService pluginCustomizationService;
     private final SystemSnapshotService systemSnapshotService;
 
-    public BaseDeployerService(DeltaFiProperties deltaFiProperties, PluginImageRepositoryRepo imageRepositoryRepo, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService) {
-        this.deltaFiProperties = deltaFiProperties;
+    public BaseDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryRepo imageRepositoryRepo, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService) {
+        this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.imageRepositoryRepo = imageRepositoryRepo;
         this.pluginRegistryService = pluginRegistryService;
         this.pluginCustomizationService = pluginCustomizationService;
@@ -117,6 +118,7 @@ public abstract class BaseDeployerService implements DeployerService {
 
     private PluginImageRepository defaultPluginImageRepository() {
         PluginImageRepository pluginImageRepository = new PluginImageRepository();
+        DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
         if (deltaFiProperties.getPlugins() != null) {
             pluginImageRepository.setPluginGroupIds(List.of("SYSTEM_DEFAULT"));
             pluginImageRepository.setImageRepositoryBase(deltaFiProperties.getPlugins().getImageRepositoryBase());

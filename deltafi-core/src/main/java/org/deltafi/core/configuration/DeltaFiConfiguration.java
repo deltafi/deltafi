@@ -19,8 +19,7 @@ package org.deltafi.core.configuration;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.action.ActionEventQueueProperties;
-import org.deltafi.core.services.api.DeltafiApiClient;
-import org.deltafi.core.services.api.DeltafiApiRestClient;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.task.TaskSchedulerCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -29,21 +28,16 @@ import org.springframework.context.annotation.Configuration;
 import java.net.URISyntaxException;
 
 @Configuration
-@EnableConfigurationProperties({ActionEventQueueProperties.class, DeltaFiProperties.class})
+@EnableConfigurationProperties({ActionEventQueueProperties.class})
 public class DeltaFiConfiguration {
     @Bean
     public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
-                                             DeltaFiProperties deltaFiProperties) throws URISyntaxException {
-        return new ActionEventQueue(actionEventQueueProperties, deltaFiProperties.getCoreServiceThreads());
+                                             DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
+        return new ActionEventQueue(actionEventQueueProperties, deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads());
     }
 
     @Bean
-    public DeltafiApiClient deltafiApiClient(DeltaFiProperties properties) {
-        return new DeltafiApiRestClient(properties.getApiUrl());
-    }
-
-    @Bean
-    public TaskSchedulerCustomizer taskSchedulerCustomizer(DeltaFiProperties deltaFiProperties) {
-        return taskScheduler ->  taskScheduler.setPoolSize(deltaFiProperties.getScheduledServiceThreads());
+    public TaskSchedulerCustomizer taskSchedulerCustomizer(DeltaFiPropertiesService deltaFiPropertiesService) {
+        return taskScheduler ->  taskScheduler.setPoolSize(deltaFiPropertiesService.getDeltaFiProperties().getScheduledServiceThreads());
     }
 }

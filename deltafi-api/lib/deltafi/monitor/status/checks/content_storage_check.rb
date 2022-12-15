@@ -27,7 +27,7 @@ module Deltafi
       module Checks
         class ContentStorageCheck < Status::Check
           DEFAULT_THRESHOLD = 90
-          THRESHOLD_PROPERTY = 'deltafi.checks.contentStorage.percentThreshold'
+          THRESHOLD_PROPERTY = %w[checks contentStoragePercentThreshold]
 
           def initialize
             super('Content Storage Check')
@@ -49,7 +49,7 @@ module Deltafi
           private
 
           def threshold
-            (DF.system_properties[THRESHOLD_PROPERTY] || DEFAULT_THRESHOLD).to_i
+            DF.system_property(THRESHOLD_PROPERTY, DEFAULT_THRESHOLD).to_i
           end
 
           def usage

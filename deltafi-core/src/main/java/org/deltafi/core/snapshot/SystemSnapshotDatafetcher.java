@@ -54,7 +54,8 @@ public class SystemSnapshotDatafetcher {
     @DgsMutation
     @NeedsPermission.SnapshotRevert
     public Result resetFromSnapshotWithId(String snapshotId, Boolean hardReset) {
-        return systemSnapshotService.resetFromSnapshot(snapshotId, Boolean.TRUE.equals(hardReset));
+        boolean hard = hardReset != null ? hardReset : true;
+        return systemSnapshotService.resetFromSnapshot(snapshotId, hard);
     }
 
     @DgsMutation

@@ -21,7 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.services.api.model.DiskMetrics;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
@@ -30,14 +32,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 @Slf4j
+@Service
 public class DeltafiApiRestClient implements DeltafiApiClient {
+
     private final String url;
     private final HttpClient httpClient;
-
     private final static String CONTENT_METRICS_ENDPOINT = "/api/v1/metrics/system/content";
     private final static String METRIC_VIEW_PERMISSION = "MetricsView";
 
-    public DeltafiApiRestClient(String url) {
+    public DeltafiApiRestClient(@Value("${API_URL:http://deltafi-api-service}") String url) {
         this.url = url;
         this.httpClient = HttpClient.newHttpClient();
     }

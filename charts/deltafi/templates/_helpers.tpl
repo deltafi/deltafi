@@ -169,8 +169,6 @@ env:
     valueFrom:
       fieldRef:
         fieldPath: spec.nodeName
-  - name: SPRING_CONFIG_IMPORT
-    value: configserver:http://deltafi-core-service/config
 {{- include "commonEnvVars" . | nindent 2 }}
 {{- include "sslEnvVars" . | nindent 2 }}
 envFrom:
@@ -180,10 +178,8 @@ volumeMounts:
 {{- end -}}
 
 {{- define "coreEnvVars" -}}
-- name: DELTAFI_API_URL
+- name: API_URL
   value: "http://deltafi-api-service"
-- name: DELTAFI_CONFIG_IMPORT
-  value: deltafi:mongodb=true&git=false
 - name: STATSD_HOSTNAME
   value: "deltafi-graphite"
 - name: STATSD_PORT
@@ -197,9 +193,6 @@ volumeMounts:
 
 {{- define "coreVolumeMounts" -}}
 {{- include "keyVolumeMounts" . }}
-- mountPath: {{ .Values.deltafi.core.nativeConfigMountPath }}
-  name: config-map
-  readOnly: true
 - mountPath: /template
   name: action-deployment-template
   readOnly: true
@@ -207,10 +200,6 @@ volumeMounts:
 
 {{- define "coreVolumes" -}}
 {{- include "keyVolumes" . }}
-- name: config-map
-  configMap:
-    name: {{ .Values.deltafi.core.nativeConfigMap }}
-    optional: true
 - name: action-deployment-template
   configMap:
     name: deltafi-action-deployment

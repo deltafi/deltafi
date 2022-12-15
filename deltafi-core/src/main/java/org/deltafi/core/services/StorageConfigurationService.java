@@ -23,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -41,7 +40,7 @@ public class StorageConfigurationService {
     public static final String GET_BUCKET_LIFECYCLE_ERROR = "Unable to get bucket lifecycle";
 
     private final MinioClient minioClient;
-    private final DeltaFiProperties deltaFiProperties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     private Integer expirationDayCache = null;
 
@@ -86,7 +85,7 @@ public class StorageConfigurationService {
     boolean expirationChanged() throws ObjectStorageException {
         try {
             Integer expiration = getCurrentExpiration();
-            return expiration == null || expiration != deltaFiProperties.getDelete().getAgeOffDays();
+            return expiration == null || expiration != getAgeOffDays();
         } catch (Exception e) {
             log.error(GET_BUCKET_LIFECYCLE_ERROR);
             throw new ObjectStorageException(GET_BUCKET_LIFECYCLE_ERROR, e);
@@ -98,8 +97,8 @@ public class StorageConfigurationService {
             minioClient.setBucketLifecycle(SetBucketLifecycleArgs.builder()
                     .bucket(bucketName)
                     .config(buildLifeCycleConfig()).build());
-            expirationDayCache = deltaFiProperties.getDelete().getAgeOffDays();
-            log.info("Set bucket age-off days: " + deltaFiProperties.getDelete().getAgeOffDays());
+            expirationDayCache = getAgeOffDays();
+            log.info("Set bucket age-off days: " + getAgeOffDays());
         } catch (Exception e) {
             log.error("Unable to set bucket lifecycle");
             throw new ObjectStorageException("Unable to set bucket lifecycle", e);
@@ -111,7 +110,7 @@ public class StorageConfigurationService {
                 new LifecycleRule(
                         Status.ENABLED,
                         null,
-                        new Expiration((ZonedDateTime) null, deltaFiProperties.getDelete().getAgeOffDays(), null),
+                        new Expiration((ZonedDateTime) null, getAgeOffDays(), null),
                         new RuleFilter(""),
                         AGE_OFF,
                         null,
@@ -148,6 +147,10 @@ public class StorageConfigurationService {
         }
 
         return lifecycleRule.expiration().days();
+    }
+    
+    private int getAgeOffDays() {
+        return deltaFiPropertiesService.getDeltaFiProperties().getDelete().getAgeOffDays();
     }
 
 }

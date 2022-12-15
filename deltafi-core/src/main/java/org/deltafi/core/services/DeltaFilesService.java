@@ -97,7 +97,7 @@ public class DeltaFilesService {
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
-    private final DeltaFiProperties properties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final FlowAssignmentService flowAssignmentService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
@@ -109,6 +109,7 @@ public class DeltaFilesService {
 
     @PostConstruct
     private void initializeExecutor() {
+        DeltaFiProperties properties = getProperties();
         int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
         executor = Executors.newFixedThreadPool(threadCount);
         log.info("Executors pool size: " + threadCount);
@@ -771,7 +772,7 @@ public class DeltaFilesService {
 
                             enqueueActions.addAll(advanceOnly(child));
 
-                            if (properties.getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
+                            if (getProperties().getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
                                 delete(Collections.singletonList(deltaFile), "on completion", false);
                             }
 
@@ -909,7 +910,7 @@ public class DeltaFilesService {
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
         try {
             List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
-            if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
+            if (getProperties().getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
                 delete(Collections.singletonList(deltaFile), "on completion", false);
             } else {
                 deltaFileRepo.save(deltaFile);
@@ -932,7 +933,7 @@ public class DeltaFilesService {
         deltaFiles.forEach(deltaFile -> {
             try {
                 enqueueActions.addAll(stateMachine.advance(deltaFile));
-                if (properties.getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
+                if (getProperties().getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
                     deleteDeltaFiles.add(deltaFile);
                 } else {
                     saveDeltaFiles.add(deltaFile);
@@ -1010,13 +1011,13 @@ public class DeltaFilesService {
 
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now();
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, properties.getRequeueSeconds());
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds());
         List <ActionInput> actions = requeuedDeltaFiles.stream()
                 .map(deltaFile -> requeuedActionInput(deltaFile, modified))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         if (!actions.isEmpty()) {
-            log.warn(actions.size() + " actions exceeded requeue threshold of " + properties.getRequeueSeconds() + " seconds, requeuing now");
+            log.warn(actions.size() + " actions exceeded requeue threshold of " + getProperties().getRequeueSeconds() + " seconds, requeuing now");
             enqueueActions(actions);
         }
     }
@@ -1076,7 +1077,7 @@ public class DeltaFilesService {
             return null;
         }
 
-        return actionConfiguration.buildActionInput(deltaFile, properties.getSystemName(), egressFlow);
+        return actionConfiguration.buildActionInput(deltaFile, getProperties().getSystemName(), egressFlow);
     }
 
     public void processActionEvents() {
@@ -1163,5 +1164,9 @@ public class DeltaFilesService {
 
     public List<String> indexedMetadataKeys(String domain) {
         return deltaFileRepo.indexedMetadataKeys(domain);
+    }
+
+    private DeltaFiProperties getProperties() {
+        return deltaFiPropertiesService.getDeltaFiProperties();
     }
 }

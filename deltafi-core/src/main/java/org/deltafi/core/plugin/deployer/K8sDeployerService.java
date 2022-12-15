@@ -17,21 +17,19 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,13 +46,15 @@ public class K8sDeployerService extends BaseDeployerService {
     private static final int READY_TIMEOUT = 60;
     private static final String APP_LABEL_KEY = "app";
     private static final String PLUGIN_GROUP_LABEL_KEY = "pluginGroup";
+    private static final String CONFIG_MOUNT_NAME = "config";
+    private static final String CONFIG_MAP_NAME_TPL = "%s-config";
     private final KubernetesClient k8sClient;
 
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiProperties deltaFiProperties, KubernetesClient k8sClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService) {
-        super(deltaFiProperties, imageRepositoryRepo, pluginRegistryService, pluginCustomizationService, systemSnapshotService);
+    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient k8sClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService) {
+        super(deltaFiPropertiesService, imageRepositoryRepo, pluginRegistryService, pluginCustomizationService, systemSnapshotService);
         this.k8sClient = k8sClient;
     }
 
@@ -140,7 +140,30 @@ public class K8sDeployerService extends BaseDeployerService {
             deployment.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(localObjectReference));
         }
 
+        addConfigMounts(deployment, applicationName);
+
         return deployment;
+    }
+
+    /**
+     * Add optional volume mount where extra properties can set for a plugin
+     * @param deployment to add config mount to
+     * @param applicationName name of the application
+     */
+    void addConfigMounts(Deployment deployment, String applicationName) {
+        VolumeMount volumeMount = new VolumeMountBuilder()
+                .withName(CONFIG_MOUNT_NAME)
+                .withMountPath("/config")
+                .withReadOnly(true)
+                .build();
+
+        Volume configVolume = new VolumeBuilder()
+                .withName(CONFIG_MOUNT_NAME)
+                .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(String.format(CONFIG_MAP_NAME_TPL, applicationName)).withOptional(true).build())
+                .build();
+
+        deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().add(volumeMount);
+        deployment.getSpec().getTemplate().getSpec().getVolumes().add(configVolume);
     }
 
     void preserveValuesIfUpgrade(Deployment upgradedDeployment, Deployment existingDeployment) {

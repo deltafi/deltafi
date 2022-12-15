@@ -57,6 +57,9 @@ spec:
               name: keystore
               readOnly: true
               subPath: trustStore.p12
+            - mountPath: "/config"
+              name: "config"
+              readOnly: true
         - name: test
           image: docker.io/sidecar:latest
       volumes:
@@ -64,5 +67,9 @@ spec:
           secret:
             secretName: keystore-secret
             optional: true
+        - configMap:
+            name: "plugin-config"
+            optional: true
+          name: "config"
       imagePullSecrets:
         - name: docker-cred

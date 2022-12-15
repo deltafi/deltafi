@@ -27,9 +27,9 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
+import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.repo.DeltaFileRepo;
@@ -70,7 +70,7 @@ class DeltaFilesServiceTest {
 
     @SuppressWarnings("unused")
     @Spy
-    DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+    DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     @SuppressWarnings("unused")
     @Mock

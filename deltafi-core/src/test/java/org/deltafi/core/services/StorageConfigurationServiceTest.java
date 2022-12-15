@@ -23,7 +23,7 @@ import io.minio.SetBucketLifecycleArgs;
 import io.minio.errors.*;
 import io.minio.messages.LifecycleRule;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -49,7 +49,7 @@ class StorageConfigurationServiceTest {
     MinioClient minioClient;
 
     @Spy
-    DeltaFiProperties deltafiProperties = new DeltaFiProperties();
+    DeltaFiPropertiesService deltafiProperties = new MockDeltaFiPropertiesService();
     
     @Test
     void testBucketExists() throws ObjectStorageException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {

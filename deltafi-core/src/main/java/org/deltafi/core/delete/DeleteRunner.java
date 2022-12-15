@@ -19,6 +19,7 @@ package org.deltafi.core.delete;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.types.DeletePolicy;
 import org.deltafi.core.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.types.TimedDeletePolicy;
@@ -38,7 +39,7 @@ public class DeleteRunner {
     private final DeltaFilesService deltaFilesService;
     private final DiskSpaceService diskSpaceService;
     private final DeletePolicyService deletePolicyService;
-    private final DeltaFiProperties deltaFiProperties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     public void runDeletes() {
         List<DeletePolicyWorker> policiesScheduled = refreshPolicies();
@@ -47,6 +48,7 @@ public class DeleteRunner {
 
     public List<DeletePolicyWorker> refreshPolicies() {
         List<DeletePolicyWorker> policies = new ArrayList<>();
+        DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
         int batchSize = deltaFiProperties.getDelete().getPolicyBatchSize() > 0 ? deltaFiProperties.getDelete().getPolicyBatchSize() : 1000;
         for (DeletePolicy policy : deletePolicyService.getEnabledPolicies()) {
             if (policy instanceof DiskSpaceDeletePolicy) {

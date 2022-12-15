@@ -32,6 +32,7 @@ spec:
         - name: DELTAFI_UI_DOMAIN
           value: {{ .Values.ingress.domain }}
         {{- include "commonEnvVars" . | nindent 8 }}
+        {{- include "mongoEnvVars" . | nindent 8 }}
         - name: WORKERS
           value: {{ default "2" .Values.deltafi.api.workers | quote }}
         - name: AUTH_MODE

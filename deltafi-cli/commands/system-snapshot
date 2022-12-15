@@ -18,7 +18,7 @@ Usage:
 
 Options:
   -h, --help        Show help
-  -R, --hard-reset  Reset the system to the default settings prior to applying the snapshot settings"
+  -R, --soft-reset  Preserve current settings that are not set in the snapshot
   exit 1
 }
 
@@ -36,7 +36,7 @@ log_failed() {
 
 trap cleanup INT
 
-HARD_RESET=false
+HARD_RESET=true
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -47,8 +47,8 @@ while [[ $# -gt 0 ]]; do
       cli_help_command
       shift # past argument
       ;;
-    -R|--hard-reset)
-      HARD_RESET=true
+    -R|--soft-reset)
+      HARD_RESET=false
       shift
       ;;
     *)    # unknown option
@@ -68,19 +68,33 @@ ID_OR_FILE=${ARGS[2]}
 ALL_SNAPSHOT_FIELDS="id
             reason
             created
-            propertySets {
-              id
-              displayName
-              description
-              properties {
-                key
-                value
-                description
-                defaultValue
-                hidden
-                editable
-                refreshable
+            deltaFiProperties {
+              systemName
+              requeueSeconds
+              coreServiceThreads
+              scheduledServiceThreads
+              delete {
+                ageOffDays
+                frequency
+                onCompletion
+                policyBatchSize
               }
+              ingress {
+                enabled
+                diskSpaceRequirementInMb
+              }
+              metrics {
+                enabled
+              }
+              plugins {
+                imageRepositoryBase
+                imagePullSecret
+              }
+              checks {
+                actionQueueSizeThreshold
+                contentStoragePercentThreshold
+              }
+              setProperties
             }
             deletePolicies {
               timedPolicies {

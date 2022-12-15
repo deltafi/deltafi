@@ -3,26 +3,6 @@ spring:
     auto: false
   application:
     name: deltafi-core
-  cloud:
-    compatibility-verifier:
-      enabled: false
-    config:
-      server:
-        native.search-locations: ${NATIVE_SEARCH_LOCATIONS:file:./config/}
-        git:
-          uri: ${GIT_CONFIG_REPO:https://gitlab.com/systolic/deltafi/deltafi-config.git}
-          username: ${USERNAME:config-server}
-          password: ${CONFIG_TOKEN}
-          clone-on-start: ${CLONE_ON_START:true}
-          private-key: ${PRIVATE_KEY}
-          ignore-local-ssh-settings: ${IGNORE_LOCAL_SSH_SETTINGS:true}
-          strict-host-key-checking: ${STRICT_HOST_KEY_CHECKING:false}
-        default-label: ${DEFAULT_LABEL:main}
-        prefix: config
-    discovery:
-      enabled: false
-  config:
-    import: ${DELTAFI_CONFIG_IMPORT:~}
   data:
     mongodb:
       host: ${MONGO_HOST:deltafi-mongodb}

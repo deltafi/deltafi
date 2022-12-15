@@ -21,9 +21,10 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.common.types.*;
+import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,8 +34,10 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.EnableRetry;
@@ -46,11 +49,11 @@ import java.util.Collections;
 import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
-@Import({DeltaFilesService.class, DeltaFiProperties.class})
+@Import({DeltaFilesService.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
-@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class})
+@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class, MetricRepository.class, DeltaFiPropertiesRepo.class})
 @EnableRetry
-public class IngressServiceRetryTest {
+class IngressServiceRetryTest {
 
     @Autowired
     private DeltaFilesService deltaFilesService;
@@ -58,11 +61,18 @@ public class IngressServiceRetryTest {
     @MockBean
     private DeltaFileRepo deltaFileRepo;
 
-    @MockBean
-    private MetricRepository metricRepository;
+    @TestConfiguration
+    public static class TestConfig {
+        @Bean
+        public DeltaFiPropertiesService deltaFiPropertiesService() {
+            return new MockDeltaFiPropertiesService();
+        }
+    }
+
 
     @Test
     void testRetry() {
+
         String did = "abc";
         String fromAction = "validateAction";
 

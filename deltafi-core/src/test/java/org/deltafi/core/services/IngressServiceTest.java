@@ -25,6 +25,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
+import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.services.api.model.DiskMetrics;
@@ -65,7 +66,7 @@ class IngressServiceTest {
     DeltaFilesService deltaFilesService;
 
     @Spy
-    DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+    DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     @Spy
     @SuppressWarnings("unused")
@@ -89,20 +90,20 @@ class IngressServiceTest {
     @Test @SneakyThrows
     void isEnabled() {
         Assertions.assertTrue(ingressService.isEnabled());
-        deltaFiProperties.getIngress().setEnabled(false);
+        deltaFiProperties().getIngress().setEnabled(false);
         Assertions.assertFalse(ingressService.isEnabled());
     }
 
     @Test @SneakyThrows
     void isStorageAvailable() {
         Mockito.when(diskSpaceService.contentMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
-        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(1);
+        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(1);
         Assertions.assertTrue(ingressService.isStorageAvailable());
-        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(4);
+        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(4);
         Assertions.assertTrue(ingressService.isStorageAvailable());
-        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(5);
+        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(5);
         Assertions.assertFalse(ingressService.isStorageAvailable());
-        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(6);
+        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(6);
         Assertions.assertFalse(ingressService.isStorageAvailable());
     }
 
@@ -142,5 +143,9 @@ class IngressServiceTest {
     void fromMetadataString_fail() {
         String metadata = "[\"bad\"]";
         Assertions.assertThrows(IngressMetadataException.class, () -> ingressService.fromMetadataString(metadata));
+    }
+
+    private DeltaFiProperties deltaFiProperties() {
+        return deltaFiPropertiesService.getDeltaFiProperties();
     }
 }

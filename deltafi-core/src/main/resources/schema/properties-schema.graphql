@@ -27,8 +27,8 @@ type Property {
     description: String!            # describe what this property does
     defaultValue: String            # value used if no value is set in git or mongo
     refreshable: Boolean!           # will apps automatically pick up changes to this property
-    editable: Boolean!              # should this be editable from the GUI
-    hidden: Boolean!                # should the GUI display this property
+    editable: Boolean! @deprecated(reason: "all properties will be editable")
+    hidden: Boolean! @deprecated(reason: "all properties will be visible")
     value: String                   # value as set in git/file-system or mongo
     propertySource: PropertySource! # where the property was set (external for git/filesystem or mongo)
 }
@@ -38,8 +38,8 @@ input PropertyInput {
     description: String!            # describe what this property does
     defaultValue: String            # value used if no value is set in git or mongo
     refreshable: Boolean!           # will apps automatically pick up changes to this property
-    editable: Boolean!              # should this be editable from the GUI
-    hidden: Boolean!                # should the GUI display this property
+    editable: Boolean! @deprecated(reason: "all properties will be editable")
+    hidden: Boolean! @deprecated(reason: "all properties will be visible")
     value: String                   # value as set in git/file-system or mongo
     propertySource: PropertySource  # not needed here but allows the Property class to be reused for input
 }
@@ -67,4 +67,110 @@ input PropertyUpdate {
 input PropertyId {
     propertySetId: String!
     key: String!
+}
+
+enum PropertyType {
+    ACTION_QUEUE_THRESHOLD
+    AGE_OFF_DAYS
+    CONTENT_STORAGE_THRESHOLD
+    CORE_SERVICE_THREADS
+    DELETE_BATCH_SIZE
+    DELETE_FREQUENCY
+    DELETE_ON_COMPLETION
+    IMAGE_PULL_SECRET
+    IMAGE_REPOSITORY_BASE
+    INGRESS_DISK_SPACE_REQUIRED
+    INGRESS_ENABLED
+    METRICS_ENABLED
+    REQUEUE_SECONDS
+    SCHEDULER_POOL_SIZE
+    SYSTEM_NAME
+}
+
+type DeleteProperties {
+    ageOffDays: Int!
+    frequency: String!
+    onCompletion: Boolean!
+    policyBatchSize: Int!
+}
+
+type IngressProperties {
+    enabled: Boolean!
+    diskSpaceRequirementInMb: Long!
+}
+
+type MetricsProperties {
+    enabled: Boolean!
+}
+
+type PluginProperties {
+    imageRepositoryBase: String
+    imagePullSecret: String
+}
+
+type SystemCheckProperties {
+    actionQueueSizeThreshold: Int!
+    contentStoragePercentThreshold: Int!
+}
+
+input DeletePropertiesInput {
+    ageOffDays: Int!
+    frequency: String!
+    onCompletion: Boolean!
+    policyBatchSize: Int!
+}
+
+input IngressPropertiesInput {
+    enabled: Boolean!
+    diskSpaceRequirementInMb: Long!
+}
+
+input MetricsPropertiesInput {
+    enabled: Boolean!
+}
+
+input PluginPropertiesInput {
+    imageRepositoryBase: String
+    imagePullSecret: String
+}
+
+input SystemCheckPropertiesInput {
+    actionQueueSizeThreshold: Int!
+    contentStoragePercentThreshold: Int!
+}
+
+type DeltaFiProperties {
+    systemName: String!
+    requeueSeconds: Int!
+    coreServiceThreads: Int!
+    scheduledServiceThreads: Int!
+    delete: DeleteProperties!
+    ingress: IngressProperties!
+    metrics: MetricsProperties!
+    plugins: PluginProperties!
+    checks: SystemCheckProperties!
+    setProperties: [PropertyType]!
+}
+
+input DeltaFiPropertiesInput {
+    systemName: String!
+    requeueSeconds: Int!
+    coreServiceThreads: Int!
+    scheduledServiceThreads: Int!
+    delete: DeletePropertiesInput!
+    ingress: IngressPropertiesInput!
+    metrics: MetricsPropertiesInput!
+    plugins: PluginPropertiesInput!
+    checks: SystemCheckPropertiesInput!
+    setProperties: [PropertyType]!
+}
+
+extend type Query {
+    getPropertySets: [PropertySet]!
+    getDeltaFiProperties: DeltaFiProperties!
+}
+
+extend type Mutation {
+    updateProperties(updates: [PropertyUpdate]!): Boolean!
+    removePropertyOverrides(propertyIds: [PropertyId]!): Boolean!
 }

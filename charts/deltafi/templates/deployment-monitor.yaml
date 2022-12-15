@@ -26,11 +26,8 @@ spec:
         env:
         - name: RUNNING_IN_CLUSTER
           value: "true"
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: redis-password
-              key: redis-password
+        {{- include "commonEnvVars" . | nindent 8 }}
+        {{- include "mongoEnvVars" . | nindent 8 }}
         - name: PROBE_DIR
           value: "/tmp/probe"
         livenessProbe:

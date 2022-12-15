@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.schedulers.trigger;
 
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -28,8 +28,8 @@ import java.time.Duration;
 @Service
 public class RequeueTrigger extends ConfigurableFixedDelayTrigger {
 
-    public RequeueTrigger(DeltaFiProperties deltaFiProperties) {
-        super(deltaFiProperties, (props) -> Duration.ofSeconds(props.getRequeueSeconds()), 0L);
+    public RequeueTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
+        super(deltaFiPropertiesService, (props) -> Duration.ofSeconds(props.getRequeueSeconds()), 0L);
     }
 
 }

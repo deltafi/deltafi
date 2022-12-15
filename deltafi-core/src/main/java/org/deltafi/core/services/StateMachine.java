@@ -20,11 +20,10 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.*;
+import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.IngressFlow;
-import org.deltafi.core.configuration.*;
-import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -41,7 +40,7 @@ public class StateMachine {
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
-    private final DeltaFiProperties deltaFiProperties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     /**
      * Advance the state of the given DeltaFile
@@ -259,7 +258,7 @@ public class StateMachine {
     }
 
     private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile, String egressFlow) {
-        return actionConfiguration.buildActionInput(deltaFile, deltaFiProperties.getSystemName(), egressFlow);
+        return actionConfiguration.buildActionInput(deltaFile, deltaFiPropertiesService.getDeltaFiProperties().getSystemName(), egressFlow);
     }
 
 }

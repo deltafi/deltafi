@@ -11,10 +11,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - `cluster prerequisites` will install python and attempt to install Fedora/Debian dependencies
+- Restoring a `system-snapshot` now defaults to a hard reset
+- System properties are stored as json instead of key value pairs
+- Plugins are configured through environment variables
 
 ### Deprecated
 
 ### Removed
+- The `config-server` has been removed
 
 ### Fixed
 

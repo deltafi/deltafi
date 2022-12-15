@@ -22,7 +22,7 @@ type SystemSnapshot {
     created: DateTime!
     deletePolicies: DeletePolicies!
     flowAssignmentRules: [FlowAssignmentRule]!
-    propertySets: [PropertySet]!
+    deltaFiProperties: DeltaFiProperties!
     installedPlugins: [PluginCoordinates]!
     pluginVariables: [PluginVariables]!
     runningIngressFlows: [String]!
@@ -38,7 +38,7 @@ input SystemSnapshotInput {
     created: DateTime!
     deletePolicies: DeletePoliciesInput!
     flowAssignmentRules: [FlowAssignmentRuleInput]!
-    propertySets: [PropertySetInput]!
+    deltaFiProperties: DeltaFiPropertiesInput!
     installedPlugins: [PluginCoordinatesInput]!
     pluginVariables: [PluginVariablesInput]!
     runningIngressFlows: [String]!

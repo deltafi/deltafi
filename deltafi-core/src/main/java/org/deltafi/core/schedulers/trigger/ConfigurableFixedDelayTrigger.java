@@ -18,6 +18,7 @@
 package org.deltafi.core.schedulers.trigger;
 
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.TriggerContext;
 
@@ -27,12 +28,12 @@ import java.util.function.Function;
 
 public class ConfigurableFixedDelayTrigger implements Trigger {
 
-    private final DeltaFiProperties deltaFiProperties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final long initialDelay;
     private final Function<DeltaFiProperties, Duration> durationFunction;
 
-    public ConfigurableFixedDelayTrigger(DeltaFiProperties deltaFiProperties, Function<DeltaFiProperties, Duration> durationFunction, long initialDelay) {
-        this.deltaFiProperties = deltaFiProperties;
+    public ConfigurableFixedDelayTrigger(DeltaFiPropertiesService deltaFiPropertiesService, Function<DeltaFiProperties, Duration> durationFunction, long initialDelay) {
+        this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.initialDelay = initialDelay;
         this.durationFunction = durationFunction;
     }
@@ -45,6 +46,6 @@ public class ConfigurableFixedDelayTrigger implements Trigger {
             return new Date(triggerContext.getClock().millis() + this.initialDelay);
         }
 
-        return new Date(lastCompletion.getTime() + durationFunction.apply(deltaFiProperties).toMillis());
+        return new Date(lastCompletion.getTime() + durationFunction.apply(deltaFiPropertiesService.getDeltaFiProperties()).toMillis());
     }
 }

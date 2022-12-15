@@ -27,7 +27,7 @@ module Deltafi
       module Checks
         class ActionQueueCheck < Status::Check
           DEFAULT_SIZE_THRESHOLD = 0
-          SIZE_THRESHOLD_PROPERTY = 'deltafi.checks.actionQueue.sizeThreshold'
+          SIZE_THRESHOLD_PROPERTY = %w[checks actionQueueSizeThreshold]
           DGS_QUEUE_NAME = 'dgs'
           INGORED_QUEUE_NAMES = [
             DF::Common::STATUS_REDIS_KEY,
@@ -86,7 +86,7 @@ module Deltafi
           end
 
           def size_threshold
-            (DF.system_properties[SIZE_THRESHOLD_PROPERTY] || DEFAULT_SIZE_THRESHOLD).to_i
+            DF.system_property(SIZE_THRESHOLD_PROPERTY, DEFAULT_SIZE_THRESHOLD).to_i
           end
 
           def generate_queue_size_metric(queue_name, queue_size)

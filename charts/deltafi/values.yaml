@@ -14,13 +14,6 @@ deltafi:
   core:
     image: deltafi/deltafi-core:0.99.5
     mongo_host: deltafi-mongodb
-    nativeConfigMap: config-server-configmap
-    nativeConfigMountPath: /config
-    # Properties that will be set externally prior to system startup
-    propertyOverrides: ~
-      # deltafi-common.yaml: |-
-      #  deltafi:
-      #    properties: here
   docs:
     image: deltafi/deltafi-docs:0.99.5
     enabled: true

@@ -20,7 +20,7 @@ package org.deltafi.core.snapshot;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
@@ -41,7 +41,7 @@ public class SystemSnapshot {
     private OffsetDateTime created = OffsetDateTime.now();
     private List<PluginVariables> pluginVariables;
     private DeletePolicies deletePolicies;
-    private List<PropertySet> propertySets;
+    private DeltaFiProperties deltaFiProperties;
     private List<FlowAssignmentRule> flowAssignmentRules;
     private List<String> runningIngressFlows;
     private List<String> testIngressFlows;

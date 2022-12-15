@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Metric;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.metrics.statsd.StatsdDeltaReporter;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,8 @@ public class MetricRepository {
     public MetricRepository(@Value("${STATSD_HOSTNAME:deltafi-graphite}") String statsdHostname,
                             @Value("${STATSD_PORT:8125}") int statsdPort,
                             @Value("${METRICS_PERIOD_SECONDS:10}") int periodSeconds,
-                            DeltaFiProperties deltaFiProperties) {
+                            DeltaFiPropertiesService deltaFiPropertiesService) {
+        DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
         if (deltaFiProperties.getMetrics().isEnabled()) {
             log.info("Creating metric service");
             metrics = new MetricRegistry();

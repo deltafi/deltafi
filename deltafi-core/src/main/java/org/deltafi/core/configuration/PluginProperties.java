@@ -21,6 +21,6 @@ import lombok.Data;
 
 @Data
 public class PluginProperties {
-    private String imageRepositoryBase;
+    private String imageRepositoryBase = "docker.io/deltafi/";
     private String imagePullSecret;
 }

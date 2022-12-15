@@ -18,19 +18,29 @@
 package org.deltafi.core.configuration;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.deltafi.core.types.PropertyType;
+import org.springframework.data.annotation.Id;
 
-@ConfigurationProperties("deltafi")
+import java.util.HashSet;
+import java.util.Set;
+
 @Data
 public class DeltaFiProperties {
 
+    public static final String PROPERTY_ID = "deltafi-properties";
+
+    @Id
+    private String id = PROPERTY_ID;
+    private String systemName = "DeltaFi";
     private int requeueSeconds = 300;
     private int coreServiceThreads = 16;
     private int scheduledServiceThreads = 32;
     private MetricsProperties metrics = new MetricsProperties();
     private DeleteProperties delete = new DeleteProperties();
     private IngressProperties ingress = new IngressProperties();
-    private String apiUrl;
-    private String systemName;
-    private PluginProperties plugins;
+    private PluginProperties plugins = new PluginProperties();
+    private SystemCheckProperties checks = new SystemCheckProperties();
+
+    private Set<PropertyType> setProperties = new HashSet<>();
+
 }

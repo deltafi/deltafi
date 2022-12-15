@@ -22,8 +22,8 @@ import lombok.Singular;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
+import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.Util;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -35,6 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 
@@ -75,9 +76,9 @@ class StateMachineTest {
     @Mock
     IngressFlowService ingressFlowService;
 
-    @Mock
+    @Spy
     @SuppressWarnings("unused")
-    DeltaFiProperties deltaFiProperties;
+    DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     @Test
     void testGetEnrichActions() {

@@ -18,7 +18,7 @@
 package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.configuration.server.service.PropertyService;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -30,10 +30,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PropertySyncScheduler {
 
-    private final PropertyService propertyService;
+    private final DeltaFiPropertiesService propertyService;
 
     @Scheduled(fixedDelay = 5000)
     public void syncProperties() {
-        propertyService.syncProperties();
+        propertyService.refreshProperties();
     }
 }

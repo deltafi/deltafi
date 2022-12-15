@@ -18,7 +18,6 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
@@ -32,23 +31,26 @@ import java.time.Duration;
 public class DeltaFileIndexService {
 
     private final DeltaFileRepo deltaFileRepo;
-    private final DeltaFiProperties deltaFiProperties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
-    public DeltaFileIndexService(DeltaFileRepo deltaFileRepo, DeltaFiProperties deltaFiProperties) {
+    public DeltaFileIndexService(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService) {
         this.deltaFileRepo = deltaFileRepo;
-        this.deltaFiProperties = deltaFiProperties;
+        this.deltaFiPropertiesService = deltaFiPropertiesService;
     }
 
     @EventListener
     public void onEnvChange(final EnvironmentChangeEvent event) {
         if (event.getKeys().contains("deltafi.delete.ageOffDays")) {
-            this.deltaFileRepo.setExpirationIndex(Duration.ofDays(deltaFiProperties.getDelete().getAgeOffDays()));
+            this.deltaFileRepo.setExpirationIndex(getAgeOffDays());
         }
     }
 
     @PostConstruct
     public void ensureAllIndices() {
-        this.deltaFileRepo.ensureAllIndices(Duration.ofDays(deltaFiProperties.getDelete().getAgeOffDays()));
+        this.deltaFileRepo.ensureAllIndices(getAgeOffDays());
     }
 
+    private Duration getAgeOffDays() {
+        return Duration.ofDays(deltaFiPropertiesService.getDeltaFiProperties().getDelete().getAgeOffDays());
+    }
 }

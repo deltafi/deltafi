@@ -15,9 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration.server.loader;
+package org.deltafi.core.repo;
 
-import org.springframework.boot.context.config.ConfigDataResource;
+import org.deltafi.core.configuration.DeltaFiProperties;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-public class DeltaFiConfigDataResource extends ConfigDataResource {
+@Repository
+public interface DeltaFiPropertiesRepo extends MongoRepository<DeltaFiProperties, String>, DeltaFiPropertiesRepoCustom {
 }

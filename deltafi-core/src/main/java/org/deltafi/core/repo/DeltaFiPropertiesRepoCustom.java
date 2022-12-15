@@ -15,28 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration.server.repo;
+package org.deltafi.core.repo;
 
-import java.util.UUID;
+import org.deltafi.core.types.PropertyType;
 
-public interface StateHolderRepository {
+import java.util.List;
+import java.util.Map;
 
-    /**
-     * If the StateHolder is populated return the current UUID
-     * otherwise create a new StateHolder and return the generated UUID
-     * @return UUID of the persisted StateHolder
-     */
-    UUID getOrInit();
-
-    /**
-     * Get the current StateHolder UUID
-     * @return UUID of the persisted StateHolder
-     */
-    UUID getCurrentState();
-
-    /**
-     * Set a new UUID in the persisted StateHolder
-     */
-    void replaceStateHolderUUID(UUID uuid);
-
+public interface DeltaFiPropertiesRepoCustom {
+    boolean updateProperties(Map<PropertyType, String> updateMap);
+    boolean unsetProperties(List<PropertyType> propertyTypes);
 }

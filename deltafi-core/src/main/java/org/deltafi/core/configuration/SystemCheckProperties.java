@@ -15,19 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration.server.repo;
+package org.deltafi.core.configuration;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-
-import java.util.UUID;
 
 @Data
-public class StateHolder {
-    public static final String STATIC_ID = "configStateId";
-
-    @Id
-    private String ID = STATIC_ID;
-    private UUID stateId;
-
+public class SystemCheckProperties {
+    private int actionQueueSizeThreshold = 10;
+    private int contentStoragePercentThreshold = 90;
 }

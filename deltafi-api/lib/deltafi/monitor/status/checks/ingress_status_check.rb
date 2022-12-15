@@ -27,8 +27,8 @@ module Deltafi
       module Checks
         class IngressStatusCheck < Status::Check
           DEFAULT_REQUIRED_MEGABYTES = 1
-          REQUIRED_MEGABYTES_PROPERTY = 'deltafi.ingress.diskSpaceRequirementInMb'
-          INGRESS_ENABLED_PROPERTY = 'deltafi.ingress.enabled'
+          REQUIRED_MEGABYTES_PROPERTY = %w[ingress diskSpaceRequirementInMb]
+          INGRESS_ENABLED_PROPERTY = %w[ingress enabled]
 
           def initialize
             super('Ingress Status Check')
@@ -65,7 +65,7 @@ module Deltafi
           end
 
           def required_bytes
-            (DF.system_properties[REQUIRED_MEGABYTES_PROPERTY] || DEFAULT_REQUIRED_MEGABYTES).to_i * 1000000
+            DF.system_property(REQUIRED_MEGABYTES_PROPERTY, DEFAULT_REQUIRED_MEGABYTES).to_i * 1000000
           end
 
           def remaining_bytes
@@ -80,7 +80,7 @@ module Deltafi
           end
 
           def ingress_enabled?
-            (DF.system_properties[INGRESS_ENABLED_PROPERTY] || 'true').to_s.downcase == 'true'
+            DF.system_property(INGRESS_ENABLED_PROPERTY, 'true').to_s.downcase == 'true'
           end
 
         end

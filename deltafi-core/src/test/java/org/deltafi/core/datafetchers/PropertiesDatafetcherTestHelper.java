@@ -19,52 +19,37 @@ package org.deltafi.core.datafetchers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import graphql.ExecutionResult;
 import org.deltafi.common.types.PropertySet;
-import org.deltafi.core.configuration.server.constants.PropertyConstants;
+import org.deltafi.core.configuration.DeltaFiProperties;
 
 import java.util.List;
 import java.util.Map;
-
-import static org.deltafi.core.Util.getPropertySetWithProperty;
 
 
 public class PropertiesDatafetcherTestHelper {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final String REMOVE_TEMPLATE = "mutation {removePluginPropertySet(propertySetId: \"%s\")}";
-    private static final String ADD_PROPERTY_SET = "mutation($propertySet: PropertySetInput!) {addPluginPropertySet(propertySet: $propertySet)}";
     private static final String UPDATE_PROPERTIES = "mutation($updates: [PropertyUpdate]!) {updateProperties(updates: $updates)}";
+    private static final String GET_PROPERTIES = "query { getDeltaFiProperties { systemName requeueSeconds coreServiceThreads scheduledServiceThreads checks {actionQueueSizeThreshold contentStoragePercentThreshold} delete {frequency ageOffDays onCompletion policyBatchSize} ingress {enabled diskSpaceRequirementInMb} plugins {imageRepositoryBase imagePullSecret} metrics {enabled} setProperties }}";
+    private static final String UNSET_PROPERTY = "mutation($ids: [PropertyId]!) { removePropertyOverrides(propertyIds: $ids)}";
 
     public static List<PropertySet> getPropertySets(DgsQueryExecutor dgsQueryExecutor) {
         String query = "query {getPropertySets {id displayName description properties {key value hidden editable refreshable}}}";
         return dgsQueryExecutor.executeAndExtractJsonPath(query, "data.getPropertySets");
     }
 
-    public static int updateProperties(DgsQueryExecutor dgsQueryExecutor) {
-        Map<String, Object> updatesMap = Map.of("updates", List.of(Map.of("key", "editable", "value", "changedit", "propertySetId", "test-plugin")));
+    public static boolean updateProperties(DgsQueryExecutor dgsQueryExecutor) {
+        Map<String, Object> updatesMap = Map.of("updates", List.of(Map.of("key", "scheduledServiceThreads", "value", "3", "propertySetId", "test-plugin")));
         return dgsQueryExecutor.executeAndExtractJsonPath(UPDATE_PROPERTIES, "data.updateProperties", updatesMap);
     }
 
-    public static boolean addPluginPropertySet_valid(DgsQueryExecutor dgsQueryExecutor) {
-        PropertySet propSet = getPropertySetWithProperty("a");
-        Map<String, Object> properSetMap = Map.of("propertySet", OBJECT_MAPPER.convertValue(propSet, Map.class));
-        return dgsQueryExecutor.executeAndExtractJsonPath(ADD_PROPERTY_SET, "data.addPluginPropertySet", properSetMap);
+    public static DeltaFiProperties getDeltaFiProperties(DgsQueryExecutor dgsQueryExecutor) {
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(GET_PROPERTIES, "data.getDeltaFiProperties", DeltaFiProperties.class);
     }
 
-    public static ExecutionResult addPluginPropertySet_commonFails(DgsQueryExecutor dgsQueryExecutor) {
-        PropertySet propSet = getPropertySetWithProperty(PropertyConstants.DELTAFI_PROPERTY_SET);
-        Map<String, Object> properSetMap = Map.of("propertySet", OBJECT_MAPPER.convertValue(propSet, Map.class));
-        return dgsQueryExecutor.execute(ADD_PROPERTY_SET, properSetMap);
+    public static boolean removePropertyOverrides(DgsQueryExecutor dgsQueryExecutor) {
+        Map<String, Object> updatesMap = Map.of("ids", List.of(Map.of("propertySetId", "deltafi-common", "key", "scheduledServiceThreads")));
+        return dgsQueryExecutor.executeAndExtractJsonPath(UNSET_PROPERTY, "data.removePropertyOverrides", updatesMap);
     }
 
-    public static boolean removePluginPropertySet(DgsQueryExecutor dgsQueryExecutor) {
-        String removeMutation = String.format(REMOVE_TEMPLATE, "test-plugin");
-        return dgsQueryExecutor.executeAndExtractJsonPath(removeMutation, "data.removePluginPropertySet");
-    }
-
-    public static ExecutionResult removePluginPropertySet_commonFails(DgsQueryExecutor dgsQueryExecutor) {
-        String removeMutation = String.format(REMOVE_TEMPLATE, PropertyConstants.DELTAFI_PROPERTY_SET);
-        return dgsQueryExecutor.execute(removeMutation);
-    }
 }

@@ -446,8 +446,6 @@ type Query {
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
 
-  getPropertySets: [PropertySet]!
-
   resolveFlowFromFlowAssignmentRules(sourceInfo: SourceInfoInput!): String
   getAllFlowAssignmentRules: [FlowAssignmentRule]!
   getFlowAssignmentRule(id: String!): FlowAssignmentRule
@@ -512,13 +510,6 @@ type Mutation {
 
   savePluginVariables(pluginVariablesInput: PluginVariablesInput!) : Boolean!
   setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput]!) : Boolean!
-
-  updateProperties(updates: [PropertyUpdate]!): Int!
-  removePropertyOverrides(propertyIds: [PropertyId]!): Int!
-
-  # use when adding or removing a plugin
-  addPluginPropertySet(propertySet: PropertySetInput!) : Boolean!
-  removePluginPropertySet(propertySetId: String!): Boolean!
 
   stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!
 }

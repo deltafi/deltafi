@@ -30,7 +30,6 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.springframework.cache.annotation.CacheEvict;
@@ -50,7 +49,7 @@ public class IngressService {
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
     private final ObjectMapper objectMapper;
-    private final DeltaFiProperties properties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final DiskSpaceService diskSpaceService;
 
     @RequiredArgsConstructor
@@ -67,7 +66,7 @@ public class IngressService {
      * @return true if ingress is enabled, false otherwise
      */
     public boolean isEnabled() {
-        return properties.getIngress().isEnabled();
+        return deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled();
     }
 
     /**
@@ -77,7 +76,7 @@ public class IngressService {
      */
     @Cacheable(cacheNames = {"diskspaceservice-storage"})
     public boolean isStorageAvailable() {
-        return diskSpaceService.contentMetrics().bytesRemaining() > properties.getIngress().getDiskSpaceRequirementInMb() * 1000000;
+        return diskSpaceService.contentMetrics().bytesRemaining() > deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;
     }
 
     /**

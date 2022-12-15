@@ -1,8 +1,6 @@
 spring:
   application:
     name: deltafi-core-actions
-  config:
-    import: configserver:http://deltafi-core-service/config
   main:
     web-application-type: none
     banner-mode: "off"

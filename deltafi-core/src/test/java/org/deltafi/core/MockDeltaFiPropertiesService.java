@@ -15,30 +15,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration.server.repo;
+package org.deltafi.core;
 
-import java.util.UUID;
+import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 
-public class StateHolderRepositoryInMemoryImpl implements StateHolderRepository {
+public class MockDeltaFiPropertiesService extends DeltaFiPropertiesService  {
 
-    private UUID stateId;
+    private final DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
 
-    @Override
-    public UUID getOrInit() {
-        if (null == stateId) {
-            stateId = UUID.randomUUID();
-        }
-
-        return stateId;
+    public MockDeltaFiPropertiesService() {
+        super(null);
     }
 
     @Override
-    public UUID getCurrentState() {
-        return stateId;
+    public void ensurePropertiesExist() {
+
     }
 
     @Override
-    public void replaceStateHolderUUID(UUID uuid) {
-        stateId = uuid;
+    public DeltaFiProperties getDeltaFiProperties() {
+        return deltaFiProperties;
     }
+
+
 }
