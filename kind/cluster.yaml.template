@@ -8,10 +8,15 @@ fqdns:
 plugins:
   - name: deltafi-passthrough
     plugin_coordinates: "org.deltafi.passthrough:deltafi-passthrough:latest"
+    image_repository_base: localhost:5000
     url: 'https://gitlab.com/systolic/deltafi/deltafi-passthrough'
-  #- name: deltafi-stix                                                   # name of the plugin used as path when cloning and building the plugin locally
-  #  plugin_coordinates: "org.deltafi.stix:deltafi-stix-actions:latest"   # plugin coordinates used in the install
-  #  url: 'https://gitlab.com/systolic/deltafi/deltafi-stix'                  # url to clone, used for building local images
-  #  image_repository_base: docker.io/deltafi                             # optional - image repository base to use
+  # - name: deltafi-stix                                                   # name of the plugin used as path when cloning and building the plugin locally
+  #   plugin_coordinates: "org.deltafi.stix:deltafi-stix-actions:latest"   # plugin coordinates used in the install
+  #   url: 'git@gitlab.com:systolic/deltafi/deltafi-stix'                  # url to clone, used for building local images
+  #   image_repository_base: localhost:5000                                # optional - image repository base to use
+  # - name: deltafi-json-validation
+  #   plugin_coordinates: "org.deltafi.stix:deltafi-json-validation-actions:latest"
+  #   url: 'git@gitlab.com:systolic/deltafi/deltafi-json-validation'
+  #   image_repository_base: localhost:5000
 persistent_volume:
   storage: '1G'
