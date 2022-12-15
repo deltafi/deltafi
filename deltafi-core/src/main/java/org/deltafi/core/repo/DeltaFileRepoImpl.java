@@ -378,7 +378,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         List<Criteria> andCriteria = new ArrayList<>();
 
         if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            andCriteria.add(Criteria.where(EGRESS_FLOW).all(filter.getEgressFlows()));
+            andCriteria.add(Criteria.where(EGRESS_FLOW).in(filter.getEgressFlows()));
         }
 
         if (nonNull(filter.getDids()) && !filter.getDids().isEmpty()) {
