@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Removed
 - The `config-server` has been removed
+- Mongo migrations for DeltaFi versions older than 0.99.4 have been removed
 
 ### Fixed
 
@@ -51,6 +52,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - junit-jupiter-api 5.9.1
   - junit-jupiter-engine 5.9.1
 - Docker base image updated to 0.99.6-1
+- System properties collection changed from `propertySet` to `deltaFiProperties` with new structure, and reflected in `systemSnapshot`
 
 ## [0.99.5] - 2022-12-08
 

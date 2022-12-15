@@ -1,3 +1,7 @@
+let oldPropertyCollectionExists = function() {
+    return db.propertySet.count() > 0
+}
+
 let alreadyRun = function() {
     return db.propertySet.count({properties: {$elemMatch: {"key": "deltafi.delete.ageOffDays"}}}) > 0
 }
@@ -89,6 +93,10 @@ let migrateSnapshots = function() {
 }
 
 let runMigrations = function() {
+    if (!oldPropertyCollectionExists()) {
+        return;
+    }
+
     if (alreadyRun()) {
         return;
     }
