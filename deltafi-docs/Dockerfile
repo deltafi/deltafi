@@ -6,5 +6,5 @@ COPY ./ .
 ENV BASE_PATH=/docs/
 RUN npm run build
 
-FROM nginx:1.21-alpine as production-stage
+FROM nginx:1.23.3-alpine as production-stage
 COPY --from=deltafi-docs-build-stage /app/dist /usr/share/nginx/html/docs
