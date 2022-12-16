@@ -15,7 +15,7 @@ variables:
   DOCKER_DRIVER: overlay2
 
 services:
-  - name: docker:18.09.7-dind
+  - name: docker:20.10.21-dind
     entrypoint: ["dockerd-entrypoint.sh"]
     command: ["--tls=false", "--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
 

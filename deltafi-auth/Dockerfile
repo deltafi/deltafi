@@ -1,17 +1,8 @@
-# Pinning base image to 2.7-alpine3.13 as 2.7-alpine3.16 had issues in gitlab-ci.
-FROM ruby:2.7-alpine3.13 AS build
+FROM deltafi/deltafi-ruby-base:0.99.6-2
 WORKDIR /app
-COPY Gemfile Gemfile.lock /app/
-RUN apk add --no-cache make yajl-dev gcc g++ musl-dev sqlite-dev && \
-    bundle config set path 'vendor/bundle' && \
-    bundle install
-
-FROM ruby:2.7-alpine3.13
-WORKDIR /app
-COPY --from=build /app /app
 COPY . /app
 COPY probe.sh /
-RUN apk add --no-cache curl sqlite-libs && \
-    bundle config set path 'vendor/bundle'
+RUN apk add --no-cache sqlite-libs && \
+    bundle install
 EXPOSE 9292
 CMD bundle exec rainbows -c rainbows.conf -p 9292

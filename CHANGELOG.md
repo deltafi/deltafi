@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - System properties are stored as json instead of key value pairs
 - Plugins are configured through environment variables
 - Search for multiple `DeltaFilesFilter:egressFlows` values is now done as an OR operation instead of AND
+- Use Ruby base image for API, Auth, and Egress Sink.
 
 ### Deprecated
 
