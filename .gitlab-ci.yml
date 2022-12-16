@@ -4,6 +4,7 @@ stages:
   - publish
   - ci
   - trigger
+  - scan
 
 default:
   timeout: 45m
@@ -13,9 +14,13 @@ variables:
   DOCKER_HOST: "tcp://docker:2375"
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
+  # DOCKER_BUILDKIT: 1
+  # BUILDKIT_INLINE_CACHE: 1
+  # COMPOSE_DOCKER_CLI_BUILD: 1
 
 services:
   - name: docker:20.10.21-dind
+    alias: dind
     entrypoint: ["dockerd-entrypoint.sh"]
     command: ["--tls=false", "--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
 
@@ -184,6 +189,54 @@ trigger_passthrough:
     - .trigger
   trigger:
     project: systolic/deltafi/deltafi-passthrough
+
+.container_scanning:
+  variables:
+    CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning:5"
+    GIT_STRATEGY: fetch
+  image: "$CS_ANALYZER_IMAGE$CS_IMAGE_SUFFIX"
+  stage: scan
+  allow_failure: true
+  artifacts:
+    reports:
+      container_scanning: deltafi-core.container-report.json
+    paths:
+      - deltafi-core.container-report.json
+      - deltafi-core-actions.container-report.json
+      - deltafi-api.container-report.json
+      - deltafi-auth.container-report.json
+      - deltafi-docs.container-report.json
+      - deltafi-egress-sink.container-report.json
+      - deltafi-nodemonitor.container-report.json
+  dependencies: []
+  when: manual
+  script:
+    - CS_DOCKERFILE_PATH=deltafi-core CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core:${CI_COMMIT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-core.container-report.json
+    - CS_DOCKERFILE_PATH=deltafi-core-actions CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core-actions:${CI_COMMIT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-core-actions.container-report.json
+    - CS_DOCKERFILE_PATH=deltafi-api CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-api:${CI_COMMIT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-api.container-report.json
+    - CS_DOCKERFILE_PATH=deltafi-auth CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-auth:${CI_COMMIT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-auth.container-report.json
+    - CS_DOCKERFILE_PATH=deltafi-docs CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-docs:${CI_COMMIT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-docs.container-report.json
+    - CS_DOCKERFILE_PATH=deltafi-egress-sink CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-egress-sink:${CI_COMMIT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-egress-sink.container-report.json
+    - CS_DOCKERFILE_PATH=deltafi-nodemonitor CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-nodemonitor:${CI_COMMIT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-nodemonitor.container-report.json
+
+grype_scan:
+  extends:
+    - .container_scanning
+  variables:
+    CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning/grype:5"
+
+trivy_scan:
+  extends:
+    - .container_scanning
+  variables:
+    CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning/trivy:5"
 
 include:
   - local: '*/.gitlab-ci.yml'
