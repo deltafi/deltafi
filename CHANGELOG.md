@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Update Spring Boot base image to deltai/spring-boot-base:0.99.7
 
 ## [0.99.6] - 2022-12-18
 

@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-spring-base:0.99.6-1
+FROM deltafi/deltafi-spring-base:0.99.7
 VOLUME /tmp
 ADD /build/libs/deltafi-*.jar deltafi-app.jar
 COPY probe.sh /
