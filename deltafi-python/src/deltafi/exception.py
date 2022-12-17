@@ -40,4 +40,4 @@ class MissingMetadataException(RuntimeError):
 
 class MissingSourceMetadataException(MissingMetadataException):
     def __init__(self, key):
-        super.__init__(key)
+        super().__init__(key)

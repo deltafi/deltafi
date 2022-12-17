@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Mongo migrations for DeltaFi versions older than 0.99.4 have been removed
 
 ### Fixed
+- Incorrect creation of metadata exceptions in python action kit
 
 ### Tech-Debt/Refactor
 - Added unit testing for several python modules

@@ -15,10 +15,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+from typing import Dict, List, NamedTuple
+
 from deltafi.domain import *
 from deltafi.exception import MissingMetadataException, MissingSourceMetadataException, ExpectedContentException, \
     MissingDomainException, MissingEnrichmentException
-from typing import Dict, List, NamedTuple
 
 
 class DomainInput(NamedTuple):
@@ -32,7 +33,7 @@ class DomainInput(NamedTuple):
         if key in self.source_metadata:
             return self.source_metadata[key]
         else:
-            raise MissingSourceMetadataException
+            raise MissingSourceMetadataException(key)
 
     def get_source_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.source_metadata:
@@ -44,7 +45,7 @@ class DomainInput(NamedTuple):
         if key in self.metadata:
             return self.metadata[key]
         else:
-            raise MissingMetadataException
+            raise MissingMetadataException(key)
 
     def get_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.metadata:
@@ -71,7 +72,7 @@ class EgressInput(NamedTuple):
         if key in self.source_metadata:
             return self.source_metadata[key]
         else:
-            raise MissingSourceMetadataException
+            raise MissingSourceMetadataException(key)
 
     def get_source_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.source_metadata:
@@ -93,7 +94,7 @@ class EnrichInput(NamedTuple):
         if key in self.source_metadata:
             return self.source_metadata[key]
         else:
-            raise MissingSourceMetadataException
+            raise MissingSourceMetadataException(key)
 
     def get_source_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.source_metadata:
@@ -116,7 +117,7 @@ class EnrichInput(NamedTuple):
         if key in self.metadata:
             return self.metadata[key]
         else:
-            raise MissingMetadataException
+            raise MissingMetadataException(key)
 
     def get_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.metadata:
@@ -154,7 +155,7 @@ class FormatInput(NamedTuple):
         if key in self.source_metadata:
             return self.source_metadata[key]
         else:
-            raise MissingSourceMetadataException
+            raise MissingSourceMetadataException(key)
 
     def get_source_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.source_metadata:
@@ -177,7 +178,7 @@ class FormatInput(NamedTuple):
         if key in self.metadata:
             return self.metadata[key]
         else:
-            raise MissingMetadataException
+            raise MissingMetadataException(key)
 
     def get_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.metadata:
@@ -213,7 +214,7 @@ class LoadInput(NamedTuple):
         if key in self.source_metadata:
             return self.source_metadata[key]
         else:
-            raise MissingSourceMetadataException
+            raise MissingSourceMetadataException(key)
 
     def get_source_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.source_metadata:
@@ -236,7 +237,7 @@ class LoadInput(NamedTuple):
         if key in self.metadata:
             return self.metadata[key]
         else:
-            raise MissingMetadataException
+            raise MissingMetadataException(key)
 
     def get_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.metadata:
@@ -256,7 +257,7 @@ class TransformInput(NamedTuple):
         if key in self.source_metadata:
             return self.source_metadata[key]
         else:
-            raise MissingSourceMetadataException
+            raise MissingSourceMetadataException(key)
 
     def get_source_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.source_metadata:
@@ -279,7 +280,7 @@ class TransformInput(NamedTuple):
         if key in self.metadata:
             return self.metadata[key]
         else:
-            raise MissingMetadataException
+            raise MissingMetadataException(key)
 
     def get_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.metadata:
@@ -298,7 +299,7 @@ class ValidateInput(NamedTuple):
         if key in self.source_metadata:
             return self.source_metadata[key]
         else:
-            raise MissingSourceMetadataException
+            raise MissingSourceMetadataException(key)
 
     def get_source_metadata_or_else(self, key: str, default: str) -> str:
         if key in self.source_metadata:

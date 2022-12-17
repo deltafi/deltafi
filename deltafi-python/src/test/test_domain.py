@@ -19,15 +19,7 @@ from deltafi.domain import Content, Context, DeltaFile, Domain, Event, Formatted
 from deltafi.storage import ContentService
 from mockito import mock, unstub
 
-from .helperutils import make_content_reference, TEST_DID
-
-SEG_ID = "1"
-
-
-def make_key_val_list():
-    return [
-        {'key': 'key1', 'value': 'value1'},
-        {'key': 'key2', 'value': 'value2'}]
+from .helperutils import *
 
 
 def check_meta_list(meta):
@@ -42,11 +34,9 @@ def check_meta_dict(meta):
     assert meta["key2"] == "value2"
 
 
-def make_content_dict(name):
-    return {
-        'name': name,
-        'metadata': make_key_val_list(),
-        'contentReference': make_content_reference(SEG_ID).json()}
+def check_pl_meta_dict(meta):
+    assert meta["plKey1"] == "valueA"
+    assert meta["plKey2"] == "valueB"
 
 
 def make_content(name):
@@ -58,16 +48,6 @@ def test_content_json():
     content_json = content.json()
     assert content_json["name"] == "CONTENT_NAME"
     check_meta_list(content_json["metadata"])
-
-
-def make_context_dict():
-    return {
-        'did': TEST_DID,
-        'ingressFlow': "IN",
-        'name': "ACTION_NAME",
-        'egressFlow': "OUT",
-        'systemName': "SYSTEM"
-    }
 
 
 def test_context_json():
@@ -110,25 +90,11 @@ def test_formatted_data():
     check_meta_dict(formatted_data.metadata)
 
 
-def make_protocol_layer_dict():
-    return {
-        'action': "ACTION",
-        'content': [make_content_dict("CONTENT_NAME")],
-        'metadata': make_key_val_list()}
-
-
 def test_protocol_layer():
     protocol_layer = ProtocolLayer.from_dict(make_protocol_layer_dict())
     assert protocol_layer.action == "ACTION"
     assert protocol_layer.content[0].name == "CONTENT_NAME"
-    check_meta_dict(protocol_layer.metadata)
-
-
-def make_source_info_dict():
-    return {
-        'filename': "FILENAME",
-        'flow': "FLOW",
-        'metadata': make_key_val_list()}
+    check_pl_meta_dict(protocol_layer.metadata)
 
 
 def test_source_info():
@@ -136,38 +102,6 @@ def test_source_info():
     assert source_info.filename == "FILENAME"
     assert source_info.flow == "FLOW"
     check_meta_dict(source_info.metadata)
-
-
-def make_delta_file_dict():
-    return {
-        'did': TEST_DID,
-        'sourceInfo': make_source_info_dict(),
-        'protocolStack': [make_protocol_layer_dict()],
-        'domains': [
-            {'name': "DOMAIN1", 'value': "VALUE1", 'mediaType': "MEDIA_TYPE1"},
-            {'name': "DOMAIN2", 'value': "VALUE2", 'mediaType': "MEDIA_TYPE2"}
-        ],
-        'indexedMetadata': {},
-        'enrichment': [
-            {'name': "ENRICH1", 'value': "VALUE1", 'mediaType': "MEDIA_TYPE1"},
-            {'name': "ENRICH2", 'value': "VALUE2", 'mediaType': "MEDIA_TYPE2"},
-            {'name': "ENRICH3", 'value': "VALUE3", 'mediaType': "MEDIA_TYPE3"}
-        ],
-        'formattedData': [
-            {
-                'filename': "FN1",
-                'formatAction': "FORMAT_ACTION",
-                'metadata': [],
-                'contentReference': make_content_reference(SEG_ID).json()
-            },
-            {
-                'filename': "FN2",
-                'formatAction': "FORMAT_ACTION2",
-                'metadata': [],
-                'contentReference': make_content_reference("2").json()
-            }
-        ]
-    }
 
 
 def test_delta_file():
