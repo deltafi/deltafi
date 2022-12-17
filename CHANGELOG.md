@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.6
+## [Unreleased] - Next release 0.99.7
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.6] - 2022-12-18
 
 ### Added
 - Alternate `bootstrap-dev.sh` script to bootstrap a dev environment
@@ -16,8 +34,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Plugins are configured through environment variables
 - Search for multiple `DeltaFilesFilter:egressFlows` values is now done as an OR operation instead of AND
 - Use Ruby base image for API, Auth, and Egress Sink.
-
-### Deprecated
 
 ### Removed
 - The `config-server` has been removed
@@ -966,7 +982,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.5...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.6...main
+[0.99.6]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.5...0.99.6
 [0.99.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.4...0.99.5
 [0.99.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.3...0.99.4
 [0.99.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.2...0.99.3
