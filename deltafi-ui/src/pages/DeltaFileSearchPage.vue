@@ -472,15 +472,19 @@ const fetchStages = async () => {
   stageOptions.value = enumsStageTypes.data.__type.enumValues;
 };
 
+const fetchDeltaFilesDataNoDebounce = async () => {
+  setPersistedParams();
+
+  loading.value = true;
+  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value);
+  tableData.value = data.data.deltaFiles.deltaFiles;
+  loading.value = false;
+  totalRecords.value = data.data.deltaFiles.totalCount;
+};
+
 const fetchDeltaFilesData = _.debounce(
   async () => {
-    setPersistedParams();
-
-    loading.value = true;
-    let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value);
-    tableData.value = data.data.deltaFiles.deltaFiles;
-    loading.value = false;
-    totalRecords.value = data.data.deltaFiles.totalCount;
+    fetchDeltaFilesDataNoDebounce();
   },
   500,
   { leading: true, trailing: false }
@@ -511,7 +515,7 @@ const actionRowClass = (data) => {
 const onPage = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
-  fetchDeltaFilesData();
+  fetchDeltaFilesDataNoDebounce();
 };
 
 const ISOStringToDate = (dateISOString) => {

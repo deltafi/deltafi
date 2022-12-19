@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [unreleased]
 
-## Changed
+### Fixed
+
+- Paging on search page debouced fixed (#309)
+
+## [0.99.6]
+
+### Changed
 
 - Added Paging to System Snapshots page (#308)
 
@@ -496,7 +502,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.5...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.6...main
+[0.99.6]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.5...0.99.6
 [0.99.5]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.4...0.99.5
 [0.99.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.3...0.99.4
 [0.99.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.2...0.99.3
