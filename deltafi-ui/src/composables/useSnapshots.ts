@@ -66,6 +66,29 @@ export default function useSystemSnapshots() {
           requeueSeconds: true,
           coreServiceThreads: true,
           scheduledServiceThreads: true,
+          ui: {
+            useUTC: true,
+            deltaFileLinks: {
+              name: true,
+              url: true,
+              description: true
+            },
+            externalLinks: {
+              name: true,
+              url: true,
+              description: true
+            },
+            topBar: {
+              textColor: true,
+              backgroundColor: true
+            },
+            securityBanner: {
+              enabled: true,
+              text: true,
+              textColor: true,
+              backgroundColor: true
+            }
+          },
           delete: {
             ageOffDays: true,
             frequency: true,
