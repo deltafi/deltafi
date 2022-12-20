@@ -84,7 +84,14 @@ enum PropertyType {
     METRICS_ENABLED
     REQUEUE_SECONDS
     SCHEDULER_POOL_SIZE
+    SECURITY_BANNER_BACKGROUND_COLOR
+    SECURITY_BANNER_ENABLED
+    SECURITY_BANNER_TEXT
+    SECURITY_BANNER_TEXT_COLOR
     SYSTEM_NAME
+    TOP_BAR_BACKGROUND_COLOR
+    TOP_BAR_TEXT_COLOR
+    UI_USE_UTC
 }
 
 type DeleteProperties {
@@ -111,6 +118,31 @@ type PluginProperties {
 type SystemCheckProperties {
     actionQueueSizeThreshold: Int!
     contentStoragePercentThreshold: Int!
+}
+type Link {
+    name: String!
+    url: String!
+    description: String
+}
+
+type TopBar {
+    backgroundColor: String
+    textColor: String
+}
+
+type SecurityBanner {
+    text: String
+    backgroundColor: String
+    textColor: String
+    enabled: Boolean!
+}
+
+type UiProperties {
+    useUTC: Boolean!
+    deltaFileLinks: [Link]!
+    externalLinks: [Link]!
+    topBar: TopBar!
+    securityBanner: SecurityBanner!
 }
 
 input DeletePropertiesInput {
@@ -139,6 +171,32 @@ input SystemCheckPropertiesInput {
     contentStoragePercentThreshold: Int!
 }
 
+input LinkInput {
+    name: String!
+    url: String!
+    description: String
+}
+
+input TopBarInput {
+    backgroundColor: String
+    textColor: String
+}
+
+input SecurityBannerInput {
+    text: String
+    backgroundColor: String
+    textColor: String
+    enabled: Boolean!
+}
+
+input UiPropertiesInput {
+    useUTC: Boolean!
+    deltaFileLinks: [LinkInput]
+    externalLinks: [LinkInput]
+    topBar: TopBarInput!
+    securityBanner: SecurityBannerInput!
+}
+
 type DeltaFiProperties {
     systemName: String!
     requeueSeconds: Int!
@@ -149,6 +207,7 @@ type DeltaFiProperties {
     metrics: MetricsProperties!
     plugins: PluginProperties!
     checks: SystemCheckProperties!
+    ui: UiProperties!
     setProperties: [PropertyType]!
 }
 
@@ -162,6 +221,7 @@ input DeltaFiPropertiesInput {
     metrics: MetricsPropertiesInput!
     plugins: PluginPropertiesInput!
     checks: SystemCheckPropertiesInput!
+    ui: UiPropertiesInput!
     setProperties: [PropertyType]!
 }
 
@@ -173,4 +233,8 @@ extend type Query {
 extend type Mutation {
     updateProperties(updates: [PropertyUpdate]!): Boolean!
     removePropertyOverrides(propertyIds: [PropertyId]!): Boolean!
+    saveExternalLink(link: LinkInput!): Boolean!
+    saveDeltaFileLink(link: LinkInput!): Boolean!
+    removeExternalLink(linkName: String!): Boolean!
+    removeDeltaFileLink(linkName: String!): Boolean!
 }

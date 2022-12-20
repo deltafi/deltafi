@@ -23,6 +23,7 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.types.PropertyId;
@@ -62,6 +63,30 @@ public class DeltaFiPropertiesDatafetcher {
     @NeedsPermission.SystemPropertiesUpdate
     public boolean removePropertyOverrides(@InputArgument List<PropertyId> propertyIds) {
         return deltaFiPropertiesService.unsetProperties(propertyIds);
+    }
+
+    @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
+    public boolean saveExternalLink(Link link) {
+        return deltaFiPropertiesService.saveExternalLink(link);
+    }
+
+    @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
+    public boolean saveDeltaFileLink(Link link) {
+        return deltaFiPropertiesService.saveDeltaFileLink(link);
+    }
+
+    @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
+    public boolean removeExternalLink(String linkName) {
+        return deltaFiPropertiesService.removeExternalLink(linkName);
+    }
+
+    @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
+    public boolean removeDeltaFileLink(String linkName) {
+        return deltaFiPropertiesService.removeDeltaFileLink(linkName);
     }
 
 }

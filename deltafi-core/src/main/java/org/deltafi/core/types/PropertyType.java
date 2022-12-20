@@ -187,6 +187,58 @@ public enum PropertyType {
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
             target.setSystemName(source.getSystemName());
         }
+    },
+    UI_USE_UTC("ui.useUTC", "Display times in UTC", props -> props.getUi().isUseUTC()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertBoolean(value);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().setUseUTC(source.getUi().isUseUTC());
+        }
+    },
+    TOP_BAR_BACKGROUND_COLOR("ui.topBar.backgroundColor", "Background color of the top bar", props -> props.getUi().getTopBar().getBackgroundColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getTopBar().setBackgroundColor(source.getUi().getTopBar().getBackgroundColor());
+        }
+    },
+    TOP_BAR_TEXT_COLOR("ui.topBar.textColor", "Text color of the top bar", props -> props.getUi().getTopBar().getTextColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getTopBar().setTextColor(source.getUi().getTopBar().getTextColor());
+        }
+    },
+    SECURITY_BANNER_TEXT("ui.securityBanner.text", "Text to display in the security banner", props -> props.getUi().getSecurityBanner().getText()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setText(source.getUi().getSecurityBanner().getText());
+        }
+    },
+    SECURITY_BANNER_BACKGROUND_COLOR("ui.securityBanner.backgroundColor", "Background color of the security banner", props -> props.getUi().getSecurityBanner().getBackgroundColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setBackgroundColor(source.getUi().getSecurityBanner().getBackgroundColor());
+        }
+    },
+    SECURITY_BANNER_TEXT_COLOR("ui.securityBanner.textColor", "Color of the text in the security banner", props -> props.getUi().getSecurityBanner().getTextColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setTextColor(source.getUi().getSecurityBanner().getTextColor());
+        }
+    },
+    SECURITY_BANNER_ENABLED("ui.securityBanner.enabled", "Toggles the security banner display", props -> props.getUi().getSecurityBanner().isEnabled()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertBoolean(value);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setEnabled(source.getUi().getSecurityBanner().isEnabled());
+        }
     };
 
     private static final DeltaFiProperties DEFAULT = new DeltaFiProperties();

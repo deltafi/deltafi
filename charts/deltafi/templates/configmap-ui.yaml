@@ -1,3 +1,4 @@
+# Deprecated - remove this after all systems have been migrated to use DeltaFiProperties
 apiVersion: v1
 kind: ConfigMap
 metadata:

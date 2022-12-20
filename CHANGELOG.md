@@ -27,6 +27,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Alternate `bootstrap-dev.sh` script to bootstrap a dev environment
 - Bootstrap installer supports Debian and Ubuntu
+- New mutations added to add and remove DeltaFile links and external links:
+  - `saveExternalLink`
+  - `saveDeltaFileLink`
+  - `removeExternalLink`
+  - `removeDeltaFileLink`
 
 ### Changed
 - `cluster prerequisites` will install python and attempt to install Fedora/Debian dependencies
@@ -35,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Plugins are configured through environment variables
 - Search for multiple `DeltaFilesFilter:egressFlows` values is now done as an OR operation instead of AND
 - Use Ruby base image for API, Auth, and Egress Sink.
+- Moved the UI configuration from the `deltafi-ui-config` ConfigMap into the `DeltaFiProperties`
 
 ### Removed
 - The `config-server` has been removed
@@ -72,6 +78,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - junit-jupiter-engine 5.9.1
 - Docker base image updated to 0.99.6-1
 - System properties collection changed from `propertySet` to `deltaFiProperties` with new structure, and reflected in `systemSnapshot`
+- The UI configuration is moved from the `deltafi-ui-config` ConfigMap to `deltaFiProperties`, and added into the `systemSnapshots`
 
 ## [0.99.5] - 2022-12-08
 

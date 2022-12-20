@@ -24,13 +24,17 @@ module Deltafi
       module Config
         module UI
           class << self
-            UI_CONFIGMAP = 'deltafi-ui-config'
+            DOMAIN = ENV['DELTAFI_UI_DOMAIN']
+            AUTH_MODE = ENV['AUTH_MODE']
 
             def config
-              ui_config = DF.k8s_client.api('v1')
-                            .resource('configmaps', namespace: DF::Common::K8S_NAMESPACE)
-                            .get(UI_CONFIGMAP).data.config
-              YAML.safe_load(ui_config)
+              properties = DF.system_properties || {}
+
+              config = properties[:ui] || {}
+              config[:title] = properties[:systemName] || "DeltaFi"
+              config[:domain] = DOMAIN
+              config[:authMode] = AUTH_MODE
+              config
             end
           end
         end

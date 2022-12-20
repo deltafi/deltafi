@@ -18,7 +18,7 @@ Usage:
 
 Options:
   -h, --help        Show help
-  -R, --soft-reset  Preserve current settings that are not set in the snapshot
+  -R, --soft-reset  Preserve current settings that are not set in the snapshot"
   exit 1
 }
 
@@ -93,6 +93,29 @@ ALL_SNAPSHOT_FIELDS="id
               checks {
                 actionQueueSizeThreshold
                 contentStoragePercentThreshold
+              }
+              ui {
+                useUTC
+                deltaFileLinks {
+                  name
+                  url
+                  description
+                }
+                externalLinks {
+                  name
+                  url
+                  description
+                }
+                topBar {
+                  textColor
+                  backgroundColor
+                }
+                securityBanner {
+                  enabled
+                  text
+                  textColor
+                  backgroundColor
+                }
               }
               setProperties
             }

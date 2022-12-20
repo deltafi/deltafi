@@ -1682,6 +1682,20 @@ class DeltaFiCoreApplicationTests {
 		assertThat(PropertiesDatafetcherTestHelper.removePropertyOverrides(dgsQueryExecutor)).isTrue();
 	}
 
+	@Test
+	void testAddExternalLinkMutations() {
+		assertThat(PropertiesDatafetcherTestHelper.removeExternalLink(dgsQueryExecutor)).isFalse();
+		assertThat(PropertiesDatafetcherTestHelper.addExternalLink(dgsQueryExecutor)).isTrue();
+		assertThat(PropertiesDatafetcherTestHelper.removeExternalLink(dgsQueryExecutor)).isTrue();
+	}
+
+	@Test
+	void testDeltaFileLinkMutations() {
+		assertThat(PropertiesDatafetcherTestHelper.removeDeltaFileLink(dgsQueryExecutor)).isFalse();
+		assertThat(PropertiesDatafetcherTestHelper.addDeltaFileLink(dgsQueryExecutor)).isTrue();
+		assertThat(PropertiesDatafetcherTestHelper.removeDeltaFileLink(dgsQueryExecutor)).isTrue();
+	}
+
 	List<String> getActionNames(List<ActionFamily> actionFamilies, String family) {
 		return actionFamilies.stream()
 				.filter(actionFamily -> family.equals(actionFamily.getFamily()))

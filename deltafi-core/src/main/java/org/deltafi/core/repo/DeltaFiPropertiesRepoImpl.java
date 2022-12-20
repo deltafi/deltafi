@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.repo;
 
+import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.types.PropertyType;
@@ -64,6 +65,19 @@ public class DeltaFiPropertiesRepoImpl implements DeltaFiPropertiesRepoCustom {
         return executeUpdate(update);
     }
 
+    @Override
+    public boolean removeExternalLink(String linkName) {
+        return removeLink("ui.externalLinks", linkName);
+    }
+
+    @Override
+    public boolean removeDeltaFileLink(String linkName) {
+        return removeLink("ui.deltaFileLinks", linkName);
+    }
+
+    private boolean removeLink(String key, String linkName) {
+        return executeUpdate(new Update().pull(key, new BasicDBObject("name", linkName)));
+    }
 
     private boolean executeUpdate(Update update) {
         return mongoTemplate.updateFirst(ID_QUERY, update, DeltaFiProperties.class).getModifiedCount() > 0;

@@ -105,7 +105,6 @@ module Deltafi
 
     begin
       @@system_properties = self.mongo_client[:deltaFiProperties].find.limit(1).first || {}
-      puts "Found #{@@system_properties}"
     rescue StandardError => e
       puts e
     end

@@ -15,18 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.repo;
+package org.deltafi.core.configuration.ui;
 
-import org.deltafi.core.types.PropertyType;
+import lombok.Data;
 
-import java.util.List;
-import java.util.Map;
-
-public interface DeltaFiPropertiesRepoCustom {
-    boolean updateProperties(Map<PropertyType, String> updateMap);
-    boolean unsetProperties(List<PropertyType> propertyTypes);
-
-    boolean removeExternalLink(String linkName);
-
-    boolean removeDeltaFileLink(String linkName);
+@Data
+public class TopBar {
+    private String backgroundColor;
+    private String textColor;
 }

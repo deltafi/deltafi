@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.datafetchers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -28,10 +27,11 @@ import java.util.Map;
 
 public class PropertiesDatafetcherTestHelper {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String UPDATE_PROPERTIES = "mutation($updates: [PropertyUpdate]!) {updateProperties(updates: $updates)}";
     private static final String GET_PROPERTIES = "query { getDeltaFiProperties { systemName requeueSeconds coreServiceThreads scheduledServiceThreads checks {actionQueueSizeThreshold contentStoragePercentThreshold} delete {frequency ageOffDays onCompletion policyBatchSize} ingress {enabled diskSpaceRequirementInMb} plugins {imageRepositoryBase imagePullSecret} metrics {enabled} setProperties }}";
     private static final String UNSET_PROPERTY = "mutation($ids: [PropertyId]!) { removePropertyOverrides(propertyIds: $ids)}";
+    private static final String ADD_EXTERNAL_LINK = "mutation($link: LinkInput!) {saveExternalLink(link: $link)}";
+    private static final String ADD_DELTA_FILE_LINK = "mutation($link: LinkInput!) {saveDeltaFileLink(link: $link)}";
 
     public static List<PropertySet> getPropertySets(DgsQueryExecutor dgsQueryExecutor) {
         String query = "query {getPropertySets {id displayName description properties {key value hidden editable refreshable}}}";
@@ -50,6 +50,26 @@ public class PropertiesDatafetcherTestHelper {
     public static boolean removePropertyOverrides(DgsQueryExecutor dgsQueryExecutor) {
         Map<String, Object> updatesMap = Map.of("ids", List.of(Map.of("propertySetId", "deltafi-common", "key", "scheduledServiceThreads")));
         return dgsQueryExecutor.executeAndExtractJsonPath(UNSET_PROPERTY, "data.removePropertyOverrides", updatesMap);
+    }
+
+    public static boolean addExternalLink(DgsQueryExecutor dgsQueryExecutor) {
+        return dgsQueryExecutor.executeAndExtractJsonPath(ADD_EXTERNAL_LINK, "data.saveExternalLink", linkArgs());
+    }
+
+    public static boolean addDeltaFileLink(DgsQueryExecutor dgsQueryExecutor) {
+        return dgsQueryExecutor.executeAndExtractJsonPath(ADD_DELTA_FILE_LINK, "data.saveDeltaFileLink", linkArgs());
+    }
+
+    public static boolean removeExternalLink(DgsQueryExecutor dgsQueryExecutor) {
+        return dgsQueryExecutor.executeAndExtractJsonPath("mutation {removeExternalLink(linkName: \"some link\")}", "data.removeExternalLink", linkArgs());
+    }
+
+    public static boolean removeDeltaFileLink(DgsQueryExecutor dgsQueryExecutor) {
+        return dgsQueryExecutor.executeAndExtractJsonPath("mutation {removeDeltaFileLink(linkName: \"some link\")}", "data.removeDeltaFileLink", linkArgs());
+    }
+
+    private static Map<String, Object> linkArgs() {
+        return Map.of("link", Map.of("name", "some link", "url", "www.some.place", "description", "some place described"));
     }
 
 }

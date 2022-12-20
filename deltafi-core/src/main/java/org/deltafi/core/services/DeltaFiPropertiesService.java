@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Property;
 import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
@@ -107,10 +108,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
         }
 
 
-        boolean changed = !updateMap.isEmpty() ? deltaFiPropertiesRepo.updateProperties(updateMap) : false;
-
-        refreshProperties();
-        return changed;
+        return refresh(!updateMap.isEmpty() ? deltaFiPropertiesRepo.updateProperties(updateMap) : false);
     }
 
     /**
@@ -123,9 +121,31 @@ public class DeltaFiPropertiesService implements Snapshotter {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        boolean changed = !propertyTypes.isEmpty() ? deltaFiPropertiesRepo.unsetProperties(propertyTypes) : false;
-        refreshProperties();
-        return changed;
+        return refresh(!propertyTypes.isEmpty() ? deltaFiPropertiesRepo.unsetProperties(propertyTypes) : false);
+    }
+
+    public boolean saveExternalLink(Link link) {
+        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
+        addOrReplaceLink(latest.getUi().getExternalLinks(), link);
+        deltaFiPropertiesRepo.save(latest);
+
+        return refresh(true);
+    }
+
+    public boolean saveDeltaFileLink(Link link) {
+        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
+        addOrReplaceLink(latest.getUi().getDeltaFileLinks(), link);
+        deltaFiPropertiesRepo.save(latest);
+
+        return refresh(true);
+    }
+
+    public boolean removeExternalLink(String linkName) {
+        return refresh(deltaFiPropertiesRepo.removeExternalLink(linkName));
+    }
+
+    public boolean removeDeltaFileLink(String linkName) {
+        return refresh(deltaFiPropertiesRepo.removeDeltaFileLink(linkName));
     }
 
     @Override
@@ -145,6 +165,14 @@ public class DeltaFiPropertiesService implements Snapshotter {
         return Result.success();
     }
 
+    private boolean refresh(boolean changed) {
+        if (changed) {
+            refreshProperties();
+        }
+
+        return changed;
+    }
+
     @Override
     public int getOrder() {
         return SnapshotRestoreOrder.PROPERTIES_ORDER;
@@ -155,13 +183,15 @@ public class DeltaFiPropertiesService implements Snapshotter {
      * @param source that hold the property values to copy
      * @return latest properties with the source properties merged in
      */
-    private DeltaFiProperties mergeProperties(DeltaFiProperties source) {
+    DeltaFiProperties mergeProperties(DeltaFiProperties source) {
         DeltaFiProperties target = getDeltaFiPropertiesFromRepo();
 
         for (PropertyType propertyType : source.getSetProperties()) {
             propertyType.copyValue(target, source);
             target.getSetProperties().add(propertyType);
         }
+
+        target.getUi().mergeLinkLists(source.getUi());
 
         return target;
     }
@@ -181,6 +211,24 @@ public class DeltaFiPropertiesService implements Snapshotter {
         propertySet.setDisplayName("Common Properties");
         propertySet.setDescription("Properties used across all parts of the system.");
         return propertySet;
+    }
+
+    /**
+     * Add or replace a link in the given list of links. If the list
+     * already contains a link with the same name as the linkToAdd
+     * remove it.
+     * @param links list of links to update
+     * @param linkToAdd link that will be added to the list
+     */
+    private void addOrReplaceLink(List<Link> links, Link linkToAdd) {
+        Iterator<Link> existingLinks = links.iterator();
+        while (existingLinks.hasNext()) {
+            Link next = existingLinks.next();
+            if (next.nameMatches(linkToAdd)) {
+                existingLinks.remove();
+            }
+        }
+        links.add(linkToAdd);
     }
 
     private void warnInvalidProperty(String key) {

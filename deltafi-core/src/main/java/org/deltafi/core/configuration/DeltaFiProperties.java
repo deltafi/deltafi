@@ -18,6 +18,7 @@
 package org.deltafi.core.configuration;
 
 import lombok.Data;
+import org.deltafi.core.configuration.ui.UiProperties;
 import org.deltafi.core.types.PropertyType;
 import org.springframework.data.annotation.Id;
 
@@ -40,6 +41,7 @@ public class DeltaFiProperties {
     private IngressProperties ingress = new IngressProperties();
     private PluginProperties plugins = new PluginProperties();
     private SystemCheckProperties checks = new SystemCheckProperties();
+    private UiProperties ui = new UiProperties();
 
     private Set<PropertyType> setProperties = new HashSet<>();
 
