@@ -17,17 +17,16 @@
 """
 import json
 import os
-from os.path import isfile, join
-from pathlib import Path
-
-import pkg_resources
-import requests
 import sys
 import threading
 import time
 import traceback
+from os.path import isdir, isfile, join
+from pathlib import Path
 from typing import List
 
+import pkg_resources
+import requests
 from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event
 from deltafi.exception import ExpectedContentException, MissingDomainException, MissingEnrichmentException, \
@@ -96,12 +95,16 @@ class Plugin(object):
 
     def _register(self):
         flows_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'flows')
-        flow_files = [f for f in os.listdir(flows_path) if isfile(join(flows_path, f))]
 
+        flow_files = []
         variables = []
-        if 'variables.json' in flow_files:
-            flow_files.remove('variables.json')
-            variables = json.load(open(join(flows_path, 'variables.json')))
+        if isdir(flows_path):
+            flow_files = [f for f in os.listdir(flows_path) if isfile(join(flows_path, f))]
+            if 'variables.json' in flow_files:
+                flow_files.remove('variables.json')
+                variables = json.load(open(join(flows_path, 'variables.json')))
+        else:
+            self.logger.warning(f"Flows directory ({flows_path}) does not exist. No flows will be installed.")
 
         flows = [json.load(open(join(flows_path, f))) for f in flow_files]
         actions = [self._action_json(action) for action in self.actions]
