@@ -36,7 +36,7 @@ def make_context_dict():
     return {
         'did': TEST_DID,
         'ingressFlow': "IN",
-        'name': "ACTION_NAME",
+        'name': "ACTION_NAME_IN_FLOW",
         'egressFlow': "OUT",
         'systemName': "SYSTEM"
     }

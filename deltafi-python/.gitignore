@@ -1,5 +1,6 @@
 # general things to ignore
 build/
+.coverage
 src/dist/
 pyproject.toml
 *.py[cod]
