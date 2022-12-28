@@ -713,6 +713,7 @@ Options:
   uninstall   Uninstall deltafi and plugins
   restart     Down a cluster, restart it, and install deltafi and plugins
   bounce      Restart an application (deltafi-api, etc.).  App name must follow command
+  nocore      Skips building core DeltaFi and UI (build only)
   -f | force  Skip "are you sure?"
 
 Examples:
@@ -753,6 +754,9 @@ loc() {
         ;;
       build)
         BUILD=build
+        ;;
+      nocore)
+        NOCORE=nocore
         ;;
       install)
         INSTALL=install
@@ -820,16 +824,19 @@ _local_build() {
     _attention "Cleaning deltafi build environment"
     ./gradlew clean
   fi
-  _attention "Building deltafi"
-  ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal
 
-  _attention "Building deltafi-ui"
-  if [[ ! -d "$ROOT/deltafi-ui" ]]; then
-    git clone git@gitlab.com:systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui" || git clone https://gitlab.com/systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui"
+  if [[ -z "$NOCORE" ]]; then
+    _attention "Building deltafi"
+    ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal
+
+    _attention "Building deltafi-ui"
+    if [[ ! -d "$ROOT/deltafi-ui" ]]; then
+      git clone git@gitlab.com:systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui" || git clone https://gitlab.com/systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui"
+    fi
+    cd "$ROOT/deltafi-ui"
+    docker build -t localhost:5000/deltafi-ui:latest .
+    docker push localhost:5000/deltafi-ui:latest
   fi
-  cd "$ROOT/deltafi-ui"
-  docker build -t localhost:5000/deltafi-ui:latest .
-  docker push localhost:5000/deltafi-ui:latest
 
   for plugin in "${PLUGINS[@]}"; do
     if [[ ! -d $ROOT/$plugin ]]; then
