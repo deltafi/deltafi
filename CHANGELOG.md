@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - In the python action kit, when a plugin does not have a `flows` directory, log a warning instead of an unhandled exception
+- `cluster` command will warn if the `deltafi` command is not linked to the expected location
 
 ### Tech-Debt/Refactor
 - Added unit testing for python modules

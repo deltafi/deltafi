@@ -228,6 +228,18 @@ _check_deltafi_cli() {
     popd > /dev/null
     _ok "Local CLI"
   fi
+
+  local DELTAFI_PATH
+  DELTAFI_PATH=$(_readlink -e "$(which deltafi)")
+  local EXPECTED_DELTAFI_PATH="$BASE_PATH/cluster"
+
+  if [[ "$DELTAFI_PATH" != "$EXPECTED_DELTAFI_PATH" ]]; then
+    _warn echo "deltafi command is linked to an unexpected location:"
+    _warn echo "    Expected: " "$EXPECTED_DELTAFI_PATH"
+    _warn echo "    Actual:   " "$DELTAFI_PATH"
+    _warn echo "Run kind/install.sh to reinitialize the links"
+    echo
+  fi
 }
 
 _check_docker() {
