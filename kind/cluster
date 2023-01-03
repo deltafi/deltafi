@@ -754,6 +754,7 @@ loc() {
   local RESTART=
   local BOUNCE=
   local FORCE=
+  local NOCORE=
 
   [[ -z "$1" ]] && _loc_help
 
