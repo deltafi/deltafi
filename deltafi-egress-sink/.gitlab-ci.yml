@@ -6,3 +6,8 @@ egress_sink:docker:
   extends:
     - .egress-sink
     - .docker
+
+egress_sink:docker-multiarch:
+  extends:
+    - .egress-sink
+    - .docker-multiarch

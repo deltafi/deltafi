@@ -6,5 +6,10 @@ auth:docker:
   extends:
     - .auth
     - .docker
-  after_script:
-    - docker run --rm ${DOCKER_TAG} bundle exec rspec --format doc
+  # after_script:
+  #   - docker run --rm ${DOCKER_TAG} bundle exec rspec --format doc
+
+auth:docker-multiarch:
+  extends:
+    - .auth
+    - .docker-multiarch

@@ -8,3 +8,8 @@ core:docker:
     - .docker
   needs:
     - job: "build"
+
+core:docker-multiarch:
+  extends:
+    - .core
+    - .docker-multiarch

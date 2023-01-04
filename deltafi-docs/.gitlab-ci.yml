@@ -24,3 +24,8 @@ docs:docker:
   extends:
     - .docs
     - .docker
+
+docs:docker-multiarch:
+  extends:
+    - .docs
+    - .docker-multiarch

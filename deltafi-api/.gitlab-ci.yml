@@ -6,3 +6,8 @@ api:docker:
   extends:
     - .api
     - .docker
+
+api:docker-multiarch:
+  extends:
+    - .api
+    - .docker-multiarch

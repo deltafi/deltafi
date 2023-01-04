@@ -6,3 +6,8 @@ nodemonitor:docker:
   extends:
     - .nodemonitor
     - .docker
+
+nodemonitor:docker-multiarch:
+  extends:
+    - .nodemonitor
+    - .docker-multiarch
