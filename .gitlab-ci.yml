@@ -190,6 +190,12 @@ trigger_passthrough:
   trigger:
     project: systolic/deltafi/deltafi-passthrough
 
+trigger_EDI:
+  extends:
+    - .trigger
+  trigger:
+    project: systolic/deltafi/deltafi-edi
+
 .container_scanning:
   variables:
     CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning:5"
