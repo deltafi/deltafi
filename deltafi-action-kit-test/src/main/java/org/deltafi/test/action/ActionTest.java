@@ -139,6 +139,12 @@ public abstract class ActionTest {
     /**
      * Use a supplier here to make sure code is only executed if it is required.  That way complex initializations
      * can be done but not waste CPU cycles.
+     *
+     * @param testCaseName name of the test case
+     * @param file name of file to be used as test data
+     * @param supplier supplier input stream to be used for test data
+     *
+     * @return test data input stream
      */
     protected InputStream getTestResourceOrDefault(String testCaseName, String file, Supplier<InputStream> supplier) {
         try(InputStream ret = getClass().getClassLoader().getResourceAsStream(getClass().getSimpleName() + "/" + testCaseName + "/" + file)) {

@@ -68,6 +68,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * Create the ActionInput that should be sent to an Action
      * @param deltaFile DeltaFile that will be acted upon
      * @param systemName system name to set in context
+     * @param egressFlow the egress flow for this action
      * @return ActionInput containing the ActionConfiguration
      */
     public ActionInput buildActionInput(DeltaFile deltaFile, String systemName, String egressFlow) {
@@ -91,6 +92,8 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
 
     /**
      * Validates this action configuration.
+     *
+     * @param actionDescriptor action descriptor to be validated against
      *
      * @return a List of validation errors or an empty list if there are no errors
      */

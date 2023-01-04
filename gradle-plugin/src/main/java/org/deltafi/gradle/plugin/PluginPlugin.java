@@ -33,18 +33,19 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * A Gradle plugin for validating Deltafi plugins.
- * <p></p>
+ * <h1>A Gradle plugin for validating Deltafi plugins.</h1>
+ * <p>
  * This plugin should be added to the build.gradle file at the root of a project that is a Deltafi plugin.
  * It should be added to the plugins section as follows:
- * <p></p>
+ * </p>
  * <pre>
  * plugins {
  *     id "org.deltafi.plugin" version "${deltafiVersion}"
  * }
  * </pre>
+ * <p>
  * The plugin may be configured by adding the following:
- * <p></p>
+ * </p>
  * <pre>
  * deltafiPlugin {
  *   flowsDir = "flows" (optional, defaults to "src/main/resources/flows")
