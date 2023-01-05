@@ -53,7 +53,7 @@ update-helmchart:
     - cd deltafi/charts/deltafi
     - git branch -D ci || echo "CI branch does not exist"
     - git checkout -b ci
-    - for project in $PROJECT_LIST; do DOCKER_TAG=${CI_REGISTRY_IMAGE}/${project}:${CI_COMMIT_SHA}; PATH_VAR=${project//-/_}_HELM_IMAGE_PATH; HELM_IMAGE_PATH=$(eval echo \$$PATH_VAR); yq e ".${HELM_IMAGE_PATH} = \"${DOCKER_TAG}\"" -i values.yaml; done
+    - for project in $PROJECT_LIST; do DOCKER_TAG=${CI_REGISTRY_IMAGE}/${project}:${CI_COMMIT_SHORT_SHA}; PATH_VAR=${project//-/_}_HELM_IMAGE_PATH; HELM_IMAGE_PATH=$(eval echo \$$PATH_VAR); yq e ".${HELM_IMAGE_PATH} = \"${DOCKER_TAG}\"" -i values.yaml; done
     - git diff
     - git add values.yaml
     - git commit -am "[skip ci] CI/CD image update from ${CI_PROJECT_NAME}"
