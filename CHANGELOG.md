@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - CLI: `stop` command removed (was a confusing alias for uninstall)
 
 ### Fixed
+- Regressed OpenFeign to v11, since v12 included slf4j-api 2.0, which is not compatible with springboot and caused logging to be disabled
 - In the python action kit, when a plugin does not have a `flows` directory, log a warning instead of an unhandled exception
 - CLI: Improved warning when uninstalling DeltaFi
 - `cluster` command will warn if the `deltafi` command is not linked to the expected location
