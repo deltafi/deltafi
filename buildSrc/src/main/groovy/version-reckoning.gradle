@@ -17,12 +17,13 @@ class Versioner {
     static String reckon() {
         reckonedVersion = gitVersion()
 
-        def snapshotMatcher = reckonedVersion =~ /(\d+)\.(\d+)\.\d+-.*/
+        def snapshotMatcher = reckonedVersion =~ /(\d+)\.(\d+)\.(\d+)-.*/
         if (snapshotMatcher.size() > 0) {
             def major = snapshotMatcher[0][1]
             def minor = snapshotMatcher[0][2] as Integer
-            minor++
-            reckonedVersion = major + "." + minor + ".0-SNAPSHOT"
+            def patch = snapshotMatcher[0][3] as Integer
+            patch++
+            reckonedVersion = major + "." + minor + "." + patch + "-SNAPSHOT"
         }
 
         return reckonedVersion
