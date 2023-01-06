@@ -13,9 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Deprecated
 
 ### Removed
+- CLI: `stop` command removed (was a confusing alias for uninstall)
 
 ### Fixed
 - In the python action kit, when a plugin does not have a `flows` directory, log a warning instead of an unhandled exception
+- CLI: Improved warning when uninstalling DeltaFi
 - `cluster` command will warn if the `deltafi` command is not linked to the expected location
 
 ### Tech-Debt/Refactor

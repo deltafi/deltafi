@@ -6,7 +6,7 @@ cli_help_command() {
   echo "
 Command: uninstall
 
-Usage: 
+Usage:
   uninstall"
   exit 1
 }
@@ -14,7 +14,9 @@ Usage:
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
-read -r -p "Are you sure? [y/N] " response
+read -r -p "☢️  Uninstalling DeltafFi is a destructive operation that will remove configuration, secrets, and anything in the database.
+☠️  This could make your day go badly.
+Are you really, really sure? [y/N] " response
 case "$response" in
   [yY][eE][sS]|[yY])
     cli_log "Uninstalling DeltaFi"

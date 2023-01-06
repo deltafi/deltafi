@@ -159,7 +159,6 @@ Commands:
   set-admin-password     set the admin password
   start                  (alias for install)
   status                 show status of system
-  stop                   (alias for uninstall)
   system-snapshot        manage system state snapshots
   system-property        manage system properties
   trace                  show trace data for a DID
@@ -286,7 +285,7 @@ case "$1" in
   status)
     "$DELTAFICLI_WORKDIR/commands/status" $@
     ;;
-  uninstall|stop)
+  uninstall)
     "$DELTAFICLI_WORKDIR/commands/uninstall" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/uninstall.log"
     ;;
   uninstall-plugin)
