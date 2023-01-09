@@ -239,6 +239,7 @@ trigger_EDI:
   dependencies: []
   when: manual
   script:
+    - which grype && grype db update
     - CS_DOCKERFILE_PATH=deltafi-core CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core:${CI_COMMIT_SHORT_SHA} gtcs scan
     - cp gl-container-scanning-report.json deltafi-core.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-core-actions CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core-actions:${CI_COMMIT_SHORT_SHA} gtcs scan
