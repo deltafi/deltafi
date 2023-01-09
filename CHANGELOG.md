@@ -3,14 +3,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.7
+## [Unreleased] - Next release 0.99.9
 
 ### Added
-- Added `nocore` directive to `cluster loc build` command to shortcut and avoid building the core when developing plugins 
 
 ### Changed
 
 ### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.99.8] - 2023-01-09
+
+### Added
+- Added `nocore` directive to `cluster loc build` command to shortcut and avoid building the core when developing plugins 
 
 ### Removed
 - CLI: `stop` command removed (was a confusing alias for uninstall)
@@ -25,10 +39,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Tech-Debt/Refactor
 - Added unit testing for python modules
 
-### Security
-
 ### Upgrade and Migration
-- Update Spring Boot base image to deltai/spring-boot-base:0.99.7
+- Update Spring Boot base image to deltai/spring-boot-base:0.99.8
+- Update Ruby base image to deltai/deltafi-ruby-base:0.99.8
 
 ## [0.99.6] - 2022-12-18
 
