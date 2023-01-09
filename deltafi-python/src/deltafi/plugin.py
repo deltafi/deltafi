@@ -143,6 +143,7 @@ class Plugin(object):
             try:
                 event_string = self.queue.take(self.action_name(action))
                 event = Event.create(json.loads(event_string), self.hostname, self.content_service, action_logger)
+                start_time = time.time()
                 action_logger.debug(f"Processing event for did {event.context.did}")
 
                 try:
@@ -169,7 +170,7 @@ class Plugin(object):
                 response = {
                     'did': event.context.did,
                     'action': event.context.action_name,
-                    'start': time.time(),
+                    'start': start_time,
                     'stop': time.time(),
                     'type': result.result_type,
                     'metrics': [metric.json() for metric in result.metrics]

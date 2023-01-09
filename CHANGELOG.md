@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - In the python action kit, when a plugin does not have a `flows` directory, log a warning instead of an unhandled exception
 - CLI: Improved warning when uninstalling DeltaFi
 - `cluster` command will warn if the `deltafi` command is not linked to the expected location
+- Action `start_time` in Python action kit now recorded before action execution, not after.
 
 ### Tech-Debt/Refactor
 - Added unit testing for python modules
