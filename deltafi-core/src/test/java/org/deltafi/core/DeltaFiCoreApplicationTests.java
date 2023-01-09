@@ -76,6 +76,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -113,6 +114,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {
+		"schedule.actionEvents=false",
+		"schedule.maintenance=false",
+		"schedule.flowSync=false",
+		"schedule.propertySync=false"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
 

@@ -1084,6 +1084,7 @@ public class DeltaFilesService {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 ActionEventInput event = actionEventQueue.takeResult();
+                if (event == null) throw new RuntimeException("ActionEventQueue returned null event.  This should NEVER happen");
                 executor.submit(() -> {
                     int count = 0;
                     while (true) {
