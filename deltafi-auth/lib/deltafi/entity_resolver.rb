@@ -31,7 +31,9 @@ module Deltafi
     def resolve(identifier)
       return [identifier] unless ER_ENABLED
 
-      response = HTTParty.post(ER_URL, { body: identifier })
+      response = HTTParty.post(ER_URL,
+                               body: [identifier].to_json,
+                               headers: { 'Content-Type' => 'application/json' })
       raise "#{response.code} error from entity resolver: #{response.message}" unless response.success?
 
       resolved_entities = response.parsed_response
