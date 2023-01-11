@@ -25,11 +25,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Metric;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.metrics.MetricsUtil;
@@ -534,7 +532,7 @@ public class DeltaFilesService {
 
                 enqueueActions.addAll(advanceOnly(child));
 
-                calculateTotalBytes(child);
+                child.recalculateBytes();
 
                 return child;
             }).collect(Collectors.toList());
@@ -557,24 +555,6 @@ public class DeltaFilesService {
         }
 
         return deltaFile;
-    }
-
-    public static void calculateTotalBytes(DeltaFile deltaFile) {
-        List<Segment> storedSegments = deltaFile.storedSegments();
-
-        // keep track of the first and last offset for each unique uuid contentReference
-        // make an assumption that we won't have disjoint segments
-        Map<String, Pair<Long, Long>> segments = new HashMap<>();
-        storedSegments.forEach(storedSegment -> {
-            if (segments.containsKey(storedSegment.getUuid())) {
-                Pair<Long, Long> segment = segments.get(storedSegment.getUuid());
-                segments.put(storedSegment.getUuid(), Pair.of(Math.min(segment.getLeft(), storedSegment.getOffset()), Math.max(segment.getRight(), storedSegment.getOffset() + storedSegment.getSize())));
-            } else {
-                segments.put(storedSegment.getUuid(), Pair.of(storedSegment.getOffset(), storedSegment.getOffset() + storedSegment.getSize()));
-            }
-        });
-
-        deltaFile.setTotalBytes(segments.values().stream().map(p -> p.getRight() - p.getLeft()).mapToLong(Long::longValue).sum());
     }
 
     @MongoRetryable
@@ -618,7 +598,7 @@ public class DeltaFilesService {
 
                 enqueueActions.addAll(advanceOnly(child));
 
-                calculateTotalBytes(child);
+                child.recalculateBytes();
 
                 return child;
             }).collect(Collectors.toList());
@@ -776,7 +756,7 @@ public class DeltaFilesService {
                                 delete(Collections.singletonList(deltaFile), "on completion", false);
                             }
 
-                            calculateTotalBytes(child);
+                            child.recalculateBytes();
                             deltaFile.setReplayed(now);
                             deltaFile.setReplayDid(child.getDid());
                             if (Objects.isNull(deltaFile.getChildDids())) {

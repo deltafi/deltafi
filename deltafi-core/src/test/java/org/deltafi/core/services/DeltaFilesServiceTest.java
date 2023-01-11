@@ -293,33 +293,6 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testCalculateBytes() {
-        ContentReference contentReference1 = new ContentReference("*/*", new Segment("uuid1", 0, 500, "did1"));
-        ContentReference contentReference2 = new ContentReference("*/*", new Segment("uuid1", 400, 200, "did1"));
-        ContentReference contentReference3 = new ContentReference("*/*", new Segment("uuid1", 200, 200, "did1"));
-        ContentReference contentReference4 = new ContentReference("*/*", new Segment("uuid2", 5, 200, "did1"));
-        ContentReference contentReference5 = new ContentReference("*/*", new Segment("uuid3", 5, 200, "did2"));
-
-        DeltaFile deltaFile = DeltaFile.newBuilder()
-                .protocolStack(List.of(
-                        new ProtocolLayer("action", List.of(
-                                new Content("name", Collections.emptyList(), contentReference1),
-                                new Content("name2", Collections.emptyList(), contentReference2)), Collections.emptyList()),
-                        new ProtocolLayer("action2", List.of(
-                                new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
-                ))
-                .formattedData(List.of(
-                        FormattedData.newBuilder().contentReference(contentReference4).build(),
-                        FormattedData.newBuilder().contentReference(contentReference5).build()
-                ))
-                .did("did1")
-                .build();
-
-        DeltaFilesService.calculateTotalBytes(deltaFile);
-        assertEquals(800, deltaFile.getTotalBytes());
-    }
-
-    @Test
     void testSplitNoChildFlow() {
         IngressFlow flow = new IngressFlow();
         LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);

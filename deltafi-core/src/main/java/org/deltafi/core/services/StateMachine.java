@@ -121,7 +121,7 @@ public class StateMachine {
             deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
         }
 
-        DeltaFilesService.calculateTotalBytes(deltaFile);
+        deltaFile.recalculateBytes();
         return enqueueActions;
     }
 

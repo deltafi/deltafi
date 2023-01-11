@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.99.9
 
 ### Added
+- Add new referencedBytes field to the DeltaFile that sums the size of all data referenced by that DeltaFile, even if the data was stored as part of another DeltaFile
 
 ### Changed
 - Auth now sends JSON to entity resolver.
@@ -23,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Existing deltaFiles will have a referencedBytes field that is set to the value of totalBytes.  New DeltaFiles will have the referencedBytes field set correctly.
 
 ## [0.99.8] - 2023-01-09
 

@@ -254,6 +254,7 @@ type DeltaFile {
   childDids: [String!]!
   requeueCount: Int!
   ingressBytes: Long!
+  referencedBytes: Long!
   totalBytes: Long!
   stage: DeltaFileStage!
   actions: [Action!]!
@@ -382,6 +383,8 @@ input DeltaFilesFilter {
   requeueCountMin: Int
   ingressBytesMin: Long
   ingressBytesMax: Long
+  referencedBytesMin: Long
+  referencedBytesMax: Long
   totalBytesMin: Long
   totalBytesMax: Long
   createdAfter: DateTime

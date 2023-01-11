@@ -17,10 +17,12 @@
  */
 package org.deltafi.common.types;
 
-import org.deltafi.common.types.*;
+import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.content.Segment;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -68,5 +70,33 @@ class DeltaFileTest {
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(0).getState());
         assertEquals(ActionState.COMPLETE, deltaFile.getActions().get(1).getState());
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(2).getState());
+    }
+
+    @Test
+    void testRecalculateBytes() {
+        ContentReference contentReference1 = new ContentReference("*/*", new Segment("uuid1", 0, 500, "did1"));
+        ContentReference contentReference2 = new ContentReference("*/*", new Segment("uuid1", 400, 200, "did1"));
+        ContentReference contentReference3 = new ContentReference("*/*", new Segment("uuid1", 200, 200, "did1"));
+        ContentReference contentReference4 = new ContentReference("*/*", new Segment("uuid2", 5, 200, "did1"));
+        ContentReference contentReference5 = new ContentReference("*/*", new Segment("uuid3", 5, 200, "did2"));
+
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .protocolStack(List.of(
+                        new ProtocolLayer("action", List.of(
+                                new Content("name", Collections.emptyList(), contentReference1),
+                                new Content("name2", Collections.emptyList(), contentReference2)), Collections.emptyList()),
+                        new ProtocolLayer("action2", List.of(
+                                new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
+                ))
+                .formattedData(List.of(
+                        FormattedData.newBuilder().contentReference(contentReference4).build(),
+                        FormattedData.newBuilder().contentReference(contentReference5).build()
+                ))
+                .did("did1")
+                .build();
+
+        deltaFile.recalculateBytes();
+        assertEquals(1000, deltaFile.getReferencedBytes());
+        assertEquals(800, deltaFile.getTotalBytes());
     }
 }
