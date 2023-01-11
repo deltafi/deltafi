@@ -27,14 +27,14 @@ class Versioner {
         proc.waitForProcessOutput(sout, serr)
 
         String result = sout
-        if (!result?.trim()) throw new Exception("Unable to determine git version ($serr)")
+        if (!result?.trim()) return "0.0.0-SNAPSHOT"
         return result.trim()
     }
 
     static String reckon() {
         reckonedVersion = gitVersion()
 
-        def snapshotMatcher = reckonedVersion =~ /(\d+)\.(\d+)\.(\d+)-.*/
+        def snapshotMatcher = reckonedVersion =~ /(\d+)\.(\d+)\.(\d+)-(\d+)-([0-9a-z]+).*/
         if (snapshotMatcher.size() > 0) {
             def major = snapshotMatcher[0][1]
             def minor = snapshotMatcher[0][2] as Integer
@@ -53,3 +53,10 @@ Versioner.reckon()
 allprojects { project ->
     version Versioner.reckonedVersion
 }
+
+task version {
+    doLast {
+        println "Version is reckoned to " + "$version"
+    }
+}
+

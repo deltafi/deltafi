@@ -9,12 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - Auth now sends JSON to entity resolver.
+- Version reckoning Gradle plugin will accept x.y.z-nn as a valid tagged version
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- Version reckoning Gradle plugin will default to 0.0.0-SNAPSHOT in an untagged repository
 
 ### Tech-Debt/Refactor
 
