@@ -96,7 +96,7 @@ class DeltaFilesServiceTest {
     @Test
     void setsAndGets() {
         final String flow = "theFlow";
-        SourceInfo sourceInfo = new SourceInfo(null, flow, List.of());
+        SourceInfo sourceInfo = new SourceInfo(null, flow, Map.of());
 
         String did = UUID.randomUUID().toString();
 
@@ -113,7 +113,7 @@ class DeltaFilesServiceTest {
 
     @Test
     void setThrowsOnMissingFlow() {
-        SourceInfo sourceInfo = new SourceInfo(null, "nonsense", List.of());
+        SourceInfo sourceInfo = new SourceInfo(null, "nonsense", Map.of());
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference("mediaType")).build());
         IngressEvent ingressInput = new IngressEvent("did", sourceInfo, content, OffsetDateTime.now());
 
@@ -156,16 +156,14 @@ class DeltaFilesServiceTest {
 
     @Test
     void testSourceMetadataUnion() {
-        DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(
-                new KeyValue("k1", "1a"),
-                new KeyValue("k2", "val2")));
-        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(
-                new KeyValue("k1", "1b"),
-                new KeyValue("k3", "val3")));
-        DeltaFile deltaFile3 = Util.buildDeltaFile("3", List.of(
-                new KeyValue("k2", "val2"),
-                new KeyValue("k3", null),
-                new KeyValue("k4", "val4")));
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", Map.of("k1", "1a", "k2", "val2"));
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", Map.of("k1", "1b", "k3", "val3"));
+
+        // Map.of disallows null keys or values, so do it the hard way
+        DeltaFile deltaFile3 = Util.buildDeltaFile("3", new HashMap<>());
+        deltaFile3.getSourceInfo().addMetadata("k2", "val2");
+        deltaFile3.getSourceInfo().addMetadata("k3", null);
+        deltaFile3.getSourceInfo().addMetadata("k4", "val4");
 
         List<String> dids = List.of("1", "2", "3", "4");
         DeltaFilesFilter filter = new DeltaFilesFilter();

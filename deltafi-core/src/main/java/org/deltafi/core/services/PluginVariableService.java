@@ -147,15 +147,15 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
 
         PluginVariables pluginVariables = pluginVariableRepo.findById(pluginCoordinates).orElseThrow();
 
-        values.forEach(keyValue -> setVariableFromKeyValue(pluginVariables, keyValue));
+        values.forEach(keyValue -> setVariable(pluginVariables, keyValue));
 
         pluginVariableRepo.save(pluginVariables);
         return true;
     }
 
-    private void setVariableFromKeyValue(PluginVariables pluginVariables, KeyValue keyValue) {
+    private void setVariable(PluginVariables pluginVariables, KeyValue keyValue) {
         Variable variable = pluginVariables.getVariables().stream()
-                .filter(v1 -> nameMatches(v1, keyValue))
+                .filter(v1 -> nameMatches(v1, keyValue.getKey()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Variable name: " + keyValue.getKey() + " was not found in the variables for plugin: " + pluginVariables.getSourcePlugin()));
 
         String errorMsg = variable.getDataType().validateValue(keyValue.getValue());
@@ -167,8 +167,8 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         variable.setValue(keyValue.getValue());
     }
 
-    private boolean nameMatches(Variable variable, KeyValue keyValue) {
-        return Objects.nonNull(keyValue) && Objects.nonNull(keyValue.getKey()) && keyValue.getKey().equals(variable.getName());
+    private boolean nameMatches(Variable variable, String key) {
+        return key != null && key.equals(variable.getName());
     }
 
     @Override

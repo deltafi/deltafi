@@ -21,7 +21,6 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.FlowAssignmentRuleInput;
 import org.deltafi.core.services.FlowAssignmentService;
@@ -145,7 +144,7 @@ public class FlowAssignmentDatafetcherTestHelper {
                 .build();
     }
 
-    static public Result saveSecondRuleSet(DgsQueryExecutor dgsQueryExecutor) {
+    static public void saveSecondRuleSet(DgsQueryExecutor dgsQueryExecutor) {
         FlowAssignmentRuleInput input = FlowAssignmentRuleInput.newBuilder()
                 .name(RULE_NAME2)
                 .flow(FLOW_NAME2)
@@ -153,7 +152,7 @@ public class FlowAssignmentDatafetcherTestHelper {
                 .requiredMetadata(Collections.singletonList(new KeyValue(META_KEY, META_VALUE)))
                 .build();
 
-        return executeLoadRules(dgsQueryExecutor, false, List.of(input)).get(0);
+        executeLoadRules(dgsQueryExecutor, false, List.of(input));
     }
 
     static private List<Result> executeLoadRules(DgsQueryExecutor dgsQueryExecutor, boolean replaceAll, List<FlowAssignmentRuleInput> rules) {
@@ -171,17 +170,6 @@ public class FlowAssignmentDatafetcherTestHelper {
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(),
                 resultListType);
-    }
-
-    static public String resolveFlowAssignment(DgsQueryExecutor dgsQueryExecutor, SourceInfo sourceInfo) {
-        ResolveFlowFromFlowAssignmentRulesGraphQLQuery query = ResolveFlowFromFlowAssignmentRulesGraphQLQuery
-                .newRequest().sourceInfo(sourceInfo).build();
-
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
-
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + query.getOperationName(), String.class);
     }
 
     static public boolean removeFlowAssignment(DgsQueryExecutor dgsQueryExecutor, String id) {

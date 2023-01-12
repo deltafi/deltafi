@@ -18,12 +18,12 @@
 package org.deltafi.core.types;
 
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.SourceInfo;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -85,14 +85,13 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
         return true;
     }
 
-    boolean matchesRequiredMetadata(List<KeyValue> sourceMetadata) {
-        if ((null == getRequiredMetadata()) || (getRequiredMetadata().isEmpty())) {
+    boolean matchesRequiredMetadata(Map<String, String> sourceMetadata) {
+        if (getRequiredMetadata() == null || getRequiredMetadata().isEmpty()) {
             return true;
-        } else if ((null == sourceMetadata) || (sourceMetadata.isEmpty())) {
+        } else if (sourceMetadata == null || sourceMetadata.isEmpty()) {
             return false;
         } else {
-            return new HashSet<>(sourceMetadata).containsAll(getRequiredMetadata());
+            return sourceMetadata.entrySet().containsAll(KeyValueConverter.convertKeyValues(getRequiredMetadata()).entrySet());
         }
     }
-
 }

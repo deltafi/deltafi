@@ -26,7 +26,6 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
@@ -90,7 +89,7 @@ class FlowfileEgressActionTest {
     private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()
             .filename(POST_FILENAME)
             .contentReference(CONTENT_REFERENCE)
-            .metadata(KeyValueConverter.fromMap(METADATA))
+            .metadata(METADATA)
             .build();
     private static final EgressInput EGRESS_INPUT = new EgressInput(ORIG_FILENAME, FLOW, Map.of(), FORMATTED_DATA);
 

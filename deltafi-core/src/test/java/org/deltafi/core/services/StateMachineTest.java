@@ -39,15 +39,13 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class StateMachineTest {
@@ -438,7 +436,7 @@ class StateMachineTest {
         assertThat(deltaFile.actionNamed(TEST_EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
         assertThat(deltaFile.actionNamed("EgressAction2")).isPresent().get().matches(action -> ActionState.QUEUED.equals(action.getState()));
         assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
-        assertThat(deltaFile.getTestMode()).isTrue();
+        assertTrue(deltaFile.getTestMode());
         assertThat(deltaFile.getTestModeReason()).isEqualTo("Egress flow 'TestEgressFlow' in test mode");
     }
 
@@ -481,7 +479,7 @@ class StateMachineTest {
         assertThat(deltaFile.actionNamed(TEST_EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
         assertThat(deltaFile.actionNamed(EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
         assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
-        assertThat(deltaFile.getTestMode()).isTrue();
+        assertTrue(deltaFile.getTestMode());
         assertThat(deltaFile.getTestModeReason()).isEqualTo("Ingress flow 'TheIngressFlow' in test mode");
     }
 
@@ -626,14 +624,14 @@ class StateMachineTest {
         deltaFile.addEnrichment(ENRICH, "value", MediaType.ALL_VALUE);
 
         if (withSourceInfo) {
-            deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", List.of(new KeyValue(SOURCE_KEY, "value"))));
+            deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", Map.of(SOURCE_KEY, "value")));
         }
 
         if (withProtocolStack) {
             Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, "did"))).build();
             deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION,
                     List.of(content),
-                    Collections.singletonList(new KeyValue(PROTOCOL_LAYER_KEY, "value"))));
+                    Map.of(PROTOCOL_LAYER_KEY, "value")));
         }
         return deltaFile;
     }

@@ -22,19 +22,12 @@ from mockito import mock, unstub
 from .helperutils import *
 
 
-def check_meta_list(meta):
-    assert meta[0]["key"] == "key1"
-    assert meta[0]["value"] == "value1"
-    assert meta[1]["key"] == "key2"
-    assert meta[1]["value"] == "value2"
-
-
-def check_meta_dict(meta):
+def check_meta(meta):
     assert meta["key1"] == "value1"
     assert meta["key2"] == "value2"
 
 
-def check_pl_meta_dict(meta):
+def check_pl_meta(meta):
     assert meta["plKey1"] == "valueA"
     assert meta["plKey2"] == "valueB"
 
@@ -47,7 +40,8 @@ def test_content_json():
     content = make_content("CONTENT_NAME")
     content_json = content.json()
     assert content_json["name"] == "CONTENT_NAME"
-    check_meta_list(content_json["metadata"])
+    assert content_json["metadata"]["key1"] == "value1"
+    assert content_json["metadata"]["key2"] == "value2"
 
 
 def test_context_json():
@@ -82,26 +76,26 @@ def test_formatted_data():
     formatted_data = FormattedData.from_dict({
         'filename': "FILENAME",
         'formatAction': "FORMAT_ACTION",
-        'metadata': make_key_val_list(),
+        'metadata': {'key1': 'value1', 'key2': 'value2'},
         'contentReference': make_content_reference(SEG_ID).json()})
 
     assert formatted_data.filename == "FILENAME"
     assert formatted_data.format_action == "FORMAT_ACTION"
-    check_meta_dict(formatted_data.metadata)
+    check_meta(formatted_data.metadata)
 
 
 def test_protocol_layer():
     protocol_layer = ProtocolLayer.from_dict(make_protocol_layer_dict())
     assert protocol_layer.action == "ACTION"
     assert protocol_layer.content[0].name == "CONTENT_NAME"
-    check_pl_meta_dict(protocol_layer.metadata)
+    check_pl_meta(protocol_layer.metadata)
 
 
 def test_source_info():
     source_info = SourceInfo.from_dict(make_source_info_dict())
     assert source_info.filename == "FILENAME"
     assert source_info.flow == "FLOW"
-    check_meta_dict(source_info.metadata)
+    check_meta(source_info.metadata)
 
 
 def test_delta_file():
@@ -130,3 +124,4 @@ def test_event():
     assert event.context.content_service == mock_content_service
     assert event.context.logger is None
     assert len(event.params) == 0
+

@@ -83,12 +83,9 @@ def test_load_action():
         ],
         'protocolLayer': {
             'content': [],
-            'metadata': [
-                {
-                    'key': 'loadKey',
-                    'value': 'loadValue'
-                }
-            ]
+            'metadata': {
+                'loadKey': 'loadValue'
+            }
         }
     }
     assert result.response() == expected_response

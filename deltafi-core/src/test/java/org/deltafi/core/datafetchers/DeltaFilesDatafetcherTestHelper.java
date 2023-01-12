@@ -21,7 +21,6 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressEvent;
-import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.generated.client.DeltaFileProjectionRoot;
 import org.deltafi.core.generated.client.DeltaFilesProjectionRoot;
@@ -29,10 +28,7 @@ import org.deltafi.core.generated.client.ErrorSummaryByFlowProjectionRoot;
 import org.deltafi.core.generated.client.ErrorSummaryByMessageProjectionRoot;
 
 import java.time.OffsetDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class DeltaFilesDatafetcherTestHelper {
 
@@ -43,14 +39,14 @@ public class DeltaFilesDatafetcherTestHelper {
     static final String OBJECT_UUID_2 = "theUuid2";
     static final String DID = UUID.randomUUID().toString();
     static final String DID_2 = UUID.randomUUID().toString();
-    static final List<KeyValue> METADATA = Arrays.asList(new KeyValue("k1", "v1"), new KeyValue("k2", "v2"));
+    static final Map<String, String> METADATA = Map.of("k1", "v1", "k2", "v2");
     static final String MEDIA_TYPE = "plain/text";
     static final ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID));
     static final List<Content> CONTENT = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE).build());
     static final ContentReference CONTENT_REFERENCE_2 = new ContentReference(MEDIA_TYPE, new Segment(OBJECT_UUID_2, 0, SIZE, DID));
     static final List<Content> CONTENT_2 = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE_2).build());
     static final SourceInfo SOURCE_INFO = new SourceInfo(FILENAME, FLOW, METADATA);
-    static final SourceInfo SOURCE_INFO_EMPTY_METADATA = new SourceInfo(FILENAME, FLOW, Collections.emptyList());
+    static final SourceInfo SOURCE_INFO_EMPTY_METADATA = new SourceInfo(FILENAME, FLOW, Collections.emptyMap());
     public static final IngressEvent INGRESS_INPUT_EMPTY_METADATA = new IngressEvent(DID, SOURCE_INFO_EMPTY_METADATA, CONTENT, OffsetDateTime.now());
     public static final IngressEvent INGRESS_INPUT = new IngressEvent(DID, SOURCE_INFO, CONTENT, OffsetDateTime.now());
     public static final IngressEvent INGRESS_INPUT_2 = new IngressEvent(DID_2, SOURCE_INFO, CONTENT_2, OffsetDateTime.now());
@@ -77,9 +73,6 @@ public class DeltaFilesDatafetcherTestHelper {
                 .content()
                 .name()
                 .metadata()
-                .key()
-                .value()
-                .parent()
                 .contentReference()
                 .mediaType()
                 .size()
@@ -91,18 +84,12 @@ public class DeltaFilesDatafetcherTestHelper {
                 .parent()
                 .parent()
                 .metadata()
-                .key()
-                .value()
-                .parent()
                 .parent()
                 .parent()
                 .sourceInfo()
                 .filename()
                 .flow()
                 .metadata()
-                .key()
-                .value()
-                .parent()
                 .parent()
                 .enrichment()
                 .name()
@@ -159,9 +146,6 @@ public class DeltaFilesDatafetcherTestHelper {
               .content()
                 .name()
                 .metadata()
-                  .key()
-                  .value()
-                  .parent()
                 .contentReference()
                   .mediaType()
                   .size()
@@ -174,17 +158,11 @@ public class DeltaFilesDatafetcherTestHelper {
                   .parent()
                 .parent()
               .metadata()
-                .key()
-                .value()
-                .parent()
               .parent()
             .sourceInfo()
               .filename()
               .flow()
               .metadata()
-                .key()
-                .value()
-                .parent()
               .parent()
             .enrichment()
                 .name()

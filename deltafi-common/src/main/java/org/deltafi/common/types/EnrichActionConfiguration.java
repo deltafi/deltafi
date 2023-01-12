@@ -48,10 +48,7 @@ public class EnrichActionConfiguration extends RequiresDomainsAndEnrichmentsActi
 
     @Override
     public List<String> validate(ActionDescriptor actionDescriptor) {
-        List<String> errors = super.validate(actionDescriptor);
-
-        // TODO: Validate requiresMetadataKeyValues???
-
-        return errors;
+        // TODO: Validate requiresMetadata?
+        return super.validate(actionDescriptor);
     }
 }

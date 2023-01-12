@@ -1,0 +1,30 @@
+{
+    "did": "%1$s",
+    "action": "sampleIngress.SampleLoadAction",
+    "start": "2021-07-11T13:44:22.183Z",
+    "stop": "2021-07-11T13:44:22.184Z",
+    "type": "LOAD",
+    "load": {
+        "domains": [ { "name": "sampleDomain", "value": "sampleDomainValue", "mediaType": "application/octet-stream" } ],
+        "protocolLayer": {
+            "action": "sampleIngress.SampleLoadAction",
+            "content": [
+                {
+                    "contentReference": {
+                        "segments": [{
+                            "uuid": "objectName",
+                            "offset": 0,
+                            "size": 500,
+                            "did": "%1$s"
+                        }],
+                        "mediaType": "application/octet-stream"
+                    }
+                }
+            ],
+            "metadata": {
+                "loadSampleType": "load-sample-type",
+                "loadSampleVersion": "2.2"
+            }
+        }
+    }
+}

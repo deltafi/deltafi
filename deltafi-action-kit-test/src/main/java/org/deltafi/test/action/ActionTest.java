@@ -158,12 +158,12 @@ public abstract class ActionTest {
     protected DeltaFile deltaFile(Map<String, String> metadata, List<Content> content) {
         return DeltaFile.newBuilder().sourceInfo(
                         SourceInfo.builder().metadata(
-                                        metadata==null ? new ArrayList<>() : metadata.entrySet().stream().map(kv -> new KeyValue(kv.getKey(), kv.getValue())).collect(Collectors.toList()))
+                                        metadata == null ? new HashMap<>() : metadata)
                                 .filename("filename")
                                 .flow("flow")
                                 .build())
                 .protocolStack(Collections.singletonList(ProtocolLayer.builder()
-                        .metadata(Collections.emptyList())
+                        .metadata(new HashMap<>())
                         .action("action")
                         .content(content)
                         .build()))

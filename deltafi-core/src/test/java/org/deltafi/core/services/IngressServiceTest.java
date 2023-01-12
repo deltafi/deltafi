@@ -23,7 +23,6 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -41,7 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 
@@ -123,20 +122,18 @@ class IngressServiceTest {
     void fromMetadataString() {
         String metadata = "{\"simple\": \"value\"}";
 
-        List<KeyValue> keyValues = ingressService.fromMetadataString(metadata);
-        Assertions.assertEquals(1, keyValues.size());
-        Assertions.assertEquals("simple", keyValues.get(0).getKey());
-        Assertions.assertEquals("value", keyValues.get(0).getValue());
+        Map<String, String> map = ingressService.fromMetadataString(metadata);
+        Assertions.assertEquals(1, map.size());
+        Assertions.assertEquals("value", map.get("simple"));
     }
 
     @Test @SneakyThrows
     void fromMetadataString_subObject() {
         String metadata = "{\"complex\": {\"key\": {\"list\": [1, 2, 3]}}}";
 
-        List<KeyValue> keyValues = ingressService.fromMetadataString(metadata);
-        Assertions.assertEquals(1, keyValues.size());
-        Assertions.assertEquals("complex", keyValues.get(0).getKey());
-        Assertions.assertEquals("{\"key\":{\"list\":[1,2,3]}}", keyValues.get(0).getValue());
+        Map<String, String> map = ingressService.fromMetadataString(metadata);
+        Assertions.assertEquals(1, map.size());
+        Assertions.assertEquals("{\"key\":{\"list\":[1,2,3]}}", map.get("complex"));
     }
 
     @Test

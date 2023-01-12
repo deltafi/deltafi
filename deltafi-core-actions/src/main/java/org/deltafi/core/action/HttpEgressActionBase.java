@@ -70,7 +70,7 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
     public Map<String, String> buildHeadersMap(String did, String sourceFilename, String ingressFlow, FormattedData formattedData, String egressFlow) {
         Map<String, String> headersMap = new HashMap<>();
         if (formattedData.getMetadata() != null) {
-            formattedData.getMetadata().forEach(pair -> headersMap.put(pair.getKey(), pair.getValue()));
+            headersMap.putAll(formattedData.getMetadata());
         }
         headersMap.put("did", did);
         headersMap.put("ingressFlow", ingressFlow);

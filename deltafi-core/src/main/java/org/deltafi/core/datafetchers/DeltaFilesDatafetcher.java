@@ -143,18 +143,6 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
-  @NeedsPermission.DeltaFileIngress
-  public DeltaFile ingress(@InputArgument IngressEvent input) {
-    return deltaFilesService.ingress(input);
-  }
-
-  @DgsMutation
-  @NeedsPermission.ActionEvent
-  public DeltaFile actionEvent(@InputArgument ActionEventInput event) throws JsonProcessingException {
-    return deltaFilesService.handleActionEvent(event);
-  }
-
-  @DgsMutation
   @NeedsPermission.DeltaFileResume
   public List<RetryResult> resume(@InputArgument List<String> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     return deltaFilesService.resume(dids, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
@@ -186,10 +174,10 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.StressTest
-  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument List<KeyValue> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
+  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
     Random random = new Random();
-    SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new ArrayList<>() : metadata);
-    Content c = new Content("stressTestContent", Collections.emptyList(), null);
+    SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new HashMap<>() : metadata);
+    Content c = new Content("stressTestContent", Collections.emptyMap(), null);
 
     // batches let us test quick bursts of ingress traffic, deferring ingress until after content is stored for the batch
     if (batchSize == null || batchSize < 1) {
@@ -217,7 +205,7 @@ public class DeltaFilesDatafetcher {
         String did = cr.getSegments().isEmpty() ? UUID.randomUUID().toString() : cr.getSegments().get(0).getDid();
         IngressEvent ingressEvent = new IngressEvent(did, sourceInfo, List.of(c), OffsetDateTime.now());
         log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
-        ingress(ingressEvent);
+        deltaFilesService.ingress(ingressEvent);
       }
 
       remainingFiles -= batchSize;

@@ -39,6 +39,7 @@ public class LoadInput {
     List<Content> contentList;
     Map<String, String> metadata;
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key) {
         if (sourceMetadata.containsKey(key)) {
             return sourceMetadata.get(key);
@@ -47,6 +48,7 @@ public class LoadInput {
         }
     }
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key, String defaultValue) {
         return sourceMetadata.getOrDefault(key, defaultValue);
     }
@@ -71,6 +73,7 @@ public class LoadInput {
         return contentList.get(index);
     }
 
+    @SuppressWarnings("unused")
     public Content firstContent() {
         if (!hasContent()) {
             throw new ExpectedContentException();
@@ -82,9 +85,9 @@ public class LoadInput {
         return LoadInput.builder()
                 .sourceFilename(deltaFile.getSourceInfo().getFilename())
                 .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
                 .contentList(deltaFile.getLastProtocolLayerContent())
-                .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                .metadata(deltaFile.getLastProtocolLayerMetadata())
                 .build();
     }
 }

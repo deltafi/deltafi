@@ -35,6 +35,7 @@ public class ValidateInput {
     Map<String, String> sourceMetadata;
     FormattedData formattedData;
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key) {
         if (sourceMetadata.containsKey(key)) {
             return sourceMetadata.get(key);
@@ -43,6 +44,7 @@ public class ValidateInput {
         }
     }
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key, String defaultValue) {
         return sourceMetadata.getOrDefault(key, defaultValue);
     }
@@ -51,7 +53,7 @@ public class ValidateInput {
         return ValidateInput.builder()
                 .sourceFilename(deltaFile.getSourceInfo().getFilename())
                 .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
                 .formattedData(deltaFile.getFormattedData().get(0))
                 .build();
     }

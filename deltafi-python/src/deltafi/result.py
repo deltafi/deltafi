@@ -122,10 +122,10 @@ class FormatResult(Result):
         super().__init__('format', 'FORMAT')
         self.filename = filename
         self.content_reference = content_reference
-        self.metadata = []
+        self.metadata = {}
 
     def add_metadata(self, key: str, value: str):
-        self.metadata.append({'key': key, 'value': value})
+        self.metadata[key] = value
         return self
 
     def response(self):
@@ -153,7 +153,7 @@ class LoadResult(Result):
     def __init__(self):
         super().__init__('load', 'LOAD')
         self.content = []
-        self.metadata = []
+        self.metadata = {}
         self.domains = []
 
     def add_content(self, name: str, content_reference: ContentReference):
@@ -162,7 +162,7 @@ class LoadResult(Result):
         return self
 
     def add_metadata(self, key: str, value: str):
-        self.metadata.append({'key': key, 'value': value})
+        self.metadata[key] = value
         return self
 
     def add_domain(self, name: str, value: str, media_type: str):
@@ -195,7 +195,7 @@ class SplitResult(Result):
                 'sourceInfo': {
                     'filename': self.filename,
                     'flow': self.flow,
-                    'metadata': [{'key': k, 'value': v} for (k, v) in self.metadata.items()]
+                    'metadata': self.metadata
                 },
                 'content': [content.json() for content in self.content]
             }
@@ -216,7 +216,7 @@ class TransformResult(Result):
     def __init__(self):
         super().__init__('transform', 'TRANSFORM')
         self.content = []
-        self.metadata = []
+        self.metadata = {}
 
     def add_content(self, name: str, content_reference: ContentReference):
         content = Content(name=name, metadata={}, content_reference=content_reference)
@@ -224,7 +224,7 @@ class TransformResult(Result):
         return self
 
     def add_metadata(self, key: str, value: str):
-        self.metadata.append({'key': key, 'value': value})
+        self.metadata[key] = value
         return self
 
     def response(self):

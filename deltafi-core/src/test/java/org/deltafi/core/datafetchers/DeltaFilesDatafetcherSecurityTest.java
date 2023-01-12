@@ -82,7 +82,6 @@ class DeltaFilesDatafetcherSecurityTest {
         callables.add(() -> deltaFilesDatafetcher.domains());
         callables.add(() -> deltaFilesDatafetcher.rawDeltaFile("did", true));
         callables.add(() -> deltaFilesDatafetcher.acknowledge(List.of("did"), "reason"));
-        callables.add(() -> deltaFilesDatafetcher.actionEvent(null)); // TODO do we need this mutation still?
         callables.add(() -> deltaFilesDatafetcher.cancel(List.of("did")));
         callables.add(() -> deltaFilesDatafetcher.resume(List.of("did"), null, null));
         callables.add(() -> deltaFilesDatafetcher.replay(List.of("did"), null, null, null, null));
@@ -93,7 +92,6 @@ class DeltaFilesDatafetcherSecurityTest {
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByFlow(0, 0, null, null));
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByMessage(0, 0, null, null));
         callables.add(() -> deltaFilesDatafetcher.indexedMetadataKeys(""));
-        callables.add(() -> deltaFilesDatafetcher.ingress(null)); // TODO do we need this mutation still?
         callables.add(() -> deltaFilesDatafetcher.stressTest(null, null, null, null, null));
         callables.add(() -> deltaFilesDatafetcher.sourceMetadataUnion(null));
         return callables;

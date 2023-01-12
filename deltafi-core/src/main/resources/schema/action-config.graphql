@@ -82,7 +82,7 @@ type EnrichActionConfiguration implements ActionConfiguration & DeltaFiConfigura
     parameters: JSON
     requiresDomains: [String]!
     requiresEnrichments: [String]
-    requiresMetadataKeyValues: [KeyValue]
+    requiresMetadataKeyValues: [KeyValue!]
 }
 
 input EnrichActionConfigurationInput {
@@ -93,7 +93,7 @@ input EnrichActionConfigurationInput {
     parameters: JSON
     requiresDomains: [String]!
     requiresEnrichments: [String]
-    requiresMetadataKeyValues: [KeyValueInput]
+    requiresMetadataKeyValues: [KeyValueInput!]
 }
 
 type FormatActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {

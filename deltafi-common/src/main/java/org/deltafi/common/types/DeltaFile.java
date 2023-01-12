@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.content.Segment;
-import org.deltafi.common.converters.KeyValueConverter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
@@ -29,7 +28,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -284,29 +282,12 @@ public class DeltaFile {
     return names.stream().allMatch(this::hasCompletedAction);
   }
 
-  public boolean markForDelete(String policy) {
-    OffsetDateTime now = OffsetDateTime.now();
-
-    AtomicBoolean actionUpdated = new AtomicBoolean(false);
-    getActions().stream()
-            .filter(action -> action.getState().equals(ActionState.QUEUED))
-            .forEach(action -> {
-              actionUpdated.set(true);
-              action.setModified(now);
-              action.setState(ActionState.ERROR);
-              action.setErrorCause("DeltaFile marked for deletion by " + policy + " policy");
-            });
-    setContentDeleted(now);
-    setContentDeletedReason(policy);
-    return actionUpdated.get();
-  }
-
   public String sourceMetadata(String key) {
-    return sourceMetadata(key, null);
+    return getSourceInfo().getMetadata().get(key);
   }
 
   public String sourceMetadata(String key, String defaultValue) {
-    return getSourceInfo().getMetadata().stream().filter(k -> k.getKey().equals(key)).findFirst().map(KeyValue::getValue).orElse(defaultValue);
+    return getSourceInfo().getMetadata().getOrDefault(key, defaultValue);
   }
 
   @JsonIgnore
@@ -324,17 +305,13 @@ public class DeltaFile {
   }
 
   @JsonIgnore
-  public @NotNull List<KeyValue> getLastProtocolLayerMetadata() {
+  @SuppressWarnings("unused")
+  public @NotNull Map<String, String> getLastProtocolLayerMetadata() {
     if (Objects.isNull(getLastProtocolLayer()) || Objects.isNull(getLastProtocolLayer().getMetadata())) {
-      return Collections.emptyList();
+      return Collections.emptyMap();
     }
 
     return getLastProtocolLayer().getMetadata();
-  }
-
-  @JsonIgnore
-  public @NotNull Map<String, String> getLastProtocolLayerMetadataAsMap() {
-    return KeyValueConverter.convertKeyValues(getLastProtocolLayerMetadata());
   }
 
   public @NotNull List<Domain> getDomains() {

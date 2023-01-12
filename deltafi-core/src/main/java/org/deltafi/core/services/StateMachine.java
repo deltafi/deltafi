@@ -212,15 +212,13 @@ public class StateMachine {
             return true;
         } else {
             if ((deltaFile.getProtocolStack() != null) && !deltaFile.getProtocolStack().isEmpty()) {
-                Map<String, String> metadataMap = KeyValueConverter.convertKeyValues(deltaFile.getLastProtocolLayer().getMetadata());
-                if (matchesAllMetadata(requiresMetadata, metadataMap)) {
+                if (matchesAllMetadata(requiresMetadata, deltaFile.getLastProtocolLayer().getMetadata())) {
                     return true;
                 }
             }
 
             if (deltaFile.getSourceInfo() != null) {
-                Map<String, String> sourceInfoMetadataMap = KeyValueConverter.convertKeyValues(deltaFile.getSourceInfo().getMetadata());
-                return matchesAllMetadata(requiresMetadata, sourceInfoMetadataMap);
+                return matchesAllMetadata(requiresMetadata, deltaFile.getSourceInfo().getMetadata());
             }
         }
         return false;

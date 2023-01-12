@@ -23,7 +23,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentReference;
 
-import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -32,5 +32,5 @@ import java.util.List;
 public class FormatEvent {
   private String filename;
   private ContentReference contentReference;
-  private List<KeyValue> metadata;
+  private Map<String, String> metadata;
 }

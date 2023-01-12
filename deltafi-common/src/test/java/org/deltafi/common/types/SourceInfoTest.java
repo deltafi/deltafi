@@ -17,15 +17,14 @@
  */
 package org.deltafi.common.types;
 
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SourceInfoTest {
 
@@ -34,10 +33,9 @@ class SourceInfoTest {
 
     @Test
     void getMetadataMap() {
-        SourceInfo sut = new SourceInfo(FILENAME, FLOW, List.of(new KeyValue("foo", "bar"),
-                new KeyValue("baz", "bam")));
+        SourceInfo sut = new SourceInfo(FILENAME, FLOW, Map.of("foo", "bar", "baz", "bam"));
 
-        Map<String, String> map = sut.getMetadataAsMap();
+        Map<String, String> map = sut.getMetadata();
         assertThat(map, hasEntry("foo", "bar"));
         assertThat(map, hasEntry("baz", "bam"));
         assertThat(map.size(), equalTo(2));
@@ -47,18 +45,15 @@ class SourceInfoTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void addMetadataMap() {
-        SourceInfo sut = new SourceInfo(FILENAME, FLOW, new ArrayList<>(List.of(new KeyValue("foo", "bar"),
-                new KeyValue("baz", "bam"))));
+        SourceInfo sut = new SourceInfo(FILENAME, FLOW, new HashMap<>(Map.of("foo", "bar", "baz", "bam")));
 
-        Map<String, String> initialMap = sut.getMetadataAsMap();
         Map<String, String> addedMap = Map.of("larry", "1", "moe", "2", "curly", "3");
 
         sut.addMetadata(addedMap);
 
-        Map<String, String> result = sut.getMetadataAsMap();
-        assertThat(result.entrySet(), (Matcher)hasItems(addedMap.entrySet().toArray()));
-        assertThat(result.entrySet(), (Matcher)hasItems(initialMap.entrySet().toArray()));
+        Map<String, String> expected = new HashMap<>(sut.getMetadata());
+        expected.putAll(addedMap);
+        assertEquals(expected, sut.getMetadata());
     }
 }

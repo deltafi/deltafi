@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentReference;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -33,7 +34,7 @@ import java.util.List;
 public class ProtocolLayer {
     private String action;
     private List<Content> content;
-    private List<KeyValue> metadata;
+    private Map<String, String> metadata;
 
     @JsonIgnore
     public ContentReference getContentReference() {

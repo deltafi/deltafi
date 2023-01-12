@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentReference;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -33,7 +34,7 @@ public class FormattedData {
   private String filename;
   private String formatAction;
   private ContentReference contentReference;
-  private List<KeyValue> metadata;
+  private Map<String, String> metadata;
   private List<String> egressActions;
   private List<String> validateActions;
 }

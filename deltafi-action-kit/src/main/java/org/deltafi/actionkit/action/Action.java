@@ -76,7 +76,6 @@ public abstract class Action<P extends ActionParameters> {
         throw new RuntimeException("Cannot instantiate" + getClass().toString());
     }
 
-    @SuppressWarnings("unchecked")
     private final Class<P> paramClass = getGenericParameterType();
 
     private final ActionType actionType;
@@ -173,6 +172,7 @@ public abstract class Action<P extends ActionParameters> {
      * @return a content reference for the new stored content
      * @throws ObjectStorageException when the content storage service fails to store content
      */
+    @SuppressWarnings("unused")
     protected ContentReference saveContent(String did, byte[] content, String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
     }
@@ -186,7 +186,7 @@ public abstract class Action<P extends ActionParameters> {
      * @return a content reference for the new stored content
      * @throws ObjectStorageException when the content storage service fails to store content
      */
-    protected ContentReference saveContent(String did, InputStream content, String mediaType) throws ObjectStorageException {
+    protected ContentReference saveContent(String did, InputStream content, @SuppressWarnings("SameParameterValue") String mediaType) throws ObjectStorageException {
         return contentStorageService.save(did, content, mediaType);
     }
 

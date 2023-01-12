@@ -28,7 +28,7 @@ from .helperutils import make_content_reference
 def verify_metric(metric, name, value, tags):
     assert metric['name'] == name
     assert metric['value'] == value
-    assert metric['tags'] == [{'key': k, 'value': v} for (k, v) in tags.items()]
+    assert metric['tags'] == tags
 
 
 def verify_no_metrics(result):
@@ -116,17 +116,12 @@ def test_filter_result():
     assert response.get('message') == "filteredCause"
 
 
-def verify_metadata(meta, key, val):
-    assert meta['key'] == key
-    assert meta['value'] == val
-
-
 def verify_all_metadata(item):
     metadata = item.get("metadata")
     assert len(metadata) == 3
-    verify_metadata(metadata[0], "key1", "val1")
-    verify_metadata(metadata[1], "key2", "val2")
-    verify_metadata(metadata[2], "key3", "val3")
+    assert metadata["key1"] == "val1"
+    assert metadata["key2"] == "val2"
+    assert metadata["key3"] == "val3"
 
 
 def add_canned_metadata(result):

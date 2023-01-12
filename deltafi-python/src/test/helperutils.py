@@ -42,29 +42,17 @@ def make_context_dict():
     }
 
 
-def make_key_val_list():
-    return [
-        {'key': 'key1', 'value': 'value1'},
-        {'key': 'key2', 'value': 'value2'}]
-
-
-def make_pl_key_val_list():
-    return [
-        {'key': 'plKey1', 'value': 'valueA'},
-        {'key': 'plKey2', 'value': 'valueB'}]
-
-
 def make_source_info_dict():
     return {
         'filename': "FILENAME",
         'flow': "FLOW",
-        'metadata': make_key_val_list()}
+        'metadata': {'key1': 'value1', 'key2': 'value2'}}
 
 
 def make_content_dict(name):
     return {
         'name': name,
-        'metadata': make_key_val_list(),
+        'metadata': {'key1': 'value1', 'key2': 'value2'},
         'contentReference': make_content_reference(SEG_ID).json()}
 
 
@@ -72,7 +60,7 @@ def make_protocol_layer_dict():
     return {
         'action': "ACTION",
         'content': [make_content_dict("CONTENT_NAME")],
-        'metadata': make_pl_key_val_list()}
+        'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'}}
 
 
 def make_delta_file_dict():

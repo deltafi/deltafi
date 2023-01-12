@@ -234,22 +234,12 @@ class DeltaFiCoreApplicationTests {
 	private final OffsetDateTime START_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 183, ZoneOffset.UTC);
 	private final OffsetDateTime STOP_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 184, ZoneOffset.UTC);
 
-	private static final String TEST_PLUGIN = "test-plugin";
-	private static final String EDITABLE = "editable";
-	private static final String NOT_EDITABLE = "not-editable";
-	private static final String ORIGINAL_VALUE = "original";
 	private static final String INGRESS_FLOW_NAME = "sampleIngress";
 	private static final String EGRESS_FLOW_NAME = "sampleEgress";
 
-	final static List <KeyValue> loadSampleMetadata = Arrays.asList(
-			new KeyValue("loadSampleType", "load-sample-type"),
-			new KeyValue("loadSampleVersion", "2.2"));
-	final static List <KeyValue> loadWrongMetadata = Arrays.asList(
-			new KeyValue("loadSampleType", "wrong-sample-type"),
-			new KeyValue("loadSampleVersion", "2.2"));
-	final static List <KeyValue> transformSampleMetadata = Arrays.asList(
-			new KeyValue("sampleType", "sample-type"),
-			new KeyValue("sampleVersion", "2.1"));
+	final static Map<String, String> loadSampleMetadata = Map.of("loadSampleType", "load-sample-type", "loadSampleVersion", "2.2");
+	final static Map<String, String> loadWrongMetadata = Map.of("loadSampleType", "wrong-sample-type", "loadSampleVersion", "2.2");
+	final static Map<String, String> transformSampleMetadata = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
 
 	@BeforeEach
 	void setup() {
@@ -588,6 +578,16 @@ class DeltaFiCoreApplicationTests {
 		deleteRunner.runDeletes();
 	}
 
+	private ActionEventInput actionEvent(String filename, String did) throws IOException {
+		String json = String.format(new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()), did);
+		return OBJECT_MAPPER.readValue(json, ActionEventInput.class);
+	}
+
+	private ActionEventInput filterActionEvent(String did, String filteredAction) throws IOException {
+		String json = String.format(new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, filteredAction);
+		return OBJECT_MAPPER.readValue(json, ActionEventInput.class);
+	}
+
 	private String graphQL(String filename) throws IOException {
 		return new String(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("full-flow/" + filename + ".graphql")).readAllBytes());
 	}
@@ -596,24 +596,10 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
 		deltaFile.setIngressBytes(500L);
 		deltaFile.queueAction("sampleIngress.Utf8TransformAction");
-		deltaFile.setSourceInfo(new SourceInfo("input.txt", INGRESS_FLOW_NAME, new ArrayList<>(List.of(new KeyValue("AuthorizedBy", "XYZ"), new KeyValue("removeMe", "whatever")))));
+		deltaFile.setSourceInfo(new SourceInfo("input.txt", INGRESS_FLOW_NAME, new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever"))));
 		Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, did))).build();
 		deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION, List.of(content), null));
 		return deltaFile;
-	}
-
-	@Test
-	void test01Ingress() throws IOException {
-		String did = UUID.randomUUID().toString();
-		DeltaFile deltaFileFromDgs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("01.ingress"), did),
-				"data." + DgsConstants.MUTATION.Ingress,
-				DeltaFile.class);
-
-		assertEquals(did, deltaFileFromDgs.getDid());
-		verifyActionEventResults(postIngressDeltaFile(did), "sampleIngress.Utf8TransformAction");
-
-		Mockito.verifyNoInteractions(metricRepository);
 	}
 
 	DeltaFile postTransformUtf8DeltaFile(String did) {
@@ -627,14 +613,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test03TransformUtf8() throws IOException {
+	void testTransformUtf8() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postIngressDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("03.transformUtf8"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("transformUtf8", did));
 
 		verifyActionEventResults(postTransformUtf8DeltaFile(did), "sampleIngress.SampleTransformAction");
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleIngress.Utf8TransformAction", INGRESS_FLOW_NAME, null);
@@ -653,14 +636,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test05Transform() throws IOException {
+	void testTransform() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("05.transform"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("transform", did));
 
 		verifyActionEventResults(postTransformDeltaFile(did), "sampleIngress.SampleLoadAction");
 
@@ -686,21 +666,22 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@SuppressWarnings("SameParameterValue")
-	DeltaFile postRetryTransformDeltaFile(String did, String retryAction) {
+	DeltaFile postResumeTransformDeltaFile(String did, String retryAction) {
 		DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
 		deltaFile.retryErrors();
 		deltaFile.setStage(DeltaFileStage.INGRESS);
 		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).build());
+		deltaFile.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
 		return deltaFile;
 	}
 
 	@Test
-	void test06Retry() throws IOException {
+	void testResumeTransform() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postTransformHadErrorDeltaFile(did));
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("06.resume"), did),
+				String.format(graphQL("resumeTransform"), did),
 				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
@@ -708,15 +689,14 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertTrue(retryResults.get(0).getSuccess());
 
-		DeltaFile expected = postRetryTransformDeltaFile(did, "sampleIngress.SampleTransformAction");
-		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
+		DeltaFile expected = postResumeTransformDeltaFile(did, "sampleIngress.SampleTransformAction");
 		verifyActionEventResults(expected, "sampleIngress.SampleTransformAction");
 
 		Mockito.verifyNoInteractions(metricRepository);
 	}
 
 	@Test
-	void test06ResumeContentDeleted() throws IOException {
+	void testResumeContentDeleted() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile contentDeletedDeltaFile = postTransformHadErrorDeltaFile(did);
 		contentDeletedDeltaFile.setContentDeleted(OffsetDateTime.now());
@@ -724,7 +704,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(contentDeletedDeltaFile);
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("06.resume"), did),
+				String.format(graphQL("resumeTransform"), did),
 				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
@@ -748,15 +728,12 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test08Load() throws IOException {
+	void testLoad() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postTransform = postTransformDeltaFile(did);
 		deltaFileRepo.save(postTransform);
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("08.load"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("load", did));
 
 		verifyActionEventResults(postLoadDeltaFile(did), "sampleEnrich.SampleDomainAction");
 
@@ -778,8 +755,8 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test09EnrichSkippedWrongMetadata() throws IOException {
-		// Test is similar to 08.load, but has the wrong metadata value, which
+	void testEnrichSkippedWrongMetadata() throws IOException {
+		// Test is similar to load, but has the wrong metadata value, which
 		// results in the enrich action not being run, and cascades through.
 		String did = UUID.randomUUID().toString();
 		DeltaFile loaded = postLoadDeltaFile(did);
@@ -788,10 +765,7 @@ class DeltaFiCoreApplicationTests {
 		loaded.getLastProtocolLayer().setMetadata(loadWrongMetadata);
 		deltaFileRepo.save(loaded);
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("11.domain"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("domain", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 
@@ -805,15 +779,12 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test10Split() throws IOException {
+	void testSplit() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postTransform = postTransformDeltaFile(did);
 		deltaFileRepo.save(postTransform);
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("10.split"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("split", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
@@ -859,14 +830,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test11Domain() throws IOException {
+	void testDomain() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postLoadDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("11.domain"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("domain", did));
 
 		verifyActionEventResults(postDomainDeltaFile(did), "sampleEnrich.SampleEnrichAction");
 
@@ -888,14 +856,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test12Enrich() throws IOException {
+	void testEnrich() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postDomainDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("12.enrich"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("enrich", did));
 
 		verifyActionEventResults(postEnrichDeltaFile(did), "sampleEgress.SampleFormatAction");
 		Map<String, String> tags = tagsFor(ActionEventType.ENRICH, "sampleEnrich.SampleEnrichAction", INGRESS_FLOW_NAME, null);
@@ -911,7 +876,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.getFormattedData().add(FormattedData.newBuilder()
 				.formatAction("sampleEgress.SampleFormatAction")
 				.filename("output.txt")
-				.metadata(Arrays.asList(new KeyValue("key1", "value1"), new KeyValue("key2", "value2")))
+				.metadata(Map.of("key1", "value1", "key2", "value2"))
 				.contentReference(new ContentReference("application/octet-stream", new Segment("formattedObjectName", 0, 1000, did)))
 				.egressActions(Collections.singletonList("sampleEgress.SampleEgressAction"))
 				.validateActions(List.of("sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction"))
@@ -920,14 +885,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test13Format() throws IOException {
+	void testFormat() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postEnrichDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("13.format"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("format", did));
 
 		verifyActionEventResults(postFormatDeltaFile(did), "sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction");
 		Map<String, String> tags = tagsFor(ActionEventType.FORMAT, "sampleEgress.SampleFormatAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
@@ -937,15 +899,12 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test14FormatMany() throws IOException {
+	void testFormatMany() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postEnrich = postEnrichDeltaFile(did);
 		deltaFileRepo.save(postEnrich);
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("14.formatMany"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("formatMany", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
@@ -987,14 +946,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test15Validate() throws IOException {
+	void testValidate() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postFormatDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("15.validate"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("validate", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
@@ -1016,14 +972,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test17Error() throws IOException {
+	void testError() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("17.error"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("error", did));
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
 
@@ -1043,16 +996,17 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.retryErrors();
 		deltaFile.setStage(DeltaFileStage.EGRESS);
 		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).build());
+		deltaFile.getSourceInfo().addMetadata("a", "b");
 		return deltaFile;
 	}
 
 	@Test
-	void test18Resume() throws IOException {
+	void testResume() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postErrorDeltaFile(did));
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("18.resume"), did),
+				String.format(graphQL("resume"), did),
 				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
@@ -1075,7 +1029,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(postErrorDeltaFile);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("18.resume"), did),
+				String.format(graphQL("resume"), did),
 				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {});
 
@@ -1086,12 +1040,12 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test19Acknowledge() throws IOException {
+	void testAcknowledge() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postErrorDeltaFile(did));
 
 		List<AcknowledgeResult> acknowledgeResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("19.acknowledge"), did),
+				String.format(graphQL("acknowledge"), did),
 				"data." + DgsConstants.MUTATION.Acknowledge,
 				new TypeRef<>() {});
 
@@ -1107,13 +1061,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test25Cancel() throws IOException {
+	void testCancel() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
 		deltaFileRepo.save(deltaFile);
 
 		List<CancelResult> cancelResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("25.cancel"), did),
+				String.format(graphQL("cancel"), did),
 				"data." + DgsConstants.MUTATION.Cancel,
 				new TypeRef<>() {
 				});
@@ -1128,7 +1082,7 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(postCancelDeltaFile(did), afterMutation);
 
 		List<CancelResult> alreadyCancelledResult = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("25.cancel"), did),
+				String.format(graphQL("cancel"), did),
 				"data." + DgsConstants.MUTATION.Cancel,
 				new TypeRef<>() {
 				});
@@ -1169,14 +1123,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test20ValidateAuthority() throws IOException {
+	void testValidateAuthority() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("20.validateAuthority"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("validateAuthority", did));
 
 		verifyActionEventResults(postValidateAuthorityDeltaFile(did), "sampleEgress.SampleEgressAction");
 
@@ -1196,14 +1147,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test22Egress() throws IOException {
+	void testEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("22.egress"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("egress", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postEgressDeltaFile(did), deltaFile);
@@ -1223,10 +1171,7 @@ class DeltaFiCoreApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("20.validateAuthority"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("validateAuthority", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 
@@ -1246,10 +1191,7 @@ class DeltaFiCoreApplicationTests {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("20.validateAuthority"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("validateAuthority", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 
@@ -1265,12 +1207,12 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test23Replay() throws IOException {
+	void testReplay() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postEgressDeltaFile(did));
 
 		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("23.replay"), did),
+				String.format(graphQL("replay"), did),
 				"data." + DgsConstants.MUTATION.Replay,
 				new TypeRef<>() {});
 
@@ -1289,11 +1231,11 @@ class DeltaFiCoreApplicationTests {
 		expected.getActions().get(1).setName("sampleIngress.SampleLoadAction");
 		expected.getSourceInfo().setFilename("newFilename");
 		expected.getSourceInfo().setFlow("theFlow");
-		expected.getSourceInfo().setMetadata(List.of(new KeyValue("AuthorizedBy", "ABC"), new KeyValue("sourceInfo.filename.original", "input.txt"), new KeyValue("sourceInfo.flow.original", INGRESS_FLOW_NAME), new KeyValue("removeMe.original", "whatever"), new KeyValue("AuthorizedBy.original", "XYZ"), new KeyValue("anotherKey", "anotherValue")));
+		expected.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "sourceInfo.filename.original", "input.txt", "sourceInfo.flow.original", INGRESS_FLOW_NAME, "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
 		verifyActionEventResults(expected, "sampleIngress.SampleLoadAction");
 
 		List<RetryResult> secondResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("23.replay"), did),
+				String.format(graphQL("replay"), did),
 				"data." + DgsConstants.MUTATION.Replay,
 				new TypeRef<>() {});
 
@@ -1303,7 +1245,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test23ReplayContentDeleted() throws IOException {
+	void testReplayContentDeleted() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile contentDeletedDeltaFile = postEgressDeltaFile(did);
 		contentDeletedDeltaFile.setContentDeleted(OffsetDateTime.now());
@@ -1311,7 +1253,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(contentDeletedDeltaFile);
 
 		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("23.replay"), did),
+				String.format(graphQL("replay"), did),
 				"data." + DgsConstants.MUTATION.Replay,
 				new TypeRef<>() {});
 
@@ -1326,15 +1268,13 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testSourceMetadataUnion() throws IOException {
-		DeltaFile deltaFile1 = buildDeltaFile("did1", List.of(
-				new KeyValue("key", "val1")));
-		DeltaFile deltaFile2 = buildDeltaFile("did2", List.of(
-				new KeyValue("key", "val2")));
+		DeltaFile deltaFile1 = buildDeltaFile("did1", Map.of("key", "val1"));
+		DeltaFile deltaFile2 = buildDeltaFile("did2", Map.of("key", "val2"));
 		List<DeltaFile> deltaFiles = List.of(deltaFile1, deltaFile2);
 		deltaFileRepo.saveAll(deltaFiles);
 
 		List<UniqueKeyValues> metadataUnion = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("24.source"), "did1", "did2"),
+				String.format(graphQL("source"), "did1", "did2"),
 				"data." + DgsConstants.QUERY.SourceMetadataUnion,
 				new TypeRef<>() {
 				});
@@ -1390,10 +1330,7 @@ class DeltaFiCoreApplicationTests {
 	private void verifyFiltered(DeltaFile deltaFile, String filteredAction, boolean filteringAllowed) throws IOException {
 		deltaFileRepo.save(deltaFile);
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("filter"), deltaFile.getDid(), filteredAction),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(filterActionEvent(deltaFile.getDid(), filteredAction));
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(deltaFile.getDid());
 		Action action = actual.getActions().stream().filter(a -> a.getName().equals(filteredAction)).findFirst().orElse(null);
@@ -1403,7 +1340,9 @@ class DeltaFiCoreApplicationTests {
 			assertEquals(ActionState.FILTERED, action.getState());
 			assertEquals(DeltaFileStage.COMPLETE, actual.getStage());
 			assertTrue(actual.getFiltered());
-			assertEquals("you got filtered", actual.getActions().stream().filter(a -> a.getState() == ActionState.FILTERED).findFirst().orElse(null).getFilteredCause());
+			Optional<Action> result = actual.getActions().stream().filter(a -> a.getState() == ActionState.FILTERED).findFirst();
+			assertTrue(result.isPresent());
+			assertEquals("you got filtered", result.get().getFilteredCause());
 
 			Mockito.verify(actionEventQueue, never()).putActions(any());
 		} else {
@@ -1414,16 +1353,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void test22EgressDeleteCompleted() throws IOException {
+	void testEgressDeleteCompleted() throws IOException {
 		deltaFiPropertiesService.getDeltaFiProperties().getDelete().setOnCompletion(true);
 
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
-		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				String.format(graphQL("22.egress"), did),
-				"data." + DgsConstants.MUTATION.ActionEvent,
-				DeltaFile.class);
+		deltaFilesService.handleActionEvent(actionEvent("egress", did));
 
 		Optional<DeltaFile> deltaFile = deltaFileRepo.findById(did);
 		assertTrue(deltaFile.isPresent());
@@ -1916,54 +1852,6 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals("new-name", updated.getName());
 		assertEquals(100, updated.getPriority());
-	}
-
-	@Test
-	void testResolveFlowAssignment() {
-		saveFirstRule(dgsQueryExecutor);
-		assertEquals(FLOW_NAME1, resolveFlowAssignment(dgsQueryExecutor, SourceInfo.builder()
-				.flow("").filename(FILENAME_REGEX).build()));
-		assertNull(resolveFlowAssignment(dgsQueryExecutor, SourceInfo.builder()
-				.flow("").filename("not-found").build()));
-	}
-
-	@Test
-	void addDeltaFile() {
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-				IngressGraphQLQuery.newRequest().input(INGRESS_INPUT).build(),
-				DELTA_FILE_PROJECTION_ROOT
-		);
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQLQueryRequest.serialize(),
-				"data." + DgsConstants.MUTATION.Ingress,
-				DeltaFile.class);
-		assertThat(deltaFile.getDid()).isEqualTo(UUID.fromString(deltaFile.getDid()).toString());
-		assertThat(deltaFile.getSourceInfo().getFilename()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFilename());
-		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
-		assertThat(deltaFile.getSourceInfo().getMetadata()).isEqualTo(INGRESS_INPUT.getSourceInfo().getMetadata());
-		assertThat(deltaFile.getLastProtocolLayerContent().get(0).getContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
-		assertTrue(deltaFile.getEnrichment().isEmpty());
-		assertTrue(deltaFile.getDomains().isEmpty());
-		assertTrue(deltaFile.getFormattedData().isEmpty());
-	}
-
-	@Test
-	void addDeltaFileNoMetadata() {
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
-				IngressGraphQLQuery.newRequest().input(INGRESS_INPUT_EMPTY_METADATA).build(),
-				DELTA_FILE_PROJECTION_ROOT
-		);
-		DeltaFile deltaFile = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQLQueryRequest.serialize(),
-				"data." + DgsConstants.MUTATION.Ingress,
-				DeltaFile.class);
-		assertThat(deltaFile.getDid()).isEqualTo(UUID.fromString(deltaFile.getDid()).toString());
-		assertThat(deltaFile.getSourceInfo().getFlow()).isEqualTo(INGRESS_INPUT.getSourceInfo().getFlow());
-		assertTrue(deltaFile.getSourceInfo().getMetadata().isEmpty());
-		assertThat(deltaFile.getLastProtocolLayerContent().get(0).getContentReference()).isEqualTo(INGRESS_INPUT.getContent().get(0).getContentReference());
-		assertTrue(deltaFile.getEnrichment().isEmpty());
-		assertTrue(deltaFile.getDomains().isEmpty());
-		assertTrue(deltaFile.getFormattedData().isEmpty());
 	}
 
 	@Test
@@ -2507,9 +2395,9 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.addIndexedMetadata(Map.of("a.1", "first", "common", "value"));
 		deltaFile1.setEnrichment(List.of(new Enrichment("enrichment1", null, null)));
 		deltaFile1.setContentDeleted(MONGO_NOW);
-		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value2"))));
+		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
 		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
-		deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename1").formatAction("formatAction1").metadata(List.of(new KeyValue("formattedKey1", "formattedValue1"), new KeyValue("formattedKey2", "formattedValue2"))).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
+		deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename1").formatAction("formatAction1").metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
@@ -2522,7 +2410,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setDomains(List.of(new Domain("domain1", null, null), new Domain("domain2", null, null)));
 		deltaFile2.addIndexedMetadata(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
-		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", List.of()));
+		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
 		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").build()));
 		deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename2").formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));
 		deltaFile2.setEgressed(true);
@@ -2537,7 +2425,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setDomains(List.of(new Domain("domain3", null, null)));
 		deltaFile3.addIndexedMetadata(Map.of("b.2", "first", "common", "value"));
 		deltaFile3.setEnrichment(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
-		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", List.of()));
+		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of()));
 		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").build()));
 		deltaFile3.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename3").formatAction("formatAction3").egressActions(List.of("EgressAction2")).build()));
 		deltaFile3.setEgressed(true);
@@ -2603,11 +2491,11 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile3, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(true).build(), deltaFile3, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(keyValuePairs("common", "value")).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(keyValuePairs("a.1", "first")).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(keyValuePairs("a.1", "first", "common", "value")).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(keyValuePairs("a.1", "first", "common", "value", "extra", "missing")).build());
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(keyValuePairs("a.1", "first", "common", "miss")).build());
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("common", "value")).build(), deltaFile3, deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first")).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first", "common", "value")).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first", "common", "value", "extra", "missing")).build());
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first", "common", "miss")).build());
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlowz")).build());
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow")).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow2")).build(), deltaFile2);
@@ -3358,14 +3246,6 @@ class DeltaFiCoreApplicationTests {
 		pluginVariableRepo.deleteAll();
 	}
 
-	private List<KeyValue> keyValuePairs(String ... pairs) {
-		List<KeyValue> keyValues = new ArrayList<>();
-		for (int i = 0; i < pairs.length; i++) {
-			keyValues.add(new KeyValue(pairs[i], pairs[++i]));
-		}
-		return keyValues;
-	}
-
 	@Test
 	void domains() {
 		deltaFileRepo.insert(DeltaFile.newBuilder()
@@ -3511,10 +3391,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(INGRESS_RESULT.getDid(), response.getBody());
 
-		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
-		Mockito.verify(ingressService).ingressData(is.capture(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE));
-		// TODO: EOF inputStream?
-		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
+		Mockito.verify(ingressService).ingressData(any(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE));
 
 		Map<String, String> tags = tagsFor("ingress", INGRESS_ACTION, FLOW, null);
 		Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_IN, tags, 1);
@@ -3698,12 +3575,12 @@ class DeltaFiCoreApplicationTests {
 
 		OffsetDateTime timestamp = MONGO_NOW;
 
-		deltaFileRepo.setContentDeletedByDidIn(List.of("1", "3", "4"), MONGO_NOW, "MyPolicy");
+		deltaFileRepo.setContentDeletedByDidIn(List.of("1", "3", "4"), timestamp, "MyPolicy");
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
-		deltaFile1.setContentDeleted(MONGO_NOW);
+		deltaFile1.setContentDeleted(timestamp);
 		deltaFile1.setContentDeletedReason("MyPolicy");
 		deltaFile1.setVersion(2);
-		deltaFile3.setContentDeleted(MONGO_NOW);
+		deltaFile3.setContentDeleted(timestamp);
 		deltaFile3.setContentDeletedReason("MyPolicy");
 		deltaFile3.setVersion(2);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile3, deltaFile2, deltaFile1));

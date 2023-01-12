@@ -39,7 +39,6 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.jetbrains.annotations.NotNull;
@@ -135,7 +134,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                         decompressionType = String.join(".", archiveType, compressionType);
                     } catch (ArchiveException e) {
                         ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-                        Content content = new Content(contentName, Collections.emptyList(), reference);
+                        Content content = new Content(contentName, Collections.emptyMap(), reference);
                         result.addContent(content);
                         decompressionType = compressionType;
                     }
@@ -191,7 +190,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressGzip(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
         try (GzipCompressorInputStream decompressed = new GzipCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-            Content content = new Content(name, Collections.emptyList(), reference);
+            Content content = new Content(name, Collections.emptyMap(), reference);
             result.addContent(content);
         } catch (ObjectStorageException e) {
             throw new DecompressionTransformException("Unable to store content", e);
@@ -203,7 +202,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressXZ(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
         try (XZCompressorInputStream decompressed = new XZCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-            Content content = new Content(name, Collections.emptyList(), reference);
+            Content content = new Content(name, Collections.emptyMap(), reference);
             result.addContent(content);
         } catch (ObjectStorageException e) {
             throw new DecompressionTransformException("Unable to store content", e);
@@ -215,7 +214,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressZ(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
         try (ZCompressorInputStream decompressed = new ZCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-            Content content = new Content(name, Collections.emptyList(), reference);
+            Content content = new Content(name, Collections.emptyMap(), reference);
             result.addContent(content);
         } catch (ObjectStorageException e) {
             throw new DecompressionTransformException("Unable to store content", e);
@@ -231,7 +230,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
             if (entry.isDirectory()) continue;
             Content content = Content.newBuilder()
                     .name(entry.getName())
-                    .metadata(List.of(new KeyValue("lastModified", entry.getLastModifiedDate().toString())))
+                    .metadata(Map.of("lastModified", entry.getLastModifiedDate().toString()))
                     .build();
 
             contentToBytes.put(content, archive.readAllBytes());

@@ -21,14 +21,6 @@ from typing import Dict, List, NamedTuple
 from deltafi.storage import ContentService, ContentReference
 
 
-def _keyval_to_metadata(keyval: List[Dict[str, str]]):
-    return {item['key']: item['value'] for item in keyval}
-
-
-def _metadata_to_keyval(metadata: Dict[str, str]):
-    return [{'key': k, 'value': v} for (k, v) in metadata.items()]
-
-
 class Content(NamedTuple):
     name: str
     metadata: Dict[str, str]
@@ -38,13 +30,13 @@ class Content(NamedTuple):
         return {
             'name': self.name,
             'contentReference': self.content_reference.json(),
-            'metadata': _metadata_to_keyval(self.metadata)
+            'metadata': self.metadata
         }
 
     @classmethod
     def from_dict(cls, content: dict):
         name = content['name']
-        metadata = _keyval_to_metadata(content.get('metadata', []))
+        metadata = content.get('metadata', {})
         content_reference = ContentReference.from_dict(content['contentReference'])
         return Content(name=name,
                        metadata=metadata,
@@ -107,7 +99,7 @@ class FormattedData(NamedTuple):
         filename = formatted_data['filename']
         format_action = formatted_data['formatAction']
         content_reference = ContentReference.from_dict(formatted_data['contentReference'])
-        metadata = _keyval_to_metadata(formatted_data.get('metadata', []))
+        metadata = formatted_data.get('metadata', {})
         return FormattedData(filename=filename,
                              format_action=format_action,
                              content_reference=content_reference,
@@ -123,7 +115,7 @@ class ProtocolLayer(NamedTuple):
     def from_dict(cls, layer: dict):
         action = layer['action']
         content = [Content.from_dict(item) for item in layer['content']]
-        metadata = _keyval_to_metadata(layer.get('metadata', []))
+        metadata = layer.get('metadata', {})
         return ProtocolLayer(action=action,
                              content=content,
                              metadata=metadata)
@@ -138,7 +130,7 @@ class SourceInfo(NamedTuple):
     def from_dict(cls, source_info: dict):
         filename = source_info['filename']
         flow = source_info['flow']
-        metadata = _keyval_to_metadata(source_info.get('metadata', []))
+        metadata = source_info.get('metadata', {})
         return SourceInfo(filename=filename,
                           flow=flow,
                           metadata=metadata)

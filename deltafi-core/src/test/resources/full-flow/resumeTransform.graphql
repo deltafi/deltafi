@@ -17,26 +17,16 @@
 #
 
 mutation {
-    actionEvent(
-        event: {
-            did: "%1$s"
-            action: "sampleEgress.AuthorityValidateAction"
-            start: "2021-07-11T13:44:22.183Z"
-            stop: "2021-07-11T13:44:22.184Z"
-            type: ERROR
-            error: {
-                cause: "Authority XYZ not recognized"
-                context: "Dead beef feed face cafe"
-            }
-        }
+    resume(
+        dids: ["%1$s"],
+        removeSourceMetadata: [ "removeMe" ]
+        replaceSourceMetadata: [
+            { key: "AuthorizedBy", value: "ABC"},
+            { key: "anotherKey", value: "anotherValue" }
+        ]
     ) {
         did
-        stage
-        actions {
-            name
-            state
-            errorCause
-            errorContext
-        }
+        success
+        error
     }
 }

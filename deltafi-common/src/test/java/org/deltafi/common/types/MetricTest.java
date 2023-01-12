@@ -19,7 +19,6 @@
 package org.deltafi.common.types;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -31,8 +30,7 @@ class MetricTest {
     void metricName() {
         Metric sut = new Metric("myName", 42);
         assertThat(sut.metricName(), equalTo("myName"));
-        assertThat(sut.getTags(), equalTo(List.of()));
-        assertThat(sut.getTagsAsMap(), equalTo(Map.of()));
+        assertThat(sut.getTags(), equalTo(Map.of()));
     }
 
     @Test
@@ -44,7 +42,7 @@ class MetricTest {
         assertThat(sut.metricName(), equalTo("myName;a=2;z=1"));
         sut.addTag("f", "3");
         assertThat(sut.metricName(), equalTo("myName;a=2;f=3;z=1"));
-        assertThat(sut.getTagsAsMap(), equalTo(Map.of("a","2","z","1","f","3")));
+        assertThat(sut.getTags(), equalTo(Map.of("a","2","z","1","f","3")));
     }
 
     @Test

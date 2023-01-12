@@ -520,7 +520,7 @@ public class DeltaFilesService {
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
                         .sourceInfo(split.getSourceInfo())
-                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, split.getContent(), Collections.emptyList())))
+                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, split.getContent(), Collections.emptyMap())))
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())
                         .formattedData(Collections.emptyList())
@@ -686,12 +686,12 @@ public class DeltaFilesService {
             }
         }
 
-        for (KeyValue keyValue : replaceSourceMetadata) {
+        replaceSourceMetadata.forEach( keyValue -> {
             if (sourceInfo.containsKey(keyValue.getKey())) {
                 sourceInfo.addMetadata(keyValue.getKey() + ".original", sourceInfo.getMetadata(keyValue.getKey()));
             }
             sourceInfo.addMetadata(keyValue.getKey(), keyValue.getValue());
-        }
+        });
     }
 
     public List<RetryResult> replay(@NotNull List<String> dids, String replaceFilename, String replaceFlow, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata)  {
@@ -861,15 +861,12 @@ public class DeltaFilesService {
         DeltaFiles deltaFiles = getDeltaFiles(0, dids.size(), filter, null, List.of(SOURCE_INFO_METADATA));
 
         Map<String, UniqueKeyValues> keyValues = new HashMap<>();
-        deltaFiles.getDeltaFiles().forEach(deltaFile -> {
-            List<KeyValue> deltaFileMeta = deltaFile.getSourceInfo().getMetadata();
-            for (KeyValue meta : deltaFileMeta) {
-                if (!keyValues.containsKey(meta.getKey())) {
-                    keyValues.put(meta.getKey(), new UniqueKeyValues(meta.getKey()));
-                }
-                keyValues.get(meta.getKey()).addValue(meta.getValue());
+        deltaFiles.getDeltaFiles().forEach(deltaFile -> deltaFile.getSourceInfo().getMetadata().forEach((key, value) -> {
+            if (!keyValues.containsKey(key)) {
+                keyValues.put(key, new UniqueKeyValues(key));
             }
-        });
+            keyValues.get(key).addValue(value);
+        }));
         return new ArrayList<>(keyValues.values());
     }
 

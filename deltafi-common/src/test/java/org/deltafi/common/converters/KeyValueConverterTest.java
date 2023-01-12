@@ -96,5 +96,4 @@ class KeyValueConverterTest {
                 new KeyValue("stooge3", null)
         ));
     }
-
 }

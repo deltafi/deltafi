@@ -23,13 +23,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.converters.KeyValueConverter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Data
@@ -40,46 +36,26 @@ public class Metric {
     private String name;
     private long value;
     @Builder.Default
-    private List<KeyValue> tags = new ArrayList<>();
-
-    public
-    Metric(String name, long value, @NotNull Map<String, String> tags) {
-        this.name = name;
-        this.value = value;
-        this.tags = KeyValueConverter.fromMap(tags);
-    }
+    private Map<String, String> tags = new HashMap<>();
 
     public
     Metric(String name, long value) {
         this.name = name;
         this.value = value;
-        this.tags = new ArrayList<>();
-    }
-
-    @JsonIgnore
-    public Map<String, String> getTagsAsMap() {
-        return KeyValueConverter.convertKeyValues(tags);
-    }
-
-    public void addTag(KeyValue keyValue) {
-        Optional<KeyValue> existing = tags.stream().filter(kv -> kv.getKey().equals(keyValue.getKey())).findFirst();
-        if (existing.isPresent()) {
-            existing.get().setValue(keyValue.getValue());
-        } else {
-            tags.add(keyValue);
-        }
-    }
-
-    public Metric addTag(List<KeyValue> keyValues) {
-        if (keyValues == null) { return this; }
-        for (KeyValue keyValue : keyValues) {
-            addTag(keyValue);
-        }
-        return this;
+        this.tags = new HashMap<>();
     }
 
     public Metric addTag(String key, String value) {
-        addTag(new KeyValue(key, value));
+        if (key.contains("=") || key.contains(";")) {
+            throw new IllegalArgumentException("Metric keys cannot contain = or ;");
+        }
+
+        if (value.contains("=") || value.contains(";")) {
+            throw new IllegalArgumentException("Metric keys cannot contain = or ;");
+        }
+
+        tags.put(key, value);
+
         return this;
     }
 
@@ -88,8 +64,9 @@ public class Metric {
         return this;
     }
 
+    @SuppressWarnings("unused")
     public void removeTag(String key) {
-        tags.removeIf(kv -> kv.getKey().equals(key));
+        tags.remove(key);
     }
 
     /**
@@ -98,8 +75,7 @@ public class Metric {
      */
     @JsonIgnore
     public String metricName() {
-
-        String taglist = tags.stream()
+        String taglist = tags.entrySet().stream()
                 .map(t -> t.getKey() + "=" + t.getValue())
                 .sorted()
                 .collect(Collectors.joining(";"));

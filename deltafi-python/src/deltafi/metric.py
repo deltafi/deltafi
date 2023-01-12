@@ -18,10 +18,6 @@
 from typing import Dict, NamedTuple
 
 
-def _tags_to_keyval(tags: Dict[str, str]):
-    return [{'key': k, 'value': v} for (k, v) in tags.items()]
-
-
 class Metric(NamedTuple):
     name: str
     value: int
@@ -31,5 +27,5 @@ class Metric(NamedTuple):
         return {
             'name': self.name,
             'value': self.value,
-            'tags': _tags_to_keyval(self.tags)
+            'tags': self.tags
         }

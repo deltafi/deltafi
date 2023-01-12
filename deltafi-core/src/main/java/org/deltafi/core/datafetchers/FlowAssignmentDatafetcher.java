@@ -70,12 +70,6 @@ public class FlowAssignmentDatafetcher {
         return flowAssignmentService.remove(id);
     }
 
-    @DgsQuery
-    @NeedsPermission.IngressRoutingRuleRead
-    public String resolveFlowFromFlowAssignmentRules(SourceInfo sourceInfo) {
-        return flowAssignmentService.findFlow(sourceInfo);
-    }
-
     @DgsMutation
     @NeedsPermission.IngressRoutingRuleUpdate
     public Result updateFlowAssignmentRule(FlowAssignmentRuleInput rule) {

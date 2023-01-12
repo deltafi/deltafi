@@ -20,20 +20,18 @@ package org.deltafi.test.action;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.common.types.KeyValue;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @SuperBuilder
 public class IOContent {
 
     String name;
-
     String contentType;
 
     @Builder.Default
-    List<KeyValue> metadata = Collections.emptyList();
+    Map<String, String> metadata = new HashMap<>();
 
 }

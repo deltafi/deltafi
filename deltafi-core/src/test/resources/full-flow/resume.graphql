@@ -17,28 +17,12 @@
 #
 
 mutation {
-    actionEvent(
-        event: {
-            did: "%1$s"
-            action: "sampleEnrich.SampleDomainAction"
-            start: "2021-07-11T13:44:22.183Z"
-            stop: "2021-07-11T13:44:22.184Z"
-            type: DOMAIN
-            domain: {
-                indexedMetadata: {
-                    domainKey: "domain metadata"
-                }
-            }
-        }
+    resume(
+        dids: ["%1$s", "fakedid"],
+        replaceSourceMetadata: [ { key: "a" value: "b" } ]
     ) {
         did
-        stage
-        actions {
-            name
-            state
-            errorCause
-            errorContext
-        }
-        indexedMetadata
+        success
+        error
     }
 }

@@ -25,7 +25,9 @@ import org.deltafi.common.types.*;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,7 +41,7 @@ public class Util {
         return emptyDeltaFile(did, FLOW);
     }
 
-    public static DeltaFile buildDeltaFile(String did, List<KeyValue> metadata) {
+    public static DeltaFile buildDeltaFile(String did, Map<String, String> metadata) {
         OffsetDateTime now = OffsetDateTime.now();
         return buildDeltaFile(did, null, DeltaFileStage.INGRESS, now, now, metadata);
     }
@@ -51,7 +53,7 @@ public class Util {
 
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified) {
-        return buildDeltaFile(did, flow, stage, created, modified, new ArrayList<>());
+        return buildDeltaFile(did, flow, stage, created, modified, new HashMap<>());
 
     }
 
@@ -95,7 +97,7 @@ public class Util {
     }
 
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
-                                           OffsetDateTime modified, List<KeyValue> metadata) {
+                                           OffsetDateTime modified, Map<String, String> metadata) {
         Action ingressAction = Action.newBuilder()
                 .name(INGRESS_ACTION)
                 .state(ActionState.COMPLETE)

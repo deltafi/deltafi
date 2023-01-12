@@ -43,6 +43,7 @@ public class EnrichInput {
     Map<String, Domain> domains;
     Map<String, Enrichment> enrichment;
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key) {
         if (sourceMetadata.containsKey(key)) {
             return sourceMetadata.get(key);
@@ -51,6 +52,7 @@ public class EnrichInput {
         }
     }
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key, String defaultValue) {
         return sourceMetadata.getOrDefault(key, defaultValue);
     }
@@ -83,6 +85,7 @@ public class EnrichInput {
         return contentList.get(index);
     }
 
+    @SuppressWarnings("unused")
     public Content firstContent() {
         if (!hasContent()) {
             throw new ExpectedContentException();
@@ -94,9 +97,9 @@ public class EnrichInput {
         return EnrichInput.builder()
                 .sourceFilename(deltaFile.getSourceInfo().getFilename())
                 .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
                 .contentList(deltaFile.getLastProtocolLayerContent())
-                .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                .metadata(deltaFile.getLastProtocolLayerMetadata())
                 .domains(deltaFile.domainMap())
                 .enrichment(deltaFile.enrichmentMap())
                 .build();

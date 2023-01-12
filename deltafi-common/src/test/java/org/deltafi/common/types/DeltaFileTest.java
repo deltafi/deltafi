@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -33,7 +34,7 @@ class DeltaFileTest {
     void testSourceMetadata() {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .sourceInfo(new SourceInfo(null, null,
-                        List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value2"))))
+                        Map.of("key1", "value1", "key2", "value2")))
                 .build();
 
         assertEquals("value1", deltaFile.sourceMetadata("key1"));
@@ -83,10 +84,10 @@ class DeltaFileTest {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .protocolStack(List.of(
                         new ProtocolLayer("action", List.of(
-                                new Content("name", Collections.emptyList(), contentReference1),
-                                new Content("name2", Collections.emptyList(), contentReference2)), Collections.emptyList()),
+                                new Content("name", Collections.emptyMap(), contentReference1),
+                                new Content("name2", Collections.emptyMap(), contentReference2)), Collections.emptyMap()),
                         new ProtocolLayer("action2", List.of(
-                                new Content("name3", Collections.emptyList(), contentReference3)), Collections.emptyList())
+                                new Content("name3", Collections.emptyMap(), contentReference3)), Collections.emptyMap())
                 ))
                 .formattedData(List.of(
                         FormattedData.newBuilder().contentReference(contentReference4).build(),

@@ -58,22 +58,10 @@ type Enrichment {
   mediaType: String!
 }
 
-input EnrichmentInput {
-  name: String!
-  value: String
-  mediaType: String!
-}
-
 type SourceInfo {
   filename: String!
   flow: String!
-  metadata: [KeyValue!]
-}
-
-input SourceInfoInput {
-  filename: String!
-  flow: String!
-  metadata: [KeyValueInput!]
+  metadata: Metadata
 }
 
 input SourceInfoFilter {
@@ -104,14 +92,8 @@ input FlowAssignmentRuleInput {
 
 type Content {
   name: String
-  metadata: [KeyValue!]
+  metadata: Metadata
   contentReference: ContentReference!
-}
-
-input ContentInput {
-  name: String
-  metadata: [KeyValueInput!]
-  contentReference: ContentReferenceInput!
 }
 
 """
@@ -123,20 +105,7 @@ type ContentReference {
   size: Long!
 }
 
-input ContentReferenceInput {
-  segments: [SegmentInput!]!
-  mediaType: String!
-  size: Long
-}
-
 type Segment {
-  uuid: String!
-  offset: Long!
-  size: Long!
-  did: String!
-}
-
-input SegmentInput {
   uuid: String!
   offset: Long!
   size: Long!
@@ -153,20 +122,14 @@ type ProtocolLayer {
   "Content produced by the action"
   content: [Content!]!
   "Additional metadata"
-  metadata: [KeyValue!]
-}
-
-input ProtocolLayerInput {
-  action: String
-  content: [ContentInput!]!
-  metadata: [KeyValueInput!]
+  metadata: Metadata
 }
 
 type FormattedData {
   filename: String!
   formatAction: String!
   contentReference: ContentReference!
-  metadata: [KeyValue!]
+  metadata: Metadata
   egressActions: [String!]!
   validateActions: [String!]!
 }
@@ -210,44 +173,6 @@ type Action {
   filteredCause: String
 }
 
-enum ActionEventType {
-  TRANSFORM
-  LOAD
-  DOMAIN
-  ENRICH
-  FORMAT
-  FORMAT_MANY
-  VALIDATE
-  EGRESS
-  ERROR
-  FILTER
-  SPLIT
-}
-
-input Metric {
-  name: String!
-  value: Long!
-  tags: [KeyValueInput!]
-}
-
-input ActionEventInput {
-  did: String!
-  action: String!
-  start: DateTime!
-  stop: DateTime!
-  type: ActionEventType!
-  transform: TransformEvent
-  load: LoadEvent
-  domain: DomainEvent
-  enrich: EnrichEvent
-  format: FormatEvent
-  formatMany: [FormatEvent]
-  error: ErrorEvent
-  filter: FilterEvent
-  split: [SplitEvent]
-  metrics: [Metric!]
-}
-
 type DeltaFile {
   did: String!
   parentDids: [String!]!
@@ -277,51 +202,6 @@ type DeltaFile {
   filtered: Boolean
   replayed: DateTime
   replayDid: String
-}
-
-input IngressEvent {
-  did: String!
-  sourceInfo: SourceInfoInput!
-  content: [ContentInput!]!
-  created: DateTime!
-}
-
-input TransformEvent {
-  protocolLayer: ProtocolLayerInput!
-}
-
-input LoadEvent {
-  domains: [DomainInput!]!
-  protocolLayer: ProtocolLayerInput!
-}
-
-input DomainEvent {
-  indexedMetadata: Metadata
-}
-
-input EnrichEvent {
-  enrichments: [EnrichmentInput!]!
-  indexedMetadata: Metadata
-}
-
-input ErrorEvent {
-  cause: String!
-  context: String
-}
-
-input FormatEvent {
-  filename: String!
-  contentReference: ContentReferenceInput!
-  metadata: [KeyValueInput!]
-}
-
-input FilterEvent {
-  message: String!
-}
-
-input SplitEvent {
-  sourceInfo: SourceInfoInput!
-  content: [ContentInput!]!
 }
 
 type DeltaFiles {
@@ -390,7 +270,7 @@ input DeltaFilesFilter {
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]
-  indexedMetadata: [KeyValueInput]
+  indexedMetadata: Metadata
   enrichment: [String!]
   egressFlows: [String!]
   contentDeleted: Boolean
@@ -449,7 +329,6 @@ type Query {
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
 
-  resolveFlowFromFlowAssignmentRules(sourceInfo: SourceInfoInput!): String
   getAllFlowAssignmentRules: [FlowAssignmentRule]!
   getFlowAssignmentRule(id: String!): FlowAssignmentRule
 
@@ -503,16 +382,13 @@ type Mutation {
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
 
-  ingress(input: IngressEvent!): DeltaFile!
-  actionEvent(event: ActionEventInput!): DeltaFile!
-
   resume(dids: [String!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [String!]!) : [CancelResult!]!
 
   savePluginVariables(pluginVariablesInput: PluginVariablesInput!) : Boolean!
-  setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput]!) : Boolean!
+  setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
 
   stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!
 }

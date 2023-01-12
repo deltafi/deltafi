@@ -25,7 +25,6 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.DeltaFiles;
 import org.springframework.data.domain.Sort;
@@ -407,8 +406,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getIndexedMetadata())) {
-            List<Criteria> metadataCriteria = filter.getIndexedMetadata().stream()
-                    .map(this::fromIndexedMetadata).filter(Objects::nonNull).collect(Collectors.toList());
+            List<Criteria> metadataCriteria = filter.getIndexedMetadata().entrySet().stream()
+                    .map(e -> fromIndexedMetadata(e.getKey(), e.getValue())).filter(Objects::nonNull).collect(Collectors.toList());
             andCriteria.addAll(metadataCriteria);
         }
 
@@ -446,7 +445,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
 
             if (nonNull(filter.getSourceInfo().getMetadata())) {
-                filter.getSourceInfo().getMetadata().forEach(m -> andCriteria.add(Criteria.where(SOURCE_INFO_METADATA).elemMatch(Criteria.where(KEY).is(m.getKey()).and(VALUE).is(m.getValue()))));
+                filter.getSourceInfo().getMetadata().forEach(keyValue -> {
+                    String searchKey = keyValue.getKey();
+                    if (searchKey.contains(".")) {
+                        searchKey = StringUtils.replace(keyValue.getKey(), ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
+                    }
+                    andCriteria.add(Criteria.where(SOURCE_INFO_METADATA + "." + searchKey).is(keyValue.getValue()));
+                });
             }
         }
 
@@ -476,7 +481,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
 
             if (nonNull(filter.getFormattedData().getMetadata())) {
-                filter.getFormattedData().getMetadata().forEach(m -> andCriteria.add(Criteria.where(FORMATTED_DATA_METADATA).elemMatch(Criteria.where(KEY).is(m.getKey()).and(VALUE).is(m.getValue()))));
+                filter.getFormattedData().getMetadata().forEach(keyValue -> {
+                    String searchKey = keyValue.getKey();
+                    if (searchKey.contains(".")) {
+                        searchKey = StringUtils.replace(keyValue.getKey(), ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
+                    }
+                    andCriteria.add(Criteria.where(FORMATTED_DATA_METADATA + "." + searchKey).is(keyValue.getValue()));
+                });
             }
 
             if (nonNull(filter.getFormattedData().getEgressActions()) && !filter.getFormattedData().getEgressActions().isEmpty()) {
@@ -547,10 +558,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return criteria;
     }
 
-    private Criteria fromIndexedMetadata(KeyValue keyValue) {
-        String key = keyValue.getKey();
-        String value = keyValue.getValue();
-
+    private Criteria fromIndexedMetadata(String key, String value) {
         if (null == key || null == value) {
             return null;
         }

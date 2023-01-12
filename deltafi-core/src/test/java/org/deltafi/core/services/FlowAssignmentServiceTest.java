@@ -31,6 +31,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -54,7 +55,7 @@ class FlowAssignmentServiceTest {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
         assertEquals(REGEX_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("abcd", "", List.of())));
+                new SourceInfo("abcd", "", Map.of())));
     }
 
     @Test
@@ -62,7 +63,7 @@ class FlowAssignmentServiceTest {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
         assertNull(flowAssignmentService.findFlow(
-                new SourceInfo("123abc", "", List.of())));
+                new SourceInfo("123abc", "", Map.of())));
     }
 
     @Test
@@ -70,7 +71,7 @@ class FlowAssignmentServiceTest {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
         assertNull(flowAssignmentService.findFlow(
-                new SourceInfo("file", "", List.of(new KeyValue("key1", "val1")))));
+                new SourceInfo("file", "", Map.of("key1", "val1"))));
     }
 
     @Test
@@ -78,9 +79,7 @@ class FlowAssignmentServiceTest {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
         assertEquals(META_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("file", "", List.of(
-                        new KeyValue("key2", "val2"),
-                        new KeyValue("key1", "val1")))));
+                new SourceInfo("file", "", Map.of("key2", "val2", "key1", "val1"))));
     }
 
     @Test
@@ -88,7 +87,7 @@ class FlowAssignmentServiceTest {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
         assertNull(flowAssignmentService.findFlow(
-                new SourceInfo("def", "", List.of(new KeyValue("x", "x")))));
+                new SourceInfo("def", "", Map.of("x", "x"))));
     }
 
     @Test
@@ -96,8 +95,7 @@ class FlowAssignmentServiceTest {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
         assertEquals(BOTH_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("def", "", List.of(
-                        new KeyValue("key3", "val3")))));
+                new SourceInfo("def", "", Map.of("key3", "val3"))));
     }
 
     @Test
@@ -105,8 +103,7 @@ class FlowAssignmentServiceTest {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
         assertEquals(PASS_DOWN_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("file", "", List.of(
-                        new KeyValue("key3", "val3")))));
+                new SourceInfo("file", "", Map.of("key3", "val3"))));
     }
 
     @Test

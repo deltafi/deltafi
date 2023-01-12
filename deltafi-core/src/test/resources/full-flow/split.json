@@ -1,0 +1,57 @@
+{
+    "did": "%1$s",
+    "action": "sampleIngress.SampleLoadAction",
+    "start": "2021-07-11T13:44:22.183Z",
+    "stop": "2021-07-11T13:44:22.184Z",
+    "type": "SPLIT",
+    "split": [
+        {
+            "sourceInfo": {
+                "filename": "file1",
+                "flow": "childFlow",
+                "metadata": {}
+            },
+            "content": [
+                {
+                    "contentReference": {
+                        "segments": [{
+                            "uuid": "objectName",
+                            "offset": 0,
+                            "size": 250,
+                            "did": "%1$s" }],
+                        "mediaType": "application/octet-stream"
+                    }
+                },
+                {
+                    "contentReference": {
+                        "segments": [{
+                            "uuid": "objectName2",
+                            "offset": 0,
+                            "size": 400,
+                            "did": "%1$s" }],
+                        "mediaType": "application/xml"
+                    }
+                }
+            ]
+        },
+        {
+            "sourceInfo": {
+                "filename": "file2",
+                "flow": "childFlow",
+                "metadata": {}
+            },
+            "content": [
+                {
+                    "contentReference": {
+                        "segments": [{
+                            "uuid": "objectName",
+                            "offset": 250,
+                            "size": 250,
+                            "did": "%1$s" }],
+                        "mediaType": "application/octet-stream"
+                    }
+                }
+            ]
+        }
+    ]
+}

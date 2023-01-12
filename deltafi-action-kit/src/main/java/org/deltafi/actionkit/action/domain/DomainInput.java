@@ -37,6 +37,7 @@ public class DomainInput {
     Map<String, String> metadata;
     Map<String, Domain> domains;
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key) {
         if (sourceMetadata.containsKey(key)) {
             return sourceMetadata.get(key);
@@ -45,6 +46,7 @@ public class DomainInput {
         }
     }
 
+    @SuppressWarnings("unused")
     public String sourceMetadata(String key, String defaultValue) {
         return sourceMetadata.getOrDefault(key, defaultValue);
     }
@@ -69,8 +71,8 @@ public class DomainInput {
         return DomainInput.builder()
                 .sourceFilename(deltaFile.getSourceInfo().getFilename())
                 .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadataAsMap())
-                .metadata(deltaFile.getLastProtocolLayerMetadataAsMap())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
+                .metadata(deltaFile.getLastProtocolLayerMetadata())
                 .domains(deltaFile.domainMap())
                 .build();
     }

@@ -21,7 +21,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.*;
-import org.deltafi.common.converters.KeyValueConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,23 +49,11 @@ public class SplitResult extends Result implements LoadResultType {
      * @param metadata Source metadata for the new DeltaFile
      * @param content Content of the new DeltaFile
      */
-    public void addChild(String filename, String flow, List<KeyValue> metadata, List<Content> content) {
+    public void addChild(String filename, String flow, Map<String, String> metadata, List<Content> content) {
         splitEvents.add(SplitEvent.newBuilder()
                 .sourceInfo(new SourceInfo(filename, flow, metadata))
                 .content(content)
                 .build());
-    }
-
-    /**
-     * Add a new child to the result that will be ingressed as a new DeltaFile
-     * @param filename Ingress file name for the new DeltaFile
-     * @param flow Flow for the new DeltaFile to be ingressed on
-     * @param metadata Source metadata for the new DeltaFile
-     * @param content Content of the new DeltaFile
-     */
-    @SuppressWarnings("unused")
-    public void addChild(String filename, String flow, Map<String, String> metadata, List<Content> content) {
-        addChild(filename, flow, KeyValueConverter.fromMap(metadata), content);
     }
 
     @Override
