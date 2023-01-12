@@ -1,66 +1,79 @@
 # Domain Action
 
-## Interface
+## Java
+
+### Interface
 
 A DomainAction must implement the `extractAndValidate` method which receives:
 * `ActionContext` describing the action's environment and current execution
-* `ActionParameters` as specified in the template specialization, unless this is a SimpleDomainAction
-* `SourceInfo` including the flow, filename, and source metadata
-* `Map<String, String>` metadata emitted by the LoadAction
-* `Map<String, Domain>` named domains and their values
+* `ActionParameters` as specified in the template specialization
+* `DomainInput` provides source, metadata, and content input to the action
 
-An DomainAction also must implement the `getRequiresDomain` method.  This method return a list of
+A DomainAction also must implement the `getRequiresDomain` method.  This method return a list of
 domains that are required to be present in DeltaFiles that it receives. This can return
 `DeltaFiConstants.MATCHES_ANY` if you can accept any domain, which would then be defined in a flow yaml.
 
-## Return Types
+### Domain Input
 
-The `extractAndValidate` method should return a `DomainResult`, `ErrorResult`, or `FilterResult`.
+```java
+public class DomainInput {
+    // Original filename
+    String sourceFilename;
+    // Ingress flow assigned to the DeltaFile
+    String ingressFlow;
+    // Metadata passed in with the DeltaFile on ingress
+    Map<String, String> sourceMetadata;
+    // Metadata emitted by the Load Action
+    Map<String, String> metadata;
+    // Named domains and their values
+    Map<String, Domain> domains;
+```
+
+### Return Types
+
+The `extractAndValidate` method must return a `DomainResultType`, which is currently implemented by `DomainResult`, and `ErrorResult`.
 
 A `DomainResult` contains a map of key value pairs that will be indexed in the system.
 
-## Example
+### Example
 
 ```java
 package org.deltafi.passthrough.action;
 
-import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.annotation.Action;
 import org.deltafi.actionkit.action.domain.DomainAction;
+import org.deltafi.actionkit.action.domain.DomainInput;
 import org.deltafi.actionkit.action.domain.DomainResult;
+import org.deltafi.actionkit.action.domain.DomainResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Domain;
-import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.*;
 import org.deltafi.passthrough.param.RoteDomainParameters;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
-@Action(requiresDomains = DeltaFiConstants.MATCHES_ANY,
-        description = "Populate enrichment with the parameterized key/value pairs")
+@Component
+@SuppressWarnings("unused")
 public class RoteDomainAction extends DomainAction<RoteDomainParameters> {
 
     @SuppressWarnings("unused")
     public RoteDomainAction() {
-        super(RoteDomainParameters.class);
+        super("Populate enrichment with the parameterized key/value pairs");
     }
 
-    public Result extractAndValidate(@NotNull ActionContext context,
-                                     @NotNull RoteDomainParameters params,
-                                     @NotNull SourceInfo sourceInfo,
-                                     @NotNull Map<String, String> metadata,
-                                     @NotNull Map<String, Domain> domainList) {
+    public DomainResultType extractAndValidate(
+        @NotNull ActionContext context,
+        @NotNull RoteDomainParameters params,
+        @NotNull DomainInput input) {
 
-        if (null == domainList || domainList.isEmpty()) {
+        if (null == input.domains || input.domains.isEmpty()) {
             return new ErrorResult(context, "no domain was sent");
         }
 
         DomainResult result = new DomainResult(context);
         if (null != params.getFieldsToIndex()) {
-            params.getFieldsToIndex().forEach(field -> result.addIndexedMetadata(field, metadata.getOrDefault(field, "missing")));
+            params.getFieldsToIndex().forEach(field -> result.addIndexedMetadata(field, input.metadata.getOrDefault(field, "missing")));
         }
 
         return result;
@@ -71,4 +84,49 @@ public class RoteDomainAction extends DomainAction<RoteDomainParameters> {
         return List.of(DeltaFiConstants.MATCHES_ANY);
     }
 }
+```
+## Python
+
+### Interface
+
+A DomainAction must implement the `domain` method which receives:
+* `Context` describing the action's environment and current execution
+* `BaseModel` contains flow parameters for use by the action, matching the type specified by `param_class()` method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
+* `DomainInput` provides source, metadata, and content input to the action
+
+A list of required domains must be passed to the DomainAction constructor.
+
+### Domain Input
+
+```python
+class DomainInput(NamedTuple):
+    source_filename: str
+    ingress_flow: str
+    source_metadata: Dict[str, str]
+    metadata: Dict[str, str]
+    domains: Dict[str, Domain]
+```
+
+### Return Types
+
+The `domain()` method must return one of: `DomainResult`, or `ErrorResult`.
+
+A `DomainResult` contains a map of key value pairs that will be indexed in the system.
+
+### Example
+
+```python
+from deltafi.action import DomainAction
+from deltafi.domain import Context
+from deltafi.input import DomainInput
+from deltafi.result import DomainResult
+from pydantic import BaseModel
+
+
+class HelloWorldDomainAction(DomainAction):
+    def __init__(self):
+        super().__init__('Hello domain', ['pyHelloWorld'])
+
+    def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
+        return DomainResult().index_metadata('domainKey', 'domainValue')
 ```

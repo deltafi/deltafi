@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Auth now sends JSON to entity resolver.
 - Version reckoning Gradle plugin will accept x.y.z-nn as a valid tagged version
 - Changed data structure for storing various metadata fields in the DeltaFile from a list of key values to a map
+- Updated documentation for latest plugin structure, action interfaces, and Python action kit
 
 ### Deprecated
 

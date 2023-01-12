@@ -41,6 +41,7 @@ Ingress flows steer data through a series of 0 to many Transform Actions and int
 ```json
 {
   "name": "passthrough",
+  "type": "INGRESS",
   "description": "Flow that passes data through unchanged",
   "transformActions": [ {
       "name": "PassthroughTransformAction",
@@ -67,6 +68,7 @@ by Domains and by other Enrichment, controlling what data is routed to the Actio
 ```json
 {
   "name": "artificial-enrichment",
+  "type": "ENRICH",
   "description": "A synthetic enrichment that acts on binary domain objects",
   "domainActions": [{
     "name": "BinaryDomainAction",
@@ -99,6 +101,7 @@ Egress Flows subscribe to Domains and Enrichment in the same manner as Enrich Fl
 ```json
 {
   "name": "passthrough",
+  "type": "EGRESS",
   "description": "Egress flow that passes data through unchanged",
   "includeIngressFlows": [
     "passthrough"

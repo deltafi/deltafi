@@ -72,7 +72,7 @@ new Docute({
       title: 'Plugins',
       children: [
         {
-          title: 'Building Plugins',
+          title: 'Creating a Plugin',
           link: '/plugins'
         },
         {

@@ -1,72 +1,168 @@
 # Format Action
 
-## Interface
+## Java
+
+### Interface
 
 A FormatAction must implement the `format` method which receives:
 * `ActionContext` describing the action's environment and current execution
-* `ActionParameters` as specified in the template specialization, unless this is a SimpleFormatAction
-* `SourceInfo` including the flow, filename, and source metadata
-* `List<Content>` or `Content` emitted by the LoadAction, depending on whether this is a MultipartFormatAction or not
-* `Map<String, String>` metadata emitted by the LoadAction
-* `Map<String, Domain>` named domains and their values
-* `Map<String, Enrichment>` named enrichment and their values
+* `ActionParameters` as specified in the template specialization
+* `FormatInput` provides source, metadata, and content input to the action
 
-A FormatAction also must implement getRequiresDomain and getRequiresEnrichment methods that return the domains and
-enrichment that allow it to select which DeltaFiles it receives. Either of these can return
-`DeltaFiConstants.MATCHES_ANY` if you do not wish to filter based on domain or enrichment.
+A FormatAction also must implement the `getRequiresDomain()` method, and my implemented the `getRequiresEnrichment()` method.  These methods return a list of
+domains and enrichment that are required to be present in DeltaFiles that it receives. Either of these can return
+`DeltaFiConstants.MATCHES_ANY` if you can accept any domain or enrichment, which would then be defined in a flow yaml.
+If you require either just domains or just enrichment, you can set the other to an empty list.
 
-## Return Types
+### Format Input
 
-The `format` method should return a `FormatResult`, `FormatManyResult`, `ErrorResult`, or `FilterResult`.
+```java
+public class FormatInput {
+    // Original filename
+    String sourceFilename;
+    // Ingress flow assigned to the DeltaFile
+    String ingressFlow;
+    // Metadata passed in with the DeltaFile on ingress
+    Map<String, String> sourceMetadata;
+    // Content emitted by the last ingress flow action, or as
+    // received at Ingress if there was no action-generated content.
+    List<Content> contentList;
+    // Metadata produced by the Load Action
+    Map<String, String> metadata;
+    // named domains and their values
+    Map<String, Domain> domains;
+    // named enrichment and their values
+    Map<String, Enrichment> enrichment;
+```
+
+### Return Types
+
+The `format` method must return a `FormatResultType`, which is currently implemented by `FormatResult`, `FormatManyResult`, `ErrorResult`, and `FilterResult`.
 
 A `FormatResult` includes the content and metadata created by the `FormatAction`.
 
 A `FormatManyResult` is like a list of `FormatResult` where each entry will be validated and egressed independently.
 
-## Example
+### Example
 
 ```java
 package org.deltafi.passthrough.action;
 
-import org.deltafi.actionkit.action.Result;
-import org.deltafi.actionkit.action.annotation.Action;
+import org.deltafi.actionkit.action.format.FormatAction;
+import org.deltafi.actionkit.action.format.FormatInput;
 import org.deltafi.actionkit.action.format.FormatResult;
-import org.deltafi.actionkit.action.format.SimpleFormatAction;
+import org.deltafi.actionkit.action.format.FormatResultType;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.Domain;
-import org.deltafi.common.types.Enrichment;
-import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
-@Action(requiresDomains = DeltaFiConstants.MATCHES_ANY,
-        description = "Format the result created by the load action with no transformation")
-public class RoteFormatAction extends SimpleFormatAction {
-  public Result format(@NotNull ActionContext context,
-                       @NotNull SourceInfo sourceInfo,
-                       @NotNull Content content,
-                       @NotNull Map<String, String> metadata,
-                       @NotNull Map<String, Domain> domains,
-                       @NotNull Map<String, Enrichment> enrichment) {
-    FormatResult result = new FormatResult(context, sourceInfo.getFilename());
-    result.setContentReference(content.getContentReference());
-    result.addMetadata(sourceInfo.getMetadata(), "sourceInfo.");
-    result.addMetadata(content.getMetadata());
-    return result;
-  }
+@Component
+@SuppressWarnings("unused")
+public class RoteFormatAction extends FormatAction<ActionParameters> {
+    public RoteFormatAction() {
+        super("Format the result created by the load action with no transformation");
+    }
 
-  @Override
-  public List<String> getRequiresDomains() {
-    return List.of(DeltaFiConstants.MATCHES_ANY);
-  }
+    public FormatResultType format(
+        @NotNull ActionContext context,
+        @NotNull ActionParameters parameters,
+        @NotNull FormatInput input) {
 
-  @Override
-  public List<String> getRequiresEnrichment() {
-    return List.of(DeltaFiConstants.MATCHES_ANY);
-  }
+        FormatResult result = new FormatResult(context, input.getSourceFilename());
+        if (input.getContentList().size() > 0) {
+            Content content = input.firstContent();
+            result.setContentReference(content.getContentReference());
+            result.addMetadata(content.getMetadata());
+        }
+        result.addMetadata(input.getSourceMetadata(), "sourceInfo.");
+
+        return result;
+    }
+
+    @Override
+    public List<String> getRequiresDomains() {
+        return List.of(DeltaFiConstants.MATCHES_ANY);
+    }
+
+    @Override
+    public List<String> getRequiresEnrichments() {
+        return List.of(DeltaFiConstants.MATCHES_ANY);
+    }
 }
+```
+
+## Python
+
+### Interface
+
+A FormatAction must implement the `format` method which receives:
+* `Context` describing the action's environment and current execution
+* `BaseModel` contains flow parameters for use by the action, matching the type specified by `param_class()` method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
+* `FormatInput` provides source, metadata, and content input to the action
+
+A list of required domains, and list of required enrichment  must be passed to the FormatAction constructor.
+If you require either just domains or just enrichment, you can set the other to an empty list.
+
+### Format Input
+
+A description of each Input field can be found in the Java section above.
+
+```python
+class FormatInput(NamedTuple):
+    source_filename: str
+    ingress_flow: str
+    source_metadata: Dict[str, str]
+    content: List[Content]
+    metadata: dict
+    domains: Dict[str, Domain]
+    enrichment: Dict[str, Domain]
+```
+
+### Return Types
+
+The `format()` method must return one of: `FormatResult`, `FormatManyResult`, `ErrorResult`, or `FilterResult`.
+
+A `FormatResult` includes the content and metadata created by the `FormatAction`.
+
+A `FormatManyResult` is like a list of `FormatResult` where each entry will be validated and egressed independently.
+
+### Example
+
+```python
+from deltafi.action import FormatAction
+from deltafi.domain import Context
+from deltafi.input import FormatInput
+from deltafi.result import FormatResult, FormatManyResult
+from pydantic import BaseModel
+from random import randrange
+
+
+class HelloWorldFormatAction(FormatAction):
+    def __init__(self):
+        super().__init__('Format or formatMany', ['pyHelloWorld'], ['helloWorld'])
+
+    def format(self, context: Context, params: BaseModel, format_input: FormatInput):
+        content_reference = format_input.content[0].content_reference
+        data = f"{context.content_service.get_str(content_reference)}\nHelloWorldFormatAction did its thing"
+        new_content_reference = context.content_service.put_str(context.did, data, 'test/plain')
+        format_result = FormatResult("formattedHello", new_content_reference)
+        format_result.add_metadata("segment", "1")
+
+        if randrange(5) != 0:
+            return format_result
+        else:
+            format_many_result = FormatManyResult()
+            format_many_result.add_format_result(format_result)
+
+            data = f"{data} a second time"
+            second_content_reference = context.content_service.put_str(context.did, data, 'test/plain')
+            second_format_result = FormatResult("formattedHello", second_content_reference)
+            second_format_result.add_metadata("segment", "2")
+            format_many_result.add_format_result(second_format_result)
+
+            return format_many_result
 ```
