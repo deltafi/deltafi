@@ -1,6 +1,13 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    activemodel (7.0.4)
+      activesupport (= 7.0.4)
+    activesupport (7.0.4)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      i18n (>= 1.6, < 2)
+      minitest (>= 5.1)
+      tzinfo (~> 2.0)
     awesome_print (1.9.2)
     aws-eventstream (1.2.0)
     aws-partitions (1.687.0)
@@ -57,6 +64,8 @@ GEM
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
+    i18n (1.12.0)
+      concurrent-ruby (~> 1.0)
     ice_nine (0.11.2)
     jmespath (1.6.2)
     jsonpath (0.9.9)
@@ -78,8 +87,13 @@ GEM
       rb-inotify (~> 0.9, >= 0.9.10)
     method_source (1.0.0)
     mini_mime (1.1.2)
+    minitest (5.17.0)
     mongo (2.18.2)
       bson (>= 4.14.1, < 5.0.0)
+    mongoid (8.0.3)
+      activemodel (>= 5.1, < 7.1, != 7.0.0)
+      mongo (>= 2.18.0, < 3.0.0)
+      ruby2_keywords (~> 0.0.5)
     multi_json (1.15.0)
     multi_xml (0.6.0)
     mustermann (3.0.0)
@@ -132,6 +146,8 @@ GEM
     tilt (2.0.11)
     timers (4.3.5)
     to_regexp (0.2.1)
+    tzinfo (2.0.5)
+      concurrent-ruby (~> 1.0)
     unicorn (5.8.0)
       kgio (~> 2.6)
       raindrops (~> 0.7)
@@ -152,6 +168,7 @@ DEPENDENCIES
   httparty
   k8s-ruby
   mongo
+  mongoid
   pry
   rack-test
   rainbows

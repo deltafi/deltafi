@@ -71,6 +71,7 @@ class AuthApi < Sinatra::Application
                DeletePolicyRead
                DeltaFileContentView
                DeltaFileMetadataView
+               EventRead
                FlowView
                IngressRoutingRuleRead
                MetricsView

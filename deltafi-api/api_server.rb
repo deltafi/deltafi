@@ -27,10 +27,10 @@ require 'sinatra/streaming'
 require 'sinatra/quiet_logger'
 require 'sinatra/namespace'
 
-$sse_service = DF::API::V1::ServerSentEvents::Service.new
+$sse_service = DF::API::V1::ServerSentEvents::Service.new unless ENV['RUNNING_IN_CLUSTER'].nil?
 
 class ApiServer < Sinatra::Base
-  %w[helpers routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
+  %w[helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
 
   helpers Sinatra::Streaming
 
@@ -136,7 +136,7 @@ class ApiServer < Sinatra::Base
       raise JSON::ParserError, "Failed to parse content reference: #{e.message}"
     end
 
-    get '/events' do
+    get '/sse' do
       authorize! :UIAccess
 
       content_type 'text/event-stream'
@@ -148,10 +148,6 @@ class ApiServer < Sinatra::Base
     end
   end
 
-  error StandardError do
-    build_error_response(env['sinatra.error'].message)
-  end
-
   error Sinatra::NotFound do
     build_error_response('404 Not Found')
   end
@@ -160,6 +156,10 @@ class ApiServer < Sinatra::Base
     permission = env['sinatra.error'].permission
     req = "#{request.request_method} #{request.env['PATH_INFO']}"
     audit("request '#{req}' was denied due to missing permission '#{permission}'")
+    build_error_response(env['sinatra.error'].message)
+  end
+
+  error StandardError do
     build_error_response(env['sinatra.error'].message)
   end
 

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Add new referencedBytes field to the DeltaFile that sums the size of all data referenced by that DeltaFile, even if the data was stored as part of another DeltaFile
+- Added Event API
 
 ### Changed
 - Auth now sends JSON to entity resolver.
@@ -29,7 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [0.99.8] - 2023-01-09
 
 ### Added
-- Added `nocore` directive to `cluster loc build` command to shortcut and avoid building the core when developing plugins 
+- Added `nocore` directive to `cluster loc build` command to shortcut and avoid building the core when developing plugins
 
 ### Removed
 - CLI: `stop` command removed (was a confusing alias for uninstall)

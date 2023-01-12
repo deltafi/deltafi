@@ -49,4 +49,9 @@ Roles,RoleCreate,Grants the ability to create Roles
 Roles,RoleRead,Grants the ability to view Roles
 Roles,RoleUpdate,Grants the ability to edit Roles
 Roles,RoleDelete,Grants the ability to delete Roles
+Events,EventCreate,Grants the ability to create Events
+Events,EventRead,Grants the ability to view Events
+Events,EventUpdate,Grants the ability to edit Events
+Events,EventDelete,Grants the ability to delete Events
+Events,EventAcknowledge,Grants the ability to acknowledge Events
 Stress Tests,StressTest,Grants the ability to execute Stress Tests

@@ -43,5 +43,17 @@ class ApiServer < Sinatra::Base
 
       raise Deltafi::AuthError.new(permission: permission) if ([permission.to_s, 'Admin'] & user_permissions).empty?
     end
+
+    def read_json_body
+      request.body.rewind
+      JSON.parse(request.body.read, symbolize_names: true)
+    rescue StandardError => e
+      raise "Unable to parse request body as JSON. #{e.message}"
+    end
+
+    def error(error_message, status_code = 500)
+      status status_code
+      { error: error_message, timestamp: Time.now }.to_json
+    end
   end
 end

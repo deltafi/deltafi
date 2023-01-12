@@ -36,17 +36,25 @@ module Deltafi
     ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
   end
 
-  def self.mongo_client
-    mongo_host = ENV['MONGO_HOST'] || 'deltafi-mongodb'
-    mongo_port = ENV['MONGO_PORT'] || '27017'
-    mongo_database = ENV['MONGO_DATABASE'] || 'deltafi'
-    mongo_auth_source = ENV['MONGO_AUTH_DATABASE'] || 'deltafi'
-    mongo_user = ENV['MONGO_USER'] || 'mongouser'
-    mongo_password = ENV['MONGO_PASSWORD']
-
-    Mongo::Client.new(["#{mongo_host}:#{mongo_port}"], database: mongo_database, user: mongo_user, password: mongo_password, auth_source: mongo_auth_source)
+  def self.mongo_config
+    {
+      host: ENV['MONGO_HOST'] || 'deltafi-mongodb',
+      port: ENV['MONGO_PORT'] || '27017',
+      database: ENV['MONGO_DATABASE'] || 'deltafi',
+      auth_source: ENV['MONGO_AUTH_DATABASE'] || 'deltafi',
+      user: ENV['MONGO_USER'] || 'mongouser',
+      password: ENV['MONGO_PASSWORD']
+    }
   end
 
+  def self.mongo_client
+    config = mongo_config
+    Mongo::Client.new(["#{config[:host]}:#{config[:post]}"],
+                      database: config[:database],
+                      user: config[:user],
+                      password: config[:password],
+                      auth_source: config[:auth_source])
+  end
 
   def self.graphql(query)
     graphql_url = File.join(BASE_URL, 'graphql')
