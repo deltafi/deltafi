@@ -21,23 +21,7 @@ import useGraphQL from "./useGraphQL";
 export default function useIngressRoutingQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  // Resolves Flow from Flow Assignment Rules
-  const resolveFlowFromFlowAssignmentRules = (fileName: string, flowName: string, metadata: object) => {
-    const query = {
-      resolveFlowFromFlowAssignmentRules: {
-        __args: {
-          sourceInfo: {
-            filename: fileName,
-            flow: flowName,
-            metadata: metadata,
-          },
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "resolveFlowFromFlowAssignmentRules");
-  };
-
-  // Enable a delete policy
+  // Get all Flow Assignment Rules
   const getAllFlowAssignmentRules = () => {
     const query = {
       getAllFlowAssignmentRules: {
@@ -55,7 +39,7 @@ export default function useIngressRoutingQueryBuilder() {
     return sendGraphQLQuery(query, "getAllFlowAssignmentRules");
   };
 
-  // Get current Flow Assignment Rule
+  // Get Flow Assignment Rule with name
   const getFlowAssignmentRule = (flowName: string) => {
     const query = {
       getFlowAssignmentRule: {
@@ -113,7 +97,6 @@ export default function useIngressRoutingQueryBuilder() {
   };
 
   return {
-    resolveFlowFromFlowAssignmentRules,
     getAllFlowAssignmentRules,
     getFlowAssignmentRule,
     loadFlowAssignmentRules,

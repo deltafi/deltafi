@@ -135,8 +135,8 @@ const metadataReferences = computed(() => {
     let actions = [layer.action, layer.formatAction].flat().filter((n) => n);
     for (const action of actions) {
       let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
-      if (metadata.length > 0) {
-        content[action] = metadata;
+      if (Object.keys(metadata).length > 0) {
+        content[action] = Object.entries(metadata).map(([key, value]) => ({key,value}));
       }
     }
     return content;

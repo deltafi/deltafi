@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Updated Server Sent Events endpoint (#312)
+- Adjusted metadata fields that changed from KeyValues to maps
 
 ## [0.99.8]
 

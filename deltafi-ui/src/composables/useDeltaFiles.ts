@@ -38,10 +38,7 @@ export default function useDeltaFiles() {
         sourceInfo: {
           filename: true,
           flow: true,
-          metadata: {
-            key: true,
-            value: true,
-          },
+          metadata: true,
         },
         stage: true,
         testMode: true,
@@ -75,10 +72,7 @@ export default function useDeltaFiles() {
         filtered: true,
         formattedData: {
           filename: true,
-          metadata: {
-            key: true,
-            value: true,
-          },
+          metadata: true,
           formatAction: true,
           egressActions: true,
           contentReference: {
@@ -94,16 +88,10 @@ export default function useDeltaFiles() {
         },
         protocolStack: {
           action: true,
-          metadata: {
-            key: true,
-            value: true,
-          },
+          metadata: true,
           content: {
             name: true,
-            metadata: {
-              key: true,
-              value: true
-            },
+            metadata: true,
             contentReference: {
               segments: {
                 did: true,

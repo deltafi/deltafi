@@ -262,7 +262,7 @@ const allMetadata = computed(() => {
     for (const action of actions) {
       let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
       if (metadata.length > 0) {
-        content[action] = metadata;
+        content[action] = Object.entries(metadata).map(([key, value]) => ({key,value}));
       }
     }
     return content;

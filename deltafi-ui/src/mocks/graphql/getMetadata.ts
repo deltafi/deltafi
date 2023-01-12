@@ -18,36 +18,15 @@
 
 const generateData = () => {
   return {
-    metadata: [
-      {
-        key: "city 1",
-        value: ["a", "b", "c"],
-      },
-      {
-        key: "state 2",
-        value: ["vfg"],
-      },
-      {
-        key: "county 3",
-        value: ["a"],
-      },
-      {
-        key: "grate 4",
-        value: ["gdeds"],
-      },
-      {
-        key: "district 5",
-        value: ["ghr", "fed"],
-      },
-      {
-        key: "money 6",
-        value: ["bdrf"],
-      },
-      {
-        key: "hotel 7",
-        value: ["dcv"],
-      },
-    ],
+    metadata: {
+      "city 1": ["a", "b", "c"],
+      "state 2": ["vfg"],
+      "county 3": ["a"],
+      "grate 4": ["gdeds"],
+      "district 5": ["ghr", "fed"],
+      "money 6": ["bdrf"],
+      "hotel 7": ["dcv"]
+    }
   };
 };
 
