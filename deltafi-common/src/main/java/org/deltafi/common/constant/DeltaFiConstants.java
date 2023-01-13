@@ -21,30 +21,31 @@ public class DeltaFiConstants {
 
     private DeltaFiConstants(){}
 
+    public static final String ADMIN_PERMISSION = "Admin";
     public static final String AUTO_RESOLVE_FLOW_NAME = "auto-resolve";
     public static final String DGS_QUEUE = "dgs";
     public static final String INGRESS_ACTION = "IngressAction";
     public static final String MATCHES_ANY = "any";
     public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
     public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
+    public static final String PERMISSIONS_HEADER = "X-User-Permissions";
+    public static final String SURVEY_ACTION = "SurveyAction";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS = "SyntheticEgressActionForTestIngress";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS = "SyntheticEgressActionForTestEgress";
     public static final String USER_HEADER = "X-User-Name";
-    public static final String PERMISSIONS_HEADER = "X-User-Permissions";
-    public static final String ADMIN_PERMISSION = "Admin";
 
     // Metric names
-    public static final String FILES_ERRORED = "files_errored";
+    public static final String BYTES_IN = "bytes_in";
+    public static final String BYTES_OUT = "bytes_out";
     public static final String FILES_DROPPED = "files_dropped";
+    public static final String FILES_ERRORED = "files_errored";
     public static final String FILES_FILTERED = "files_filtered";
     public static final String FILES_IN = "files_in";
     public static final String FILES_OUT = "files_out";
-    public static final String BYTES_IN = "bytes_in";
-    public static final String BYTES_OUT = "bytes_out";
 
     // Tag names
     public static final String ACTION = "action";
-    public static final String SOURCE = "source";
-    public static final String INGRESS_FLOW = "ingressFlow";
     public static final String EGRESS_FLOW = "egressFlow";
+    public static final String INGRESS_FLOW = "ingressFlow";
+    public static final String SOURCE = "source";
 }

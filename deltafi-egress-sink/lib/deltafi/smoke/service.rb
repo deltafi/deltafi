@@ -34,6 +34,8 @@ module Deltafi
       GRAPHQL_URL = 'http://deltafi-core-service/graphql'
       GET_FLOWS = '{"query":"{ getRunningFlows { ingress { name flowStatus { state } } enrich { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
       INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
+      SURVEY_URL = 'http://deltafi-ingress-service/survey'
+
       def initialize
         @smoke = {}
         @logger = Deltafi::Logger.new($stdout)
@@ -106,6 +108,7 @@ module Deltafi
 
         timeout_smoke
         send_smoke
+        send_survey
       end
 
       def send_smoke
@@ -122,6 +125,20 @@ module Deltafi
           @smoke[did] = { filename: uuid, sent: Time.now }
         else
           @logger.error "Failed to POST to #{INGRESS_URL}: #{response.code} #{response.body}"
+        end
+      end
+
+      def send_survey
+        count = Random.rand(100)
+        bytes = Random.rand(1000000)
+
+        response = HTTParty.post("#{SURVEY_URL}?flow=smoke-survey&count=#{count}&bytes=#{bytes}",
+                                 body: nil,
+                                 headers: { 'Content-Type' => 'application/octet-stream',
+                                            'X-User-Name' => 'egress-sink',
+                                            'X-User-Permissions' => 'DeltaFileIngress'})
+        unless response.code == 200
+          @logger.error "Failed to POST to #{SURVEY_URL}: #{response.code} #{response.body}"
         end
       end
     end

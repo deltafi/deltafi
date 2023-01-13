@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Add new referencedBytes field to the DeltaFile that sums the size of all data referenced by that DeltaFile, even if the data was stored as part of another DeltaFile
 - Added Event API
+- Add lightweight metrics-only survey endpoint (https://{base}/survey?flow={flow}&count={count}&bytes={bytes})
 
 ### Changed
 - Auth now sends JSON to entity resolver.

@@ -78,7 +78,7 @@ public class IngressRest {
                                               @RequestHeader(value = "Flow", required = false) String flow,
                                               @RequestHeader(value = "Metadata", required = false) String metadata,
                                               @RequestHeader(HttpHeaders.CONTENT_TYPE) String contentType,
-                                              @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false) String username) {
+                                              @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false, defaultValue = "system") String username) {
         username = StringUtils.isNotBlank(username) ? username : "system";
 
         if (! ingressService.isEnabled()) {

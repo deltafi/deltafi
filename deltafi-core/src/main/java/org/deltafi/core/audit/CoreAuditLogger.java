@@ -54,6 +54,7 @@ public class CoreAuditLogger extends SimpleInstrumentation {
     private final Map<String, String> permissionMap = new HashMap<>();
 
     @Override
+    @NotNull
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         String path = parameters.getExecutionStepInfo().getPath().getSegmentName();
         boolean isMutation = isMutation(parameters);
@@ -90,6 +91,12 @@ public class CoreAuditLogger extends SimpleInstrumentation {
     public void logIngress(String userName, String fileName) {
         try (MDC.MDCCloseable ignored = MDC.putCloseable("user", userName)) {
             log.info("ingress {}", fileName);
+        }
+    }
+
+    public void logSurvey(String userName, String flow, Long bytes, Long count) {
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", userName)) {
+            log.info("survey {} flow {} bytes {} count", flow, bytes, count);
         }
     }
 
