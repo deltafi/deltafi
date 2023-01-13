@@ -1,7 +1,7 @@
 /*
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ const generateData = () => {
       permissions: [
         "Admin"
       ],
-      created_at: "2022-11-30T19:55:51.760Z",
-      updated_at: "2022-11-30T19:55:51.760Z"
+      created_at: "2021-2023-11-30T19:55:51.760Z",
+      updated_at: "2021-2023-11-30T19:55:51.760Z"
     },
     {
       id: 2,
@@ -33,8 +33,8 @@ const generateData = () => {
       permissions: [
         "DeltaFileIngress"
       ],
-      created_at: "2022-11-30T19:55:51.763Z",
-      updated_at: "2022-11-30T19:55:51.763Z"
+      created_at: "2021-2023-11-30T19:55:51.763Z",
+      updated_at: "2021-2023-11-30T19:55:51.763Z"
     },
     {
       id: 3,
@@ -56,8 +56,8 @@ const generateData = () => {
         "UIAccess",
         "VersionsView"
       ],
-      created_at: "2022-11-30T19:55:51.765Z",
-      updated_at: "2022-11-30T19:55:51.765Z"
+      created_at: "2021-2023-11-30T19:55:51.765Z",
+      updated_at: "2021-2023-11-30T19:55:51.765Z"
     }
   ]
 };

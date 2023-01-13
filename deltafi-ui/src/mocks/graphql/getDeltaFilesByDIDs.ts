@@ -1,7 +1,7 @@
 /*
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ const generateData = (count: number) => {
     return {
       did: faker.datatype.uuid(),
       stage: "ERROR",
-      created: "2022-03-03T19:23:20.823Z",
-      modified: "2022-03-03T19:23:20.888Z",
+      created: "2021-2023-03-03T19:23:20.823Z",
+      modified: "2021-2023-03-03T19:23:20.888Z",
       sourceInfo: {
         filename: faker.system.commonFileName("txt"),
         flow: "mock.ingressFlow",

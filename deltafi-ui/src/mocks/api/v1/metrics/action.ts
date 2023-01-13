@@ -1,7 +1,7 @@
 /*
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ const generateData = () => {
         "stix2_1.Stix2_1EgressAction": {},
       },
     },
-    timestamp: "2022-06-23 07:57:51 +0000",
+    timestamp: "2021-2023-06-23 07:57:51 +0000",
   };
 };
 
