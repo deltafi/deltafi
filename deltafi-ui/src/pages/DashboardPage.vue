@@ -18,11 +18,13 @@
 
 <template>
   <div class="dashboard">
-    <PageHeader heading="Dashboard" />
+    <PageHeader heading="Dashboard">
+      <Button class="p-button p-button-outlined deltafi-input-field" icon="fa fa-sync-alt" label="Refresh" @click="refreshDashboard" />
+    </PageHeader>
     <div class="row">
       <div v-for="(components, column) in columns" :key="column" :class="`col-6 ${column}`">
         <div v-for="component of components" :key="component">
-          <Component :is="loadComponent(component)" />
+          <Component :is="loadComponent(component)" :key="refreshKey" />
         </div>
       </div>
     </div>
@@ -30,8 +32,12 @@
 </template>
 
 <script setup>
+import Button from "primevue/button";
 import PageHeader from "@/components/PageHeader.vue";
-import { defineAsyncComponent, reactive } from "vue";
+import { defineAsyncComponent, reactive, ref } from "vue";
+
+const refreshKey = ref(0)
+const refreshDashboard = () => refreshKey.value += 1;
 
 const columns = reactive({
   one: [
