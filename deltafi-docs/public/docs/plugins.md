@@ -81,7 +81,7 @@ org.gradle.logging.level=INFO
 systemProp.org.gradle.internal.http.socketTimeout=120000
 systemProp.org.gradle.internal.http.connectionTimeout=120000
 
-deltafiVersion=0.99.8
+deltafiVersion=0.100.0
 hierynomusLicenseVersion=0.16.1
 
 deltafiMavenRepo=https://gitlab.com/api/v4/projects/25005502/packages/maven
@@ -217,7 +217,7 @@ systemProp.org.gradle.internal.http.socketTimeout=120000
 systemProp.org.gradle.internal.http.connectionTimeout=120000
 
 palantirDockerVersion=0.22.1
-deltafiVersion=0.99.8
+deltafiVersion=0.100.0
 localDockerRegistry=localhost:5000
 ```
 
@@ -236,7 +236,7 @@ packages = []
 
 [tool.poetry.dependencies]
 python = "^3.7"
-deltafi = "0.99.8"
+deltafi = "0.100.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -42,6 +42,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Upgrade and Migration
 - Existing deltaFiles will have a referencedBytes field that is set to the value of totalBytes.  New DeltaFiles will have the referencedBytes field set correctly.
+- Upgraded docker base images:
+  - deltafi/deltafi-ruby-base:0.100.0
+  - deltafi/deltafi-spring-base:0.100.0
+  - deltafi/deltafi-kind-node:0.100.0
 
 ## [0.99.8] - 2023-01-09
 
@@ -1033,7 +1037,9 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.6...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.100.0...main
+[0.100.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.8...0.100.0
+[0.99.8]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.6...0.99.8
 [0.99.6]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.5...0.99.6
 [0.99.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.4...0.99.5
 [0.99.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.3...0.99.4
