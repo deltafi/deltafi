@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.99.9
+## [Unreleased] - Next release 0.100.1
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.100.0] - 2023-01-14
 
 ### Added
 - Add new referencedBytes field to the DeltaFile that sums the size of all data referenced by that DeltaFile, even if the data was stored as part of another DeltaFile
@@ -16,17 +34,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Changed data structure for storing various metadata fields in the DeltaFile from a list of key values to a map
 - Updated documentation for latest plugin structure, action interfaces, and Python action kit
 
-### Deprecated
-
 ### Removed
 - GraphQL endpoints for action responses have been removed
 
 ### Fixed
 - Version reckoning Gradle plugin will default to 0.0.0-SNAPSHOT in an untagged repository
-
-### Tech-Debt/Refactor
-
-### Security
 
 ### Upgrade and Migration
 - Existing deltaFiles will have a referencedBytes field that is set to the value of totalBytes.  New DeltaFiles will have the referencedBytes field set correctly.
