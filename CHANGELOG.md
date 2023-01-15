@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.100.1
+## [Unreleased] - Next release 0.100.1 or 1.0.0
 
 ### Added
 
