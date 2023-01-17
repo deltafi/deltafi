@@ -62,7 +62,7 @@ livenessProbe:
 {{- define "initContainersWaitForCore" -}}
 initContainers:
 - name: wait-for-core
-  image: busybox:1.35.0
+  image: busybox:1.36.0
   command:
   - 'sh'
   - '-c'
@@ -75,7 +75,7 @@ initContainers:
 {{- define "initContainersWaitForMongo" -}}
 initContainers:
 - name: wait-for-mongo
-  image: busybox:1.35.0
+  image: busybox:1.36.0
   command:
   - 'sh'
   - '-c'
