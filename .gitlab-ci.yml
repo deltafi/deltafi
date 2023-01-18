@@ -16,7 +16,7 @@ variables:
   DOCKER_DRIVER: overlay2
 
 .gradle:
-  image: gradle:7.5.1-jdk11
+  image: deltafi/deltafi-build:jdk17
   variables:
     GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -143,7 +143,7 @@ publish-gitlab:
     refs:
       - tags
       - main
-  image: gradle:7.3.3-jdk11
+  image: deltafi/deltafi-build:jdk17
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -160,7 +160,7 @@ publish-gitlab:
   only:
     refs:
       - tags
-  image: gradle:7.3.3-jdk11
+  image: deltafi/deltafi-build:jdk17
   before_script:
     - apt update
     - apt-get install -y python3-pip

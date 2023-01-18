@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * <h1>A Gradle plugin for validating Deltafi plugins.</h1>
+ * A Gradle plugin for validating Deltafi plugins.
  * <p>
  * This plugin should be added to the build.gradle file at the root of a project that is a Deltafi plugin.
  * It should be added to the plugins section as follows:

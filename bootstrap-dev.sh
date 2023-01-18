@@ -301,7 +301,7 @@ install_linux_packages() {
   bullet "Installing required packages"
   if tool_exists yum; then
     info "Checking for necessary packages via yum"
-    ${SUDO} yum install -y git curl wget java-11-openjdk java-11-openjdk-devel python3 python3-pip
+    ${SUDO} yum install -y git curl wget java-17-openjdk java-17-openjdk-devel python3 python3-pip
     if ! tool_exists kubectl; then
       cat <<EOF | ${SUDO} tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -319,7 +319,7 @@ EOF
     wait_for_user
     ${SUDO} apt-get install -y ca-certificates curl
     ${SUDO} apt-get update
-    ${SUDO} apt-get install -y uidmap dbus-user-session fuse-overlayfs slirp4netns git wget snapd vim tig tmux openjdk-11-jdk python3 python3-pip
+    ${SUDO} apt-get install -y uidmap dbus-user-session fuse-overlayfs slirp4netns git wget snapd vim tig tmux openjdk-17-jdk python3 python3-pip
     if ! tool_exists kubectl; then
       ${SUDO} snap install --classic kubectl
       mkdir -p ~/.kube/kubens
@@ -338,7 +338,7 @@ EOF
   elif tool_exists apk; then
     info "Checking for necessary packages via apk"
     wait_for_user
-    ${SUDO} apk add ncurses curl git wget vim tig tmux python3 py3-pip openjdk11-jdk kubectx helm yq
+    ${SUDO} apk add ncurses curl git wget vim tig tmux python3 py3-pip openjdk17-jdk kubectx helm yq
     ${SUDO} apk add kubectl --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
     ${SUDO} pip3 install --upgrade -q poetry
   fi
