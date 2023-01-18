@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 public class MetricRepository {
 
     private final MetricRegistry metrics;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final StatsdDeltaReporter reporter;
 
     public MetricRepository(@Value("${STATSD_HOSTNAME:deltafi-graphite}") String statsdHostname,
                             @Value("${STATSD_PORT:8125}") int statsdPort,
@@ -46,14 +48,15 @@ public class MetricRepository {
             metrics = new MetricRegistry();
 
             log.info("Starting statsd reporter connecting to {}:{}", statsdHostname, statsdPort);
-            StatsdDeltaReporter
+            reporter = StatsdDeltaReporter
                     .builder(statsdHostname, statsdPort, metrics)
-                    .build()
-                    .start(periodSeconds, TimeUnit.SECONDS);
+                    .build();
+            reporter.start(periodSeconds, TimeUnit.SECONDS);
             log.info("MetricService initialized.");
         } else {
             log.warn("Metrics are disabled");
             metrics = null;
+            reporter = null;
         }
     }
 
