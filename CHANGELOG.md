@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Corrected Python license headers.
 
 ### Tech-Debt/Refactor
 
@@ -22,7 +23,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Upgrade and Migration
 - Upgrade to MongoDB 5.0.14
 - Upgrade to Redis 7.0.7
-- Upgrade to Minio RELEASE.2023-01-12T02-06-16Z
 - Upgrade to Grafana 9.3.2
 - Upgrade to Promtail 2.7.1
 - Upgrade to Loki 2.7.1

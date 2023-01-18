@@ -16,28 +16,12 @@
 #    limitations under the License.
 #
 
-"""
-   DeltaFi - Data transformation and enrichment platform
-
-   Copyright 2022 DeltaFi Contributors <deltafi@deltafi.org>
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-"""
 import io
-import minio
+import uuid
 from typing import List, NamedTuple
 from urllib.parse import urlparse
-import uuid
+
+import minio
 
 BUCKET = 'storage'
 
@@ -105,7 +89,7 @@ class ContentService:
 
     def get_bytes(self, content_reference: ContentReference):
         return b"".join([self.minio_client.get_object(BUCKET, segment.id(), segment.offset,
-                                            segment.size).read() for segment in content_reference.segments])
+                                                      segment.size).read() for segment in content_reference.segments])
 
     def get_str(self, content_reference: ContentReference):
         return self.get_bytes(content_reference).decode('utf-8')
