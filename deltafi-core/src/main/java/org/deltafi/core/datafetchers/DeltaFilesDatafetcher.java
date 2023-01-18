@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
-  ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+  static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
   ContentStorageService contentStorageService;
 
@@ -87,9 +87,9 @@ public class DeltaFilesDatafetcher {
     DeltaFilesFilter filter = objectMapper.convertValue(dfe.getArgument("filter"), DeltaFilesFilter.class);
     DeltaFileOrder orderBy = objectMapper.convertValue(dfe.getArgument("orderBy"), DeltaFileOrder.class);
 
-    List<String> rawIncludeFields = dfe.getSelectionSet().getFields().stream().filter(f -> f.getFullyQualifiedName().contains("/")).map(this::buildName).collect(Collectors.toList());
+    List<String> rawIncludeFields = dfe.getSelectionSet().getFields().stream().filter(f -> f.getFullyQualifiedName().contains("/")).map(this::buildName).toList();
     // remove subfields -- for example if we have did, sourceInfo, and sourceInfo.flow, this should resolve to did and sourceInfo.flow
-    List<String> includeFields = rawIncludeFields.stream().filter(f -> rawIncludeFields.stream().noneMatch(p -> p.startsWith(f) && !p.equals(f))).collect(Collectors.toList());
+    List<String> includeFields = rawIncludeFields.stream().filter(f -> rawIncludeFields.stream().noneMatch(p -> p.startsWith(f) && !p.equals(f))).toList();
 
     return deltaFilesService.getDeltaFiles(offset, limit, filter, orderBy, includeFields);
   }

@@ -19,8 +19,9 @@ public class EgressInput {
     String ingressFlow;
     // Metadata passed in with the DeltaFile on ingress
     Map<String, String> sourceMetadata;
-*   // structure containing the content references that were created by the FormatAction
+    // structure containing the content references that were created by the FormatAction
     FormattedData formattedData;
+}
 ```
 
 ### Return Types

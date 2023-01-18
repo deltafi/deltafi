@@ -40,7 +40,7 @@ class K8sDeployerServiceTest {
             .build();
 
 
-    K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null);
+    final K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null);
 
     @BeforeEach
     public void setDeploymentTemplate() {

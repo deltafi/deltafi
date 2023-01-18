@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.types.Metric;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.common.types.*;
@@ -49,7 +48,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -247,53 +246,52 @@ public class DeltaFilesService {
 
         DeltaFile returnVal;
         switch (event.getType()) {
-            case TRANSFORM:
+            case TRANSFORM -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = transform(deltaFile, event);
-                break;
-            case LOAD:
+            }
+            case LOAD -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = load(deltaFile, event);
-                break;
-            case DOMAIN:
+            }
+            case DOMAIN -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = domain(deltaFile, event);
-                break;
-            case ENRICH:
+            }
+            case ENRICH -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = enrich(deltaFile, event);
-                break;
-            case FORMAT:
+            }
+            case FORMAT -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = format(deltaFile, event);
-                break;
-            case VALIDATE:
+            }
+            case VALIDATE -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = validate(deltaFile, event);
-                break;
-            case EGRESS:
+            }
+            case EGRESS -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = egress(deltaFile, event);
-                break;
-            case ERROR:
+            }
+            case ERROR -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = error(deltaFile, event);
-                break;
-            case FILTER:
+            }
+            case FILTER -> {
                 metrics.add(new Metric(DeltaFiConstants.FILES_FILTERED, 1));
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = filter(deltaFile, event);
-                break;
-            case SPLIT:
+            }
+            case SPLIT -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = split(deltaFile, event);
-                break;
-            case FORMAT_MANY:
+            }
+            case FORMAT_MANY -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = formatMany(deltaFile, event);
-                break;
-            default:
-                throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
+            }
+            default -> throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
         }
 
         return returnVal;
@@ -453,6 +451,7 @@ public class DeltaFilesService {
                         .cause(NO_EGRESS_CONFIGURED_CAUSE)
                         .context(NO_EGRESS_CONFIGURED_CONTEXT)
                         .build())
+                .type(ActionEventType.UNKNOWN)
                 .build();
     }
 
@@ -535,10 +534,10 @@ public class DeltaFilesService {
                 child.recalculateBytes();
 
                 return child;
-            }).collect(Collectors.toList());
+            }).toList();
 
             if (encounteredError.isEmpty()) {
-                deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+                deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).toList());
             }
 
             deltaFile.splitAction(event);
@@ -564,7 +563,7 @@ public class DeltaFilesService {
 
         List<ActionInput> enqueueActions = new ArrayList<>();
 
-        List<String> formatActions = egressFlowService.getAll().stream().map(ef -> ef.getFormatAction().getName()).collect(Collectors.toList());
+        List<String> formatActions = egressFlowService.getAll().stream().map(ef -> ef.getFormatAction().getName()).toList();
 
         if (!formatActions.contains(event.getAction())) {
             deltaFile.errorAction(event, "Attempted to split from an Action that is not a current FormatAction: " + event.getAction(), "");
@@ -591,7 +590,7 @@ public class DeltaFilesService {
                         .metadata(formatInput.getMetadata())
                         .contentReference(formatInput.getContentReference())
                         .egressActions(List.of(egressFlow.getEgressAction().getName()))
-                        .validateActions(egressFlow.getValidateActions().stream().map(ValidateActionConfiguration::getName).collect(Collectors.toList()))
+                        .validateActions(egressFlow.getValidateActions().stream().map(ValidateActionConfiguration::getName).toList())
                         .build();
 
                 child.setFormattedData(List.of(formattedData));
@@ -601,9 +600,9 @@ public class DeltaFilesService {
                 child.recalculateBytes();
 
                 return child;
-            }).collect(Collectors.toList());
+            }).toList();
 
-            deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+            deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).toList());
 
             deltaFile.splitAction(event);
         }
@@ -660,7 +659,7 @@ public class DeltaFilesService {
                     }
                     return result;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         advanceAndSave(advanceAndSaveDeltaFiles);
         return retryResults;
@@ -773,7 +772,7 @@ public class DeltaFilesService {
                     }
                     return result;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         deltaFileRepo.saveAll(childDeltaFiles);
         deltaFileRepo.saveAll(parentDeltaFiles);
@@ -812,7 +811,7 @@ public class DeltaFilesService {
                     }
                     return result;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         deltaFileRepo.saveAll(changedDeltaFiles);
         return results;
@@ -849,7 +848,7 @@ public class DeltaFilesService {
                     }
                     return result;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         deltaFileRepo.saveAll(changedDeltaFiles);
         return results;
@@ -992,7 +991,7 @@ public class DeltaFilesService {
         List <ActionInput> actions = requeuedDeltaFiles.stream()
                 .map(deltaFile -> requeuedActionInput(deltaFile, modified))
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+                .toList();
         if (!actions.isEmpty()) {
             log.warn(actions.size() + " actions exceeded requeue threshold of " + getProperties().getRequeueSeconds() + " seconds, requeuing now");
             enqueueActions(actions);
@@ -1004,7 +1003,7 @@ public class DeltaFilesService {
                 .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
                 .map(action -> toActionInput(action, deltaFile))
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private ActionConfiguration actionConfiguration(String actionName, DeltaFile deltaFile) {
@@ -1044,7 +1043,7 @@ public class DeltaFilesService {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
             log.error(errorMessage);
             ErrorEvent error = ErrorEvent.newBuilder().cause(errorMessage).build();
-            ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(action.getName()).error(error).build();
+            ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(action.getName()).type(ActionEventType.UNKNOWN).error(error).build();
             try {
                 this.error(deltaFile, event);
             } catch (JsonProcessingException ex) {
@@ -1103,13 +1102,13 @@ public class DeltaFilesService {
         contentStorageService.deleteAll(deltaFiles.stream()
                 .map(DeltaFile::storedSegments)
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList()));
+                .toList());
 
         if (deleteMetadata) {
             deleteMetadata(deltaFiles);
         } else {
             deltaFileRepo.setContentDeletedByDidIn(
-                    deltaFiles.stream().map(DeltaFile::getDid).distinct().collect(Collectors.toList()),
+                    deltaFiles.stream().map(DeltaFile::getDid).distinct().toList(),
                     OffsetDateTime.now(),
                     policy);
         }
@@ -1120,7 +1119,7 @@ public class DeltaFilesService {
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {
-        deltaFileRepo.deleteByDidIn(deltaFiles.stream().map(DeltaFile::getDid).distinct().collect(Collectors.toList()));
+        deltaFileRepo.deleteByDidIn(deltaFiles.stream().map(DeltaFile::getDid).distinct().toList());
 
     }
 

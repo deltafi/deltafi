@@ -26,7 +26,6 @@ import org.deltafi.common.types.Content;
 import javax.ws.rs.core.MediaType;
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class ContentStorageService {
@@ -48,7 +47,7 @@ public class ContentStorageService {
                                     throw new RuntimeException(e);
                                 }
                             })
-                            .collect(Collectors.toList())));
+                            .toList()));
                 } catch (RuntimeException e) {
                     throw new ObjectStorageException(e);
                 }
@@ -124,7 +123,7 @@ public class ContentStorageService {
             objectStorageService.removeObjects(CONTENT_BUCKET, segments.stream()
                     .map(Segment::objectName)
                     .distinct()
-                    .collect(Collectors.toList()));
+                    .toList());
         }
     }
 

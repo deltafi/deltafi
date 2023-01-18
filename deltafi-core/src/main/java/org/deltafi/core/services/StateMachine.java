@@ -83,7 +83,7 @@ public class StateMachine {
                 List<ActionInput> enrichActions = enrichFlowService.getRunningFlows().stream()
                         .map(enrichFlow -> advanceEnrichStage(enrichFlow, deltaFile))
                         .flatMap(Collection::stream)
-                        .collect(Collectors.toList());
+                        .toList();
 
                 if (!enrichActions.isEmpty()) {
                     enrichActions.forEach(actionInput -> deltaFile.queueNewAction(actionInput.getActionContext().getName()));
@@ -101,7 +101,7 @@ public class StateMachine {
                 List<ActionInput> egressActions = egressFlowService.getMatchingFlows(deltaFile.getSourceInfo().getFlow()).stream()
                         .map(egressFlow -> advanceEgress(egressFlow, deltaFile))
                         .flatMap(Collection::stream)
-                        .collect(Collectors.toList());
+                        .toList();
 
                 if (deltaFile.getEgress().isEmpty() && egressActions.isEmpty()) {
                     throw new MissingEgressFlowException(deltaFile.getDid());
@@ -142,7 +142,7 @@ public class StateMachine {
                 .filter(domainActionConfiguration -> domainActionReady(domainActionConfiguration, deltaFile))
                 .filter(domainActionConfiguration -> isNewAction(domainActionConfiguration, deltaFile))
                 .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     List<ActionInput> nextEnrichActions(EnrichFlow enrichFlow, DeltaFile deltaFile) {
@@ -150,14 +150,14 @@ public class StateMachine {
                 .filter(enrichActionConfiguration -> enrichActionReady(enrichActionConfiguration, deltaFile))
                 .filter(enrichActionConfiguration -> isNewAction(enrichActionConfiguration, deltaFile))
                 .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     List<ActionInput> advanceEgress(EgressFlow egressFlow, DeltaFile deltaFile) {
         return nextEgressActions(egressFlow, deltaFile).stream()
                 .filter(actionConfiguration -> isNewAction(actionConfiguration, deltaFile))
                 .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, egressFlow.getName()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     List<ActionConfiguration> nextEgressActions(EgressFlow egressFlow, DeltaFile deltaFile) {

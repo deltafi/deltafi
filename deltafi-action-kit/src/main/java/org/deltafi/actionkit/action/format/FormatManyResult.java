@@ -28,7 +28,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Specialized result class for FORMAT actions that generate multiple formatted results to be independently egressed.
@@ -67,7 +66,7 @@ public class FormatManyResult extends Result implements FormatResultType {
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setFormatMany(formatResults.stream().map(f -> f.toEvent().getFormat()).collect(Collectors.toList()));
+        event.setFormatMany(formatResults.stream().map(f -> f.toEvent().getFormat()).toList());
         return event;
     }
 }

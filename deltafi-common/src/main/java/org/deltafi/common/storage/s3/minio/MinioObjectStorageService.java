@@ -34,7 +34,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -87,7 +86,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
             minioClient.uploadSnowballObjects(UploadSnowballObjectsArgs
                             .builder()
                             .bucket(bucket)
-                            .objects(inputStreamMap.entrySet().stream().map(this::createSnowballObject).collect(Collectors.toList()))
+                            .objects(inputStreamMap.entrySet().stream().map(this::createSnowballObject).toList())
                             .build());
         } catch (ErrorResponseException | InsufficientDataException | InternalException |
                  InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
@@ -114,7 +113,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public boolean removeObjects(String bucket, List<String> objectNames) {
-        List<DeleteObject> objectsInStorage = objectNames.stream().map(DeleteObject::new).collect(Collectors.toList());
+        List<DeleteObject> objectsInStorage = objectNames.stream().map(DeleteObject::new).toList();
 
         log.info("Sending command to delete " + objectsInStorage.size() + " objects in storage from minio");
         Iterable<Result<DeleteError>> removeResults =

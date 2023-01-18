@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Upgrade to Promtail 2.7.1
 - Upgrade to Loki 2.7.1
 - Upgrade to Graphite 1.1.10-4
+- Upgrade to Spring Boot 3.0.1
+- Upgrade to DGS 6.0.0
+- Upgrade to DGS Codegen 5.6.5
 - New base image: deltafi/deltafi-spring-base:jdk17
 - Upgrade to Gradle 7.6.0
 

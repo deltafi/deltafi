@@ -44,7 +44,6 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -209,11 +208,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds) {
         List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueSeconds), DeltaFile.class);
         for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            Query query = new Query().addCriteria(Criteria.where(ID).in(batch.stream().map(DeltaFile::getDid).collect(Collectors.toList())));
+            Query query = new Query().addCriteria(Criteria.where(ID).in(batch.stream().map(DeltaFile::getDid).toList()));
             mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueSeconds), DeltaFile.class);
         }
 
-        List<String> dids = filesToRequeue.stream().map(DeltaFile::getDid).collect(Collectors.toList());
+        List<String> dids = filesToRequeue.stream().map(DeltaFile::getDid).toList();
         Query query = Query.query(Criteria.where(ID).in(dids));
         return mongoTemplate.find(query, DeltaFile.class);
     }
@@ -256,7 +255,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     met.set(sum.get() >= bytesToDelete);
                     return !done;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -407,7 +406,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (nonNull(filter.getIndexedMetadata())) {
             List<Criteria> metadataCriteria = filter.getIndexedMetadata().entrySet().stream()
-                    .map(e -> fromIndexedMetadata(e.getKey(), e.getValue())).filter(Objects::nonNull).collect(Collectors.toList());
+                    .map(e -> fromIndexedMetadata(e.getKey(), e.getValue())).filter(Objects::nonNull).toList();
             andCriteria.addAll(metadataCriteria);
         }
 

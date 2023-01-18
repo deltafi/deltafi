@@ -93,8 +93,8 @@ class FlowfileEgressActionTest {
             .build();
     private static final EgressInput EGRESS_INPUT = new EgressInput(ORIG_FILENAME, FLOW, Map.of(), FORMATTED_DATA);
 
-    static Integer NUM_TRIES = 3;
-    static Integer RETRY_WAIT = 10;
+    final static Integer NUM_TRIES = 3;
+    final static Integer RETRY_WAIT = 10;
     private static final HttpEgressParameters PARAMS = new HttpEgressParameters(URL, NUM_TRIES, RETRY_WAIT);
 
     @Mock

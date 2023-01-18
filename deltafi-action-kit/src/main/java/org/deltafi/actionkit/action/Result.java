@@ -38,7 +38,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
 
     protected final ActionContext context;
 
-    protected ArrayList<Metric> metrics = new ArrayList<>();
+    protected final ArrayList<Metric> metrics = new ArrayList<>();
 
 
     public Result(@NotNull ActionContext context) {

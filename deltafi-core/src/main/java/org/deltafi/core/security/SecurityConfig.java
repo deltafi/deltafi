@@ -31,9 +31,11 @@ import org.springframework.security.core.userdetails.UserDetailsByNameServiceWra
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
 
-import javax.servlet.Filter;
+import jakarta.servlet.Filter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -47,7 +49,7 @@ public class SecurityConfig {
 
     @Bean
     public PreAuthenticatedAuthenticationProvider preAuthenticatedAuthenticationProvider(UserDetailsService userDetailsService) {
-        UserDetailsByNameServiceWrapper userDetailsByNameServiceWrapper = new UserDetailsByNameServiceWrapper(userDetailsService);
+        UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> userDetailsByNameServiceWrapper = new UserDetailsByNameServiceWrapper<>(userDetailsService);
         PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
         provider.setPreAuthenticatedUserDetailsService(userDetailsByNameServiceWrapper);
         return provider;
@@ -58,7 +60,7 @@ public class SecurityConfig {
         // Do not secure internal use endpoints that are not exposed
         return webSecurity -> webSecurity
                 .ignoring()
-                .antMatchers("/config/**", "/plugins");
+                .requestMatchers(new AntPathRequestMatcher("/config/**"), new AntPathRequestMatcher("/plugins"));
     }
 
     @Bean

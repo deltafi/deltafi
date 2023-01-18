@@ -35,6 +35,7 @@ import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.IngressFlow;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
@@ -47,7 +48,7 @@ public class FlowPlanDatafetcher {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final ActionFamily INGRESS_FAMILY = ActionFamily.newBuilder().family("INGRESS").actionNames(List.of(DeltaFiConstants.INGRESS_ACTION)).build();
-    private static final Yaml YAML_EXPORTER = new Yaml(new Constructor(), new YamlRepresenter());
+    private static final Yaml YAML_EXPORTER = new Yaml(new Constructor(new LoaderOptions()), new YamlRepresenter());
 
     private final IngressFlowPlanService ingressFlowPlanService;
     private final IngressFlowService ingressFlowService;
@@ -60,65 +61,65 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public IngressFlow saveIngressFlowPlan(IngressFlowPlanInput ingressFlowPlan) {
+    public IngressFlow saveIngressFlowPlan(@InputArgument IngressFlowPlanInput ingressFlowPlan) {
         return ingressFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(ingressFlowPlan, IngressFlowPlan.class));
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
-    public boolean removeIngressFlowPlan(String name) {
+    public boolean removeIngressFlowPlan(@InputArgument String name) {
         return ingressFlowPlanService.removePlan(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
-    public boolean startIngressFlow(String flowName) {
+    public boolean startIngressFlow(@InputArgument String flowName) {
         return ingressFlowService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
-    public boolean stopIngressFlow(String flowName) {
+    public boolean stopIngressFlow(@InputArgument String flowName) {
         return ingressFlowService.stopFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean enableIngressTestMode(String flowName) { return ingressFlowService.enableTestMode(flowName); }
+    public boolean enableIngressTestMode(@InputArgument String flowName) { return ingressFlowService.enableTestMode(flowName); }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean disableIngressTestMode(String flowName) { return ingressFlowService.disableTestMode(flowName); }
+    public boolean disableIngressTestMode(@InputArgument String flowName) { return ingressFlowService.disableTestMode(flowName); }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean enableEgressTestMode(String flowName) { return egressFlowService.enableTestMode(flowName); }
+    public boolean enableEgressTestMode(@InputArgument String flowName) { return egressFlowService.enableTestMode(flowName); }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean disableEgressTestMode(String flowName) { return egressFlowService.disableTestMode(flowName); }
+    public boolean disableEgressTestMode(@InputArgument String flowName) { return egressFlowService.disableTestMode(flowName); }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public EnrichFlow saveEnrichFlowPlan(EnrichFlowPlanInput enrichFlowPlan) {
+    public EnrichFlow saveEnrichFlowPlan(@InputArgument EnrichFlowPlanInput enrichFlowPlan) {
         return enrichFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(enrichFlowPlan, EnrichFlowPlan.class));
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
-    public boolean removeEnrichFlowPlan(String name) {
+    public boolean removeEnrichFlowPlan(@InputArgument String name) {
         return enrichFlowPlanService.removePlan(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
-    public boolean startEnrichFlow(String flowName) {
+    public boolean startEnrichFlow(@InputArgument String flowName) {
         return enrichFlowService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
-    public boolean stopEnrichFlow(String flowName) {
+    public boolean stopEnrichFlow(@InputArgument String flowName) {
         return enrichFlowService.stopFlow(flowName);
     }
 
@@ -130,32 +131,32 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
-    public boolean removeEgressFlowPlan(String name) {
+    public boolean removeEgressFlowPlan(@InputArgument String name) {
         return egressFlowPlanService.removePlan(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
-    public boolean startEgressFlow(String flowName) {
+    public boolean startEgressFlow(@InputArgument String flowName) {
         return egressFlowService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
-    public boolean stopEgressFlow(String flowName) {
+    public boolean stopEgressFlow(@InputArgument String flowName) {
         return egressFlowService.stopFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
-    public boolean savePluginVariables(PluginVariablesInput pluginVariablesInput) {
+    public boolean savePluginVariables(@InputArgument PluginVariablesInput pluginVariablesInput) {
         pluginVariableService.saveVariables(pluginVariablesInput.getSourcePlugin(), pluginVariablesInput.getVariables());
         return true;
     }
 
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
-    public boolean setPluginVariableValues(PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
+    public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
         boolean updated = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (updated) {
             ingressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
@@ -167,61 +168,61 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public IngressFlow getIngressFlow(String flowName) {
+    public IngressFlow getIngressFlow(@InputArgument String flowName) {
         return ingressFlowService.getFlowOrThrow(flowName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EnrichFlow getEnrichFlow(String flowName) {
+    public EnrichFlow getEnrichFlow(@InputArgument String flowName) {
         return enrichFlowService.getFlowOrThrow(flowName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EgressFlow getEgressFlow(String flowName) {
+    public EgressFlow getEgressFlow(@InputArgument String flowName) {
         return egressFlowService.getFlowOrThrow(flowName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowValidate
-    public IngressFlow validateIngressFlow(String flowName) {
+    public IngressFlow validateIngressFlow(@InputArgument String flowName) {
         return ingressFlowService.validateAndSaveFlow(flowName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowValidate
-    public EnrichFlow validateEnrichFlow(String flowName) {
+    public EnrichFlow validateEnrichFlow(@InputArgument String flowName) {
         return enrichFlowService.validateAndSaveFlow(flowName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowValidate
-    public EgressFlow validateEgressFlow(String flowName) {
+    public EgressFlow validateEgressFlow(@InputArgument String flowName) {
         return egressFlowService.validateAndSaveFlow(flowName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public IngressFlowPlan getIngressFlowPlan(String planName) {
+    public IngressFlowPlan getIngressFlowPlan(@InputArgument String planName) {
         return ingressFlowPlanService.getPlanByName(planName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EnrichFlowPlan getEnrichFlowPlan(String planName) {
+    public EnrichFlowPlan getEnrichFlowPlan(@InputArgument String planName) {
         return enrichFlowPlanService.getPlanByName(planName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EgressFlowPlan getEgressFlowPlan(String planName) {
+    public EgressFlowPlan getEgressFlowPlan(@InputArgument String planName) {
         return egressFlowPlanService.getPlanByName(planName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public List<DeltaFiConfiguration> deltaFiConfigs(@InputArgument ConfigQueryInput configQuery) {
+    public List<DeltaFiConfiguration> deltaFiConfigs(ConfigQueryInput configQuery) {
         List<DeltaFiConfiguration> matchingConfigs = ingressFlowService.getConfigs(configQuery);
         matchingConfigs.addAll(enrichFlowService.getConfigs(configQuery));
         matchingConfigs.addAll(egressFlowService.getConfigs(configQuery));
@@ -251,7 +252,7 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.UIAccess
-    public FlowNames getFlowNames(FlowState state) {
+    public FlowNames getFlowNames(@InputArgument FlowState state) {
         return FlowNames.newBuilder()
                 .ingress(ingressFlowService.getFlowNamesByState(state))
                 .enrich(enrichFlowService.getFlowNamesByState(state))

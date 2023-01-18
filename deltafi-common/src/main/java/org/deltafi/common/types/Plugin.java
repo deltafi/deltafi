@@ -23,7 +23,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Document
 @Data
@@ -41,6 +40,6 @@ public class Plugin {
 
   public List<String> actionNames() {
     return Objects.nonNull(getActions()) ?
-            getActions().stream().map(ActionDescriptor::getName).collect(Collectors.toList()) : List.of();
+            getActions().stream().map(ActionDescriptor::getName).toList() : List.of();
   }
 }

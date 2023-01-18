@@ -28,6 +28,6 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Retryable(value= OptimisticLockingFailureException.class, maxAttempts = 10, backoff = @Backoff(value = 0))
+@Retryable(retryFor = OptimisticLockingFailureException.class, maxAttempts = 10, backoff = @Backoff(value = 0))
 public @interface MongoRetryable {
 }

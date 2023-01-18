@@ -31,5 +31,4 @@ public interface PluginImageRepositoryRepo extends MongoRepository<PluginImageRe
      * @return PluginImageRepository if it exists
      */
     Optional<PluginImageRepository> findByPluginGroupIds(String groupId);
-
 }

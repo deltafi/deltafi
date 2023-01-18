@@ -55,7 +55,7 @@ public class SurveyRestTest {
 
         ResponseEntity<String> response = testObj.survey(flow, bytes, count, null);
 
-        Assertions.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCode().value());
 
         Map<String, String> tags = MetricsUtil.tagsFor(ActionType.INGRESS.name(), SURVEY_ACTION, flow, null);
         Mockito.verify(auditLogger).logSurvey("system", flow, bytes, count);
@@ -70,7 +70,7 @@ public class SurveyRestTest {
 
         ResponseEntity<String> response = testObj.survey(null, bytes, count, null);
 
-        Assertions.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCode().value());
 
         Mockito.verifyNoInteractions(auditLogger);
         Mockito.verifyNoInteractions(metricRepository);

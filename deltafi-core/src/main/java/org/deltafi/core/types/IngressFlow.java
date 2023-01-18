@@ -25,7 +25,6 @@ import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Document
 @Data
@@ -52,16 +51,13 @@ public class IngressFlow extends Flow {
 
     @Override
     public List<DeltaFiConfiguration> findByConfigType(ConfigType configType)  {
-        switch (configType) {
-            case INGRESS_FLOW:
-                return List.of(asFlowConfiguration());
-            case TRANSFORM_ACTION:
-                return Objects.nonNull(transformActions) ? new ArrayList<>(transformActions) : Collections.emptyList();
-            case LOAD_ACTION:
-                return List.of(loadAction);
-            default:
-                return Collections.emptyList();
-        }
+        return switch (configType) {
+            case INGRESS_FLOW -> List.of(asFlowConfiguration());
+            case TRANSFORM_ACTION ->
+                    Objects.nonNull(transformActions) ? new ArrayList<>(transformActions) : Collections.emptyList();
+            case LOAD_ACTION -> List.of(loadAction);
+            default -> Collections.emptyList();
+        };
     }
 
     @Override
@@ -73,7 +69,7 @@ public class IngressFlow extends Flow {
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
         IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration(name, loadAction.getName());
-        ingressFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()));
+        ingressFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).toList());
         return ingressFlowConfiguration;
     }
 }

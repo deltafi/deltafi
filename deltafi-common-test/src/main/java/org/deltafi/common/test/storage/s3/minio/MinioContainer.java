@@ -25,8 +25,8 @@ import java.time.Duration;
 public class MinioContainer extends GenericContainer<MinioContainer> {
     private static final int DEFAULT_PORT = 9000;
 
-    protected String accessKey;
-    protected String secretKey;
+    final protected String accessKey;
+    final protected String secretKey;
 
     public MinioContainer(String accessKey, String secretKey) {
         super("minio/minio:RELEASE.2021-02-14T04-01-33Z");

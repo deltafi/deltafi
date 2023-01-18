@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 class IngressFlowPlanConverterTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    IngressFlowPlanConverter ingressFlowPlanConverter = new IngressFlowPlanConverter();
+    final IngressFlowPlanConverter ingressFlowPlanConverter = new IngressFlowPlanConverter();
 
     @Test
     void testConverter() throws IOException {

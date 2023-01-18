@@ -33,7 +33,7 @@ import java.util.Map;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class SplitResult extends Result implements LoadResultType {
-    List<SplitEvent> splitEvents = new ArrayList<>();
+    final List<SplitEvent> splitEvents = new ArrayList<>();
 
     /**
      * @param context Execution context for the current action

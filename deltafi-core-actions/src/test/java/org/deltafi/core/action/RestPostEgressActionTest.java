@@ -78,8 +78,8 @@ class RestPostEgressActionTest {
             .contentReference(CONTENT_REFERENCE)
             .build();
     private static final EgressInput EGRESS_INPUT = new EgressInput(ORIG_FILENAME, FLOW, Collections.emptyMap(), FORMATTED_DATA);
-    static Integer NUM_TRIES = 3;
-    static Integer RETRY_WAIT = 10;
+    static final Integer NUM_TRIES = 3;
+    static final Integer RETRY_WAIT = 10;
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
 
     @Mock

@@ -30,7 +30,6 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.resource.Resource;
-import org.deltafi.common.types.Metric;
 import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
@@ -52,7 +51,6 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.PropertyType;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,7 +89,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
@@ -123,7 +120,7 @@ import static org.mockito.Mockito.never;
 class DeltaFiCoreApplicationTests {
 
 	@Container
-	public static MongoDBContainer mongoDBContainer = new MongoDBContainer(MONGODB_CONTAINER);
+	public final static MongoDBContainer mongoDBContainer = new MongoDBContainer(MONGODB_CONTAINER);
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
@@ -528,15 +525,13 @@ class DeltaFiCoreApplicationTests {
 
 		for (DeletePolicy policy : policyList) {
 			ids.add(policy.getId());
-			if (policy instanceof DiskSpaceDeletePolicy) {
-				DiskSpaceDeletePolicy diskPolicy = (DiskSpaceDeletePolicy) policy;
+			if (policy instanceof DiskSpaceDeletePolicy diskPolicy) {
 				if (diskPolicy.getName().equals(DISK_SPACE_PERCENT_POLICY)) {
 					assertTrue(diskPolicy.isEnabled());
 					assertFalse(diskPolicy.isLocked());
 					foundDiskSpacePercent = true;
 				}
-			} else if (policy instanceof TimedDeletePolicy) {
-				TimedDeletePolicy timedPolicy = (TimedDeletePolicy) policy;
+			} else if (policy instanceof TimedDeletePolicy timedPolicy) {
 				if (timedPolicy.getName().equals(AFTER_COMPLETE_LOCKED_POLICY)) {
 					assertTrue(timedPolicy.isEnabled());
 					assertTrue(timedPolicy.isLocked());
@@ -1643,7 +1638,7 @@ class DeltaFiCoreApplicationTests {
 				.filter(actionFamily -> family.equals(actionFamily.getFamily()))
 				.map(ActionFamily::getActionNames)
 				.flatMap(Collection::stream)
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	@Test
@@ -2100,7 +2095,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testReadDids() {
 		List<String> dids = List.of("a", "b", "c");
-		List<DeltaFile> deltaFiles = dids.stream().map(Util::buildDeltaFile).collect(Collectors.toList());
+		List<DeltaFile> deltaFiles = dids.stream().map(Util::buildDeltaFile).toList();
 		deltaFileRepo.saveAll(deltaFiles);
 
 		List<String> didsRead = deltaFileRepo.readDidsWithContent();
@@ -2141,7 +2136,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void deleteByDidIn() {
-		List<DeltaFile> deltaFiles = Stream.of("a", "b", "c").map(Util::buildDeltaFile).collect(Collectors.toList());
+		List<DeltaFile> deltaFiles = Stream.of("a", "b", "c").map(Util::buildDeltaFile).toList();
 		deltaFileRepo.saveAll(deltaFiles);
 
 		assertEquals(3, deltaFileRepo.count());
@@ -2165,7 +2160,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile3);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 10);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2181,7 +2176,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile3);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 1);
-		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2191,7 +2186,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile1);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", true, 10);
-		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2207,7 +2202,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile4);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, "policy", false, 10);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2218,7 +2213,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile2);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", "policy", false, 10);
-		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2246,7 +2241,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile3);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(250L, null, "policy", 100);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2272,7 +2267,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile6);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 100);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2288,7 +2283,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile3);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 2);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2304,7 +2299,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile3);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, "a", "policy", 100);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()));
+		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 	}
 
 	@Test
@@ -2641,12 +2636,12 @@ class DeltaFiCoreApplicationTests {
 		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC));
 
 		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(3).contains("a", "b", "c");
-		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).collect(Collectors.toList())).hasSize(3).contains("a", "b", "c");
+		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).toList()).hasSize(3).contains("a", "b", "c");
 
 		ingressFlowPlanService.pruneFlowsAndPlans(newCoordinates);
 
 		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(2).contains("a", "b");
-		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).collect(Collectors.toList())).hasSize(2).contains("a", "b");
+		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).toList()).hasSize(2).contains("a", "b");
 	}
 
 	@Test
@@ -3255,7 +3250,7 @@ class DeltaFiCoreApplicationTests {
 				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
 				.build());
 
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery());
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery("query"));
 
 		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQLQueryRequest.serialize(),
@@ -3268,7 +3263,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void domainsEmpty() {
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery());
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery("query"));
 
 		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQLQueryRequest.serialize(),
@@ -3360,8 +3355,8 @@ class DeltaFiCoreApplicationTests {
 	static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
 	static final String USERNAME = "myname";
 	static final String DID = "did";
-	ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), DID));
-	IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW, FILENAME, DID);
+	static final ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), DID));
+	static final IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW, FILENAME, DID);
 
 	private ResponseEntity<String> ingress(String filename, String flow, String metadata, byte[] body, String contentType) {
 		HttpHeaders headers = new HttpHeaders();
@@ -3388,7 +3383,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
 
 		ResponseEntity<String> response = ingress(FILENAME, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
-		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(200, response.getStatusCode().value());
 		assertEquals(INGRESS_RESULT.getDid(), response.getBody());
 
 		Mockito.verify(ingressService).ingressData(any(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE));
@@ -3405,7 +3400,7 @@ class DeltaFiCoreApplicationTests {
 
 		ResponseEntity<String> response = ingress(FILENAME, null, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 
-		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(200, response.getStatusCode().value());
 		assertEquals(INGRESS_RESULT.getContentReference().getSegments().get(0).getDid(), response.getBody());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
@@ -3421,21 +3416,21 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testIngress_missingFilename() {
 		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
-		assertEquals(400, response.getStatusCodeValue());
+		assertEquals(400, response.getStatusCode().value());
 	}
 
 	@Test
 	void testIngress_disabled() {
 		Mockito.when(ingressService.isEnabled()).thenReturn(false);
 		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
-		assertEquals(503, response.getStatusCodeValue());
+		assertEquals(503, response.getStatusCode().value());
 	}
 
 	@Test
 	void testIngress_storageLimit() {
 		Mockito.when(ingressService.isStorageAvailable()).thenReturn(false);
 		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
-		assertEquals(507, response.getStatusCodeValue());
+		assertEquals(507, response.getStatusCode().value());
 	}
 
 	@Test
@@ -3444,7 +3439,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(RESOLVED_FLOWFILE_METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
 		ResponseEntity<String> response = ingress(FILENAME, FLOW, INCOMING_FLOWFILE_METADATA, flowfile(Map.of("overwrite", "vim is awesome", "fromFlowfile", "youbetcha")), FLOWFILE_V1_MEDIA_TYPE);
 
-		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(200, response.getStatusCode().value());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
 
@@ -3474,7 +3469,7 @@ class DeltaFiCoreApplicationTests {
 						"fromFlowfile", "youbetcha")),
 				FLOWFILE_V1_MEDIA_TYPE);
 
-		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(200, response.getStatusCode().value());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
 
@@ -3497,7 +3492,7 @@ class DeltaFiCoreApplicationTests {
 						"fromFlowfile", "youbetcha")),
 				FLOWFILE_V1_MEDIA_TYPE);
 
-		assertEquals(400, response.getStatusCodeValue());
+		assertEquals(400, response.getStatusCode().value());
 		assertEquals("Filename must be passed in as a header or flowfile attribute", response.getBody());
 	}
 
@@ -3512,7 +3507,7 @@ class DeltaFiCoreApplicationTests {
 						"fromFlowfile", "youbetcha")),
 				FLOWFILE_V1_MEDIA_TYPE);
 
-		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(200, response.getStatusCode().value());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
 

@@ -35,7 +35,7 @@ public class SystemSnapshotDatafetcher {
 
     @DgsQuery
     @NeedsPermission.SnapshotRead
-    public SystemSnapshot getSystemSnapshot(String snapshotId) {
+    public SystemSnapshot getSystemSnapshot(@InputArgument String snapshotId) {
         return systemSnapshotService.get(snapshotId);
     }
 
@@ -53,20 +53,20 @@ public class SystemSnapshotDatafetcher {
 
     @DgsMutation
     @NeedsPermission.SnapshotRevert
-    public Result resetFromSnapshotWithId(String snapshotId, Boolean hardReset) {
+    public Result resetFromSnapshotWithId(@InputArgument String snapshotId, @InputArgument Boolean hardReset) {
         boolean hard = hardReset != null ? hardReset : true;
         return systemSnapshotService.resetFromSnapshot(snapshotId, hard);
     }
 
     @DgsMutation
     @NeedsPermission.SnapshotCreate
-    public SystemSnapshot importSnapshot(SystemSnapshot snapshot) {
+    public SystemSnapshot importSnapshot(@InputArgument SystemSnapshot snapshot) {
         return systemSnapshotService.saveSnapshot(snapshot);
     }
 
     @DgsMutation
     @NeedsPermission.SnapshotDelete
-    public Result deleteSnapshot(String snapshotId) {
+    public Result deleteSnapshot(@InputArgument String snapshotId) {
         return systemSnapshotService.deleteSnapshot(snapshotId);
     }
 }

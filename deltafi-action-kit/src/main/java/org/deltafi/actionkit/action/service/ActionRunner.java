@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ResultType;
@@ -36,7 +37,6 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 
-import javax.annotation.PostConstruct;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;

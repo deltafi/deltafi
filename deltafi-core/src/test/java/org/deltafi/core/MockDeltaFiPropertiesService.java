@@ -17,6 +17,7 @@
  */
 package org.deltafi.core;
 
+import jakarta.annotation.PostConstruct;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 
@@ -28,6 +29,7 @@ public class MockDeltaFiPropertiesService extends DeltaFiPropertiesService  {
         super(null);
     }
 
+    @PostConstruct
     @Override
     public void ensurePropertiesExist() {
 

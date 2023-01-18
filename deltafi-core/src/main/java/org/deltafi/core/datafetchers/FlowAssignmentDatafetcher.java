@@ -24,7 +24,6 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.generated.types.FlowAssignmentRuleInput;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.FlowAssignmentService;
@@ -34,7 +33,6 @@ import org.deltafi.core.types.Result;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @DgsComponent
 @RequiredArgsConstructor
@@ -51,28 +49,28 @@ public class FlowAssignmentDatafetcher {
 
     @DgsQuery
     @NeedsPermission.IngressRoutingRuleRead
-    public FlowAssignmentRule getFlowAssignmentRule(String id) {
+    public FlowAssignmentRule getFlowAssignmentRule(@InputArgument String id) {
         return flowAssignmentService.get(id).orElse(null);
     }
 
     @DgsMutation
     @NeedsPermission.IngressRoutingRuleCreate
-    public List<Result> loadFlowAssignmentRules(boolean replaceAll, @InputArgument List<FlowAssignmentRuleInput> rules) {
+    public List<Result> loadFlowAssignmentRules(@InputArgument Boolean replaceAll, @InputArgument List<FlowAssignmentRuleInput> rules) {
         if (replaceAll) {
             flowAssignmentService.removeAll();
         }
-        return rules.stream().map(this::convertAndSave).collect(Collectors.toList());
+        return rules.stream().map(this::convertAndSave).toList();
     }
 
     @DgsMutation
     @NeedsPermission.IngressRoutingRuleDelete
-    public boolean removeFlowAssignmentRule(String id) {
+    public boolean removeFlowAssignmentRule(@InputArgument String id) {
         return flowAssignmentService.remove(id);
     }
 
     @DgsMutation
     @NeedsPermission.IngressRoutingRuleUpdate
-    public Result updateFlowAssignmentRule(FlowAssignmentRuleInput rule) {
+    public Result updateFlowAssignmentRule(@InputArgument FlowAssignmentRuleInput rule) {
         FlowAssignmentRule flowAssignmentRule = OBJECT_MAPPER.convertValue(rule, FlowAssignmentRule.class);
         return flowAssignmentService.update(flowAssignmentRule);
     }

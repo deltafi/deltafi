@@ -27,7 +27,6 @@ import org.deltafi.core.generated.types.FlowErrorType;
 import org.springframework.util.PropertyPlaceholderHelper;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
 
@@ -63,13 +62,13 @@ public class FlowPlanPropertyHelper {
     public List<String> replaceListOfPlaceholders(List<String> values, String inActionNamed) {
         return nonNull(values) ? values.stream()
                 .map(value -> this.replaceValue(value, inActionNamed))
-                .collect(Collectors.toList()) : Collections.emptyList();
+                .toList() : Collections.emptyList();
     }
 
     public List<KeyValue> replaceKeyValuePlaceholders(List<KeyValue> keyValues, String inActionNamed) {
         return nonNull(keyValues) ? keyValues.stream()
                 .map(keyValue -> this.replaceKeyValuePlaceholders(keyValue, inActionNamed))
-                .collect(Collectors.toList()) : Collections.emptyList();
+                .toList() : Collections.emptyList();
     }
 
     public KeyValue replaceKeyValuePlaceholders(KeyValue keyValue, String inActionNamed) {

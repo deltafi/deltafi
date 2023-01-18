@@ -29,7 +29,6 @@ import org.deltafi.core.generated.types.FlowStatus;
 import org.springframework.data.annotation.Id;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Data
 public abstract class Flow {
@@ -130,7 +129,7 @@ public abstract class Flow {
     }
 
     public <T extends ActionConfiguration> List<String> actionNames(List<T> actions) {
-        return Objects.nonNull(actions) ? actions.stream().map(ActionConfiguration::getName).collect(Collectors.toList()) : List.of();
+        return Objects.nonNull(actions) ? actions.stream().map(ActionConfiguration::getName).toList() : List.of();
     }
 
     public <T extends ActionConfiguration> ActionConfiguration actionNamed(List<T> actions, String actionName) {

@@ -30,7 +30,7 @@ import org.deltafi.core.types.Result;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.*;
 
 @Service
@@ -42,7 +42,7 @@ public class FlowAssignmentService implements Snapshotter {
 
     private final FlowAssignmentRuleRepo flowAssignmentRuleRepo;
 
-    private List<FlowAssignmentRule> rulesCache = Collections.emptyList();
+    private List<FlowAssignmentRule> rulesCache;
 
     @PostConstruct
     private void init() {

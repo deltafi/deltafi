@@ -79,7 +79,7 @@ public class HttpServiceAutoConfiguration {
     }
 
     private boolean isPasswordNotSet(String password) {
-        return null != password && SslProperties.NOT_SET.equals(password);
+        return SslProperties.NOT_SET.equals(password);
     }
 
     String readEnvVar(String key) {

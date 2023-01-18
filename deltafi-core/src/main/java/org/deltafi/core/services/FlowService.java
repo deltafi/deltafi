@@ -37,7 +37,7 @@ import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -138,7 +138,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(sourcePlugin);
         List<FlowT> updatedFlows = flowPlans.stream()
                 .map(flowPlan -> buildFlow(flowPlan, variables))
-                .collect(Collectors.toList());
+                .toList();
 
         flowRepo.saveAll(updatedFlows);
 
@@ -237,7 +237,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public List<String> getFlowNamesByState(FlowState state) {
         List<FlowT> flows = state == null ? getAll() : flowRepo.findByFlowStatusState(state);
 
-        return flows.stream().map(Flow::getName).collect(Collectors.toList());
+        return flows.stream().map(Flow::getName).toList();
     }
 
     /**
@@ -245,11 +245,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @return list of names of the running flows
      */
     public List<String> getRunningFlowNames() {
-        return getAll().stream().filter(Flow::isRunning).map(Flow::getName).collect(Collectors.toList());
+        return getAll().stream().filter(Flow::isRunning).map(Flow::getName).toList();
     }
 
     public List<String> getTestFlowNames() {
-        return getAll().stream().filter(Flow::isTestMode).map(Flow::getName).collect(Collectors.toList());
+        return getAll().stream().filter(Flow::isTestMode).map(Flow::getName).toList();
     }
 
     abstract List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot);
@@ -428,7 +428,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return getAll().stream()
                 .map(flow -> flow.findByConfigType(configType))
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<DeltaFiConfiguration> findAllConfigs() {

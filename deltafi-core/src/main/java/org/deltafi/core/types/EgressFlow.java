@@ -62,18 +62,14 @@ public class EgressFlow extends Flow {
 
     @Override
     public List<DeltaFiConfiguration> findByConfigType(ConfigType configType) {
-        switch (configType) {
-            case EGRESS_FLOW:
-                return List.of(asFlowConfiguration());
-            case FORMAT_ACTION:
-                return List.of(formatAction);
-            case VALIDATE_ACTION:
-                return Objects.nonNull(validateActions) ? new ArrayList<>(validateActions) : Collections.emptyList();
-            case EGRESS_ACTION:
-                return List.of(egressAction);
-            default:
-                return Collections.emptyList();
-        }
+        return switch (configType) {
+            case EGRESS_FLOW -> List.of(asFlowConfiguration());
+            case FORMAT_ACTION -> List.of(formatAction);
+            case VALIDATE_ACTION ->
+                    Objects.nonNull(validateActions) ? new ArrayList<>(validateActions) : Collections.emptyList();
+            case EGRESS_ACTION -> List.of(egressAction);
+            default -> Collections.emptyList();
+        };
     }
 
     @Override

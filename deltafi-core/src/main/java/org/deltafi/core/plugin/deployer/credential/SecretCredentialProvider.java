@@ -65,7 +65,7 @@ public class SecretCredentialProvider implements CredentialProvider {
                 .withData(Map.of("username", encodeValue(username), "password", encodeValue(password)))
                 .build();
 
-        k8sClient.secrets().createOrReplace(secret);
+        k8sClient.secrets().resource(secret).createOrReplace();
 
         return new Result();
     }

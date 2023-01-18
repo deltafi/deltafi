@@ -46,7 +46,7 @@ class EgressFlowPlanConverterTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
             .registerModule(new JavaTimeModule());
-    EgressFlowPlanConverter egressFlowPlanConverter = new EgressFlowPlanConverter();
+    final EgressFlowPlanConverter egressFlowPlanConverter = new EgressFlowPlanConverter();
 
     @Test
     void testConverter() throws IOException {

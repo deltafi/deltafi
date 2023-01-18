@@ -67,25 +67,25 @@ public class DeltaFiPropertiesDatafetcher {
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean saveExternalLink(Link link) {
+    public boolean saveExternalLink(@InputArgument Link link) {
         return deltaFiPropertiesService.saveExternalLink(link);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean saveDeltaFileLink(Link link) {
+    public boolean saveDeltaFileLink(@InputArgument Link link) {
         return deltaFiPropertiesService.saveDeltaFileLink(link);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean removeExternalLink(String linkName) {
+    public boolean removeExternalLink(@InputArgument String linkName) {
         return deltaFiPropertiesService.removeExternalLink(linkName);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean removeDeltaFileLink(String linkName) {
+    public boolean removeDeltaFileLink(@InputArgument String linkName) {
         return deltaFiPropertiesService.removeDeltaFileLink(linkName);
     }
 

@@ -23,7 +23,6 @@ import org.deltafi.test.action.ActionTest;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class EnrichActionTest extends ActionTest {
 
@@ -41,7 +40,7 @@ public class EnrichActionTest extends ActionTest {
         List<Enrichment> expectedEnrichments = testCase.getOutputs().stream()
                 .map(org.deltafi.test.action.Enrichment.class::cast)
                 .map(enrichment -> new Enrichment(enrichment.getName(), enrichment.getValue(), enrichment.getContentType()))
-                .collect(Collectors.toList());
+                .toList();
 
         Assertions.assertArrayEquals(expectedEnrichments.toArray(), result.getEnrichments().toArray());
 

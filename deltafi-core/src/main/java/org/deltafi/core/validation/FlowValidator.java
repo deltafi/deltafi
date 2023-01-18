@@ -23,7 +23,6 @@ import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.types.Flow;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public abstract class FlowValidator<T extends Flow> {
@@ -54,7 +53,7 @@ public abstract class FlowValidator<T extends Flow> {
         return actionConfigurations.stream()
                 .map(this::validateAction)
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {

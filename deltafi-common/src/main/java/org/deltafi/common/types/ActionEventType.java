@@ -28,5 +28,6 @@ public enum ActionEventType {
   EGRESS,
   ERROR,
   FILTER,
-  SPLIT
+  SPLIT,
+  UNKNOWN
 }

@@ -33,6 +33,7 @@ public class FormatInput {
     Map<String, Domain> domains;
     // named enrichment and their values
     Map<String, Enrichment> enrichment;
+}
 ```
 
 ### Return Types

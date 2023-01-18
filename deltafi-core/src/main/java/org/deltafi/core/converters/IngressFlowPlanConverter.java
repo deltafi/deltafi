@@ -24,7 +24,6 @@ import org.deltafi.common.types.IngressFlowPlan;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan, IngressFlow> {
 
@@ -49,7 +48,7 @@ public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan,
     List<TransformActionConfiguration> buildTransformActions(List<TransformActionConfiguration> transformActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         return Objects.nonNull(transformActionTemplates) ? transformActionTemplates.stream()
                     .map(transformTemplate -> buildTransformAction(transformTemplate, flowPlanPropertyHelper))
-                    .collect(Collectors.toList()) : List.of();
+                    .toList() : List.of();
     }
 
     /**

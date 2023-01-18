@@ -48,14 +48,14 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
         errors.addAll(checkForDuplicatesInOtherPlans(flowPlan));
         errors.addAll(findDuplicatesInFlowPlan(flowPlan));
 
-        return errors.stream().distinct().collect(Collectors.toList());
+        return errors.stream().distinct().toList();
     }
 
     List<FlowConfigError> findDuplicatesInFlowPlan(EnrichFlowPlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
         errors.addAll(findDuplicateActionTypes(flowPlan.getEnrichActions(), flowPlan.getName()));
         errors.addAll(findDuplicateActionTypes(flowPlan.getDomainActions(), flowPlan.getName()));
-        return errors.stream().distinct().collect(Collectors.toList());
+        return errors.stream().distinct().toList();
     }
 
     /**
@@ -77,7 +77,7 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
             action = compareActions.remove(0);
         }
 
-        return errors.stream().distinct().collect(Collectors.toList());
+        return errors.stream().distinct().toList();
     }
 
     /**
@@ -91,7 +91,7 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
                 .map(otherPlan -> checkForDuplicatesInOtherPlan(enrichFlowPlan, otherPlan))
                 .flatMap(Collection::stream)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<FlowConfigError> checkForDuplicatesInOtherPlan(EnrichFlowPlan incomingPlan, EnrichFlowPlan otherPlan) {
@@ -102,7 +102,7 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
         if (!blankList(incomingPlan.getEnrichActions()) && !blankList(otherPlan.getEnrichActions())) {
             errors.addAll(checkForDuplicatesInOtherPlan(incomingPlan.getEnrichActions(), otherPlan.getEnrichActions(), incomingPlan.getName(), otherPlan.getName()));
         }
-        return errors.stream().distinct().collect(Collectors.toList());
+        return errors.stream().distinct().toList();
     }
 
     private List<FlowConfigError> checkForDuplicatesInOtherPlan(List<? extends RequiresDomainsActionConfiguration> incomingActions,
@@ -110,7 +110,7 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
         return findDuplicateActionConfig(incomingActions, existingActions).stream()
                 .map(dupeAction -> duplicateActionError(dupeAction, incomingPlanName, otherPlanName))
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<RequiresDomainsActionConfiguration> findDuplicateActionConfig(List<? extends RequiresDomainsActionConfiguration> incomingActions,

@@ -35,7 +35,7 @@ public class MetricsUtil {
      * @return the map
      */
     static public @NotNull Map<String, String> tagsFor(@NotNull ActionEventType actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
-        return tagsFor((actionType == null) ? "unknown" : actionType.name().toLowerCase(), actionName, ingressFlow, egressFlow);
+        return tagsFor(actionType.name().toLowerCase(), actionName, ingressFlow, egressFlow);
     }
 
     /** Helper for generating a default tag list for metrics

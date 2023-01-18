@@ -64,7 +64,7 @@ public class IngressRest {
     private final MetricRepository metricService;
     private final CoreAuditLogger coreAuditLogger;
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    final static ObjectMapper objectMapper = new ObjectMapper();
 
     public static final String FILENAME_ATTRIBUTES = "flowfile.attributes";
     public static final String FILENAME_CONTENT = "flowfile.content";
@@ -195,7 +195,7 @@ public class IngressRest {
 
     private static final Pattern ENTRY_PATTERN = Pattern.compile("<entry key=\"([^\"]+)\">([^<]+)</entry>", Pattern.MULTILINE);
 
-    protected Map<String, String> extractFlowfileAttributes(final ArchiveInputStream stream) throws IOException {
+    protected Map<String, String> extractFlowfileAttributes(final ArchiveInputStream stream) {
         final Map<String, String> result = new HashMap<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 

@@ -33,7 +33,7 @@ public class DeltafiMinioContainer extends MinioContainer {
         super.start();
 
         MinioClient minioClient = MinioClient.builder()
-                .endpoint(getContainerIpAddress(), getMappedPort(), false)
+                .endpoint(getHost(), getMappedPort(), false)
                 .credentials(accessKey, secretKey)
                 .build();
 

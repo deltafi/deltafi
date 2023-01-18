@@ -53,16 +53,12 @@ public class EnrichFlow extends Flow {
 
     @Override
     public List<DeltaFiConfiguration> findByConfigType(ConfigType configType) {
-        switch (configType) {
-            case ENRICH_FLOW:
-                return List.of(asFlowConfiguration());
-            case DOMAIN_ACTION:
-                return new ArrayList<>(domainActions);
-            case ENRICH_ACTION:
-                return new ArrayList<>(enrichActions);
-            default:
-                return Collections.emptyList();
-        }
+        return switch (configType) {
+            case ENRICH_FLOW -> List.of(asFlowConfiguration());
+            case DOMAIN_ACTION -> new ArrayList<>(domainActions);
+            case ENRICH_ACTION -> new ArrayList<>(enrichActions);
+            default -> Collections.emptyList();
+        };
     }
 
     @Override

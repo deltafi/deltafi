@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 public class KeyValueConverter {
 
@@ -40,7 +39,7 @@ public class KeyValueConverter {
         if (map == null) {
             return new ArrayList<>();
         }
-        return map.entrySet().stream().map(KeyValueConverter::fromMapEntry).collect(Collectors.toList());
+        return map.entrySet().stream().map(KeyValueConverter::fromMapEntry).toList();
     }
 
     public static KeyValue fromMapEntry(Map.Entry<String, String> entry) {

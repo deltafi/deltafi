@@ -27,6 +27,7 @@ public class DomainInput {
     Map<String, String> metadata;
     // Named domains and their values
     Map<String, Domain> domains;
+}
 ```
 
 ### Return Types

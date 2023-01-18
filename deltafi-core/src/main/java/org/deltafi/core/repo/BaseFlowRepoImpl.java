@@ -26,7 +26,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public abstract class BaseFlowRepoImpl<T extends Flow> implements FlowRepoCustom<T> {
 
@@ -52,7 +51,7 @@ public abstract class BaseFlowRepoImpl<T extends Flow> implements FlowRepoCustom
     @Override
     public List<String> findRunningBySourcePlugin(PluginCoordinates sourcePlugin) {
         Query runningPluginQuery = Query.query(Criteria.where(SOURCE_PLUGIN).is(sourcePlugin).and(FLOW_STATUS_STATE).is(FlowState.RUNNING));
-        return mongoTemplate.find(runningPluginQuery, entityType).stream().map(Flow::getName).collect(Collectors.toList());
+        return mongoTemplate.find(runningPluginQuery, entityType).stream().map(Flow::getName).toList();
     }
 
     @Override

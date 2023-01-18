@@ -22,6 +22,7 @@ public class ValidateInput {
     // structure containing the content references that
     // were created by the FormatAction
     FormattedData formattedData;
+}
 ```
 
 ### Return Types

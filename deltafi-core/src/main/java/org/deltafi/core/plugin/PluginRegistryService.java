@@ -124,7 +124,7 @@ public class PluginRegistryService implements Snapshotter {
 
         return getPluginsWithVariables().stream()
                 .map(plugin -> toPluginFlows(plugin, ingressFlows, enrichFlows, egressFlows))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -179,7 +179,7 @@ public class PluginRegistryService implements Snapshotter {
             }
         }
 
-        result.getInfo().addAll(missing.stream().map(installed -> "Installed plugin " + installed + " was not installed at the time of the snapshot").collect(Collectors.toList()));
+        result.getInfo().addAll(missing.stream().map(installed -> "Installed plugin " + installed + " was not installed at the time of the snapshot").toList());
 
         missing = new HashSet<>(snapshotPlugins);
         for (PluginCoordinates snapshotPlugin: snapshotPlugins) {
@@ -190,7 +190,7 @@ public class PluginRegistryService implements Snapshotter {
             }
         }
 
-        result.getInfo().addAll(missing.stream().map(snapshotPlugin -> "Plugin " + snapshotPlugin + " was installed at the time of the snapshot but is no longer installed").collect(Collectors.toList()));
+        result.getInfo().addAll(missing.stream().map(snapshotPlugin -> "Plugin " + snapshotPlugin + " was installed at the time of the snapshot but is no longer installed").toList());
         return result;
     }
 
@@ -213,7 +213,7 @@ public class PluginRegistryService implements Snapshotter {
         List<String> blockers = pluginUninstallChecks.stream()
                 .map(pluginUninstallCheck -> pluginUninstallCheck.uninstallBlockers(plugin))
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> errors = new ArrayList<>(blockers);
 

@@ -27,7 +27,6 @@ import org.deltafi.test.action.TestCaseBase;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.InputStream;
-import java.util.stream.Collectors;
 
 public class FormatActionTest extends ActionTest {
 
@@ -48,7 +47,7 @@ public class FormatActionTest extends ActionTest {
         FormatActionTestCase formatActionTestCase = (FormatActionTestCase) testCase;
 
         deltaFile.setEnrichment(
-            formatActionTestCase.getEnrichments().stream().map(this::readEnrichment).collect(Collectors.toList())
+            formatActionTestCase.getEnrichments().stream().map(this::readEnrichment).toList()
         );
     }
 

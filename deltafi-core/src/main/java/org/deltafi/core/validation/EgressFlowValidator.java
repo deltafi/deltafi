@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 public class EgressFlowValidator extends FlowValidator<EgressFlow> {
@@ -44,7 +43,7 @@ public class EgressFlowValidator extends FlowValidator<EgressFlow> {
             return egressFlow.getExcludeIngressFlows().stream()
                     .filter(flowName -> egressFlow.getIncludeIngressFlows().contains(flowName))
                     .map(flowName -> excludedAndIncludedError(egressFlow.getName(), flowName))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         return Collections.emptyList();

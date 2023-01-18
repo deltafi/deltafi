@@ -32,14 +32,14 @@ public interface DeployerService {
      * @param imageRepoOverride docker repository to use for this install
      * @param imagePullSecretOverride secret used to pull from that image repository
      * @param customDeploymentOverride yaml holding deployment customizations to apply to this deployment
-     * @return
+     * @return result of the installation or upgrade process
      */
     Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride);
 
     /**
      * Uninstall the plugin with the given coordinates
      * @param pluginCoordinates coordinates of the plugin to uninstall
-     * @return result of the uninstall process
+     * @return result of the uninstallation process
      */
     Result uninstallPlugin(PluginCoordinates pluginCoordinates);
 

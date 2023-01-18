@@ -28,7 +28,6 @@ import java.lang.String;
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
-    include = JsonTypeInfo.As.PROPERTY,
     property = "__typename"
 )
 @JsonSubTypes({

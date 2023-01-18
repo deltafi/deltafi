@@ -73,7 +73,7 @@ public class SurveyRest {
                 username);
         try {
             coreAuditLogger.logSurvey(username, flow, bytes, count);
-            Map<String, String> tags = MetricsUtil.tagsFor(ActionType.INGRESS.name(), SURVEY_ACTION, flow, null);;
+            Map<String, String> tags = MetricsUtil.tagsFor(ActionType.INGRESS.name(), SURVEY_ACTION, flow, null);
             metricService.increment(DeltaFiConstants.FILES_IN, tags, count);
             metricService.increment(DeltaFiConstants.BYTES_IN, tags, bytes);
 

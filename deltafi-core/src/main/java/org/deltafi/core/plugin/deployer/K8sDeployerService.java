@@ -88,6 +88,7 @@ public class K8sDeployerService extends BaseDeployerService {
 
     @Override
     Result removeDeployment(PluginCoordinates pluginCoordinates) {
+        // TODO: Fix this, it can never be true
         if (Boolean.FALSE.equals(k8sClient.apps().deployments().withName(pluginCoordinates.getArtifactId()).delete())) {
             return Result.newBuilder().success(false).errors(List.of("Failed to remove the deployment named " + pluginCoordinates.getArtifactId())).build();
         }

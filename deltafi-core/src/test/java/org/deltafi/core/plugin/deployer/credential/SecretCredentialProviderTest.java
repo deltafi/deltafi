@@ -26,7 +26,7 @@ import java.util.Map;
 
 class SecretCredentialProviderTest {
 
-    SecretCredentialProvider secretCredentialProvider = new SecretCredentialProvider(null);
+    final SecretCredentialProvider secretCredentialProvider = new SecretCredentialProvider(null);
 
     @Test
     void getCredentials() {

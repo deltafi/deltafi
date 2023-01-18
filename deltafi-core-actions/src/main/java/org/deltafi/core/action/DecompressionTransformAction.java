@@ -69,38 +69,20 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         try (InputStream contentStream = loadContentAsInputStream(content.getContentReference())) {
             try {
                 switch (params.getDecompressionType()) {
-                    case TAR_GZIP:
-                        decompressTarGzip(contentStream, result, context.getDid());
-                        break;
-                    case TAR_Z:
-                        decompressTarZ(contentStream, result, context.getDid());
-                        break;
-                    case TAR_XZ:
-                        decompressTarXZ(contentStream, result, context.getDid());
-                        break;
-                    case ZIP:
-                        unarchiveZip(contentStream, result, context.getDid());
-                        break;
-                    case TAR:
-                        unarchiveTar(contentStream, result, context.getDid());
-                        break;
-                    case AR:
-                        unarchiveAR(contentStream, result, context.getDid());
-                        break;
-                    case GZIP:
-                        decompressGzip(contentStream, result, context.getDid(), content.getName());
-                        break;
-                    case XZ:
-                        decompressXZ(contentStream, result, context.getDid(), content.getName());
-                        break;
-                    case Z:
-                        decompressZ(contentStream, result, context.getDid(), content.getName());
-                        break;
-                    case AUTO:
-                        decompressionType = decompressAutomatic(contentStream, result, context.getDid(), content.getName());
-                        break;
-                    default:
+                    case TAR_GZIP -> decompressTarGzip(contentStream, result, context.getDid());
+                    case TAR_Z -> decompressTarZ(contentStream, result, context.getDid());
+                    case TAR_XZ -> decompressTarXZ(contentStream, result, context.getDid());
+                    case ZIP -> unarchiveZip(contentStream, result, context.getDid());
+                    case TAR -> unarchiveTar(contentStream, result, context.getDid());
+                    case AR -> unarchiveAR(contentStream, result, context.getDid());
+                    case GZIP -> decompressGzip(contentStream, result, context.getDid(), content.getName());
+                    case XZ -> decompressXZ(contentStream, result, context.getDid(), content.getName());
+                    case Z -> decompressZ(contentStream, result, context.getDid(), content.getName());
+                    case AUTO ->
+                            decompressionType = decompressAutomatic(contentStream, result, context.getDid(), content.getName());
+                    default -> {
                         return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType()).logErrorTo(log);
+                    }
                 }
                 contentStream.close();
             } catch (DecompressionTransformException | IOException e) {

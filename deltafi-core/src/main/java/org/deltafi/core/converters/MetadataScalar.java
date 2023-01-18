@@ -26,6 +26,7 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class MetadataScalar implements Coercing<Map<String, String>, Object> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+    public Object serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException {
         if (dataFetcherResult instanceof Map) {
             return dataFetcherResult;
         } else {
@@ -46,29 +47,28 @@ public class MetadataScalar implements Coercing<Map<String, String>, Object> {
         }
     }
 
+    @NotNull
     @Override
-    public Map<String, String> parseValue(Object input) throws CoercingParseValueException {
+    public Map<String, String> parseValue(@NotNull Object input) throws CoercingParseValueException {
         return OBJECT_MAPPER.convertValue(input, new TypeReference<>() {});
     }
 
+    @NotNull
     @Override
-    public Map<String, String> parseLiteral(Object input) throws CoercingParseLiteralException {
+    public Map<String, String> parseLiteral(@NotNull Object input) throws CoercingParseLiteralException {
         if (!(input instanceof Value)) {
             throw new CoercingParseLiteralException("Expected AST type 'Value' but was '" + typeName(input) + "'.");
         }
 
-        if (input instanceof NullValue) {
-            return null;
-        } else if (input instanceof StringValue) {
+        if (input instanceof StringValue) {
             try {
                 return OBJECT_MAPPER.readValue(((StringValue) input).getValue(), new TypeReference<>() {});
             } catch (JsonProcessingException e) {
                 throw new CoercingParseLiteralException("Value is not a Map<String, String>");
             }
-        } else if (input instanceof ObjectValue){
-            ObjectValue objectInput = (ObjectValue) input;
+        } else if (input instanceof ObjectValue objectInput){
             Map<String, String> mapped = new HashMap<>();
-            objectInput.getObjectFields().stream().forEach(field -> addObjectField(field, mapped));
+            objectInput.getObjectFields().forEach(field -> addObjectField(field, mapped));
             return mapped;
         }
         throw new CoercingParseLiteralException("Value is not a Map<String, String>");

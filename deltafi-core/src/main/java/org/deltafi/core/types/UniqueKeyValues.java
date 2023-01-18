@@ -21,10 +21,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @NoArgsConstructor
 public class UniqueKeyValues {
@@ -44,7 +44,7 @@ public class UniqueKeyValues {
     }
 
     public List<String> getValues() {
-        return valuesSet.stream().collect(Collectors.toList());
+        return new ArrayList<>(valuesSet);
     }
 
     public void setValues(List<String> values) {

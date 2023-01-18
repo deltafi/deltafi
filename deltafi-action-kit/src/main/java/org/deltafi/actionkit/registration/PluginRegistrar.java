@@ -38,14 +38,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class PluginRegistrar {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Autowired(required = false)
-    private List<Action<?>> actions = Collections.emptyList();
+    private final List<Action<?>> actions = Collections.emptyList();
 
     @Autowired
     BuildProperties buildProperties;
@@ -81,7 +80,7 @@ public class PluginRegistrar {
                 .description(buildProperties.get("description"))
                 .actionKitVersion(buildProperties.get("actionKitVersion"))
                 .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
-                .actions(actions.stream().map(Action::getActionDescriptor).collect(Collectors.toList()));
+                .actions(actions.stream().map(Action::getActionDescriptor).toList());
 
         Resource flowsDirectory = applicationContext.getResource("flows");
         if (flowsDirectory.exists()) {
@@ -95,7 +94,7 @@ public class PluginRegistrar {
 
     private List<PluginCoordinates> toPluginCoordinatesList(String pluginDependencies) {
         return pluginDependencies == null ? List.of() :
-            Arrays.stream(pluginDependencies.split(",\\s?")).map(PluginCoordinates::new).collect(Collectors.toList());
+            Arrays.stream(pluginDependencies.split(",\\s?")).map(PluginCoordinates::new).toList();
     }
 
     private List<Variable> loadVariables() {

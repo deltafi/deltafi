@@ -20,6 +20,7 @@ package org.deltafi.core.converters;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.IngressFlow;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -37,7 +38,7 @@ import static java.util.Objects.isNull;
 public class YamlRepresenter extends Representer {
 
     public YamlRepresenter() {
-        super();
+        super(new DumperOptions());
         this.addClassTag(IngressFlow.class, Tag.MAP);
         this.addClassTag(EgressFlow.class, Tag.MAP);
         this.addClassTag(EnrichFlow.class, Tag.MAP);

@@ -23,7 +23,7 @@ import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.TriggerContext;
 
 import java.time.Duration;
-import java.util.Date;
+import java.time.Instant;
 import java.util.function.Function;
 
 public class ConfigurableFixedDelayTrigger implements Trigger {
@@ -39,13 +39,13 @@ public class ConfigurableFixedDelayTrigger implements Trigger {
     }
 
     @Override
-    public Date nextExecutionTime(TriggerContext triggerContext) {
-        Date lastExecution = triggerContext.lastScheduledExecutionTime();
-        Date lastCompletion = triggerContext.lastCompletionTime();
+    public Instant nextExecution(TriggerContext triggerContext) {
+        Instant lastExecution = triggerContext.lastScheduledExecution();
+        Instant lastCompletion = triggerContext.lastCompletion();
         if (lastExecution == null || lastCompletion == null) {
-            return new Date(triggerContext.getClock().millis() + this.initialDelay);
+            return triggerContext.getClock().instant().plusMillis(this.initialDelay);
         }
 
-        return new Date(lastCompletion.getTime() + durationFunction.apply(deltaFiPropertiesService.getDeltaFiProperties()).toMillis());
+        return lastCompletion.plusMillis(durationFunction.apply(deltaFiPropertiesService.getDeltaFiProperties()).toMillis());
     }
 }

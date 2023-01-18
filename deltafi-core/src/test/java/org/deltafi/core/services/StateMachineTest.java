@@ -40,7 +40,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
@@ -368,7 +367,7 @@ class StateMachineTest {
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.EGRESS);
         assertThat(actionInputs.get(0)).matches(actionInput -> "FormatAction1".equals(actionInput.getActionContext().getName()));
         assertThat(actionInputs.get(1)).matches(actionInput -> "FormatAction2".equals(actionInput.getActionContext().getName()));
-        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactly(EGRESS_FLOW);
+        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).toList()).containsExactly(EGRESS_FLOW);
     }
 
     @Test
@@ -400,7 +399,7 @@ class StateMachineTest {
         assertThat(actionInputs.get(1)).matches(actionInput -> "EgressAction2".equals(actionInput.getActionContext().getName()));
         assertThat(deltaFile.actionNamed("EgressAction1")).isPresent().get().matches(action -> ActionState.QUEUED.equals(action.getState()));
         assertThat(deltaFile.actionNamed("EgressAction2")).isPresent().get().matches(action -> ActionState.QUEUED.equals(action.getState()));
-        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactly(EGRESS_FLOW);
+        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).toList()).containsExactly(EGRESS_FLOW);
     }
 
     @Test
@@ -435,7 +434,7 @@ class StateMachineTest {
         assertThat(actionInputs.get(0)).matches(actionInput -> "EgressAction2".equals(actionInput.getActionContext().getName()));
         assertThat(deltaFile.actionNamed(TEST_EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
         assertThat(deltaFile.actionNamed("EgressAction2")).isPresent().get().matches(action -> ActionState.QUEUED.equals(action.getState()));
-        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
+        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).toList()).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
         assertTrue(deltaFile.getTestMode());
         assertThat(deltaFile.getTestModeReason()).isEqualTo("Egress flow 'TestEgressFlow' in test mode");
     }
@@ -478,7 +477,7 @@ class StateMachineTest {
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
         assertThat(deltaFile.actionNamed(TEST_EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
         assertThat(deltaFile.actionNamed(EGRESS_ACTION)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
-        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).collect(Collectors.toList())).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
+        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).toList()).containsExactlyInAnyOrder(EGRESS_FLOW, "TestEgressFlow");
         assertTrue(deltaFile.getTestMode());
         assertThat(deltaFile.getTestModeReason()).isEqualTo("Ingress flow 'TheIngressFlow' in test mode");
     }
@@ -639,11 +638,11 @@ class StateMachineTest {
     @Builder
     private static class IngressFlowMaker {
         @Builder.Default
-        String name = INGRESS_FLOW;
+        final String name = INGRESS_FLOW;
         @Builder.Default
-        FlowState flowState = FlowState.STOPPED;
+        final FlowState flowState = FlowState.STOPPED;
         @Builder.Default
-        boolean testMode = false;
+        final boolean testMode = false;
 
         private IngressFlow makeIngressFlow() {
             IngressFlow ingressFlow = new IngressFlow();
@@ -662,17 +661,17 @@ class StateMachineTest {
         @Singular("formatRequiresEnrichment")
         List<String> formatRequiresEnrichment;
         @Builder.Default
-        String formatActionName = FORMAT_ACTION;
+        final String formatActionName = FORMAT_ACTION;
         @Builder.Default
-        List<String> validateActions = List.of(VALIDATE_ACTION);
+        final List<String> validateActions = List.of(VALIDATE_ACTION);
         @Builder.Default
-        String egressActionName = EGRESS_ACTION;
+        final String egressActionName = EGRESS_ACTION;
         @Builder.Default
-        String name = EGRESS_FLOW;
+        final String name = EGRESS_FLOW;
         @Builder.Default
-        FlowState flowState = FlowState.STOPPED;
+        final FlowState flowState = FlowState.STOPPED;
         @Builder.Default
-        boolean testMode = false;
+        final boolean testMode = false;
 
         private EgressFlow makeEgressFlow() {
             EgressFlow egressFlow = new EgressFlow();
@@ -683,7 +682,7 @@ class StateMachineTest {
             FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration(formatActionName, null, formatRequiresDomains);
             formatActionConfiguration.setRequiresEnrichments(formatRequiresEnrichment);
             egressFlow.setFormatAction(formatActionConfiguration);
-            egressFlow.setValidateActions(validateActions.stream().map(this::named).collect(Collectors.toList()));
+            egressFlow.setValidateActions(validateActions.stream().map(this::named).toList());
 
             egressFlow.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
 
@@ -704,7 +703,7 @@ class StateMachineTest {
         @Singular("enrichRequiresMetadata")
         List<KeyValue> enrichRequiresMetadata;
         @Builder.Default
-        String enrichActionName = ENRICH_ACTION;
+        final String enrichActionName = ENRICH_ACTION;
 
         private EnrichFlow makeEnrichFlow() {
             EnrichFlow enrichFlow = new EnrichFlow();

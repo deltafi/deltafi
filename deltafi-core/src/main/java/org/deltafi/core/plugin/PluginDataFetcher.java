@@ -20,6 +20,7 @@ package org.deltafi.core.plugin;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
+import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
@@ -48,7 +49,7 @@ public class PluginDataFetcher {
 
     @DgsQuery
     @NeedsPermission.PluginsView
-    public boolean verifyActionsAreRegistered(PluginCoordinates pluginCoordinates) {
+    public boolean verifyActionsAreRegistered(@InputArgument PluginCoordinates pluginCoordinates) {
         return pluginRegistryService.verifyActionsAreRegistered(pluginCoordinates);
     }
 
@@ -66,13 +67,13 @@ public class PluginDataFetcher {
 
     @DgsMutation
     @NeedsPermission.PluginImageRepoWrite
-    public PluginImageRepository savePluginImageRepository(PluginImageRepository pluginImageRepository) {
+    public PluginImageRepository savePluginImageRepository(@InputArgument PluginImageRepository pluginImageRepository) {
         return deployerService.savePluginImageRepository(pluginImageRepository);
     }
 
     @DgsMutation
     @NeedsPermission.PluginCustomizationConfigWrite
-    public PluginCustomizationConfig savePluginCustomizationConfig(PluginCustomizationConfig pluginCustomizationConfigInput) {
+    public PluginCustomizationConfig savePluginCustomizationConfig(@InputArgument PluginCustomizationConfig pluginCustomizationConfigInput) {
         return deployerService.savePluginCustomizationConfig(pluginCustomizationConfigInput);
     }
 
@@ -84,7 +85,7 @@ public class PluginDataFetcher {
 
     @DgsMutation
     @NeedsPermission.PluginInstall
-    public Result installPluginWithSettings(PluginCoordinates pluginCoordinates, String imageRepositoryOverride, String imagePullSecretOverride, String customDeploymentYaml) {
+    public Result installPluginWithSettings(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument String imageRepositoryOverride, @InputArgument String imagePullSecretOverride, @InputArgument String customDeploymentYaml) {
         return deployerService.installOrUpgradePlugin(pluginCoordinates, imageRepositoryOverride, imagePullSecretOverride, customDeploymentYaml);
     }
 
@@ -96,19 +97,19 @@ public class PluginDataFetcher {
 
     @DgsMutation
     @NeedsPermission.PluginCustomizationConfigWrite
-    public Result addBasicCredential(String sourceName, String username, String password) {
+    public Result addBasicCredential(@InputArgument String sourceName, @InputArgument String username, @InputArgument String password) {
         return credentialProvider.createCredentials(sourceName, username, password);
     }
 
     @DgsMutation
     @NeedsPermission.PluginImageRepoDelete
-    public Result removePluginImageRepository(String id) {
+    public Result removePluginImageRepository(@InputArgument String id) {
         return deployerService.removePluginImageRepository(id);
     }
 
     @DgsMutation
     @NeedsPermission.PluginCustomizationConfigDelete
-    public Result removePluginCustomizationConfig(String id) {
+    public Result removePluginCustomizationConfig(@InputArgument String id) {
         return deployerService.removePluginCustomizationConfig(id);
     }
 

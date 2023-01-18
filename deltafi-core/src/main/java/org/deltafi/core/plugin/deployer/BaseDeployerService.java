@@ -113,7 +113,7 @@ public abstract class BaseDeployerService implements DeployerService {
 
     PluginImageRepository findByGroupId(PluginCoordinates pluginCoordinates) {
         return imageRepositoryRepo.findByPluginGroupIds(pluginCoordinates.getGroupId())
-                .orElseGet(() -> defaultPluginImageRepository());
+                .orElseGet(this::defaultPluginImageRepository);
     }
 
     private PluginImageRepository defaultPluginImageRepository() {

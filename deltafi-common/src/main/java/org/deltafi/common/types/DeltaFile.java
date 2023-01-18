@@ -145,12 +145,12 @@ public class DeltaFile {
   public List<String> retryErrors() {
     List<Action> actionsToRetry = getActions().stream()
             .filter(action -> action.getState().equals(ActionState.ERROR))
-            .collect(Collectors.toList());
+            .toList();
 
     // this must be separate from the above stream since it mutates the original list
     actionsToRetry.forEach(action -> action.setState(ActionState.RETRIED));
 
-    return actionsToRetry.stream().map(Action::getName).collect(Collectors.toList());
+    return actionsToRetry.stream().map(Action::getName).toList();
   }
 
   private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop) {
@@ -182,7 +182,7 @@ public class DeltaFile {
   }
 
   public List<String> queuedActions() {
-    return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).collect(Collectors.toList());
+    return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).toList();
   }
 
   public Map<String, Domain> domainMap() {
@@ -215,7 +215,7 @@ public class DeltaFile {
   }
 
   public void addEgressFlow(@NotNull String flow) {
-    if (!getEgress().stream().map(Egress::getFlow).collect(Collectors.toList()).contains(flow)) {
+    if (!getEgress().stream().map(Egress::getFlow).toList().contains(flow)) {
       getEgress().add(new Egress(flow));
     }
   }
@@ -336,7 +336,7 @@ public class DeltaFile {
             .formattedData(getFormattedData().stream()
                     .filter(f -> f.getEgressActions().contains(actionName) ||
                             (Objects.nonNull(f.getValidateActions()) && f.getValidateActions().contains(actionName)))
-                    .collect(Collectors.toList()));
+                    .toList());
 
     if (!getProtocolStack().isEmpty()) {
       builder.protocolStack(Collections.singletonList(getLastProtocolLayer()));
@@ -353,7 +353,7 @@ public class DeltaFile {
     segments.addAll(getFormattedData().stream()
             .map(FormattedData::getContentReference)
             .flatMap(f -> f.getSegments().stream())
-            .collect(Collectors.toList()));
+            .toList());
     return segments;
   }
 
@@ -367,7 +367,7 @@ public class DeltaFile {
             .map(FormattedData::getContentReference)
             .flatMap(f -> f.getSegments().stream())
             .filter(s -> s.getDid().equals(getDid()))
-            .collect(Collectors.toList()));
+            .toList());
     return segments;
   }
 

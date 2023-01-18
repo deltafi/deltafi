@@ -18,7 +18,7 @@
 package org.deltafi.actionkit.exception;
 
 public class MissingMetadataException extends IllegalArgumentException {
-    String key;
+    final String key;
 
     public MissingMetadataException(String key) {
         this.key = key;

@@ -24,7 +24,6 @@ import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.common.types.EnrichFlowPlan;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class EnrichFlowPlanConverter extends FlowPlanConverter<EnrichFlowPlan, EnrichFlow> {
 
@@ -37,13 +36,13 @@ public class EnrichFlowPlanConverter extends FlowPlanConverter<EnrichFlowPlan, E
     List<DomainActionConfiguration> buildDomainActions(List<DomainActionConfiguration> domainActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         return null != domainActionTemplates ? domainActionTemplates.stream()
                 .map(domainActionTemplate -> buildDomainAction(domainActionTemplate, flowPlanPropertyHelper))
-                .collect(Collectors.toList()) : List.of();
+                .toList() : List.of();
     }
 
     List<EnrichActionConfiguration> buildEnrichActions(List<EnrichActionConfiguration> enrichActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         return null != enrichActionTemplates ? enrichActionTemplates.stream()
                 .map(enrichActionTemplate -> buildEnrichAction(enrichActionTemplate, flowPlanPropertyHelper))
-                .collect(Collectors.toList()) : List.of();
+                .toList() : List.of();
     }
 
     /**

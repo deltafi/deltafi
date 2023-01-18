@@ -31,7 +31,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
@@ -50,7 +49,7 @@ public abstract class LoadActionTest extends ActionTest {
         expectedResult.addMetadata(testCase.getResultMetadata());
         if(testCase.getOutputDomain()!=null) {
             // Load text string as the file to domain... for each entry in the map
-            testCase.getOutputDomain().entrySet().stream().sequential().forEach(kv -> {
+            testCase.getOutputDomain().entrySet().forEach(kv -> {
                 byte[] domainContent = getTestResourceBytesOrNull(testCase.getTestName(), kv.getKey());
                 String output = domainContent==null ? null : new String(domainContent, StandardCharsets.UTF_8);
                 expectedResult.addDomain(kv.getKey().startsWith("domain.") ? kv.getKey().substring(7) : kv.getKey(),
@@ -64,7 +63,7 @@ public abstract class LoadActionTest extends ActionTest {
             }
             final List<Domain> expectedDomains = expectedResult.getDomains();
             List<Domain> domains = loadResult.getDomains().stream().map(Domain::getName).map(
-                    n -> getDomain(expectedDomains, n)).collect(Collectors.toList());
+                    n -> getDomain(expectedDomains, n)).toList();
             expectedDomains.clear();
             expectedDomains.addAll(domains);
         }
@@ -80,7 +79,7 @@ public abstract class LoadActionTest extends ActionTest {
 
         // TODO Check various ways to check contents
         // expectedContent should be a list of byte[], let's get the list of content and grab bytes to recreate
-        List<byte[]> actualContent = loadResult.getContent().stream().map(this::getContent).collect(Collectors.toList());
+        List<byte[]> actualContent = loadResult.getContent().stream().map(this::getContent).toList();
 
         assertContentIsEqual(expectedContent, actualContent);
     }

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(MockitoExtension.class)
 class HttpServiceAutoConfigurationTest {
 
-    HttpServiceAutoConfiguration autoConfiguration = new HttpServiceAutoConfiguration();
+    final HttpServiceAutoConfiguration autoConfiguration = new HttpServiceAutoConfiguration();
 
     @Test
     void httpClient_sslConfigured() {

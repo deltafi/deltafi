@@ -32,7 +32,6 @@ import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -100,7 +99,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         pluginVariableRepo.deleteById(existing.getSourcePlugin());
         insertVariables(pluginCoordinates, variables.stream()
                 .map(variable -> preserveValue(variable, existing.getVariables()))
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     private Variable preserveValue(Variable incoming, List<Variable> existingValues) {
@@ -177,7 +176,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         systemSnapshot.setPluginVariables(pluginVariableRepo.findAll().stream()
                 .map(this::filterSetValuesOnly)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     PluginVariables filterSetValuesOnly(PluginVariables pluginVariables) {
@@ -189,7 +188,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     private List<Variable> filterSetValuesOnly(List<Variable> variables) {
-        return null != variables ? variables.stream().filter(Variable::hasValue).collect(Collectors.toList()) : List.of();
+        return null != variables ? variables.stream().filter(Variable::hasValue).toList() : List.of();
     }
 
     @Override
@@ -202,7 +201,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         List<PluginVariables> variablesToSet = pluginVariableRepo.findAll();
         List<PluginVariables> snapshotVariables = systemSnapshot.getPluginVariables();
 
-        List<PluginVariables> resetPluginVariables = variablesToSet.stream().map(rollbackVariables -> rollbackValues(rollbackVariables, snapshotVariables)).collect(Collectors.toList());
+        List<PluginVariables> resetPluginVariables = variablesToSet.stream().map(rollbackVariables -> rollbackValues(rollbackVariables, snapshotVariables)).toList();
         
         pluginVariableRepo.saveAll(resetPluginVariables);
 

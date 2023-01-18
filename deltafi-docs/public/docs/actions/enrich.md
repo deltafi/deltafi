@@ -33,6 +33,7 @@ public class EnrichInput {
     Map<String, Domain> domains;
     // named enrichment and their values
     Map<String, Enrichment> enrichment;
+}
 ```
 
 ### Return Types

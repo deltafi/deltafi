@@ -27,7 +27,6 @@ import org.deltafi.core.validation.EgressFlowValidator;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
@@ -52,7 +51,7 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
     List<EgressFlow> findMatchingFlows(String ingressFlow) {
         return flowCache.values().stream()
                 .filter(egressFlow -> egressFlow.flowMatches(ingressFlow))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public EgressFlow withFormatActionNamed(String formatActionName) {

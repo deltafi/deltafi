@@ -32,7 +32,7 @@ import org.deltafi.core.types.PropertyUpdate;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,7 +44,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
     private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
     private DeltaFiProperties cachedDeltaFiProperties;
 
-    private Map<String, PropertyType> propertyMap;
+    private final Map<String, PropertyType> propertyMap;
 
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
@@ -77,7 +77,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     /**
      * Get the properties and return them as a list of PropertySets
-     * @return
+     * @return the list of PropertySets
      */
     public List<PropertySet> getPopulatedProperties() {
         PropertySet common = commonPropertySet();
@@ -108,7 +108,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
         }
 
 
-        return refresh(!updateMap.isEmpty() ? deltaFiPropertiesRepo.updateProperties(updateMap) : false);
+        return refresh(!updateMap.isEmpty() && deltaFiPropertiesRepo.updateProperties(updateMap));
     }
 
     /**
@@ -119,9 +119,9 @@ public class DeltaFiPropertiesService implements Snapshotter {
     public boolean unsetProperties(List<PropertyId> propertyIds) {
         List<PropertyType> propertyTypes = propertyIds.stream().map(this::toPropertyType)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
 
-        return refresh(!propertyTypes.isEmpty() ? deltaFiPropertiesRepo.unsetProperties(propertyTypes) : false);
+        return refresh(!propertyTypes.isEmpty() && deltaFiPropertiesRepo.unsetProperties(propertyTypes));
     }
 
     public boolean saveExternalLink(Link link) {
@@ -221,13 +221,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
      * @param linkToAdd link that will be added to the list
      */
     private void addOrReplaceLink(List<Link> links, Link linkToAdd) {
-        Iterator<Link> existingLinks = links.iterator();
-        while (existingLinks.hasNext()) {
-            Link next = existingLinks.next();
-            if (next.nameMatches(linkToAdd)) {
-                existingLinks.remove();
-            }
-        }
+        links.removeIf(next -> next.nameMatches(linkToAdd));
         links.add(linkToAdd);
     }
 

@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, EgressFlow> {
 
@@ -62,7 +61,7 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
     List<ValidateActionConfiguration> buildValidateActions(List<ValidateActionConfiguration> validateActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         return null != validateActionTemplates ? validateActionTemplates.stream()
                 .map(validateTemplate -> buildValidateAction(validateTemplate, flowPlanPropertyHelper))
-                .collect(Collectors.toList()) : List.of();
+                .toList() : List.of();
     }
 
     /**

@@ -49,7 +49,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
@@ -108,12 +107,12 @@ public abstract class ActionTest {
                 t.printStackTrace();
                 return null;
             }
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     protected List<Content> createContents(TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
         return outputs.stream().map(convertOutputToContent(testCase))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     protected Function<IOContent, Content> convertOutputToContent(TestCaseBase<?> testCase) {
@@ -171,7 +170,7 @@ public abstract class ActionTest {
                 .formattedData(content.stream()
                         .map(Content::getContentReference)
                         .map(cr -> FormattedData.newBuilder().contentReference(cr).build())
-                        .collect(Collectors.toList()))
+                        .toList())
                 .did(DID)
                 .build();
     }
@@ -309,7 +308,7 @@ public abstract class ActionTest {
     protected <R> List<R> orderListByAnother(List<R> orderBy, List<R> toOrder, Function<R, ?> getIdProperty) {
         return orderBy.stream().map(getIdProperty).map(
                 itemValue -> getObjectByLambda(toOrder, item -> getIdProperty.apply(item).equals(itemValue), () ->
-                Assertions.fail("Unable to find correct item in list to normalize"))).collect(Collectors.toList());
+                Assertions.fail("Unable to find correct item in list to normalize"))).toList();
     }
 
     protected <R> R getObjectByLambda(List<R> list, Predicate<R> isCorrectOne, Supplier<R> ifNotFound) {
@@ -322,7 +321,7 @@ public abstract class ActionTest {
         List<Content> normalizedExpectedContent = orderListByAnother(actualResult.getContent(), expectedContent, Content::getName);
         expectedResult.setContent(normalizedExpectedContent);
 
-        return normalizedExpectedContent.stream().map(this::getContent).collect(Collectors.toList());
+        return normalizedExpectedContent.stream().map(this::getContent).toList();
     }
 
     protected byte[] getContent(Content content) {

@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -36,7 +35,7 @@ public class ContentReference {
 
     public ContentReference(String mediaType, Segment... segments) {
         this.mediaType = mediaType;
-        this.segments = Arrays.stream(segments).collect(Collectors.toUnmodifiableList());
+        this.segments = Arrays.stream(segments).toList();
     }
 
     /**

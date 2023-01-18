@@ -19,6 +19,7 @@ package org.deltafi.core.audit;
 
 import com.netflix.graphql.dgs.context.DgsContext;
 import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
@@ -55,7 +56,7 @@ public class CoreAuditLogger extends SimpleInstrumentation {
 
     @Override
     @NotNull
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         String path = parameters.getExecutionStepInfo().getPath().getSegmentName();
         boolean isMutation = isMutation(parameters);
 
@@ -67,7 +68,7 @@ public class CoreAuditLogger extends SimpleInstrumentation {
 
                 String userName = !id.isEmpty() ? id.get(0) : UNKNOWN_USER;
 
-                try (MDC.MDCCloseable mdc = MDC.putCloseable("user", userName)) {
+                try (@SuppressWarnings("unused") MDC.MDCCloseable mdc = MDC.putCloseable("user", userName)) {
                     log.info("called mutation {}", path);
                 }
             }
@@ -112,7 +113,7 @@ public class CoreAuditLogger extends SimpleInstrumentation {
         String methodCalled = extractMethodName(authorizationDeniedEvent);
         String missingPermissions = extractMissingPermissions(authorizationDeniedEvent);
 
-        try (MDC.MDCCloseable mdc = MDC.putCloseable("user", username)) {
+        try (@SuppressWarnings("unused") MDC.MDCCloseable mdc = MDC.putCloseable("user", username)) {
             log.info("request '{}' was denied due to missing permission '{}'", methodCalled, missingPermissions);
         }
     }

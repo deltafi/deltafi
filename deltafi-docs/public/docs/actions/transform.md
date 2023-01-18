@@ -25,7 +25,7 @@ public class TransformInput {
     // Metadata produced by previous Transform Action, or
     // an empty Map is there was no previous Transform Action
     Map<String, String> metadata;
-
+}
 ```
 
 ### Return Types

@@ -183,29 +183,29 @@ class DeltaFilesServiceTest {
 
         for (UniqueKeyValues u : uniqueMetadata) {
             switch (u.getKey()) {
-                case "k1":
+                case "k1" -> {
                     assertEquals(2, u.getValues().size());
                     assertTrue(u.getValues().containsAll(List.of("1a", "1b")));
                     foundKey1 = true;
-                    break;
-                case "k2":
+                }
+                case "k2" -> {
                     assertEquals(1, u.getValues().size());
                     assertTrue(u.getValues().contains("val2"));
                     foundKey2 = true;
-                    break;
-                case "k3":
+                }
+                case "k3" -> {
                     assertEquals(2, u.getValues().size());
                     List<String> listWithNull = new ArrayList<>();
                     listWithNull.add("val3");
                     listWithNull.add(null);
                     assertTrue(u.getValues().containsAll(listWithNull));
                     foundKey3 = true;
-                    break;
-                case "k4":
+                }
+                case "k4" -> {
                     assertEquals(1, u.getValues().size());
                     assertTrue(u.getValues().contains("val4"));
                     foundKey4 = true;
-                    break;
+                }
             }
         }
 

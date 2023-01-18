@@ -79,7 +79,7 @@ spec:
                   key: secretkey
             #  mc admin prometheus generate don't really connect to remote server, TLS cert isn't required
             - name: MC_HOST_target
-              value: {{ $scheme }}://$(MINIO_ACCESS_KEY):$(MINIO_SECRET_KEY)@{{ $fullName }}:{{ .Values.service.port }}
+              value: "{{ $scheme }}://$(MINIO_ACCESS_KEY):$(MINIO_SECRET_KEY)@{{ $fullName }}:{{ .Values.service.port }}"
           volumeMounts:
             - name: workdir
               mountPath: /workdir

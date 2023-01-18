@@ -25,7 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
@@ -55,7 +54,7 @@ public abstract class TransformActionTest extends ActionTest {
         String outputEvent = normalizeData(result.toEvent().toString());
         Assertions.assertEquals(expectedEvent, outputEvent);
 
-        List<byte[]> actualContent = result.getContent().stream().map(this::getContent).collect(Collectors.toList());
+        List<byte[]> actualContent = result.getContent().stream().map(this::getContent).toList();
 
         assertContentIsEqual(expectedContent, actualContent);
     }

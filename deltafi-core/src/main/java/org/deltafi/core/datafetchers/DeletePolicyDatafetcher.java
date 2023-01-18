@@ -20,6 +20,7 @@ package org.deltafi.core.datafetchers;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
+import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeletePolicyService;
@@ -41,31 +42,31 @@ public class DeletePolicyDatafetcher {
 
     @DgsMutation
     @NeedsPermission.DeletePolicyCreate
-    public Result loadDeletePolicies(boolean replaceAll, DeletePolicies policies) {
+    public Result loadDeletePolicies(@InputArgument Boolean replaceAll, @InputArgument DeletePolicies policies) {
         return deletePolicyService.saveAll(replaceAll, policies);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyDelete
-    public boolean removeDeletePolicy(String id) {
+    public boolean removeDeletePolicy(@InputArgument String id) {
         return deletePolicyService.remove(id);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
-    public boolean enablePolicy(String id, boolean enabled) {
+    public boolean enablePolicy(@InputArgument String id, @InputArgument Boolean enabled) {
         return deletePolicyService.enablePolicy(id, enabled);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
-    public Result updateDiskSpaceDeletePolicy(DiskSpaceDeletePolicy policyUpdate) {
+    public Result updateDiskSpaceDeletePolicy(@InputArgument DiskSpaceDeletePolicy policyUpdate) {
         return deletePolicyService.update(policyUpdate);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
-    public Result updateTimedDeletePolicy(TimedDeletePolicy policyUpdate) {
+    public Result updateTimedDeletePolicy(@InputArgument TimedDeletePolicy policyUpdate) {
         return deletePolicyService.update(policyUpdate);
     }
 }

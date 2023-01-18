@@ -73,7 +73,7 @@ public abstract class Action<P extends ActionParameters> {
             clazz = clazz.getSuperclass();
             type = clazz.getGenericSuperclass();
         }
-        throw new RuntimeException("Cannot instantiate" + getClass().toString());
+        throw new RuntimeException("Cannot instantiate" + getClass());
     }
 
     private final Class<P> paramClass = getGenericParameterType();
