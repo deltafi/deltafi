@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 
 ### Changed
+- Upgrade all Java containers to build with JDK17 and excute with JVM17
 
 ### Deprecated
 
@@ -27,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Upgrade to Promtail 2.7.1
 - Upgrade to Loki 2.7.1
 - Upgrade to Graphite 1.1.10-4
+- New base image: deltafi/deltafi-spring-base:jdk17
+- Upgrade to Gradle 7.6.0
 
 ## [0.100.0] - 2023-01-14
 
