@@ -51,12 +51,13 @@ class Event
   include Mongoid::Document
 
   field :severity, type: String
+  field :summary, type: String
   field :content, type: String
   field :source, type: String
   field :timestamp, type: DateTime, default: -> { Time.now.utc }
   field :notification, type: Boolean
   field :acknowledged, type: Boolean, default: false
 
-  validates_presence_of :content, :notification, :severity, :source
+  validates_presence_of :summary, :notification, :severity, :source
   validates_inclusion_of :severity, in: %w[info success warn error], message: 'must be info, success, warn, or error.'
 end

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.100.1 or 1.0.0
 
 ### Added
+- Added Summary field to Events
 
 ### Changed
 - Upgrade all Java containers to build with JDK17 and excute with JVM17
