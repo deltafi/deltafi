@@ -198,6 +198,9 @@ case "$1" in
   enrich-flow)
     "$DELTAFICLI_WORKDIR/commands/enrich-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/enrich-flow.log"
     ;;
+  event)
+    "$DELTAFICLI_WORKDIR/commands/event" "$@" | tee -ia "$DELTAFICLI_WORKDIR/logs/event.log"
+    ;;
   export-config)
     "$DELTAFICLI_WORKDIR/commands/export-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-config.log"
     ;;

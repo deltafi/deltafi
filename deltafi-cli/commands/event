@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: event
+
+Subcommands:
+  create
+  list
+Usage:
+  event [SUBCOMMAND] [ARGS]"
+  exit 1
+}
+
+cli_create_help_command() {
+  echo "
+Command: event create
+
+Usage:
+  event create <arguments> <event summary text>
+
+  Event summary text is required and may or may not be quoted.
+
+  Arguments:
+  -q                   quiet, no echo of event json
+  -s|--source <val>    set the source of the event (default 'cli')
+  -c|--content 'val'   set the content of the event (default null)
+  -l|--level <val>     set the severity of the event (warn, error, info, success)
+                       default is info
+  --severity <val>     equivalent to -l
+  -n|--notification    set the notification flag on the event
+  -w|--warn            set the severity to warn
+  -e|--error           set the severity to error
+  --success            set the severity to success
+"
+  exit 1
+}
+
+cleanup() {
+  exit
+}
+
+version_check() {
+  local minimumVersion=$1
+  local actualVersion=$2
+  [[ "${minimumVersion}" = "$(echo -e "${minimumVersion}\n${actualVersion}" | sort -V | head -n1)" ]]
+}
+
+list_events() {
+  if ! version_check "jq-1.6" "$(jq --version)"; then
+    echo "This command requires at least jq version 1.6"
+    return
+  fi
+
+  API_URL="http://${API_HOST}/api/v1/events"
+
+  local width
+  width=$(tput cols)
+  local summaryLen=$((width - 60))
+  summaryLen=$((summaryLen < 7 ? 7 : summaryLen))
+
+  curl --connect-timeout 3 -s -H "$PERMISSION" "${API_URL}" 2>/dev/null | \
+    sed 's|\\n| |g' | \
+    jq -r "([\"TIMESTAMP\",\"LEVEL\",\"SUMMARY\",\"SOURCE\",\"ACK\",\"NOTIFY\"]| (.,map(length*\"-\")) | join(\"|\")), (sort_by(.timestamp) | reverse | .[] | [.timestamp[0:19], .severity, .summary[0:${summaryLen}], .source, .acknowledged, .notification] | join(\"|\"))" | \
+    column -t -s '|'
+  if [ $? -ne 0 ]; then
+    echo -e "\nUnable to communicate with API: ${API_URL}\n"
+    exit 1
+  fi
+}
+
+tool_exists() {
+    command -v "$1" &> /dev/null
+}
+
+pretty_json() {
+  [[ "$QUIET" ]]  && return 0
+  if tool_exists python; then
+    python -m json.tool
+  elif tool_exists python3; then
+    python3 -m json.tool
+  else
+    cat
+    echo
+  fi
+}
+
+create_event() {
+  API_URL="http://${API_HOST}/api/v1/events"
+
+  local summary=$*
+  local content
+  [[ "$CONTENT" ]] && content="\"content\": \"$CONTENT\","
+  local source=${SOURCE:-CLI}
+  local notification=false
+  [[ "$NOTIFICATION" ]] && notification=true
+  local severity=${SEVERITY:-info}
+
+  curl -0 -X POST --connect-timeout 3 -s -H "$PERMISSION" -H 'Content-Type: application/json' "${API_URL}" --data @- <<EOF | pretty_json
+{
+  "summary": "${summary}",
+  ${content}
+  "severity": "${severity}",
+  "notification": ${notification},
+  "source": "${source}"
+}
+EOF
+}
+trap cleanup INT
+
+API_HOST=$(deltafi serviceip deltafi-api-service)
+
+ARGS=("$@")
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+SUBCOMMAND=${ARGS[1]}
+shift
+shift
+case "$SUBCOMMAND" in
+  list)
+    list_events "$@"
+    ;;
+  create)
+    VALID_ARGS=$(getopt -o qhwens:c:l: --long help,quiet,warn,error,success,notification,source:,content:,level:,severity: -- "$@")
+    if [[ $? -ne 0 ]]; then
+      exit 1;
+    fi
+    eval set --"$VALID_ARGS"
+    while true; do
+      case "$1" in
+        -h | --help)
+          cli_create_help_command
+          shift
+          ;;
+        -w | --warn)
+          SEVERITY=warn
+          shift
+          ;;
+        -e | --error)
+          SEVERITY=error
+          shift
+          ;;
+        --success)
+          SEVERITY=success
+          shift
+          ;;
+        -n | --notification)
+          NOTIFICATION=true
+          shift
+          ;;
+        -q | --quiet)
+          QUIET=true
+          shift
+          ;;
+        -s | --source)
+          SOURCE="$2"
+          shift 2
+          ;;
+        -c | --content)
+          CONTENT="$2"
+          shift 2
+          ;;
+        -l | --level | --severity)
+          SEVERITY="$2"
+          shift 2
+          ;;
+        --) shift;
+          break
+          ;;
+      esac
+    done
+
+    create_event "$@"
+    ;;
+  *)
+    cli_help_command
+    ;;
+esac
+
+cleanup
