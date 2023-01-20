@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Added Summary field to Events
+- CLI: `deltafi event list` and `deltafi event create` commands added (#409)
 
 ### Changed
 - Upgrade all Java containers to build with JDK17 and excute with JVM17
