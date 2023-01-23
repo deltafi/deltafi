@@ -82,7 +82,7 @@ public class IngressService {
      * Cache eviction method for the disk space service call.  Flushed every 5 seconds.
      * This is scheduled and should not be called directly.
      */
-    @CacheEvict(cacheNames = {"diskspaceservice-storage"})
+    @CacheEvict(cacheNames = {"diskspaceservice-storage"}, allEntries = true)
     @Scheduled(fixedDelay = 5000)
     public void evictStorageAvailable() {
     }

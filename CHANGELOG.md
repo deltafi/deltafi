@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Corrected Python license headers.
+- Fix caching of API storage check calls from ingress
 
 ### Tech-Debt/Refactor
 
