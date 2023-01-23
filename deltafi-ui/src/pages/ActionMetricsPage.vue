@@ -41,7 +41,7 @@
 <script setup>
 import Dropdown from "primevue/dropdown";
 import Message from "primevue/message";
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
 import QueueMetricsTable from "@/components/QueueMetricsTable.vue";
 import PageHeader from "@/components/PageHeader.vue";

@@ -38,7 +38,7 @@
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import usePlugins from "@/composables/usePlugins";
 import Panel from "primevue/panel";
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import { computed, onMounted } from "vue";
 
 const { data: plugins, fetch: fetchPlugins, loading } = usePlugins();

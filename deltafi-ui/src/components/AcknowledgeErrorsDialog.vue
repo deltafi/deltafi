@@ -41,7 +41,7 @@
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Dialog from "primevue/dialog";
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, ref, defineProps, defineEmits, watch } from "vue";
 import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";

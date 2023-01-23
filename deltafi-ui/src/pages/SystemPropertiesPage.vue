@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import Message from "primevue/message";
 import PageHeader from "@/components/PageHeader.vue";
 import PropertySet from "@/components/PropertySet.vue";

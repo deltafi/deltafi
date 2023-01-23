@@ -70,7 +70,7 @@
 <script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import PageHeader from "@/components/PageHeader.vue";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 import useUtilFunctions from "@/composables/useUtilFunctions";

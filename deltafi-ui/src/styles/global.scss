@@ -126,3 +126,12 @@ td.did-column {
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
   text-shadow: .02rem 0px black;
 }
+
+.p-paginator {
+  background: none !important;
+  color: #212529 !important;
+}
+
+.p-progressbar .p-progressbar-label {
+  color: #212529 !important;
+}

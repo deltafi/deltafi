@@ -99,7 +99,7 @@
     </div>
     <Panel header="Results" class="table-panel results">
       <template #icons>
-        <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
       <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>

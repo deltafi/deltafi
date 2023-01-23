@@ -90,7 +90,7 @@ import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import Message from "primevue/message";
 import Panel from "primevue/panel";
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import Splitter from "primevue/splitter";
 import SplitterPanel from "primevue/splitterpanel";
 

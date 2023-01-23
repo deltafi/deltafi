@@ -24,7 +24,7 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="errors.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="errors.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
     </template>
     <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>

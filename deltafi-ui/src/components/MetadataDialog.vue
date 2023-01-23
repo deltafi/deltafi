@@ -85,7 +85,7 @@ import useReplay from "@/composables/useReplay";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import Message from "primevue/message";
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import _ from "lodash";
 
 const emit = defineEmits(["update"]);

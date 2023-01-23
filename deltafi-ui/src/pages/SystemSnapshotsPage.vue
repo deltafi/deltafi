@@ -30,7 +30,7 @@
           <i class="pi pi-search" />
           <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
-        <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" class="p-panel-header" style="float: left" @page="onPage"></Paginator>
+        <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage"></Paginator>
       </template>
       <DataTable v-model:filters="filters" :value="snapshots" :paginator="true" :first="pageFirst" :rows="pageRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading">
         <template #empty>No snapshots to display.</template>
@@ -101,7 +101,7 @@ import useNotifications from "@/composables/useNotifications";
 import { FilterMatchMode } from "primevue/api";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
-import FileUpload from "primevue/fileupload";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
 import { EnumType } from "json-to-graphql-query";
 import Paginator from "primevue/paginator";
 

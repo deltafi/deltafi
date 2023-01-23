@@ -37,7 +37,7 @@
 import useDeletePolicyConfiguration from "@/composables/useDeletePolicyConfiguration";
 import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import FileUpload from "primevue/fileupload";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
 import Message from "primevue/message";
 import OverlayPanel from "primevue/overlaypanel";
 import { defineEmits, ref } from "vue";

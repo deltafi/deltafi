@@ -37,7 +37,7 @@
 import useIngressRoutingConfiguration from "@/composables/useIngressRoutingConfiguration";
 import useIngressRoutingQueryBuilder from "@/composables/useIngressRoutingQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import FileUpload from "primevue/fileupload";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
 import Message from "primevue/message";
 import OverlayPanel from "primevue/overlaypanel";
 import { defineEmits, ref } from "vue";

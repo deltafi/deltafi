@@ -90,7 +90,7 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import ConfirmDialog from "primevue/confirmdialog";
 import Menu from "primevue/menu";
-import ProgressBar from "primevue/progressbar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import DeltaFileIndexedMetadataPanel from "@/components/DeltaFileIndexedMetadataPanel.vue";
 import MetadataViewer from "@/components/MetadataViewer.vue";
 import MetadataDialog from "@/components/MetadataDialog.vue";
