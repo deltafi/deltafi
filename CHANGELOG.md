@@ -7,7 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Added Summary field to Events
-- CLI: `deltafi event list` and `deltafi event create` commands added (#409)
+- CLI: `deltafi event list` and `deltafi event create` commands added (#410)
+- Grafana alerts create events when they are initiated and cleared (#409)
 
 ### Changed
 - Upgrade all Java containers to build with JDK17 and excute with JVM17
@@ -15,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Deprecated
 
 ### Removed
+- Alerts from Grafana no longer trigger a failed status check.  Events will be used to track alerts (#409)
 
 ### Fixed
 - Corrected Python license headers.

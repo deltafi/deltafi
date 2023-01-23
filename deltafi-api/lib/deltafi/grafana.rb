@@ -22,6 +22,7 @@ require 'httparty'
 require 'json'
 
 module Deltafi
+  # Grafana API client
   module Grafana
     extend self
 
@@ -29,7 +30,7 @@ module Deltafi
 
     ALERT_API = "#{GRAFANA_URL}/api/alertmanager/grafana/api/v2/alerts"
 
-    def self.alerts(raw = false)
+    def self.alerts(raw: false)
       if raw
         HTTParty.get(ALERT_API).to_s
       else
@@ -41,6 +42,5 @@ module Deltafi
         end
       end
     end
-
   end
 end

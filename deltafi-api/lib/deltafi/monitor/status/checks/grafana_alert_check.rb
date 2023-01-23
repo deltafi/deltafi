@@ -20,12 +20,17 @@
 
 require 'deltafi'
 require 'deltafi/monitor/status/check'
+require 'deltafi/events'
 
 module Deltafi
   module Monitor
     module Status
       module Checks
         class GrafanaAlertCheck < Status::Check
+          # Static list  of previous alerts used for statekeeping (minimize repeat events and generate clear events)
+          @@previous_alerts = []
+
+          FILTERED_LABELS = %i[__alert_rule_uid__ ref_id alertname datasource_uid grafana_folder].freeze
 
           def initialize
             super('Grafana Alert Check')
@@ -33,23 +38,50 @@ module Deltafi
 
           def run
             alerts = Deltafi::Grafana.alerts
-            if(alerts && !alerts.empty?)
-              self.code = 1
-              message_lines << '##### Active alerts'
+
+            if alerts && !alerts.empty?
               alerts.each do |alert|
                 name = alert.dig :labels, :alertname
                 summary = alert.dig :annotations, :summary
-                labels = alert.dig :labels
-                message_lines << "- **#{name}**"
-                message_lines << "  - *Summary*: #{summary}" if summary
-                labels&.each do |k,v|
-                  message_lines << "  - *#{k.capitalize}*: #{v}" unless [:'__alert_rule_uid__', :ref_id, :alertname, :datasource_uid, :grafana_folder].include? k
-                end
+                labels = alert[:labels]
+                labels[:summary] = summary
+
+                generate_new_event name, labels, labels[:severity]
               end
             end
+
+            clear_old_alerts alerts
+
             self
           end
 
+          def generate_new_event(name, labels, severity)
+            return if @@previous_alerts.include?(name)
+
+            # Event content is a bullet list of all labels on the alert, excluding filtered labels
+            content = labels&.reject { |l| FILTERED_LABELS.include? l }&.map do |k, v|
+              "- *#{k.capitalize}*: #{v}"
+            end&.join("\n")
+
+            Deltafi::Events.generate "Alert: #{name}",
+                                     content: content,
+                                     severity: severity,
+                                     notification: true,
+                                     source: 'Grafana'
+          end
+
+          def clear_old_alerts(alerts)
+            alert_list = alerts&.map { |a| a.dig :labels, :alertname } || []
+
+            @@previous_alerts.reject { |i| alert_list.include? i }.each do |old|
+              Deltafi::Events.generate "Alert cleared: #{old}",
+                                       severity: 'success',
+                                       notification: true,
+                                       source: 'Grafana'
+            end
+
+            @@previous_alerts = alert_list
+          end
         end
       end
     end
