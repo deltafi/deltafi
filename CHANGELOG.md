@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.100.1 or 1.0.0
+## [Unreleased] - Next release 0.101.1 or 1.0.0
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.101.0] - 2023-01-23
 
 ### Added
 - Added Summary field to Events
@@ -13,18 +31,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - Upgrade all Java containers to build with JDK17 and excute with JVM17
 
-### Deprecated
-
 ### Removed
 - Alerts from Grafana no longer trigger a failed status check.  Events will be used to track alerts (#409)
 
 ### Fixed
 - Corrected Python license headers.
 - Fix caching of API storage check calls from ingress
-
-### Tech-Debt/Refactor
-
-### Security
 
 ### Upgrade and Migration
 - Upgrade to MongoDB 5.0.14
