@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.101.1]
+
+### Fixed
+
+- Fix toolbar issue with PrimeVue upgrade (#317)
+
 ## [0.101.0]
 
 ### Changed
@@ -516,7 +522,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[0.101.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.100.0..0.101.0
+[0.101.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.0...0.101.1
+[0.101.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.100.0...0.101.0
 [0.100.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.8...0.100.0
 [0.99.8]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.6...0.99.8
 [0.99.6]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.99.5...0.99.6

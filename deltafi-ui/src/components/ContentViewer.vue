@@ -21,10 +21,10 @@
     <div class="content-viewer-container" :style="`height: ${maxHeight}; max-height: ${maxHeight}`">
       <div class="content-viewer-section">
         <Toolbar>
-          <template #left>
+          <template #start>
             <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
           </template>
-          <template #right>
+          <template #end>
             <Button :label="contentReference.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
             <Button class="p-button-text p-button-secondary" disabled>
@@ -112,7 +112,7 @@ const contentLoaded = ref(false);
 const highlightCode = ref(true);
 const viewMetadata = ref(false);
 const content = ref(new ArrayBuffer());
-const contentAs = reactive({})
+const contentAs = reactive({});
 const decoder = new TextDecoder("utf-8");
 const encoder = new TextEncoder("utf-8");
 const prettyPrintFormats = ["json", "xml"];
@@ -128,18 +128,18 @@ const processContent = async () => {
   });
 
   // UTF-8
-  contentAs.utf8 = decoder.decode(content.value)
+  contentAs.utf8 = decoder.decode(content.value);
 
   // Formatted JSON/XML
   if (prettyPrintFormats.includes(language.value)) {
-    contentAs.formatted = "Loading..."
-    contentAs.formatted = await prettyPrint(contentAs.utf8, language.value)
+    contentAs.formatted = "Loading...";
+    contentAs.formatted = await prettyPrint(contentAs.utf8, language.value);
   }
 };
 
 const displayedContent = computed(() => {
   return contentAs[selectedRenderFormat.value.id];
-})
+});
 
 // Menu Buttons
 const highlightBtnEnbl = computed(() => {
@@ -204,22 +204,22 @@ const language = computed(() => {
 
 const renderFormats = computed(() => {
   const formats = [
-    { name: "Hexdump", id: 'hex', highlight: false },
-    { name: "UTF-8", id: 'utf8', highlight: true }
+    { name: "Hexdump", id: "hex", highlight: false },
+    { name: "UTF-8", id: "utf8", highlight: true },
   ];
 
   if (prettyPrintFormats.includes(language.value)) {
     formats.push({
       name: `Formatted ${language.value.toUpperCase()}`,
-      id: 'formatted',
-      highlight: true
-    })
+      id: "formatted",
+      highlight: true,
+    });
   }
 
-  return _.sortBy(formats, 'name');
+  return _.sortBy(formats, "name");
 });
 
-const selectedRenderFormat = ref(renderFormats.value.find((f) => f.id === 'utf8'));
+const selectedRenderFormat = ref(renderFormats.value.find((f) => f.id === "utf8"));
 
 onMounted(() => {
   loadContent();
@@ -230,9 +230,9 @@ watch(
   () => {
     loadContent();
     if (renderFormats.value.find((f) => f.id == selectedRenderFormat.value.id)) {
-      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === selectedRenderFormat.value.id)
+      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === selectedRenderFormat.value.id);
     } else {
-      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === 'utf8')
+      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === "utf8");
     }
   }
 );
