@@ -177,8 +177,14 @@ fi
 NEW_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
 
 if ! [ "${ORIG_CORE_POD}" = "${NEW_CORE_POD}" ]; then
+
   cli_log "Running migrations"
-  deltafi mongo-migrate
+  deltafi event create -s "cli" "Running Mongo migrations"
+  MONGO_RESULTS=$(deltafi mongo-migrate)
+  deltafi event create -s "cli" --success "Completed Mongo migrations" --content "${MONGO_RESULTS}"
+
+  deltafi event create -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
+
 fi
 
 cli_log "DeltaFi install complete"

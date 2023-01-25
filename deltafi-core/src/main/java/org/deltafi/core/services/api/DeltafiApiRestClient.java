@@ -38,6 +38,7 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
     private final String url;
     private final HttpClient httpClient;
     private final static String CONTENT_METRICS_ENDPOINT = "/api/v1/metrics/system/content";
+    private final static String EVENTS_ENDPOINT = "/api/v1/events";
     private final static String METRIC_VIEW_PERMISSION = "MetricsView";
 
     public DeltafiApiRestClient(@Value("${API_URL:http://deltafi-api-service}") String url) {
@@ -68,5 +69,22 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
             log.error(e.getMessage());
             return null;
         }
+    }
+
+    public String createEvent(String body) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url + EVENTS_ENDPOINT))
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .headers("accept", MediaType.APPLICATION_JSON.toString(), DeltaFiConstants.PERMISSIONS_HEADER, "Admin").build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() / 100 != 2) {
+                String error = "Unable to post to the event API (Error " + response.statusCode() + "):\n" + body;
+                log.error(error);
+            }
+            return response.body();
+        } catch (Throwable e) {
+            log.error("Unable to post a new event",e);
+        }
+        return null;
     }
 }

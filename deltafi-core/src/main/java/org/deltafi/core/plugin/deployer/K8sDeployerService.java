@@ -30,12 +30,14 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.EventService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -53,8 +55,8 @@ public class K8sDeployerService extends BaseDeployerService {
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient k8sClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService) {
-        super(deltaFiPropertiesService, imageRepositoryRepo, pluginRegistryService, pluginCustomizationService, systemSnapshotService);
+    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient k8sClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        super(deltaFiPropertiesService, imageRepositoryRepo, pluginRegistryService, pluginCustomizationService, systemSnapshotService, eventService);
         this.k8sClient = k8sClient;
     }
 
@@ -62,12 +64,16 @@ public class K8sDeployerService extends BaseDeployerService {
     public Result deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
         PluginImageRepository pluginImageRepository = findByGroupId(pluginCoordinates);
 
+        ArrayList<String> info = new ArrayList<>();
+
         if (imageRepoOverride != null) {
             pluginImageRepository.setImageRepositoryBase(imageRepoOverride);
+            info.add("Image repo override: " + imageRepoOverride);
         }
 
         if (imagePullSecretOverride != null) {
             pluginImageRepository.setImagePullSecret(imagePullSecretOverride);
+            info.add("Image pull secret override: " + imagePullSecretOverride);
         }
 
         PluginCustomization pluginCustomization;
@@ -76,13 +82,20 @@ public class K8sDeployerService extends BaseDeployerService {
                     PluginCustomizationService.unmarshalPluginCustomization(customDeploymentOverride) :
                     pluginCustomizationService.getPluginCustomizations(pluginCoordinates);
         } catch (Exception e) {
-            return Result.newBuilder().success(false).errors(List.of("Could not retrieve plugin customizations: " + e.getMessage())).build();
+            return Result.newBuilder().success(false).info(info).errors(List.of("Could not retrieve plugin customizations: " + e.getMessage())).build();
         }
 
         try {
-            return createOrReplace(createDeployment(pluginCoordinates, pluginImageRepository, pluginCustomization));
+            Result result = createOrReplace(createDeployment(pluginCoordinates, pluginImageRepository, pluginCustomization));
+            if(result.getInfo() != null) {
+                result.getInfo().addAll(info);
+            }
+            else {
+                result.setInfo(info);
+            }
+            return result;
         } catch (IOException e) {
-            return Result.newBuilder().success(false).errors(List.of("Could not create the deployment: " + e.getMessage())).build();
+            return Result.newBuilder().success(false).info(info).errors(List.of("Could not create the deployment: " + e.getMessage())).build();
         }
     }
 

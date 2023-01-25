@@ -26,6 +26,8 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.EventService;
+import org.deltafi.core.services.api.model.Event;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 import org.springframework.security.core.context.SecurityContext;
@@ -42,19 +44,33 @@ public abstract class BaseDeployerService implements DeployerService {
     private final PluginRegistryService pluginRegistryService;
     final PluginCustomizationService pluginCustomizationService;
     private final SystemSnapshotService systemSnapshotService;
+    private final EventService eventService;
 
-    public BaseDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryRepo imageRepositoryRepo, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService) {
+    public BaseDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryRepo imageRepositoryRepo, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService, EventService eventService) {
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.imageRepositoryRepo = imageRepositoryRepo;
         this.pluginRegistryService = pluginRegistryService;
         this.pluginCustomizationService = pluginCustomizationService;
         this.systemSnapshotService = systemSnapshotService;
+        this.eventService = eventService;
     }
 
     @Override
     public Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
         systemSnapshotService.createSnapshot(preUpgradeMessage(pluginCoordinates));
-        return deploy(pluginCoordinates, imageRepoOverride, imagePullSecretOverride, customDeploymentOverride);
+
+        Result retval = deploy(pluginCoordinates, imageRepoOverride, imagePullSecretOverride, customDeploymentOverride);
+
+        eventService.publishEvent(
+                Event.builder("Plugin installed: " + pluginCoordinates)
+                        .notification(true)
+                        .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
+                        .addList("Additional information:", retval.getInfo())
+                        .addList("Errors:", retval.getErrors())
+                        .build()
+        );
+
+        return retval;
     }
 
     @Override
@@ -65,8 +81,18 @@ public abstract class BaseDeployerService implements DeployerService {
         }
 
         pluginRegistryService.uninstallPlugin(pluginCoordinates);
+        Result retval = removeDeployment(pluginCoordinates);
 
-        return removeDeployment(pluginCoordinates);
+        eventService.publishEvent(
+                Event.builder("Plugin uninstalled: " + pluginCoordinates.toString())
+                        .notification(true)
+                        .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
+                        .addList("Additional information:", retval.getInfo())
+                        .addList("Errors:", retval.getErrors())
+                        .build()
+        );
+
+        return retval;
     }
 
     abstract Result deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride);

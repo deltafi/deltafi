@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.101.1 or 1.0.0
 
 ### Added
+- Java `EventService` for generating events to the event API from the core
+- Events generated when a new core is installed from the CLI
+- Events generated when a plugin is installed or uninstalled
 
 ### Changed
 
