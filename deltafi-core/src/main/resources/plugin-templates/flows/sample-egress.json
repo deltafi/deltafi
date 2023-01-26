@@ -1,0 +1,29 @@
+{
+  "name": "sample-egress",
+  "type": "EGRESS",
+  "description": "Egress flows require a format action and an egress action and optionally can provide one or more validate actions",
+  "includeIngressFlows": [
+    "sample-ingress"
+  ],
+  "formatAction": {
+    "name": "SampleFormatAction",
+    "type": "org.deltafi.passthrough.action.RoteFormatAction",
+    "requiresDomains": [
+      "binary"
+    ]
+  },
+  "validateActions": [
+    {
+      "name": "SampleValidateAction",
+      "type": "org.deltafi.passthrough.action.RubberStampValidateAction"
+    }
+  ],
+  "egressAction": {
+    "name": "SampleEgressAction",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
+      "metadataKey": "deltafiMetadata",
+      "url": "${egressUrl}"
+    }
+  }
+}

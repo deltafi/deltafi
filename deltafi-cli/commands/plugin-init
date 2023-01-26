@@ -1,0 +1,245 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: plugin-init
+
+Usage:
+  plugin-init [options] <plugin-out.zip>
+
+Options:
+  -a, --artifact-id 'val'  Artifact Id for the plugin
+  -d, --description 'val'  Description of the plugin
+  -f, --file 'val'         Json file containing the plugin-init arguments
+  -g, --group-id 'val'     Group Id for the plugin
+  -s, --silent             Skip prompting for actions
+  -h, --help               Show help"
+  exit 1
+}
+
+# when python is supported remove the hardcoded JAVA option
+json='{"pluginLanguage": "JAVA"}'
+
+declare -a actions
+actions["1"]="TRANSFORM"
+actions["2"]="LOAD"
+actions["3"]="DOMAIN"
+actions["4"]="ENRICH"
+actions["5"]="FORMAT"
+actions["6"]="VALIDATE"
+actions["7"]="EGRESS"
+
+action_type_prompt="Select the action type
+   1: transform action
+   2: load action
+   3: domain action
+   4: enrich action
+   5: format action
+   6: validate action
+   7: egress action
+Enter selection [1..7] "
+
+declare -a languages
+languages["1"]="JAVA"
+languages["2"]="PYTHON"
+
+plugin_language="Select the plugin language
+   1: Java
+   2: Python
+Enter selection [1..2] "
+
+add_plugin_group_id() {
+  json=$(echo "$json" | jq ". += {\"groupId\": \"$1\"}")
+}
+
+add_plugin_artifact_id() {
+  json=$(echo "$json" | jq ". += {\"artifactId\": \"$1\"}")
+}
+
+add_plugin_description() {
+  json=$(echo "$json" | jq ". += {\"description\": \"$1\"}")
+}
+
+add_plugin_language() {
+  json=$(echo "$json" | jq ". += {\"pluginLanguage\": \"$1\"}")
+}
+
+read_value() {
+  declare -n response=$1
+  while :; do
+    read -r -p "${2}" response
+    if [[ -n "$response" ]]; then
+      break
+    fi
+  done
+}
+
+add_action_prompt() {
+  declare -n value=$1
+  read -r -p "Would you like to add an action? " response
+  case "$response" in
+    [yY][eE][sS]|[yY])
+      value=1
+      ;;
+    *)
+      value=0
+      ;;
+  esac
+}
+
+add_plugin_fields() {
+  if [ "$( jq 'has("groupId")' <<< "$json" )" == "false" ]; then
+    read_value group_id "Enter the plugin groupId: "
+    add_plugin_group_id "$group_id"
+  fi
+
+  if [ "$( jq 'has("artifactId")' <<< "$json" )" == "false" ]; then
+    read_value artifact_id "Enter the plugin artifactId: "
+    add_plugin_artifact_id "$artifact_id"
+  fi
+
+  if [ "$( jq 'has("description")' <<< "$json" )" == "false" ]; then
+    read_value description "Enter the plugin description: "
+    add_plugin_description "$description"
+  fi
+
+  if [ "$( jq 'has("pluginLanguage")' <<< "$json" )" == "false" ]; then
+    while :; do
+      read -r -p "${plugin_language}" plugin_language
+      [[ $plugin_language =~ ^[0-9]+$ ]] || { echo "Please enter a valid number"; continue; }
+      if (($plugin_language > 0 && $plugin_language <= 2)); then
+        break
+      else
+        echo "The selection must be between 1 and 2, try again"
+      fi
+    done
+
+    plugin_language_string=${languages["$plugin_language"]}
+    add_plugin_language "$plugin_plugin_language_string"
+  fi
+}
+
+add_action() {
+  while :; do
+    read -r -p "${action_type_prompt}" action_type
+    [[ $action_type =~ ^[0-9]+$ ]] || { echo "Please enter a valid number"; continue; }
+    if (($action_type > 0 && $action_type <= 7)); then
+      break
+    else
+      echo "The selection must be between 1 and 7, try again"
+    fi
+  done
+
+  action_type_name=${actions["$action_type"]}
+  read_value action_name "Enter the action name: "
+  read_value action_description "Enter the action description: "
+  read -r -p "[Optional] - Enter name of the parameter class for this action: " action_parameter_class
+
+  action="{ \"className\": \"$action_name\", \"description\": \"$action_description\", \"actionType\": \"$action_type_name\" }"
+
+  if [ -n "$action_parameter_class" ]; then
+    action=$(echo "$action" | jq ". += {\"parameterClassName\": \"$action_parameter_class\"}")
+  fi
+
+  json=$(echo "$json" | jq ".actions += [$action]")
+}
+
+build_json() {
+  add_plugin_fields
+
+  if [ -z "$SILENT" ]; then
+    add_action_prompt should_add_action
+    while [[ $should_add_action -eq 1 ]]; do
+      add_action
+      add_action_prompt should_add_action
+    done
+  fi
+}
+
+read_json() {
+  if [ ! -f "$PLUGIN_FILE" ]; then
+    cli_log "${yellow}${PLUGIN_FILE}: No such file${normal}"
+    exit 1
+  fi
+  json=$(cat "$PLUGIN_FILE")
+}
+
+SILENT=
+PLUGIN_FILE=
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -a|--artifact-id)
+      shift
+      add_plugin_artifact_id "$1"
+      shift
+      ;;
+    -d|--description)
+      shift
+      add_plugin_description "$1"
+      shift
+      ;;
+    -f|--file)
+      shift
+      PLUGIN_FILE="$1"
+      shift
+      ;;
+    -g|--group-id)
+      shift
+      add_plugin_group_id "$1"
+      shift
+      ;;
+    -h|--help)
+      cli_help_command
+      shift
+      ;;
+    # When python can be generated add this option and update the help doc
+    #-l|--language)
+    #  shift
+    #  LANGUAGE="${1^^}"
+    #  if [[ ! ("$LANGUAGE" == "JAVA" || "$LANGUAGE" == "PYTHON") ]]; then
+    #    echo "The plugin language must be Java or Python";
+    #    exit 1
+    #  fi
+    #  shift
+    #  ;;
+    -s|--silent)
+      shift
+      SILENT="true"
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$PLUGIN_FILE" ]; then
+  build_json
+else
+  read_json
+fi
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+
+outfile="plugin.zip"
+if [[ ${#ARGS[@]} -gt 1 ]]; then
+  outfile="$2"
+fi
+
+DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
+RESPONSE_CODE=$(curl -s -X POST -o "${outfile}" -w "%{http_code}" -H 'Content-Type: application/json' -H "$PERMISSION" -H "$CLI_USER" -d "$json" http://$DELTAFI_DGS/generate/plugin?message=true)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  cli_log "${red}$Error generating the plugin${normal}"
+  echo -e "${red}${RESPONSE_CODE} Error: $(cat ${outfile})${normal}"
+  rm -f outfile
+else
+  echo "Successfully created plugin ${green}$outfile${normal}"
+fi

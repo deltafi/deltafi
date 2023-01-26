@@ -1,0 +1,20 @@
+{
+  "name": "sample-ingress",
+  "type": "INGRESS",
+  "description": "Ingress flows require a load action and can optional contain one or more transform actions",
+  "transformActions": [
+    {
+      "name": "SampleTransformAction",
+      "type": "org.deltafi.passthrough.action.RoteTransformAction"
+    }
+  ],
+  "loadAction": {
+    "name": "SampleLoadAction",
+    "type": "org.deltafi.passthrough.action.RoteLoadAction",
+    "parameters": {
+      "domains": [
+        "binary"
+      ]
+    }
+  }
+}

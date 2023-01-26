@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Java `EventService` for generating events to the event API from the core
 - Events generated when a new core is installed from the CLI
 - Events generated when a plugin is installed or uninstalled
+- Added a new endpoint `generate/plugin` used to create new plugin projects
+- CLI: `deltafi plugin-init` used to create new plugin projects
 
 ### Changed
 

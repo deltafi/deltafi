@@ -149,6 +149,7 @@ Commands:
   performance-test       run performance tests against DeltaFi
   plugin-customization   manage plugin customization configuration
   plugin-image-repo      manage the image repositories that hold plugin images
+  plugin-init            create a new plugin project
   query                  send a query to graphql
   redis-cli              launch the redis CLI
   redis-latency          monitor redis latency
@@ -269,6 +270,9 @@ case "$1" in
     ;;
   plugin-image-repo)
     "$DELTAFICLI_WORKDIR/commands/plugin-image-repo" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/plugin-image-repo.log"
+    ;;
+  plugin-init)
+    "$DELTAFICLI_WORKDIR/commands/plugin-init" "$@" | tee -ia "$DELTAFICLI_WORKDIR/logs/plugin-init.log"
     ;;
   query)
     "$DELTAFICLI_WORKDIR/commands/query" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/query.log"

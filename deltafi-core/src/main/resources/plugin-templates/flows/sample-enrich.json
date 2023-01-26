@@ -1,0 +1,29 @@
+{
+  "name": "sample-enrich",
+  "type": "ENRICH",
+  "description": "An enrich flow can contain domain and enrich actions",
+  "domainActions": [
+    {
+      "name": "SampleDomainAction",
+      "type": "org.deltafi.sample.action.SampleDomainAction",
+      "requiresDomains": [
+        "domain"
+      ]
+    }
+  ],
+  "enrichActions": [
+    {
+      "name": "SampleEnrichAction",
+      "type": "org.deltafi.sample.action.SampleEnrichAction",
+      "requiresDomains": [
+        "binary"
+      ],
+      "parameters": {
+        "enrichments": {
+          "binaryEnrichment": "binary enrichment value"
+        },
+        "indexedMetadata": "${indexedMetadata}"
+      }
+    }
+  ]
+}

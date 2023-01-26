@@ -22,7 +22,7 @@ subprojects {
         excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
                               "**/*.yaml", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
                               "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
-                              "**/node_modules/**"]
+                              "**/plugin-templates/**", "**/node_modules/**"]
     }
 
     java {

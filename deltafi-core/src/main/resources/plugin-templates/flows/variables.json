@@ -1,0 +1,33 @@
+[
+  {
+    "name": "egressUrl",
+    "description": "The URL to post the DeltaFile to",
+    "dataType": "STRING",
+    "required": true,
+    "defaultValue": "http://deltafi-egress-sink-service"
+  },
+  {
+    "name": "indexedMetadata",
+    "description": "Metadata that will be indexed in the DeltaFile",
+    "dataType": "MAP",
+    "required": false
+  },
+  {
+    "name": "sampleList",
+    "description": "Noop sample list variable",
+    "dataType": "LIST",
+    "required": false
+  },
+  {
+    "name": "sampleBoolean",
+    "description": "Noop sample boolean variable",
+    "dataType": "BOOLEAN",
+    "required": false
+  },
+  {
+    "name": "sampleNumber",
+    "description": "Noop sample number variable",
+    "dataType": "NUMBER",
+    "required": false
+  }
+]

@@ -23,3 +23,6 @@ management:
         enabled: false
     metrics:
       enabled: false
+server:
+  error:
+    include-message: on-param
