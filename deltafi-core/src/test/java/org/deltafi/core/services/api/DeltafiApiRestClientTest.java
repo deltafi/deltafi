@@ -81,6 +81,7 @@ class DeltafiApiRestClientTest {
     HttpClient httpClient;
 
     @Test
+    @SneakyThrows
     void testContentMetrics() throws IOException, InterruptedException {
         ReflectionTestUtils.setField(deltafiApiRestClient, "httpClient", httpClient);
         HttpResponse<Object> response = mock(HttpResponse.class);

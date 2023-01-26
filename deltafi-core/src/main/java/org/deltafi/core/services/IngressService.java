@@ -29,6 +29,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
+import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.springframework.cache.annotation.CacheEvict;
@@ -75,7 +76,12 @@ public class IngressService {
      */
     @Cacheable(cacheNames = {"diskspaceservice-storage"})
     public boolean isStorageAvailable() {
-        return diskSpaceService.contentMetrics().bytesRemaining() > deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;
+        try {
+            return diskSpaceService.contentMetrics().bytesRemaining() > deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;
+        } catch (DeltafiApiException e) {
+            log.warn("API is unreachable.  Unable to evaluate storage availability criteria");
+            return true;
+        }
     }
 
     /**

@@ -17,9 +17,10 @@
  */
 package org.deltafi.core.services.api;
 
+import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.services.api.model.DiskMetrics;
 
 public interface DeltafiApiClient {
-    DiskMetrics contentMetrics();
+    DiskMetrics contentMetrics() throws DeltafiApiException;
     String createEvent(String body);
 }

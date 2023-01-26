@@ -15,22 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services;
+package org.deltafi.core.exceptions;
 
-import lombok.AllArgsConstructor;
-import org.deltafi.core.exceptions.DeltafiApiException;
-import org.deltafi.core.services.api.DeltafiApiClient;
-import org.deltafi.core.services.api.model.DiskMetrics;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-@Service
-@AllArgsConstructor
-public class DiskSpaceService {
-    @Autowired
-    DeltafiApiClient deltafiApiClient;
-
-    public DiskMetrics contentMetrics() throws DeltafiApiException {
-        return deltafiApiClient.contentMetrics();
-    }
+public class DeltafiApiException extends Exception {
+    public DeltafiApiException(String message, Throwable t) { super(message, t); }
 }

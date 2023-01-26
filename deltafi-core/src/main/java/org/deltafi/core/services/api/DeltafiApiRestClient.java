@@ -19,6 +19,7 @@ package org.deltafi.core.services.api;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.services.api.model.DiskMetrics;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -50,7 +52,7 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
      *
      * @return A DiskMetrics object containing the disk limit and usage
      */
-    public DiskMetrics contentMetrics() {
+    public DiskMetrics contentMetrics() throws DeltafiApiException {
         try {
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url + CONTENT_METRICS_ENDPOINT))
                     .GET()
@@ -65,9 +67,12 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
             JSONObject jsonObject = new JSONObject(response.body());
             JSONObject content = jsonObject.getJSONObject("content");
             return new DiskMetrics(content.getLong("limit"), content.getLong("usage"));
+        } catch (ConnectException e) {
+            log.error("Unable to connect to DeltaFi API");
+            throw new DeltafiApiException("Unable to connect to API", e);
         } catch (Exception e) {
-            log.error(e.getMessage());
-            return null;
+            log.error("DeltaFi API communication error", e);
+            throw new DeltafiApiException("Unable to communicate with API", e);
         }
     }
 
