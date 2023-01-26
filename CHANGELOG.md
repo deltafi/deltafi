@@ -3,14 +3,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.101.1 or 1.0.0
+## [Unreleased] - Next release 0.101.2 or 1.0.0
 
 ### Added
-- Java `EventService` for generating events to the event API from the core
-- Events generated when a new core is installed from the CLI
-- Events generated when a plugin is installed or uninstalled
-- Added a new endpoint `generate/plugin` used to create new plugin projects
-- CLI: `deltafi plugin-init` used to create new plugin projects
 
 ### Changed
 
@@ -19,13 +14,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
-- Fix API call NPEs
 
 ### Tech-Debt/Refactor
 
 ### Security
 
 ### Upgrade and Migration
+
+## [0.101.1] - 2021-01-26
+
+### Added
+- Java `EventService` for generating events to the event API from the core
+- Events generated when a new core is installed from the CLI
+- Events generated when a plugin is installed or uninstalled
+- Added a new endpoint `generate/plugin` used to create new plugin projects
+- CLI: `deltafi plugin-init` used to create new plugin projects
+
+### Fixed
+- Fix API call NPEs
 
 ## [0.101.0] - 2023-01-23
 
@@ -1073,7 +1079,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.0...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.1...main
+[0.101.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.0...0.101.1
 [0.101.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.100.0...0.101.0
 [0.100.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.8...0.100.0
 [0.99.8]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.99.6...0.99.8
