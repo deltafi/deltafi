@@ -7,8 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Memory profiler for Monitor when at DEBUG log level
+- Time range query support to Event API
+- Unacknowledge endpoint to Event API
 
 ### Changed
+- Sort order for Event API is now by timestamp descending
 
 ### Deprecated
 

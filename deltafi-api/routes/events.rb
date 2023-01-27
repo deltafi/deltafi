@@ -25,7 +25,13 @@ class ApiServer < Sinatra::Base
     get '/events' do
       authorize! :EventRead
 
-      Event.where(params).to_json
+      start_param = params.delete('start')
+      end_param = params.delete('end')
+      start_time = start_param.nil? ? 24.hours.ago : Time.parse(start_param)
+      end_time = end_param.nil? ? Time.now : Time.parse(end_param)
+      params[:timestamp] = (start_time..end_time)
+
+      Event.where(params).order_by(%i[timestamp desc]).to_json
     end
 
     get '/events/:id' do |id|
@@ -54,13 +60,15 @@ class ApiServer < Sinatra::Base
       event.to_json
     end
 
-    put '/events/:id/acknowledge' do |id|
+    put '/events/:id/:action' do |id, action|
+      raise Sinatra::NotFound unless %w[acknowledge unacknowledge].include?(params['action'])
+
       authorize! :EventAcknowledge
 
       event = Event.find(id)
       return not_found(id) if event.nil?
 
-      event.update_attributes!({ acknowledged: true })
+      event.update_attributes!({ acknowledged: params['action'] == 'acknowledge' })
       event.to_json
     end
 
