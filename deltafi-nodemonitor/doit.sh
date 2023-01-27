@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #    DeltaFi - Data transformation and enrichment platform
 #
@@ -22,8 +22,8 @@ GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
 PERIOD=${PERIOD:-9}
 
 _log() {
-    local log_level=$1
-    local message=$2
+    local log_level="$1"
+    local message="$2"
     timestamp=$(date "+%Y-%m-%dT%H:%M:%SZ")
     echo "{\"timestamp\":\"$timestamp\",\"level\":\"$log_level\",\"$message\"}"
 }
@@ -53,12 +53,12 @@ trap exterminate SIGTERM
 
 # Post usage and limit of /data to graphite roughly every $PERIOD seconds
 while true; do
-    LIMIT=`df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f2`
-    USAGE=`df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f3`
-    TIMESTAMP=`date +%s`
-    echo "gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
-    echo "gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N $GRAPHITE_HOST $GRAPHITE_PORT
+    LIMIT=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f2)
+    USAGE=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f3)
+    TIMESTAMP=$(date +%s)
+    echo "gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    echo "gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
 
     _debug "$NODE_NAME: Using $USAGE of $LIMIT"
-    sleep $PERIOD
+    sleep "$PERIOD"
 done
