@@ -49,11 +49,11 @@ module Deltafi
 
   def self.mongo_client
     config = mongo_config
-    Mongo::Client.new(["#{config[:host]}:#{config[:post]}"],
-                      database: config[:database],
-                      user: config[:user],
-                      password: config[:password],
-                      auth_source: config[:auth_source])
+    @@mongo_client ||= Mongo::Client.new(["#{config[:host]}:#{config[:post]}"],
+                                         database: config[:database],
+                                         user: config[:user],
+                                         password: config[:password],
+                                         auth_source: config[:auth_source])
   end
 
   def self.graphql(query)

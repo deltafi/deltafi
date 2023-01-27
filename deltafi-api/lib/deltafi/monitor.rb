@@ -21,6 +21,7 @@
 require 'deltafi'
 require 'timers'
 require 'fileutils'
+require 'memory_profiler'
 
 Dir[File.join(File.dirname(__FILE__), 'monitor', '*.rb')].each do |f|
   require "deltafi/monitor/#{File.basename(f).split('.')[0]}"
@@ -29,6 +30,7 @@ end
 module Deltafi
   module Monitor
     extend self
+    extend Deltafi::Logger
 
     MODULES = DF::Monitor.constants.map { |c| DF::Monitor.const_get(c) }
 
@@ -49,13 +51,22 @@ module Deltafi
 
     def fork_service(service_class)
       fork do
+        info "Forking process for #{service_class}"
         Process.setproctitle("monitor - child (#{service_class})")
         service = service_class.new
         timers = Timers::Group.new
         timers.now_and_every(service_class::INTERVAL) do
-          service.run
+          if ENV['LOG_LEVEL'] == 'DEBUG'
+            MemoryProfiler.start
+            service.run
+            MemoryProfiler.stop.pretty_print(to_file: "/tmp/#{service_class}.txt", scale_bytes: true)
+            thread_count_by_status = Thread.list.group_by { |t| t.status }.map { |s, t| "#{s} => #{t.size}" }
+            debug "#{service_class} thread count by status: #{thread_count_by_status.join(', ')}"
+          else
+            service.run
+          end
         rescue StandardError => e
-          puts e
+          error e
         end
         loop { timers.wait }
       end

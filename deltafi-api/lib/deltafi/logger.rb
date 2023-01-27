@@ -62,7 +62,7 @@ module Deltafi
         logger.progname = klass
 
         level ||= LOGLEVELS.index ENV.fetch('LOG_LEVEL', 'INFO')
-        level ||= Logger::INFO
+        level ||= ::Logger::INFO
         logger.level = level
 
         return logger

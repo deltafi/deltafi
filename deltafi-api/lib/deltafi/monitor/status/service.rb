@@ -19,6 +19,7 @@
 # frozen_string_literal: true
 
 require 'benchmark'
+require 'timeout'
 
 require "deltafi/monitor/status/check"
 Dir[File.join(File.dirname(__FILE__), 'checks', '*.rb')].each do |f|
@@ -31,7 +32,10 @@ module Deltafi
       class Service
         attr_accessor :status, :checks
 
+        include Deltafi::Logger
+
         INTERVAL = 5
+        TIMEOUT = 5
         COLORS = %w[green yellow red].freeze
         STATES = %w[Healthy Degraded Unhealthy].freeze
         SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'status'].compact.join('.')
@@ -63,10 +67,18 @@ module Deltafi
         def run_checks
           results = checks.map do |check|
             Thread.new do
-              Thread.current[:result] = check.new.run
+              Timeout::timeout(TIMEOUT) do
+                Thread.current[:result] = check.new.run
+              end
+            rescue Timeout::Error => e
+              error "Timeout occurred while running #{check}"
+              Thread.current[:result] = check.new.tap do |c|
+                c.code = 2
+                c.message_lines << 'Timeout occurred while running check.'
+              end
             rescue StandardError => e
-              puts "Error occurred while running #{check} check!"
-              puts e.message, e.backtrace
+              error "Error occurred while running #{check}"
+              error e.message, e.backtrace
               Thread.current[:result] = check.new.tap do |c|
                 c.code = 2
                 c.message_lines << 'Exception occurred while running check.'
