@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Fixed Mongo Connection thread issue in Monitor
+- Formatting on migration event content
+- CLI: Cleaned up event output on install command
 
 ### Tech-Debt/Refactor
 
