@@ -42,7 +42,7 @@ class AuthApi < Sinatra::Application
       permission = DOMAIN_PERMISSIONS[domain]
       return false if permission.nil?
 
-      @user.has_permission?(permission)
+      @user.permission?(permission)
     end
 
     def basic_authenticated?
@@ -95,7 +95,7 @@ class AuthApi < Sinatra::Application
         user: user,
         message: message
       }.to_json
-      puts audit_message + "\n" unless ENV['RACK_ENV'] == 'test'
+      puts "#{audit_message}\n" unless ENV['RACK_ENV'] == 'test'
     end
 
     def authorize!(permission)

@@ -110,7 +110,7 @@ class User < Sequel::Model
     permissions.join(',')
   end
 
-  def has_permission?(permission)
+  def permission?(permission)
     return !([permission, 'Admin'] & permissions).empty?
   end
 

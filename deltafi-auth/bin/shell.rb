@@ -35,4 +35,4 @@ Sequel::Migrator.run(db, 'db/migrations')
 
 %w[lib helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
 
-binding.pry
+binding.pry # rubocop:disable Lint/Debugger

@@ -28,11 +28,10 @@ require 'rack/test'
 
 USERNAME = 'frank'
 PASSWORD = 'P@ssw0rd'
+ADMIN_PERMISSIONS = { 'HTTP_X_USER_PERMISSIONS' => 'Admin' }.freeze
 
 RSpec.describe 'Auth API' do
   include Rack::Test::Methods
-
-  ADMIN_PERMISSIONS = { 'HTTP_X_USER_PERMISSIONS' => 'Admin' }.freeze
 
   def app
     AuthApi
