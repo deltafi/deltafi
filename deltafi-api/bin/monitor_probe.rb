@@ -29,7 +29,7 @@ THRESHOLD = 30 # seconds
 
 def redis_client
   url = ENV['DELTAFI_REDIS_MASTER_PORT'].gsub('tcp://', 'redis://')
-  password = ENV['REDIS_PASSWORD']
+  password = ENV.fetch('REDIS_PASSWORD', nil)
   retries = 0
   begin
     Redis.new(

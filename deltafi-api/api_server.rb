@@ -48,7 +48,7 @@ class ApiServer < Sinatra::Base
     content_type 'application/json'
   end
 
-  get('/probe') {}
+  get('/probe') { return }
 
   namespace '/api/v1' do
     get '/config' do

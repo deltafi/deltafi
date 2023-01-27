@@ -24,14 +24,14 @@ module Deltafi
       module Config
         module UI
           class << self
-            DOMAIN = ENV['DELTAFI_UI_DOMAIN']
-            AUTH_MODE = ENV['AUTH_MODE']
+            DOMAIN = ENV.fetch('DELTAFI_UI_DOMAIN', nil)
+            AUTH_MODE = ENV.fetch('AUTH_MODE', nil)
 
             def config
               properties = DF.system_properties || {}
 
               config = properties[:ui] || {}
-              config[:title] = properties[:systemName] || "DeltaFi"
+              config[:title] = properties[:systemName] || 'DeltaFi'
               config[:domain] = DOMAIN
               config[:authMode] = AUTH_MODE
               config

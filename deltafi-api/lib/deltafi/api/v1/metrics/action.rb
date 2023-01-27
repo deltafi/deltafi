@@ -44,11 +44,13 @@ module Deltafi
               queue_list = []
 
               results.each do |metric|
+                next unless queue_names.include?(metric[:target])
+
                 queue_list << {
                   name: metric[:target],
                   size: metric[:datapoints].map(&:first).compact.last, # Use the oldest non-null datapoint for the gauge value
                   timestamp: metric[:datapoints].last.last.to_i * 1000
-                } if queue_names.include?(metric[:target])
+                }
               end
 
               queue_list

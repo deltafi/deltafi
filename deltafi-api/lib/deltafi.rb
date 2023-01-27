@@ -43,7 +43,7 @@ module Deltafi
       database: ENV['MONGO_DATABASE'] || 'deltafi',
       auth_source: ENV['MONGO_AUTH_DATABASE'] || 'deltafi',
       user: ENV['MONGO_USER'] || 'mongouser',
-      password: ENV['MONGO_PASSWORD']
+      password: ENV.fetch('MONGO_PASSWORD', nil)
     }
   end
 
@@ -76,7 +76,7 @@ module Deltafi
   end
 
   def self.redis_client
-    redis_password = ENV['REDIS_PASSWORD']
+    redis_password = ENV.fetch('REDIS_PASSWORD', nil)
     redis_url = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
 
     retries = 0
@@ -112,7 +112,7 @@ module Deltafi
     return @@system_properties unless running_in_cluster?
 
     begin
-      @@system_properties = self.mongo_client[:deltaFiProperties].find.limit(1).first || {}
+      @@system_properties = mongo_client[:deltaFiProperties].find.limit(1).first || {}
     rescue StandardError => e
       puts e
     end
@@ -120,8 +120,8 @@ module Deltafi
     return @@system_properties
   end
 
-  def self.system_property(dig_path=[], defaultValue=nil)
-    self.system_properties.dig(*dig_path) || defaultValue
+  def self.system_property(dig_path = [], default_value = nil)
+    system_properties.dig(*dig_path) || default_value
   end
 
   def self.running_in_cluster?

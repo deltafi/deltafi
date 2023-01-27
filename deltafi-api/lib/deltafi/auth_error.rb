@@ -22,7 +22,7 @@ module Deltafi
   class AuthError < StandardError
     attr_reader :permission
 
-    def initialize(msg: 'Access Denied.', permission:)
+    def initialize(permission:, msg: 'Access Denied.')
       @permission = permission
       super(msg)
     end

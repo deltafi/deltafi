@@ -78,8 +78,8 @@ module Deltafi
             return @minio_client unless @minio_client.nil?
 
             minio_url = ENV['MINIO_URL'] || 'http://deltafi-minio:9000'
-            minio_access_key = ENV['MINIO_ACCESSKEY']
-            minio_secret_key = ENV['MINIO_SECRETKEY']
+            minio_access_key = ENV.fetch('MINIO_ACCESSKEY', nil)
+            minio_secret_key = ENV.fetch('MINIO_SECRETKEY', nil)
 
             Aws.config.update(
               endpoint: minio_url,

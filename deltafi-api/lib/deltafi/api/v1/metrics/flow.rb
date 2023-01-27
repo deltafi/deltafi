@@ -31,7 +31,6 @@ module Deltafi
         module Flow
           class << self
             def summary(params:)
-
               egress_filter = params[:egressFlows] ? ", 'egressFlow=~(#{params[:egressFlows].join('|')})'" : ''
 
               ingress = <<-QUERY

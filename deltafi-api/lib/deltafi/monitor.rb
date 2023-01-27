@@ -60,7 +60,7 @@ module Deltafi
             MemoryProfiler.start
             service.run
             MemoryProfiler.stop.pretty_print(to_file: "/tmp/#{service_class}.txt", scale_bytes: true)
-            thread_count_by_status = Thread.list.group_by { |t| t.status }.map { |s, t| "#{s} => #{t.size}" }
+            thread_count_by_status = Thread.list.group_by(&:status).map { |s, t| "#{s} => #{t.size}" }
             debug "#{service_class} thread count by status: #{thread_count_by_status.join(', ')}"
           else
             service.run

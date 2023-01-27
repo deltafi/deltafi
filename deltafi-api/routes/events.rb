@@ -61,14 +61,14 @@ class ApiServer < Sinatra::Base
     end
 
     put '/events/:id/:action' do |id, action|
-      raise Sinatra::NotFound unless %w[acknowledge unacknowledge].include?(params['action'])
+      raise Sinatra::NotFound unless %w[acknowledge unacknowledge].include?(action)
 
       authorize! :EventAcknowledge
 
       event = Event.find(id)
       return not_found(id) if event.nil?
 
-      event.update_attributes!({ acknowledged: params['action'] == 'acknowledge' })
+      event.update_attributes!({ acknowledged: action == 'acknowledge' })
       event.to_json
     end
 

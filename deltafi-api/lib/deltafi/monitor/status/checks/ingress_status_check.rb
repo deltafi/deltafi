@@ -27,8 +27,8 @@ module Deltafi
       module Checks
         class IngressStatusCheck < Status::Check
           DEFAULT_REQUIRED_MEGABYTES = 1
-          REQUIRED_MEGABYTES_PROPERTY = %w[ingress diskSpaceRequirementInMb]
-          INGRESS_ENABLED_PROPERTY = %w[ingress enabled]
+          REQUIRED_MEGABYTES_PROPERTY = %w[ingress diskSpaceRequirementInMb].freeze
+          INGRESS_ENABLED_PROPERTY = %w[ingress enabled].freeze
 
           def initialize
             super('Ingress Status Check')
@@ -46,43 +46,40 @@ module Deltafi
           private
 
           def check_for_disabled_ingress
-            unless ingress_enabled?
-              self.code = 1
-              message_lines << "##### Ingress is disabled\n"
-              message_lines << "Reenable the system property '#{INGRESS_ENABLED_PROPERTY}' to restart ingress."
-            end
+            return if ingress_enabled?
+
+            self.code = 1
+            message_lines << "##### Ingress is disabled\n"
+            message_lines << "Reenable the system property '#{INGRESS_ENABLED_PROPERTY}' to restart ingress."
           end
 
           def check_for_storage_disabled_ingress
             remaining = remaining_bytes
             required = required_bytes
-            unless remaining && required && remaining >= required
-              self.code = 1
-              message_lines << "##### Ingress is disabled due to lack of content storage\n"
-              message_lines << "Required bytes in content storage: #{required}\n"
-              message_lines << "Remaining bytes in content storage: #{remaining}\n"
-            end
+            return if remaining && required && remaining >= required
+
+            self.code = 1
+            message_lines << "##### Ingress is disabled due to lack of content storage\n"
+            message_lines << "Required bytes in content storage: #{required}\n"
+            message_lines << "Remaining bytes in content storage: #{remaining}\n"
           end
 
           def required_bytes
-            DF.system_property(REQUIRED_MEGABYTES_PROPERTY, DEFAULT_REQUIRED_MEGABYTES).to_i * 1000000
+            DF.system_property(REQUIRED_MEGABYTES_PROPERTY, DEFAULT_REQUIRED_MEGABYTES).to_i * 1_000_000
           end
 
           def remaining_bytes
             json = DF::API::V1::Metrics::System.content
             limit = json&.dig(:limit)&.to_i
             usage = json&.dig(:usage)&.to_i
-            if limit && usage
-              limit - usage
-            else
-              nil
-            end
+            return unless limit && usage
+
+            limit - usage
           end
 
           def ingress_enabled?
-            DF.system_property(INGRESS_ENABLED_PROPERTY, 'true').to_s.downcase == 'true'
+            DF.system_property(INGRESS_ENABLED_PROPERTY, 'true').to_s.casecmp('true').zero?
           end
-
         end
       end
     end
