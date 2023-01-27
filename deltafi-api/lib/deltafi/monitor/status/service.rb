@@ -78,7 +78,7 @@ module Deltafi
               end
             rescue StandardError => e
               error "Error occurred while running #{check}"
-              error e.message, e.backtrace
+              error "#{e.message}\n#{e.backtrace}"
               Thread.current[:result] = check.new.tap do |c|
                 c.code = 2
                 c.message_lines << 'Exception occurred while running check.'

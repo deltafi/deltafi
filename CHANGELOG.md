@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Fixed Mongo Connection thread issue in Monitor
 - Formatting on migration event content
 - CLI: Cleaned up event output on install command
+- Monitor logger did not log errors with backtrace correctly
 
 ### Tech-Debt/Refactor
 
