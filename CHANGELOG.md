@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.101.2 or 1.0.0
+## [Unreleased] - Next release 0.101.3 or 1.0.0
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.101.2] - 2023-01-30
 
 ### Added
 - Memory profiler for Monitor when at DEBUG log level
@@ -13,23 +31,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - Sort order for Event API is now by timestamp descending
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Fixed Mongo Connection thread issue in Monitor
 - Formatting on migration event content
 - CLI: Cleaned up event output on install command
 - Monitor logger did not log errors with backtrace correctly
 
-### Tech-Debt/Refactor
-
-### Security
-
-### Upgrade and Migration
-
-## [0.101.1] - 2021-01-26
+## [0.101.1] - 2023-01-26
 
 ### Added
 - Java `EventService` for generating events to the event API from the core
