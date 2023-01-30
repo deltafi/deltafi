@@ -62,9 +62,10 @@ public abstract class BaseDeployerService implements DeployerService {
         Result retval = deploy(pluginCoordinates, imageRepoOverride, imagePullSecretOverride, customDeploymentOverride);
 
         eventService.publishEvent(
-                Event.builder("Plugin installed: " + pluginCoordinates)
+                Event.builder("Plugin installed: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
                         .notification(true)
                         .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
+                        .content(pluginCoordinates.toString() + "\\n\\n")
                         .addList("Additional information:", retval.getInfo())
                         .addList("Errors:", retval.getErrors())
                         .build()
@@ -84,9 +85,10 @@ public abstract class BaseDeployerService implements DeployerService {
         Result retval = removeDeployment(pluginCoordinates);
 
         eventService.publishEvent(
-                Event.builder("Plugin uninstalled: " + pluginCoordinates.toString())
+                Event.builder("Plugin uninstalled: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
                         .notification(true)
                         .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
+                        .content(pluginCoordinates.toString() + "\\n\\n")
                         .addList("Additional information:", retval.getInfo())
                         .addList("Errors:", retval.getErrors())
                         .build()
