@@ -30,6 +30,8 @@ module Deltafi
           REQUIRED_MEGABYTES_PROPERTY = %w[ingress diskSpaceRequirementInMb].freeze
           INGRESS_ENABLED_PROPERTY = %w[ingress enabled].freeze
 
+          @@ingress_disabled_by_storage = false
+
           def initialize
             super('Ingress Status Check')
           end
@@ -56,12 +58,39 @@ module Deltafi
           def check_for_storage_disabled_ingress
             remaining = remaining_bytes
             required = required_bytes
-            return if remaining && required && remaining >= required
 
-            self.code = 1
-            message_lines << "##### Ingress is disabled due to lack of content storage\n"
-            message_lines << "Required bytes in content storage: #{required}\n"
-            message_lines << "Remaining bytes in content storage: #{remaining}\n"
+            return unless remaining && required
+
+            if remaining >= required
+              notify_storage_enabled
+            else
+              notify_storage_disabled remaining, required
+              self.code = 1
+              message_lines << "##### Ingress is disabled due to lack of content storage\n"
+              message_lines << "Required bytes in content storage: #{required}\n"
+              message_lines << "Remaining bytes in content storage: #{remaining}\n"
+            end
+          end
+
+          def notify_storage_disabled(remaining, required)
+            return if @@ingress_disabled_by_storage
+
+            Deltafi::Events.generate 'Alert: Disabling ingress due to depleted content storage',
+                                     content: "- Remaining bytes in content storage: #{remaining}\n- Required bytes: #{required}\n",
+                                     severity: 'warn',
+                                     notification: true,
+                                     source: 'ingress'
+            @@ingress_disabled_by_storage = true
+          end
+
+          def notify_storage_enabled
+            return unless @@ingress_disabled_by_storage
+
+            Deltafi::Events.generate 'Ingress is re-enabled',
+                                     severity: 'info',
+                                     notification: true,
+                                     source: 'ingress'
+            @@ingress_disabled_by_storage = false
           end
 
           def required_bytes
