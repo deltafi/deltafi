@@ -136,6 +136,9 @@ class Plugin(object):
         for action in self.actions:
             threading.Thread(target=self._do_action, args=(action,)).start()
 
+        f = open("/running", "w")
+        f.close()
+
     def _do_action(self, action):
         action_logger = get_logger(self.action_name(action))
 

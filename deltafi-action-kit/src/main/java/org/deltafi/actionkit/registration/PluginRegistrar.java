@@ -19,6 +19,7 @@ package org.deltafi.actionkit.registration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.Retryer;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.properties.ActionsProperties;
@@ -62,8 +63,7 @@ public class PluginRegistrar {
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
-
-        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl);
+        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, null, new Retryer.Default(500, 2000, 3));
         coreClient.postPlugin(pluginRegistration);
     }
 

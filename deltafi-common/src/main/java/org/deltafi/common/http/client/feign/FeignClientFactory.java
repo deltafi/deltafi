@@ -50,10 +50,24 @@ public class FeignClientFactory {
      * @param <T> the interface type
      */
     public static <T> T build(Class<T> targetClass, String url, SSLContext sslContext) {
+        return build(targetClass, url, sslContext, new Retryer.Default(1000, 5000, 5));
+    }
+
+    /**
+     * Builds an SSL-enabled client for the provided Feign-annotated interface for the resources at the given URL.
+     *
+     * @param targetClass the Feign-annotated interface class
+     * @param url the URL the client will access
+     * @param sslContext the SSLContext to use for creating an SSL connection to the given URL
+     * @param retryer the retry settings for this Feign client
+     * @return a Feign-generated instance of the provided interface for accessing the given URL
+     * @param <T> the interface type
+     */
+    public static <T> T build(Class<T> targetClass, String url, SSLContext sslContext, Retryer retryer) {
         Feign.Builder builder = Feign.builder()
                 .encoder(new JacksonEncoder())
                 .decoder(new JacksonDecoder())
-                .retryer(new Retryer.Default(1000, 5000, 5))
+                .retryer(retryer)
                 .logger(new Slf4jLogger(targetClass))
                 .logLevel(Logger.Level.FULL);
 

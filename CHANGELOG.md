@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Timestamp index to Events collection in Mongo
 - Events generated when ingress is disabled due to content storage depletion
+- A `startupProbe` in plugin deployments that waits for actions to listen for work
 
 ### Changed
 - Improved event summary for plugin installation/uninstall

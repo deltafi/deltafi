@@ -59,6 +59,18 @@ livenessProbe:
   failureThreshold: 2
 {{- end -}}
 
+{{- define "actionStartupProbe" -}}
+startupProbe:
+  exec:
+    command:
+    - cat
+    - /running
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 1
+  failureThreshold: 30
+{{- end -}}
+
 {{- define "initContainersWaitForCore" -}}
 initContainers:
 - name: wait-for-core
@@ -173,6 +185,7 @@ env:
 {{- include "sslEnvVars" . | nindent 2 }}
 envFrom:
 {{- include "keyStorePasswordSecret" . | nindent 2 }}
+{{ include "actionStartupProbe" . }}
 volumeMounts:
 {{- include "keyVolumeMounts" . | nindent 2 }}
 {{- end -}}

@@ -26,6 +26,7 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.exception.ExpectedContentException;
 import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.actionkit.exception.MissingSourceMetadataException;
+import org.deltafi.actionkit.exception.StartupException;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
@@ -37,6 +38,9 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -84,6 +88,8 @@ public class ActionRunner {
             log.info("Starting action: {}", action.getClassCanonicalName());
             executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
         }
+
+        markRunning();
     }
 
     private void listen(Action<?> action, long delayMs) {
@@ -129,6 +135,14 @@ public class ActionRunner {
             actionEventQueue.putResult(result.toEvent());
         } catch (Throwable e) {
             log.error("Error sending result to redis for did " + context.getDid(), e);
+        }
+    }
+
+    private void markRunning() {
+        try {
+            Files.createFile(Path.of("/running"));
+        } catch (IOException e) {
+            throw new StartupException("Failed to write running file: " + e.getMessage());
         }
     }
 }
