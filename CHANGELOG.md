@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - Improved event summary for plugin installation/uninstall
 - Restrict `_id` field in Event creation/updating
+- The scheduled execution time for `delete` and `requeue` jobs are calculated based on the last execution time instead of last completion time
 
 ### Deprecated
 
