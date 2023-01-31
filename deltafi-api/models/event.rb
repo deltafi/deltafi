@@ -60,4 +60,8 @@ class Event
 
   validates_presence_of :summary, :notification, :severity, :source
   validates_inclusion_of :severity, in: %w[info success warn error], message: 'must be info, success, warn, or error.'
+
+  index({ timestamp: 1 })
 end
+
+Event.create_indexes

@@ -46,7 +46,10 @@ class ApiServer < Sinatra::Base
     post '/events' do
       authorize! :EventCreate
 
-      event = Event.create!(read_json_body)
+      new_event = read_json_body
+      raise "_id cannot be specified on Event creation" if new_event.keys.include?(:_id)
+
+      event = Event.create!(new_event)
       event.to_json
     end
 
@@ -56,7 +59,10 @@ class ApiServer < Sinatra::Base
       event = Event.find(id)
       return not_found(id) if event.nil?
 
-      event.update_attributes!(read_json_body)
+      updates = read_json_body
+      raise "_id cannot be updated" if updates.keys.include?(:_id)
+
+      event.update_attributes!(updates)
       event.to_json
     end
 

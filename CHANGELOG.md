@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.101.3 or 1.0.0
 
 ### Added
+- Timestamp index to Events collection in Mongo
 - Events generated when ingress is disabled due to content storage depletion
 
 ### Changed
 - Improved event summary for plugin installation/uninstall
+- Restrict `_id` field in Event creation/updating
 
 ### Deprecated
 
