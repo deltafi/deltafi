@@ -142,6 +142,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: "/events",
+    name: "Events",
+    component: () => import("@/pages/EventsPage.vue"),
+    meta: {
+      permission: "EventRead",
+    },
+  },
+  {
     path: "/admin/users",
     name: "Users",
     component: () => import("@/pages/UsersPage.vue"),

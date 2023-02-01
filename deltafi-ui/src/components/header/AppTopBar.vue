@@ -31,10 +31,11 @@
       </div>
     </span>
     <span class="navbar-text col">
-      <Version style="font-size: 0.9rem;" />
+      <Version style="font-size: 0.9rem" />
     </span>
     <span>
       <Clock class="mr-3" />
+      <NotificationBadge v-if="$hasPermission('EventRead')" class="mr-3" />
       <StatusBadge class="mr-3" />
       <UserBadge class="mr-3" />
     </span>
@@ -44,26 +45,27 @@
 <script setup>
 import Clock from "@/components/Clock";
 import StatusBadge from "@/components/StatusBadge";
+import NotificationBadge from "@/components/NotificationBadge.vue";
 import UserBadge from "@/components/UserBadge.vue";
 import Version from "@/components/Version.vue";
 import { computed, inject } from "vue";
 
-const uiConfig = inject('uiConfig');
-const sidebarHidden = inject('sidebarHidden');
+const uiConfig = inject("uiConfig");
+const sidebarHidden = inject("sidebarHidden");
 
 const textColor = computed(() => {
-  return (uiConfig.topBar.textColor) ? `${uiConfig.topBar.textColor} !important` : null;
+  return uiConfig.topBar.textColor ? `${uiConfig.topBar.textColor} !important` : null;
 });
 
 const backgroundColor = computed(() => {
-  return (uiConfig.topBar.backgroundColor) ? `${uiConfig.topBar.backgroundColor} !important` : null;
+  return uiConfig.topBar.backgroundColor ? `${uiConfig.topBar.backgroundColor} !important` : null;
 });
 
 const toggleSidebarIcon = computed(() => {
   return sidebarHidden.value ? "pi pi-angle-double-right" : "pi pi-angle-double-left";
 });
 
-const toggleSidebar = () => sidebarHidden.value = !sidebarHidden.value
+const toggleSidebar = () => (sidebarHidden.value = !sidebarHidden.value);
 </script>
 
 <style scoped lang="scss">
