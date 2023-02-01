@@ -30,4 +30,5 @@ public class PluginCustomization {
      * Extra containers that should run within the plugin pod
      */
     List<Container> extraContainers;
+    List<Integer> ports;
 }

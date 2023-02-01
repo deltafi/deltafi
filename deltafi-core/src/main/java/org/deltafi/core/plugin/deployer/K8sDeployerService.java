@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class K8sDeployerService extends BaseDeployerService {
@@ -149,6 +150,21 @@ public class K8sDeployerService extends BaseDeployerService {
             deployment.getSpec().getTemplate().getSpec().getContainers().addAll(pluginCustomization.getExtraContainers());
         }
 
+        if (null != pluginCustomization.getPorts()) {
+            List<ContainerPort> containerPorts = pluginCustomization.getPorts().stream().map(this::createContainerPort).map(ContainerPortBuilder::build).collect(Collectors.toList());
+            container.setPorts(containerPorts);
+
+            Service service = new ServiceBuilder().withMetadata(new ObjectMetaBuilder().withName(applicationName).build()).withSpec(
+                    new ServiceSpecBuilder().withPorts(
+                            pluginCustomization.getPorts().stream().map(this::createServicePort).map(b -> b.withTargetPort(new IntOrString(b.getPort()))).map(ServicePortBuilder::build).collect(Collectors.toList())
+                    ).withSelector(
+                            Map.of("app", applicationName)
+                    ).build()
+            ).build();
+            k8sClient.services().resource(service).createOrReplace();
+            log.info("Created service {}", applicationName);
+        }
+
         if (null != pluginImageRepository.getImagePullSecret()) {
             LocalObjectReference localObjectReference = new LocalObjectReferenceBuilder().withName(pluginImageRepository.getImagePullSecret()).build();
             deployment.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(localObjectReference));
@@ -157,6 +173,20 @@ public class K8sDeployerService extends BaseDeployerService {
         addConfigMounts(deployment, applicationName);
 
         return deployment;
+    }
+
+    private ContainerPortBuilder createContainerPort(Integer port) {
+        ContainerPortBuilder builder = new ContainerPortBuilder();
+        builder.withContainerPort(port).withName("port-" + port);
+
+        return builder;
+    }
+
+    private ServicePortBuilder createServicePort(Integer port) {
+        ServicePortBuilder builder = new ServicePortBuilder();
+        builder.withPort(port);
+
+        return builder;
     }
 
     /**

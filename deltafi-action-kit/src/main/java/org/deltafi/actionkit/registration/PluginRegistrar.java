@@ -82,12 +82,7 @@ public class PluginRegistrar {
                 .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
                 .actions(actions.stream().map(Action::getActionDescriptor).toList());
 
-        Resource flowsDirectory = applicationContext.getResource("flows");
-        if (flowsDirectory.exists()) {
-            pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
-        } else {
-            log.info("No flows directory exists to load variables or flows");
-        }
+        pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
 
         return pluginRegistrationBuilder.build();
     }
@@ -98,7 +93,7 @@ public class PluginRegistrar {
     }
 
     private List<Variable> loadVariables() {
-        Resource variablesResource = applicationContext.getResource("flows/variables.json");
+        Resource variablesResource = applicationContext.getResource("classpath:flows/variables.json");
         if (!variablesResource.exists()) {
             log.info("No flow variables have been defined");
             return null;
@@ -116,7 +111,7 @@ public class PluginRegistrar {
     private List<FlowPlan> loadFlowPlans() {
         Resource[] flowPlanResources;
         try {
-            flowPlanResources = applicationContext.getResources("flows/*");
+            flowPlanResources = applicationContext.getResources("classpath:flows/*");
         } catch (IOException e) {
             log.warn("Unable to load flow plans", e);
             return Collections.emptyList();
