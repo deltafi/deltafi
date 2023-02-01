@@ -22,7 +22,7 @@ license:
     - ./licenseCheck.sh
 
 variables:
-  DOCKER_TAG: ${CI_REGISTRY_IMAGE}/deltafi-ui:${CI_COMMIT_SHA}
+  DOCKER_TAG: ${CI_REGISTRY_IMAGE}/deltafi-ui:${CI_COMMIT_SHORT_SHA}
   DOCKER_HOST: "tcp://docker:2375"
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
