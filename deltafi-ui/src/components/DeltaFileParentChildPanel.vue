@@ -19,7 +19,7 @@
 <template>
   <div>
     <CollapsiblePanel header="Parent/Child DeltaFiles" class="table-panel">
-      <DataTable v-model:expandedRowGroups="expandedRowGroups" :paginator="(didsList.length < 10 ? false : true)" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading && !loaded" :expandable-row-groups="true" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
+      <DataTable v-model:expandedRowGroups="expandedRowGroups" :paginator="didsList.length < 10 ? false : true" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading && !loaded" :expandable-row-groups="true" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
         <template #empty>No Parent/Child DeltaFiles found.</template>
         <template #loading>Loading Parent/Child DeltaFiles. Please wait.</template>
         <Column field="didType" header="DID Type" :hidden="false" :sortable="true" />
@@ -65,7 +65,7 @@ const props = defineProps({
   },
 });
 
-const expandedRowGroups = ref()
+const expandedRowGroups = ref();
 const didsList = ref([]);
 const deltaFile = reactive(props.deltaFileData);
 const loading = ref(true);
@@ -78,7 +78,7 @@ onMounted(() => {
 const fetchParentChildDidsArrayData = async () => {
   const didTypes = ["parentDids", "childDids"];
   loading.value = true;
-  let combinDidsList = []
+  let combinDidsList = [];
   for (let didType of didTypes) {
     if (_.isEmpty(deltaFile[didType])) {
       continue;
@@ -102,21 +102,16 @@ const fetchParentChildDidsArrayData = async () => {
   didsList.value = combinDidsList;
 };
 
-watch(
-  () => deltaFile,
-  fetchParentChildDidsArrayData,
-  { deep: true }
-)
+watch(() => deltaFile, fetchParentChildDidsArrayData, { deep: true });
 
 const pluralizeWithCount = (count, singular, plural) => {
   let pluralized = pluralize(count, singular, plural, false);
-  return (count > 1) ? `${pluralized} (${count})` : pluralized;
-}
+  return count > 1 ? `${pluralized} (${count})` : pluralized;
+};
 
 const actionRowClass = (data) => {
   return data.stage === "ERROR" ? "table-danger action-error" : null;
 };
-
 </script>
 
 <style lang="scss">

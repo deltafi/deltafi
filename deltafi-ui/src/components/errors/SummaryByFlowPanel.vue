@@ -225,7 +225,7 @@ watch(
 
 const getPersistedParams = async () => {
   let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
-  perPage.value = state.value.perPage || 10;
+  perPage.value = state.value.perPage || 20;
 };
 
 const setPersistedParams = () => {

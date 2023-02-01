@@ -523,7 +523,7 @@ const ISOStringToDate = (dateISOString) => {
 };
 
 const getPersistedParams = async () => {
-  perPage.value = nonPanelState.value.perPage || 10;
+  perPage.value = nonPanelState.value.perPage || 20;
   if (useURLSearch.value) {
     if (params.start) startTimeDate.value = ISOStringToDate(params.start);
     if (params.end) endTimeDate.value = ISOStringToDate(params.end);

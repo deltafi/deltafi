@@ -106,7 +106,7 @@ import { EnumType } from "json-to-graphql-query";
 import Paginator from "primevue/paginator";
 
 const confirm = useConfirm();
-const pageRows = ref(10);
+const pageRows = ref(20);
 const pageFirst = ref(0);
 const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot, deleteSnapshot, loading } = useSystemSnapshots();
 const snapshot = ref(null);
@@ -172,7 +172,7 @@ const onRevertClick = (snapshotData) => {
     accept: () => {
       onRevert(snapshotData.id);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -186,7 +186,7 @@ const onDeleteClick = (snapshotData) => {
     accept: () => {
       onDelete(snapshotData.id);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
