@@ -3,7 +3,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.101.3 or 1.0.0
+## [Unreleased] - Next release 0.101.4 or 1.0.0
+
+### Added
+
+### Changed
+- Cache calls to k8s and graphite from the API's content endpoint
+- Cache permissions in Auth
+- Increased default worker threads in Auth and API
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.101.3] - 2023-02-01
 
 ### Added
 - Timestamp index to Events collection in Mongo
@@ -14,7 +35,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Improved event summary for plugin installation/uninstall
 - Restrict `_id` field in Event creation/updating
 - The scheduled execution time for `delete` and `requeue` jobs are calculated based on the last execution time instead of last completion time
-- Cache calls to k8s and graphite from the API's content endpoint
 
 ### Deprecated
 
@@ -1102,7 +1122,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.2...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.3...main
+[0.101.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.2...0.101.3
 [0.101.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.1...0.101.2
 [0.101.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.0...0.101.1
 [0.101.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.100.0...0.101.0
