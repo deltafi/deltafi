@@ -74,7 +74,7 @@ public class IngressService {
      * the configured disk space requirement in system properties.
      * @return true if space is available, false otherwise
      */
-    @Cacheable(cacheNames = {"diskspaceservice-storage"})
+    @Cacheable(cacheNames = "diskspaceservice-storage", sync = true)
     public boolean isStorageAvailable() {
         try {
             return diskSpaceService.contentMetrics().bytesRemaining() > deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;

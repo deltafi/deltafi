@@ -24,9 +24,52 @@ module Deltafi
       module Metrics
         module System
           class << self
+            REFRESH_K8S_CACHE_SECONDS = 60
+            # this matches the refresh time in the nodemonitor.  We will be at most 9 seconds stale.
+            REFRESH_GRAPHITE_CACHE_SECONDS = 9
+
+            @@cached_k8s_info = nil
+            @@cached_graphite_metrics = nil
+
+            def k8s_info
+              if @@cached_k8s_info.nil? || @@last_k8s_cache_time - Time.now > REFRESH_K8S_CACHE_SECONDS
+                @@last_k8s_cache_time = Time.now
+                @@cached_k8s_info = {
+                  nodes: DF.k8s_client.api('v1').resource('nodes').list,
+                  node_usage: DF.k8s_client.api('metrics.k8s.io/v1beta1').resource('nodes').list,
+                  pods_by_node: DF.k8s_client.api('v1').resource('pods').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName },
+                  pod_usage: DF.k8s_client.api('metrics.k8s.io/v1beta1').resource('pods').list
+                }
+              end
+
+              @@cached_k8s_info
+            end
+
+            def disk_metrics
+              if @@cached_graphite_metrics.nil? || @@last_graphite_cache_time - Time.now > REFRESH_GRAPHITE_CACHE_SECONDS
+                @@last_graphite_cache_time = Time.now
+                usage_query = <<-QUERY
+                keepLastValue(seriesByTag('name=gauge.node.disk.usage'), inf)
+                QUERY
+
+                limit_query = <<-QUERY
+                keepLastValue(seriesByTag('name=gauge.node.disk.limit'), inf)
+                QUERY
+
+                @@cached_graphite_metrics = DF::Metrics.graphite({
+                                                                   target: [usage_query, limit_query],
+                                                                   from: '-1min',
+                                                                   until: 'now',
+                                                                   format: 'json'
+                                                                 })
+              end
+
+              @@cached_graphite_metrics
+            end
+
             def nodes
-              nodes = DF.k8s_client.api('v1').resource('nodes').list
-              node_usage = DF.k8s_client.api('metrics.k8s.io/v1beta1').resource('nodes').list
+              nodes = k8s_info[:nodes]
+              node_usage = k8s_info[:node_usage]
               pods = pods_by_node
               disks = disks_by_node
 
@@ -53,23 +96,9 @@ module Deltafi
             end
 
             def disks_by_node
-              usage_query = <<-QUERY
-              keepLastValue(seriesByTag('name=gauge.node.disk.usage'), inf)
-              QUERY
-
-              limit_query = <<-QUERY
-              keepLastValue(seriesByTag('name=gauge.node.disk.limit'), inf)
-              QUERY
-
-              results = DF::Metrics.graphite({
-                                               target: [usage_query, limit_query],
-                                               from: '-1min',
-                                               until: 'now',
-                                               format: 'json'
-                                             })
               disks = {}
 
-              results.each do |metric|
+              disk_metrics.each do |metric|
                 hostname = metric[:tags][:hostname]
                 measurement = metric[:tags][:name].sub('gauge.node.disk.', '')
                 disks[hostname] ||= {}
@@ -80,8 +109,8 @@ module Deltafi
             end
 
             def pods_by_node
-              pods_by_node = DF.k8s_client.api('v1').resource('pods').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName }
-              pod_usage = DF.k8s_client.api('metrics.k8s.io/v1beta1').resource('pods').list
+              pods_by_node = k8s_info[:pods_by_node]
+              pod_usage = k8s_info[:pod_usage]
               pods_by_node.transform_values do |pods|
                 pods.map do |pod|
                   {
