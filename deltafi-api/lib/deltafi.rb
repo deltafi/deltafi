@@ -33,6 +33,7 @@ module Deltafi
   @@system_properties = nil
 
   def self.k8s_client
+    debug "#{__method__} called from #{caller[0]}"
     ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
   end
 
@@ -48,6 +49,7 @@ module Deltafi
   end
 
   def self.mongo_client
+    debug "#{__method__} called from #{caller[0]}"
     config = mongo_config
     @@mongo_client ||= Mongo::Client.new(["#{config[:host]}:#{config[:post]}"],
                                          database: config[:database],
@@ -57,6 +59,7 @@ module Deltafi
   end
 
   def self.graphql(query)
+    debug "#{__method__} called from #{caller[0]}"
     graphql_url = File.join(BASE_URL, 'graphql')
 
     response = HTTParty.post(graphql_url,
@@ -76,6 +79,7 @@ module Deltafi
   end
 
   def self.redis_client
+    debug "#{__method__} called from #{caller[0]}"
     redis_password = ENV.fetch('REDIS_PASSWORD', nil)
     redis_url = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
 

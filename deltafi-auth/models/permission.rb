@@ -23,8 +23,19 @@ require 'csv'
 class Permission
   extend Deltafi::Logger
 
+  @@permissions = []
+
   def self.all
-    CSV.table('permissions.csv').map do |row|
+    @@permissions
+  end
+
+  def self.all_names
+    all.map { |p| p[:name] }
+  end
+
+  def self.load
+    debug "Loading permissions.csv"
+    @@permissions = CSV.table('permissions.csv').map do |row|
       unless row.size == 3 && row[1].match?(/^[a-zA-Z]*$/)
         warn "Ignoring malformed permission: #{row}"
         next
@@ -33,8 +44,6 @@ class Permission
       row.to_hash
     end.compact
   end
-
-  def self.all_names
-    all.map { |p| p[:name] }
-  end
 end
+
+Permission.load

@@ -39,6 +39,8 @@ spec:
           value: {{ .Values.ingress.domain }}
         - name: DATA_DIR
           value: /data
+        - name: WORKERS
+          value: {{ default "8" .Values.deltafi.api.workers | quote }}
         {{ if .Values.deltafi.auth.entityResolver.enabled }}
         - name: ENTITY_RESOLVER_ENABLED
           value: "true"
