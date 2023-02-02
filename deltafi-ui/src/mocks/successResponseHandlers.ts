@@ -20,7 +20,7 @@ import _ from "lodash";
 import { rest, graphql } from "msw";
 
 export default [
-  rest.get("/api/v1/events", (req, res, ctx) => {
+  rest.get("/api/v1/sse", (req, res, ctx) => {
     const status = require(`./api/v1/status.ts`);
     const errorCount = 2;
 
@@ -70,7 +70,7 @@ export default [
 
       const mockModule = require(`.${req.url.pathname}`);
       const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-      return res(ctx.delay(500), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
+      return res(ctx.delay(5000), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
     } catch (e) {
       console.error(e);
       return;
@@ -87,7 +87,7 @@ export default [
 
         const mockModule = require(`./graphql/${req.body.operationName}`);
         const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-        return res(ctx.delay(100), ctx.data(responseJson));
+        return res(ctx.delay(5000), ctx.data(responseJson));
       }
     } catch (e) {
       console.error(e);

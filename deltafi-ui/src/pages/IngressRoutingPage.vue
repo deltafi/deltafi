@@ -34,7 +34,7 @@
           <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="uiIngressRoutes" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow', 'priority', 'filenameRegex', 'requiredMetadata']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="uiIngressRoutes" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :global-filter-fields="['name', 'flow', 'priority', 'filenameRegex', 'requiredMetadata']" :row-hover="true">
         <template #empty> No Ingress Routing rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: 'auto' }">
           <template #body="{ data }">
@@ -85,7 +85,7 @@ import _ from "lodash";
 
 const ingressRoutes = ref([]);
 const uiIngressRoutes = ref([]);
-const { getAllFlowAssignmentRules } = useIngressRoutingQueryBuilder();
+const { getAllFlowAssignmentRules, loaded, loading } = useIngressRoutingQueryBuilder();
 
 onMounted(async () => {
   fetchIngressRoutes();

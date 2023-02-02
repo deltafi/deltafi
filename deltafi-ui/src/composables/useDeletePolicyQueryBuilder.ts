@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 
 export default function useDeletePolicyQueryBuilder() {
-  const { response, errors, queryGraphQL } = useGraphQL();
+  const { response, errors, queryGraphQL,loading, loaded } = useGraphQL();
 
   // Get current delete policies
   const getDeletePolicies = () => {
@@ -103,5 +103,7 @@ export default function useDeletePolicyQueryBuilder() {
     enablePolicy,
     removeDeletePolicy,
     loadDeletePolicies,
+    loading,
+    loaded,
   };
 }

@@ -36,7 +36,7 @@
           <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Flow'" placeholder="Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">
         <template #empty> No delete policies to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
@@ -91,7 +91,7 @@ import Panel from "primevue/panel";
 import _ from "lodash";
 
 const deletePolicies = ref([]);
-const { getDeletePolicies } = useDeletePolicyQueryBuilder();
+const { getDeletePolicies, loading, loaded } = useDeletePolicyQueryBuilder();
 
 onMounted(async () => {
   fetchDeletePolicies();

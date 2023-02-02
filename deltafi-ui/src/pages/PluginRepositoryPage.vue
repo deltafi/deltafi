@@ -34,7 +34,7 @@
           <InputText v-model="filters['global'].value" v-tooltip.left="'Search on pluginGroupIds, imageRepositoryBase, and imagePullSecret'" placeholder="Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="pluginImageRepositories" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-repo-config-table" :global-filter-fields="['pluginGroupIds', 'imageRepositoryBase', 'imagePullSecret']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="pluginImageRepositories" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-repo-config-table" :global-filter-fields="['pluginGroupIds', 'imageRepositoryBase', 'imagePullSecret']" :row-hover="true">
         <template #empty> No Plugin Repositories to display </template>
         <Column field="imageRepositoryBase" header="Image Repository Base" :sortable="true" :style="{ width: 'auto' }">
           <template #body="{ data }">
@@ -79,7 +79,7 @@ import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
 
 const pluginImageRepositories = ref([]);
-const { getPluginImageRepositories } = usePlugins();
+const { getPluginImageRepositories, loaded, loading } = usePlugins();
 
 onMounted(async () => {
   fetchPluginImageRepositories();

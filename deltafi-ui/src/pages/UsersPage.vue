@@ -22,15 +22,13 @@
       <Button :hidden="!$hasPermission('UserCreate')" label="Add User" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newUser" />
     </PageHeader>
     <Panel header="Users" class="users-panel table-panel">
-      <DataTable :value="users" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
+      <DataTable :value="users" data-Key="id" :loading="loading && !loaded" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
         <template #header>
-          <div style="text-align:left">
+          <div style="text-align: left">
             <MultiSelect :model-value="selectedColumns" :options="columns" option-label="header" placeholder="Select Columns" style="width: 22rem" @update:model-value="onToggle" />
           </div>
         </template>
-        <template #empty>
-          No users to display
-        </template>
+        <template #empty> No users to display </template>
         <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :field="col.field" :header="col.header" :sortable="col.sortable" :class="col.class">
           <template #body="{ data, field }">
             <span v-if="field == 'roles'">
@@ -48,7 +46,7 @@
             <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
-        <Column style="width: 5rem; padding: 0;" :hidden="!$hasSomePermissions('UserUpdate', 'UserDelete')">
+        <Column style="width: 5rem; padding: 0" :hidden="!$hasSomePermissions('UserUpdate', 'UserDelete')">
           <template #body="{ data }">
             <Button v-tooltip.top="`Edit User ${data.name}`" :hidden="!$hasPermission('UserUpdate')" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editUser(data)" />
             <Button v-tooltip.top="`Remove User ${data.name}`" :hidden="!$hasPermission('UserDelete')" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteUser(data)" />
@@ -71,8 +69,7 @@
         <TabView :active-index="activeTabIndex">
           <TabPanel header="Basic">
             <Message v-if="uiConfig.authMode != 'basic' && !isReadOnly" severity="warn">
-              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
-              This must be set to <strong>basic</strong> before changes to this section will take effect.
+              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>basic</strong> before changes to this section will take effect.
             </Message>
             <div class="field mb-2">
               <label for="dn">Username</label>
@@ -85,8 +82,7 @@
           </TabPanel>
           <TabPanel header="Certificate">
             <Message v-if="uiConfig.authMode != 'cert' && !isReadOnly" severity="warn">
-              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
-              This must be set to <strong>cert</strong> before changes to this section will take effect.
+              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>cert</strong> before changes to this section will take effect.
             </Message>
             <div class="field mb-2">
               <label for="dn">Distinguished Name (DN)</label>
@@ -141,10 +137,10 @@ import Panel from "primevue/panel";
 import useUsers from "@/composables/useUsers";
 import useRoles from "@/composables/useRoles";
 import Timestamp from "@/components/Timestamp.vue";
-import TabView from 'primevue/tabview';
-import TabPanel from 'primevue/tabpanel';
-import MultiSelect from 'primevue/multiselect'
-import Checkbox from 'primevue/checkbox';
+import TabView from "primevue/tabview";
+import TabPanel from "primevue/tabpanel";
+import MultiSelect from "primevue/multiselect";
+import Checkbox from "primevue/checkbox";
 import usePermissions from "@/composables/usePermissions";
 import PermissionPill from "@/components/PermissionPill.vue";
 import PermissionCheckboxes from "@/components/PermissionCheckboxes.vue";
@@ -155,16 +151,16 @@ const userDialog = ref(false);
 const deleteUserDialog = ref(false);
 const isNew = ref(false);
 const isReadOnly = ref(false);
-const { data: users, fetch: fetchUsers, create, remove: removeUser, update: updateUser, errors } = useUsers();
+const { data: users, loading, loaded, fetch: fetchUsers, create, remove: removeUser, update: updateUser, errors } = useUsers();
 const { data: roles, fetch: fetchRoles } = useRoles();
 const { appPermissionsByName } = usePermissions();
-const uiConfig = inject('uiConfig');
+const uiConfig = inject("uiConfig");
 const activeTabIndex = ref(0);
 const selectedColumns = ref([]);
 const columns = ref([
   { field: "name", header: "Name", sortable: true },
-  { field: "dn", header: "DN", sortable: true, class: "dn-col", hideInAuthMode: 'basic' },
-  { field: "username", header: "Username", sortable: true, hideInAuthMode: 'cert' },
+  { field: "dn", header: "DN", sortable: true, class: "dn-col", hideInAuthMode: "basic" },
+  { field: "username", header: "Username", sortable: true, hideInAuthMode: "cert" },
   { field: "roles", header: "Roles", sortable: true },
   { field: "permissions", header: "Permissions", sortable: true, hidden: true },
   { field: "created_at", header: "Added", sortable: true, class: "timestamp-col" },
@@ -172,7 +168,7 @@ const columns = ref([
 ]);
 
 const onToggle = (val) => {
-  selectedColumns.value = columns.value.filter(col => val.includes(col));
+  selectedColumns.value = columns.value.filter((col) => val.includes(col));
 };
 
 const hideDialog = () => {
@@ -183,7 +179,7 @@ const hideDialog = () => {
 };
 
 const editUser = (userInfo) => {
-  errors.value.splice(0, errors.value.length)
+  errors.value.splice(0, errors.value.length);
   user.value = { ...userInfo };
   isNew.value = false;
   isReadOnly.value = false;
@@ -198,24 +194,24 @@ const showUser = (userInfo) => {
 };
 
 const newUser = () => {
-  errors.value.splice(0, errors.value.length)
+  errors.value.splice(0, errors.value.length);
   user.value = { role_ids: [] };
   isNew.value = true;
   isReadOnly.value = false;
-  submitted.value = false
+  submitted.value = false;
   userDialog.value = true;
 };
 
 const saveUser = async () => {
   const { id, created_at, updated_at, roles, permissions, ...saveParams } = user.value; // eslint-disable-line no-unused-vars
   try {
-    isNew.value ? await create(saveParams) : await updateUser(user.value.id, saveParams)
+    isNew.value ? await create(saveParams) : await updateUser(user.value.id, saveParams);
     await fetchUsers();
     hideDialog();
   } catch {
     // No op - keep dialog open
   }
-  submitted.value = true
+  submitted.value = true;
 };
 
 const confirmDeleteUser = (userInfo) => {
@@ -232,14 +228,17 @@ const deleteUser = async () => {
 onMounted(() => {
   fetchUsers();
   fetchRoles();
-  selectedColumns.value = columns.value.filter(col => col.hideInAuthMode !== uiConfig.authMode && !col.hidden);;
+  selectedColumns.value = columns.value.filter((col) => col.hideInAuthMode !== uiConfig.authMode && !col.hidden);
 });
 
-watch(() => userDialog.value, (newValue) => {
-  if (newValue) {
-    activeTabIndex.value = uiConfig.authMode == 'cert' ? 1 : 0
+watch(
+  () => userDialog.value,
+  (newValue) => {
+    if (newValue) {
+      activeTabIndex.value = uiConfig.authMode == "cert" ? 1 : 0;
+    }
   }
-})
+);
 </script>
 
 <style lang="scss">
@@ -278,7 +277,7 @@ watch(() => userDialog.value, (newValue) => {
     label {
       display: flex;
       align-items: center;
-      margin-top: .15rem;
+      margin-top: 0.15rem;
       margin-left: 0.4rem;
     }
   }

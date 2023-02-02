@@ -29,30 +29,35 @@
       </span>
     </div>
   </PageHeader>
-  <FlowDataTable flow-type-prop="ingress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
-  <FlowDataTable flow-type-prop="enrich" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
-  <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+  <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
+  <div v-else>
+    <FlowDataTable flow-type-prop="ingress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+    <FlowDataTable flow-type-prop="enrich" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+    <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+  </div>
 </template>
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import FlowDataTable from "@/components/flow/FlowDataTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { onBeforeMount, ref } from "vue";
+import { onBeforeMount, ref, computed } from "vue";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 import _ from "lodash";
 
-const { getAllFlows } = useFlowQueryBuilder();
+const { getAllFlows, loaded, loading } = useFlowQueryBuilder();
 
 const allFlowData = ref("");
 const flowData = ref({});
 const filterFlowsText = ref("");
 const pluginNames = ref([]);
 const pluginNameSelected = ref(null);
+const showLoading = computed(() => !loaded.value && loading.value);
 
 onBeforeMount(async () => {
   await fetchFlows();

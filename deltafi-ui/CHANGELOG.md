@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Events page (#315)
 - Added Notifications badge (#311)
 - Updated nginx runtime image to 1.23.3
+- Added Loading to pages (#320)
 - Updated default page size to 20 (#319)
 
 ## [0.101.1]

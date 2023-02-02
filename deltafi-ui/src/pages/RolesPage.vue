@@ -22,10 +22,8 @@
       <Button :hidden="!$hasPermission('RoleCreate')" label="Add Role" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newRole" />
     </PageHeader>
     <Panel header="Roles" class="roles-panel table-panel">
-      <DataTable :value="roles" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
-        <template #empty>
-          No roles to display
-        </template>
+      <DataTable :value="roles" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
+        <template #empty> No roles to display </template>
         <Column v-for="(col, index) of columns" :key="col.field + '_' + index" :field="col.field" :header="col.header" :sortable="col.sortable" :class="col.class">
           <template #body="{ data, field }">
             <span v-if="['permissions'].includes(field)">
@@ -40,7 +38,7 @@
             <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
-        <Column style="width: 5rem; padding: 0;" :hidden="!$hasSomePermissions('RoleUpdate', 'RoleDelete')">
+        <Column style="width: 5rem; padding: 0" :hidden="!$hasSomePermissions('RoleUpdate', 'RoleDelete')">
           <template #body="{ data }">
             <Button v-tooltip.top="`Edit Role ${data.name}`" :hidden="!$hasPermission('RoleUpdate')" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editRole(data)" />
             <Button v-tooltip.top="`Remove Role ${data.name}`" :hidden="!$hasPermission('RoleDelete')" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteRole(data)" />
@@ -102,9 +100,9 @@ const roleDialog = ref(false);
 const deleteRoleDialog = ref(false);
 const isNew = ref(false);
 const isReadOnly = ref(false);
-const { data: roles, fetch: fetchRoles, create, remove: removeRole, update: updateRole, errors } = useRoles();
+const { data: roles, loaded, loading, fetch: fetchRoles, create, remove: removeRole, update: updateRole, errors } = useRoles();
 const { appPermissionsByName } = usePermissions();
-const uiConfig = inject('uiConfig');
+const uiConfig = inject("uiConfig");
 const activeTabIndex = ref(0);
 const columns = ref([
   { field: "name", header: "Name", sortable: true, class: "name-col" },
@@ -121,7 +119,7 @@ const hideDialog = () => {
 };
 
 const editRole = (roleInfo) => {
-  errors.value.splice(0, errors.value.length)
+  errors.value.splice(0, errors.value.length);
   role.value = { ...roleInfo };
   isNew.value = false;
   isReadOnly.value = false;
@@ -136,24 +134,24 @@ const showRole = (roleInfo) => {
 };
 
 const newRole = () => {
-  errors.value.splice(0, errors.value.length)
+  errors.value.splice(0, errors.value.length);
   role.value = { name: "", permissions: [] };
   isNew.value = true;
   isReadOnly.value = false;
-  submitted.value = false
+  submitted.value = false;
   roleDialog.value = true;
 };
 
 const saveRole = async () => {
   const { id, created_at, updated_at, ...saveParams } = role.value; // eslint-disable-line no-unused-vars
   try {
-    isNew.value ? await create(saveParams) : await updateRole(role.value.id, saveParams)
+    isNew.value ? await create(saveParams) : await updateRole(role.value.id, saveParams);
     await fetchRoles();
     hideDialog();
   } catch {
     // No op - keep dialog open
   }
-  submitted.value = true
+  submitted.value = true;
 };
 
 const confirmDeleteRole = (roleInfo) => {
@@ -171,11 +169,14 @@ onMounted(() => {
   fetchRoles();
 });
 
-watch(() => roleDialog.value, (newValue) => {
-  if (newValue) {
-    activeTabIndex.value = uiConfig.authMode == 'cert' ? 1 : 0
+watch(
+  () => roleDialog.value,
+  (newValue) => {
+    if (newValue) {
+      activeTabIndex.value = uiConfig.authMode == "cert" ? 1 : 0;
+    }
   }
-})
+);
 </script>
 
 <style lang="scss">

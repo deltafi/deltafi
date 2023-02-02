@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 
 export default function useIngressRoutingQueryBuilder() {
-  const { response, queryGraphQL } = useGraphQL();
+  const { response, queryGraphQL,loaded,loading } = useGraphQL();
 
   // Get all Flow Assignment Rules
   const getAllFlowAssignmentRules = () => {
@@ -101,5 +101,7 @@ export default function useIngressRoutingQueryBuilder() {
     getFlowAssignmentRule,
     loadFlowAssignmentRules,
     removeFlowAssignmentRule,
+    loaded,
+    loading,
   };
 }

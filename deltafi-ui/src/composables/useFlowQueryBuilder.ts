@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 
 export default function useFlowQueryBuilder() {
-  const { response, queryGraphQL } = useGraphQL();
+  const { response, queryGraphQL,loaded,loading } = useGraphQL();
 
   // Get all flows grouped by plugin
   const getFlowsGroupedByPlugin = () => {
@@ -644,5 +644,7 @@ export default function useFlowQueryBuilder() {
     disableTestIngressFlowByName,
     enableTestEgressFlowByName,
     disableTestEgressFlowByName,
+    loaded,
+    loading,
   };
 }
