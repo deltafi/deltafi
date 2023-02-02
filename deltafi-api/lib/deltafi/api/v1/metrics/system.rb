@@ -25,14 +25,18 @@ module Deltafi
         module System
           class << self
             REFRESH_K8S_CACHE_SECONDS = 60
-            # this matches the refresh time in the nodemonitor.  We will be at most 9 seconds stale.
-            REFRESH_GRAPHITE_CACHE_SECONDS = 9
+            # this matches half the refresh rate of the nodemonitor.  We will be at most 9 seconds stale.
+            REFRESH_GRAPHITE_CACHE_SECONDS = 4.5
+
+            USAGE_QUERY = 'keepLastValue(seriesByTag(\'name=gauge.node.disk.usage\'), inf)'.freeze
+            LIMIT_QUERY = 'keepLastValue(seriesByTag(\'name=gauge.node.disk.limit\'), inf)'.freeze
 
             @@cached_k8s_info = nil
             @@cached_graphite_metrics = nil
+            @@last_graphite_cache_time = Time.now
 
             def k8s_info
-              if @@cached_k8s_info.nil? || @@last_k8s_cache_time - Time.now > REFRESH_K8S_CACHE_SECONDS
+              if @@cached_k8s_info.nil? || Time.now - @@last_k8s_cache_time > REFRESH_K8S_CACHE_SECONDS
                 @@last_k8s_cache_time = Time.now
                 @@cached_k8s_info = {
                   nodes: DF.k8s_client.api('v1').resource('nodes').list,
@@ -46,18 +50,11 @@ module Deltafi
             end
 
             def disk_metrics
-              if @@cached_graphite_metrics.nil? || @@last_graphite_cache_time - Time.now > REFRESH_GRAPHITE_CACHE_SECONDS
+              if @@cached_graphite_metrics.nil? || Time.now - @@last_graphite_cache_time > REFRESH_GRAPHITE_CACHE_SECONDS
                 @@last_graphite_cache_time = Time.now
-                usage_query = <<-QUERY
-                keepLastValue(seriesByTag('name=gauge.node.disk.usage'), inf)
-                QUERY
-
-                limit_query = <<-QUERY
-                keepLastValue(seriesByTag('name=gauge.node.disk.limit'), inf)
-                QUERY
 
                 @@cached_graphite_metrics = DF::Metrics.graphite({
-                                                                   target: [usage_query, limit_query],
+                                                                   target: [USAGE_QUERY, LIMIT_QUERY],
                                                                    from: '-1min',
                                                                    until: 'now',
                                                                    format: 'json'
