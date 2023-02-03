@@ -74,13 +74,13 @@ let autoRefresh = null;
 onMounted(async () => {
   await fetchNotifications();
   autoRefresh = setInterval(() => {
-    if(!isIdle.value) {
-    fetchNotifications();
+    if (!isIdle.value) {
+      fetchNotifications();
     }
-   }, refreshInterval);
+  }, refreshInterval);
 });
 
-onUnmounted(()=> {
+onUnmounted(() => {
   clearInterval(autoRefresh)
 });
 
