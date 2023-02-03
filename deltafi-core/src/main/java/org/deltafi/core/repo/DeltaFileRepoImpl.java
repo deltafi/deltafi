@@ -830,9 +830,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             query.addCriteria(Criteria.where(DOMAINS_NAME).is(domain));
         }
 
-        List<String> keyList = mongoTemplate.findDistinct(query, INDEXED_METADATA_KEYS, DeltaFile.class, String.class);
+        List<Object> keyList = mongoTemplate.findDistinct(query, INDEXED_METADATA_KEYS, DeltaFile.class, Object.class);
         return keyList.stream()
-                .filter(Objects::nonNull)
+                .filter(o -> o instanceof String)
+                .map(o -> (String) o)
                 .collect(Collectors.toSet());
     }
 

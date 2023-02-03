@@ -3302,6 +3302,23 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void noIndexedMetadata() {
+		deltaFileRepo.insert(DeltaFile.newBuilder()
+				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
+				.build());
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new IndexedMetadataKeysGraphQLQuery());
+
+		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				graphQLQueryRequest.serialize(),
+				"data." + DgsConstants.QUERY.IndexedMetadataKeys,
+				new TypeRef<>() {}
+		);
+
+		assertEquals(Collections.emptyList(), actual);
+	}
+
+	@Test
 	void indexedMetadataPerDomain() {
 		deltaFileRepo.insert(DeltaFile.newBuilder()
 				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
