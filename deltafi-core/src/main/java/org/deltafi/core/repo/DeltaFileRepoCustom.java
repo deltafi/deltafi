@@ -25,7 +25,6 @@ import org.springframework.data.mongodb.core.index.IndexInfo;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Set;
 
 public interface DeltaFileRepoCustom {
     /**
@@ -151,7 +150,7 @@ public interface DeltaFileRepoCustom {
      * @param domain An optional domain to filter by
      * @return the indexed metadata
      */
-    Set<String> indexedMetadataKeys(String domain);
+    List<String> indexedMetadataKeys(String domain);
 
     /**
      * For each did in the list, update the corresponding DeltaFile contentDeleted to value

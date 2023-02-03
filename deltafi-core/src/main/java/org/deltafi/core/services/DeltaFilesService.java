@@ -1139,7 +1139,7 @@ public class DeltaFilesService {
         return deltaFileRepo.domains();
     }
 
-    public Set<String> indexedMetadataKeys(String domain) {
+    public List<String> indexedMetadataKeys(String domain) {
         return deltaFileRepo.indexedMetadataKeys(domain);
     }
 
