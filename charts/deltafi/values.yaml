@@ -57,6 +57,8 @@ minio:
   image:
     # Do not change without extensive minio testing and changes to secret handling
     tag: RELEASE.2022-08-25T07-17-05Z
+  environment:
+    MINIO_API_DELETE_CLEANUP_INTERVAL: 1m
   existingSecret: minio-keys
   resources:
     requests:
