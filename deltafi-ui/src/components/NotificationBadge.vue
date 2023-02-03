@@ -54,7 +54,7 @@
 import OverlayPanel from "primevue/overlaypanel";
 import { useTimeAgo } from "@vueuse/core";
 import Tag from "primevue/tag";
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, inject, onUnmounted } from "vue";
 import Button from "primevue/button";
 import useEventsNotifications from "@/composables/useEventsNotifications";
 import EventViewerDialog from "@/components/events/EventViewerDialog.vue";
@@ -67,19 +67,30 @@ const refreshInterval = 5000; // 5 seconds
 const notificationOP = ref(null);
 const showEventDialog = ref(false);
 const activeEvent = ref({});
+const isIdle = inject("isIdle");
+
+let autoRefresh = null;
 
 onMounted(async () => {
   await fetchNotifications();
-  setInterval(fetchNotifications, refreshInterval);
+  autoRefresh = setInterval(() => {
+    if(!isIdle.value) {
+    fetchNotifications();
+    }
+   }, refreshInterval);
+});
+
+onUnmounted(()=> {
+  clearInterval(autoRefresh)
 });
 
 const notificationCount = computed(() => {
   return notifications.value.length;
-})
+});
 
 const tagValue = computed(() => {
   return (notificationCount.value > 0) ? notificationCount.value : "";
-})
+});
 
 const openNotificationsPanel = (event) => {
   fetchNotifications();

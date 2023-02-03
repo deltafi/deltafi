@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Added Loading to pages (#320)
 - Search page now displays "of many" when results are 50,000 (#322)
+- Fixed issue with isIdle on notification badge (#323)
 
 ## [0.101.3]
 
