@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Add mongodb index to fix disk space delete policy query performance
 - Changed the MinIO delete cleanup interval from 5 minutes to 1 minute
 - Improve domains endpoint performance
+- Add a top-level DeltaFile field listing indexedMetadata keys, improve performance of indexedMetadataKeys endpoint
 
 ### Deprecated
 

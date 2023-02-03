@@ -44,6 +44,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -111,6 +112,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String ID_FLOW = ID + "." + FLOW_LOWER_CASE;
     private static final String UNWIND_STATE = "unwindState";
     public static final String INDEXED_METADATA = "indexedMetadata";
+    public static final String INDEXED_METADATA_KEYS = "indexedMetadataKeys";
 
     private static final String PROTOCOL_STACK_SEGMENTS = "protocolStack.content.contentReference.segments";
     private static final String FORMATTED_DATA_SEGMENTS = "formattedData.contentReference.segments";
@@ -149,6 +151,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC),
             "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC),
             "domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC),
+            "metadata_keys_index", new Index().named("metadata_keys_index").on(INDEXED_METADATA_KEYS, Sort.Direction.ASC),
             "disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.DESC).on(CREATED, Sort.Direction.ASC));
 
     private final MongoTemplate mongoTemplate;
@@ -821,25 +824,16 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<String> indexedMetadataKeys(String domain) {
-        List<AggregationOperation> operations = new ArrayList<>();
-
+    public Set<String> indexedMetadataKeys(String domain) {
+        Query query = new Query();
         if (domain != null && !domain.isEmpty()) {
-            operations.add(match(Criteria.where(DOMAINS_NAME).is(domain)));
+            query.addCriteria(Criteria.where(DOMAINS_NAME).is(domain));
         }
-        operations.add(project().and(ObjectOperators.valueOf(INDEXED_METADATA).toArray()).as(INDEXED_METADATA));
-        operations.add(unwind(INDEXED_METADATA));
-        operations.add(group().addToSet("indexedMetadata.k").as("keys"));
 
-        Aggregation aggregation = newAggregation(operations).withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        List<String> keys = Optional
-                .ofNullable(mongoTemplate.aggregate(aggregation, COLLECTION, Document.class).getUniqueMappedResult())
-                .map(doc -> doc.getList("keys", String.class))
-                .orElse(Collections.emptyList());
-        Collections.sort(keys);
-
-        return keys;
+        List<String> keyList = mongoTemplate.findDistinct(query, INDEXED_METADATA_KEYS, DeltaFile.class, String.class);
+        return keyList.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     @Override

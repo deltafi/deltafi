@@ -22,6 +22,7 @@ import lombok.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.content.Segment;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -52,8 +53,8 @@ public class DeltaFile {
   private SourceInfo sourceInfo;
   private List<ProtocolLayer> protocolStack;
   private List<Domain> domains;
-  @Builder.Default
   private Map<String, String> indexedMetadata = new HashMap<>();
+  private Set<String> indexedMetadataKeys = new HashSet<>();
   private List<Enrichment> enrichment;
   @Builder.Default
   private List<Egress> egress = new ArrayList<>();
@@ -212,6 +213,7 @@ public class DeltaFile {
     }
 
     this.indexedMetadata.putAll(metadata);
+    this.indexedMetadataKeys.addAll(metadata.keySet());
   }
 
   public void addEgressFlow(@NotNull String flow) {
@@ -409,5 +411,20 @@ public class DeltaFile {
 
   public boolean inactiveStage() {
     return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
+  }
+
+  public static class DeltaFileBuilder {
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
+    private Map<String, String> indexedMetadata = new HashMap<>();
+
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
+    private Set<String> indexedMetadataKeys = new HashSet<>();
+
+    public DeltaFileBuilder indexedMetadata(Map<String, String> indexedMetadata) {
+      this.indexedMetadata = indexedMetadata;
+      this.indexedMetadataKeys = indexedMetadata.keySet();
+
+      return this;
+    }
   }
 }

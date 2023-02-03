@@ -223,6 +223,6 @@ public class DeltaFilesDatafetcher {
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
   public List<String> indexedMetadataKeys(@InputArgument String domain) {
-    return deltaFilesService.indexedMetadataKeys(domain);
+    return new ArrayList<>(deltaFilesService.indexedMetadataKeys(domain));
   }
 }
