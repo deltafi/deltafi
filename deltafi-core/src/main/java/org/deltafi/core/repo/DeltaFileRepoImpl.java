@@ -148,7 +148,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
             "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC),
             "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC),
-            "domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
+            "domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC),
+            "disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.DESC).on(CREATED, Sort.Direction.ASC));
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
@@ -240,7 +241,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
         }
 
-        Query query = new Query(buildReadyForDeleteCriteria(OffsetDateTime.now(), null, 1, flow, false, true));
+        Query query = new Query(buildReadyForDeleteCriteria(null, null, 1, flow, false, true));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
         query.fields().include(ID, TOTAL_BYTES, PROTOCOL_STACK_SEGMENTS, FORMATTED_DATA_SEGMENTS);
