@@ -29,12 +29,8 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
-import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -50,7 +46,6 @@ public class IngressService {
     private final DeltaFilesService deltaFilesService;
     private final ObjectMapper objectMapper;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final DiskSpaceService diskSpaceService;
 
     @RequiredArgsConstructor
     @Data
@@ -67,30 +62,6 @@ public class IngressService {
      */
     public boolean isEnabled() {
         return deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled();
-    }
-
-    /**
-     * Check to see if ingress storage is available based on the content bytes remaining and
-     * the configured disk space requirement in system properties.
-     * @return true if space is available, false otherwise
-     */
-    @Cacheable(cacheNames = "diskspaceservice-storage", sync = true)
-    public boolean isStorageAvailable() {
-        try {
-            return diskSpaceService.contentMetrics().bytesRemaining() > deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;
-        } catch (DeltafiApiException e) {
-            log.warn("API is unreachable.  Unable to evaluate storage availability criteria");
-            return true;
-        }
-    }
-
-    /**
-     * Cache eviction method for the disk space service call.  Flushed every 5 seconds.
-     * This is scheduled and should not be called directly.
-     */
-    @CacheEvict(cacheNames = {"diskspaceservice-storage"}, allEntries = true)
-    @Scheduled(fixedDelay = 5000)
-    public void evictStorageAvailable() {
     }
 
     public IngressResult ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, Map<String, String> metadata, String mediaType) throws ObjectStorageException, IngressException {

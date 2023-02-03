@@ -18,5 +18,6 @@
 package org.deltafi.core.exceptions;
 
 public class DeltafiApiException extends Exception {
+    public DeltafiApiException(String message) { super(message); }
     public DeltafiApiException(String message, Throwable t) { super(message, t); }
 }

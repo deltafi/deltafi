@@ -1118,6 +1118,7 @@ No changes.  UI update only
 - Deduplicated versions on versions endpoint
 - Allow empty parameters in flow configurations
 - Config server strict host key checking turned off by default
+- Ingress is blocked when the API is unreachable
 
 ### Tech-Debt/Refactor
 - DRY'ed up gradle build files

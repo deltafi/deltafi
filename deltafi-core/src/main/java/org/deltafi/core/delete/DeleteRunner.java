@@ -27,6 +27,7 @@ import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeletePolicyService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.DiskSpaceService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

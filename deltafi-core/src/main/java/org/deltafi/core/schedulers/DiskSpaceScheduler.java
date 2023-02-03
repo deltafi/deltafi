@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,21 +15,30 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.schedulers.trigger;
 
-import org.deltafi.core.services.DeltaFiPropertiesService;
+package org.deltafi.core.schedulers;
+
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.schedulers.trigger.DiskSpaceTrigger;
+import org.deltafi.core.services.DiskSpaceService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Service;
 
-/**
- * Calculates the next execution time based on the delete.frequency in the DeltaFiProperties.
- */
-@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "schedule.diskSpace", havingValue = "true", matchIfMissing = true)
 @Service
-public class DeleteTrigger extends ConfigurableFixedDelayTrigger {
+@EnableScheduling
+@RequiredArgsConstructor
+public class DiskSpaceScheduler {
 
-    public DeleteTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(deltaFiPropertiesService, (props) -> props.getDelete().getFrequency(), 10_000L);
+    private final DiskSpaceService diskSpaceService;
+    private final TaskScheduler taskScheduler;
+    private final DiskSpaceTrigger diskSpaceTrigger;
+
+    @PostConstruct
+    public void requeue() {
+        taskScheduler.schedule(diskSpaceService::getContentStorageDiskMetrics, diskSpaceTrigger);
     }
-
 }

@@ -28,6 +28,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -36,6 +37,7 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.DiskSpaceService;
 import org.deltafi.core.services.IngressService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
@@ -63,6 +65,7 @@ public class IngressRest {
     private final IngressService ingressService;
     private final MetricRepository metricService;
     private final CoreAuditLogger coreAuditLogger;
+    private final DiskSpaceService diskSpaceService;
 
     final static ObjectMapper objectMapper = new ObjectMapper();
 
@@ -70,6 +73,8 @@ public class IngressRest {
     public static final String FILENAME_CONTENT = "flowfile.content";
     public static final String FLOWFILE_MEDIA_TYPE = "application/flowfile";
     public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile-v1";
+
+    static boolean diskSpaceAPIReachable = true;
 
     @NeedsPermission.DeltaFileIngress
     @PostMapping(value = "deltafile/ingress", consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
@@ -87,10 +92,19 @@ public class IngressRest {
                     flow, filename, contentType, username);
         }
 
-        if (! ingressService.isStorageAvailable()) {
-            return errorResponse(HttpStatus.INSUFFICIENT_STORAGE,
-                    "Ingress temporarily disabled due to storage limits",
-                    flow, filename, contentType, username);
+        try {
+            boolean storageDepleted = diskSpaceService.isContentStorageDepleted();
+            if (!diskSpaceAPIReachable) log.info("Disk Space API is reachable again");
+            diskSpaceAPIReachable = true;
+
+            if (storageDepleted) {
+                return errorResponse(HttpStatus.INSUFFICIENT_STORAGE,
+                        "Ingress temporarily disabled due to storage limits",
+                        flow, filename, contentType, username);
+            }
+        } catch (DeltafiApiException e) {
+            if (diskSpaceAPIReachable) log.warn("Disk Space API unreachable.  Unable to calculate storage depletion");
+            diskSpaceAPIReachable = false;
         }
 
         log.debug("Ingressing: flow={} filename={} contentType={} username={}",

@@ -45,18 +45,16 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
 
     public void run() {
         try {
-            DiskMetrics contentMetrics = diskSpaceService.contentMetrics();
+            DiskMetrics contentMetrics = diskSpaceService.uncachedContentMetrics();
 
-            while (contentMetrics != null && contentMetrics.percentUsed() > maxPercent) {
+            if (contentMetrics != null && contentMetrics.percentUsed() > maxPercent) {
                 log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + contentMetrics.percentUsed() + "%, maximum = " + maxPercent + "%");
                 long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
                 log.info("Deleting up to " + bytesToDelete + " bytes");
                 List<DeltaFile> deleted = deltaFilesService.delete(bytesToDelete, flow, name, false, getBatchSize());
                 if (deleted.isEmpty()) {
                     log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
-                    break;
                 }
-                contentMetrics = diskSpaceService.contentMetrics();
             }
         } catch (DeltafiApiException e) {
             log.warn("DeltaFi API is unreachable.  Unable to evaluate deletion criteria.");

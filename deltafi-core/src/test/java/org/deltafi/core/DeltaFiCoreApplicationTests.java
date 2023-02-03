@@ -115,6 +115,7 @@ import static org.mockito.Mockito.never;
 		"schedule.actionEvents=false",
 		"schedule.maintenance=false",
 		"schedule.flowSync=false",
+		"schedule.diskSpace=false",
 		"schedule.propertySync=false"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
@@ -202,6 +203,9 @@ class DeltaFiCoreApplicationTests {
 	@MockBean
 	StorageConfigurationService storageConfigurationService;
 
+	@MockBean
+	DiskSpaceService diskSpaceService;
+
 	@Captor
 	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
 
@@ -239,6 +243,7 @@ class DeltaFiCoreApplicationTests {
 	final static Map<String, String> transformSampleMetadata = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
 
 	@BeforeEach
+	@SneakyThrows
 	void setup() {
 		actionDescriptorRepo.deleteAll();
 		deltaFileRepo.deleteAll();
@@ -258,7 +263,7 @@ class DeltaFiCoreApplicationTests {
 		SecurityContextHolder.setContext(securityContext);
 
 		Mockito.when(ingressService.isEnabled()).thenReturn(true);
-		Mockito.when(ingressService.isStorageAvailable()).thenReturn(true);
+		Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
 	}
 
 	void loadConfig() {
@@ -3427,8 +3432,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	@SneakyThrows
 	void testIngress_storageLimit() {
-		Mockito.when(ingressService.isStorageAvailable()).thenReturn(false);
+		Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(true);
 		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 		assertEquals(507, response.getStatusCode().value());
 	}

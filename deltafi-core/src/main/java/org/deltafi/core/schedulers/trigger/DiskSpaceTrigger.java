@@ -15,19 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration;
+package org.deltafi.core.schedulers.trigger;
 
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
-@Configuration
-@EnableCaching
-public class StorageCacheConfig {
-    @Bean
-    public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("diskspaceservice-storage");
+import java.time.Duration;
+
+/**
+ * Calculates the next execution time based on the delete.frequency in the DeltaFiProperties.
+ */
+@ConditionalOnProperty(value = "schedule.diskSpace", havingValue = "true", matchIfMissing = true)
+@Service
+public class DiskSpaceTrigger extends ConfigurableFixedDelayTrigger {
+
+    public DiskSpaceTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
+        super(deltaFiPropertiesService, (props) -> Duration.ofSeconds(5), 5_000L);
     }
+
 }

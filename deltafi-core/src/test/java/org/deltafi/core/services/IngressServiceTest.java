@@ -59,9 +59,6 @@ class IngressServiceTest {
     ContentStorageService contentStorageService;
 
     @Mock
-    DiskSpaceService diskSpaceService;
-
-    @Mock
     DeltaFilesService deltaFilesService;
 
     @Spy
@@ -95,15 +92,6 @@ class IngressServiceTest {
 
     @Test @SneakyThrows
     void isStorageAvailable() {
-        Mockito.when(diskSpaceService.contentMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
-        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(1);
-        Assertions.assertTrue(ingressService.isStorageAvailable());
-        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(4);
-        Assertions.assertTrue(ingressService.isStorageAvailable());
-        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(5);
-        Assertions.assertFalse(ingressService.isStorageAvailable());
-        deltaFiProperties().getIngress().setDiskSpaceRequirementInMb(6);
-        Assertions.assertFalse(ingressService.isStorageAvailable());
     }
 
     @Test @SneakyThrows

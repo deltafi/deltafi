@@ -17,9 +17,11 @@
  */
 package org.deltafi.core.rest;
 
+import lombok.SneakyThrows;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.exceptions.IngressException;
+import org.deltafi.core.services.DiskSpaceService;
 import org.deltafi.core.services.IngressService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -41,13 +43,17 @@ public class IngressRestTest {
     IngressService ingressService;
 
     @Mock
+    DiskSpaceService diskSpaceService;
+
+    @Mock
     MetricRepository metricRepository;
 
     @InjectMocks
     IngressRest testObj;
 
     @Test
-    public void testUTF32Metadata() throws ObjectStorageException, IngressException {
+    @SneakyThrows
+    public void testUTF32Metadata() {
         String username = "nobody";
         String contentType = "application/flowfile-v1";
         String flow = "";
@@ -57,7 +63,7 @@ public class IngressRestTest {
         AtomicInteger numberOfMetadata = new AtomicInteger(0);
 
         Mockito.when(ingressService.isEnabled()).thenReturn(true);
-        Mockito.when(ingressService.isStorageAvailable()).thenReturn(true);
+        Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
         Mockito.when(ingressService.ingressData(Mockito.any(InputStream.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap(), Mockito.anyString())).then(invocation -> {
             Map<String, String> metadataReturned = invocation.getArgument(3, Map.class);
 

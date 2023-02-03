@@ -23,7 +23,7 @@ spec:
         image: {{ .Values.deltafi.core.image }}
         env:
         - name: JDK_JAVA_OPTIONS
-          value: "-Dcom.redhat.fips=false -Dschedule.maintenance=false"
+          value: "-Dcom.redhat.fips=false -Dschedule.maintenance=false -Dschedule.diskSpace=false"
         {{- include "coreEnvVars" . | nindent 8 }}
         envFrom:
         {{- include "keyStorePasswordSecret" . | nindent 8 }}
