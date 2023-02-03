@@ -161,4 +161,10 @@ public interface DeltaFileRepoCustom {
      * @param reason Reason for deletion
      */
     void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason);
+
+    /**
+     * Perform an estimated count of documents based on collection stats
+     * @return the estimated count
+     */
+    Long estimatedCount();
 }

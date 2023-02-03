@@ -1146,4 +1146,8 @@ public class DeltaFilesService {
     private DeltaFiProperties getProperties() {
         return deltaFiPropertiesService.getDeltaFiProperties();
     }
+
+    public Long totalCount() {
+        return deltaFileRepo.estimatedCount();
+    }
 }

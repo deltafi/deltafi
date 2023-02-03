@@ -18,6 +18,7 @@
 package org.deltafi.core.repo;
 
 import com.google.common.collect.Lists;
+import com.mongodb.client.MongoCollection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -121,6 +122,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String OVER = "over";
     private static final String CUMULATIVE_OVER = "cumulativeOver";
 
+    public static final int MAX_COUNT = 50_000;
+
     static class FlowCountAndDids {
         TempSourceInfo sourceInfo;
         int groupCount;
@@ -142,17 +145,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
     }
 
-    private static final Map<String, Index> INDICES = Map.of(
-            "action_search", new Index().named("action_search").on(ACTIONS_NAME, Sort.Direction.ASC),
-            "queued_loop", new Index().named("queued_loop").on(REQUEUE_COUNT, Sort.Direction.DESC).on(STAGE, Sort.Direction.ASC),
-            "completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
-            "created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
-            "modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC),
-            "requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC),
-            "metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC),
-            "domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC),
-            "metadata_keys_index", new Index().named("metadata_keys_index").on(INDEXED_METADATA_KEYS, Sort.Direction.ASC),
-            "disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.DESC).on(CREATED, Sort.Direction.ASC));
+    private static final Map<String, Index> INDICES;
+    static {
+        INDICES = new HashMap<>();
+        INDICES.put("action_search", new Index().named("action_search").on(ACTIONS_NAME, Sort.Direction.ASC));
+        INDICES.put("queued_loop", new Index().named("queued_loop").on(REQUEUE_COUNT, Sort.Direction.DESC).on(STAGE, Sort.Direction.ASC));
+        INDICES.put("completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
+        INDICES.put("created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
+        INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
+        INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC));
+        INDICES.put("metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC));
+        INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
+        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(INDEXED_METADATA_KEYS, Sort.Direction.ASC));
+        INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.DESC).on(CREATED, Sort.Direction.ASC));
+    }
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
@@ -298,7 +305,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if ((Objects.isNull(includeFields) || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
             deltaFiles.setTotalCount(deltaFiles.getOffset() + deltaFiles.getCount());
         } else {
-            int total = (int) mongoTemplate.count(new Query(buildDeltaFilesCriteria(filter)), DeltaFile.class);
+            int total = (int) mongoTemplate.count(new Query(buildDeltaFilesCriteria(filter)).limit(MAX_COUNT), DeltaFile.class);
             deltaFiles.setTotalCount(total);
         }
 
@@ -844,5 +851,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
             mongoTemplate.updateMulti(query, update, DeltaFile.class);
         }
+    }
+
+    @Override
+    public Long estimatedCount() {
+        return mongoTemplate.execute(COLLECTION, MongoCollection::estimatedDocumentCount);
     }
 }

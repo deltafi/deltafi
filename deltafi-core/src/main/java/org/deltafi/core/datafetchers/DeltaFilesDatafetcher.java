@@ -225,4 +225,10 @@ public class DeltaFilesDatafetcher {
   public List<String> indexedMetadataKeys(@InputArgument String domain) {
     return new ArrayList<>(deltaFilesService.indexedMetadataKeys(domain));
   }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
+  public Long totalCount() {
+    return deltaFilesService.totalCount();
+  }
 }
