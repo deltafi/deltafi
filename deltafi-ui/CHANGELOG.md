@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.101.4]
+
+### Changed
+
+- Added Loading to pages (#320)
+- Search page now displays "of many" when results are 50,000 (#322)
+
 ## [0.101.3]
 
 ### Changed
@@ -11,7 +18,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added Events page (#315)
 - Added Notifications badge (#311)
 - Updated nginx runtime image to 1.23.3
-- Added Loading to pages (#320)
 - Updated default page size to 20 (#319)
 
 ## [0.101.1]
@@ -532,6 +538,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
+[0.101.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.3...main
 [0.101.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.1...0.101.3
 [0.101.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.0...0.101.1
 [0.101.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.100.0...0.101.0

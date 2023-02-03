@@ -99,7 +99,7 @@
     </div>
     <Panel header="Results" class="table-panel results">
       <template #icons>
-        <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
       <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>
@@ -177,6 +177,12 @@ const route = useRoute();
 const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
 const optionMenu = ref();
+
+const maxTotalRecords = 50000;
+const pageReportTemplate = computed(() => {
+  const total = totalRecords.value == maxTotalRecords ? "many" : "{totalRecords}";
+  return `{first} - {last} of ${total}`;
+});
 
 // Dates
 const defaultStartTimeDate = computed(() => {
