@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Increased default worker threads in Auth and API
 - Add mongodb index to fix disk space delete policy query performance
 - Changed the MinIO delete cleanup interval from 5 minutes to 1 minute
+- Improve domains endpoint performance
 
 ### Deprecated
 

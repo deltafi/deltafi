@@ -815,7 +815,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<String> domains() {
-        return mongoTemplate.findDistinct(new Query(Criteria.where(DOMAINS_NAME).ne(null)), DOMAINS_NAME, DeltaFile.class, String.class);
+        return mongoTemplate.findDistinct(new Query(), DOMAINS_NAME, DeltaFile.class, String.class).stream()
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
