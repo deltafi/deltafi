@@ -964,6 +964,7 @@ public class DeltaFilesService {
 
         int found;
         do {
+            log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
             List<DeltaFile> deltaFiles = delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
             found = deltaFiles.size();
             allDeleted.addAll(deltaFiles);
@@ -975,12 +976,13 @@ public class DeltaFilesService {
 
     public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
         if (deltaFiles.isEmpty()) {
+            log.info("No deltaFiles found to delete for policy " + policy);
             return deltaFiles;
         }
 
-        log.info("Deleting " + deltaFiles.size() + " files for policy " + policy);
+        log.info("Deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
         deleteContent(deltaFiles, policy, deleteMetadata);
-        log.info("Finished deleting " + deltaFiles.size() + " files for policy " + policy);
+        log.info("Finished deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
 
         return deltaFiles;
     }

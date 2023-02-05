@@ -3604,5 +3604,19 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile3, deltaFile2, deltaFile1));
 	}
 
-
+	@Test
+	void testDeleteMultipleBatches() {
+		for (int i = 0; i < 500; i++) {
+			deltaFileRepo.save(DeltaFile.newBuilder()
+					.did("abc" + i)
+					.created(OffsetDateTime.now().minusDays(1))
+					.protocolStack(Collections.emptyList())
+					.formattedData(Collections.emptyList())
+					.build());
+		}
+		assertEquals(500, deltaFileRepo.count());
+		deltaFilesService.delete(OffsetDateTime.now(), null, 0L, null, "policyName", true, 49);
+		// ensure that it looped over each batch and deleted everything
+		assertEquals(0, deltaFileRepo.count());
+	}
 }
