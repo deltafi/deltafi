@@ -22,7 +22,6 @@ import lombok.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.content.Segment;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;

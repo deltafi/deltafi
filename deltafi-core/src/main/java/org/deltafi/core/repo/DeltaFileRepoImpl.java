@@ -35,7 +35,6 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.index.IndexOperations;
-import org.springframework.data.mongodb.core.index.PartialIndexFilter;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -157,7 +156,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC));
         INDICES.put("metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC));
         INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
-        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(INDEXED_METADATA_KEYS, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(INDEXED_METADATA_KEYS).exists(true))));
+        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(INDEXED_METADATA_KEYS, Sort.Direction.ASC));
         INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.DESC).on(CREATED, Sort.Direction.ASC));
     }
 
