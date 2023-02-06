@@ -18,18 +18,18 @@
 
 <template>
   <span>
-    <Tag v-tooltip.bottom="'Click for more info'" class="status-tag" :icon="icon(status.code)" :severity="tagSeverity(status.code)" :value="status.state" @click="openStatusDialog()" />
+    <Tag v-tooltip.bottom="'Click for more info'" class="status-tag" :icon="icon(computedStatus.code)" :severity="tagSeverity(computedStatus.code)" :value="computedStatus.state" @click="openStatusDialog()" />
     <Dialog v-model:visible="showStatusDialog" icon header="System Status" :style="{ width: '50vw' }" :maximizable="true" :modal="true" position :dismissable-mask="true">
-      <span v-for="check in status.checks" :key="check.description">
+      <span v-for="check in computedStatus.checks" :key="check.description">
         <Message :severity="messageSeverity(check.code)" :closable="false">{{ check.description }}</Message>
         <div v-if="check.message">
           <div class="message" v-html="markdown(check.message)" />
         </div>
       </span>
       <template #footer>
-        <small v-if="status.timestamp" class="text-muted">
+        <small v-if="computedStatus.timestamp" class="text-muted">
           Last Updated:
-          <Timestamp :timestamp="status.timestamp" />
+          <Timestamp :timestamp="computedStatus.timestamp" />
         </small>
       </template>
     </Dialog>
@@ -44,35 +44,57 @@ import Dialog from "primevue/dialog";
 import Tag from "primevue/tag";
 import Message from "primevue/message";
 import Timestamp from "@/components/Timestamp.vue";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, computed } from "vue";
+import { useTimeAgo } from '@vueuse/core'
 
-const status = ref({
-  state: "Connecting",
-  code: 3,
-  checks: [{
-    description: "API Connection",
-    message: "Establishing connection to API..."
-  }]
-})
+const markdownIt = new MarkdownIt();
+const timeSinceLastStatusThreshold = 30;
+const status = ref({})
+const now = ref(new Date().getTime());
 const showStatusDialog = ref(false);
 const { serverSentEvents, connectionStatus } = useServerSentEvents();
-const { fetchStatus } = useStatus();
+const { fetchStatus, loading: apiLoading } = useStatus();
 
 onMounted(async () => {
   status.value = await fetchStatus();
+  setInterval(() => now.value = new Date().getTime(), 1000);
 })
 
-watch(connectionStatus, (value) => {
-  if (value === 'DISCONNECTED') {
-    status.value = {
-      code: 3,
-      state: "Reconnecting",
-      checks: [{
-        description: "API Connection",
-        code: 3,
-        message: "Connection to API has been lost. Reconnecting..."
-      }]
-    };
+const timeSinceLastStatus = computed(() => {
+  return Math.round((now.value - new Date(status.value.timestamp).getTime()) / 1000);
+})
+
+const statusBuilder = (code, state, checkCode, checkDescription, checkMessage, timestamp = new Date()) => {
+  return {
+    code: code,
+    state: state,
+    checks: [{
+      code: checkCode,
+      description: checkDescription,
+      message: checkMessage
+    }],
+    timestamp: timestamp
+  }
+}
+
+const computedStatus = computed(() => {
+  if (connectionStatus.value === 'CONNECTING' || apiLoading.value) {
+    return statusBuilder(3, "Connecting", 3, "API Connection", "Establishing connection to API...")
+  } else if (connectionStatus.value === 'DISCONNECTED') {
+    return statusBuilder(3, "Reconnecting", 3, "API Connection", "Connection to API has been lost. Reconnecting...")
+  } else if (timeSinceLastStatus.value > timeSinceLastStatusThreshold) {
+    const message = `The \`deltafi-monitor\` last reported system status ${timeSinceLastStatusInWords.value}.`
+    return statusBuilder(1, "Unknown", 1, "Monitor", message, status.value.timestamp)
+  } else {
+    return status.value;
+  }
+})
+
+const timeSinceLastStatusInWords = computed(() => {
+  if (timeSinceLastStatus.value < 60) {
+    return `${timeSinceLastStatus.value} seconds ago`;
+  } else {
+    return useTimeAgo(new Date(status.value.timestamp)).value;
   }
 });
 
@@ -83,21 +105,23 @@ serverSentEvents.addEventListener('status', (event) => {
 const openStatusDialog = () => {
   showStatusDialog.value = true;
 };
+
 const tagSeverity = (code) => {
   let severities = ["success", "warning", "danger"];
   return severities[code] || "info";
 };
+
 const messageSeverity = (code) => {
   let severities = ["success", "warn", "error"];
   return severities[code] || "info";
 };
+
 const icon = (code) => {
   let icons = ["check", "exclamation-triangle", "times", "spin pi-spinner"];
   let icon = icons[code] || "question-circle";
   return `pi pi-${icon}`;
 };
 
-const markdownIt = new MarkdownIt();
 const markdown = (source) => {
   return markdownIt.render(source);
 };
