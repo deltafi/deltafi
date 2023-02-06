@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Refactor Notifications to use SSE for count (#325)
 - Added Loading to pages (#320)
 - Search page now displays "of many" when results are 50,000 (#322)
 - New logo (#327)
