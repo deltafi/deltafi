@@ -44,8 +44,8 @@ public interface DeltaFileRepoCustom {
     void ensureAllIndices(Duration newTtl);
 
     /**
-     * Set or verify the expiration TTL value on the collection.
-     *
+     * Create or update the expiration TTL value on the collection
+     * if it doesn't exist, or it has changed.
      * @param expirationDuration duration until expiration
      */
     void setExpirationIndex(Duration expirationDuration);

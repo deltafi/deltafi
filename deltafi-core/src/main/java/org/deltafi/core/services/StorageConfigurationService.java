@@ -19,21 +19,22 @@ package org.deltafi.core.services;
 
 import io.minio.*;
 import io.minio.messages.*;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
+@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 public class StorageConfigurationService {
 
     private static final String AGE_OFF = "AgeOff";
@@ -49,14 +50,14 @@ public class StorageConfigurationService {
         if (!bucketExists(ContentStorageService.CONTENT_BUCKET)) {
             createBucket(ContentStorageService.CONTENT_BUCKET);
             setExpiration(ContentStorageService.CONTENT_BUCKET);
-        } else if (expirationChanged()) {
-            setExpiration(ContentStorageService.CONTENT_BUCKET);
+        } else {
+            updateAgeOffIfChanged();
         }
     }
 
-    @EventListener
-    public void onEnvChange(final EnvironmentChangeEvent event) throws ObjectStorageException {
-        if (event.getKeys().contains("deltafi.delete.ageOffDays")) {
+    @SneakyThrows
+    public void updateAgeOffIfChanged() {
+        if (expirationChanged()) {
             setExpiration(ContentStorageService.CONTENT_BUCKET);
         }
     }

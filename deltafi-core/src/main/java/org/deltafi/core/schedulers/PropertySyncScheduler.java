@@ -19,10 +19,14 @@ package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.DeltaFileIndexService;
+import org.deltafi.core.services.StorageConfigurationService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @ConditionalOnProperty(value = "schedule.propertySync", havingValue = "true", matchIfMissing = true)
 @Service
@@ -32,8 +36,14 @@ public class PropertySyncScheduler {
 
     private final DeltaFiPropertiesService propertyService;
 
+    private final Optional<StorageConfigurationService> storageConfigurationService;
+    private final Optional<DeltaFileIndexService> deltaFileIndexService;
+
+
     @Scheduled(fixedDelay = 5000)
     public void syncProperties() {
         propertyService.refreshProperties();
+        storageConfigurationService.ifPresent(StorageConfigurationService::updateAgeOffIfChanged);
+        deltaFileIndexService.ifPresent(DeltaFileIndexService::updateAgeOffIfChanged);
     }
 }

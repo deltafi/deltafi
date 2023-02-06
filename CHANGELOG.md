@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Add a top-level DeltaFile field listing indexedMetadata keys, improve performance of indexedMetadataKeys endpoint
 - Cap total count at 50k for deltaFiles query to improve mongodb performance
 - Add totalCount endpoint to give estimated total count of deltaFiles
+- Only set indicies and bucket age off if `schedule.maintenance` is not set to false
 
 ### Deprecated
 
@@ -23,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Add mongodb index to fix disk space delete policy query performance
+- Check for ageOff property changes when properties are refreshed and update the TTLs if needed
 
 ### Tech-Debt/Refactor
 

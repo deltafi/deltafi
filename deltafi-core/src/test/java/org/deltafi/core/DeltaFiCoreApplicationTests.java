@@ -23,6 +23,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.common.action.ActionEventQueue;
@@ -60,8 +61,10 @@ import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -241,6 +244,20 @@ class DeltaFiCoreApplicationTests {
 	final static Map<String, String> loadSampleMetadata = Map.of("loadSampleType", "load-sample-type", "loadSampleVersion", "2.2");
 	final static Map<String, String> loadWrongMetadata = Map.of("loadSampleType", "wrong-sample-type", "loadSampleVersion", "2.2");
 	final static Map<String, String> transformSampleMetadata = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
+
+
+	@TestConfiguration
+	public static class Config {
+		@Bean
+		public DeltaFileIndexService deltaFileIndexService(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService) {
+			return new DeltaFileIndexService(deltaFileRepo, deltaFiPropertiesService);
+		}
+
+		@Bean
+		public StorageConfigurationService storageConfigurationService(MinioClient minioClient, DeltaFiPropertiesService deltaFiPropertiesService) {
+			return new StorageConfigurationService(minioClient, deltaFiPropertiesService);
+		}
+	}
 
 	@BeforeEach
 	@SneakyThrows

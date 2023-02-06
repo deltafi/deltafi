@@ -17,17 +17,17 @@
  */
 package org.deltafi.core.services;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.repo.DeltaFileRepo;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 
-@Service
 @Slf4j
+@Service
+@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 public class DeltaFileIndexService {
 
     private final DeltaFileRepo deltaFileRepo;
@@ -38,11 +38,8 @@ public class DeltaFileIndexService {
         this.deltaFiPropertiesService = deltaFiPropertiesService;
     }
 
-    @EventListener
-    public void onEnvChange(final EnvironmentChangeEvent event) {
-        if (event.getKeys().contains("deltafi.delete.ageOffDays")) {
-            this.deltaFileRepo.setExpirationIndex(getAgeOffDays());
-        }
+    public void updateAgeOffIfChanged() {
+        this.deltaFileRepo.setExpirationIndex(getAgeOffDays());
     }
 
     @PostConstruct
