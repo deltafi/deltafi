@@ -11,7 +11,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Cache calls to k8s and graphite from the API's content endpoint
 - Cache permissions in Auth
 - Increased default worker threads in Auth and API
-- Add mongodb index to fix disk space delete policy query performance
 - Changed the MinIO delete cleanup interval from 5 minutes to 1 minute
 - Improve domains endpoint performance
 - Add a top-level DeltaFile field listing indexedMetadata keys, improve performance of indexedMetadataKeys endpoint
@@ -23,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Add mongodb index to fix disk space delete policy query performance
 
 ### Tech-Debt/Refactor
 
