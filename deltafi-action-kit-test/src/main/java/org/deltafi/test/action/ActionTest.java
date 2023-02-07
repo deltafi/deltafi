@@ -36,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
@@ -82,6 +83,7 @@ public abstract class ActionTest {
         }
         else {
             Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenReturn(new ByteArrayInputStream(content));
+            Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(content));
         }
     }
 
@@ -92,8 +94,8 @@ public abstract class ActionTest {
                 byte[] content = getTestResourceOrDefault(testCase.getTestName(), ioContent.getName(),
                         () -> new ByteArrayInputStream(ioContent.getName().getBytes(StandardCharsets.UTF_8)))
                         .readAllBytes();
-                final Segment segment = new Segment(UUID.randomUUID().toString(), 0, content.length, DID);
-                ContentReference reference = new ContentReference(ioContent.getContentType(), segment);
+                final Segment segment = new Segment(UUID.randomUUID().toString(), ioContent.getOffset(), content.length, DID);
+                ContentReference reference = Mockito.spy(new ContentReference(ioContent.getContentType(), segment));
 
                 setMocksForLoad(testCase, reference, content);
 
@@ -119,8 +121,8 @@ public abstract class ActionTest {
         return (output) -> {
             try {
                 byte[] content = getTestResourceOrEmpty(testCase.getTestName(), output.getName()).readAllBytes();
-                final Segment segment = new Segment(UUID.randomUUID().toString(), 0, content.length, DID);
-                ContentReference reference = new ContentReference(output.getContentType(), segment);
+                final Segment segment = new Segment(UUID.randomUUID().toString(), output.getOffset(), content.length, DID);
+                ContentReference reference = Mockito.spy(new ContentReference(output.getContentType(), segment));
                 setMocksForLoad(testCase, reference, content);
                 return Content.newBuilder()
                         .name(output.getName().startsWith("output.") ? output.getName().substring(7) : output.getName())
@@ -236,10 +238,22 @@ public abstract class ActionTest {
         }
 
         final Segment segment = new Segment(UUID.randomUUID().toString(), 0, bytes.length, did);
-        ContentReference reference = new ContentReference(contentType, segment);
+        ContentReference reference = Mockito.spy(new ContentReference(contentType, segment));
+        Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(bytes));
         Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenReturn(new ByteArrayInputStream(bytes));
 
         return reference;
+    }
+
+    protected Answer<ContentReference> createContentSubreference(byte[] bytes) {
+        return invocation -> {
+            Long offset = invocation.getArgument(0);
+            Long size = invocation.getArgument(1);
+            ContentReference reference = Mockito.spy((ContentReference)invocation.callRealMethod());
+            Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(bytes));
+            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenReturn(new ByteArrayInputStream(bytes, offset.intValue(), size.intValue()));
+            return reference;
+        };
     }
 
     public void executeFilter(TestCaseBase<?> testCase) {
@@ -325,7 +339,10 @@ public abstract class ActionTest {
     }
 
     protected byte[] getContent(Content content) {
-        try(InputStream stream = contentStorageService.load(content.getContentReference())) {
+        ContentReference ref = content.getContentReference();
+        try {
+            InputStream stream = contentStorageService.load(ref);
+            assert(stream!=null);
             return stream.readAllBytes();
         }
         catch(Throwable t) {

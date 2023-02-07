@@ -23,6 +23,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.CompressorException;
@@ -41,6 +42,7 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
+import org.deltafi.core.parameters.DecompressionType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -73,13 +75,13 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                     case TAR_Z -> decompressTarZ(contentStream, result, context.getDid());
                     case TAR_XZ -> decompressTarXZ(contentStream, result, context.getDid());
                     case ZIP -> unarchiveZip(contentStream, result, context.getDid());
-                    case TAR -> unarchiveTar(contentStream, result, context.getDid());
+                    case TAR -> inPlaceUnarchiveTar(contentStream, result, content.getContentReference(), context.getDid());
                     case AR -> unarchiveAR(contentStream, result, context.getDid());
                     case GZIP -> decompressGzip(contentStream, result, context.getDid(), content.getName());
                     case XZ -> decompressXZ(contentStream, result, context.getDid(), content.getName());
                     case Z -> decompressZ(contentStream, result, context.getDid(), content.getName());
                     case AUTO ->
-                            decompressionType = decompressAutomatic(contentStream, result, context.getDid(), content.getName());
+                            decompressionType = decompressAutomatic(contentStream, result, content.getContentReference(), context.getDid(), content.getName());
                     default -> {
                         return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType()).logErrorTo(log);
                     }
@@ -100,7 +102,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         return result;
     }
 
-    private String decompressAutomatic(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String contentName) {
+    private String decompressAutomatic(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull ContentReference contentReference, @NotNull String did, String contentName) {
         String decompressionType;
         try (BufferedInputStream buffer = new BufferedInputStream(stream)) {
             try {
@@ -124,11 +126,16 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
             } catch (CompressorException ex) {
                 try {
                     String archiveType = ArchiveStreamFactory.detect(buffer);
-                    try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(buffer))) {
-                        unarchive(dearchived, result, did);
+                    if (DecompressionType.TAR.getValue().equals(archiveType)) {
+                        inPlaceUnarchiveTar(new BufferedInputStream(buffer), result, contentReference, did);
                         decompressionType = archiveType;
-                    } catch (IOException e) {
-                        throw new DecompressionTransformException("Unable to unarchive content", e);
+                    } else {
+                        try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(buffer))) {
+                            unarchive(dearchived, result, did);
+                            decompressionType = archiveType;
+                        } catch (IOException e) {
+                            throw new DecompressionTransformException("Unable to unarchive content", e);
+                        }
                     }
                 } catch (ArchiveException e) {
                     throw new DecompressionTransformException("No compression or archive formats detected");
@@ -249,4 +256,31 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
             throw new DecompressionTransformException("Unable to store content", e);
         }
     }
+
+    void unarchiveTarOffsets(TarArchiveInputStream archive, @NotNull TransformResult result, @NotNull ContentReference contentReference, @NotNull String did) throws IOException, ObjectStorageException {
+        TarArchiveEntry entry;
+        List<Content> contents = new ArrayList<>();
+        while ((entry = archive.getNextTarEntry()) != null) {
+            if (entry.isDirectory()) continue;
+            ContentReference subreference = contentReference.subreference(archive.getBytesRead(), entry.getSize());
+            subreference.setMediaType(MediaType.APPLICATION_OCTET_STREAM);
+            contents.add(Content.newBuilder()
+                    .name(entry.getName())
+                    .metadata(Map.of("lastModified", entry.getLastModifiedDate().toString()))
+                    .contentReference(subreference)
+                    .build());
+        }
+        result.getContent().addAll(contents);
+    }
+
+    void inPlaceUnarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull ContentReference contentReference, @NotNull String did) throws DecompressionTransformException {
+        try (TarArchiveInputStream archive = new TarArchiveInputStream(stream)) {
+            unarchiveTarOffsets(archive, result, contentReference, did);
+        } catch (IOException e) {
+            throw new DecompressionTransformException("Unable to unarchive tar", e);
+        } catch (ObjectStorageException e) {
+            throw new DecompressionTransformException("Unable to store content", e);
+        }
+    }
+
 }

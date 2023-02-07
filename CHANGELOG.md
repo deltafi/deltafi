@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Cap total count at 50k for deltaFiles query to improve mongodb performance
 - Add totalCount endpoint to give estimated total count of deltaFiles
 - Only set indicies and bucket age off if `schedule.maintenance` is not set to false
+- Storage efficient un-tar for regular TAR files
 
 ### Deprecated
 
