@@ -7,7 +7,10 @@ cli_help_command() {
 Command: plugin-init
 
 Usage:
-  plugin-init [options] <plugin-out.zip>
+  plugin-init [options]
+
+  The plugin source code will be written in a new directory next to deltafi directory
+  to allow it to be picked up with the KinD cluster command.
 
 Options:
   -a, --artifact-id 'val'  Artifact Id for the plugin
@@ -15,6 +18,7 @@ Options:
   -f, --file 'val'         Json file containing the plugin-init arguments
   -g, --group-id 'val'     Group Id for the plugin
   -s, --silent             Skip prompting for actions
+  -z, --zip 'val'          Zip the generated plugin source code using the given name for the zip file
   -h, --help               Show help"
   exit 1
 }
@@ -168,6 +172,7 @@ read_json() {
 
 SILENT=
 PLUGIN_FILE=
+ZIP=
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -192,6 +197,11 @@ while [[ $# -gt 0 ]]; do
     -g|--group-id)
       shift
       add_plugin_group_id "$1"
+      shift
+      ;;
+    -z|--zip)
+      shift
+      ZIP="$1"
       shift
       ;;
     -h|--help)
@@ -228,9 +238,9 @@ fi
 set -- "${POSITIONAL[@]}" # restore positional parameters
 ARGS=($@)
 
-outfile="plugin.zip"
-if [[ ${#ARGS[@]} -gt 1 ]]; then
-  outfile="$2"
+outfile="$DELTAFI_DIR/../plugin.zip"
+if [ -n "$ZIP" ]; then
+  outfile="$DELTAFI_DIR/../$ZIP"
 fi
 
 DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
@@ -241,5 +251,13 @@ if [[ "$RESPONSE_CODE" != "200" ]]; then
   echo -e "${red}${RESPONSE_CODE} Error: $(cat ${outfile})${normal}"
   rm -f outfile
 else
-  echo "Successfully created plugin ${green}$outfile${normal}"
+  if [ -z "$ZIP" ]; then
+    dir=$(zipinfo -1 "$outfile"| head -n1)
+    dir_name=$(dirname "${dir}")
+    unzip "$outfile"
+    rm "$outfile"
+    echo "Successfully created plugin ${green}$dir_name${normal}"
+  else
+    echo "Successfully created plugin ${green}$outfile${normal}"
+  fi
 fi
