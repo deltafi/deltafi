@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Deprecated
 
 ### Removed
+- Locked option from delete policies
 
 ### Fixed
 - Fixed problem with publishing all Gradle plugins to Gradle Central

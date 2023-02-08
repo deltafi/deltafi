@@ -53,7 +53,7 @@ public class DeletePolicyService implements Snapshotter {
      */
     public boolean enablePolicy(String id, boolean enable) {
         Optional<DeletePolicy> policy = get(id);
-        if (policy.isEmpty() || (policy.get().isLocked() && !enable) || (policy.get().isEnabled() == enable)) {
+        if (policy.isEmpty() || policy.get().isEnabled() == enable) {
             return false;
         }
         policy.get().setEnabled(enable);

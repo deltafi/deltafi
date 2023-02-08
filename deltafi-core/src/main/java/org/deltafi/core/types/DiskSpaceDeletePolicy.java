@@ -30,7 +30,6 @@ public class DiskSpaceDeletePolicy implements DeletePolicy {
     private String id;
     private String name;
     private boolean enabled;
-    private boolean locked;
     private String flow;
     private int maxPercent;
 

@@ -29,29 +29,26 @@ import java.util.List;
 public class DeletePolicyDatafetcherTestHelper {
 
     public static final String DISK_SPACE_PERCENT_POLICY = "diskSpacePercent";
-    public static final String AFTER_COMPLETE_LOCKED_POLICY = "afterCompleteLockedPolicy";
+    public static final String AFTER_COMPLETE_POLICY = "afterCompletePolicy";
     public static final String OFFLINE_POLICY = "offlinePolicy";
 
     private static final List<DiskSpaceDeletePolicy> DISK_POLICY_LIST = List.of(
             DiskSpaceDeletePolicy.newBuilder()
                     .name(DISK_SPACE_PERCENT_POLICY)
                     .enabled(true)
-                    .locked(false)
                     .maxPercent(99)
                     .build());
 
     private static final List<TimedDeletePolicy> TIMED_POLICY_LIST = List.of(
             TimedDeletePolicy.newBuilder()
-                    .name(AFTER_COMPLETE_LOCKED_POLICY)
+                    .name(AFTER_COMPLETE_POLICY)
                     .enabled(true)
-                    .locked(true)
                     .afterComplete("PT2S")
                     .build(),
             TimedDeletePolicy.newBuilder()
                     .name(OFFLINE_POLICY)
                     .flow("bogus")
                     .enabled(false)
-                    .locked(false)
                     .afterCreate("PT2S")
                     .minBytes(1000L)
                     .build());
@@ -60,7 +57,6 @@ public class DeletePolicyDatafetcherTestHelper {
             .id()
             .name()
             .enabled()
-            .locked()
             .flow()
             .onDiskSpaceDeletePolicy()
             .maxPercent()

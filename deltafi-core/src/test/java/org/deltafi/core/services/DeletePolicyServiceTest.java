@@ -38,10 +38,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DeletePolicyServiceTest {
 
-    private static final String LOCKED_DISABLED_POLICY = "lockedDisabled";
-    private static final String LOCKED_ENABLED_POLICY = "lockedEnabled";
-    private static final String UNLOCKED_DISABLED_POLICY = "unlockedDisabled";
-    private static final String UNLOCKED_ENABLED_POLICY = "unlockedEnabled";
+    private static final String DISABLED_POLICY = "disabled";
+    private static final String ENABLED_POLICY = "enabled";
     private static final String NOT_FOUND = "notFound";
 
     private static final boolean REPLACE_ALL = true;
@@ -54,44 +52,27 @@ class DeletePolicyServiceTest {
     DeletePolicyService deletePolicyService;
 
     @Test
-    void testEnableUnlockedSuccess() {
-        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getUnlockedDisabled()));
-        assertTrue(deletePolicyService.enablePolicy(UNLOCKED_DISABLED_POLICY, true));
+    void testEnableSuccess() {
+        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getDisabled()));
+        assertTrue(deletePolicyService.enablePolicy(DISABLED_POLICY, true));
 
-        DeletePolicy changed = getUnlockedDisabled();
+        DeletePolicy changed = getDisabled();
         changed.setEnabled(true);
         verify(deletePolicyRepo, times(1)).save(changed);
     }
 
     @Test
-    void testUnlockedAlreadyEnabled() {
-        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getUnlockedEnabled()));
-        assertFalse(deletePolicyService.enablePolicy(UNLOCKED_ENABLED_POLICY, true));
+    void testAlreadyEnabled() {
+        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getEnabled()));
+        assertFalse(deletePolicyService.enablePolicy(ENABLED_POLICY, true));
         verify(deletePolicyRepo, times(0)).save(Mockito.any());
-    }
-
-    @Test
-    void testCannotDisableLocked() {
-        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getLockedEnabled()));
-        assertFalse(deletePolicyService.enablePolicy(LOCKED_ENABLED_POLICY, false));
-        verify(deletePolicyRepo, times(0)).save(Mockito.any());
-    }
-
-    @Test
-    void testEnableLocked() {
-        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getLockedDisabled()));
-        assertTrue(deletePolicyService.enablePolicy(LOCKED_DISABLED_POLICY, true));
-
-        DeletePolicy changed = getLockedDisabled();
-        changed.setEnabled(true);
-        verify(deletePolicyRepo, times(1)).save(changed);
     }
 
     @Test
     void testDeleteFound() {
-        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getUnlockedDisabled()));
-        assertTrue(deletePolicyService.remove(UNLOCKED_DISABLED_POLICY));
-        verify(deletePolicyRepo, times(1)).deleteById(UNLOCKED_DISABLED_POLICY);
+        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getDisabled()));
+        assertTrue(deletePolicyService.remove(DISABLED_POLICY));
+        verify(deletePolicyRepo, times(1)).deleteById(DISABLED_POLICY);
     }
 
     @Test
@@ -152,26 +133,17 @@ class DeletePolicyServiceTest {
         assertThat(result.getErrors()).isEmpty();
     }
 
-    private DeletePolicy getLockedDisabled() {
-        return buildPolicy(true, false);
+    private DeletePolicy getEnabled() {
+        return buildPolicy(true);
     }
 
-    private DeletePolicy getLockedEnabled() {
-        return buildPolicy(true, true);
+    private DeletePolicy getDisabled() {
+        return buildPolicy(false);
     }
 
-    private DeletePolicy getUnlockedDisabled() {
-        return buildPolicy(false, false);
-    }
-
-    private DeletePolicy getUnlockedEnabled() {
-        return buildPolicy(false, true);
-    }
-
-    private DeletePolicy buildPolicy(boolean locked, boolean enabled) {
+    private DeletePolicy buildPolicy(boolean enabled) {
         DiskSpaceDeletePolicy policy = new DiskSpaceDeletePolicy();
-        policy.setId(DeletePolicyServiceTest.LOCKED_ENABLED_POLICY);
-        policy.setLocked(locked);
+        policy.setId(DeletePolicyServiceTest.ENABLED_POLICY);
         policy.setEnabled(enabled);
         policy.setMaxPercent(90);
         return policy;

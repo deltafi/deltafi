@@ -20,7 +20,6 @@ QUERY="query {
     name
     __typename
     enabled
-    locked
     ... on DiskSpaceDeletePolicy {
       maxPercent
       flow

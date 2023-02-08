@@ -390,7 +390,7 @@ class DeltaFiCoreApplicationTests {
 	void testRemoveDeletePolicy() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
 		assertEquals(3, deletePolicyRepo.count());
-		String id = getIdByPolicyName(AFTER_COMPLETE_LOCKED_POLICY);
+		String id = getIdByPolicyName(AFTER_COMPLETE_POLICY);
 		assertTrue(removeDeletePolicy(dgsQueryExecutor, id));
 		assertEquals(2, deletePolicyRepo.count());
 		assertFalse(removeDeletePolicy(dgsQueryExecutor, id));
@@ -400,7 +400,7 @@ class DeltaFiCoreApplicationTests {
 	void testEnablePolicy() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
 		assertTrue(enablePolicy(dgsQueryExecutor, getIdByPolicyName(OFFLINE_POLICY), true));
-		assertFalse(enablePolicy(dgsQueryExecutor, getIdByPolicyName(AFTER_COMPLETE_LOCKED_POLICY), false));
+		assertTrue(enablePolicy(dgsQueryExecutor, getIdByPolicyName(AFTER_COMPLETE_POLICY), false));
 	}
 
 	private String getIdByPolicyName(String name) {
@@ -423,7 +423,6 @@ class DeltaFiCoreApplicationTests {
 						.id(idToUpdate)
 						.name(DISK_SPACE_PERCENT_POLICY)
 						.maxPercent(-1)
-						.locked(false)
 						.enabled(false)
 						.build());
 		checkUpdateResult(true, validationError, "maxPercent is invalid", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
@@ -433,7 +432,6 @@ class DeltaFiCoreApplicationTests {
 						.id(idToUpdate)
 						.name("newName")
 						.maxPercent(50)
-						.locked(false)
 						.enabled(false)
 						.build());
 		checkUpdateResult(true, updateNameIsGood, null, idToUpdate, "newName", false);
@@ -443,7 +441,6 @@ class DeltaFiCoreApplicationTests {
 						.id("wrongId")
 						.name("blah")
 						.maxPercent(50)
-						.locked(false)
 						.enabled(true)
 						.build());
 		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, "newName", false);
@@ -452,7 +449,6 @@ class DeltaFiCoreApplicationTests {
 				DiskSpaceDeletePolicy.newBuilder()
 						.name("blah")
 						.maxPercent(50)
-						.locked(false)
 						.enabled(true)
 						.build());
 		checkUpdateResult(true, missingId, "id is missing", idToUpdate, "newName", false);
@@ -468,7 +464,6 @@ class DeltaFiCoreApplicationTests {
 						.id(idToUpdate)
 						.name(DISK_SPACE_PERCENT_POLICY)
 						.maxPercent(60)
-						.locked(false)
 						.enabled(false)
 						.build());
 		assertFalse(duplicateName.isSuccess());
@@ -486,7 +481,6 @@ class DeltaFiCoreApplicationTests {
 						.id(idToUpdate)
 						.name("blah")
 						.afterComplete("ABC")
-						.locked(false)
 						.enabled(false)
 						.build());
 		checkUpdateResult(true, validationError, "Unable to parse duration for afterComplete", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
@@ -496,7 +490,6 @@ class DeltaFiCoreApplicationTests {
 						.id("wrongId")
 						.name("blah")
 						.afterComplete("PT1H")
-						.locked(false)
 						.enabled(true)
 						.build());
 		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
@@ -506,7 +499,6 @@ class DeltaFiCoreApplicationTests {
 						.id(idToUpdate)
 						.name("newTypesAndName")
 						.afterComplete("PT1H")
-						.locked(false)
 						.enabled(false)
 						.build());
 		checkUpdateResult(false, goodUpdate, null, idToUpdate, "newTypesAndName", false);
@@ -540,7 +532,7 @@ class DeltaFiCoreApplicationTests {
 		List<DeletePolicy> policyList = getDeletePolicies(dgsQueryExecutor);
 		assertEquals(3, policyList.size());
 
-		boolean foundAfterCompleteLockedPolicy = false;
+		boolean foundAfterCompletePolicy = false;
 		boolean foundOfflinePolicy = false;
 		boolean foundDiskSpacePercent = false;
 		Set<String> ids = new HashSet<>();
@@ -550,21 +542,18 @@ class DeltaFiCoreApplicationTests {
 			if (policy instanceof DiskSpaceDeletePolicy diskPolicy) {
 				if (diskPolicy.getName().equals(DISK_SPACE_PERCENT_POLICY)) {
 					assertTrue(diskPolicy.isEnabled());
-					assertFalse(diskPolicy.isLocked());
 					foundDiskSpacePercent = true;
 				}
 			} else if (policy instanceof TimedDeletePolicy timedPolicy) {
-				if (timedPolicy.getName().equals(AFTER_COMPLETE_LOCKED_POLICY)) {
+				if (timedPolicy.getName().equals(AFTER_COMPLETE_POLICY)) {
 					assertTrue(timedPolicy.isEnabled());
-					assertTrue(timedPolicy.isLocked());
 					assertEquals("PT2S", timedPolicy.getAfterComplete());
 					assertNull(timedPolicy.getAfterCreate());
 					assertNull(timedPolicy.getMinBytes());
-					foundAfterCompleteLockedPolicy = true;
+					foundAfterCompletePolicy = true;
 
 				} else if (timedPolicy.getName().equals(OFFLINE_POLICY)) {
 					assertFalse(timedPolicy.isEnabled());
-					assertFalse(timedPolicy.isLocked());
 					assertEquals("PT2S", timedPolicy.getAfterCreate());
 					assertNull(timedPolicy.getAfterComplete());
 					assertEquals(1000, timedPolicy.getMinBytes());
@@ -573,7 +562,7 @@ class DeltaFiCoreApplicationTests {
 			}
 		}
 
-		assertTrue(foundAfterCompleteLockedPolicy);
+		assertTrue(foundAfterCompletePolicy);
 		assertTrue(foundOfflinePolicy);
 		assertTrue(foundDiskSpacePercent);
 		assertEquals(3, ids.size());
@@ -587,7 +576,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(policiesScheduled.size()).isEqualTo(2); // only 2 of 3 are enabled
 		List<String> names = List.of(policiesScheduled.get(0).getName(),
 				policiesScheduled.get(1).getName());
-		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_LOCKED_POLICY)));
+		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_POLICY)));
 	}
 
 	@Test

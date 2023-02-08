@@ -20,8 +20,6 @@ interface DeletePolicy {
     id: String!
     name: String!
     enabled: Boolean!
-    "A locked policy can never be disabled"
-    locked: Boolean!
     flow: String
 }
 
@@ -29,7 +27,6 @@ type DiskSpaceDeletePolicy implements DeletePolicy {
     id: String!
     name: String!
     enabled: Boolean!
-    locked: Boolean!
     flow: String
     maxPercent: Int!
 }
@@ -38,7 +35,6 @@ input DiskSpaceDeletePolicyInput {
     id: String
     name: String!
     enabled: Boolean!
-    locked: Boolean!
     flow: String
     maxPercent: Int!
 }
@@ -47,7 +43,6 @@ type TimedDeletePolicy implements DeletePolicy {
     id: String!
     name: String!
     enabled: Boolean!
-    locked: Boolean!
     flow: String
     afterCreate: String
     afterComplete: String
@@ -59,7 +54,6 @@ input TimedDeletePolicyInput {
     id: String
     name: String!
     enabled: Boolean!
-    locked: Boolean!
     flow: String
     "Really a Duration type:"
     afterCreate: String

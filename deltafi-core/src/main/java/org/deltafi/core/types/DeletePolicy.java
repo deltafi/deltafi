@@ -48,16 +48,6 @@ public interface DeletePolicy {
 
   void setEnabled(boolean enabled);
 
-  /**
-   * A locked policy can never be disabled
-   */
-  boolean isLocked();
-
-  /**
-   * A locked policy can never be disabled
-   */
-  void setLocked(boolean locked);
-
   String getFlow();
 
   void setFlow(String flow);
