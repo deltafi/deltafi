@@ -21,6 +21,7 @@
     <span class="navbar-brand-wrapper">
       <div class="navbar-brand col mr-0 px-3">
         <div class="row">
+          <img class="logo" src="/logo.png" />
           <div class="col title" :style="{ color: textColor }">{{ uiConfig.title }}</div>
           <div class="col text-right">
             <button v-tooltip.right="'Toggle sidebar menu'" class="navbar-toggler btn btn-sm" @click="toggleSidebar">
