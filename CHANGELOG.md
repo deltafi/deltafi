@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Updated deltafi-build, deltafi-ruby-base, deltafi-spring-base and deltafi-kind-node base images to 0.101.4
 
 ## [0.101.3] - 2023-02-01
 
