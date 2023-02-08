@@ -148,6 +148,10 @@ new Docute({
         {
           title: 'Cluster Integration Testing with KinD',
           link: '/advanced/kind'
+        },
+        {
+          title: 'Data Retention',
+          link: '/advanced/data_retention'
         }
       ]
     }
