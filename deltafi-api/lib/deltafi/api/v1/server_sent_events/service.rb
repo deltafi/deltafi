@@ -29,6 +29,8 @@ module Deltafi
 
           attr_accessor :subscribers
 
+          HEARTBEAT_INTERVAL = 15
+
           def initialize
             self.subscribers = []
             @redis = DF.redis_client
@@ -49,6 +51,14 @@ module Deltafi
                     conn << "data: #{message}\n\n"
                   end
                 end
+              end
+            end
+
+            Thread.new do
+              loop do
+                debug "Sending heartbeat to #{subscribers.size} subscriber(s)" unless subscribers.empty?
+                subscribers.each(&:send_heartbeat)
+                sleep HEARTBEAT_INTERVAL
               end
             end
           end

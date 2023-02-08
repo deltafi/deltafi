@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Add a top-level DeltaFile field listing indexedMetadata keys, improve performance of indexedMetadataKeys endpoint
 - Cap total count at 50k for deltaFiles query to improve mongodb performance
 - Add totalCount endpoint to give estimated total count of deltaFiles
+- Added heartbeat to Server-Sent Events (SSE) connections
 - Only set indicies and bucket age off if `schedule.maintenance` is not set to false
 - Storage efficient un-tar for regular TAR files
 - Use a standard output location when generating plugins

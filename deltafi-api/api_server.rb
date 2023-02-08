@@ -144,6 +144,7 @@ class ApiServer < Sinatra::Base
       stream(:keep_open) do |conn|
         $sse_service.subscribers << conn
         conn.callback { $sse_service.subscribers.delete(conn) }
+        conn.send_heartbeat
       end
     end
   end
