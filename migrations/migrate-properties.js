@@ -7,7 +7,6 @@ let defaultProperties = {
     "delete": {
         "ageOffDays": 13,
         "frequency": "PT10M",
-        "onCompletion": false,
         "policyBatchSize": 1000
     },
     "ingress": {
@@ -69,10 +68,6 @@ let propertySetMapping = [
         "propertySetKey": "deltafi.delete.ageOffDays",
         "propertyType": "AGE_OFF_DAYS",
         "setter": (deltaFiProps, value) => { deltaFiProps["delete"]["ageOffDays"] = parseInt(value) }
-    }, {
-        "propertySetKey": "deltafi.delete.onCompletion",
-        "propertyType": "DELETE_ON_COMPLETION",
-        "setter": (deltaFiProps, value) => { deltaFiProps["delete"]["onCompletion"] = value === 'true' }
     }, {
         "propertySetKey": "deltafi.delete.policyBatchSize",
         "propertyType": "DELETE_BATCH_SIZE",

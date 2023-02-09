@@ -28,7 +28,7 @@ import java.util.Map;
 public class PropertiesDatafetcherTestHelper {
 
     private static final String UPDATE_PROPERTIES = "mutation($updates: [PropertyUpdate]!) {updateProperties(updates: $updates)}";
-    private static final String GET_PROPERTIES = "query { getDeltaFiProperties { systemName requeueSeconds coreServiceThreads scheduledServiceThreads checks {actionQueueSizeThreshold contentStoragePercentThreshold} delete {frequency ageOffDays onCompletion policyBatchSize} ingress {enabled diskSpaceRequirementInMb} plugins {imageRepositoryBase imagePullSecret} metrics {enabled} setProperties }}";
+    private static final String GET_PROPERTIES = "query { getDeltaFiProperties { systemName requeueSeconds coreServiceThreads scheduledServiceThreads checks {actionQueueSizeThreshold contentStoragePercentThreshold} delete {frequency ageOffDays policyBatchSize} ingress {enabled diskSpaceRequirementInMb} plugins {imageRepositoryBase imagePullSecret} metrics {enabled} setProperties }}";
     private static final String UNSET_PROPERTY = "mutation($ids: [PropertyId]!) { removePropertyOverrides(propertyIds: $ids)}";
     private static final String ADD_EXTERNAL_LINK = "mutation($link: LinkInput!) {saveExternalLink(link: $link)}";
     private static final String ADD_DELTA_FILE_LINK = "mutation($link: LinkInput!) {saveDeltaFileLink(link: $link)}";

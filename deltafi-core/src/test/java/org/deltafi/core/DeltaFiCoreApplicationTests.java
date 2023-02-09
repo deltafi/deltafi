@@ -265,7 +265,6 @@ class DeltaFiCoreApplicationTests {
 		actionDescriptorRepo.deleteAll();
 		deltaFileRepo.deleteAll();
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
-		deltaFiPropertiesService.getDeltaFiProperties().getDelete().setOnCompletion(false);
 		deltaFileRepo.deleteAll();
 		flowAssignmentRuleRepo.deleteAll();
 		loadConfig();
@@ -1356,20 +1355,6 @@ class DeltaFiCoreApplicationTests {
 			assertEquals(DeltaFileStage.ERROR, actual.getStage());
 			assertFalse(actual.getFiltered());
 		}
-	}
-
-	@Test
-	void testEgressDeleteCompleted() throws IOException {
-		deltaFiPropertiesService.getDeltaFiProperties().getDelete().setOnCompletion(true);
-
-		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
-
-		deltaFilesService.handleActionEvent(actionEvent("egress", did));
-
-		Optional<DeltaFile> deltaFile = deltaFileRepo.findById(did);
-		assertTrue(deltaFile.isPresent());
-		assertNotNull(deltaFile.get().getContentDeleted());
 	}
 
 	@Test

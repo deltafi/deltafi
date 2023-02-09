@@ -76,7 +76,6 @@ ALL_SNAPSHOT_FIELDS="id
               delete {
                 ageOffDays
                 frequency
-                onCompletion
                 policyBatchSize
               }
               ingress {

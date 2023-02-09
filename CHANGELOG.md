@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Removed
 - Locked option from delete policies
+- Remove deleteOnCompletion option to prevent split/join problems
 
 ### Fixed
 - Fixed problem with publishing all Gradle plugins to Gradle Central

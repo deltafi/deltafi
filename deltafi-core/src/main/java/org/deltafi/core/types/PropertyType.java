@@ -103,17 +103,6 @@ public enum PropertyType {
             target.getDelete().setAgeOffDays(source.getDelete().getAgeOffDays());
         }
     },
-    DELETE_ON_COMPLETION("delete.onCompletion", "Immediately remove DeltaFile after it is processed.", props -> props.getDelete().isOnCompletion()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertBoolean(value);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getDelete().setOnCompletion(source.getDelete().isOnCompletion());
-        }
-    },
     DELETE_BATCH_SIZE("delete.policyBatchSize", "Maximum deletes per policy iteration loop", props -> props.getDelete().getPolicyBatchSize()) {
         @Override
         public Object convertValue(String value) {

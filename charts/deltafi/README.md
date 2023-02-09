@@ -40,7 +40,6 @@ data:
   deltafi-common.yaml: |-
     deltafi:
       delete:
-        onCompletion: false
         policyBatchSize: 1000
         frequency: PT1M
   action-kit.yaml: |-

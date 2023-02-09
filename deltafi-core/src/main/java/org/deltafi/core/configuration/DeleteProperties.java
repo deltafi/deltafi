@@ -27,7 +27,6 @@ public class DeleteProperties {
 
     private int ageOffDays = 13;
     private Duration frequency = Duration.ofMinutes(10);
-    private boolean onCompletion = false;
     private int policyBatchSize = DEFAULT_POLICY_BATCH_SIZE;
 
     public int getPolicyBatchSize() {

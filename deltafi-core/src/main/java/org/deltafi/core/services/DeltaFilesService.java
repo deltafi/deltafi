@@ -751,10 +751,6 @@ public class DeltaFilesService {
 
                             enqueueActions.addAll(advanceOnly(child));
 
-                            if (getProperties().getDelete().isOnCompletion() && child.getStage().equals(DeltaFileStage.COMPLETE)) {
-                                delete(Collections.singletonList(deltaFile), "on completion", false);
-                            }
-
                             child.recalculateBytes();
                             deltaFile.setReplayed(now);
                             deltaFile.setReplayDid(child.getDid());
@@ -886,67 +882,47 @@ public class DeltaFilesService {
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
         try {
             List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
-            if (getProperties().getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
-                delete(Collections.singletonList(deltaFile), "on completion", false);
-            } else {
-                deltaFileRepo.save(deltaFile);
-                if (!enqueueActions.isEmpty()) {
-                    enqueueActions(enqueueActions);
-                }
+            deltaFileRepo.save(deltaFile);
+            if (!enqueueActions.isEmpty()) {
+                enqueueActions(enqueueActions);
             }
         } catch (MissingEgressFlowException e) {
-            handleMissingEgressFlow(Collections.singletonList(deltaFile));
+            handleMissingEgressFlow(deltaFile);
+            deltaFileRepo.save(deltaFile);
         }
         return deltaFile;
     }
 
     public void advanceAndSave(List<DeltaFile> deltaFiles) {
-        List<DeltaFile> saveDeltaFiles = new ArrayList<>();
-        List<DeltaFile> deleteDeltaFiles = new ArrayList<>();
-        List<DeltaFile> missingEgressFlowDeltaFiles = new ArrayList<>();
+        if (deltaFiles.isEmpty()) {
+            return;
+        }
+
         List<ActionInput> enqueueActions = new ArrayList<>();
 
         deltaFiles.forEach(deltaFile -> {
             try {
                 enqueueActions.addAll(stateMachine.advance(deltaFile));
-                if (getProperties().getDelete().isOnCompletion() && deltaFile.getStage().equals(DeltaFileStage.COMPLETE)) {
-                    deleteDeltaFiles.add(deltaFile);
-                } else {
-                    saveDeltaFiles.add(deltaFile);
-                }
             } catch (MissingEgressFlowException e) {
-                missingEgressFlowDeltaFiles.add(deltaFile);
+                handleMissingEgressFlow(deltaFile);
             }
         });
 
-        if (!deltaFiles.isEmpty()) {
-            deltaFileRepo.saveAll(saveDeltaFiles);
-        }
-
-        if (!deleteDeltaFiles.isEmpty()) {
-            delete(deleteDeltaFiles, "on completion", false);
-        }
-
-        if (!missingEgressFlowDeltaFiles.isEmpty()) {
-            handleMissingEgressFlow(missingEgressFlowDeltaFiles);
-        }
+        deltaFileRepo.saveAll(deltaFiles);
 
         if (!enqueueActions.isEmpty()) {
             enqueueActions(enqueueActions);
         }
     }
 
-    private void handleMissingEgressFlow(List<DeltaFile> deltaFiles) {
-        for (DeltaFile deltaFile : deltaFiles) {
-            deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
-            try {
-                processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile));
-            } catch (JsonProcessingException e) {
-                log.error("Unable to create error file: " + e.getMessage());
-            }
-            deltaFile.setStage(DeltaFileStage.ERROR);
+    private void handleMissingEgressFlow(DeltaFile deltaFile) {
+        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
+        try {
+            processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile));
+        } catch (JsonProcessingException e) {
+            log.error("Unable to create error file: " + e.getMessage());
         }
-        deltaFileRepo.saveAll(deltaFiles);
+        deltaFile.setStage(DeltaFileStage.ERROR);
     }
 
     public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
