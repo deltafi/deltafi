@@ -1,0 +1,6 @@
+# DeltaFi config
+deltafi:
+  ui:
+    title: DeltaFi (DinK)
+  auth:
+    mode: disabled

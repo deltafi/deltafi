@@ -599,7 +599,7 @@ install() {
   # Detect ARM processor and load arm64 overrides
   local EXTRA=
   _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
-  _kind_deltafi install "$@" "$EXTRA" 2>&1 | while read -r line; do [[ "$line" =~ "deprecated" ]] || echo " |  $line"; done
+  _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml "$EXTRA" 2>&1 | while read -r line; do [[ "$line" =~ "deprecated" ]] || echo " |  $line"; done
   _kind_deltafi set-admin-password password
   _ok "DeltaFi core installed"
   _warn echo "If basic_auth is enabled user is 'admin', password is 'password'"

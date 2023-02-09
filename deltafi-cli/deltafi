@@ -116,6 +116,7 @@ _command_check ruby
 
 cli_help() {
   cli_name=${0##*/}
+  cat "$DELTAFICLI_WORKDIR/logo"
   echo "
 DeltaFi CLI
 Version: $(cat $DELTAFICLI_WORKDIR/VERSION)
@@ -318,6 +319,9 @@ case "$1" in
     ;;
   versions|version)
     "$DELTAFICLI_WORKDIR/commands/versions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/versions.log"
+    ;;
+  logo)
+    cat "$DELTAFICLI_WORKDIR"/logo
     ;;
   *)
     cli_help

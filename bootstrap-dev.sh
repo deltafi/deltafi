@@ -208,7 +208,6 @@ install_homebrew() {
     require_tools curl bash
     info "This will require downloading and executing an install script from github"
     info "See http://brew.sh for details or to install manually"
-    wait_for_user
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   else
     bullet "Homebrew package manager already installed"
@@ -262,7 +261,6 @@ install_brew_packages() {
   done
   bullet "Installing required packages via Homebrew"
   info "This process may take several minutes.  Packages will be downloaded from the internet"
-  wait_for_user
   [[ -f $ROOT_PATH/kind/Brewfile ]] || abort "Unable to locate Brewfile at ${ROOT_PATH}/kind/Brewfile"
   brew bundle install --file="$ROOT_PATH/kind/Brewfile"
 }
@@ -273,7 +271,6 @@ install_docker() {
     info "Installing docker using https://get.docker.io"
     info "After the docker install, you will need to log out and back in, then rerun the bootstrap"
     info "If the docker install fails, you will need to install docker yourself"
-    wait_for_user
 
     if tool_exists yum; then
       ${SUDO} yum remove runc
@@ -316,7 +313,6 @@ EOF
     ${SUDO} pip3 install --upgrade -q poetry
   elif tool_exists apt; then
     info "Checking for necessary packages via apt/snap"
-    wait_for_user
     ${SUDO} apt-get install -y ca-certificates curl
     ${SUDO} apt-get update
     ${SUDO} apt-get install -y uidmap dbus-user-session fuse-overlayfs slirp4netns git wget snapd vim tig tmux openjdk-17-jdk python3 python3-pip
@@ -337,7 +333,6 @@ EOF
     ${SUDO} ln -s /snap/bin/* /usr/local/bin || warn "All tools may not be configured correctly"
   elif tool_exists apk; then
     info "Checking for necessary packages via apk"
-    wait_for_user
     ${SUDO} apk add ncurses curl git wget vim tig tmux python3 py3-pip openjdk17-jdk kubectx helm yq
     ${SUDO} apk add kubectl --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
     ${SUDO} pip3 install --upgrade -q poetry
@@ -345,18 +340,15 @@ EOF
 
   if ! tool_exists kubens; then
     info "Installing kubectx... installing from a git repo"
-    wait_for_user
     ${SUDO} git clone https://github.com/ahmetb/kubectx /opt/kubectx
     ${SUDO} ln -s /opt/kubectx/kubens /usr/local/bin/kubens
   fi
   if ! tool_exists helm; then
     info "Installing helm... running a script from the helm repo as ${SUDO}"
-    wait_for_user
     ${SUDO} bash -c "PATH=$PATH:/usr/local/bin $(curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3)"
   fi
   if ! tool_exists yq; then
     info "Installing yq... installing from a git repo"
-    wait_for_user
     if is_arm; then
       ${SUDO} wget -q https://github.com/mikefarah/yq/releases/download/v4.27.5/yq_linux_arm64 -O /usr/bin/yq && ${SUDO} chmod +x /usr/bin/yq
     else
@@ -365,7 +357,6 @@ EOF
   fi
   if ! tool_exists kind; then
     info "Installing KinD... installing from the KinD website"
-    wait_for_user
     if is_arm; then
       ${SUDO} wget -q https://kind.sigs.k8s.io/dl/v0.15.0/kind-linux-arm64 -O /usr/local/bin/kind && ${SUDO} chmod +x /usr/local/bin/kind
     else

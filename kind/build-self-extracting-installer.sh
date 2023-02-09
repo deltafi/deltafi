@@ -120,18 +120,24 @@ echo "$LATEST_RELEASE" > "$TEMP_TREE/LATEST_RELEASE"
 cp -rf "$DELTAFI_PATH/charts" "$TEMP_TREE"
 cp -rf "$DELTAFI_PATH/deltafi-cli" "$TEMP_TREE"
 cp -rf "$DELTAFI_PATH/kind" "$TEMP_TREE"
-cp -rf "$DELTAFI_PATH/bootstrap.sh" "$TEMP_TREE"
+cp -rf "$DELTAFI_PATH"/bootstrap*.sh "$TEMP_TREE"
 cp -rf "$DELTAFI_PATH/LICENSE" "$TEMP_TREE"
 rm -rf "$TEMP_TREE/kind/deltafi" "$TEMP_TREE/*/build" "$TEMP_TREE/kind/self-*.sh" "$TEMP_TREE/*/*/logs" "$TEMP_TREE/*/logs" "$TEMP_TREE/kind/data"
 
 cd "$BASE_PATH"
 tar -pczf archive.tar.gz deltafi
+ls -la archive.tar.gz
+tar -tvf archive.tar.gz
 
 cat <<EOF > "$BASE_PATH/kind-install.sh"
 #!/bin/sh
 if [ -e deltafi ]; then
   echo "'deltafi' directory already exists here!"
-  echo "You might try running deltafi/bootstrap.sh"
+  if [ "\$1" = '--dev' ]; then
+    echo "You might try running deltafi/bootstrap-dev.sh"
+  else
+    echo "You might try running deltafi/bootstrap.sh"
+  fi
   exit 1
 fi
 cat <<ARCHIVE | base64 -d | tar -pzxf -
@@ -139,7 +145,11 @@ $(base64 < archive.tar.gz)
 ARCHIVE
 rm -f archive.tar.gz
 cd deltafi
-./bootstrap.sh
+if [ "\$1" = '--dev' ]; then
+  ./bootstrap-dev.sh
+else
+  ./bootstrap.sh
+fi
 EOF
 
 rm -rf "$BASE_PATH/archive.tar.gz" "$TEMP_TREE"
