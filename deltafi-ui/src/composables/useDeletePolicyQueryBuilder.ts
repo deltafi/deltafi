@@ -30,7 +30,6 @@ export default function useDeletePolicyQueryBuilder() {
         flow: true,
         __typename: true,
         enabled: true,
-        locked: true,
         __on: [
           {
             __typeName: "TimedDeletePolicy",

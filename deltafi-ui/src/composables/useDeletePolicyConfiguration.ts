@@ -47,12 +47,6 @@ export default function useDeletePolicyConfiguration() {
     };
   };
 
-  const lockedSchema = () => {
-    return {
-      type: "boolean",
-    };
-  };
-
   const maxPercentSchema = () => {
     return { type: "number", minimum: 0, maximum: 100 };
   };
@@ -115,7 +109,6 @@ export default function useDeletePolicyConfiguration() {
         name: { $ref: "#/definitions/nameSchema" },
         flow: { $ref: "#/definitions/flowSchema" },
         enabled: { $ref: "#/definitions/enabledSchema" },
-        locked: { $ref: "#/definitions/lockedSchema" },
         afterCreate: { $ref: "#/definitions/ISO8601Duration" },
         afterComplete: { $ref: "#/definitions/ISO8601Duration" },
         minBytes: { type: ["number", "null"] },
@@ -130,7 +123,6 @@ export default function useDeletePolicyConfiguration() {
           id: "${0/name} - id is a required field.",
           name: "name is a required field.",
           enabled: "${0/name} - enabled must be true or false.",
-          locked: "${0/name} - locked must be true or false.",
           afterCreate: "${0/name} - afterCreate needs to be in ISO 8601 notation.",
           afterComplete: "${0/name} - afterComplete needs to be in ISO 8601 notation.",
         },
@@ -146,7 +138,6 @@ export default function useDeletePolicyConfiguration() {
         name: { $ref: "#/definitions/nameSchema" },
         flow: { $ref: "#/definitions/flowSchema" },
         enabled: { $ref: "#/definitions/enabledSchema" },
-        locked: { $ref: "#/definitions/lockedSchema" },
         maxPercent: { $ref: "#/definitions/maxPercentSchema" },
       },
       required: ["name"],
@@ -157,7 +148,6 @@ export default function useDeletePolicyConfiguration() {
         properties: {
           name: "name is a required field.",
           enabled: "${0/name} - enabled must be true or false",
-          locked: "${0/name} - locked must be true or false",
           maxPercent: "${0/name} - maxPercent must be a number between 0 and 100.",
         },
       },
@@ -188,7 +178,6 @@ export default function useDeletePolicyConfiguration() {
       nameSchema: nameSchema(),
       flowSchema: flowSchema(),
       enabledSchema: enabledSchema(),
-      lockedSchema: lockedSchema(),
       maxPercentSchema: maxPercentSchema(),
     },
     required: ["timedPolicies", "diskSpacePolicies"],
@@ -205,7 +194,6 @@ export default function useDeletePolicyConfiguration() {
       nameSchema: nameSchema(),
       flowSchema: flowSchema(),
       enabledSchema: enabledSchema(),
-      lockedSchema: lockedSchema(),
       maxPercentSchema: maxPercentSchema(),
     },
   };

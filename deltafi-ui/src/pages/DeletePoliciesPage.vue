@@ -51,11 +51,6 @@
             <i v-tooltip.right="deletePolicyType.get(data.__typename).tooltip" :class="deletePolicyType.get(data.__typename).class" />
           </template>
         </Column>
-        <Column field="locked" header="Locked" :sortable="true" :style="{ width: '10%' }">
-          <template #body="{ data }">
-            <i v-tooltip.right="deletePolicyLocked.get(data.locked).tooltip" :class="deletePolicyLocked.get(data.locked).class" />
-          </template>
-        </Column>
         <Column :style="{ width: '10%' }" class="deletePolicy-state-column">
           <template #body="{ data }">
             <div class="d-flex justify-content-between">
@@ -111,10 +106,6 @@ const filters = ref({
 const deletePolicyType = new Map([
   ["TimedDeletePolicy", { tooltip: "Timed Delete Policy", class: "far fa-clock text-muted ml-1" }],
   ["DiskSpaceDeletePolicy", { tooltip: "DiskSpace Delete Policy", class: "fas fa-hdd text-muted ml-1" }],
-]);
-const deletePolicyLocked = new Map([
-  [true, { tooltip: "Locked Policy", class: "fas fa-lock text-muted ml-1" }],
-  [false, { tooltip: "Unlocked Policy", class: "fas fa-lock-open text-muted ml-1" }],
 ]);
 
 const uiDeletePoliciesList = computed(() => {

@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Search page now displays "of many" when results are 50,000 (#322)
 - New logo (#327)
 
+### Removed
+
+- Remove locked option on Delete Policies
+
 ### Fixed
 
 - Fixed issue with isIdle on notification badge (#323)

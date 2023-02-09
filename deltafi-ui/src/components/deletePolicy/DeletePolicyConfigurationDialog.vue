@@ -42,10 +42,6 @@
           <dd>
             <Dropdown v-model="selectedDeleteType" :options="deletePolicyTypes" :placeholder="deletePolicyConfigurationMap.get('__typename').placeholder" :disabled="deletePolicyConfigurationMap.get('__typename').disabled" class="inputWidth" />
           </dd>
-          <dt>{{ deletePolicyConfigurationMap.get("locked").header }}</dt>
-          <dd>
-            <InputSwitch v-model="selectedLockedBoolean" :disabled="deletePolicyConfigurationMap.get('locked').disabled" />
-          </dd>
           <dt>{{ deletePolicyConfigurationMap.get("enabled").header }}</dt>
           <dd>
             <InputSwitch v-model="selectedEnabledBoolean" :disabled="deletePolicyConfigurationMap.get('enabled').disabled" />
@@ -159,7 +155,6 @@ const deletePolicyConfigurationMap = new Map([
   ["name", { header: "Name", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy }],
   ["__typename", { header: "Type", placeholder: "e.g. TimedDeletePolicy, DiskSpaceDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
   ["flow", { header: "Flow", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
-  ["locked", { header: "Locked", type: "boolean", disabled: viewDeletePolicy }],
   ["enabled", { header: "Enabled", type: "boolean", disabled: viewDeletePolicy }],
   ["afterCreate", { header: "After Create", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
   ["afterComplete", { header: "After Complete", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
@@ -172,7 +167,6 @@ const selectedDeleteId = ref(_.get(rowdata, "id", null));
 const selectedDeleteName = ref(_.get(rowdata, "name", null));
 const selectedDeleteflow = ref(_.isEmpty(_.get(rowdata, "flow")) || _.isEqual(_.get(rowdata, "flow"), "All") ? null : rowdata["flow"]);
 const selectedDeleteType = ref(_.get(rowdata, "__typename", null));
-const selectedLockedBoolean = ref(_.get(rowdata, "locked", false));
 const selectedEnabledBoolean = ref(_.get(rowdata, "enabled", false));
 const selectedAfterCreate = ref(_.get(rowdata, "afterCreate", null));
 const selectedAfterComplete = ref(_.get(rowdata, "afterComplete", null));
@@ -199,7 +193,6 @@ const createNewPolicy = () => {
     newDeletePolicy["flow"] = selectedDeleteflow.value;
   }
 
-  newDeletePolicy["locked"] = selectedLockedBoolean.value;
   newDeletePolicy["enabled"] = selectedEnabledBoolean.value;
 
   if (_.isEqual(selectedDeleteType.value, "TimedDeletePolicy")) {

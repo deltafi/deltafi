@@ -34,7 +34,6 @@ export default function useSystemSnapshots() {
             id: true,
             name: true,
             enabled: true,
-            locked: true,
             flow: true,
             afterCreate: true,
             afterComplete: true,
@@ -45,7 +44,6 @@ export default function useSystemSnapshots() {
             id: true,
             name: true,
             enabled: true,
-            locked: true,
             flow: true,
             maxPercent: true
           }
