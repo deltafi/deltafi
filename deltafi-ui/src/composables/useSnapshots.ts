@@ -90,7 +90,6 @@ export default function useSystemSnapshots() {
           delete: {
             ageOffDays: true,
             frequency: true,
-            onCompletion: true,
             policyBatchSize: true,
           },
           ingress: {
@@ -167,7 +166,7 @@ export default function useSystemSnapshots() {
     await queryGraphQL(query, "postRevertSystemSnapshot", "mutation");
     mutationData.value = response.value.data.resetFromSnapshotWithId;
   };
-  
+
   const importSnapshot = async (snapShot: JSON) => {
     const query = {
       importSnapshot: {
