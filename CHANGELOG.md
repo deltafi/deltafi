@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Monitor will now reconnect to MongoDB if the connection is lost
 - KinD metric-server architecture selected correctly on linux arm64 VMs
 
 ### Tech-Debt/Refactor

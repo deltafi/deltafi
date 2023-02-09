@@ -56,6 +56,8 @@ module Deltafi
                                          user: config[:user],
                                          password: config[:password],
                                          auth_source: config[:auth_source])
+    @@mongo_client.reconnect if @@mongo_client.cluster.servers.empty?
+    @@mongo_client
   end
 
   def self.graphql(query)
@@ -104,6 +106,7 @@ module Deltafi
   end
 
   def self.cached_system_properties
+    debug "#{__method__} called from #{caller[0]}"
     if @@system_properties.nil? || @@system_properties.keys.empty?
       system_properties
     else
@@ -112,10 +115,12 @@ module Deltafi
   end
 
   def self.system_properties
+    debug "#{__method__} called from #{caller[0]}"
     @@system_properties ||= {}
     return @@system_properties unless running_in_cluster?
 
     begin
+      debug "Querying mongo for system properties"
       @@system_properties = mongo_client[:deltaFiProperties].find.limit(1).first || {}
     rescue StandardError => e
       puts e
@@ -125,6 +130,7 @@ module Deltafi
   end
 
   def self.system_property(dig_path = [], default_value = nil)
+    debug "#{__method__} called from #{caller[0]}"
     system_properties.dig(*dig_path) || default_value
   end
 

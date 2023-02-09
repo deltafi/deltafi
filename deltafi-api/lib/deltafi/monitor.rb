@@ -53,9 +53,9 @@ module Deltafi
       fork do
         info "Forking process for #{service_class}"
         Process.setproctitle("monitor - child (#{service_class})")
-        service = service_class.new
         timers = Timers::Group.new
         timers.now_and_every(service_class::INTERVAL) do
+          service = service_class.new
           if ENV['LOG_LEVEL'] == 'DEBUG'
             MemoryProfiler.start
             service.run

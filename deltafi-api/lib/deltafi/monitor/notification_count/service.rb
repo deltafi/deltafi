@@ -32,6 +32,9 @@ module Deltafi
 
         def initialize
           @redis = DF.redis_client
+          Mongoid::Clients.clients.values.each do |client|
+            client.reconnect if client.cluster.servers.empty?
+          end
         end
 
         def run
