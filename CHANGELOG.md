@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Fixed problem with publishing all Gradle plugins to Gradle Central
 - Add mongodb index to fix disk space delete policy query performance
 - Check for ageOff property changes when properties are refreshed and update the TTLs if needed
 

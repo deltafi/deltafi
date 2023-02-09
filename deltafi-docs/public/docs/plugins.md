@@ -95,7 +95,7 @@ A local Dockerfile is not necessary.
 
 ```groovy
 plugins {
-    id 'org.deltafi.version-reckoning' version "${deltafiVersion}"
+    id 'org.deltafi.version-reckoning' version "1.0"
     id "org.deltafi.plugin-convention" version "${deltafiVersion}"
 }
 
