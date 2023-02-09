@@ -949,8 +949,9 @@ public class DeltaFilesService {
         deltaFileRepo.saveAll(deltaFiles);
     }
 
-    public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata, int batchSize) {
+    public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
         int found;
+        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
         do {
             List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(createdBefore, completedBefore, minBytes, flow, policy, deleteMetadata, batchSize);
             found = deltaFiles.size();
@@ -958,9 +959,10 @@ public class DeltaFilesService {
         } while (found == batchSize);
     }
 
-    public List<DeltaFile> delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata, int batchSize) {
+    public List<DeltaFile> delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata) {
         List<DeltaFile> allDeleted = new ArrayList<>();
         long bytesLeft = bytesToDelete;
+        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
 
         int found;
         do {

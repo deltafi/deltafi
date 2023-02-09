@@ -225,7 +225,7 @@ class DeltaFilesServiceTest {
         deltaFile2.getFormattedData().add(FormattedData.newBuilder().contentReference(cr2).build());
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false, 10);
+        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
         assertEquals(List.of(cr1.getSegments().get(0), cr2.getSegments().get(0)), segmentCaptor.getValue());
@@ -243,7 +243,7 @@ class DeltaFilesServiceTest {
         deltaFile2.getFormattedData().add(FormattedData.newBuilder().contentReference(cr2).build());
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true, 10);
+        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
         assertEquals(List.of(cr1.getSegments().get(0), cr2.getSegments().get(0)), segmentCaptor.getValue());

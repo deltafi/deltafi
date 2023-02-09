@@ -35,8 +35,8 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
     private final String flow;
     private final DiskSpaceService diskSpaceService;
 
-    public DiskSpaceDelete(int batchSize, DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DiskSpaceDeletePolicy policy) {
-        super(deltaFilesService, policy.getName(), batchSize);
+    public DiskSpaceDelete(DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DiskSpaceDeletePolicy policy) {
+        super(deltaFilesService, policy.getName());
 
         this.diskSpaceService = diskSpaceService;
         this.maxPercent = policy.getMaxPercent();
@@ -51,7 +51,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
                 log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + contentMetrics.percentUsed() + "%, maximum = " + maxPercent + "%");
                 long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
                 log.info("Deleting up to " + bytesToDelete + " bytes");
-                List<DeltaFile> deleted = deltaFilesService.delete(bytesToDelete, flow, name, false, getBatchSize());
+                List<DeltaFile> deleted = deltaFilesService.delete(bytesToDelete, flow, name, false);
                 if (deleted.isEmpty()) {
                     log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
                 }

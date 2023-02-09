@@ -3606,7 +3606,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testDeleteMultipleBatches() {
-		for (int i = 0; i < 500; i++) {
+		for (int i = 0; i < 1500; i++) {
 			deltaFileRepo.save(DeltaFile.newBuilder()
 					.did("abc" + i)
 					.created(OffsetDateTime.now().minusDays(1))
@@ -3614,8 +3614,8 @@ class DeltaFiCoreApplicationTests {
 					.formattedData(Collections.emptyList())
 					.build());
 		}
-		assertEquals(500, deltaFileRepo.count());
-		deltaFilesService.delete(OffsetDateTime.now(), null, 0L, null, "policyName", true, 49);
+		assertEquals(1500, deltaFileRepo.count());
+		deltaFilesService.delete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
 		// ensure that it looped over each batch and deleted everything
 		assertEquals(0, deltaFileRepo.count());
 	}

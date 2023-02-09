@@ -23,8 +23,14 @@ import java.time.Duration;
 
 @Data
 public class DeleteProperties {
+    private static int DEFAULT_POLICY_BATCH_SIZE = 1000;
+
     private int ageOffDays = 13;
     private Duration frequency = Duration.ofMinutes(10);
     private boolean onCompletion = false;
-    private int policyBatchSize = 1000;
+    private int policyBatchSize = DEFAULT_POLICY_BATCH_SIZE;
+
+    public int getPolicyBatchSize() {
+       return policyBatchSize > 0 ? policyBatchSize : DEFAULT_POLICY_BATCH_SIZE;
+    }
 }

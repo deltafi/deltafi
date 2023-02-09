@@ -26,7 +26,6 @@ import org.deltafi.core.services.DeltaFilesService;
 public abstract class DeletePolicyWorker {
     protected final DeltaFilesService deltaFilesService;
     protected final String name;
-    protected final int batchSize;
 
     public abstract void run();
 }

@@ -40,7 +40,6 @@ public class DeleteRunner {
     private final DeltaFilesService deltaFilesService;
     private final DiskSpaceService diskSpaceService;
     private final DeletePolicyService deletePolicyService;
-    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     public void runDeletes() {
         List<DeletePolicyWorker> policiesScheduled = refreshPolicies();
@@ -49,19 +48,17 @@ public class DeleteRunner {
 
     public List<DeletePolicyWorker> refreshPolicies() {
         List<DeletePolicyWorker> policies = new ArrayList<>();
-        DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
-        int batchSize = deltaFiProperties.getDelete().getPolicyBatchSize() > 0 ? deltaFiProperties.getDelete().getPolicyBatchSize() : 1000;
         for (DeletePolicy policy : deletePolicyService.getEnabledPolicies()) {
             if (policy instanceof DiskSpaceDeletePolicy) {
-                policies.add(new DiskSpaceDelete(batchSize, deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
+                policies.add(new DiskSpaceDelete(deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
             } else if (policy instanceof TimedDeletePolicy) {
-                policies.add(new TimedDelete(batchSize, deltaFilesService, (TimedDeletePolicy) policy));
+                policies.add(new TimedDelete(deltaFilesService, (TimedDeletePolicy) policy));
             } else {
                 throw new IllegalArgumentException("Unknown delete policy type " + policy.getClass().getSimpleName());
             }
 
         }
-        log.debug("Preparing to execute " + policies.size() + " policies using a batch size of " + batchSize);
+        log.debug("Preparing to execute " + policies.size());
         return policies;
     }
 
