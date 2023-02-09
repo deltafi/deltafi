@@ -3,9 +3,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.101.4 or 1.0.0
+## [Unreleased] - Next release 0.101.5 or 1.0.0
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.101.4] - 2022-02-09
+
+### Added
+- Add a top-level DeltaFile field listing indexedMetadata keys
+- Add totalCount endpoint to give estimated total count of deltaFiles
+- Added heartbeat to Server-Sent Events (SSE) connections
 
 ### Changed
 - Send notification count via Server-Sent Events (SSE)
@@ -14,16 +35,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Increased default worker threads in Auth and API
 - Changed the MinIO delete cleanup interval from 5 minutes to 1 minute
 - Improve domains endpoint performance
-- Add a top-level DeltaFile field listing indexedMetadata keys, improve performance of indexedMetadataKeys endpoint
+- Improve performance of indexedMetadataKeys endpoint
 - Cap total count at 50k for deltaFiles query to improve mongodb performance
-- Add totalCount endpoint to give estimated total count of deltaFiles
-- Added heartbeat to Server-Sent Events (SSE) connections
 - Only set indicies and bucket age off if `schedule.maintenance` is not set to false
 - Storage efficient un-tar for regular TAR files
 - Use a standard output location when generating plugins
 - Unzip generated plugins by default, add an option to zip them
-
-### Deprecated
 
 ### Removed
 - Locked option from delete policies
@@ -37,10 +54,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Allow delete batch size to be changed dynamically
 - Fix issues with searching indexed metadata
 - Fixed issue with plugin test harness not allowing reading the content more than once
-
-### Tech-Debt/Refactor
-
-### Security
 
 ### Upgrade and Migration
 - Updated deltafi-build, deltafi-ruby-base, deltafi-spring-base and deltafi-kind-node base images to 0.101.4
