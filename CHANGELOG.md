@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.101.5 or 1.0.0
 
 ### Added
+- Additional KinD caching registry for registry.k8s.io
 
 ### Changed
 
@@ -14,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- KinD metric-server architecture selected correctly on linux arm64 VMs
 
 ### Tech-Debt/Refactor
 

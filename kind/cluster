@@ -405,6 +405,7 @@ up() {
   _create_proxy k8s-proxy "https://k8s.gcr.io" 5002
   _create_proxy ghcr-proxy "https://ghcr.io" 5003
   _create_proxy quay-proxy "https://quay.io" 5004
+  _create_proxy k8s-registry-proxy "https://registry.k8s.io" 5005
 
   if kind get clusters | grep "^${CLUSTER_NAME}$" > /dev/null; then
     _ok "${CLUSTER_NAME} cluster already instantiated"
@@ -451,7 +452,10 @@ EOF
 
   _k8s_add_namespace deltafi
 
-  kubectl apply -f "${BASE_PATH}/files/kind-metrics-server-deployment.yaml" | while read -r line; do _debug " |  $line"; done
+  local METRICS_SERVER_DEPLOYMENT="${BASE_PATH}/files/kind-metrics-server-deployment.yaml"
+  _is_arm && METRICS_SERVER_DEPLOYMENT="${BASE_PATH}/files/kind-metrics-server-deployment-arm64.yaml"
+
+  kubectl apply -f "$METRICS_SERVER_DEPLOYMENT" | while read -r line; do _debug " |  $line"; done
   kubens deltafi || kubens deltafi # Repeated because kubens fails on first execution in Debian
   _install_node_cli
   _enable_ui
