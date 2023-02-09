@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Check for ageOff property changes when properties are refreshed and update the TTLs if needed
 - Allow delete batch size to be changed dynamically
 - Fix issues with searching indexed metadata
+- Fixed issue with plugin test harness not allowing reading the content more than once
 
 ### Tech-Debt/Refactor
 

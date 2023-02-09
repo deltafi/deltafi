@@ -82,7 +82,7 @@ public abstract class ActionTest {
             Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenThrow(testCase.getException());
         }
         else {
-            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenReturn(new ByteArrayInputStream(content));
+            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenAnswer((invocation) -> new ByteArrayInputStream(content));
             Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(content));
         }
     }
@@ -240,7 +240,7 @@ public abstract class ActionTest {
         final Segment segment = new Segment(UUID.randomUUID().toString(), 0, bytes.length, did);
         ContentReference reference = Mockito.spy(new ContentReference(contentType, segment));
         Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(bytes));
-        Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenReturn(new ByteArrayInputStream(bytes));
+        Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenAnswer((invocation) -> new ByteArrayInputStream(bytes));
 
         return reference;
     }
@@ -251,7 +251,7 @@ public abstract class ActionTest {
             Long size = invocation.getArgument(1);
             ContentReference reference = Mockito.spy((ContentReference)invocation.callRealMethod());
             Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(bytes));
-            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenReturn(new ByteArrayInputStream(bytes, offset.intValue(), size.intValue()));
+            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenAnswer((invocation2) -> new ByteArrayInputStream(bytes, offset.intValue(), size.intValue()));
             return reference;
         };
     }
@@ -340,8 +340,7 @@ public abstract class ActionTest {
 
     protected byte[] getContent(Content content) {
         ContentReference ref = content.getContentReference();
-        try {
-            InputStream stream = contentStorageService.load(ref);
+        try (InputStream stream = contentStorageService.load(ref)) {
             assert(stream!=null);
             return stream.readAllBytes();
         }
