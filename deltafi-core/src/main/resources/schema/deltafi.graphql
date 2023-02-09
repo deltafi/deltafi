@@ -270,7 +270,7 @@ input DeltaFilesFilter {
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]
-  indexedMetadata: Metadata
+  indexedMetadata: [KeyValueInput!]
   enrichment: [String!]
   egressFlows: [String!]
   contentDeleted: Boolean

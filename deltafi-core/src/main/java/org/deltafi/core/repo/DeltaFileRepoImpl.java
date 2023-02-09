@@ -415,7 +415,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getIndexedMetadata())) {
-            List<Criteria> metadataCriteria = filter.getIndexedMetadata().entrySet().stream()
+            List<Criteria> metadataCriteria = filter.getIndexedMetadata().stream()
                     .map(e -> fromIndexedMetadata(e.getKey(), e.getValue())).filter(Objects::nonNull).toList();
             andCriteria.addAll(metadataCriteria);
         }
@@ -836,8 +836,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             query.addCriteria(Criteria.where(DOMAINS_NAME).is(domain));
         }
 
-        return mongoTemplate.findDistinct(query, INDEXED_METADATA_KEYS, DeltaFile.class, String.class).stream()
+        return mongoTemplate.findDistinct(query, INDEXED_METADATA_KEYS, DeltaFile.class, Object.class).stream()
                 .filter(Objects::nonNull)
+                .filter(o -> o instanceof String)
+                .map(o -> (String) o)
                 .toList();
     }
 

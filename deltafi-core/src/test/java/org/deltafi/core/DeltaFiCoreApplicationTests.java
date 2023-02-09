@@ -2508,11 +2508,11 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile3, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(true).build(), deltaFile3, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("common", "value")).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first")).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first", "common", "value")).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first", "common", "value", "extra", "missing")).build());
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(Map.of("a.1", "first", "common", "miss")).build());
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("common", "value"))).build(), deltaFile3, deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"), new KeyValue("extra", "missing"))).build());
+		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "miss"))).build());
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlowz")).build());
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow")).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow2")).build(), deltaFile2);
