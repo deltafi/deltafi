@@ -14,95 +14,6 @@ Options:
   exit 1
 }
 
-execute_graphql() {
-  truncate --size 0 ${TMPFILE}
-
-  DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
-
-  local POST_QUERY="$@"
-
-  local RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" http://$DELTAFI_DGS/graphql)
-
-  if [[ "$RESPONSE_CODE" != "200" ]]; then
-    echo -e "$RESPONSE_CODE Error: $(cat ${TMPFILE})"
-    return 1
-  else
-    ERRORS=$(cat ${TMPFILE} | jq "select(.errors) | .errors[] | .message")
-    if [[ "$ERRORS" != "" ]]; then
-      echo -e "$ERRORS"
-      return 1
-    else
-      cat "$TMPFILE"
-      return 0
-    fi
-  fi
-}
-
-load_variables() {
-  local VARIABLES_FILE="$@"
-  local BASENAME="$(basename "$VARIABLES_FILE")"
-  local JSON=$(cat "$VARIABLES_FILE")
-
-  local VARIABLES="{\"variables\": $JSON }"
-  local QUERY="mutation(\$variables: PluginVariablesInput!) { savePluginVariables(pluginVariablesInput: \$variables)}"
-  local POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
-
-  MUTATION_RESPONSE=$(execute_graphql "$POST_QUERY")
-  MUTATION_RETURN_CODE=$?
-
-  if [[ "$MUTATION_RETURN_CODE" == "0" ]]; then
-    cli_log "Successfully loaded variables from file ${cyan}${BASENAME}${normal}"
-  else
-    cli_log "${red}${BASENAME}: Loading variables failed${normal}"
-    echo -e "${red}$MUTATION_RESPONSE${normal}"
-  fi
-}
-
-load_plan() {
-  local FLOW_PLAN_FILE="$@"
-  local BASENAME="$(basename $FLOW_PLAN_FILE)"
-  local JSON=$(cat "$FLOW_PLAN_FILE")
-
-  local VARIABLES="{\"flowPlan\": $JSON }"
-
-  if [[ "$JSON" == *"loadAction"* ]]; then
-    local LOAD_TYPE="ingress flow plan"
-    local OPERATION_NAME="saveIngressFlowPlan"
-    local QUERY="mutation(\$flowPlan: IngressFlowPlanInput!) {saveIngressFlowPlan(ingressFlowPlan: \$flowPlan) { name }}"
-  elif [[ "$JSON" == *"egressAction"* ]]; then
-    local LOAD_TYPE="egress flow plan"
-    local OPERATION_NAME="saveEgressFlowPlan"
-    local QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
-  elif [[ "$JSON" == *"enrichActions"* ]]; then
-    local LOAD_TYPE="enrich flow plan"
-    local OPERATION_NAME="saveEnrichFlowPlan"
-    local QUERY="mutation(\$flowPlan: EnrichFlowPlanInput!) {saveEnrichFlowPlan(enrichFlowPlan: \$flowPlan) { name }}"
-  else
-    cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must contain a load action, enrich actions or an egress action${normal}"
-    echo -e "${red}Loading flow plan failed, plan must contain a load action, enrich actions or an egress action${normal}"
-    return 0
-  fi
-
-  local POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
-
-  MUTATION_RESPONSE=$(execute_graphql "$POST_QUERY")
-  MUTATION_RETURN_CODE=$?
-
-  if [[ "$MUTATION_RETURN_CODE" == "0" ]]; then
-    local FLOW_PLAN_NAME=$(echo "$MUTATION_RESPONSE" | jq -r ".data.${OPERATION_NAME}.name")
-    cli_log "Successfully loaded $LOAD_TYPE ${FLOW_PLAN_NAME} from file ${cyan}${BASENAME}${normal}"
-  else
-    cli_log "${red}${BASENAME}: Loading $LOAD_TYPE failed${normal}"
-    echo -e "${red}$MUTATION_RESPONSE${normal}"
-  fi
-}
-
-load_policies() {
-  if [[ ! "${1}" =~ "default.json" ]]; then
-    deltafi load-policies $1
-  fi
-}
-
 TMPFILE="/tmp/.deltafi-install.$$"
 
 cleanup() {
@@ -145,34 +56,6 @@ helm upgrade --install --wait \
 
 HELM_RETURN_CODE=$?
 [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
-
-FLOWS_DIRECTORY="${DELTAFI_DIR}/flows"
-if [ ! -d "$FLOWS_DIRECTORY" ]; then
-  cli_log "${yellow}Deltafi directory does not include a ${bold}flows${normal}${yellow} subdirectory${normal}"
-else
-  cli_log "Loading core flow plans"
-  if [[ -f $FLOWS_DIRECTORY/variables.json ]]; then
-    load_variables "${FLOWS_DIRECTORY}/variables.json"
-  fi
-
-  for flowFile in "$FLOWS_DIRECTORY"/*.json; do
-    if [[ ! "${flowFile}" =~ "variables.json" ]]; then
-      load_plan "$flowFile"
-    fi
-  done
-fi
-
-POLICIES_DIRECTORY="${DELTAFI_DIR}/policies"
-if [ ! -d "$POLICIES_DIRECTORY" ]; then
-  cli_log "${yellow}Deltafi directory does not include a ${bold}policies${normal}${yellow} subdirectory${normal}"
-else
-  cli_log "Loading delete policies"
-  export -f load_policies
-  if [[ -f $POLICIES_DIRECTORY/default.json ]]; then
-    deltafi load-policies -r "${POLICIES_DIRECTORY}/default.json"
-  fi
-  find $POLICIES_DIRECTORY -name "*.json" -exec bash -c "load_policies \"{}\"" \;
-fi
 
 NEW_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
 
