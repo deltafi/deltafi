@@ -143,7 +143,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Alerts from Grafana no longer trigger a failed status check.  Events will be used to track alerts (#409)
 
 ### Fixed
-- Corrected Python license headers.
+- Corrected Python license headers
 - Fix caching of API storage check calls from ingress
 
 ### Upgrade and Migration
@@ -167,7 +167,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Add lightweight metrics-only survey endpoint (https://{base}/survey?flow={flow}&count={count}&bytes={bytes})
 
 ### Changed
-- Auth now sends JSON to entity resolver.
+- Auth now sends JSON to entity resolver
 - Version reckoning Gradle plugin will accept x.y.z-nn as a valid tagged version
 - Changed data structure for storing various metadata fields in the DeltaFile from a list of key values to a map
 - Updated documentation for latest plugin structure, action interfaces, and Python action kit
@@ -179,7 +179,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Version reckoning Gradle plugin will default to 0.0.0-SNAPSHOT in an untagged repository
 
 ### Upgrade and Migration
-- Existing deltaFiles will have a referencedBytes field that is set to the value of totalBytes.  New DeltaFiles will have the referencedBytes field set correctly.
+- Existing deltaFiles will have a referencedBytes field that is set to the value of totalBytes.  New DeltaFiles will have the referencedBytes field set correctly
 - Upgraded docker base images:
   - deltafi/deltafi-ruby-base:0.100.0
   - deltafi/deltafi-spring-base:0.100.0
@@ -198,7 +198,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - In the python action kit, when a plugin does not have a `flows` directory, log a warning instead of an unhandled exception
 - CLI: Improved warning when uninstalling DeltaFi
 - `cluster` command will warn if the `deltafi` command is not linked to the expected location
-- Action `start_time` in Python action kit now recorded before action execution, not after.
+- Action `start_time` in Python action kit now recorded before action execution, not after
 
 ### Tech-Debt/Refactor
 - Added unit testing for python modules
@@ -224,7 +224,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - System properties are stored as json instead of key value pairs
 - Plugins are configured through environment variables
 - Search for multiple `DeltaFilesFilter:egressFlows` values is now done as an OR operation instead of AND
-- Use Ruby base image for API, Auth, and Egress Sink.
+- Use Ruby base image for API, Auth, and Egress Sink
 - Moved the UI configuration from the `deltafi-ui-config` ConfigMap into the `DeltaFiProperties`
 
 ### Removed
@@ -385,7 +385,7 @@ is not intended to be egressed from the system
 - System configuration `deltafi.ingress.enabled` to globally enable or disable all ingress
 - System configuration `deltafi.ingress.diskSpaceRequirementInMb` to specify amount of disk space required to allow ingress
 - Ingress backpressure will occur when the content storage does not have the required free storage space.  Ingress will
-return a `507` error when there is not enough free content storage.
+return a `507` error when there is not enough free content storage
 - Single-step bootstrap installer script added for MacOS, CentOS, and Rocky Linux
 - Allow DeltaFiles to be queried by filter message
 - Added saveMany to the content storage service
@@ -421,7 +421,7 @@ return a `507` error when there is not enough free content storage.
 - Docs repo merged into DeltaFi monolith
 - A checkDeltafiPlugin task that validates plugin variables and flow files has been added. It may be used in a
 plugin's build.gradle by adding `id "org.deltafi.plugin" version "${deltafiVersion}"` to plugins and including
-`bootJar.dependsOn(checkDeltafiPlugin)`.
+`bootJar.dependsOn(checkDeltafiPlugin)`
 - New CLI commands: `list-plugins`, `system-property`, `plugin-customization`, `plugin-image-repo`
 - DeployerService in `deltafi-core` that manages plugin deployments
 - Common action deployment template in `deltafi-core` used by all plugins
@@ -436,7 +436,7 @@ plugin's build.gradle by adding `id "org.deltafi.plugin" version "${deltafiVersi
 
 ### Changed
 - FlowPlan and ActionConfiguration classes now enforce required fields. They are final and must be provided to the
-constructor.
+constructor
 - CLI commands `install-plugin` and `uninstall-plugin` now take `groupId:artifactid:version` of the plugin
 - The `uninstallPlugin` mutation no longer takes a dry-run flag
 - Move delete policy "Preparing to execute" log messages to DEBUG level
@@ -444,7 +444,7 @@ constructor.
 - Disk delete policy only deletes files that have completed processing or have been cancelled
 
 ### Removed
-- Plugin manifest generation has been removed from the DeltaFi Gradle plugin.
+- Plugin manifest generation has been removed from the DeltaFi Gradle plugin
 
 ### Fixed
 - Flow summary dashboard ingress files query was incorrect
@@ -507,7 +507,7 @@ been removed
 - Add index for domain names
 - Fix FILTER command from TransformActions
 - Fix ERROR command from EnrichActions
-- Bug in Graphite does not gracefully allow for null tags.  Removed Dropped Files metric from the report, since it may have null ingressFlow tags.
+- Bug in Graphite does not gracefully allow for null tags.  Removed Dropped Files metric from the report, since it may have null ingressFlow tags
 - Improved initialization time for deltafi-core
 
 ### Tech-Debt/Refactor
@@ -516,14 +516,14 @@ been removed
 - Merge ingress code into core. Start ingress as a separate core instance with most core services disabled. Remove the overhead of an internal HTTP call on ingress
 - Plugins now register themselves with their actions, variables, and flows on startup
 - Unused Spring Boot services disabled by configuration in core
-- Restrict Result types for each Action type.
+- Restrict Result types for each Action type
 
 ### Upgrade and Migration
 - Upgrade Grafana to 9.1.7
-- Upgrade Grafana helm chart to 6.40.3.  Air-gapped installs will need this new chart.
+- Upgrade Grafana helm chart to 6.40.3.  Air-gapped installs will need this new chart
 - Base docker image updated to `deltafi/deltafi-spring-base:0.99.0`
 - KinD: Node image updated to `deltafi/deltafi-kind-node:0.99.0`
-- Graphite chart is now a local chart versioned as 0.99.0.  Air-gapped installs will need this new chart.
+- Graphite chart is now a local chart versioned as 0.99.0.  Air-gapped installs will need this new chart
 - Upgraded to Redis 7.0.5.  Air-gapped installations will need the new Redis image
 - Plugins now require expanded Spring boot info in build.gradle (plugin dependencies are optional):
 ```
@@ -545,8 +545,8 @@ Chart.yaml:
 annotations:
   group: org.deltafi.passthrough
 ```
-- Plugin flow files now require a type field. Valid values are INGRESS, ENRICH, and EGRESS.
-- Plugin variables.json files need to have the extra "variables" field removed, making it just an array of variables.
+- Plugin flow files now require a type field. Valid values are INGRESS, ENRICH, and EGRESS
+- Plugin variables.json files need to have the extra "variables" field removed, making it just an array of variables
 
 ## [0.98.5] - 2022-10-03
 
@@ -629,7 +629,7 @@ annotations:
 - Added heartbeat to Monitor and configured the Kubernetes probe to use that for liveliness
 - Added better Redis exception handling to API/Monitor
 - KinD: Added Linux compatability to `cluster` command
-- DecompressionTransformAction will log error results.
+- DecompressionTransformAction will log error results
 - Add domains and indexedMetadataKeys graphQL endpoints
 - Add metadata parameter to stressTest
 - KinD: Configurable plugin list
@@ -650,14 +650,14 @@ annotations:
 - Consolidated GraphQL client code to a new `org.deltafi.common.graphql.dgs` package in `deltafi-common`
 - Moved the `HttpService` to a new `org.deltafi.common.http` package in `deltafi-common`
 - Moved SSL configuration properties to the top level instead of being under actions
-- Added auto configuration classes to deltafi-common and deltafi-actionkit. It's no longer necessary to specify base packages to scan.
-- Removed `@Configuration` from `@ConfigurationProperties` classes. The @ConfigurationPropertiesScan in the auto configurations doesn't need it.
+- Added auto configuration classes to deltafi-common and deltafi-actionkit. It's no longer necessary to specify base packages to scan
+- Removed `@Configuration` from `@ConfigurationProperties` classes. The @ConfigurationPropertiesScan in the auto configurations doesn't need it
 - Migrated Java StatsD client from UDP to TCP to guarantee metric delivery and handle metrics back-up when graphite is down
 - Changed name of deltafi-core-domain to deltafi-core
 - Disabled spring log banners in deltafi-ingress and deltafi-core-actions
 - MinIO storage creation now done in deltafi-core instead of helm
 - Flow assignment rules now has a name that is independent of the rule ID
-- Removed "egressFlow" parameter for EgressActions.
+- Removed "egressFlow" parameter for EgressActions
 - Changed "minio.expiration-days" property to be editable and refreshable
 
 ### Deprecated
@@ -726,7 +726,7 @@ annotations:
 
 ### Removed
 - Error children are no longer created on errored Deltafiles
-- Remove minio housekeeping routine due to scaling issues. Depend on minio ttl instead.
+- Remove minio housekeeping routine due to scaling issues. Depend on minio ttl instead
 
 ### Fixed
 - KinD: Creates docker kind network automatically if not present on `cluster up`
@@ -739,11 +739,11 @@ annotations:
 
 ### Tech-Debt/Refactor
 - Plugins no longer depend on deltafi-core-domain
-- Removed core domain dependencies from action kit.  This is a breaking change for plugins.
+- Removed core domain dependencies from action kit.  This is a breaking change for plugins
 - KinD updated to have a simpler initial user experience
 
 ### Upgrade and Migration
-- Refactored common and core domain to remove deltafi-core-domain dependencies will require refactoring of all plugins to move to the new common dependencies.
+- Refactored common and core domain to remove deltafi-core-domain dependencies will require refactoring of all plugins to move to the new common dependencies
 - Upgraded Redis to `7.0.4`
 - Upgraded Minio to `RELEASE.2022-08-25T07-17-05Z`
 
@@ -1073,7 +1073,7 @@ annotations:
 
 ## [0.18.2] - 2022-03-01
 
-No changes.  Supporting UI release.
+No changes.  Supporting UI release
 
 ## [0.18.1] - 2022-02-24
 
