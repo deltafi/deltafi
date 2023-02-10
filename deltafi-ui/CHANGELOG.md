@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.101.5]
 
+### Changed
+
+- Added plugin image repository and customization settings to the snapshots
+
 ### Fixed
 
 - Remove `onCompletion` from snapshots
@@ -555,7 +559,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - NiFi link from Dashboard
 - Requested resource information from System Metrics
 
-[0.101.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.3...main
+[0.101.5]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.4...0.101.5
+[0.101.4]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.3...0.101.4
 [0.101.3]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.1...0.101.3
 [0.101.1]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.101.0...0.101.1
 [0.101.0]: https://gitlab.com/systolic/deltafi/deltafi-ui/-/compare/0.100.0...0.101.0

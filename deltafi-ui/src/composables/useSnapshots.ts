@@ -109,6 +109,11 @@ export default function useSystemSnapshots() {
           },
           setProperties: true
         },
+        pluginImageRepositories: {
+          imageRepositoryBase: true,
+          pluginGroupIds: true,
+          imagePullSecret: true
+        },
         installedPlugins: {
           groupId: true,
           artifactId: true,
@@ -133,7 +138,13 @@ export default function useSystemSnapshots() {
         runningEnrichFlows: true,
         runningEgressFlows: true,
         testIngressFlows: true,
-        testEgressFlows: true
+        testEgressFlows: true,
+        pluginCustomizationConfigs: {
+          groupId: true,
+          artifactId: true,
+          urlTemplate: true,
+          secretName: true
+        }
       }
     };
     await queryGraphQL(query, "getSystemSnapshots");
