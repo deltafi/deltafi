@@ -3,7 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.101.5 or 1.0.0
+## [Unreleased] - Next release 0.101.6 or 1.0.0
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+## [0.101.5] - 2022-02-10
 
 ### Added
 - Additional KinD caching registry for registry.k8s.io
@@ -13,18 +31,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Monitor now pulls System Properties from Core and caches them
 - CLI: `version` command prints the DeltaFi core version
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Monitor will now reconnect to MongoDB if the connection is lost
 - KinD metric-server architecture selected correctly on linux arm64 VMs
 - Set auth workers back to 1
-
-### Tech-Debt/Refactor
-
-### Security
 
 ### Upgrade and Migration
 - Remove `locked` field from `deletePolicy` collection, and delete policies in `systemSnapshot` collection
@@ -1166,7 +1176,9 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.3...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.5...main
+[0.101.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.4...0.101.5
+[0.101.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.3...0.101.4
 [0.101.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.2...0.101.3
 [0.101.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.1...0.101.2
 [0.101.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.0...0.101.1
