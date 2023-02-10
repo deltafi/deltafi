@@ -26,7 +26,7 @@ module Deltafi
   module Grafana
     extend self
 
-    GRAFANA_URL = ENV['DELTAFI_GRAFANA_URL'] || DF.cached_system_properties['grafana.url'] || 'http://deltafi-grafana'
+    GRAFANA_URL = ENV['DELTAFI_GRAFANA_URL'] || 'http://deltafi-grafana'
 
     ALERT_API = "#{GRAFANA_URL}/api/alertmanager/grafana/api/v2/alerts"
 

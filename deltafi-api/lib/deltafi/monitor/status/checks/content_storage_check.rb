@@ -49,7 +49,7 @@ module Deltafi
           private
 
           def threshold
-            DF.system_property(THRESHOLD_PROPERTY, DEFAULT_THRESHOLD).to_i
+            DF::SystemProperties.dig(THRESHOLD_PROPERTY, DEFAULT_THRESHOLD).to_i
           end
 
           def usage

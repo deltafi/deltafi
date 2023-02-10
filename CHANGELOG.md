@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Added `cluster plugin` command to KinD CLI for building and installing local plugins
 
 ### Changed
-- CLI: `verson` command prints the DeltaFi core version
+- Monitor now pulls System Properties from Core and caches them
+- CLI: `version` command prints the DeltaFi core version
 
 ### Deprecated
 

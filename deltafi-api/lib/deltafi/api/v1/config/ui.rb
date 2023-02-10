@@ -28,10 +28,8 @@ module Deltafi
             AUTH_MODE = ENV.fetch('AUTH_MODE', nil)
 
             def config
-              properties = DF.system_properties || {}
-
-              config = properties[:ui] || {}
-              config[:title] = properties[:systemName] || 'DeltaFi'
+              config = DF::SystemProperties.dig('ui', {})
+              config[:title] = DF::SystemProperties.dig('systemName', 'DeltaFi')
               config[:domain] = DOMAIN
               config[:authMode] = AUTH_MODE
               config

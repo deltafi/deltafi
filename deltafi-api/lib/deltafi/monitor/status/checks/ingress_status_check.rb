@@ -94,7 +94,7 @@ module Deltafi
           end
 
           def required_bytes
-            DF.system_property(REQUIRED_MEGABYTES_PROPERTY, DEFAULT_REQUIRED_MEGABYTES).to_i * 1_000_000
+            DF::SystemProperties.dig(REQUIRED_MEGABYTES_PROPERTY, DEFAULT_REQUIRED_MEGABYTES).to_i * 1_000_000
           end
 
           def remaining_bytes
@@ -107,7 +107,7 @@ module Deltafi
           end
 
           def ingress_enabled?
-            DF.system_property(INGRESS_ENABLED_PROPERTY, 'true').to_s.casecmp('true').zero?
+            DF::SystemProperties.dig(INGRESS_ENABLED_PROPERTY, 'true').to_s.casecmp('true').zero?
           end
         end
       end

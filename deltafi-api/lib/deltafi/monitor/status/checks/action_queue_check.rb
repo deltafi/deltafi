@@ -86,7 +86,7 @@ module Deltafi
           end
 
           def size_threshold
-            DF.system_property(SIZE_THRESHOLD_PROPERTY, DEFAULT_SIZE_THRESHOLD).to_i
+            DF::SystemProperties.dig(SIZE_THRESHOLD_PROPERTY, DEFAULT_SIZE_THRESHOLD).to_i
           end
 
           def generate_queue_size_metric(queue_name, queue_size)

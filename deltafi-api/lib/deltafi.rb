@@ -21,7 +21,6 @@
 require 'httparty'
 require 'k8s-ruby'
 require 'redis'
-require 'mongo'
 require 'deltafi/logger'
 
 module Deltafi
@@ -30,7 +29,6 @@ module Deltafi
   REDIS_RECONNECT_ATTEMPTS = 1_000_000_000
   REDIS_RETRY_COUNT = 30
   BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
-  @@system_properties = nil
 
   def self.k8s_client
     debug "#{__method__} called from #{caller[0]}"
@@ -46,18 +44,6 @@ module Deltafi
       user: ENV['MONGO_USER'] || 'mongouser',
       password: ENV.fetch('MONGO_PASSWORD', nil)
     }
-  end
-
-  def self.mongo_client
-    debug "#{__method__} called from #{caller[0]}"
-    config = mongo_config
-    @@mongo_client ||= Mongo::Client.new(["#{config[:host]}:#{config[:post]}"],
-                                         database: config[:database],
-                                         user: config[:user],
-                                         password: config[:password],
-                                         auth_source: config[:auth_source])
-    @@mongo_client.reconnect if @@mongo_client.cluster.servers.empty?
-    @@mongo_client
   end
 
   def self.graphql(query)
@@ -103,35 +89,6 @@ module Deltafi
       retries += 1
       retry
     end
-  end
-
-  def self.cached_system_properties
-    debug "#{__method__} called from #{caller[0]}"
-    if @@system_properties.nil? || @@system_properties.keys.empty?
-      system_properties
-    else
-      @@system_properties
-    end
-  end
-
-  def self.system_properties
-    debug "#{__method__} called from #{caller[0]}"
-    @@system_properties ||= {}
-    return @@system_properties unless running_in_cluster?
-
-    begin
-      debug "Querying mongo for system properties"
-      @@system_properties = mongo_client[:deltaFiProperties].find.limit(1).first || {}
-    rescue StandardError => e
-      puts e
-    end
-
-    return @@system_properties
-  end
-
-  def self.system_property(dig_path = [], default_value = nil)
-    debug "#{__method__} called from #{caller[0]}"
-    system_properties.dig(*dig_path) || default_value
   end
 
   def self.running_in_cluster?
