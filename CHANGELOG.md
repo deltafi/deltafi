@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Additional KinD caching registry for registry.k8s.io
+- Added `cluster plugin` command to KinD CLI for building and installing local plugins
 
 ### Changed
 

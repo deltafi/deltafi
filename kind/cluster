@@ -142,7 +142,7 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
   if [[ $# -gt 0 ]]; then
 
     case $1 in
-      install|update|upgrade|start|shell|loc)
+      install|update|upgrade|start|shell|loc|plugin|config)
         cluster "$@"
         ;;
       cluster)
@@ -218,6 +218,11 @@ _are_you_sure() {
       exit 0
       ;;
   esac
+}
+
+describe config "Edit cluster command configuration"
+config() {
+  ${EDITOR:-vim} "$ROOT/deltafi/kind/cluster.yaml"
 }
 
 _check_deltafi_cli() {
@@ -829,6 +834,11 @@ loc() {
   fi
 }
 
+_restart_pod() {
+  _attention "Restarting $1"
+  kubectl get pods | cut -d' ' -f1 | grep "$1" | xargs kubectl delete pod
+}
+
 _local_build() {
 
   _attention "Building local images"
@@ -869,6 +879,130 @@ _local_build() {
     ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal
   done
 
+}
+
+describe plugin "Control local plugin builds and installs"
+_plugin_help() {
+  cat <<EOF
+Command: cluster plugin
+
+Usage:
+  cluster plugin [ commands ]
+
+Options:
+  clean                          Modifies build to do a clean build
+  build                          Build all plugin artifacts locally
+  install                        Install plugins into an existing system
+  add <name> <coordinates> <url> Add a plugin to the configuration
+  add-local <name> <group>       Add a local plugin to the configuration
+  -f | force                     Skip "are you sure?"
+
+Examples:
+
+  cluster plugin clean build install -f
+    - Clean local build of plugins and install the plugin, no questions
+
+EOF
+  exit 0
+}
+plugin() {
+
+  local CLEAN=
+  local BUILD=
+  local INSTALL=
+  local FORCE=
+
+  [[ -z "$1" ]] && _plugin_help
+
+  while [[ $# -gt 0 ]]; do
+    local cmd=$1
+    shift
+    case "$cmd" in
+      config)
+        config
+        exit 0
+        ;;
+      add)
+        _plugin_add "$@"
+        exit 0
+        ;;
+      add-local)
+        _plugin_add_local "$@"
+        exit 0
+        ;;
+      clean)
+        CLEAN=clean
+        ;;
+      build)
+        BUILD=build
+        ;;
+      install)
+        INSTALL=install
+        ;;
+      force|-f)
+        FORCE=-f
+        ;;
+      -h|*)
+        _plugin_help
+      ;;
+    esac
+  done
+
+  _check_java
+
+  [[ -n "$BUILD" ]] && _plugin_build $CLEAN
+
+  if [[ -n "$INSTALL" ]]; then
+    _attention "Installing Plugins"
+    _install_plugins
+
+    for plugin in "${PLUGINS[@]}"; do
+      _restart_pod "$plugin"
+    done
+  fi
+}
+
+_plugin_add() {
+  _attention "Adding plugin $1"
+  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2\", \"url\": \"$3\"}]" "$ROOT/deltafi/kind/cluster.yaml"
+}
+
+_plugin_add_local() {
+  _attention "Adding plugin $1"
+  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2:$1:latest\", \"image_repository_base\": \"localhost:5000\"}]" "$ROOT/deltafi/kind/cluster.yaml"
+}
+
+_plugin_build() {
+
+  _attention "Building local plugins"
+
+  local BUILD_TARGETS=( assemble )
+
+  for plugin in "${PLUGINS[@]}"; do
+    if [[ ! -d $ROOT/$plugin ]]; then
+      local PLUGIN_URL
+      PLUGIN_URL=$(_url_for_plugin "$plugin")
+      if [[ "$PLUGIN_URL" != "" ]]; then
+        git clone "$PLUGIN_URL" "$ROOT/$plugin"
+      else
+        _attention "Cannot download source for $plugin"
+      fi
+    fi
+    if [[ -d $ROOT/$plugin ]]; then
+      cd "$ROOT/$plugin"
+      [[ -d "$ROOT/$plugin/.git" ]] && git pull || echo "Cannot pull latest"
+      if [[ $# -gt 0 && $1 == "clean" ]]; then
+        _attention "Cleaning $plugin build environment"
+        ./gradlew clean
+      fi
+      _attention "Building $plugin"
+      ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal
+    else
+      _attention "Unable to build $plugin: Source not in $ROOT/$plugin"
+    fi
+  done
+
+  _local_push
 }
 
 _local_push_one() {
@@ -924,8 +1058,6 @@ _down() {
 _fail() {
   printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 1)" "FAIL" "$(tput sgr0)" "$@"
 }
-
-diff "${CONFIG}" "${CONFIG}.template" || _attention "NOTE: cluster.yaml differs from template"
 
 # Initialize bask framework
 _init

@@ -369,8 +369,7 @@ EOF
 install_cluster() {
   require_tools cluster deltafi
   bullet "Installing a DeltaFi KinD cluster"
-  deltafi loc build install
-  deltafi set-admin-password password
+  deltafi install
   deltafi versions
 }
 
