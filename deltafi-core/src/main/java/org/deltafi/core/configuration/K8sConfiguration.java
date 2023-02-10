@@ -27,8 +27,7 @@ import org.deltafi.core.plugin.deployer.credential.SecretCredentialProvider;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfigRepo;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationRepo;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
-import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
@@ -60,8 +59,8 @@ public class K8sConfiguration {
     }
 
     @Bean
-    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient kubernetesClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        return new K8sDeployerService(deltaFiPropertiesService, kubernetesClient, imageRepositoryRepo, pluginCustomizationService, pluginRegistryService, systemSnapshotService, eventService);
+    public DeployerService deployerService(PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient kubernetesClient, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        return new K8sDeployerService(pluginImageRepositoryService, kubernetesClient, pluginCustomizationService, pluginRegistryService, systemSnapshotService, eventService);
     }
 
 }

@@ -30,6 +30,8 @@ type SystemSnapshot {
     runningEgressFlows: [String]!
     testIngressFlows: [String]!
     testEgressFlows: [String]!
+    pluginImageRepositories: [PluginImageRepository]!
+    pluginCustomizationConfigs: [PluginCustomizationConfig]!
 }
 
 input SystemSnapshotInput {
@@ -46,6 +48,8 @@ input SystemSnapshotInput {
     runningEgressFlows: [String]!
     testIngressFlows: [String]!
     testEgressFlows: [String]!
+    pluginImageRepositories: [PluginImageRepositoryInput]!
+    pluginCustomizationConfigs: [PluginCustomizationConfigInput]!
 }
 
 extend type Query {

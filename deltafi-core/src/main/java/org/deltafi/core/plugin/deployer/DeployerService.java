@@ -19,7 +19,6 @@ package org.deltafi.core.plugin.deployer;
 
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.Result;
 
 import java.util.List;
@@ -44,23 +43,10 @@ public interface DeployerService {
     Result uninstallPlugin(PluginCoordinates pluginCoordinates);
 
     /**
-     * Get all repositories storing plugin images
-     * @return list of plugin image repositories
-     */
-    List<PluginImageRepository> getPluginImageRepositories();
-
-    /**
      * Get all plugin customization configs
      * @return list of plugin customization configs
      */
     List<PluginCustomizationConfig> getPluginCustomizationConfigs();
-
-    /**
-     * Add the plugin image repository config item
-     * @param pluginImageRepository image repository used for group(s) of plugins
-     * @return copy of the saved item
-     */
-    PluginImageRepository savePluginImageRepository(PluginImageRepository pluginImageRepository);
 
     /**
      * Add the plugin customization config item
@@ -68,13 +54,6 @@ public interface DeployerService {
      * @return copy of the saved item
      */
     PluginCustomizationConfig savePluginCustomizationConfig(PluginCustomizationConfig pluginCustomizationConfigInput);
-
-    /**
-     * Remove the plugin image repository with the given id
-     * @param id of the image repository to remove
-     * @return result of the operation
-     */
-    Result removePluginImageRepository(String id);
 
     /**
      * Remove the plugin customization config with the given id

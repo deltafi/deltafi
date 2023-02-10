@@ -137,6 +137,11 @@ ALL_SNAPSHOT_FIELDS="id
                 maxPercent
               }
             }
+            pluginImageRepositories {
+              imageRepositoryBase
+              pluginGroupIds
+              imagePullSecret
+            }
             installedPlugins {
               groupId
               artifactId
@@ -172,7 +177,13 @@ ALL_SNAPSHOT_FIELDS="id
             testEgressFlows
             runningIngressFlows
             runningEnrichFlows
-            runningEgressFlows"
+            runningEgressFlows
+            pluginCustomizationConfigs {
+              groupId
+              artifactId
+              urlTemplate
+              secretName
+            }"
 
 ALL_RESULT_FIELDS="success info errors"
 

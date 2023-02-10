@@ -46,6 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Storage efficient un-tar for regular TAR files
 - Use a standard output location when generating plugins
 - Unzip generated plugins by default, add an option to zip them
+- Add plugin image repository and customization settings to the snapshots
 
 ### Removed
 - Locked option from delete policies

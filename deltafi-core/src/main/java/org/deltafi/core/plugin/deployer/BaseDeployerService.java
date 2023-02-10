@@ -19,13 +19,10 @@ package org.deltafi.core.plugin.deployer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
-import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.api.model.Event;
 import org.deltafi.core.snapshot.SystemSnapshotService;
@@ -39,16 +36,15 @@ import java.util.List;
 @Slf4j
 public abstract class BaseDeployerService implements DeployerService {
 
-    private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final PluginImageRepositoryRepo imageRepositoryRepo;
     private final PluginRegistryService pluginRegistryService;
+
+    final PluginImageRepositoryService pluginImageRepositoryService;
     final PluginCustomizationService pluginCustomizationService;
     private final SystemSnapshotService systemSnapshotService;
     private final EventService eventService;
 
-    public BaseDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryRepo imageRepositoryRepo, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        this.deltaFiPropertiesService = deltaFiPropertiesService;
-        this.imageRepositoryRepo = imageRepositoryRepo;
+    public BaseDeployerService(PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        this.pluginImageRepositoryService = pluginImageRepositoryService;
         this.pluginRegistryService = pluginRegistryService;
         this.pluginCustomizationService = pluginCustomizationService;
         this.systemSnapshotService = systemSnapshotService;
@@ -102,30 +98,8 @@ public abstract class BaseDeployerService implements DeployerService {
     abstract Result removeDeployment(PluginCoordinates pluginCoordinates);
 
     @Override
-    public List<PluginImageRepository> getPluginImageRepositories() {
-        List<PluginImageRepository> pluginImageRepositories = imageRepositoryRepo.findAll();
-        pluginImageRepositories.add(defaultPluginImageRepository());
-        return pluginImageRepositories;
-    }
-
-    @Override
     public List<PluginCustomizationConfig> getPluginCustomizationConfigs() {
         return pluginCustomizationService.getAllConfiguration();
-    }
-
-    @Override
-    public PluginImageRepository savePluginImageRepository(PluginImageRepository pluginImageRepository) {
-        return imageRepositoryRepo.save(pluginImageRepository);
-    }
-
-    @Override
-    public Result removePluginImageRepository(String id) {
-        if (imageRepositoryRepo.existsById(id)) {
-            imageRepositoryRepo.deleteById(id);
-            return new Result();
-        } else {
-            return Result.newBuilder().success(false).errors(List.of("No plugin image repository config exists with an id of " + id)).build();
-        }
     }
 
     @Override
@@ -137,22 +111,6 @@ public abstract class BaseDeployerService implements DeployerService {
     @Override
     public Result removePluginCustomizationConfig(String id) {
         return pluginCustomizationService.delete(id);
-    }
-
-    PluginImageRepository findByGroupId(PluginCoordinates pluginCoordinates) {
-        return imageRepositoryRepo.findByPluginGroupIds(pluginCoordinates.getGroupId())
-                .orElseGet(this::defaultPluginImageRepository);
-    }
-
-    private PluginImageRepository defaultPluginImageRepository() {
-        PluginImageRepository pluginImageRepository = new PluginImageRepository();
-        DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
-        if (deltaFiProperties.getPlugins() != null) {
-            pluginImageRepository.setPluginGroupIds(List.of("SYSTEM_DEFAULT"));
-            pluginImageRepository.setImageRepositoryBase(deltaFiProperties.getPlugins().getImageRepositoryBase());
-            pluginImageRepository.setImagePullSecret(deltaFiProperties.getPlugins().getImagePullSecret());
-        }
-        return pluginImageRepository;
     }
 
     private String preUpgradeMessage(PluginCoordinates pluginCoordinates) {

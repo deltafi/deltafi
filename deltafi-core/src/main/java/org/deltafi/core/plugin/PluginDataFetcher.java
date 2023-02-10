@@ -28,6 +28,7 @@ import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
 
@@ -38,6 +39,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PluginDataFetcher {
     private final PluginRegistryService pluginRegistryService;
+    private final PluginImageRepositoryService pluginImageRepositoryService;
     private final DeployerService deployerService;
     private final CredentialProvider credentialProvider;
 
@@ -56,7 +58,7 @@ public class PluginDataFetcher {
     @DgsQuery
     @NeedsPermission.PluginImageRepoView
     public List<PluginImageRepository> getPluginImageRepositories() {
-        return deployerService.getPluginImageRepositories();
+        return pluginImageRepositoryService.getPluginImageRepositories();
     }
 
     @DgsQuery
@@ -68,7 +70,7 @@ public class PluginDataFetcher {
     @DgsMutation
     @NeedsPermission.PluginImageRepoWrite
     public PluginImageRepository savePluginImageRepository(@InputArgument PluginImageRepository pluginImageRepository) {
-        return deployerService.savePluginImageRepository(pluginImageRepository);
+        return pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
     }
 
     @DgsMutation
@@ -104,7 +106,7 @@ public class PluginDataFetcher {
     @DgsMutation
     @NeedsPermission.PluginImageRepoDelete
     public Result removePluginImageRepository(@InputArgument String id) {
-        return deployerService.removePluginImageRepository(id);
+        return pluginImageRepositoryService.removePluginImageRepository(id);
     }
 
     @DgsMutation

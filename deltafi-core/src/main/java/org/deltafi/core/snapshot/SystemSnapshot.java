@@ -21,6 +21,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
@@ -28,6 +30,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -49,4 +52,6 @@ public class SystemSnapshot {
     private List<String> runningEgressFlows;
     private List<String> testEgressFlows;
     private Set<PluginCoordinates> installedPlugins;
+    private List<PluginCustomizationConfig> pluginCustomizationConfigs = new ArrayList<>();
+    private List<PluginImageRepository> pluginImageRepositories = new ArrayList<>();
 }

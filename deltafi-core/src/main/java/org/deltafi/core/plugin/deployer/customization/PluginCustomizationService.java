@@ -18,11 +18,15 @@
 package org.deltafi.core.plugin.deployer.customization;
 
 import io.fabric8.kubernetes.client.utils.Serialization;
+import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.deployer.credential.BasicCredentials;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
+import org.deltafi.core.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.snapshot.Snapshotter;
+import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 
 import java.io.IOException;
@@ -34,7 +38,8 @@ import java.net.http.HttpResponse;
 import java.util.List;
 
 @Slf4j
-public class PluginCustomizationService {
+@AllArgsConstructor
+public class PluginCustomizationService implements Snapshotter {
 
     private static final PluginCustomization EMPTY_CUSTOMIZATIONS = new PluginCustomization();
     private static final String AUTHORIZATION = "Authorization";
@@ -43,13 +48,6 @@ public class PluginCustomizationService {
     private final PluginCustomizationRepo pluginCustomizationRepo;
     private final CredentialProvider credentialProvider;
     private final HttpClient httpClient;
-
-    public PluginCustomizationService(PluginCustomizationConfigRepo pluginCustomizationConfigRepo, PluginCustomizationRepo pluginCustomizationRepo, CredentialProvider credentialProvider, HttpClient httpClient) {
-        this.pluginCustomizationConfigRepo = pluginCustomizationConfigRepo;
-        this.pluginCustomizationRepo = pluginCustomizationRepo;
-        this.credentialProvider = credentialProvider;
-        this.httpClient = httpClient;
-    }
 
     public PluginCustomization getPluginCustomizations(PluginCoordinates pluginCoordinates) {
         // Use the cached info if this version of the plugin has been installed before
@@ -80,6 +78,26 @@ public class PluginCustomizationService {
         } else {
             return Result.newBuilder().success(false).errors(List.of("No plugin customization config exists with an id of " + id)).build();
         }
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setPluginCustomizationConfigs(getAllConfiguration());
+    }
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        if (hardReset) {
+            pluginCustomizationConfigRepo.deleteAll();
+        }
+
+        pluginCustomizationConfigRepo.saveAll(systemSnapshot.getPluginCustomizationConfigs());
+        return new Result();
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.PLUGIN_CUSTOMIZATION_CONFIG_ORDER;
     }
 
     public static PluginCustomization unmarshalPluginCustomization(String rawCustomization) {

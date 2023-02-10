@@ -28,8 +28,7 @@ import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
-import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
@@ -56,14 +55,14 @@ public class K8sDeployerService extends BaseDeployerService {
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient k8sClient, PluginImageRepositoryRepo imageRepositoryRepo, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        super(deltaFiPropertiesService, imageRepositoryRepo, pluginRegistryService, pluginCustomizationService, systemSnapshotService, eventService);
+    public K8sDeployerService(PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient k8sClient, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        super(pluginImageRepositoryService, pluginRegistryService, pluginCustomizationService, systemSnapshotService, eventService);
         this.k8sClient = k8sClient;
     }
 
     @Override
     public Result deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
-        PluginImageRepository pluginImageRepository = findByGroupId(pluginCoordinates);
+        PluginImageRepository pluginImageRepository = pluginImageRepositoryService.findByGroupId(pluginCoordinates);
 
         ArrayList<String> info = new ArrayList<>();
 
