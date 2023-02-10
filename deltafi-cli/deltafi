@@ -168,6 +168,7 @@ Commands:
   upgrade                (alias for install)
   uninstall              uninstall the DeltaFi core
   uninstall-plugin       uninstall a DeltaFi plugin
+  version                print the current core version of DeltaFi
   versions               show running versions
   *                      show help
 
@@ -317,8 +318,11 @@ case "$1" in
   trace)
     "$DELTAFICLI_WORKDIR/commands/trace" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/trace.log"
     ;;
-  versions|version)
+  versions)
     "$DELTAFICLI_WORKDIR/commands/versions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/versions.log"
+    ;;
+  version)
+    cat "$DELTAFICLI_WORKDIR"/VERSION
     ;;
   logo)
     cat "$DELTAFICLI_WORKDIR"/logo
