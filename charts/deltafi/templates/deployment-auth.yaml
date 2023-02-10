@@ -40,7 +40,7 @@ spec:
         - name: DATA_DIR
           value: /data
         - name: WORKERS
-          value: {{ default "8" .Values.deltafi.api.workers | quote }}
+          value: {{ default "1" .Values.deltafi.auth.workers | quote }}
         {{ if .Values.deltafi.auth.entityResolver.enabled }}
         - name: ENTITY_RESOLVER_ENABLED
           value: "true"
