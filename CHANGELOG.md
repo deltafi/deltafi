@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Remove `locked` field from `deletePolicy` collection, and delete policies in `systemSnapshot` collection
 
 ## [0.101.4] - 2022-02-09
 
