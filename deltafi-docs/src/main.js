@@ -69,6 +69,15 @@ new Docute({
       ]
     },
     {
+      title: 'Configuration',
+      children: [
+        {
+          title: 'Authentication',
+          link: '/config/authentication'
+        }
+      ]
+    },
+    {
       title: 'Plugins',
       children: [
         {
