@@ -322,7 +322,7 @@ case "$1" in
     "$DELTAFICLI_WORKDIR/commands/versions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/versions.log"
     ;;
   version)
-    cat "$DELTAFICLI_WORKDIR"/VERSION
+    printf "%s" "$(cat "$DELTAFICLI_WORKDIR"/VERSION)"
     ;;
   logo)
     cat "$DELTAFICLI_WORKDIR"/logo
