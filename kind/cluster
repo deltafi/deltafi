@@ -149,6 +149,9 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         shift
         cluster "$@"
         ;;
+      version)
+        "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
+        ;;
       *)
         docker exec -it -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi "$@"
         ;;

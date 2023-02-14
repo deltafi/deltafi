@@ -229,7 +229,7 @@ case "$1" in
     "$DELTAFICLI_WORKDIR/commands/install" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/install.log"
     ;;
   install-plugin)
-    "$DELTAFICLI_WORKDIR/commands/install-plugin" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/install-plugin.log"
+    "$DELTAFICLI_WORKDIR/commands/install-plugin" "$@" | tee -ia "$DELTAFICLI_WORKDIR/logs/install-plugin.log"
     ;;
   list-actions)
     "$DELTAFICLI_WORKDIR/commands/list-actions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-actions.log"
@@ -322,7 +322,7 @@ case "$1" in
     "$DELTAFICLI_WORKDIR/commands/versions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/versions.log"
     ;;
   version)
-    printf "%s" "$(cat "$DELTAFICLI_WORKDIR"/VERSION)"
+    cat "$DELTAFICLI_WORKDIR"/VERSION
     ;;
   logo)
     cat "$DELTAFICLI_WORKDIR"/logo
