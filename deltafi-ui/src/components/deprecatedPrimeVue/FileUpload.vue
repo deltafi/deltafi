@@ -198,7 +198,7 @@ export default {
         },
         basicChooseButtonIconClass() {
             return ['p-button-icon p-button-icon-left pi', {
-                'pi-plus': !this.hasFiles || this.auto,
+                'fas fa-upload fa-fw': !this.hasFiles || this.auto,
                 'pi-upload': this.hasFiles && !this.auto
             }];
         },

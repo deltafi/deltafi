@@ -26,8 +26,9 @@
             <Button label="Add Metadata Field" icon="pi pi-plus" class="mr-2" @click="addMetadataField" />
             <Button label="Clear" icon="pi pi-times" :disabled="metadataClearDisabled" class="mr-2" @click="clearMetadata" />
             <div class="float-right btn-group">
-              <Button label="Export Metadata" icon="fas fa-download fa-fw" class="p-button-md p-button-secondary p-button-outlined mx-1" :disabled="metadataClearDisabled" @click="onExportMetadata" />
-              <FileUpload ref="metadataFileUploader" auto mode="basic" choose-label="Import Metadata" accept=".json,application/json" :file-limit="1" custom-upload class="metadata-upload p-button-secondary p-button-outlined mx-1" @uploader="preUploadMetadataValidation" @click="setOverlayPanelPosition" />
+              <Button v-tooltip.bottom="'Download Metadata To File'" label="Download Metadata" icon="fas fa-download fa-fw" class="p-button-md p-button-secondary p-button-outlined mx-1" :disabled="metadataClearDisabled" @click="onExportMetadata" />
+              <FileUpload ref="metadataFileUploader" v-tooltip.bottom="'Upload Metadata From File'" auto mode="basic" choose-label="Upload Metadata" choose-icon="fas fa-upload fa-fw" accept=".json,application/json" :file-limit="1" custom-upload class="metadata-upload p-button-secondary p-button-outlined mx-1" @uploader="preUploadMetadataValidation" @click="setOverlayPanelPosition" />
+              <Button v-tooltip.bottom="'Import Metadata From DeltaFile'" class="metadata-upload p-button-secondary p-button-outlined mx-1" icon="pi pi-file-import" label="Import Metadata" @click="showImportDialog" />
               <OverlayPanel ref="errorOverlayPanel" dismissable show-close-icon @hide="clearMetadataUploadErrors">
                 <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
                   <ul>
@@ -115,6 +116,7 @@
       </div>
     </div>
   </div>
+  <ImportMetadataDialog v-model:visible="showUploadDialog" @meta-data-value="onMetaImport"></ImportMetadataDialog>
 </template>
 
 <script setup>
@@ -122,7 +124,7 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
-import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload.vue";
 import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Message from "primevue/message";
@@ -142,8 +144,10 @@ import useNotifications from "@/composables/useNotifications";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import { ref, computed, onBeforeMount, onMounted, watch } from "vue";
 import _ from "lodash";
+import ImportMetadataDialog from "@/components/ImportMetadataDialog.vue";
 
 const uploadedTimestamp = ref(new Date());
+const showUploadDialog = ref(false);
 const deltaFilesMenu = ref();
 const selectedFlow = ref(null);
 const metadata = ref([]);
@@ -173,6 +177,17 @@ const deltaFilesMenuItems = ref([
     ],
   },
 ]);
+
+const showImportDialog = () => {
+  showUploadDialog.value = true;
+};
+
+const onMetaImport = (importData) => {
+  showUploadDialog.value = false;
+  selectedFlow.value = importData.flow;
+  metadata.value = importData.metadata;
+  storeMetaDataUploadSession();
+};
 
 onBeforeMount(() => {
   getSelectedFlowSession();

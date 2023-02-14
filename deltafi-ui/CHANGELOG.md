@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.101.6]
+
+### Changed
+
+- Added ability to Import Metadata from DeltaFile on Upload Page (#321)
+
 ## [0.101.5]
 
 ### Changed
