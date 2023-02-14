@@ -153,12 +153,12 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
         ;;
       *)
-        docker exec -it -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi "$@"
+        docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi "$@"
         ;;
     esac
     exit 0
   fi
-  docker exec -it -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi
+  docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi
   exit 0
 fi
 
@@ -278,6 +278,14 @@ EOF
   _ok "Cluster CLI"
 }
 
+_update_k8s_config_permissions() {
+  _debug ">> Add read access to the k8s admin.conf"
+  docker exec -i ${CLUSTER_NAME}-control-plane bash > /dev/null <<"EOF"
+chmod +r /etc/kubernetes/admin.conf
+EOF
+  _ok "Updated k8s configuration file permissions"
+}
+
 _create_proxy() {
   local PROXY_NAME=$1
   local PROXY_REMOTE=$2
@@ -345,7 +353,7 @@ _install_plugins() {
 
     _attention "Installing $plugin with coordinates $coordinates and options of \"${options[*]}\""
 
-    run deltafi install-plugin "$coordinates" "${options[@]}"
+    _kind_deltafi install-plugin "$coordinates" "${options[@]}"
   done
 }
 
@@ -467,6 +475,7 @@ EOF
   kubens deltafi || kubens deltafi # Repeated because kubens fails on first execution in Debian
   _install_node_cli
   _enable_ui
+  _update_k8s_config_permissions
   _k8s_init
   _ok "KinD cluster"
 }
@@ -701,7 +710,7 @@ shell() {
 }
 
 _kind_deltafi() {
-  docker exec -i ${CLUSTER_NAME}-control-plane bash <<EOF
+  docker exec -i -u="$(id -u):$(id -g)" ${CLUSTER_NAME}-control-plane bash <<EOF
 cd /usr/dev
 TERM=screen-256color deltafi $@
 EOF
