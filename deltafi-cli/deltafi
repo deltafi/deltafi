@@ -144,6 +144,7 @@ Commands:
   load-plans             load the flow plans and variables for the given plugin
   load-policies          load delete policies from a JSON file
   load-rules             load ingress flow assignment rules from a JSON file
+  minio-cli              launch the minio CLI
   mongo-cli              launch the mongo CLI
   mongo-eval             eval a command in mongo
   mongo-migrate          run mongo migrations
@@ -254,6 +255,9 @@ case "$1" in
     ;;
   load-rules)
     "$DELTAFICLI_WORKDIR/commands/load-rules" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-rules.log"
+    ;;
+  minio-cli)
+    "$DELTAFICLI_WORKDIR/commands/minio-cli" $@
     ;;
   mongo-cli)
     "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@
