@@ -147,17 +147,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final Map<String, Index> INDICES;
     static {
         INDICES = new HashMap<>();
-        INDICES.put("action_search", new Index().named("action_search").on(ACTIONS_NAME, Sort.Direction.ASC));
         INDICES.put("queued_loop", new Index().named("queued_loop").on(REQUEUE_COUNT, Sort.Direction.DESC).on(STAGE, Sort.Direction.ASC));
         INDICES.put("completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("requeue_index", new Index().named("requeue_index").on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_MODIFIED, Sort.Direction.ASC));
         INDICES.put("metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC));
         INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
         INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(INDEXED_METADATA_KEYS, Sort.Direction.ASC));
-        INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.DESC).on(CREATED, Sort.Direction.ASC));
+        INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(CREATED, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.ASC));
     }
 
     private final MongoTemplate mongoTemplate;
@@ -217,14 +215,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds) {
         List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueSeconds), DeltaFile.class);
+        List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
         for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            Query query = new Query().addCriteria(Criteria.where(ID).in(batch.stream().map(DeltaFile::getDid).toList()));
+            List<String> dids = batch.stream().map(DeltaFile::getDid).toList();
+            Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
             mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueSeconds), DeltaFile.class);
+            requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
         }
 
-        List<String> dids = filesToRequeue.stream().map(DeltaFile::getDid).toList();
-        Query query = Query.query(Criteria.where(ID).in(dids));
-        return mongoTemplate.find(query, DeltaFile.class);
+        return requeuedDeltaFiles;
     }
 
     @Override
@@ -334,14 +333,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds) {
-        Criteria queued = Criteria.where(STATE).is(ActionState.QUEUED.name());
+        Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
 
         long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
         Criteria expired = Criteria.where(MODIFIED).lt(new Date(epochMs));
 
-        Criteria actionElemMatch = new Criteria().andOperator(queued, expired);
+        Query requeueQuery = new Query(new Criteria().andOperator(notComplete, expired));
+        requeueQuery.fields().include(ID);
 
-        return new Query(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
+        return requeueQuery;
     }
 
     private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate, long minBytes, String flowName, boolean deleteMetadata, boolean completeOnly) {

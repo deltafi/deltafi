@@ -2105,13 +2105,17 @@ class DeltaFiCoreApplicationTests {
 		Action shouldRequeue = Action.newBuilder().name("hit").modified(MONGO_NOW.minusSeconds(1000)).state(ActionState.QUEUED).build();
 		Action shouldStay = Action.newBuilder().name("miss").modified(MONGO_NOW.plusSeconds(1000)).state(ActionState.QUEUED).build();
 
-		DeltaFile hit = buildDeltaFile("did", null, null, MONGO_NOW, MONGO_NOW);
+		DeltaFile hit = buildDeltaFile("did", null, DeltaFileStage.EGRESS, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
 		hit.setActions(Arrays.asList(shouldRequeue, shouldStay));
 		deltaFileRepo.save(hit);
 
-		DeltaFile miss = buildDeltaFile("did2", null, null, MONGO_NOW, MONGO_NOW);
+		DeltaFile miss = buildDeltaFile("did2", null, DeltaFileStage.EGRESS, MONGO_NOW, MONGO_NOW.plusSeconds(1000));
 		miss.setActions(Arrays.asList(shouldStay, shouldStay));
 		deltaFileRepo.save(miss);
+
+		DeltaFile miss2 = buildDeltaFile("did3", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
+		miss2.setActions(Arrays.asList(shouldStay, shouldStay));
+		deltaFileRepo.save(miss2);
 
 		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30);
 

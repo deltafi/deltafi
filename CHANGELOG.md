@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Executing `deltafi` commands in KinD now writes files as the current user instead of root:root
 
 ### Tech-Debt/Refactor
+- Clean up indexes that store nested data
+- Adjust requeue query to hit completed before index
 
 ### Security
 
