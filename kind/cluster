@@ -877,6 +877,9 @@ _local_build() {
     docker push localhost:5000/deltafi-ui:latest
   fi
 
+  export DELTAFI_PYTHON
+  DELTAFI_PYTHON="$ROOT/deltafi/deltafi-python/src"
+
   for plugin in "${PLUGINS[@]}"; do
     if [[ ! -d $ROOT/$plugin ]]; then
       git clone "$(_url_for_plugin "$plugin")" "$ROOT/$plugin"
