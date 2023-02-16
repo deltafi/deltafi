@@ -231,4 +231,10 @@ public class DeltaFilesDatafetcher {
   public Long totalCount() {
     return deltaFilesService.totalCount();
   }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
+  DeltaFileStats deltaFileStats(Boolean inFlightOnly, Boolean includeDeletedContent) {
+    return deltaFilesService.deltaFileStats(inFlightOnly == null ? false : inFlightOnly, includeDeletedContent == null ? false : includeDeletedContent);
+  }
 }

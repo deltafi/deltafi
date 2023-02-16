@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - Next release 0.101.6 or 1.0.0
 
 ### Added
+- Add deltaFileStats GraphQL query
 
 ### Changed
 

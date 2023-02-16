@@ -166,4 +166,12 @@ public interface DeltaFileRepoCustom {
      * @return the estimated count
      */
     Long estimatedCount();
+
+    /**
+     * Get count and sizes of deltaFiles in the system
+     * @param inFlightOnly If true, only include deltaFiles in INGRESS, ENRICH, and EGRESS stages
+     * @param includeDeletedContent include deleted content in the stats
+     * @return stats
+     */
+    DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent);
 }

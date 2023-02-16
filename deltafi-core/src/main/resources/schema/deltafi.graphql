@@ -312,6 +312,12 @@ type Result {
   errors: [String]
 }
 
+type DeltaFileStats {
+  count: Int!
+  totalBytes: Long!
+  referencedBytes: Long!
+}
+
 type Query {
   getIngressFlowPlan(planName: String!): IngressFlowPlan!
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
@@ -357,6 +363,8 @@ type Query {
 
   version: String!
   totalCount: Long
+
+  deltaFileStats(inFlightOnly: Boolean, includeDeletedContent: Boolean): DeltaFileStats!
 }
 
 type Mutation {

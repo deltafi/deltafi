@@ -856,4 +856,37 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public Long estimatedCount() {
         return mongoTemplate.execute(COLLECTION, MongoCollection::estimatedDocumentCount);
     }
+
+    @Override
+    public DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent) {
+        List<AggregationOperation> aggregationOps = new ArrayList<>();
+        List<Criteria> criteriaList = new ArrayList<>();
+        if (inFlightOnly) {
+            criteriaList.add(Criteria.where(STAGE).in(DeltaFileStage.INGRESS, DeltaFileStage.ENRICH, DeltaFileStage.EGRESS));
+        }
+        if (!includeDeletedContent) {
+            criteriaList.add(Criteria.where(CONTENT_DELETED).isNull());
+        }
+        if (!criteriaList.isEmpty()) {
+            Criteria andCriteria = new Criteria();
+            andCriteria.andOperator(criteriaList);
+            MatchOperation match = Aggregation.match(andCriteria);
+            aggregationOps.add(match);
+        }
+        aggregationOps.add(group("null").count().as("count")
+                .sum("totalBytes").as("totalBytes")
+                .sum("referencedBytes").as("referencedBytes"));
+
+        Aggregation aggregation = Aggregation.newAggregation(aggregationOps)
+                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
+
+        AggregationResults<DeltaFileStats> aggResults = mongoTemplate.aggregate(
+                aggregation, COLLECTION, DeltaFileStats.class);
+
+        if (aggResults.getMappedResults().isEmpty()) {
+            return new DeltaFileStats(0, 0L, 0L);
+        }
+
+        return aggResults.getMappedResults().get(0);
+    }
 }

@@ -3597,4 +3597,45 @@ class DeltaFiCoreApplicationTests {
 		// ensure that it looped over each batch and deleted everything
 		assertEquals(0, deltaFileRepo.count());
 	}
+
+	@Test
+	void testDeltaFileStats() {
+		DeltaFileStats none = deltaFilesService.deltaFileStats(false, false);
+		assertEquals(0, none.getCount());
+		assertEquals(0L, none.getTotalBytes());
+		assertEquals(0L, none.getReferencedBytes());
+
+		DeltaFile deltaFile1 = Util.emptyDeltaFile("1", "flow");
+		deltaFile1.setTotalBytes(1L);
+		deltaFile1.setReferencedBytes(2L);
+		deltaFile1.setStage(DeltaFileStage.INGRESS);
+
+		DeltaFile deltaFile2 = Util.emptyDeltaFile("2", "flow");
+		deltaFile2.setTotalBytes(2L);
+		deltaFile2.setReferencedBytes(4L);
+		deltaFile2.setContentDeleted(OffsetDateTime.now());
+		deltaFile2.setStage(DeltaFileStage.EGRESS);
+
+		DeltaFile deltaFile3 = Util.emptyDeltaFile("3", "flow");
+		deltaFile3.setTotalBytes(4L);
+		deltaFile3.setReferencedBytes(8L);
+		deltaFile3.setStage(DeltaFileStage.COMPLETE);
+
+		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile2, deltaFile3));
+
+		DeltaFileStats all = deltaFilesService.deltaFileStats(false, true);
+		assertEquals(3, all.getCount());
+		assertEquals(7L, all.getTotalBytes());
+		assertEquals(14L, all.getReferencedBytes());
+
+		DeltaFileStats notDeleted = deltaFilesService.deltaFileStats(false, false);
+		assertEquals(2, notDeleted.getCount());
+		assertEquals(5L, notDeleted.getTotalBytes());
+		assertEquals(10L, notDeleted.getReferencedBytes());
+
+		DeltaFileStats inFlight = deltaFilesService.deltaFileStats(true, true);
+		assertEquals(2, inFlight.getCount());
+		assertEquals(3L, inFlight.getTotalBytes());
+		assertEquals(6L, inFlight.getReferencedBytes());
+	}
 }

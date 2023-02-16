@@ -1130,4 +1130,8 @@ public class DeltaFilesService {
     public Long totalCount() {
         return deltaFileRepo.estimatedCount();
     }
+
+    public DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent) {
+        return deltaFileRepo.deltaFileStats(inFlightOnly, includeDeletedContent);
+    }
 }
