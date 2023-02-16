@@ -64,12 +64,14 @@
 import useErrorCount from "@/composables/useErrorCount";
 import { computed, ref, watch, inject, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import useUtilFunctions from "@/composables/useUtilFunctions";
 
 const route = useRoute();
 const { fetchErrorCount, errorCount } = useErrorCount();
 const uiConfig = inject("uiConfig");
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
+const { buildURL } = useUtilFunctions();
 
 const externalLinks = computed(() => {
   return JSON.parse(JSON.stringify(uiConfig.externalLinks)).map((link) => {
@@ -100,7 +102,7 @@ const staticMenuItems = ref([
       {
         name: "Grafana Dashboards",
         icon: "icomoon grafana",
-        url: computed(() => `https://metrics.${uiConfig.domain}/dashboards`),
+        url: computed(() => `${buildURL('metrics')}/dashboards`),
         visible: computed(() => hasPermission("MetricsView")),
       },
     ],
@@ -214,13 +216,13 @@ const staticMenuItems = ref([
       {
         name: "Kubernetes Dashboard",
         icon: "icomoon kubernetes",
-        url: computed(() => `https://k8s.${uiConfig.domain}/#/workloads?namespace=deltafi`),
+        url: computed(() => `${buildURL('k8s')}/#/workloads?namespace=deltafi`),
         visible: computed(() => hasPermission("Admin")),
       },
       {
         name: "GraphiQL",
         icon: "icomoon graphql",
-        url: computed(() => `https://${uiConfig.domain}/graphiql`),
+        url: computed(() => `${buildURL()}/graphiql`),
         visible: computed(() => hasPermission("Admin")),
       },
     ],

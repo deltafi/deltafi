@@ -22,6 +22,7 @@ import filesize from "filesize";
 import useUiConfig from "./useUiConfig";
 
 const { uiConfig } = useUiConfig();
+
 dayjs.extend(utc)
 
 export default function useUtilFunctions(): {
@@ -32,6 +33,7 @@ export default function useUtilFunctions(): {
   formattedBytes: (bytes: number) => string;
   duration: (milliseconds: number, precision: number) => string;
   pluralize: (count: number, singular: string, plural?: string) => string;
+  buildURL: (urlBegin: string)=> string;
 } {
   const formatContextData = (contextData: string) => {
     let formattedString = contextData;
@@ -100,6 +102,10 @@ export default function useUtilFunctions(): {
 
   const formatTimestamp = (date: any, format: string) => {
     return uiConfig.useUTC ? dayjs(date).utc().format(format) : dayjs(date).format(format);
+  } 
+
+  const buildURL = (urlBegin: string) => {
+    return urlBegin != undefined ? `${window.location.protocol}//${urlBegin}.${uiConfig.domain}` : `${window.location.protocol}//${uiConfig.domain}`;
   }
 
   return {
@@ -110,5 +116,6 @@ export default function useUtilFunctions(): {
     formattedBytes,
     duration,
     pluralize,
+    buildURL,
   };
 }
