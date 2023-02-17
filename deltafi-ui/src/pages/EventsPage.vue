@@ -125,7 +125,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useEvents from "@/composables/useEvents";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, inject, nextTick, onMounted, ref } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import _ from "lodash";
@@ -145,6 +145,7 @@ import TriStateCheckbox from "primevue/tristatecheckbox";
 dayjs.extend(utc);
 
 const uiConfig = inject("uiConfig");
+const watchEnabled = ref(false)
 const hasPermission = inject("hasPermission");
 const loading = ref(true);
 const selectedEvents = ref([]);
@@ -309,8 +310,18 @@ const getEvents = async () => {
 
 onMounted(() => {
   setDateTimeToday();
+  watchEnabled.value = true;
   getEvents();
 });
+
+watch(startTimeDate, () => {
+  if (watchEnabled.value) getEvents();
+});
+
+watch(endTimeDate, () => {
+  if (watchEnabled.value) getEvents();
+});
+
 </script>
 
 <style lang="scss">
