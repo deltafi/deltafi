@@ -27,6 +27,7 @@ import org.deltafi.test.action.TestCaseBase;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public class FormatActionTest extends ActionTest {
 
@@ -49,6 +50,13 @@ public class FormatActionTest extends ActionTest {
         deltaFile.setEnrichment(
             formatActionTestCase.getEnrichments().stream().map(this::readEnrichment).toList()
         );
+
+        formatActionTestCase.getInputDomains().forEach((key, value) -> {
+            byte[] content = getTestResourceBytesOrNull(formatActionTestCase.getTestName(), key);
+            String output = content==null ? null : new String(content, StandardCharsets.UTF_8);
+            String domainName = key.startsWith("domain.") ? key.substring(7) : key;
+            deltaFile.addDomain(domainName, output, value);
+        });
     }
 
     private org.deltafi.common.types.Enrichment readEnrichment(org.deltafi.test.action.Enrichment enrichment) {

@@ -18,10 +18,13 @@
 package org.deltafi.test.action.enrich;
 
 import org.deltafi.actionkit.action.enrich.EnrichResult;
+import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.Enrichment;
 import org.deltafi.test.action.ActionTest;
+import org.deltafi.test.action.TestCaseBase;
 import org.junit.jupiter.api.Assertions;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class EnrichActionTest extends ActionTest {
@@ -45,5 +48,20 @@ public class EnrichActionTest extends ActionTest {
         Assertions.assertArrayEquals(expectedEnrichments.toArray(), result.getEnrichments().toArray());
 
         Assertions.assertEquals(testCase.getIndexedMetadata(), result.getIndexedMetadata());
+    }
+
+    // Override and add domains to the DeltaFile
+    @Override
+    protected void beforeExecuteAction(DeltaFile deltaFile, TestCaseBase<?> testCase) {
+        assert(testCase instanceof EnrichActionTestCase);
+
+        EnrichActionTestCase enrichTestCase = (EnrichActionTestCase) testCase;
+
+        enrichTestCase.getInputDomains().forEach((key, value) -> {
+            byte[] content = getTestResourceBytesOrNull(enrichTestCase.getTestName(), key);
+            String output = content==null ? null : new String(content, StandardCharsets.UTF_8);
+            String domainName = key.startsWith("domain.") ? key.substring(7) : key;
+            deltaFile.addDomain(domainName, output, value);
+        });
     }
 }

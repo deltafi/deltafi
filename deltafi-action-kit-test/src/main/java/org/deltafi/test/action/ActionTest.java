@@ -173,6 +173,7 @@ public abstract class ActionTest {
                         .map(Content::getContentReference)
                         .map(cr -> FormattedData.newBuilder().contentReference(cr).build())
                         .toList())
+                .domains(new ArrayList<>())
                 .did(DID)
                 .build();
     }
@@ -356,4 +357,12 @@ public abstract class ActionTest {
         }
     }
 
+    protected byte[] getTestResourceBytesOrNull(String testCaseName, String file) {
+        try(InputStream inputStream = getClass().getClassLoader().getResourceAsStream(getClass().getSimpleName() + "/" + testCaseName + "/" + file)) {
+            return inputStream==null ? null : inputStream.readAllBytes();
+        }
+        catch(Throwable t) {
+            return null;
+        }
+    }
 }

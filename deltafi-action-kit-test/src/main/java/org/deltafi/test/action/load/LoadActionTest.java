@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -49,11 +48,11 @@ public abstract class LoadActionTest extends ActionTest {
         expectedResult.addMetadata(testCase.getResultMetadata());
         if(testCase.getOutputDomain()!=null) {
             // Load text string as the file to domain... for each entry in the map
-            testCase.getOutputDomain().entrySet().forEach(kv -> {
-                byte[] domainContent = getTestResourceBytesOrNull(testCase.getTestName(), kv.getKey());
+            testCase.getOutputDomain().forEach((key, value) -> {
+                byte[] domainContent = getTestResourceBytesOrNull(testCase.getTestName(), key);
                 String output = domainContent==null ? null : new String(domainContent, StandardCharsets.UTF_8);
-                expectedResult.addDomain(kv.getKey().startsWith("domain.") ? kv.getKey().substring(7) : kv.getKey(),
-                        output, kv.getValue());
+                expectedResult.addDomain(key.startsWith("domain.") ? key.substring(7) : key,
+                        output, value);
             });
 
             // Let's try to normalize the names of the domains so that we don't fail randomly because the map's
@@ -126,14 +125,4 @@ public abstract class LoadActionTest extends ActionTest {
         SplitResult result = execute(loadActionTestCase, SplitResult.class);
         assertSplitResult(loadActionTestCase, result);
     }
-
-    protected byte[] getTestResourceBytesOrNull(String testCaseName, String file) {
-        try(InputStream inputStream = getClass().getClassLoader().getResourceAsStream(getClass().getSimpleName() + "/" + testCaseName + "/" + file)) {
-            return inputStream==null ? null : inputStream.readAllBytes();
-        }
-        catch(Throwable t) {
-            return null;
-        }
-    }
-
 }

@@ -35,6 +35,7 @@ import java.util.Map;
 public class EnrichActionTestCase extends TestCaseBase<EnrichAction<? extends ActionParameters>> {
 
     Map<String, String> indexedMetadata;
+    private Map<String, String> inputDomains;
 
     public static abstract class EnrichActionTestCaseBuilder<C extends EnrichActionTestCase, B extends EnrichActionTestCase.EnrichActionTestCaseBuilder<C, B>> extends TestCaseBase.TestCaseBaseBuilder<EnrichAction<? extends ActionParameters>, C, B> {
         public B expectEnrichResult(List<Enrichment> enrichments, Map<String, String> indexedMetadata) {

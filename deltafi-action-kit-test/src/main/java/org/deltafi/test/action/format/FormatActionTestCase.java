@@ -30,6 +30,7 @@ import org.deltafi.test.action.TestCaseBase;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @SuperBuilder
@@ -38,6 +39,7 @@ public class FormatActionTestCase extends TestCaseBase<FormatAction<? extends Ac
 
     @Builder.Default
     List<Enrichment> enrichments = Collections.emptyList();
+    Map<String, String> inputDomains;
 
     public static abstract class FormatActionTestCaseBuilder<C extends FormatActionTestCase, B extends FormatActionTestCase.FormatActionTestCaseBuilder<C, B>> extends TestCaseBase.TestCaseBaseBuilder<FormatAction<? extends ActionParameters>, C, B> {
 
@@ -47,5 +49,6 @@ public class FormatActionTestCase extends TestCaseBase<FormatAction<? extends Ac
 
             return self();
         }
+        
     }
 }
