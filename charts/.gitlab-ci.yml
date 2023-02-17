@@ -21,6 +21,9 @@ update-helmchart:
   image: alpine:3.14
   # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
   resource_group: ci-helmchart
+  environment:
+    name: dev
+    url: https://dev.deltafi.org
   variables:
     DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
     PROJECT_LIST: "deltafi-core deltafi-core-actions deltafi-docs deltafi-auth deltafi-api deltafi-egress-sink deltafi-nodemonitor"
