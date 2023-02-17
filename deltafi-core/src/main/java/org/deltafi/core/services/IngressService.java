@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,8 @@ public class IngressService {
     private final DeltaFilesService deltaFilesService;
     private final ObjectMapper objectMapper;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final FlowAssignmentService flowAssignmentService;
+    private final IngressFlowService ingressFlowService;
 
     @RequiredArgsConstructor
     @Data
@@ -64,10 +67,47 @@ public class IngressService {
         return deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled();
     }
 
-    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, Map<String, String> metadata, String mediaType) throws ObjectStorageException, IngressException {
-        String flow = (namespacedFlow == null) ? DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME : namespacedFlow;
+    /**
+     * Evaluate source info validity:
+     * <ul>
+     *     <li>Check if filename is present</li>
+     *     <li>Check if flow is present or resolvable</li>
+     *     <li>Check if flow is running</li>
+     * </ul>
+     * @param sourceInfo source info to validate
+     * @return Source info with resolved flow (if necessary)
+     * @throws IngressException if source info is malformed, unresolvable, or for an inactive flow
+     */
+    public SourceInfo validateSourceInfo(SourceInfo sourceInfo) throws IngressException {
+        if (sourceInfo.getFilename() == null) throw new IngressException("filename required in source info");
 
-        if (sourceFileName == null) throw new IngressException("filename required in source info");
+        if (sourceInfo.getFlow() == null) sourceInfo.setFlow(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME);
+
+        if (DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME.equals(sourceInfo.getFlow())) {
+            String lookup = flowAssignmentService.findFlow(sourceInfo);
+            if (lookup == null) throw new IngressException("Unable to resolve flow based on current flow assignment rules");
+            sourceInfo.setFlow(lookup);
+        }
+
+        // ensure flow is running before accepting ingress
+        try {
+            ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
+        } catch (DgsEntityNotFoundException e) {
+            throw new IngressException("Flow " + sourceInfo.getFlow() + "is not running", e);
+        }
+
+        return sourceInfo;
+    }
+
+    public IngressResult ingressData(InputStream inputStream, String sourceFileName, String namespacedFlow, Map<String, String> metadata, String mediaType) throws ObjectStorageException, IngressException {
+
+        SourceInfo sourceInfo = validateSourceInfo(
+                SourceInfo.builder()
+                        .filename(sourceFileName)
+                        .flow(namespacedFlow)
+                        .metadata(metadata)
+                        .build()
+        );
 
         String did = UUID.randomUUID().toString();
         OffsetDateTime created = OffsetDateTime.now();
@@ -77,20 +117,18 @@ public class IngressService {
 
         IngressEvent ingressInput = IngressEvent.newBuilder()
                 .did(did)
-                .sourceInfo(new SourceInfo(sourceFileName, flow, metadata))
+                .sourceInfo(sourceInfo)
                 .content(content)
                 .created(created)
                 .build();
 
         try {
             DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
-            flow = deltaFile.getSourceInfo().getFlow();
+            return new IngressResult(contentReference, deltaFile.getSourceInfo().getFlow(), sourceFileName, did);
         } catch (Exception e) {
             contentStorageService.delete(contentReference);
             throw e;
         }
-
-        return new IngressResult(contentReference, flow, sourceFileName, did);
     }
 
     public IngressResult ingressData(InputStream inputStream, String sourceFileName, String flow, String metadataString, String mediaType)

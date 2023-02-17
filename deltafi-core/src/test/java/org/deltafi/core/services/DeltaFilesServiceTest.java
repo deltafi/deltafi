@@ -112,16 +112,6 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void setThrowsOnMissingFlow() {
-        SourceInfo sourceInfo = new SourceInfo(null, "nonsense", Map.of());
-        List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference("mediaType")).build());
-        IngressEvent ingressInput = new IngressEvent("did", sourceInfo, content, OffsetDateTime.now());
-
-        when(flowService.getRunningFlowByName(sourceInfo.getFlow())).thenThrow(new DgsEntityNotFoundException());
-        assertThrows(DgsEntityNotFoundException.class, () -> deltaFilesService.ingress(ingressInput));
-    }
-
-    @Test
     void getReturnsNullOnMissingDid() {
         assertNull(deltaFilesService.getDeltaFile("nonsense"));
     }

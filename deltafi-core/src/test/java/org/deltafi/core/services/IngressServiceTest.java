@@ -18,14 +18,18 @@
 package org.deltafi.core.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.SneakyThrows;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.IngressEvent;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.services.api.model.DiskMetrics;
 import org.junit.jupiter.api.Assertions;
@@ -39,10 +43,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
+import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class IngressServiceTest {
@@ -60,6 +68,12 @@ class IngressServiceTest {
 
     @Mock
     DeltaFilesService deltaFilesService;
+
+    @Mock
+    IngressFlowService ingressFlowService;
+
+    @Mock
+    FlowAssignmentService flowAssignmentService;
 
     @Spy
     DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
@@ -92,6 +106,41 @@ class IngressServiceTest {
 
     @Test @SneakyThrows
     void isStorageAvailable() {
+    }
+
+    @Test @SneakyThrows
+    void ingressDataThrowsOnMissingFlow() {
+        Mockito.when(ingressFlowService.getRunningFlowByName(any())).thenThrow(new DgsEntityNotFoundException("Not here"));
+
+        assertThrows(
+                IngressException.class,
+                () -> ingressService.ingressData(null, OBJECT_NAME, "blarg", Collections.emptyMap(), MediaType.APPLICATION_JSON)
+        );
+
+        Mockito.verifyNoInteractions(contentStorageService);
+    }
+
+    @Test @SneakyThrows
+    void ingressDataThrowsOnMissingFilename() {
+        assertThrows(
+                IngressException.class,
+                () -> ingressService.ingressData(null, null, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON)
+        );
+
+        Mockito.verifyNoInteractions(contentStorageService);
+    }
+
+    @Test @SneakyThrows
+    void ingressDataThrowsOnFailedFlowLookup() {
+
+        Mockito.when(flowAssignmentService.findFlow(any())).thenReturn(null);
+
+        assertThrows(
+                IngressException.class,
+                () -> ingressService.ingressData(null, OBJECT_NAME, null, Collections.emptyMap(), MediaType.APPLICATION_JSON)
+        );
+
+        Mockito.verifyNoInteractions(contentStorageService);
     }
 
     @Test @SneakyThrows

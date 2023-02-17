@@ -95,7 +95,6 @@ public class DeltaFilesService {
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final FlowAssignmentService flowAssignmentService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
     private final ActionEventQueue actionEventQueue;
@@ -172,17 +171,6 @@ public class DeltaFilesService {
     @MongoRetryable
     public DeltaFile ingress(IngressEvent input, List<String> parentDids) {
         SourceInfo sourceInfo = input.getSourceInfo();
-        if (sourceInfo.getFlow().equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
-            String flow = flowAssignmentService.findFlow(sourceInfo);
-            if (Objects.isNull(flow)) {
-                throw new DgsEntityNotFoundException(
-                        "Unable to resolve flow name based on source metadata and current flow assignment rules");
-            }
-            sourceInfo.setFlow(flow);
-        }
-
-        // ensure flow is running before accepting ingress
-        ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
 
         OffsetDateTime now = OffsetDateTime.now();
 
