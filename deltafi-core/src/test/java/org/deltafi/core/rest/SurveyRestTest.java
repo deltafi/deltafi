@@ -18,10 +18,8 @@
 package org.deltafi.core.rest;
 
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.ActionType;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.metrics.MetricRepository;
-import org.deltafi.core.metrics.MetricsUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +31,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 
-import static org.deltafi.common.constant.DeltaFiConstants.SURVEY_ACTION;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,14 +50,37 @@ public class SurveyRestTest {
         Long bytes = 5000L;
         Long count = 5L;
 
-        ResponseEntity<String> response = testObj.survey(flow, bytes, count, null);
+        ResponseEntity<String> response = testObj.survey(flow, bytes, count, null,null,null);
 
         Assertions.assertEquals(200, response.getStatusCode().value());
 
-        Map<String, String> tags = MetricsUtil.tagsFor(ActionType.INGRESS.name(), SURVEY_ACTION, flow, null);
-        Mockito.verify(auditLogger).logSurvey("system", flow, bytes, count);
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.FILES_IN), eq(tags), eq(count));
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.BYTES_IN), eq(tags), eq(bytes));
+        Map<String, String> tags = Map.of("surveyFlow", "myFlow", "surveyDirection", "none");
+        Mockito.verify(auditLogger).logSurvey("system", flow, null, "none", bytes, count);
+        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_FILES), eq(tags), eq(count));
+        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_BYTES), eq(tags), eq(bytes));
+        Mockito.verifyNoMoreInteractions(metricRepository);
+    }
+
+    @Test
+    public void testSurveySubflow() {
+        String flow = "myFlow";
+        Long bytes = 5000L;
+        Long count = 5L;
+        String subflow = "mySubflow";
+        String direction = "myDirection";
+
+        ResponseEntity<String> response = testObj.survey(flow, bytes, count, subflow,direction,"Narf");
+
+        Assertions.assertEquals(200, response.getStatusCode().value());
+
+        Map<String, String> tags = Map.of("surveyFlow", flow, "surveyDirection", direction);
+        Mockito.verify(auditLogger).logSurvey("Narf", flow, subflow, direction, bytes, count);
+        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_FILES), eq(tags), eq(count));
+        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_BYTES), eq(tags), eq(bytes));
+        Map<String, String> subflowTags = Map.of("surveyFlow", flow, "surveyDirection", direction, "surveySubflow", subflow);
+        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_SUBFLOW_FILES), eq(subflowTags), eq(count));
+        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_SUBFLOW_BYTES), eq(subflowTags), eq(bytes));
+        Mockito.verifyNoMoreInteractions(metricRepository);
     }
 
     @Test
@@ -68,7 +88,7 @@ public class SurveyRestTest {
         Long bytes = 5000L;
         Long count = 5L;
 
-        ResponseEntity<String> response = testObj.survey(null, bytes, count, null);
+        ResponseEntity<String> response = testObj.survey(null, bytes, count, null, null, null);
 
         Assertions.assertEquals(400, response.getStatusCode().value());
 

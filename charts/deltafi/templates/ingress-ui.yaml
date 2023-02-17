@@ -43,6 +43,13 @@ spec:
             name: deltafi-ingress-service
             port:
               number: 80
+      - path: /(survey)
+        pathType: Prefix
+        backend:
+          service:
+            name: deltafi-ingress-service
+            port:
+              number: 80
       - path: /(docs.*)
         pathType: Prefix
         backend:

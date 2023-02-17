@@ -54,7 +54,7 @@ dependencies:
     tags:
       - logs
   - name: graphite
-    version: 0.99.0
+    version: 0.7.2-deltafi-r1
     repository: file://../graphite
     condition: enable.graphite
     tags:

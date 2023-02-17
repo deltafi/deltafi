@@ -95,9 +95,9 @@ public class CoreAuditLogger extends SimpleInstrumentation {
         }
     }
 
-    public void logSurvey(String userName, String flow, Long bytes, Long count) {
+    public void logSurvey(String userName, String flow, String subflow, String direction, Long bytes, Long count) {
         try (MDC.MDCCloseable ignored = MDC.putCloseable("user", userName)) {
-            log.info("survey {} flow {} bytes {} count", flow, bytes, count);
+            log.info("survey flow={} subflow={} direction={} bytes={} count={}", flow, subflow, direction, bytes, count);
         }
     }
 

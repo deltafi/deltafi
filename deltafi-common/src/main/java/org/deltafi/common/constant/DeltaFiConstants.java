@@ -29,7 +29,6 @@ public class DeltaFiConstants {
     public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
     public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
     public static final String PERMISSIONS_HEADER = "X-User-Permissions";
-    public static final String SURVEY_ACTION = "SurveyAction";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS = "SyntheticEgressActionForTestIngress";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS = "SyntheticEgressActionForTestEgress";
     public static final String USER_HEADER = "X-User-Name";
@@ -42,6 +41,10 @@ public class DeltaFiConstants {
     public static final String FILES_FILTERED = "files_filtered";
     public static final String FILES_IN = "files_in";
     public static final String FILES_OUT = "files_out";
+    public static final String SURVEY_FILES = "survey.files";
+    public static final String SURVEY_BYTES = "survey.bytes";
+    public static final String SURVEY_SUBFLOW_FILES = "survey.subflow.files";
+    public static final String SURVEY_SUBFLOW_BYTES = "survey.subflow.bytes";
 
     // Tag names
     public static final String ACTION = "action";

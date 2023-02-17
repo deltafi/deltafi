@@ -21,10 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.ActionType;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.metrics.MetricRepository;
-import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.security.NeedsPermission;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +32,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.util.HashMap;
 import java.util.Map;
-
-import static org.deltafi.common.constant.DeltaFiConstants.SURVEY_ACTION;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -49,7 +46,9 @@ public class SurveyRest {
     @PostMapping(value = "survey", consumes = MediaType.WILDCARD)
     public ResponseEntity<String> survey(@QueryParam(value = "flow") String flow,
                                          @QueryParam(value = "bytes") Long bytes,
-                                         @QueryParam(value = "count") Long count,
+                                         @QueryParam(value = "count") Long files,
+                                         @QueryParam(value = "subflow") String subflow,
+                                         @QueryParam(value = "direction") String direction,
                                          @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false, defaultValue = "system") String username) {
         username = StringUtils.isNotBlank(username) ? username : "system";
 
@@ -58,29 +57,37 @@ public class SurveyRest {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing flow parameter");
         }
 
-        if (bytes == null) {
-            bytes = 0L;
-        }
+        if (direction == null) direction = "none";
+        if (bytes == null) bytes = 0L;
+        if (files == null) files = 1L;
 
-        if (count == null) {
-            count = 1L;
-        }
-
-        log.debug("Survey: flow={} bytes={} count={} username={}",
+        log.debug("Survey: flow={} subflow={} direction={} bytes={} count={} username={}",
                 flow,
+                subflow,
+                direction,
                 bytes,
-                count,
+                files,
                 username);
         try {
-            coreAuditLogger.logSurvey(username, flow, bytes, count);
-            Map<String, String> tags = MetricsUtil.tagsFor(ActionType.INGRESS.name(), SURVEY_ACTION, flow, null);
-            metricService.increment(DeltaFiConstants.FILES_IN, tags, count);
-            metricService.increment(DeltaFiConstants.BYTES_IN, tags, bytes);
+            coreAuditLogger.logSurvey(username, flow, subflow, direction, bytes, files);
+
+            Map<String, String> tags = new HashMap<>();
+            tags.put("surveyFlow", flow);
+            tags.put("surveyDirection", direction);
+            metricService.increment(DeltaFiConstants.SURVEY_FILES, tags, files);
+            metricService.increment(DeltaFiConstants.SURVEY_BYTES, tags, bytes);
+
+            if (subflow != null && !subflow.isBlank()) {
+                Map<String, String> subflowTags = new HashMap<>(tags);
+                subflowTags.put("surveySubflow", subflow);
+                metricService.increment(DeltaFiConstants.SURVEY_SUBFLOW_FILES, subflowTags, files);
+                metricService.increment(DeltaFiConstants.SURVEY_SUBFLOW_BYTES, subflowTags, bytes);
+            }
 
             return ResponseEntity.ok(null);
         } catch (Throwable exception) {
             log.error("Exception thrown: ", exception);
-            log.error("{} error for flow={} bytes={} count={} username={}: {}", HttpStatus.INTERNAL_SERVER_ERROR.value(), flow, bytes, count, username, exception.getMessage());
+            log.error("{} error for flow={} subflow={} direction={} bytes={} count={} username={}: {}", HttpStatus.INTERNAL_SERVER_ERROR.value(), flow, subflow, direction, bytes, files, username, exception.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
         }
     }

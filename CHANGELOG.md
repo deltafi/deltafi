@@ -7,10 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 - Add deltaFileStats GraphQL query
+- `Survey Metrics` dashboard in Grafana
 - Set environment variable `DELTAFI_PYTHON` in cluster loc that allows downstream python projects to pick up the local python action kit
 - Server Sent Events broadcast for deltaFileStats
 
 ### Changed
+- Survey endpoint added support for survey subflows and direction
+- Survey metric retention lowered in Graphite
+- Survey metrics changed to:
+  - `stats_count.survey.files`
+  - `stats_count.survey.bytes`
+  - `stats_count.survey.subflow.files`
+  - `stats_count.survey.subflow.bytes`
 - Refactored Monitor to prevent checks from blocking one another
 
 ### Deprecated
@@ -19,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Executing `deltafi` commands in KinD now writes files as the current user instead of root:root
+- No longer storing unneeded `stats.*` metrics in Graphite database.  This is a 50% reduction in metric storage
 
 ### Tech-Debt/Refactor
 - Clean up indexes that store nested data

@@ -116,7 +116,7 @@ configMaps:
     # If USE_WHITELIST is set to True in carbon.conf, any metrics received which
     # match one of these expressions will be dropped
     # This file is reloaded automatically when changes are made
-    ^some\.noisy\.metric\.prefix\..*
+    ^stats\.
   carbon.conf: |-
     [cache]
     # Configure carbon directories.
@@ -377,7 +377,7 @@ configMaps:
     # Set this to True to enable whitelisting and blacklisting of metrics in
     # CONF_DIR/whitelist.conf and CONF_DIR/blacklist.conf. If the whitelist is
     # missing or empty, all metrics will pass through
-    # USE_WHITELIST = False
+    USE_WHITELIST = True
 
     # By default, carbon itself will log statistics (such as a count,
     # metricsReceived) with the top level prefix of 'carbon' at an interval of 60
@@ -563,7 +563,7 @@ configMaps:
     # Set this to True to enable whitelisting and blacklisting of metrics in
     # CONF_DIR/whitelist.conf and CONF_DIR/blacklist.conf. If the whitelist is
     # missing or empty, all metrics will pass through
-    # USE_WHITELIST = False
+    USE_WHITELIST = True
 
     # By default, carbon itself will log statistics (such as a count,
     # metricsReceived) with the top level prefix of 'carbon' at an interval of 60
@@ -683,7 +683,7 @@ configMaps:
     # Set this to True to enable whitelisting and blacklisting of metrics in
     # CONF_DIR/whitelist.conf and CONF_DIR/blacklist.conf. If the whitelist is
     # missing or empty, all metrics will pass through
-    # USE_WHITELIST = False
+    USE_WHITELIST = True
 
     # By default, carbon itself will log statistics (such as a count,
     # metricsReceived) with the top level prefix of 'carbon' at an interval of 60
@@ -973,10 +973,16 @@ configMaps:
     # CARBON_METRIC_PREFIX and CARBON_METRIC_INTERVAL settings
     [carbon]
     pattern = ^carbon\.
-    retentions = 10s:2h,1m:7d
-    [default_1min_for_1day]
+    retentions = 10s:1h,1m:4d
+    [survey.subflow]
+    pattern = ^.*\.survey\.subflow
+    retentions = 10s:1h,5m:2d,1h:14d,1d:60d
+    [survey]
+    pattern = ^.*\.survey\.
+    retentions = 10s:1h,5m:3d,1h:14d,1d:365d
+    [default]
     pattern = .*
-    retentions = 10s:3h,1m:6d,10m:90d,1h:365d,24h:720d
+    retentions = 10s:3h,1m:6d,10m:30d,1h:365d,24h:720d
   whitelist.conf: |-
     # This file takes a single regular expression per line
     # If USE_WHITELIST is set to True in carbon.conf, only metrics received which
