@@ -21,30 +21,33 @@
 $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../../../../models'))
 
 require 'deltafi/common'
+require 'deltafi/monitor/service'
 require 'event'
 
 module Deltafi
   module Monitor
     module NotificationCount
-      class Service
+      class Service < Deltafi::Monitor::Service
         SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'notificationCount'].compact.join('.')
         INTERVAL = 5
 
         def initialize
-          @redis = DF.redis_client
-          Mongoid::Clients.clients.values.each do |client|
+          super
+          Mongoid::Clients.clients.each_value do |client|
             client.reconnect if client.cluster.servers.empty?
           end
         end
 
         def run
-          query = {
-            timestamp: (7.days.ago..Time.now),
-            notification: true,
-            acknowledged: false
-          }
-          count = Event.where(query).count
-          @redis.publish(SSE_REDIS_CHANNEL, count)
+          periodic_timer(INTERVAL) do
+            query = {
+              timestamp: (7.days.ago..Time.now),
+              notification: true,
+              acknowledged: false
+            }
+            count = Event.where(query).count
+            @redis.publish(SSE_REDIS_CHANNEL, count)
+          end
         end
       end
     end

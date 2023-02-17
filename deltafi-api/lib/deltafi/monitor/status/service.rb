@@ -19,8 +19,8 @@
 # frozen_string_literal: true
 
 require 'benchmark'
-require 'timeout'
 
+require 'deltafi/monitor/service'
 require 'deltafi/monitor/status/check'
 Dir[File.join(File.dirname(__FILE__), 'checks', '*.rb')].each do |f|
   require "deltafi/monitor/status/checks/#{File.basename(f).split('.')[0]}"
@@ -29,76 +29,52 @@ end
 module Deltafi
   module Monitor
     module Status
-      class Service
-        attr_accessor :status, :checks
-
+      class Service < Deltafi::Monitor::Service
         include Deltafi::Logger
 
-        INTERVAL = 5
-        TIMEOUT = 5
+        PUBLISH_INTERVAL = 5
         COLORS = %w[green yellow red].freeze
         STATES = %w[Healthy Degraded Unhealthy].freeze
         SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'status'].compact.join('.')
 
         def initialize
-          self.status = {
-            code: -1,
-            state: 'Unknown',
-            color: 'Unknown',
-            checks: [],
-            timestamp: Time.now
-          }
-          self.checks = Status::Checks.constants.map { |c| Status::Checks.const_get(c) }
-          @redis = DF.redis_client
+          super
+          @statuses = {}
+          @checks = Status::Checks.constants.map { |c| Status::Checks.const_get(c) }
         end
 
         def run
-          run_checks
-          publish_status
+          spawn_check_threads
+
+          periodic_timer(PUBLISH_INTERVAL) do
+            publish_status unless @statuses.keys.empty?
+          end
         end
 
         private
 
-        def publish_status
-          @redis.publish(SSE_REDIS_CHANNEL, status.to_json)
-          @redis.set(DF::Common::STATUS_REDIS_KEY, status.to_json)
-        end
-
-        def run_checks
-          results = checks.map do |check|
+        def spawn_check_threads
+          @checks.each do |check|
             Thread.new do
-              Timeout.timeout(TIMEOUT) do
-                Thread.current[:result] = check.new.run
-              end
-            rescue Timeout::Error => e
-              error "Timeout occurred while running #{check}"
-              Thread.current[:result] = check.new.tap do |c|
-                c.code = 2
-                c.message_lines << 'Timeout occurred while running check.'
-              end
-            rescue StandardError => e
-              error "Error occurred while running #{check}"
-              error "#{e.message}\n#{e.backtrace}"
-              Thread.current[:result] = check.new.tap do |c|
-                c.code = 2
-                c.message_lines << 'Exception occurred while running check.'
-                c.message_lines << "\n\t#{e.message}"
+              periodic_timer(check::INTERVAL) do
+                @statuses[check.name] = check.new.run_check
               end
             end
-          end.map do |thread|
-            thread.join
-            thread[:result]
           end
+        end
 
-          overall_code = results.map(&:code).max || 0
-
-          self.status = {
+        def publish_status
+          debug 'Publishing status'
+          overall_code = @statuses.values.map { |s| s[:code] }.max || -1
+          status = {
             code: overall_code,
-            color: COLORS[overall_code],
-            state: STATES[overall_code],
-            checks: results.sort_by { |r| [-r.code, r.name] }.map(&:to_hash),
+            color: COLORS[overall_code] || 'Unknown',
+            state: STATES[overall_code] || 'Unknown',
+            checks: @statuses.values.sort_by { |s| [-s[:code], s[:description]] },
             timestamp: Time.now
           }
+          @redis.publish(SSE_REDIS_CHANNEL, status.to_json)
+          @redis.set(DF::Common::STATUS_REDIS_KEY, status.to_json)
         end
       end
     end

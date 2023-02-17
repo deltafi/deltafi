@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Set environment variable `DELTAFI_PYTHON` in cluster loc that allows downstream python projects to pick up the local python action kit
 
 ### Changed
+- Refactored Monitor to prevent checks from blocking one another
 
 ### Deprecated
 

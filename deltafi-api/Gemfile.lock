@@ -85,7 +85,6 @@ GEM
     listen (3.8.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
-    memory_profiler (1.0.1)
     method_source (1.0.0)
     mini_mime (1.1.2)
     minitest (5.17.0)
@@ -168,7 +167,6 @@ DEPENDENCIES
   graphite-api
   httparty
   k8s-ruby
-  memory_profiler
   mongo
   mongoid
   pry

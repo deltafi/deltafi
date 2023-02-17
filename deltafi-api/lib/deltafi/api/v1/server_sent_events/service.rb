@@ -52,6 +52,10 @@ module Deltafi
                   end
                 end
               end
+            rescue StandardError => e
+              error e.message
+              error e.backtrace.join("\n")
+              retry
             end
 
             Thread.new do

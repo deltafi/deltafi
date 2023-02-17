@@ -19,19 +19,18 @@
 # frozen_string_literal: true
 
 require 'deltafi/common'
+require 'deltafi/monitor/service'
 
 module Deltafi
   module Monitor
     module Heartbeat
-      class Service
+      class Service < Deltafi::Monitor::Service
         INTERVAL = 5
 
-        def initialize
-          @redis = DF.redis_client
-        end
-
         def run
-          @redis.set(DF::Common::HEARTBEAT_REDIS_KEY, Time.now.to_i)
+          periodic_timer(INTERVAL) do
+            @redis.set(DF::Common::HEARTBEAT_REDIS_KEY, Time.now.to_i)
+          end
         end
       end
     end

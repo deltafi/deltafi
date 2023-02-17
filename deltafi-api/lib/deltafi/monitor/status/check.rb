@@ -19,14 +19,18 @@
 # frozen_string_literal: true
 
 require 'date'
+require 'timeout'
 
 module Deltafi
   module Monitor
     module Status
       class Check
-        attr_accessor :code, :description, :message_lines, :timestamp
+        include Deltafi::Logger
+
+        attr_accessor :code, :description, :message_lines, :timestamp, :timeout
 
         CONFIGMAP = 'deltafi-status-checks'
+        INTERVAL = 5
 
         def initialize(description)
           self.description = description
@@ -36,6 +40,7 @@ module Deltafi
           self.code = 0
           self.message_lines = []
           self.timestamp = Time.now
+          self.timeout = 60
         end
 
         def name
@@ -71,6 +76,40 @@ module Deltafi
 
         def run
           raise "#{self.class} should override the `run` method"
+        end
+
+        def run_check
+          debug 'Running check'
+
+          begin
+            Timeout.timeout(timeout) do
+              run
+            end
+          rescue Timeout::Error => e
+            msg = "Timeout occurred while running check. Check took longer than #{timeout} seconds to complete."
+            backtrace = backtrace_lines(e)
+            error msg
+            error backtrace
+            message_lines << msg
+            message_lines << "```\n#{backtrace}\n```"
+            self.code = 1
+          rescue StandardError => e
+            msg = 'Error occurred while running check.'
+            backtrace = backtrace_lines(e)
+            error msg
+            error e.message
+            error e.backtrace.join("\n")
+            message_lines << msg
+            message_lines << "\n\t#{e.message}"
+            message_lines << "```\n#{backtrace}\n```"
+            self.code = 2
+          end
+
+          to_hash
+        end
+
+        def backtrace_lines(exception)
+          exception.backtrace.take_while { |line| !line.match?('block in run_check') }.join("\n")
         end
       end
     end

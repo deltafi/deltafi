@@ -19,17 +19,26 @@
 # frozen_string_literal: true
 
 module Deltafi
-  module API
-    module V1
-      module Status
-        extend self
+  module Monitor
+    # Monitor Service base class
+    class Service
+      include Deltafi::Logger
 
-        def status
-          s = DF.redis_client.get(DF::Common::STATUS_REDIS_KEY)
-          raise 'Received empty response from Redis' if s.nil?
+      def initialize
+        @redis = DF.redis_client
+      end
 
-          JSON.parse(s)
+      private
+
+      def periodic_timer(seconds)
+        timer = Timers::Group.new
+        timer.now_and_every(seconds) do
+          yield
+        rescue StandardError => e
+          error e.message
+          error e.backtrace.join("\n")
         end
+        loop { timer.wait }
       end
     end
   end
