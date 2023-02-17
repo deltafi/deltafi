@@ -23,20 +23,27 @@ require 'deltafi/monitor/service'
 
 module Deltafi
   module Monitor
-    module ErrorCount
+    module DeltaFileStats
       class Service < Deltafi::Monitor::Service
-        SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'errorCount'].compact.join('.')
-        QUERY = 'query { deltaFiles (filter: {stage: ERROR, errorAcknowledged: false}) { totalCount } }'
+        SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'deltaFileStats'].compact.join('.')
         INTERVAL = 5
+
+        def query(in_flight_only:)
+          query = "query { deltaFileStats(inFlightOnly: #{in_flight_only}) { count referencedBytes totalBytes } }"
+          response = DF.graphql(query)
+          parsed_response = JSON.parse(response.body, symbolize_names: true)
+          raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
+
+          parsed_response.dig(:data, :deltaFileStats)
+        end
 
         def run
           periodic_timer(INTERVAL) do
-            response = DF.graphql(QUERY)
-            parsed_response = JSON.parse(response.body, symbolize_names: true)
-            raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
-
-            count = parsed_response.dig(:data, :deltaFiles, :totalCount)
-            @redis.publish(SSE_REDIS_CHANNEL, count) unless count.nil?
+            result = {
+              all: query(in_flight_only: false),
+              inFlight: query(in_flight_only: true)
+            }.to_json
+            @redis.publish(SSE_REDIS_CHANNEL, result)
           end
         end
       end

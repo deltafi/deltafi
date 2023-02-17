@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Add deltaFileStats GraphQL query
 - Set environment variable `DELTAFI_PYTHON` in cluster loc that allows downstream python projects to pick up the local python action kit
+- Server Sent Events broadcast for deltaFileStats
 
 ### Changed
 - Refactored Monitor to prevent checks from blocking one another
