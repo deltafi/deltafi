@@ -53,6 +53,7 @@ import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.*;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,6 +93,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
@@ -1151,8 +1153,12 @@ class DeltaFiCoreApplicationTests {
 		return deltaFile;
 	}
 
+	@Captor
+	private ArgumentCaptor<Metric> metricCaptor;
+
 	@Test
 	void testEgress() throws IOException {
+
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
@@ -1163,10 +1169,30 @@ class DeltaFiCoreApplicationTests {
 
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "sampleEgress.SampleEgressAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_OUT, 1).addTag("destination", "final").addTags(tags));
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.BYTES_OUT, 42).addTag("destination", "final").addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+
+		Mockito.verify(metricRepository, Mockito.atLeast(4)).increment(metricCaptor.capture());
+		List<Metric> metrics = metricCaptor.getAllValues();
+		MatcherAssert.assertThat(
+				metrics.stream().map(Metric::getName).collect(Collectors.toList()),
+				Matchers.containsInAnyOrder(
+						DeltaFiConstants.FILES_IN,
+						DeltaFiConstants.FILES_OUT,
+						DeltaFiConstants.BYTES_OUT,
+						DeltaFiConstants.EXECUTION_TIME_MS
+				));
+		for (Metric metric : metrics) {
+			switch (metric.getName()) {
+				case DeltaFiConstants.FILES_IN ->
+						assertEquals(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags), metric);
+				case DeltaFiConstants.FILES_OUT ->
+						assertEquals(new Metric(DeltaFiConstants.FILES_OUT, 1).addTag("destination", "final").addTags(tags), metric);
+				case DeltaFiConstants.BYTES_OUT ->
+						assertEquals(new Metric(DeltaFiConstants.BYTES_OUT, 42).addTag("destination", "final").addTags(tags), metric);
+				case DeltaFiConstants.EXECUTION_TIME_MS ->
+						// Dont care about value...
+						assertEquals(new Metric(DeltaFiConstants.EXECUTION_TIME_MS, metric.getValue()).addTags(tags), metric);
+			}
+		}
 	}
 
 	@Test
@@ -3490,7 +3516,7 @@ class DeltaFiCoreApplicationTests {
 				flowfile(Map.of(
 						"flow", FLOW,
 						"overwrite", "vim is awesome",
-						"fromFlowfile", "youbetcha")),
+						"fromFlowfile", "you-betcha")),
 				FLOWFILE_V1_MEDIA_TYPE);
 
 		assertEquals(400, response.getStatusCode().value());

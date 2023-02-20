@@ -12,6 +12,16 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: dashboard-diagnostic
+  labels:
+    grafana_dashboard: "1"
+data:
+  diagnostic.json: |-
+{{ .Files.Get "files/grafana/dashboards/diagnostic.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: dashboard-flow-summary
   labels:
     grafana_dashboard: "1"

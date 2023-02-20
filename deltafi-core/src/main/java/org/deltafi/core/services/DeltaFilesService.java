@@ -52,6 +52,7 @@ import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -61,6 +62,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.deltafi.common.constant.DeltaFiConstants.EXECUTION_TIME_MS;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
@@ -259,8 +261,13 @@ public class DeltaFilesService {
                 returnVal = validate(deltaFile, event);
             }
             case EGRESS -> {
-                generateMetrics(metrics, event, deltaFile);
                 returnVal = egress(deltaFile, event);
+                metrics.add(
+                        Metric.builder()
+                                .name(EXECUTION_TIME_MS)
+                                .value(Duration.between(deltaFile.getCreated(), deltaFile.getModified()).toMillis())
+                                .build());
+                generateMetrics(metrics, event, deltaFile);
             }
             case ERROR -> {
                 generateMetrics(metrics, event, deltaFile);
@@ -994,7 +1001,8 @@ public class DeltaFilesService {
     }
 
     private String egressFlow(Action action, DeltaFile deltaFile) {
-        if (DeltaFileStage.EGRESS.equals(deltaFile.getStage())) {
+        if (DeltaFileStage.EGRESS.equals(deltaFile.getStage()) ||
+                (DeltaFileStage.COMPLETE.equals(deltaFile.getStage()) && deltaFile.getEgressed())) {
             try {
                 return egressFlowService.getFlowName(action.getName());
             } catch (IllegalArgumentException ignored) {}
