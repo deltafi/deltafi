@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Executing `deltafi` commands in KinD now writes files as the current user instead of root:root
 - Ingress was writing to disk when a flow was disabled or non-existent
 - No longer storing unneeded `stats.*` metrics in Graphite database.  This is a 50% reduction in metric storage
+- Run the property migration if any snapshots exist where DeltaFiProperties is not set
 
 ### Tech-Debt/Refactor
 - Clean up indexes that store nested data

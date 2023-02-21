@@ -139,7 +139,7 @@ let migrateSnapshots = function() {
 }
 
 runMigrations = function() {
-    if(db.propertySet.count() > 0 && db.systemSnapshot.count({deltaFiProperties: {$exists: 1}}) == 0) {
+    if(db.propertySet.count() > 0 && db.systemSnapshot.count({deltaFiProperties: {$exists: 0}}) > 0) {
         migratePropertySet()
         migrateSnapshots()
     }
