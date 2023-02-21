@@ -46,6 +46,8 @@ public class DeltaFiConstants {
     public static final String SURVEY_BYTES = "survey.bytes";
     public static final String SURVEY_SUBFLOW_FILES = "survey.subflow.files";
     public static final String SURVEY_SUBFLOW_BYTES = "survey.subflow.bytes";
+    public static final String DELETED_FILES = "deleted.files";
+    public static final String DELETED_BYTES = "deleted.bytes";
 
     // Tag names
     public static final String ACTION = "action";

@@ -62,8 +62,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.deltafi.common.constant.DeltaFiConstants.EXECUTION_TIME_MS;
-import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 
 @Service
@@ -954,7 +953,11 @@ public class DeltaFilesService {
         }
 
         log.info("Deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
+        long totalBytes = deltaFiles.stream().mapToLong(DeltaFile::getTotalBytes).sum();
+
         deleteContent(deltaFiles, policy, deleteMetadata);
+        metricService.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
+        metricService.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
         log.info("Finished deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
 
         return deltaFiles;

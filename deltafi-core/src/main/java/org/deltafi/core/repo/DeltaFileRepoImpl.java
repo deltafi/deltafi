@@ -238,7 +238,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata, false));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
-        query.fields().include(ID, PROTOCOL_STACK_SEGMENTS, FORMATTED_DATA_SEGMENTS);
+        query.fields().include(ID, TOTAL_BYTES, PROTOCOL_STACK_SEGMENTS, FORMATTED_DATA_SEGMENTS);
 
         return mongoTemplate.find(query, DeltaFile.class);
     }

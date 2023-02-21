@@ -44,9 +44,9 @@ public class DeltaFile {
   private List<String> parentDids;
   private List<String> childDids;
   private int requeueCount;
-  private Long ingressBytes;
-  private Long referencedBytes;
-  private Long totalBytes;
+  private long ingressBytes = 0;
+  private long referencedBytes = 0;
+  private long totalBytes = 0;
   private DeltaFileStage stage;
   private List<Action> actions;
   private SourceInfo sourceInfo;

@@ -26,7 +26,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1735,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -114,7 +113,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -204,7 +203,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -378,7 +377,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -630,7 +629,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -1173,10 +1172,15 @@
       },
       "id": 30,
       "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
         "content": "<br/><center><h1>Action Activity</h1></center>",
         "mode": "html"
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "9.3.2",
       "transparent": true,
       "type": "text"
     },
@@ -1206,7 +1210,8 @@
           "noData": true,
           "normal": false,
           "pending": true
-        }
+        },
+        "viewMode": "list"
       },
       "title": "Active Alerts",
       "type": "alertlist"
@@ -1412,10 +1417,15 @@
       },
       "id": 31,
       "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
         "content": "<br/><center><h1>Disk Status</h1></center>",
         "mode": "html"
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "9.3.2",
       "transparent": true,
       "type": "text"
     },
@@ -1577,7 +1587,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -1609,6 +1619,193 @@
         }
       ],
       "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 75,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 0,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 72
+      },
+      "id": 44,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Deleted Files",
+          "target": "aliasByTags(seriesByTag('name=stats_counts.deleted.files'), 'policy')"
+        }
+      ],
+      "title": "DeltaFiles deleted by policy",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 75,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 72
+      },
+      "id": 45,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "Deleted Bytes",
+          "target": "aliasByTags(seriesByTag('name=stats_counts.deleted.bytes'), 'policy')"
+        }
+      ],
+      "title": "Bytes deleted by policy",
+      "type": "timeseries"
     }
   ],
   "refresh": "5m",
@@ -1688,6 +1885,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }

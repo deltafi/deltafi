@@ -2171,6 +2171,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, deltaFileRepo.count());
 		assertEquals("b", deltaFileRepo.findAll().get(0).getDid());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2187,6 +2188,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2203,6 +2205,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 1);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2213,6 +2216,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", true, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2229,6 +2233,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2240,6 +2245,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2252,6 +2258,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now(), null, 0, null, "policy", false, 10);
 		assertTrue(deltaFiles.isEmpty());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2268,6 +2275,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(250L, null, "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2294,6 +2302,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2310,6 +2319,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 2);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2326,6 +2336,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, "a", "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -2337,6 +2348,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile2, deltaFile1));
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -3606,6 +3618,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setContentDeletedReason("MyPolicy");
 		deltaFile3.setVersion(2);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile3, deltaFile2, deltaFile1));
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test
@@ -3616,10 +3629,17 @@ class DeltaFiCoreApplicationTests {
 					.created(OffsetDateTime.now().minusDays(1))
 					.protocolStack(Collections.emptyList())
 					.formattedData(Collections.emptyList())
+					.totalBytes(10)
 					.build());
 		}
 		assertEquals(1500, deltaFileRepo.count());
 		deltaFilesService.delete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_FILES, 500).addTag("policy", "policyName"));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 10000).addTag("policy", "policyName"));
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 5000).addTag("policy", "policyName"));
+		Mockito.verifyNoMoreInteractions(metricRepository);
+
 		// ensure that it looped over each batch and deleted everything
 		assertEquals(0, deltaFileRepo.count());
 	}
