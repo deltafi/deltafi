@@ -21,10 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -60,7 +57,7 @@ public class ContentReference {
      * @return total size
      */
     public long getSize() {
-        return segments.stream().map(Segment::getSize).reduce(0L, Long::sum);
+        return sumSegmentSizes(segments);
     }
 
     /**
@@ -71,6 +68,17 @@ public class ContentReference {
      * @return A trimmed down ContentReference
      */
     public ContentReference subreference(long offset, long size) {
+        return new ContentReference(getMediaType(), subreferenceSegments(offset, size));
+    }
+
+    /**
+     * Returns a list of Segments that copy portions of this ContentReference, at the given offset and size
+     * Handles piecing together the underlying segments properly
+     * @param offset Number of bytes at which to offset the new segments
+     * @param size Size in bytes of the new segments
+     * @return A subset of segments in the ContentReference
+     */
+    public List<Segment> subreferenceSegments(long offset, long size) {
         if (offset < 0) {
             throw new IllegalArgumentException("subreference offset must be positive, got " + offset);
         }
@@ -84,7 +92,7 @@ public class ContentReference {
         }
 
         if (size == 0) {
-            return new ContentReference(getMediaType(), Collections.emptyList());
+            return Collections.emptyList();
         }
 
         List<Segment> newSegments = new ArrayList<>();
@@ -118,6 +126,14 @@ public class ContentReference {
             }
         }
 
-        return new ContentReference(getMediaType(), newSegments);
+        return newSegments;
+    }
+
+    public static long sumSegmentSizes(List<Segment> segments) {
+        return segments != null ? segments.stream().mapToLong(Segment::getSize).sum() : 0;
+    }
+
+    public static long minOffset(List<Segment> segments) {
+        return segments != null ? segments.stream().mapToLong(Segment::getOffset).min().orElse(0) : 0;
     }
 }
