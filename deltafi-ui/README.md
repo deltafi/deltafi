@@ -51,9 +51,20 @@ For example, to run the app and point the proxy at your local DeltaFi instance, 
 
     DELTAFI_DOMAIN=local.deltafi.org npm run dev
 
-##### Mocking
+#### Mocking
+To run the mocking service, run:
 
     VUE_APP_MOCK_RESPONSES=successResponse npm run dev
+
+To update mockServiceWorker.js to a newer version add lines to package.json file:
+
+    "msw": {
+      "workerDirectory": "public"
+      }
+
+Then run command:
+
+    npm install
 
 #### ESLint
 

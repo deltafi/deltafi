@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div>
+  <div class="delete-policies-page">
     <PageHeader heading="Delete Policies">
       <div class="d-flex mb-2">
         <Button label="Export Policies" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies" />
@@ -75,11 +75,11 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
 import { computed, nextTick, onMounted, ref } from "vue";
-import { FilterMatchMode } from "primevue/api";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
+import { FilterMatchMode } from "primevue/api";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
 
@@ -151,5 +151,5 @@ const exportDeletePolicies = () => {
 </script>
 
 <style lang="scss">
-@import "@/styles/pages/delete-policy-configuration-page.scss";
+@import "@/styles/pages/delete-policies-page.scss";
 </style>

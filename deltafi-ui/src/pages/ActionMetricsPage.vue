@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="action-metrics">
+  <div class="action-metrics-page">
     <PageHeader heading="Action Metrics" />
     <span v-if="hasErrors">
       <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
@@ -39,16 +39,17 @@
 </template>
 
 <script setup>
-import Dropdown from "primevue/dropdown";
-import Message from "primevue/message";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
-import QueueMetricsTable from "@/components/QueueMetricsTable.vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import QueueMetricsTable from "@/components/QueueMetricsTable.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlows from "@/composables/useFlows";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import { ref, computed, onUnmounted, onMounted, inject } from "vue";
+import { computed, inject, onMounted, onUnmounted, ref } from "vue";
+
+import Dropdown from "primevue/dropdown";
+import Message from "primevue/message";
 
 const refreshInterval = 5000; // 5 seconds
 const { data: actionMetrics, fetch: getActionMetrics, errors, loaded, loading, actionMetricsUngrouped } = useActionMetrics();

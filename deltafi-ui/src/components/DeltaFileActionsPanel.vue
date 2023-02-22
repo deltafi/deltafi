@@ -74,7 +74,7 @@ import Button from "primevue/button";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ContentDialog from "@/components/ContentDialog.vue";
 import MetadataViewer from "@/components/MetadataViewer.vue";
-import ErrorViewerDialog from "@/components/errors/ViewerDialog.vue";
+import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 
 import useUtilFunctions from "@/composables/useUtilFunctions";

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div>
+  <div class="list-edit">
     <div v-for="(item, i) in list" :key="i" class="list-row mb-2">
       <InputText v-model="list[i]" class="mr-2"></InputText>
       <Button icon="pi pi-times" class="p-button-secondary p-button-outlined remove-button" @click="removeItem(i)" />
@@ -32,64 +32,58 @@ import { ref, defineProps, defineEmits, onMounted, watch } from "vue";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(["update:modelValue"]);
 const props = defineProps({
   modelValue: {
     type: String,
     required: false,
-    default: ''
+    default: "",
   },
 });
-const list = ref([])
+const list = ref([]);
 
 const loadListFromModelValue = () => {
-  list.value = props.modelValue !== null ? props.modelValue.split(',').map((i) => i.trim()) : []
-}
+  list.value = props.modelValue !== null ? props.modelValue.split(",").map((i) => i.trim()) : [];
+};
 
 onMounted(() => {
   loadListFromModelValue();
-})
+});
 
 const emitUpdate = () => {
   if (list.value.length == 0) {
-    emit('update:modelValue', null)
+    emit("update:modelValue", null);
   } else {
-    emit('update:modelValue', list.value.join(', '))
+    emit("update:modelValue", list.value.join(", "));
   }
-}
+};
 
-watch(
-  () => list.value,
-  emitUpdate,
-  { deep: true }
-)
+watch(() => list.value, emitUpdate, { deep: true });
 
-watch(
-  () => props.modelValue,
-  loadListFromModelValue,
-  { deep: true }
-)
+watch(() => props.modelValue, loadListFromModelValue, { deep: true });
 
 const addItem = () => {
   list.value.push(null);
-}
+};
 
 const removeItem = (index) => {
   list.value.splice(index, 1);
-}
+};
 </script>
 
 <style lang="scss">
-.list-row {
-  width: 100%;
-  display: flex;
-}
+.list-edit {
+  .list-row {
+    width: 100%;
+    display: flex;
+  }
 
-.list-row>* {
-  flex: 1 1 auto;
-}
+  .list-row>* {
+    flex: 1 1 auto;
+  }
 
-.remove-button {
-  flex: 0 0 auto;
+  .remove-button {
+    flex: 0 0 auto;
+  }
 }
 </style>

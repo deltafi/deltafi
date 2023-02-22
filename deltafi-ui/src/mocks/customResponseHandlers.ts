@@ -16,8 +16,18 @@
    limitations under the License.
 */
 
-import { rest, graphql } from 'msw'
+import { rest, graphql } from "msw";
 
 export default [
+  rest.get("*", (req) => {
+    return req.passthrough();
+  }),
 
-]
+  graphql.query(/.*/, (req) => {
+    return req.passthrough();
+  }),
+
+  graphql.mutation(/.*/, (req) => {
+    return req.passthrough();
+  }),
+];

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="search-page">
+  <div class="deltafile-search-page">
     <div>
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
@@ -45,9 +45,9 @@
                 <label for="fileNameId">Filename:</label>
                 <InputText v-model.trim="fileName" class="p-inputtext input-area-height responsive-width" placeholder="Filename" />
                 <label for="flowId" class="mt-2">Ingress Flow:</label>
-                <MultiSelect id="flowId" v-model="flowOptionSelected" :options="flowOptions" :placeholder="flowOptionSelected.length > 0 ? flowOptionSelected + ' ' : 'Select an Ingress Flow'" class="deltafi-input-field responsive-width" />
+                <MultiSelect id="flowId" v-model="flowOptionSelected" :options="flowOptions" placeholder="Select an Ingress Flow" class="deltafi-input-field responsive-width" />
                 <label for="egressFlowId" class="mt-2">Egress Flow:</label>
-                <MultiSelect id="egressFlowId" v-model="egressFlowOptionSelected" :options="egressFlowOptions" :placeholder="egressFlowOptionSelected.length > 0 ? egressFlowOptionSelected + ' ' : 'Select an Egress Flow'" class="deltafi-input-field responsive-width" />
+                <MultiSelect id="egressFlowId" v-model="egressFlowOptionSelected" :options="egressFlowOptions" placeholder="Select an Egress Flow" class="deltafi-input-field responsive-width" />
                 <label for="stageId" class="mt-2">Size:</label>
                 <div class="size-container">
                   <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
@@ -58,14 +58,11 @@
               </div>
               <div class="flex-column flex-column-small">
                 <label for="testModeState">Test Mode:</label>
-                <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-                <Dropdown id="testModeState" v-model="testModeOptionSelected" :placeholder="testModeOptionSelected ? testModeOptionSelected.name + ' ' : 'Select if in Test Mode'" :options="testModeOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
+                <Dropdown id="testModeState" v-model="testModeOptionSelected" placeholder="Select if in Test Mode" :options="testModeOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
                 <label for="egressedState" class="mt-2">Egressed:</label>
-                <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-                <Dropdown id="egressState" v-model="egressedOptionSelected" :placeholder="egressedOptionSelected ? egressedOptionSelected.name + ' ' : 'Select if Egressed'" :options="egressedOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
+                <Dropdown id="egressState" v-model="egressedOptionSelected" placeholder="Select if Egressed" :options="egressedOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
                 <label for="filteredState" class="mt-2">Filtered:</label>
-                <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-                <Dropdown id="filteredState" v-model="filteredOptionSelected" :placeholder="filteredOptionSelected ? filteredOptionSelected.name + ' ' : 'Select if Filtered'" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
+                <Dropdown id="filteredState" v-model="filteredOptionSelected" placeholder="Select if Filtered" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
                 <label for="filteredReasonId" class="mt-2">Filtered Cause:</label>
                 <InputText v-model="filteredCause" class="p-inputtext input-area-height" placeholder="Filtered Cause" />
               </div>
@@ -73,11 +70,9 @@
                 <label for="requeueMinId">Requeue Count:</label>
                 <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Min" />
                 <label for="stageId" class="mt-2">Stage:</label>
-                <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-                <Dropdown id="stageId" v-model="stageOptionSelected" :placeholder="stageOptionSelected ? stageOptionSelected.name + ' ' : 'Select a Stage'" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <Dropdown id="stageId" v-model="stageOptionSelected" placeholder="Select a Stage" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="filteredState" class="mt-2">Domain:</label>
-                <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-                <Dropdown id="domain" v-model="domainOptionSelected" :placeholder="domainOptionSelected ? domainOptionSelected.name + ' ' : 'Select a Domain'" :options="domainOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
+                <Dropdown id="domain" v-model="domainOptionSelected" placeholder="Select a Domain" :options="domainOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="metadataState" class="mt-2">Indexed Metadata:</label>
                 <div class="metadata-chips">
                   <Chip v-for="item in metadataArray" :key="item" v-tooltip.top="{ value: invalidMetadataTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeMetadataItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
@@ -101,7 +96,7 @@
       <template #icons>
         <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
-      <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
+      <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" loading-icon="pi pi-spinner" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>
         <template #loading>Loading results. Please wait.</template>
         <Column field="did" header="DID" class="did-column">
@@ -136,8 +131,22 @@
 </template>
 
 <script setup>
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import DidLink from "@/components/DidLink.vue";
+import FormattedBytes from "@/components/FormattedBytes.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import Timestamp from "@/components/Timestamp.vue";
+import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
+import useDomains from "@/composables/useDomains";
+import useFlows from "@/composables/useFlows";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import { ref, computed, watch, onMounted, nextTick, inject, onBeforeMount } from "vue";
+import { useRoute } from "vue-router";
+import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core";
+import _ from "lodash";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+
 import Button from "primevue/button";
 import Calendar from "primevue/calendar";
 import Column from "primevue/column";
@@ -145,26 +154,12 @@ import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
 import MultiSelect from "primevue/multiselect";
 import Menu from "primevue/menu";
+import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import Chip from "primevue/chip";
 import OverlayPanel from "primevue/overlaypanel";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import FormattedBytes from "@/components/FormattedBytes.vue";
-import Paginator from "primevue/paginator";
-import PageHeader from "@/components/PageHeader.vue";
-import Timestamp from "@/components/Timestamp.vue";
-import DidLink from "@/components/DidLink.vue";
-import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
-import useUtilFunctions from "@/composables/useUtilFunctions";
-import useDomains from "@/composables/useDomains";
-import { useRoute } from "vue-router";
-import { ref, computed, watch, onMounted, nextTick, inject, onBeforeMount } from "vue";
-import { useStorage, StorageSerializers } from "@vueuse/core";
-import _ from "lodash";
-import useFlows from "@/composables/useFlows";
-import { useUrlSearchParams } from "@vueuse/core";
 
 dayjs.extend(utc);
 

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div>
+  <div class="roles-page">
     <PageHeader heading="Role Management">
       <Button :hidden="!$hasPermission('RoleCreate')" label="Add Role" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newRole" />
     </PageHeader>
@@ -79,20 +79,21 @@
 </template>
 
 <script setup>
+import PageHeader from "@/components/PageHeader.vue";
+import PermissionCheckboxes from "@/components/PermissionCheckboxes.vue";
+import PermissionPill from "@/components/PermissionPill.vue";
+import Timestamp from "@/components/Timestamp.vue";
+import usePermissions from "@/composables/usePermissions";
+import useRoles from "@/composables/useRoles";
 import { onMounted, ref, inject, watch } from "vue";
+
+import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
-import Button from "primevue/button";
-import PageHeader from "@/components/PageHeader.vue";
-import PermissionPill from "@/components/PermissionPill.vue";
-import PermissionCheckboxes from "@/components/PermissionCheckboxes.vue";
 import Panel from "primevue/panel";
-import useRoles from "@/composables/useRoles";
-import Timestamp from "@/components/Timestamp.vue";
-import usePermissions from "@/composables/usePermissions";
 
 const submitted = ref(false);
 const role = ref({ name: "", permissions: [] });
@@ -143,7 +144,7 @@ const newRole = () => {
 };
 
 const saveRole = async () => {
-  const { id, created_at, updated_at, ...saveParams } = role.value; // eslint-disable-line no-unused-vars
+  const { id, created_at, updated_at, ...saveParams } = role.value; // eslint-disable-line @typescript-eslint/no-unused-vars
   try {
     isNew.value ? await create(saveParams) : await updateRole(role.value.id, saveParams);
     await fetchRoles();
@@ -180,14 +181,5 @@ watch(
 </script>
 
 <style lang="scss">
-.roles-panel {
-  td.name-col {
-    width: 10rem;
-  }
-
-  td.timestamp-col {
-    font-size: 90%;
-    width: 12rem;
-  }
-}
+@import "@/styles/pages/roles-page.scss";
 </style>

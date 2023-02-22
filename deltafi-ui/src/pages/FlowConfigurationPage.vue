@@ -29,12 +29,13 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
-import Message from "primevue/message";
-import PageHeader from "@/components/PageHeader.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import useFlowConfiguration from "@/composables/useFlowConfiguration";
-import { onMounted, computed } from "vue";
+import { computed, onMounted } from "vue";
+
+import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
 
 const { data: flowConfigData, fetch: fetchFlowConfiguration, errors } = useFlowConfiguration();

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="install-plugin-configuration-body">
+  <div class="plugin-configuration-dialog">
     <div class="install-plugin-panel">
       <div class="pb-0">
         <div v-if="!_.isEmpty(errorsList)" class="pt-2">

@@ -17,7 +17,6 @@
 */
 
 import Ajv from "ajv";
-import _ from "lodash";
 
 export default function useMetadataConfiguration() {
   const ajv = new Ajv({ allErrors: true });

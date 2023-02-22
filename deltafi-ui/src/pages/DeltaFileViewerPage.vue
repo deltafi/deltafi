@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="deltafile-viewer">
+  <div class="deltafile-viewer-page">
     <PageHeader :heading="pageHeader">
       <div class="btn-toolbar">
         <Button v-if="loaded" label="Refresh" :icon="refreshButtonIcon" class="mr-3 p-button p-button-outlined" @click="loadDeltaFileData" />
@@ -85,31 +85,32 @@
 </template>
 
 <script setup>
-import InputText from "primevue/inputtext";
-import Button from "primevue/button";
-import Dialog from "primevue/dialog";
-import ConfirmDialog from "primevue/confirmdialog";
-import Menu from "primevue/menu";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
-import DeltaFileIndexedMetadataPanel from "@/components/DeltaFileIndexedMetadataPanel.vue";
-import MetadataViewer from "@/components/MetadataViewer.vue";
-import MetadataDialog from "@/components/MetadataDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
-import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";
 import DeltaFileDomainsPanel from "@/components/DeltaFileDomainsPanel.vue";
 import DeltaFileEnrichmentPanel from "@/components/DeltaFileEnrichmentPanel.vue";
+import DeltaFileIndexedMetadataPanel from "@/components/DeltaFileIndexedMetadataPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
-import HighlightedCode from "@/components/HighlightedCode.vue";
+import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";
+import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import HighlightedCode from "@/components/HighlightedCode.vue";
+import MetadataDialog from "@/components/MetadataDialog.vue";
+import MetadataViewer from "@/components/MetadataViewer.vue";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
-import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
-import { reactive, ref, computed, watch, onMounted, inject } from "vue";
+import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import ScrollTop from "primevue/scrolltop";
+
+import Button from "primevue/button";
+import ConfirmDialog from "primevue/confirmdialog";
+import Dialog from "primevue/dialog";
+import InputText from "primevue/inputtext";
+import Menu from "primevue/menu";
 import Message from "primevue/message";
+import ScrollTop from "primevue/scrolltop";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
@@ -262,7 +263,7 @@ const allMetadata = computed(() => {
     for (const action of actions) {
       let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
       if (metadata.length > 0) {
-        content[action] = Object.entries(metadata).map(([key, value]) => ({key,value}));
+        content[action] = Object.entries(metadata).map(([key, value]) => ({ key, value }));
       }
     }
     return content;

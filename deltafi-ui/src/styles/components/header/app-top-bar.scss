@@ -16,6 +16,8 @@
    limitations under the License.
 */
 
+@import '/src/styles/global.scss';
+
 .navbar-brand-wrapper {
   width: 300px;
 }
@@ -63,4 +65,18 @@
   margin-left: 1rem;
   width: 1.9rem;
   height: 1.9rem;
+}
+
+.navbar-toggler {
+  color: hsla(0,0%,100%,.5) !important;
+  border-color: hsla(0,0%,100%,.1) !important;
+  &:hover, 
+  &:focus,
+  &:active {
+    outline: none !important;
+    box-shadow: none !important;
+    color: hsla(0,0%,100%,.5) !important;
+    border-color: hsla(0,0%,100%,.1) !important;
+    // Styles here
+  }
 }

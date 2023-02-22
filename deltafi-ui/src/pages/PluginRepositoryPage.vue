@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div>
+  <div class="plugin-repository-page">
     <PageHeader heading="Plugin Repositories">
       <div class="d-flex mb-2">
         <div>
@@ -27,14 +27,14 @@
         </div>
       </div>
     </PageHeader>
-    <Panel header="Plugin Repositories" class="plugin-repo-config-panel table-panel">
+    <Panel header="Plugin Repositories" class="plugin-repository-panel table-panel">
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
           <InputText v-model="filters['global'].value" v-tooltip.left="'Search on pluginGroupIds, imageRepositoryBase, and imagePullSecret'" placeholder="Search" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :value="pluginImageRepositories" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-repo-config-table" :global-filter-fields="['pluginGroupIds', 'imageRepositoryBase', 'imagePullSecret']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="pluginImageRepositories" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-repository-table" :global-filter-fields="['pluginGroupIds', 'imageRepositoryBase', 'imagePullSecret']" :row-hover="true">
         <template #empty> No Plugin Repositories to display </template>
         <Column field="imageRepositoryBase" header="Image Repository Base" :sortable="true" :style="{ width: 'auto' }">
           <template #body="{ data }">
@@ -49,7 +49,7 @@
           </template>
         </Column>
         <Column field="imagePullSecret" header="Image Pull Secret" :sortable="true" :style="{ width: '20%' }" />
-        <Column :style="{ width: '5%' }" class="plugin-repo-config-actions-column" :hidden="!$hasSomePermissions('PluginImageRepoWrite', 'PluginImageRepoDelete')">
+        <Column :style="{ width: '5%' }" class="plugin-repository-actions-column" :hidden="!$hasSomePermissions('PluginImageRepoWrite', 'PluginImageRepoDelete')">
           <template #body="{ data }">
             <div class="d-flex justify-content-between">
               <DialogTemplate component-name="pluginRepository/PluginRepositoryConfigurationDialog" header="Update Plugin Repository" dialog-width="40vw" :row-data-prop="data" @reload-plugin-repos="fetchPluginImageRepositories()">
@@ -65,16 +65,16 @@
 </template>
 
 <script setup>
-import PluginImageRepositoryRemoveButton from "@/components/pluginRepository/PluginRepositoryRemoveButton.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import PluginImageRepositoryRemoveButton from "@/components/pluginRepository/PluginRepositoryRemoveButton.vue";
 import usePlugins from "@/composables/usePlugins";
 import { nextTick, onMounted, ref } from "vue";
-import { FilterMatchMode } from "primevue/api";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
+import { FilterMatchMode } from "primevue/api";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
 
@@ -98,5 +98,5 @@ const filters = ref({
 </script>
 
 <style lang="scss">
-@import "@/styles/pages/plugin-repository-configuration-page.scss";
+@import "@/styles/pages/plugin-repository-page.scss";
 </style>

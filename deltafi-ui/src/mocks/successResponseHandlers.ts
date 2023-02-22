@@ -16,7 +16,6 @@
    limitations under the License.
 */
 
-import _ from "lodash";
 import { rest, graphql } from "msw";
 
 export default [

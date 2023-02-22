@@ -17,74 +17,76 @@
 -->
 
 <template>
-  <Panel header="DeltaFiles with Errors" @contextmenu="onPanelRightClick">
-    <ContextMenu ref="menu" :model="menuItems" />
-    <template #icons>
-      <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
-        <span class="fas fa-bars" />
-      </Button>
-      <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="errors.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
-    </template>
-    <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-      <template #empty>No results to display.</template>
-      <template #loading>Loading. Please wait...</template>
-      <Column class="expander-column" :expander="true" />
-      <Column field="did" header="DID" class="did-column">
-        <template #body="{ data }">
-          <DidLink :did="data.did" />
-        </template>
-      </Column>
-      <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
-      <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
-      <Column field="created" header="Created" :sortable="true">
-        <template #body="row">
-          <Timestamp :timestamp="row.data.created" />
-        </template>
-      </Column>
-      <Column field="modified" header="Modified" :sortable="true">
-        <template #body="row">
-          <Timestamp :timestamp="row.data.modified" />
-        </template>
-      </Column>
-      <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false">
-        <template #body="{ data }">
-          <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
-          {{ latestError(data.actions).errorCause }}
-        </template>
-        <template #filter="{ filterModel, filterCallback }">
-          <Dropdown v-model="filterModel.value" placeholder="Select an Error Message" :options="errorsMessages" :filter="true" option-label="message" show-clear :editable="false" class="p-column-filter deltafi-input-field ml-3" @change="filterCallback()" />
-        </template>
-      </Column>
-      <template #expansion="error">
-        <div class="errors-Subtable">
-          <DataTable responsive-layout="scroll" :value="error.data.actions" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
-            <Column field="name" header="Action" />
-            <Column field="state" header="State" />
-            <Column field="created" header="Created">
-              <template #body="row">
-                <Timestamp :timestamp="row.data.created" />
-              </template>
-            </Column>
-            <Column field="modified" header="Modified">
-              <template #body="row">
-                <Timestamp :timestamp="row.data.modified" />
-              </template>
-            </Column>
-            <Column field="errorCause" header="Error Cause">
-              <template #body="action">
-                <span v-if="['ERROR', 'RETRIED'].includes(action.data.state) && action.data.errorCause !== null">{{ action.data.errorCause }}</span>
-                <span v-else>N/A</span>
-              </template>
-            </Column>
-          </DataTable>
-        </div>
+  <div class="all-panel">
+    <Panel header="DeltaFiles with Errors" @contextmenu="onPanelRightClick">
+      <ContextMenu ref="menu" :model="menuItems" />
+      <template #icons>
+        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+          <span class="fas fa-bars" />
+        </Button>
+        <Menu ref="menu" :model="menuItems" :popup="true" />
+        <Paginator v-if="errors.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
-    </DataTable>
-  </Panel>
-  <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
-  <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
-  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
+      <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+        <template #empty>No results to display.</template>
+        <template #loading>Loading. Please wait...</template>
+        <Column class="expander-column" :expander="true" />
+        <Column field="did" header="DID" class="did-column">
+          <template #body="{ data }">
+            <DidLink :did="data.did" />
+          </template>
+        </Column>
+        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
+        <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
+        <Column field="created" header="Created" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.created" />
+          </template>
+        </Column>
+        <Column field="modified" header="Modified" :sortable="true">
+          <template #body="row">
+            <Timestamp :timestamp="row.data.modified" />
+          </template>
+        </Column>
+        <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false">
+          <template #body="{ data }">
+            <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
+            {{ latestError(data.actions).errorCause }}
+          </template>
+          <template #filter="{ filterModel, filterCallback }">
+            <Dropdown v-model="filterModel.value" placeholder="Select an Error Message" :options="errorsMessages" :filter="true" option-label="message" show-clear :editable="false" class="p-column-filter deltafi-input-field ml-3" @change="filterCallback()" />
+          </template>
+        </Column>
+        <template #expansion="error">
+          <div class="errors-Subtable">
+            <DataTable responsive-layout="scroll" :value="error.data.actions" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
+              <Column field="name" header="Action" />
+              <Column field="state" header="State" />
+              <Column field="created" header="Created">
+                <template #body="row">
+                  <Timestamp :timestamp="row.data.created" />
+                </template>
+              </Column>
+              <Column field="modified" header="Modified">
+                <template #body="row">
+                  <Timestamp :timestamp="row.data.modified" />
+                </template>
+              </Column>
+              <Column field="errorCause" header="Error Cause">
+                <template #body="action">
+                  <span v-if="['ERROR', 'RETRIED'].includes(action.data.state) && action.data.errorCause !== null">{{ action.data.errorCause }}</span>
+                  <span v-else>N/A</span>
+                </template>
+              </Column>
+            </DataTable>
+          </div>
+        </template>
+      </DataTable>
+    </Panel>
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
+    <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
+    <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
+  </div>
 </template>
 
 <script setup>
@@ -95,7 +97,7 @@ import Button from "primevue/button";
 import Panel from "primevue/panel";
 import Menu from "primevue/menu";
 import ContextMenu from "primevue/contextmenu";
-import ErrorViewerDialog from "@/components/errors/ViewerDialog.vue";
+import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import Paginator from "primevue/paginator";
@@ -346,8 +348,10 @@ const setPersistedParams = () => {
 </script>
 
 <style lang="scss">
-.p-column-filter-overlay {
-  margin-left: -18px;
-  max-width: 300px;
+.all-panel {
+  .p-column-filter-overlay {
+    margin-left: -18px;
+    max-width: 300px;
+  }
 }
 </style>

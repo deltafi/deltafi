@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="queue-metrics">
+  <div class="queue-metrics-page">
     <PageHeader heading="Queue Metrics" />
     <div class="row">
       <div class="col-12">
@@ -40,13 +40,14 @@
 </template>
 
 <script setup>
+import PageHeader from "@/components/PageHeader.vue";
+import Timestamp from "@/components/Timestamp.vue";
+import useQueueMetrics from "@/composables/useQueueMetrics";
+import { computed, onMounted, onUnmounted, inject } from "vue";
+
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Panel from "primevue/panel";
-import PageHeader from "@/components/PageHeader.vue";
-import useQueueMetrics from "@/composables/useQueueMetrics";
-import { computed, onMounted, onUnmounted, inject } from "vue";
-import Timestamp from "@/components/Timestamp.vue";
 
 const refreshInterval = 5000; // 5 seconds
 const { data: queueMetrics, loaded, loading, fetch: fetchQueueMetrics } = useQueueMetrics();

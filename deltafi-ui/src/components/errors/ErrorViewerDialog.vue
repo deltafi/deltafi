@@ -80,5 +80,5 @@ const header = computed(() => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/error-viewer.scss";
+@import "@/styles/components/errors/error-viewer-dialog.scss";
 </style>

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="dashboard">
+  <div class="dashboard-page">
     <PageHeader heading="Dashboard">
       <Button class="p-button p-button-outlined deltafi-input-field" icon="fa fa-sync-alt" label="Refresh" @click="refreshDashboard" />
     </PageHeader>
@@ -32,9 +32,10 @@
 </template>
 
 <script setup>
-import Button from "primevue/button";
 import PageHeader from "@/components/PageHeader.vue";
 import { defineAsyncComponent, reactive, ref } from "vue";
+
+import Button from "primevue/button";
 
 const refreshKey = ref(0)
 const refreshDashboard = () => refreshKey.value += 1;

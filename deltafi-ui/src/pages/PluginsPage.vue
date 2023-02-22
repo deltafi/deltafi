@@ -77,11 +77,11 @@ import PageHeader from "@/components/PageHeader.vue";
 import PluginActionsPanel from "@/components/plugin/ActionsPanel.vue";
 import PluginRemoveButton from "@/components/plugin/PluginRemoveButton.vue";
 import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
-import usePlugins from "@/composables/usePlugins";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import useNotifications from "@/composables/useNotifications";
+import usePlugins from "@/composables/usePlugins";
 import { computed, nextTick, onMounted, provide, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-
 import _ from "lodash";
 
 import Button from "primevue/button";
@@ -90,7 +90,6 @@ import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import Message from "primevue/message";
 import Panel from "primevue/panel";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import Splitter from "primevue/splitter";
 import SplitterPanel from "primevue/splitterpanel";
 

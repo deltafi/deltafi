@@ -17,7 +17,6 @@
 */
 
 import useGraphiteApi from "./useGraphiteApi";
-import _ from "lodash";
 
 export default function useGraphiteQueryBuilder() {
   const { data, fetch } = useGraphiteApi();

@@ -17,23 +17,25 @@
 -->
 
 <template>
-  <PageHeader heading="Flows">
-    <div class="btn-toolbar mb-2 mb-md-0">
-      <DialogTemplate component-name="flow/FlowConfiguration" header="Flow Configuration">
-        <Button v-tooltip.top.hover="'View Flow Configuration'" label="Flow Configuration" class="p-button-sm p-button-secondary p-button-outlined ml-3" />
-      </DialogTemplate>
-      <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3 mr-3" />
-      <span class="p-input-icon-left">
-        <i class="pi pi-search" />
-        <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt" />
-      </span>
+  <div class="flow-plans-page">
+    <PageHeader heading="Flows">
+      <div class="btn-toolbar mb-2 mb-md-0">
+        <DialogTemplate component-name="flow/FlowConfiguration" header="Flow Configuration">
+          <Button v-tooltip.top.hover="'View Flow Configuration'" label="Flow Configuration" class="p-button-sm p-button-secondary p-button-outlined ml-3" />
+        </DialogTemplate>
+        <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3 mr-3" />
+        <span class="p-input-icon-left">
+          <i class="pi pi-search" />
+          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt" />
+        </span>
+      </div>
+    </PageHeader>
+    <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
+    <div v-else>
+      <FlowDataTable flow-type-prop="ingress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+      <FlowDataTable flow-type-prop="enrich" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+      <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
     </div>
-  </PageHeader>
-  <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
-  <div v-else>
-    <FlowDataTable flow-type-prop="ingress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
-    <FlowDataTable flow-type-prop="enrich" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
-    <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
   </div>
 </template>
 
@@ -44,11 +46,11 @@ import FlowDataTable from "@/components/flow/FlowDataTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { onBeforeMount, ref, computed } from "vue";
+import _ from "lodash";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
-import _ from "lodash";
 
 const { getAllFlows, loaded, loading } = useFlowQueryBuilder();
 

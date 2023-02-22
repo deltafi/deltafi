@@ -84,7 +84,7 @@ const confirmationPopup = (event, policyId, policyName, state) => {
         notify.info("Disabling Delete Policy", `Disabling policy ${policyName}.`, 3000);
         toggleDeletePolicyState(policyId, !state);
       },
-      reject: () => {},
+      reject: () => { },
     });
   } else {
     toggleDeletePolicyState(policyId, !state);

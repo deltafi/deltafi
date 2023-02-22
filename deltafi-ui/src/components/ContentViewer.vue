@@ -78,6 +78,8 @@ import Column from "primevue/column";
 
 import hexy from "hexy";
 import _ from "lodash";
+import { Buffer } from 'buffer';
+
 
 const props = defineProps({
   contentReference: {

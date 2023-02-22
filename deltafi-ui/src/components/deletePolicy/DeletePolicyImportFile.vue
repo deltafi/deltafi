@@ -17,8 +17,8 @@
 -->
 
 <template>
-  <span>
-    <span class="delete-policy-import-file">
+  <div class="delete-policy-import-file">
+    <span class="delete-policy-file-uploader">
       <FileUpload ref="fileUploader" auto mode="basic" choose-label="Import Policies" accept=".json,application/json" :file-limit="1" custom-upload class="p-button-sm p-button-secondary p-button-outlined mx-1" @uploader="preUploadValidation" @click="setOverlayPanelPosition" />
     </span>
     <OverlayPanel ref="errorOverlayPanel" dismissable show-close-icon @hide="clearUploadErrors">
@@ -30,7 +30,7 @@
         </ul>
       </Message>
     </OverlayPanel>
-  </span>
+  </div>
 </template>
 
 <script setup>
@@ -104,5 +104,5 @@ const setOverlayPanelPosition = (event) => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/delete-policy-import-file.scss";
+@import "@/styles/components/deletePolicy/delete-policy-import-file.scss";
 </style>

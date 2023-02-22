@@ -38,13 +38,14 @@
 </template>
 
 <script setup>
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
-import Dialog from "primevue/dialog";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, ref, defineProps, defineEmits, watch } from "vue";
-import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
+
+import Button from "primevue/button";
+import Dialog from "primevue/dialog";
+import InputText from "primevue/inputtext";
 
 const displayAcknowledgeDialog = ref(false);
 const batchCompleteValue = ref(0);
@@ -126,4 +127,6 @@ const close = () => {
 };
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+
+</style>

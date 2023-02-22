@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="delete-policy-body">
+  <div class="delete-policy-configuration-dialog">
     <div class="delete-policy-panel">
       <div class="pb-0">
         <div v-if="!_.isEmpty(errorsList)" class="pt-2">
@@ -235,5 +235,5 @@ const clearErrors = () => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/delete-policy-configuration-dialog.scss";
+@import "@/styles/components/deletePolicy/delete-policy-configuration-dialog.scss";
 </style>

@@ -36,10 +36,11 @@
 
 <script setup>
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import usePlugins from "@/composables/usePlugins";
-import Panel from "primevue/panel";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import usePlugins from "@/composables/usePlugins";
 import { computed, onMounted } from "vue";
+
+import Panel from "primevue/panel";
 
 const { data: plugins, fetch: fetchPlugins, loading } = usePlugins();
 

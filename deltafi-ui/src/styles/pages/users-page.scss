@@ -16,13 +16,43 @@
    limitations under the License.
 */
 
-.flow-plans-page {
-  .flow-panel-search-txt {
-    font-size: 1rem !important;
-  }
+.users-page {
+  .users-panel {
+    td.id-col {
+      width: 1rem;
+    }
 
-  .p-divider.p-component.p-divider-vertical.p-divider-solid.p-divider-center.mx-0.flow-divider-color:before {
-    border-left: 1px #f7f8fa !important;
-    border-left-style: solid !important;
+    td.dn-col {
+      font-family: monospace;
+      font-size: 90%;
+    }
+
+    td.timestamp-col {
+      font-size: 90%;
+      width: 12rem;
+    }
+
+    td.domains-col {
+      .badge {
+        background-color: #dee2e6;
+        font-size: 90%;
+        font-weight: normal;
+      }
+    }
+  }
+}
+
+.users-page-dialog {
+  .p-tabview .p-tabview-panels {
+    padding: 1rem 0 0 0;
+  }
+  .field-checkbox {
+    display: flex;
+    label {
+      display: flex;
+      align-items: center;
+      margin-top: 0.15rem;
+      margin-left: 0.4rem;
+    }
   }
 }

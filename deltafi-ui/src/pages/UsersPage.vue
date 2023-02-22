@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div>
+  <div class="users-page">
     <PageHeader heading="User Management">
       <Button :hidden="!$hasPermission('UserCreate')" label="Add User" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newUser" />
     </PageHeader>
@@ -54,7 +54,7 @@
         </Column>
       </DataTable>
     </Panel>
-    <Dialog v-model:visible="userDialog" :style="{ width: '60vw' }" header="User Details" :modal="true" class="p-fluid user-dialog">
+    <Dialog v-model:visible="userDialog" :style="{ width: '60vw' }" header="User Details" :modal="true" class="p-fluid users-page-dialog">
       <Message v-if="errors.length" severity="error">
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
@@ -123,27 +123,28 @@
 </template>
 
 <script setup>
+import PermissionCheckboxes from "@/components/PermissionCheckboxes.vue";
+import PermissionPill from "@/components/PermissionPill.vue";
+import Timestamp from "@/components/Timestamp.vue";
+import usePermissions from "@/composables/usePermissions";
+import useRoles from "@/composables/useRoles";
+import useUsers from "@/composables/useUsers";
 import { onMounted, ref, inject, watch } from "vue";
+
+import Button from "primevue/button";
+import Checkbox from "primevue/checkbox";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
-import Password from "primevue/password";
 import Message from "primevue/message";
-import Button from "primevue/button";
-import PageHeader from "@/components/PageHeader.vue";
-import RolePill from "@/components/RolePill.vue";
-import Panel from "primevue/panel";
-import useUsers from "@/composables/useUsers";
-import useRoles from "@/composables/useRoles";
-import Timestamp from "@/components/Timestamp.vue";
-import TabView from "primevue/tabview";
-import TabPanel from "primevue/tabpanel";
 import MultiSelect from "primevue/multiselect";
-import Checkbox from "primevue/checkbox";
-import usePermissions from "@/composables/usePermissions";
-import PermissionPill from "@/components/PermissionPill.vue";
-import PermissionCheckboxes from "@/components/PermissionCheckboxes.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import Panel from "primevue/panel";
+import Password from "primevue/password";
+import RolePill from "@/components/RolePill.vue";
+import TabPanel from "primevue/tabpanel";
+import TabView from "primevue/tabview";
 
 const submitted = ref(false);
 const user = ref({ role_ids: [] });
@@ -203,7 +204,7 @@ const newUser = () => {
 };
 
 const saveUser = async () => {
-  const { id, created_at, updated_at, roles, permissions, ...saveParams } = user.value; // eslint-disable-line no-unused-vars
+  const { id, created_at, updated_at, roles, permissions, ...saveParams } = user.value; // eslint-disable-line @typescript-eslint/no-unused-vars
   try {
     isNew.value ? await create(saveParams) : await updateUser(user.value.id, saveParams);
     await fetchUsers();
@@ -242,44 +243,5 @@ watch(
 </script>
 
 <style lang="scss">
-.users-panel {
-  td.id-col {
-    width: 1rem;
-  }
-
-  td.dn-col {
-    font-family: monospace;
-    font-size: 90%;
-  }
-
-  td.timestamp-col {
-    font-size: 90%;
-    width: 12rem;
-  }
-
-  td.domains-col {
-    .badge {
-      background-color: #dee2e6;
-      font-size: 90%;
-      font-weight: normal;
-    }
-  }
-}
-
-.user-dialog {
-  .p-tabview .p-tabview-panels {
-    padding: 1rem 0 0 0;
-  }
-
-  .field-checkbox {
-    display: flex;
-
-    label {
-      display: flex;
-      align-items: center;
-      margin-top: 0.15rem;
-      margin-left: 0.4rem;
-    }
-  }
-}
+@import "@/styles/pages/users-page.scss";
 </style>

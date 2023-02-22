@@ -16,34 +16,47 @@
    limitations under the License.
 */
 
-.action-metrics-page {
-  .p-panel-content {
-    padding: 0;
-    border: none;
-  }
-  .p-tabview .p-tabview-panels {
-    padding: 1rem 0 0 0;
-  }
-  .p-tabview-nav-link:focus {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-  .p-tabview-nav-link:hover {
-    text-decoration: none;
-  }
-  .col-6 .metric-column {
-    text-align: right !important;
-    width: 20%;
-  }
-  .col-12 .metric-column {
-    text-align: right !important;
-    width: 15%;
-  }
-  .action-metrics-panel {
+.system-snapshots-page {
+  .system-snapshots-panel {
+    .p-datatable .p-paginator {
+      display: none;
+    }
+  
     .p-panel-header {
       padding: 0 1.25rem;
+  
       .p-panel-title {
         padding: 1rem 0;
+      }
+    }
+  
+    .date-column {
+      width: 15rem;
+    }
+  
+    .p-paginator {
+      background: inherit !important;
+      color: inherit  !important;
+      border: none !important;
+      padding: 0.2rem 0!important;
+      font-size: inherit !important;
+      .p-paginator-current {
+        background: unset;
+        color: unset;
+        border: unset;
+      }
+    }
+  
+    .p-input-icon-left {
+      padding-top: 0.2rem;
+  
+      i {
+        margin-top: -0.4rem;
+      }
+  
+      .p-inputtext {
+        padding-top: 6px;
+        padding-bottom: 5px;
       }
     }
   }

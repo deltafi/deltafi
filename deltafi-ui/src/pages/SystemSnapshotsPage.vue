@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="system-snapshots">
+  <div class="system-snapshots-page">
     <PageHeader heading="System Snapshots">
       <div class="d-flex mb-2">
         <FileUpload ref="fileUploader" v-has-permission:SnapshotCreate mode="basic" choose-label="Import Snapshot" class="p-button p-button-secondary p-button-sm p-button-outlined p-button-secondary-upload" :auto="true" :custom-upload="true" @uploader="onUpload" />
@@ -86,24 +86,25 @@
 </template>
 
 <script setup>
-import PageHeader from "@/components/PageHeader.vue";
-import Button from "primevue/button";
-import Panel from "primevue/panel";
-import { onMounted, ref } from "vue";
-import InputText from "primevue/inputtext";
-import useSystemSnapshots from "@/composables/useSnapshots";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import Dialog from "primevue/dialog";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
 import HighlightedCode from "@/components/HighlightedCode.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useNotifications from "@/composables/useNotifications";
-import { FilterMatchMode } from "primevue/api";
-import ConfirmDialog from "primevue/confirmdialog";
-import { useConfirm } from "primevue/useconfirm";
-import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
+import useSystemSnapshots from "@/composables/useSnapshots";
+import { onMounted, ref } from "vue";
 import { EnumType } from "json-to-graphql-query";
+
+import Button from "primevue/button";
+import Column from "primevue/column";
+import ConfirmDialog from "primevue/confirmdialog";
+import DataTable from "primevue/datatable";
+import Dialog from "primevue/dialog";
+import { FilterMatchMode } from "primevue/api";
+import InputText from "primevue/inputtext";
 import Paginator from "primevue/paginator";
+import Panel from "primevue/panel";
+import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
 const pageRows = ref(20);
@@ -254,46 +255,5 @@ const confirmCreate = async () => {
 </script>
 
 <style lang="scss">
-.system-snapshots-panel {
-  .p-datatable .p-paginator {
-    display: none;
-  }
-
-  .p-panel-header {
-    padding: 0 1.25rem;
-
-    .p-panel-title {
-      padding: 1rem 0;
-    }
-  }
-
-  .date-column {
-    width: 15rem;
-  }
-
-  .p-paginator {
-    border: none !important;
-    padding: 0.2rem 0 !important;
-    font-size: inherit !important;
-
-    .p-paginator-current {
-      background: unset;
-      color: unset;
-      border: unset;
-    }
-  }
-
-  .p-input-icon-left {
-    padding-top: 0.2rem;
-
-    i {
-      margin-top: -0.4rem;
-    }
-
-    .p-inputtext {
-      padding-top: 6px;
-      padding-bottom: 5px;
-    }
-  }
-}
+@import "@/styles/pages/system-snapshots-page.scss";
 </style>

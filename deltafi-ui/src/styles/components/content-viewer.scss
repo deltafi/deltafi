@@ -30,18 +30,19 @@
   .content-viewer-container {
     display: flex;
     flex-direction: column;
-  }
-  .content-viewer-section {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .scrollable-content {
-    background-color: #303030;
-    font-family: "Courier New", Courier, monospace;
-    flex-grow: 1;
-    overflow: auto;
-    min-height: 0;
+
+    .content-viewer-section {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .scrollable-content {
+      background-color: #303030;
+      font-family: "Courier New", Courier, monospace;
+      flex-grow: 1;
+      overflow: auto;
+      min-height: 0;
+    }
   }
 }

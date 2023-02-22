@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div>
+  <div class="ingress-routing-page">
     <PageHeader heading="Ingress Routing">
       <div class="d-flex mb-2">
         <Button label="Export Rules" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies()" />
@@ -142,5 +142,5 @@ const exportDeletePolicies = () => {
 </script>
 
 <style lang="scss">
-@import "@/styles/pages/ingress-routing-configuration-page.scss";
+@import "@/styles/pages/ingress-routing-page.scss";
 </style>

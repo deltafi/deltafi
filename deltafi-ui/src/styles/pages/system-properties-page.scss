@@ -16,19 +16,21 @@
    limitations under the License.
 */
 
-.property-set {
-  .p-panel-content {
-    padding: 0;
-    border: none;
-  }
-  .p-cell-editing {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    input {
-      width: 100%;
+.system-properties-page {
+  .property-set {
+    .p-panel-content {
+      padding: 0;
+      border: none;
     }
-  }
-  i.text-muted {
-    color: rgb(165, 165, 165) !important;
+    .p-cell-editing {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      input {
+        width: 100%;
+      }
+    }
+    i.text-muted {
+      color: rgb(165, 165, 165) !important;
+    }
   }
 }

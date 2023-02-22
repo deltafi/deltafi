@@ -47,7 +47,21 @@ if (process.env.NODE_ENV === "development") {
   const responseType = process.env.VUE_APP_MOCK_RESPONSES ? process.env.VUE_APP_MOCK_RESPONSES : "";
   if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
     const { worker } = require("./mocks/browser.ts");
-    worker.start();
+    worker.start({    // turn off MSW warnings for specific routes
+      onUnhandledRequest(req: any, print: any) {
+        // specify routes to exclude
+        const excludedRoutes = ['/js/', '/fonts/'];
+
+        // check if the req.url.pathname contains excludedRoutes
+        const isExcluded = excludedRoutes.some(route => req.url.pathname.includes(route));
+
+        if (isExcluded) {
+          return;
+        }
+
+        print.warning()
+      }
+    });
   }
 }
 

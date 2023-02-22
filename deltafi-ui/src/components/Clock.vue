@@ -74,11 +74,13 @@ setInterval(() => {
 <style scoped lang="scss">
 .clock {
   color: var(--gray-300);
+
   .p-tag {
     cursor: pointer;
     background-color: var(--gray-700);
     font-weight: 700;
   }
+
   .v-enter-active,
   .v-leave-active {
     transition: opacity 0.3s ease;

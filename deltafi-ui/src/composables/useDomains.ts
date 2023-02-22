@@ -30,14 +30,13 @@ export default function useDomains() {
   }
 
   const getIndexedMetadataKeys = async (domain: String) => {
-    const query = { indexedMetadataKeys: {} };
-    if (domain) {
-        query.indexedMetadataKeys = {
+    const query = {
+      indexedMetadataKeys: {
         __args: {
-          domain: domain
+          domain: domain === undefined ? null : domain
         }
       }
-    }
+    };
     await queryGraphQL(query, "getIndexedMetadataKeys", "query", true);
     loaded.value = true;
     return response.value.data.indexedMetadataKeys;

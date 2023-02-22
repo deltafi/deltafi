@@ -18,7 +18,6 @@
 
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import Dashboard from "@/pages/DashboardPage.vue";
-import _ from "lodash";
 
 const routes: Array<RouteRecordRaw> = [
   {

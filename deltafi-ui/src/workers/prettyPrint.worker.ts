@@ -24,9 +24,9 @@ export const prettyPrint = async (content: string, format: string, indent: numbe
 
   const output = (function (format) {
     switch (format) {
-      case 'json':
+      case "json":
         return vkbeautify.json(content, indent);
-      case 'xml':
+      case "xml":
         return vkbeautify.xml(content, indent);
       default:
         return content;

@@ -16,20 +16,26 @@
    limitations under the License.
 */
 
-.plugin-repo-config-panel {
-  .p-panel-header {
-    padding: 0 1.25rem;
-    .p-panel-title {
-      padding: 1rem 0;
+.delete-policies-page {
+  .delete-policy-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+      .p-panel-title {
+        padding: 1rem 0;
+      }
     }
   }
-}
-.plugin-repo-config-table {
-  td.plugin-repo-config-actions-column {
-    padding: 0 !important;
-    .p-button {
-      padding: 0.25rem !important;
-      margin: 0 0 0 0.25rem !important;
+  .delete-policy-table {
+    td.deletePolicy-state-column {
+      padding: 0 !important;
+      .p-inputswitch {
+        padding: 0.25rem !important;
+        margin: 0.25rem 0 0 0.25rem !important;
+      }
+      .p-button {
+        padding: 0.25rem !important;
+        margin: 0 0 0 0.25rem !important;
+      }
     }
   }
 }

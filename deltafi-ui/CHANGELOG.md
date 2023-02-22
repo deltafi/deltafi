@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added ability to Import Metadata from DeltaFile on Upload Page (#321)
 - Fixed update on date change for Events page (#326)
 - Changed menu links to use the same scheme as the current window (#329)
+- Update libraries (#300)
 
 ## [0.101.5]
 

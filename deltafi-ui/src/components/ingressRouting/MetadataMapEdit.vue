@@ -87,7 +87,7 @@ const removeItem = (index) => {
   display: flex;
 }
 
-.map-row > * {
+.map-row>* {
   flex: 1 1 auto;
 }
 

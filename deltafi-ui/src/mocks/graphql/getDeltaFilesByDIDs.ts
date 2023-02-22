@@ -21,8 +21,6 @@ faker.seed(123);
 
 const generateData = (count: number) => {
   return Array.from(Array(count)).map(() => {
-    const uuid = faker.datatype.uuid();
-    const date = new Date();
     return {
       did: faker.datatype.uuid(),
       stage: "ERROR",

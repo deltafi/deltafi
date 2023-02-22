@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div>
+  <div class="map-edit">
     <div v-for="(pair, i) in pairs" :key="i" class="map-row mb-2">
       <InputText v-model="pair.key" class="mr-2"></InputText>
       <InputText v-model="pair.value" class="mr-2"></InputText>
@@ -33,68 +33,62 @@ import { ref, defineProps, defineEmits, onMounted, watch } from "vue";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(["update:modelValue"]);
 const props = defineProps({
   modelValue: {
     type: String,
     required: false,
-    default: ''
+    default: "",
   },
 });
-const pairs = ref([])
+const pairs = ref([]);
 
 const loadPairsFromModelValue = () => {
-  if (props.modelValue === null || props.modelValue === '') {
-    pairs.value = []
+  if (props.modelValue === null || props.modelValue === "") {
+    pairs.value = [];
   } else {
-    pairs.value = props.modelValue.split(',').map((i) => i.split(':')).map((j) => { return { key: j[0].trim(), value: j[1].trim() } })
+    pairs.value = props.modelValue.split(',').map((i) => i.split(':')).map((j) => { return { key: j[0].trim(), value: j[1].trim() } });
   }
-}
+};
 
 onMounted(() => {
   loadPairsFromModelValue();
-})
+});
 
 const emitUpdate = () => {
   if (pairs.value.length == 0) {
-    emit('update:modelValue', null)
+    emit("update:modelValue", null);
   } else {
-    emit('update:modelValue', pairs.value.map((p) => `${p.key}: ${p.value}`).join(', '))
+    emit("update:modelValue", pairs.value.map((p) => `${p.key}: ${p.value}`).join(", "));
   }
-}
+};
 
-watch(
-  () => pairs.value,
-  emitUpdate,
-  { deep: true }
-)
+watch(() => pairs.value, emitUpdate, { deep: true });
 
-watch(
-  () => props.modelValue,
-  loadPairsFromModelValue,
-  { deep: true }
-)
+watch(() => props.modelValue, loadPairsFromModelValue, { deep: true });
 
 const addItem = () => {
   pairs.value.push({ key: "", value: "" });
-}
+};
 
 const removeItem = (index) => {
   pairs.value.splice(index, 1);
-}
+};
 </script>
 
 <style lang="scss">
-.map-row {
-  width: 100%;
-  display: flex;
-}
+.map-edit {
+  .map-row {
+    width: 100%;
+    display: flex;
+  }
 
-.map-row>* {
-  flex: 1 1 auto;
-}
+  .map-row>* {
+    flex: 1 1 auto;
+  }
 
-.remove-button {
-  flex: 0 0 auto;
+  .remove-button {
+    flex: 0 0 auto;
+  }
 }
 </style>

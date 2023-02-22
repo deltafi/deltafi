@@ -56,7 +56,7 @@ export default function useIngress() {
         url: "/deltafile/ingress",
         data: file,
         headers: buildHeader(),
-        onUploadProgress: (progressEvent) => {
+        onUploadProgress: (progressEvent: any) => {
           result.percentComplete = Math.round((progressEvent.loaded / progressEvent.total) * 100);
         },
       })

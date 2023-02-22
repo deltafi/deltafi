@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <nav class="bg-light menu sidebar-scroller">
+  <nav class="badge-light menu sidebar-scroller">
     <div class="pt-3">
       <ul class="nav flex-column">
         <div v-for="item in menuItems" :key="item">

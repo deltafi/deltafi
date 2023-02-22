@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-.errors {
+.errors-page {
   .time-range .form-control:disabled,
   .time-range .form-control[readonly] {
     background-color: #ffffff;
@@ -54,6 +54,8 @@
     cursor: pointer !important;
   }
   .p-paginator {
+    background: inherit !important;
+    color: inherit  !important;
     border: none !important;
     padding: 0 !important;
     font-size: inherit !important;

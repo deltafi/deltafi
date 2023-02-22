@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="upload-page">
+  <div class="deltafile-upload-page">
     <PageHeader heading="Upload Files" />
     <div class="mb-3 row">
       <div class="col-12">
@@ -45,8 +45,7 @@
               <InputText type="text" value="Ingress Flow" disabled />
             </div>
             <div class="col-5">
-              <!-- TODO: GitLab issue "Fix multi-select dropdown data bouncing" (https://gitlab.com/systolic/deltafi/deltafi-ui/-/issues/96). Placeholder hacky fix to stop the bouncing of data within the field. -->
-              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" :placeholder="selectedFlow ? selectedFlow + ' ' : 'Select an Ingress Flow'" show-clear />
+              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" placeholder="Select an Ingress Flow" show-clear />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -120,31 +119,32 @@
 </template>
 
 <script setup>
+import CollapsiblePanel from "@/components/CollapsiblePanel";
+import DidLink from "@/components/DidLink.vue";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
+import ImportMetadataDialog from "@/components/ImportMetadataDialog.vue";
+import MetadataViewer from "@/components/MetadataViewer.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import Timestamp from "@/components/Timestamp.vue";
+import useFlows from "@/composables/useFlows";
+import useIngress from "@/composables/useIngress";
+import useMetadataConfiguration from "@/composables/useMetadataConfiguration";
+import useNotifications from "@/composables/useNotifications";
+import { computed, onBeforeMount, onMounted, ref, watch } from "vue";
+import { StorageSerializers, useStorage } from "@vueuse/core";
+import _ from "lodash";
+
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
-import FileUpload from "@/components/deprecatedPrimeVue/FileUpload.vue";
 import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Message from "primevue/message";
 import OverlayPanel from "primevue/overlaypanel";
 import Panel from "primevue/panel";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import ScrollTop from "primevue/scrolltop";
-import CollapsiblePanel from "@/components/CollapsiblePanel";
-import MetadataViewer from "@/components/MetadataViewer.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import DidLink from "@/components/DidLink.vue";
-import Timestamp from "@/components/Timestamp.vue";
-import useMetadataConfiguration from "@/composables/useMetadataConfiguration";
-import useFlows from "@/composables/useFlows";
-import useIngress from "@/composables/useIngress";
-import useNotifications from "@/composables/useNotifications";
-import { useStorage, StorageSerializers } from "@vueuse/core";
-import { ref, computed, onBeforeMount, onMounted, watch } from "vue";
-import _ from "lodash";
-import ImportMetadataDialog from "@/components/ImportMetadataDialog.vue";
 
 const uploadedTimestamp = ref(new Date());
 const showUploadDialog = ref(false);

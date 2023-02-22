@@ -27,12 +27,12 @@
 </template>
 
 <script setup>
+import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import VersionsPanel from "@/components/VersionsPanel.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import useVersions from "@/composables/useVersions";
 import useVersion from "@/composables/useVersion";
-import { onMounted, computed, onUnmounted, inject } from "vue";
+import useVersions from "@/composables/useVersions";
+import { computed, inject, onMounted, onUnmounted } from "vue";
 import _ from 'lodash';
 
 const refreshInterval = 5000; // 5 seconds

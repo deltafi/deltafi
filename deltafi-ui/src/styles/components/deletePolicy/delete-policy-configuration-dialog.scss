@@ -16,24 +16,29 @@
    limitations under the License.
 */
 
-.delete-policy-panel {
-  .p-panel-header {
-    padding: 0 1.25rem;
-    .p-panel-title {
-      padding: 1rem 0;
+.delete-policy-configuration-dialog {
+  width: 98%;
+
+  .delete-policy-panel {
+    dt {
+      margin-bottom: 0.5rem;
+    }
+    dd {
+      margin-bottom: 1.2rem;
+    }
+    dl {
+      margin-bottom: 1rem;
+    }
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
     }
   }
-}
-.delete-policy-table {
-  td.deletePolicy-state-column {
-    padding: 0 !important;
-    .p-inputswitch {
-      padding: 0.25rem !important;
-      margin: 0.25rem 0 0 0.25rem !important;
-    }
-    .p-button {
-      padding: 0.25rem !important;
-      margin: 0 0 0 0.25rem !important;
-    }
+
+  .inputWidth {
+    width: 90% !important;
+  }
+
+  .p-filled.capitalizeText {
+    text-transform: uppercase;
   }
 }

@@ -16,29 +16,19 @@
    limitations under the License.
 */
 
-.delete-policy-body {
-  width: 98%;
+.ingress-routing-page {
+  .ingress-routing-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+    }
 
-  .delete-policy-panel {
-    dt {
-      margin-bottom: 0.5rem;
+    .list-item::before {
+      content: "•";
+      margin-right: 0.25rem;
+      font-weight: bold;
     }
-    dd {
-      margin-bottom: 1.2rem;
-    }
-    dl {
-      margin-bottom: 1rem;
-    }
-    .p-panel-content {
-      padding-bottom: 0.25rem !important;
-    }
-  }
-
-  .inputWidth {
-    width: 90% !important;
-  }
-
-  .p-filled.capitalizeText {
-    text-transform: uppercase;
   }
 }

@@ -19,7 +19,6 @@
 import { ref, Ref } from 'vue'
 import { EnumType } from 'json-to-graphql-query';
 import useGraphQL from './useGraphQL'
-import _ from "lodash";
 
 export default function useFlows() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();

@@ -71,7 +71,7 @@ import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
 
-import filesize from "filesize";
+import { filesize } from "filesize";
 import { FilterMatchMode } from "primevue/api";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -192,5 +192,5 @@ const bitRate = (bitsPerFlow) => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/flow-data-table.scss";
+@import "@/styles/components/flow/flow-data-table.scss";
 </style>

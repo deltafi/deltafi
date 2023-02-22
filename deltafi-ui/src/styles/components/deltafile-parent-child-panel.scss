@@ -16,26 +16,32 @@
    limitations under the License.
 */
 
-.panel-header-layout {
-  .p-panel-header {
-    padding: 0 1.25rem;
-    .p-panel-title {
-      padding: 1rem 0;
-    }
-    .p-panel-header-icon {
-      margin-top: 0.25rem;
-      margin-right: 0;
-    }
-    .p-inputswitch {
-      margin-top: 0.3rem;
+.deltafile-parent-child-panel {
+  dd {
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
+  }
+  dl {
+    margin-bottom: 1rem;
+  }
+
+  .p-paginator {
+    background: inherit !important;
+    color: inherit !important;
+    border: none !important;
+    font-size: inherit !important;
+    .p-paginator-current {
+      background: unset;
+      color: unset;
+      border: unset;
     }
   }
-}
+  .p-panel-content {
+    padding-bottom: 0.25rem !important;
+  }
 
-.p-confirm-popup:before {
-  border-bottom-color: #c3c3c3 !important;
-}
 
-.p-confirm-popup.p-confirm-popup-flipped:before {
-   border-top-color: #c3c3c3 !important;
+  .p-paginator-bottom {
+  border-width: 0 1px 1px 1px !important;
+}
 }

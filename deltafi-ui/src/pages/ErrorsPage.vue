@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="errors">
+  <div class="errors-page">
     <PageHeader heading="Errors">
       <div class="time-range btn-toolbar mb-2 mb-md-0">
         <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3" />
@@ -40,18 +40,19 @@
 </template>
 
 <script setup>
-import Dropdown from "primevue/dropdown";
-import Button from "primevue/button";
+import AllErrorsPanel from "@/components/errors/AllPanel.vue";
+import ErrorsSummaryByFlowPanel from "@/components/errors/SummaryByFlowPanel.vue";
+import ErrorsSummaryByMessagePanel from "@/components/errors/SummaryByMessagePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useErrorCount from "@/composables/useErrorCount";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref, computed, onUnmounted, onMounted, inject } from "vue";
+
+import Dropdown from "primevue/dropdown";
+import Button from "primevue/button";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
-import AllErrorsPanel from "@/components/errors/AllPanel.vue";
-import ErrorsSummaryByFlowPanel from "@/components/errors/SummaryByFlowPanel.vue";
-import ErrorsSummaryByMessagePanel from "@/components/errors/SummaryByMessagePanel.vue";
 
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");

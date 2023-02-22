@@ -19,8 +19,6 @@
 import { ref, Ref } from "vue";
 import useApi from "./useApi";
 
-import _ from "lodash";
-
 export default function useGraphiteApi() {
   const { response, get, loading, loaded, errors } = useApi();
   const endpoint: string = "metrics/graphite";

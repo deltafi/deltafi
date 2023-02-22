@@ -16,14 +16,13 @@
    limitations under the License.
 */
 
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import filesize from "filesize";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { filesize } from "filesize";
 import useUiConfig from "./useUiConfig";
 
 const { uiConfig } = useUiConfig();
-
-dayjs.extend(utc)
+dayjs.extend(utc);
 
 export default function useUtilFunctions(): {
   formatTimestamp: (date: any, format: string) => String | undefined;
@@ -33,15 +32,15 @@ export default function useUtilFunctions(): {
   formattedBytes: (bytes: number) => string;
   duration: (milliseconds: number, precision: number) => string;
   pluralize: (count: number, singular: string, plural?: string) => string;
-  buildURL: (urlBegin: string)=> string;
+  buildURL: (urlBegin: string) => string;
 } {
   const formatContextData = (contextData: string) => {
     let formattedString = contextData;
     // Javascript does not provide the PCRE recursive parameter (?R) which would allow for the matching against nested JSON using regex: /\{(?:[^{}]|(?R))*\}/g. In order to
     // capture nested JSON we have to have this long regex.
-    const jsonIdentifierRegEx = /\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(""))*\}))*\}))*\}))*\}))*\}))*\}))*\}))*\}/g
+    const jsonIdentifierRegEx = /\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|(""))*\}))*\}))*\}))*\}))*\}))*\}))*\}))*\}/g;
 
-    formattedString = formattedString.replace(jsonIdentifierRegEx, match => parseMatch(match));
+    formattedString = formattedString.replace(jsonIdentifierRegEx, (match) => parseMatch(match));
 
     const parseMatch = (match: string) => {
       try {
@@ -50,16 +49,16 @@ export default function useUtilFunctions(): {
         return match;
       }
       return JSON.stringify(JSON.parse(match), null, 2);
-    }
+    };
 
     return formattedString;
-  }
+  };
 
   const duration = (milliseconds: number, precision: number = 1) => {
-    const seconds = (milliseconds / 1000);
-    const minutes = (milliseconds / (1000 * 60));
-    const hours = (milliseconds / (1000 * 60 * 60));
-    const days = (milliseconds / (1000 * 60 * 60 * 24));
+    const seconds = milliseconds / 1000;
+    const minutes = milliseconds / (1000 * 60);
+    const hours = milliseconds / (1000 * 60 * 60);
+    const days = milliseconds / (1000 * 60 * 60 * 24);
     if (seconds < 1) {
       return milliseconds + "ms";
     } else if (seconds < 60) {
@@ -71,7 +70,7 @@ export default function useUtilFunctions(): {
     } else {
       return days.toFixed(precision) + "d";
     }
-  }
+  };
 
   const pluralize = (count: number, singular: string, plural?: string, includeCount: boolean = true) => {
     const output = [];
@@ -85,28 +84,28 @@ export default function useUtilFunctions(): {
       output.push(`${singular}s`);
     }
 
-    return output.join(' ');
-  }
+    return output.join(" ");
+  };
 
   const formattedBytes = (bytes: number) => {
-    return filesize(bytes || 0, { base: 10 });
+    return filesize(bytes || 0, { base: 10 }).toString();
   };
 
   const convertLocalDateToUTC = (date: Date) => {
-    return new Date(date.getTime() + (-(date.getTimezoneOffset() * 60000)));
-  }
+    return new Date(date.getTime() + -(date.getTimezoneOffset() * 60000));
+  };
 
   const shortTimezone = () => {
-    return uiConfig.useUTC ? 'UTC' : new Date().toLocaleString('en', { timeZoneName: 'short' }).split(' ').pop();
-  }
+    return uiConfig.useUTC ? "UTC" : new Date().toLocaleString("en", { timeZoneName: "short" }).split(" ").pop();
+  };
 
   const formatTimestamp = (date: any, format: string) => {
     return uiConfig.useUTC ? dayjs(date).utc().format(format) : dayjs(date).format(format);
-  } 
+  };
 
   const buildURL = (urlBegin: string) => {
     return urlBegin != undefined ? `${window.location.protocol}//${urlBegin}.${uiConfig.domain}` : `${window.location.protocol}//${uiConfig.domain}`;
-  }
+  };
 
   return {
     formatTimestamp,

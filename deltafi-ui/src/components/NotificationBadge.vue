@@ -21,11 +21,11 @@
     <Tag v-tooltip.bottom="tooltip" :class="tagClass" icon="pi pi-bell" :value="tagValue" @click="openNotificationsPanel" />
     <OverlayPanel ref="notificationOP" style="width: 38.25rem; min-width: 31.25rem; top: 2.7rem; max-height: 90vh; overflow: scroll" :base-z-index="2000">
       <div class="list-group list-group-flush">
-        <div style="text-align: right; margin-bottom: 0.5rem;">
+        <div style="text-align: right; margin-bottom: 0.5rem">
           <router-link v-slot="{ navigate }" to="/events" custom>
             <Button label="View All Events" class="p-button-sm p-button-text mr-2" @click="navigate(); closeNotificationsPanel();"></Button>
           </router-link>
-          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="ackAllNotifications();"></Button>
+          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="ackAllNotifications()"></Button>
         </div>
         <div v-if="notifications.length > 0">
           <div v-for="msg in notifications" :key="msg._id" :class="severityClass(msg.severity)" @click="showEvent(msg, $event)">
@@ -92,7 +92,7 @@ const openNotificationsPanel = (event) => {
 
 const showEvent = (msg, $event) => {
   // Don't show the event if the user clicked the ack button.
-  if ($event.target.className.includes('notification-ack-button')) return;
+  if ($event.target.className.includes("notification-ack-button")) return;
 
   activeEvent.value = msg;
   showEventDialog.value = true;
@@ -108,8 +108,8 @@ const tagClass = computed(() => {
     {
       "no-notifications": notificationCount.value === 0,
     },
-  ]
-})
+  ];
+});
 
 const getTimeFrom = (msgTimeStamp) => {
   const timeAgo = useTimeAgo(new Date(msgTimeStamp));
@@ -132,11 +132,10 @@ const tooltip = computed(() => {
   const notificationsBySeverity = _.groupBy(notifications.value, "severity");
   const severities = ["info", "success", "warn", "error"];
   return severities.reduce(function (result, severity) {
-    if (severity in notificationsBySeverity)
-      result += "\n" + pluralize(notificationsBySeverity[severity].length, `${severity} notification`);
+    if (severity in notificationsBySeverity) result += "\n" + pluralize(notificationsBySeverity[severity].length, `${severity} notification`);
     return result;
   }, "Click for Notifications\n");
-})
+});
 </script>
 
 <style lang="scss">

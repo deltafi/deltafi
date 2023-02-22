@@ -35,6 +35,7 @@ a {
 
 .p-tooltip {
   max-width: 300px;
+  z-index: 2000 !important;
 
   .p-tooltip-text {
     font-size: 80%;
@@ -109,6 +110,7 @@ td.did-column {
 
 .cursor-pointer {
   cursor: pointer;
+  text-decoration: none;
 }
 
 .p-button-secondary-upload:not(.p-disabled):hover {
@@ -124,7 +126,7 @@ td.did-column {
 }
 
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
-  text-shadow: .02rem 0px black;
+  text-shadow: 0.02rem 0px black;
 }
 
 .p-tag-secondary {

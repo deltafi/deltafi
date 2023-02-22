@@ -17,8 +17,8 @@
 -->
 
 <template>
-  <span ref="link" style="cursor: pointer;">
-    <router-link class="monospace" :to="{ path: path }">{{ shortDid }}</router-link>
+  <span ref="link" class="cursor-pointer">
+    <router-link class="monospace cursor-pointer" :to="{ path: path }">{{ shortDid }}</router-link>
     <span v-tooltip.right="'Copy full DID to clipboard'" :style="{ visibility: isHovered ? 'visible' : 'hidden' }" class="copy-link" @click.stop="onCopy($event)">
       <i :class="copyLinkIconClass"></i>
     </span>
@@ -52,7 +52,7 @@ const onCopy = (event) => {
 
 const copyLinkIconClass = computed(() => {
   const common = 'fa-fw ml-1';
-  const icon = copied.value ? 'fas fa-check' : 'far fa-copy';
+  const icon = copied.value ? 'fas fa-check' : 'far fa-clone';
   return `${common} ${icon}`;
 })
 

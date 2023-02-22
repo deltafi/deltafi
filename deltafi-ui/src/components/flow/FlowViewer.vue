@@ -233,5 +233,5 @@ const actionLogLink = (actionNameForLink) => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/flow-viewer.scss";
+@import "@/styles/components/flow/flow-viewer.scss";
 </style>

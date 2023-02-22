@@ -16,11 +16,13 @@
    limitations under the License.
 */
 
-.system-metrics {
+.system-metrics-page {
   .p-progressbar {
     background: #dadada;
     .p-progressbar-label {
       font-weight: inherit;
+      color: #212529 !important;
+      display: block !important
     }
   }
 

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="SystemProperties">
+  <div class="system-properties-page">
     <PageHeader heading="System Properties" />
     <span v-if="hasErrors">
       <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
@@ -33,12 +33,13 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
-import Message from "primevue/message";
 import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import PropertySet from "@/components/PropertySet.vue";
 import usePropertySets from "@/composables/usePropertySets";
 import { computed, onBeforeMount } from "vue";
+
+import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
 
 const { data: propertySets, fetch: fetchPropertySets, errors } = usePropertySets();

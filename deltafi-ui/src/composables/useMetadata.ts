@@ -16,9 +16,8 @@
    limitations under the License.
 */
 
-import { ref } from 'vue'
-import useGraphQL from './useGraphQL'
-import { EnumType } from 'json-to-graphql-query';
+import { ref } from "vue";
+import useGraphQL from "./useGraphQL";
 export default function useMetadata() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
@@ -27,16 +26,15 @@ export default function useMetadata() {
     const searchParams = {
       sourceMetadataUnion: {
         __args: {
-          dids: dids
+          dids: dids,
         },
         key: true,
         values: true,
-      }
+      },
     };
     await queryGraphQL(searchParams, "getMetadata");
     data.value = response.value.data.sourceMetadataUnion;
   };
-
 
   return { data, loading, loaded, fetch, errors };
 }
