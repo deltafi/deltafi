@@ -32,7 +32,7 @@ export default function useUtilFunctions(): {
   formattedBytes: (bytes: number) => string;
   duration: (milliseconds: number, precision: number) => string;
   pluralize: (count: number, singular: string, plural?: string) => string;
-  buildURL: (urlBegin: string) => string;
+  buildURL: (subdomain?: string, path?: string) => string;
 } {
   const formatContextData = (contextData: string) => {
     let formattedString = contextData;
@@ -103,8 +103,12 @@ export default function useUtilFunctions(): {
     return uiConfig.useUTC ? dayjs(date).utc().format(format) : dayjs(date).format(format);
   };
 
-  const buildURL = (urlBegin: string) => {
-    return urlBegin != undefined ? `${window.location.protocol}//${urlBegin}.${uiConfig.domain}` : `${window.location.protocol}//${uiConfig.domain}`;
+  const buildURL = (subdomain?: string, path?: string) => {
+    let url = `${window.location.protocol}//`;
+    if (subdomain) url += `${subdomain}.`;
+    url += uiConfig.domain;
+    if (path) url += `${path}`;
+    return url;
   };
 
   return {

@@ -21,9 +21,10 @@
 </template>
 
 <script setup>
-import { computed, inject, defineProps } from "vue";
+import { computed, defineProps } from "vue";
+import useUtilFunctions from "@/composables/useUtilFunctions";
 
-const uiConfig = inject("uiConfig");
+const { buildURL } = useUtilFunctions();
 
 const props = defineProps({
   panelId: {
@@ -72,6 +73,6 @@ const props = defineProps({
 
 const src = computed(() => {
   const params = new URLSearchParams(props);
-  return `https://metrics.${uiConfig.domain}/d-solo/${props.dashboardId}?${params}`
+  return buildURL("metrics", `/d-solo/${props.dashboardId}?${params}`);
 })
 </script>

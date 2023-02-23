@@ -52,12 +52,12 @@ import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineEmits, defineProps, inject, ref } from "vue";
+import { computed, defineEmits, defineProps, ref } from "vue";
 
 import _ from "lodash";
 
 const emit = defineEmits(["pauseTimer"]);
-const uiConfig = inject("uiConfig");
+const { buildURL } = useUtilFunctions();
 
 const props = defineProps({
   actions: {
@@ -143,7 +143,7 @@ const tableData = computed(() => {
 });
 
 const actionLogLink = (actionNameForLink) => {
-  return `https://metrics.${uiConfig.domain}/d/action-log-viewer/action-log-viewer?var-datasource=Loki&var-searchable_pattern=&var-action_name=${actionNameForLink}`;
+  return buildURL("metrics", `/d/action-log-viewer/action-log-viewer?var-datasource=Loki&var-searchable_pattern=&var-action_name=${actionNameForLink}`);
 };
 
 const formatMetricValue = (row) => {

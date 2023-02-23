@@ -102,7 +102,7 @@ const staticMenuItems = ref([
       {
         name: "Grafana Dashboards",
         icon: "icomoon grafana",
-        url: computed(() => `${buildURL('metrics')}/dashboards`),
+        url: computed(() => buildURL("metrics", "/dashboards")),
         visible: computed(() => hasPermission("MetricsView")),
       },
     ],
@@ -216,13 +216,13 @@ const staticMenuItems = ref([
       {
         name: "Kubernetes Dashboard",
         icon: "icomoon kubernetes",
-        url: computed(() => `${buildURL('k8s')}/#/workloads?namespace=deltafi`),
+        url: computed(() => buildURL("k8s", "/#/workloads?namespace=deltafi")),
         visible: computed(() => hasPermission("Admin")),
       },
       {
         name: "GraphiQL",
         icon: "icomoon graphql",
-        url: computed(() => `${buildURL()}/graphiql`),
+        url: computed(() => buildURL(null, "/graphiql")),
         visible: computed(() => hasPermission("Admin")),
       },
     ],

@@ -121,6 +121,7 @@ import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { computed, defineExpose, defineProps, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";
+import useUtilFunctions from "@/composables/useUtilFunctions";
 
 import Divider from "primevue/divider";
 import Message from "primevue/message";
@@ -131,7 +132,7 @@ import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 const isIdle = inject("isIdle");
-const uiConfig = inject("uiConfig");
+const { buildURL } = useUtilFunctions();
 
 const { fetch: getActionMetrics, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
 
@@ -228,7 +229,7 @@ const panelHeader = (actionType) => {
 };
 
 const actionLogLink = (actionNameForLink) => {
-  return `https://metrics.${uiConfig.domain}/d/action-log-viewer/action-log-viewer?var-datasource=Loki&var-searchable_pattern=&var-action_name=${actionNameForLink}`;
+  return buildURL("metrics", `/d/action-log-viewer/action-log-viewer?var-datasource=Loki&var-searchable_pattern=&var-action_name=${actionNameForLink}`);
 };
 </script>
 
