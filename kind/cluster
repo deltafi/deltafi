@@ -624,6 +624,7 @@ install() {
   _kind_deltafi set-admin-password password
   _ok "DeltaFi core installed"
   _warn echo "If basic_auth is enabled user is 'admin', password is 'password'"
+  _ok "Open the UI at http://local.deltafi.org"
 }
 
 _k8s_init() {

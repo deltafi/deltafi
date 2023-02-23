@@ -415,7 +415,7 @@ if [[ -n "${DELTAFI_ON_MACOS-}" ]]; then
   install_cluster
 
   bullet "Installation is complete"
-  open https://local.deltafi.org
+  open http://local.deltafi.org
   info "You should have the DeltaFi UI open in a local browser window"
   info "If you have 'Your connection is not private' on the Chrome browser, type 'thisisunsafe'"
   info "If you have certificate warnings in other browsers, you may have to work through security dialogs"

@@ -90,7 +90,7 @@ cluster loc build install
 
 This command will build and install the local versions of DeltaFi core, stix, passthrough and UI.
 
-After you install DeltaFi on the cluster, you will be able to point your browser at [local.deltafi.org](https://local.deltafi.org)
+After you install DeltaFi on the cluster, you will be able to point your browser at [local.deltafi.org](http://local.deltafi.org)
 and interact with the DeltaFi UI.  You can install plugins, enable flows, upload data, check metrics, etc.
 
 ## `cluster` CLI
