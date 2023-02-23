@@ -26,7 +26,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 20,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -519,7 +518,7 @@
           "hide": true,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=~stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow')"
+          "target": "removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'))"
         },
         {
           "datasource": {
@@ -529,8 +528,8 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByNode(divideSeriesLists(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), #A), 0)",
-          "targetFull": "aliasByNode(divideSeriesLists(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), aliasByTags(groupByTags(seriesByTag('name=~stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow')), 0)"
+          "target": "removeEmptySeries(aliasByNode(divideSeriesLists(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), #A), 0))",
+          "targetFull": "removeEmptySeries(aliasByNode(divideSeriesLists(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'))), 0))"
         },
         {
           "datasource": {
@@ -540,7 +539,7 @@
           "hide": true,
           "refCount": 0,
           "refId": "C",
-          "target": "alias(sum(seriesByTag('name=~stats_counts.files_out')), 'files')"
+          "target": "removeEmptySeries(alias(sum(seriesByTag('name=~stats_counts.files_out')), 'files'))"
         },
         {
           "datasource": {
@@ -550,8 +549,8 @@
           "hide": false,
           "refCount": 0,
           "refId": "E",
-          "target": "alias(divideSeriesLists(alias(sum(seriesByTag('name=~stats_counts.execution_time_ms')), 'exec'), #C), 'overall')",
-          "targetFull": "alias(divideSeriesLists(alias(sum(seriesByTag('name=~stats_counts.execution_time_ms')), 'exec'), alias(sum(seriesByTag('name=~stats_counts.files_out')), 'files')), 'overall')"
+          "target": "removeEmptySeries(alias(divideSeriesLists(alias(sum(seriesByTag('name=~stats_counts.execution_time_ms')), 'exec'), #C), 'overall'))",
+          "targetFull": "removeEmptySeries(alias(divideSeriesLists(alias(sum(seriesByTag('name=~stats_counts.execution_time_ms')), 'exec'), removeEmptySeries(alias(sum(seriesByTag('name=~stats_counts.files_out')), 'files'))), 'overall'))"
         }
       ],
       "title": "Average Latency (ms)",
@@ -699,8 +698,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -792,8 +790,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -870,7 +867,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "All"
           ],
@@ -918,6 +915,6 @@
   "timezone": "",
   "title": "Diagnostic",
   "uid": "diagnostic",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
