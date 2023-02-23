@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Add deltaFileStats GraphQL query
 - `Survey Metrics` dashboard in Grafana
+- Disk space and Delete activity added to UI charts
 - Set environment variable `DELTAFI_PYTHON` in cluster loc that allows downstream python projects to pick up the local python action kit
 - Server Sent Events broadcast for deltaFileStats
 - Delete metrics (files and bytes by policy) accumulated and charted on System Status dashboard
