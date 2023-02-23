@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <GrafanaChartPanel header="Egress Flows" :panel-id="2" />
+  <GrafanaChartPanel header="Delete Policy Activity" :panel-id="4" />
 </template>
 
 <script setup>

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <GrafanaChartPanel header="Egress Flows" :panel-id="2" />
+  <GrafanaChartPanel header="Content Storage" :panel-id="3" />
 </template>
 
 <script setup>

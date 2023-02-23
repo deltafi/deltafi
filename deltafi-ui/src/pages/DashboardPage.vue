@@ -43,10 +43,12 @@ const refreshDashboard = () => refreshKey.value += 1;
 const columns = reactive({
   one: [
     "IngressFlows",
+    "EgressFlows",
     "InstalledPlugins"
   ],
   two: [
-    "EgressFlows",
+    "ContentStorage",
+    "DeletePolicyActivity",
     "ExternalLinks"
   ]
 })

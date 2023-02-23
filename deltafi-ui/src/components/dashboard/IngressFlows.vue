@@ -17,29 +17,9 @@
 -->
 
 <template>
-  <Panel header="Ingress Flows" class="links-panel pb-3">
-    <GrafanaChart :panel-id="1" :from="from" :to="to" />
-  </Panel>
+  <GrafanaChartPanel header="Ingress Flows" :panel-id="1" />
 </template>
 
 <script setup>
-import Panel from "primevue/panel";
-import GrafanaChart from "@/components/GrafanaChart.vue";
-import { computed, onMounted, onUnmounted, ref } from "vue";
-
-let autoRefresh = null;
-const refreshInterval = 5 * 60 * 1000; // 5 minutes
-const last = 60 * 60 * 1000; // 60 minutes
-const now = ref(new Date())
-const from = computed(() => new Date(now.value - last).getTime())
-const to = computed(() => now.value.getTime())
-
-onMounted(() => {
-  now.value = new Date();
-  autoRefresh = setInterval(() => {
-    now.value = new Date();
-  }, refreshInterval);
-});
-
-onUnmounted(() => clearInterval(autoRefresh));
+import GrafanaChartPanel from "@/components/dashboard/GrafanaChartPanel.vue";
 </script>

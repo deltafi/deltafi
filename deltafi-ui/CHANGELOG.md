@@ -11,7 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added ability to Import Metadata from DeltaFile on Upload Page (#321)
 - Fixed update on date change for Events page (#326)
 - Changed all links to use the same scheme as the current window (#329, #338)
-- Update libraries (#300)
+- Updated libraries (#300)
+- Added new Dashboard panels (#330, #333)
+  - Content Storage
+  - Delete Policy Activity
+  - DeltaFile Stats
 
 ## [0.101.5]
 
