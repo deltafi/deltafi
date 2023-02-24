@@ -1,7 +1,7 @@
 # DeltaFi config
 deltafi:
   ui:
-    title: DeltaFi (DinK)
+    title: DeltaFi (DinK local)
     image: localhost:5000/deltafi-ui:latest
   core_actions:
     image: localhost:5000/deltafi-core-actions:latest
@@ -16,7 +16,6 @@ deltafi:
     image: localhost:5000/deltafi-docs:latest
   auth:
     image: localhost:5000/deltafi-auth:latest
-    mode: disabled
   api:
     image: localhost:5000/deltafi-api:latest
   egress_sink:
