@@ -187,9 +187,9 @@ public class StateMachine {
                 deltaFile.completeAction(action, OffsetDateTime.now(), OffsetDateTime.now());
                 deltaFile.addEgressFlow(egressFlow.getName());
                 if(egressFlow.isTestMode()) {
-                    deltaFile.setTestMode("Egress flow '" + egressFlow.getName() + "' in test mode");
+                    deltaFile.setTestModeReason("Egress flow '" + egressFlow.getName() + "' in test mode");
                 } else {
-                    deltaFile.setTestMode("Ingress flow '" + ingressFlow.getName() + "' in test mode");
+                    deltaFile.setTestModeReason("Ingress flow '" + ingressFlow.getName() + "' in test mode");
                 }
             } else {
                 nextActions.add(egressFlow.getEgressAction());

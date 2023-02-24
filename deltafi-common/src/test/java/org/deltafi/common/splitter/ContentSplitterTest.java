@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-class ContentReferenceSplitterTest {
+class ContentSplitterTest {
     private static final String WITH_COMMENTS_AND_HEADERS = """
                 #ABC
                 head
@@ -71,7 +71,7 @@ class ContentReferenceSplitterTest {
                 91011
                 """;
 
-    ContentReferenceSplitter splitter = new ContentReferenceSplitter(null);
+    ContentSplitter splitter = new ContentSplitter(null);
 
     /**
      * Test segment handling with data that should all process successfully.
@@ -135,10 +135,10 @@ class ContentReferenceSplitterTest {
         return Stream.of(
                 Arguments.of("#comment\nhead\n", CountingReader.LINE_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(8).build(), "comment_too_large"),
                 Arguments.of("#abc\nheader\nrow", CountingReader.LINE_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(6).build(), "header_too_large"),
-                Arguments.of("#abc\nhead\nrow", ContentReferenceSplitter.SEGMENT_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(8).build(), "header+comment_too_large"),
-                Arguments.of("#abc\nhead\nrow", ContentReferenceSplitter.SEGMENT_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(12).build(), "header+comment+row_too_large"),
+                Arguments.of("#abc\nhead\nrow", ContentSplitter.SEGMENT_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(8).build(), "header+comment_too_large"),
+                Arguments.of("#abc\nhead\nrow", ContentSplitter.SEGMENT_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(12).build(), "header+comment+row_too_large"),
                 Arguments.of("head\nrow", CountingReader.LINE_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(6).build(), "header+row_too_large"),
-                Arguments.of("#U,V,W\n#X,Y,Z\nA,B,C\n1,4,7\n2,5,8\n3,6,9", ContentReferenceSplitter.SEGMENT_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(25).build(), "comments+row_too_large"),
+                Arguments.of("#U,V,W\n#X,Y,Z\nA,B,C\n1,4,7\n2,5,8\n3,6,9", ContentSplitter.SEGMENT_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(25).build(), "comments+row_too_large"),
                 Arguments.of("head\ntoo big\nrow", CountingReader.LINE_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(6).build(), "first_row_too_large"),
                 Arguments.of("head\none\ntoo big\ntwo", CountingReader.LINE_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(6).build(), "middle_row_too_large"),
                 Arguments.of("head\none\ntwo\ntoo big", CountingReader.LINE_OVERFLOW, SplitterParams.builder().includeHeaders(true).commentChars("#").maxSize(6).build(), "last_row_too_large")

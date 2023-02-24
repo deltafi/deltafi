@@ -15,21 +15,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.config;
 
-public enum ActionEventType {
-  TRANSFORM,
-  LOAD,
-  LOAD_MANY,
-  DOMAIN,
-  ENRICH,
-  FORMAT,
-  FORMAT_MANY,
-  VALIDATE,
-  EGRESS,
-  ERROR,
-  FILTER,
-  SPLIT,
-  JOIN,
-  UNKNOWN
+import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.splitter.ContentSplitter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ContentSplitterConfig {
+
+    @Bean
+    public ContentSplitter contentSplitter(ContentStorageService contentStorageService) {
+        return new ContentSplitter(contentStorageService);
+    }
 }

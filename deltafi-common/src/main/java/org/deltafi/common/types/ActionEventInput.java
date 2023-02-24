@@ -39,6 +39,7 @@ public class ActionEventInput {
   private DomainEvent domain;
   private TransformEvent transform;
   private LoadEvent load;
+  private List<LoadEvent> loadMany;
   private EnrichEvent enrich;
   private FormatEvent format;
   private List<FormatEvent> formatMany;

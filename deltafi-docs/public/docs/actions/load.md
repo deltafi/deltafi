@@ -30,10 +30,11 @@ public class LoadInput {
 
 ### Return Types
 
-The `load` method must return a `LoadResultType`, which is currently implemented by `LoadResult`, `SplitResult`, `ErrorResult`, and `FilterResult`.
+The `load` method must return a `LoadResultType`, which is currently implemented by `LoadResult`, `SplitResult`, `LoadManyResult`, `ErrorResult`, and `FilterResult`.
 
-The `LoadResult` includes the domains, content, and metadata created by the `LoadAction`.
-A `SplitResult` includes seperate child DeltaFiles which will be ingressed back into DeltaFi.
+The `LoadResult` includes the domains, content, and metadata created by the `LoadAction`.  
+The `LoadManyResult` contains a list of `LoadResults`. Each `LoadResult` will be split into a child `DeltaFile` that will continue to be processed independently.  
+The `SplitResult` includes seperate child DeltaFiles which will be ingressed back into DeltaFi.
 
 ### Example
 

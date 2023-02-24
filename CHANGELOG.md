@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Set environment variable `DELTAFI_PYTHON` in cluster loc that allows downstream python projects to pick up the local python action kit
 - Server Sent Events broadcast for deltaFileStats
 - Delete metrics (files and bytes by policy) accumulated and charted on System Status dashboard
-- ContentReferenceSplitter that splits a single ContentReference into multiple ContentReferences pointing to segments of the original data
+- ContentSplitter that splits content into multiple sub-references pointing to segments of the original content
 - Ingress flows now accept either a load or a join action. A join action will execute when a configurable number of
 files are received or a configurable max age is reached. The join action receives the combined DeltaFile and a list of its
 joined DeltaFiles.
@@ -33,6 +33,8 @@ joined DeltaFiles.
 - No longer storing unneeded `stats.*` metrics in Graphite database.  This is a 50% reduction in metric storage
 - Run the property migration if any snapshots exist where DeltaFiProperties is not set
 - Values issue in KinD local values
+- Check if a plugin contains a flows directory before trying to use it
+- `FormatMany` children are no longer incorrectly marked as being in `testMode`
 
 ### Tech-Debt/Refactor
 - Clean up indexes that store nested data

@@ -824,6 +824,76 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
+	@Test
+	void testLoadMany() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile postTransform = postTransformDeltaFile(did);
+		deltaFileRepo.save(postTransform);
+
+		deltaFilesService.handleActionEvent(actionEvent("loadMany", did));
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
+		assertEquals(2, deltaFile.getChildDids().size());
+		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+
+		List<DeltaFile> children = deltaFilesService.getDeltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
+		assertEquals(2, children.size());
+
+		DeltaFile child1 = children.get(0);
+		assertEquals(DeltaFileStage.ENRICH, child1.getStage());
+		assertFalse(child1.getTestMode());
+		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
+		assertEquals("input.txt", child1.getSourceInfo().getFilename());
+
+		ProtocolLayer child1ProtocolLayer = child1.getLastProtocolLayer();
+		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getAction()).isEqualTo("sampleIngress.SampleLoadAction");
+		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
+
+		Content childContent = new Content();
+		ContentReference contentReference = new ContentReference();
+		contentReference.setMediaType("application/octet-stream");
+		contentReference.setSegments(List.of(new Segment("objectName", 0, 250, did)));
+		childContent.setContentReference(contentReference);
+
+		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getContent()).hasSize(1).contains(childContent);
+
+		Domain child1Domain = new Domain("sampleDomain", "firstDomainValue", "application/octet-stream");
+		org.assertj.core.api.Assertions.assertThat(child1.getDomains()).hasSize(1).contains(child1Domain);
+
+		DeltaFile child2 = children.get(1);
+		assertEquals(DeltaFileStage.ENRICH, child2.getStage());
+		assertFalse(child2.getTestMode());
+		assertEquals(Collections.singletonList(did), child2.getParentDids());
+		assertEquals("input.txt", child2.getSourceInfo().getFilename());
+
+		ProtocolLayer child2ProtocolLayer = child1.getLastProtocolLayer();
+		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getAction()).isEqualTo("sampleIngress.SampleLoadAction");
+		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
+
+		Content child2Content = new Content();
+		ContentReference child2ContentReference = new ContentReference();
+		child2ContentReference.setMediaType("application/octet-stream");
+		child2ContentReference.setSegments(List.of(new Segment("objectName", 250, 250, did)));
+		child2Content.setContentReference(contentReference);
+
+		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getContent()).hasSize(1).contains(child2Content);
+
+		Domain child2Domain = new Domain("sampleDomain", "secondDomainValue", "application/octet-stream");
+		org.assertj.core.api.Assertions.assertThat(child2.getDomains()).hasSize(1).contains(child2Domain);
+
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
+		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
+		assertThat(actionInputs).hasSize(2);
+
+		assertEqualsIgnoringDates(child1.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(0).getDeltaFile());
+		assertEqualsIgnoringDates(child2.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(1).getDeltaFile());
+
+		Map<String, String> tags = tagsFor(ActionEventType.LOAD_MANY, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricRepository);
+	}
+
 	DeltaFile postDomainDeltaFile(String did) {
 		DeltaFile deltaFile = postLoadDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ENRICH);
@@ -920,12 +990,14 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile child1 = children.get(0);
 		assertEquals(DeltaFileStage.EGRESS, child1.getStage());
+		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
 		assertEquals(0, child1.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
+		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
 		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
@@ -1121,7 +1193,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.queueAction(expectedEgressActionName);
 		deltaFile.completeAction(expectedEgressActionName, START_TIME, STOP_TIME);
 		deltaFile.completeAction("sampleEgress.AuthorityValidateAction", START_TIME, STOP_TIME);
-		deltaFile.setTestMode(expectedEgressActionName);
+		deltaFile.setTestModeReason(expectedEgressActionName);
 		deltaFile.setEgressed(false);
 		return deltaFile;
 	}
@@ -2431,7 +2503,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
-		deltaFile1.setTestMode("TestModeReason");
+		deltaFile1.setTestModeReason("TestModeReason");
 		deltaFileRepo.save(deltaFile1);
 
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));

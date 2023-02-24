@@ -64,6 +64,7 @@ public class DeltaFile {
   private String contentDeletedReason;
   private OffsetDateTime errorAcknowledged;
   private String errorAcknowledgedReason;
+  @Setter(AccessLevel.NONE)
   private Boolean testMode;
   private String testModeReason;
   private Boolean egressed;
@@ -177,8 +178,8 @@ public class DeltaFile {
     setModified(now);
   }
 
-  public void setTestMode(String reason) {
-    testMode = true;
+  public void setTestModeReason(String reason) {
+    testMode = null != reason;
     testModeReason = reason;
   }
 

@@ -286,6 +286,10 @@ public class DeltaFilesService {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = load(deltaFile, event);
             }
+            case LOAD_MANY -> {
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = loadMany(deltaFile, event);
+            }
             case JOIN -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = join(deltaFile, event);
@@ -556,6 +560,64 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
+    public DeltaFile loadMany(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
+        List<LoadEvent> loadEvents = event.getLoadMany();
+        List<DeltaFile> childDeltaFiles = Collections.emptyList();
+        List<ActionInput> enqueueActions = new ArrayList<>();
+
+        String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
+        if (!event.getAction().equals(loadActionName)) {
+            deltaFile.errorAction(event, "Attempted to split using a LoadMany result in an Action that is not a LoadAction: " + event.getAction(), "");
+        } else if (Objects.isNull(loadEvents) || loadEvents.isEmpty()) {
+            deltaFile.errorAction(event, "Attempted to split a DeltaFile into 0 children using a LoadMany result", "");
+        } else {
+            if (Objects.isNull(deltaFile.getChildDids())) {
+                deltaFile.setChildDids(new ArrayList<>());
+            }
+
+            OffsetDateTime now = OffsetDateTime.now();
+            childDeltaFiles = loadEvents.stream()
+                    .map(loadEvent -> this.buildLoadManyChildAndEnqueue(deltaFile, event, loadEvent, enqueueActions, now))
+                    .toList();
+
+            deltaFile.splitAction(event);
+        }
+
+        advanceOnly(deltaFile);
+
+        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
+        deltaFileRepo.save(deltaFile);
+        deltaFileRepo.saveAll(childDeltaFiles);
+        enqueueActions(enqueueActions);
+
+        return deltaFile;
+    }
+
+    private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEventInput actionEventInput, LoadEvent loadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
+        DeltaFile child = createChildDeltaFile(parentDeltaFile, actionEventInput);
+        child.setModified(now);
+
+        parentDeltaFile.getChildDids().add(child.getDid());
+
+        ProtocolLayer protocolLayer = loadEvent.getProtocolLayer();
+        if (protocolLayer != null) {
+            child.getProtocolStack().add(protocolLayer);
+        }
+
+        if (loadEvent.getDomains() != null) {
+            for (Domain domain : loadEvent.getDomains()) {
+                child.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
+            }
+        }
+
+        enqueueActions.addAll(advanceOnly(child));
+
+        child.recalculateBytes();
+
+        return child;
+    }
+
+    @MongoRetryable
     public DeltaFile split(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
         List<SplitEvent> splits = event.getSplit();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
@@ -664,12 +726,8 @@ public class DeltaFilesService {
             EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
 
             childDeltaFiles = formatInputs.stream().map(formatInput -> {
-                DeltaFile child = OBJECT_MAPPER.convertValue(deltaFile, DeltaFile.class);
-                child.setVersion(0);
-                child.setDid(UUID.randomUUID().toString());
-                child.setChildDids(Collections.emptyList());
-                child.setParentDids(List.of(deltaFile.getDid()));
-                child.completeAction(event);
+                DeltaFile child = createChildDeltaFile(deltaFile, event);
+                deltaFile.getChildDids().add(child.getDid());
 
                 FormattedData formattedData = FormattedData.newBuilder()
                         .formatAction(event.getAction())
@@ -689,8 +747,6 @@ public class DeltaFilesService {
                 return child;
             }).toList();
 
-            deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).toList());
-
             deltaFile.splitAction(event);
         }
 
@@ -703,6 +759,16 @@ public class DeltaFilesService {
         enqueueActions(enqueueActions);
 
         return deltaFile;
+    }
+
+    private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, ActionEventInput event) {
+        DeltaFile child = OBJECT_MAPPER.convertValue(deltaFile, DeltaFile.class);
+        child.setVersion(0);
+        child.setDid(UUID.randomUUID().toString());
+        child.setChildDids(Collections.emptyList());
+        child.setParentDids(List.of(deltaFile.getDid()));
+        child.completeAction(event);
+        return child;
     }
 
     public List<RetryResult> resume(@NotNull List<String> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {

@@ -82,7 +82,12 @@ public class PluginRegistrar {
                 .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
                 .actions(actions.stream().map(Action::getActionDescriptor).toList());
 
-        pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
+        Resource flowsDirectory = applicationContext.getResource("flows");
+        if (flowsDirectory.exists()) {
+            pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
+        } else {
+            log.info("No flows directory exists to load variables or flows");
+        }
 
         return pluginRegistrationBuilder.build();
     }

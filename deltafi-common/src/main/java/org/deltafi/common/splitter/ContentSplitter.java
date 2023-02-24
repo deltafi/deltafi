@@ -21,6 +21,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.Content;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,17 +30,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Takes a ContentReference and creates a list of sub-references that point to segments of
- * the ContentReference. Each sub-reference offset and size is found based upon line terminators
+ * Takes Content and creates a list of sub-references that point to segments of
+ * the Content. Each sub-reference offset and size is found based upon line terminators
  * and the {@link SplitterParams} that are passed in.
  */
-public class ContentReferenceSplitter {
+public class ContentSplitter {
 
     static final String SEGMENT_OVERFLOW = "The segment will not fit within the max size limit";
 
     private final ContentStorageService contentStorageService;
 
-    public ContentReferenceSplitter(ContentStorageService contentStorageService) {
+    public ContentSplitter(ContentStorageService contentStorageService) {
         this.contentStorageService = contentStorageService;
     }
 
@@ -47,12 +48,13 @@ public class ContentReferenceSplitter {
      * Create a list of content references based on the splitterParameters.
      * If includeHeaders is true the header line (excluding any comments) will be included in
      * all segments.
-     * @param contentReference ContentReference that needs to be segmented
+     * @param content Content that needs to be segmented
      * @param splitterParams params describing the rules for segmenting the input stream
      * @return a list of ContentReferences pointing to segments of the original content
      */
-    public List<ContentReference> splitContentReference(ContentReference contentReference, SplitterParams splitterParams) {
-        if (contentReference.getSize() == 0) {
+    public List<ContentReference> splitContent(Content content, SplitterParams splitterParams) {
+        ContentReference contentReference = content.getContentReference();
+        if (contentReference == null || contentReference.getSize() == 0) {
             return List.of();
         }
 
