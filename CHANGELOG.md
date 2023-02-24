@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.102.0
+## [0.102.0] - 2022-02-24
 
 ### Added
 - Add deltaFileStats GraphQL query
@@ -24,10 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - `stats_count.survey.subflow.bytes`
 - Refactored Monitor to prevent checks from blocking one another
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Executing `deltafi` commands in KinD now writes files as the current user instead of root:root
 - Ingress was writing to disk when a flow was disabled or non-existent
@@ -38,8 +34,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Tech-Debt/Refactor
 - Clean up indexes that store nested data
 - Adjust requeue query to hit completed before index
-
-### Security
 
 ### Upgrade and Migration
 - Updated docker base images to 0.102.0
@@ -1200,7 +1194,26 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.5...main
+## [Unreleased] - yyyy-mm-dd
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.102.0...main
+[0.102.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.5...0.102.0
 [0.101.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.4...0.101.5
 [0.101.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.3...0.101.4
 [0.101.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.2...0.101.3
