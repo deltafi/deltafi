@@ -6,6 +6,7 @@ General,DashboardView,Grants the ability to view the UI dashboard
 General,VersionsView,Grants the ability to view running versions
 General,MetricsView,Grants the ability to view metrics
 DeltaFiles,DeltaFileMetadataView,Grants the ability to query for and view DeltaFiles
+DeltaFiles,DeltaFileMetadataWrite,Grants the ability to update DeltaFile metadata
 DeltaFiles,DeltaFileContentView,Grants the ability to view DeltaFile content
 DeltaFiles,DeltaFileReplay,Grants the ability to replay DeltaFiles
 DeltaFiles,DeltaFileResume,Grants the ability to resume DeltaFiles in an ERROR stage

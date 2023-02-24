@@ -98,6 +98,9 @@ class DeltaFilesServiceTest {
                 actionEventQueue, contentStorageService, metricRepository, coreAuditLogger, joinRepo);
     }
 
+    @Captor
+    ArgumentCaptor<DeltaFile> deltaFileCaptor;
+
     @Test
     void setsAndGets() {
         IngressFlow ingressFlow = new IngressFlow();
@@ -294,9 +297,9 @@ class DeltaFilesServiceTest {
         flow.setLoadAction(actionConfig);
 
         // "good" flow is available
-        when(ingressFlowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
+        when(ingressFlowService.getRunningFlowByName("good")).thenReturn(flow);
         // "bad" flow is not available
-        when(ingressFlowService.getRunningFlowByName(eq("bad"))).thenThrow(new DgsEntityNotFoundException());
+        when(ingressFlowService.getRunningFlowByName("bad")).thenThrow(new DgsEntityNotFoundException());
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .sourceInfo(SourceInfo.builder().flow("good").build())
@@ -332,7 +335,7 @@ class DeltaFilesServiceTest {
         flow.setLoadAction(actionConfig);
 
         // "good" flow is available
-        when(ingressFlowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
+        when(ingressFlowService.getRunningFlowByName("good")).thenReturn(flow);
         // "bad" flow is not available
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
@@ -357,6 +360,49 @@ class DeltaFilesServiceTest {
 
         assertFalse(deltaFile.hasErroredAction());
         assertTrue(deltaFile.getActions().stream().noneMatch(a -> a.getState()==ActionState.ERROR));
+    }
+
+    @Test
+    void testAnnotationDeltaFile() {
+        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        deltaFile.addIndexedMetadata(Map.of("key", "one"));
+
+        Mockito.when(deltaFileRepo.findById("1")).thenReturn(Optional.of(deltaFile));
+        Mockito.when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
+
+        deltaFilesService.addIndexedMetadata("1", Map.of("sys-ack", "true"), false);
+        Mockito.verify(deltaFileRepo).save(deltaFileCaptor.capture());
+
+        DeltaFile after = deltaFileCaptor.getValue();
+        Assertions.assertThat(after.getIndexedMetadata()).hasSize(2).containsEntry("key", "one").containsEntry("sys-ack", "true");
+        Assertions.assertThat(after.getIndexedMetadataKeys()).hasSize(2).contains("key", "sys-ack");
+    }
+
+    @Test
+    void testAnnotationDeltaFile_badDid() {
+        Map<String, String> metadata = Map.of("sys-ack", "true");
+        Assertions.assertThatThrownBy(() -> deltaFilesService.addIndexedMetadata("did", metadata, true))
+                        .isInstanceOf(DgsEntityNotFoundException.class)
+                        .hasMessage("DeltaFile did not found.");
+    }
+
+    @Test
+    void testAddIndexedMetadataOverwrites() {
+        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        deltaFile.setIndexedMetadata(new HashMap<>(Map.of("key", "one")));
+        deltaFile.setIndexedMetadataKeys(new HashSet<>(Set.of("key")));
+
+        Mockito.when(deltaFileRepo.findById("1")).thenReturn(Optional.of(deltaFile));
+
+        deltaFilesService.addIndexedMetadata("1", Map.of("key", "changed"), false);
+        Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(1).containsEntry("key", "one");
+
+        deltaFilesService.addIndexedMetadata("1", Map.of("key", "changed", "newKey", "value"), false);
+        Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(2).containsEntry("key", "one").containsEntry("newKey", "value");
+        Assertions.assertThat(deltaFile.getIndexedMetadataKeys()).hasSize(2).contains("key", "newKey");
+
+        deltaFilesService.addIndexedMetadata("1", Map.of("key", "changed", "newKey", "value"), true);
+        Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(2).containsEntry("key", "changed").containsEntry("newKey", "value");
     }
 
     private ContentReference createContentReference(String did) {

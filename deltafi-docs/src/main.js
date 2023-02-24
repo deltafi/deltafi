@@ -161,6 +161,10 @@ new Docute({
         {
           title: 'Data Retention',
           link: '/advanced/data_retention'
+        },
+        {
+          title: 'DeltaFile Annotations',
+          link: '/advanced/deltafile_annotations'
         }
       ]
     }

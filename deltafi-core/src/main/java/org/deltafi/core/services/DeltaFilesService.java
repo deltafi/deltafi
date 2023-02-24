@@ -531,6 +531,24 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
+    @MongoRetryable
+    public void addIndexedMetadata(String did, Map<String, String> metadata, boolean allowOverwrites) {
+        DeltaFile deltaFile = getDeltaFile(did);
+
+        if (deltaFile == null) {
+            throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
+        }
+
+        if (allowOverwrites) {
+            deltaFile.addIndexedMetadata(metadata);
+        } else {
+            deltaFile.addIndexedMetadataIfAbsent(metadata);
+        }
+
+        deltaFile.setModified(OffsetDateTime.now());
+        deltaFileRepo.save(deltaFile);
+    }
+
     public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile, OffsetDateTime time) {
         return ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())

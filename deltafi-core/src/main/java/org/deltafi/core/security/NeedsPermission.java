@@ -97,6 +97,11 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('DeltaFileMetadataView'" + OR_ADMIN)
     public @interface DeltaFileMetadataView {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileMetadataWrite'" + OR_ADMIN)
+    public @interface DeltaFileMetadataWrite {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

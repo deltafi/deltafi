@@ -217,6 +217,19 @@ public class DeltaFile {
     this.indexedMetadataKeys.addAll(metadata.keySet());
   }
 
+  public void addIndexedMetadataIfAbsent(Map<String, String> metadata) {
+    metadata.forEach(this::addIndexedMetadataIfAbsent);
+  }
+
+  public void addIndexedMetadataIfAbsent(String key, String value) {
+    if (null == key || indexedMetadata.containsKey(key)) {
+      return;
+    }
+
+    this.indexedMetadata.put(key, value);
+    this.indexedMetadataKeys.add(key);
+  }
+
   public void addEgressFlow(@NotNull String flow) {
     if (!getEgress().stream().map(Egress::getFlow).toList().contains(flow)) {
       getEgress().add(new Egress(flow));

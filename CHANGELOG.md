@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - 0.102.1 or 0.103.0
 
 ### Added
+- New permission `DeltaFileMetadataWrite` that allows a user to update indexed metadata on a `DeltaFile`
+- Annotation endpoints that add indexedMetadata to a `DeltaFile`:
+  - `/deltafile/annotate/{did}?k=v&kn=vn` - if a key already exists the value will not be replaced
+  - `/deltafile/annotate/{did}/allowOverwrites?k=v&kn=vn` - if a key already exists the value will be changed
 
 ### Changed
 

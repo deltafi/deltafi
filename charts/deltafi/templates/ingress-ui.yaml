@@ -50,6 +50,13 @@ spec:
             name: deltafi-ingress-service
             port:
               number: 80
+      - path: /(deltafile/annotate/.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: deltafi-core-service
+            port:
+              number: 80
       - path: /(docs.*)
         pathType: Prefix
         backend:
