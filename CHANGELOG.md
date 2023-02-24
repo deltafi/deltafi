@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - Next release 0.101.6 or 1.0.0
+## [Unreleased] - Next release 0.102.0
 
 ### Added
 - Add deltaFileStats GraphQL query
@@ -41,6 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Security
 
 ### Upgrade and Migration
+- Updated docker base images to 0.102.0
 
 ## [0.101.5] - 2022-02-10
 
