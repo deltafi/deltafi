@@ -837,7 +837,7 @@ loc() {
 
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
     _attention "Installing DeltaFi core"
-    install -f deltafi/charts/deltafi/values-kind.yaml deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
+    install -f deltafi/charts/deltafi/values-kind.yaml -f deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
     _install_plugins
   fi
 
