@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,20 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.common.content;
 
-public enum ActionEventType {
-  TRANSFORM,
-  LOAD,
-  DOMAIN,
-  ENRICH,
-  FORMAT,
-  FORMAT_MANY,
-  VALIDATE,
-  EGRESS,
-  ERROR,
-  FILTER,
-  SPLIT,
-  JOIN,
-  UNKNOWN
+import org.deltafi.common.types.Content;
+
+import java.util.List;
+
+public class ContentUtil {
+    public static Long computeContentSize(List<Content> content) {
+        if (content == null || content.isEmpty()) {
+            return 0L;
+        }
+
+        return content.stream()
+                .mapToLong(c -> c.getContentReference().getSize()).sum();
+    }
 }

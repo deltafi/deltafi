@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -34,11 +34,11 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class IngressFlowPlan extends FlowPlan {
     private List<TransformActionConfiguration> transformActions;
-    private final LoadActionConfiguration loadAction;
+    private LoadActionConfiguration loadAction;
+    private JoinActionConfiguration joinAction;
 
-    public IngressFlowPlan(String name, String description, LoadActionConfiguration loadAction) {
+    public IngressFlowPlan(String name, String description) {
         super(name, FlowType.INGRESS, description);
-        this.loadAction = loadAction;
     }
 
     @PersistenceCreator
@@ -46,9 +46,8 @@ public class IngressFlowPlan extends FlowPlan {
     @SuppressWarnings("unused")
     public IngressFlowPlan(@JsonProperty(value = "name", required = true) String name,
             @JsonProperty(value = "type") FlowType type,
-            @JsonProperty(value = "description", required = true) String description,
-            @JsonProperty(value = "loadAction", required = true) LoadActionConfiguration loadAction) {
-        this(name, description, loadAction);
+            @JsonProperty(value = "description", required = true) String description) {
+        this(name, description);
     }
 
     @Override
@@ -59,6 +58,9 @@ public class IngressFlowPlan extends FlowPlan {
         }
         if (loadAction != null) {
             actionConfigurations.add(loadAction);
+        }
+        if (joinAction != null) {
+            actionConfigurations.add(joinAction);
         }
         return actionConfigurations;
     }

@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -19,6 +19,7 @@ package org.deltafi.core.configuration;
 
 import lombok.Data;
 import org.deltafi.core.configuration.ui.UiProperties;
+import org.deltafi.core.join.JoinProperties;
 import org.deltafi.core.types.PropertyType;
 import org.springframework.data.annotation.Id;
 
@@ -45,4 +46,5 @@ public class DeltaFiProperties {
 
     private Set<PropertyType> setProperties = new HashSet<>();
 
+    private JoinProperties join = new JoinProperties();
 }

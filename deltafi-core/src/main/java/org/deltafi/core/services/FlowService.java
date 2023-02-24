@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -165,9 +165,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public FlowT validateAndSaveFlow(String flowName) {
         FlowT flow = getFlowOrThrow(flowName);
 
-        List<FlowConfigError> errors = flow.getFlowStatus()
+        List<FlowConfigError> errors = new ArrayList<>(flow.getFlowStatus()
                 .getErrors().stream().filter(error -> FlowErrorType.UNRESOLVED_VARIABLE.equals(error.getErrorType()))
-                .collect(Collectors.toList());
+                .toList());
 
         errors.addAll(validator.validate(flow));
 
@@ -184,7 +184,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     /**
      * Find the running flow with the given name.
-     *
+     * <p>
      * Throws an exception if the given flow is not running
      * @param flowName name of the flow to find
      * @return the flow with the given name
@@ -203,7 +203,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     /**
      * Find the flow with the given name.
-     *
+     * <p>
      * Throws an exception if the given flow does not exist
      * @param flowName name of the flow to find
      * @return the flow with the given name
@@ -367,7 +367,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     /**
      * Search the flows for a configuration configurations
      * @param actionQueryInput search parameters
-     * @return list of matching configurations
+     * @return an immutable list of matching configurations
      */
     public List<DeltaFiConfiguration> getConfigs(ConfigQueryInput actionQueryInput) {
         return Objects.nonNull(actionQueryInput) ? findConfigsWithFilter(actionQueryInput) : findAllConfigs();
@@ -421,7 +421,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         String nameFilter = actionQueryInput.getName();
         List<DeltaFiConfiguration> allByType = allOfConfigType(configType);
         return Objects.isNull(nameFilter) ? allByType :
-                allByType.stream().filter(actionConfig -> actionQueryInput.getName().equals(actionConfig.getName())).collect(Collectors.toList());
+                allByType.stream()
+                        .filter(actionConfig -> actionQueryInput.getName().equals(actionConfig.getName()))
+                        .toList();
     }
 
     private List<DeltaFiConfiguration> allOfConfigType(ConfigType configType) {
@@ -435,7 +437,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return getAll().stream()
                 .map(Flow::allConfigurations)
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private FlowT save(FlowT flow) {

@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.converters;
 
+import org.deltafi.common.types.JoinActionConfiguration;
 import org.deltafi.common.types.LoadActionConfiguration;
 import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.types.IngressFlow;
@@ -28,7 +29,12 @@ import java.util.Objects;
 public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan, IngressFlow> {
 
     public void populateFlowSpecificFields(IngressFlowPlan ingressFlowPlan, IngressFlow ingressFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        ingressFlow.setLoadAction(buildLoadAction(ingressFlowPlan.getLoadAction(), flowPlanPropertyHelper));
+        if (ingressFlowPlan.getLoadAction() != null) {
+            ingressFlow.setLoadAction(buildLoadAction(ingressFlowPlan.getLoadAction(), flowPlanPropertyHelper));
+        }
+        if (ingressFlowPlan.getJoinAction() != null) {
+            ingressFlow.setJoinAction(buildJoinAction(ingressFlowPlan.getJoinAction(), flowPlanPropertyHelper));
+        }
         ingressFlow.setTransformActions(buildTransformActions(ingressFlowPlan.getTransformActions(), flowPlanPropertyHelper));
     }
 
@@ -43,6 +49,18 @@ public class IngressFlowPlanConverter extends FlowPlanConverter<IngressFlowPlan,
                 flowPlanPropertyHelper.getReplacedName(loadActionTemplate), loadActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(loadActionConfiguration, loadActionTemplate);
         return loadActionConfiguration;
+    }
+
+    JoinActionConfiguration buildJoinAction(JoinActionConfiguration joinActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        String replacedName = flowPlanPropertyHelper.getReplacedName(joinActionTemplate);
+        JoinActionConfiguration joinActionConfiguration = new JoinActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(joinActionTemplate), joinActionTemplate.getType(),
+                flowPlanPropertyHelper.replaceValue(joinActionTemplate.getMaxAge(), replacedName));
+        flowPlanPropertyHelper.replaceCommonActionPlaceholders(joinActionConfiguration, joinActionTemplate);
+        joinActionConfiguration.setMaxNum(joinActionTemplate.getMaxNum());
+        joinActionConfiguration.setMetadataKey(flowPlanPropertyHelper.replaceValue(joinActionTemplate.getMetadataKey(), replacedName));
+        joinActionConfiguration.setMetadataIndexKey(flowPlanPropertyHelper.replaceValue(joinActionTemplate.getMetadataIndexKey(), replacedName));
+        return joinActionConfiguration;
     }
 
     List<TransformActionConfiguration> buildTransformActions(List<TransformActionConfiguration> transformActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {

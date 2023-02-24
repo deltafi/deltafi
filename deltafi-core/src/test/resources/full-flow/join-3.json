@@ -1,0 +1,32 @@
+{
+    "did": "%1$s",
+    "sourceInfo": {
+        "filename": "join3.txt",
+        "flow": "%2$s",
+        "metadata": {
+            "join3-source-metadata1": "abc",
+            "common-source-metadata": "def",
+            "fragment-index": "1"
+        }
+    },
+    "content": [
+        {
+            "contentReference": {
+                "segments": [
+                    {
+                        "uuid": "join3-content-segment1",
+                        "offset": 0,
+                        "size": 500,
+                        "did": "%1$s"
+                    }
+                ],
+                "mediaType": "join3-content-media-type"
+            },
+            "metadata": {
+                "join3-content-metadata1": "ghi",
+                "common-content-metadata": "jkl"
+            }
+        }
+    ],
+    "created": "2021-07-11T13:44:22.183Z"
+}

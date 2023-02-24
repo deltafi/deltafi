@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -43,7 +43,8 @@ class IngressFlowPlanValidatorTest {
         TransformActionConfiguration transform2 = new TransformActionConfiguration("transform", "org.deltafi.transform.Action2");
         TransformActionConfiguration transform3 = new TransformActionConfiguration("transform",  "org.deltafi.transform.Action3");
 
-        IngressFlowPlan ingressFlow = new IngressFlowPlan("flow", null, load);
+        IngressFlowPlan ingressFlow = new IngressFlowPlan("flow", null);
+        ingressFlow.setLoadAction(load);
         ingressFlow.setTransformActions(List.of(transform1, transform2, transform3));
 
         Assertions.assertThatThrownBy(() -> ingressFlowPlanValidator.validate(ingressFlow))

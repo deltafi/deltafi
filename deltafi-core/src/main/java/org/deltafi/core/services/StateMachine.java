@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -56,13 +56,22 @@ public class StateMachine {
                 if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasSplitAction()) {
                     break;
                 }
+
                 IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+
                 // transform
                 TransformActionConfiguration nextTransformAction = getTransformAction(ingressFlow, deltaFile);
                 if (nextTransformAction != null) {
                     deltaFile.queueAction(nextTransformAction.getName());
                     enqueueActions.add(buildActionInput(nextTransformAction, deltaFile, null));
                     break;
+                }
+
+                // join
+                JoinActionConfiguration joinActionConfiguration = ingressFlow.getJoinAction();
+                if ((joinActionConfiguration != null) && !deltaFile.isJoined()) {
+                    deltaFile.setStage(DeltaFileStage.JOINING);
+                    return Collections.emptyList();
                 }
 
                 // load

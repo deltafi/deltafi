@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -17,14 +17,16 @@
  */
 package org.deltafi.core.types;
 
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
 
 @Document
 @Data
@@ -32,6 +34,7 @@ import java.util.*;
 public class IngressFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
+    private JoinActionConfiguration joinAction;
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionNamed) {
@@ -39,13 +42,23 @@ public class IngressFlow extends Flow {
         if (transformActionConfiguration != null) {
             return transformActionConfiguration;
         }
-        return nameMatches(loadAction, actionNamed) ? loadAction : null;
+
+        if ((loadAction != null) && nameMatches(loadAction, actionNamed)) {
+            return loadAction;
+        }
+
+        return ((joinAction != null) && nameMatches(joinAction, actionNamed)) ? joinAction : null;
     }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
         List<ActionConfiguration> actionConfigurations = new ArrayList<>(transformActions);
-        actionConfigurations.add(loadAction);
+        if (loadAction != null) {
+            actionConfigurations.add(loadAction);
+        }
+        if (joinAction != null) {
+            actionConfigurations.add(joinAction);
+        }
         return actionConfigurations;
     }
 
@@ -53,9 +66,9 @@ public class IngressFlow extends Flow {
     public List<DeltaFiConfiguration> findByConfigType(ConfigType configType)  {
         return switch (configType) {
             case INGRESS_FLOW -> List.of(asFlowConfiguration());
-            case TRANSFORM_ACTION ->
-                    Objects.nonNull(transformActions) ? new ArrayList<>(transformActions) : Collections.emptyList();
-            case LOAD_ACTION -> List.of(loadAction);
+            case TRANSFORM_ACTION -> transformActions != null ? new ArrayList<>(transformActions) : Collections.emptyList();
+            case LOAD_ACTION -> loadAction != null ? List.of(loadAction) : Collections.emptyList();
+            case JOIN_ACTION -> joinAction != null ? List.of(joinAction) : Collections.emptyList();
             default -> Collections.emptyList();
         };
     }
@@ -63,13 +76,24 @@ public class IngressFlow extends Flow {
     @Override
     public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
         updateActionNamesByFamily(actionFamilyMap, ActionType.TRANSFORM, actionNames(transformActions));
-        updateActionNamesByFamily(actionFamilyMap, ActionType.LOAD, loadAction.getName());
+        if (loadAction != null) {
+            updateActionNamesByFamily(actionFamilyMap, ActionType.LOAD, loadAction.getName());
+        }
+        if (joinAction != null) {
+            updateActionNamesByFamily(actionFamilyMap, ActionType.JOIN, joinAction.getName());
+        }
     }
 
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
-        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration(name, loadAction.getName());
+        IngressFlowConfiguration ingressFlowConfiguration = new IngressFlowConfiguration(name);
         ingressFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).toList());
+        if (loadAction != null) {
+            ingressFlowConfiguration.setLoadAction(loadAction.getName());
+        }
+        if (joinAction != null) {
+            ingressFlowConfiguration.setJoinAction(joinAction.getName());
+        }
         return ingressFlowConfiguration;
     }
 }

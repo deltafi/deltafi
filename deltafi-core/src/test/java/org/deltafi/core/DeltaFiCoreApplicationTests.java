@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -141,9 +141,6 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	DeltaFiPropertiesService deltaFiPropertiesService;
-
-	@Autowired
-	DeletePolicyService deletePolicyService;
 
 	@Autowired
 	DeleteRunner deleteRunner;
@@ -755,7 +752,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.addIndexedMetadata(Map.of("domainKey", "domain metadata"));
 		deltaFile.setStage(DeltaFileStage.ERROR);
 		deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
-		deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile));
+		deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now()));
 		deltaFile.addDomain("sampleDomain", "sampleDomainValue", "application/octet-stream");
 		deltaFile.getLastProtocolLayer().setMetadata(loadWrongMetadata);
 		return deltaFile;
@@ -1371,9 +1368,7 @@ class DeltaFiCoreApplicationTests {
 			assertEquals(ActionState.FILTERED, action.getState());
 			assertEquals(DeltaFileStage.COMPLETE, actual.getStage());
 			assertTrue(actual.getFiltered());
-			Optional<Action> result = actual.getActions().stream().filter(a -> a.getState() == ActionState.FILTERED).findFirst();
-			assertTrue(result.isPresent());
-			assertEquals("you got filtered", result.get().getFilteredCause());
+			assertEquals("you got filtered", action.getFilteredCause());
 
 			Mockito.verify(actionEventQueue, never()).putActions(any());
 		} else {
@@ -1421,8 +1416,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetIngressFlowPlan() {
 		clearForFlowTests();
-		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("ingressPlan", "description", new LoadActionConfiguration("load", "type"));
-		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b", "description", new LoadActionConfiguration("load", "type"));
+		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("ingressPlan", "description");
+		ingressFlowPlanA.setLoadAction(new LoadActionConfiguration("load", "type"));
+		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b", "description");
+		ingressFlowPlanB.setLoadAction(new LoadActionConfiguration("load", "type"));
 		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB));
 		IngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("ingressPlan");
@@ -3607,14 +3604,12 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFileRepo.save(deltaFile3);
 
-		OffsetDateTime timestamp = MONGO_NOW;
-
-		deltaFileRepo.setContentDeletedByDidIn(List.of("1", "3", "4"), timestamp, "MyPolicy");
+		deltaFileRepo.setContentDeletedByDidIn(List.of("1", "3", "4"), MONGO_NOW, "MyPolicy");
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
-		deltaFile1.setContentDeleted(timestamp);
+		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setContentDeletedReason("MyPolicy");
 		deltaFile1.setVersion(2);
-		deltaFile3.setContentDeleted(timestamp);
+		deltaFile3.setContentDeleted(MONGO_NOW);
 		deltaFile3.setContentDeletedReason("MyPolicy");
 		deltaFile3.setVersion(2);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile3, deltaFile2, deltaFile1));

@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -28,10 +28,10 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class IngressFlowConfiguration extends DeltaFiConfiguration {
     private List<String> transformActions;
-    private final String loadAction;
+    private String loadAction;
+    private String joinAction;
 
-    public IngressFlowConfiguration(String name, String loadAction) {
+    public IngressFlowConfiguration(String name) {
         super(name);
-        this.loadAction = loadAction;
     }
 }

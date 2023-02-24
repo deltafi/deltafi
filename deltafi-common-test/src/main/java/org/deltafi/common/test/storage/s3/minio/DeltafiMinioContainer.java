@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -25,11 +25,16 @@ import io.minio.messages.*;
 import java.util.List;
 
 public class DeltafiMinioContainer extends MinioContainer {
-    public DeltafiMinioContainer(String accessKey, String secretKey) {
+    private final String defaultBucket;
+
+    public DeltafiMinioContainer(String accessKey, String secretKey, String defaultBucket) {
         super(accessKey, secretKey);
+
+        this.defaultBucket = defaultBucket;
     }
 
-    public MinioClient start(String defaultBucket) {
+    @Override
+    public void start() {
         super.start();
 
         MinioClient minioClient = MinioClient.builder()
@@ -46,7 +51,5 @@ public class DeltafiMinioContainer extends MinioContainer {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        return minioClient;
     }
 }

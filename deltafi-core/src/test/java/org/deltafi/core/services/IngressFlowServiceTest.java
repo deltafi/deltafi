@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -63,8 +63,10 @@ class IngressFlowServiceTest {
         Mockito.when(ingressFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        IngressFlowPlan runningFlowPlan = new IngressFlowPlan("running", "yep", new LoadActionConfiguration("LoadActionConfig", "LoadActionConfigType"));
-        IngressFlowPlan stoppedFlowPlan = new IngressFlowPlan("stopped", "naw", new LoadActionConfiguration("LoadActionConfig", "LoadActionConfigType"));
+        IngressFlowPlan runningFlowPlan = new IngressFlowPlan("running", "yep");
+        runningFlowPlan.setLoadAction(new LoadActionConfiguration("LoadActionConfig", "LoadActionConfigType"));
+        IngressFlowPlan stoppedFlowPlan = new IngressFlowPlan("stopped", "naw");
+        stoppedFlowPlan.setLoadAction(new LoadActionConfiguration("LoadActionConfig", "LoadActionConfigType"));
 
         IngressFlow runningIngressFlow = ingressFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         IngressFlow stoppedIngressFlow = ingressFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());

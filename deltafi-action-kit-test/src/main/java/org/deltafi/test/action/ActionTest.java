@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -201,7 +201,11 @@ public abstract class ActionTest {
         Mockito.lenient().when(actionsProperties.getHostname()).thenReturn(HOSTNAME);
 
         beforeExecuteAction(deltaFile, testCase);
-        return testCase.getAction().executeAction(deltaFile, context(), testCase.getParameters());
+        return testCase.getAction().executeAction(ActionInput.builder()
+                .deltaFile(deltaFile)
+                .actionContext(context())
+                .actionParams(testCase.getParameters())
+                .build());
     }
 
     protected List<Content> createContentReferencesForSaveMany(InvocationOnMock invocation) throws ObjectStorageException, IOException {
@@ -286,7 +290,7 @@ public abstract class ActionTest {
     }
 
     @SneakyThrows
-    public <TC extends TestCaseBase<?>, RT extends Result> RT execute(TC testCase, Class<RT> expectedResultType) {
+    public <TC extends TestCaseBase<?>, RT extends Result<?>> RT execute(TC testCase, Class<RT> expectedResultType) {
         // Setup some apis so that we can get data back out
         if(testCase.getExceptionLocation() == TestCaseBase.ExceptionLocation.STORAGE_WRITE) {
             Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(byte[].class), Mockito.anyString())).thenThrow(testCase.getException());

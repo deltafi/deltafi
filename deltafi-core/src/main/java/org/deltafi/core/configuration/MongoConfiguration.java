@@ -28,7 +28,6 @@ import java.util.Arrays;
 
 @Configuration
 public class MongoConfiguration {
-
     @Bean
     public MongoCustomConversions mongoCustomConversions() {
         return new MongoCustomConversions(Arrays.asList(new OffsetDateTimeReadConverter(), new OffsetDateTimeWriteConverter(), new DurationReadConverter()));

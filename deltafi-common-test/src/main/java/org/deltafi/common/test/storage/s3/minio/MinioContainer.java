@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -29,7 +29,7 @@ public class MinioContainer extends GenericContainer<MinioContainer> {
     final protected String secretKey;
 
     public MinioContainer(String accessKey, String secretKey) {
-        super("minio/minio:RELEASE.2021-02-14T04-01-33Z");
+        super("minio/minio:RELEASE.2022-08-25T07-17-05Z");
 
         this.accessKey = accessKey;
         this.secretKey = secretKey;

@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -19,11 +19,13 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.configuration.ClockConfiguration;
+import org.deltafi.core.join.JoinRepo;
+import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.junit.jupiter.api.Assertions;
@@ -49,9 +51,11 @@ import java.util.Collections;
 import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
-@Import({DeltaFilesService.class})
+@Import({DeltaFilesService.class, ClockConfiguration.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
-@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class, MetricRepository.class, DeltaFiPropertiesRepo.class})
+@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class,
+        ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class,
+        MetricRepository.class, DeltaFiPropertiesRepo.class, JoinRepo.class})
 @EnableRetry
 class IngressServiceRetryTest {
 
@@ -60,6 +64,9 @@ class IngressServiceRetryTest {
 
     @MockBean
     private DeltaFileRepo deltaFileRepo;
+
+    @MockBean
+    private JoinRepo joinRepo;
 
     @TestConfiguration
     public static class TestConfig {

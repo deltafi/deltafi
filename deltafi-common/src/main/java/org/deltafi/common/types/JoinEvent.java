@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -17,18 +17,19 @@
  */
 package org.deltafi.common.types;
 
-public enum ActionEventType {
-  TRANSFORM,
-  LOAD,
-  DOMAIN,
-  ENRICH,
-  FORMAT,
-  FORMAT_MANY,
-  VALIDATE,
-  EGRESS,
-  ERROR,
-  FILTER,
-  SPLIT,
-  JOIN,
-  UNKNOWN
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class JoinEvent {
+  private SourceInfo sourceInfo;
+  private List<Domain> domains;
+  private ProtocolLayer protocolLayer;
 }

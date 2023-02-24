@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -24,14 +24,16 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
-import org.deltafi.core.metrics.MetricRepository;
-import org.deltafi.core.metrics.MetricsUtil;
+import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
+import org.deltafi.core.join.JoinRepo;
+import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.IngressFlow;
@@ -41,6 +43,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -53,14 +56,20 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFilesServiceTest {
-    @Mock
-    IngressFlowService flowService;
+    private final Clock clock = new TestClock();
 
-    @Mock
-    DeltaFileRepo deltaFileRepo;
+    private final IngressFlowService ingressFlowService;
+    private final EnrichFlowService enrichFlowService;
+    private final EgressFlowService egressFlowService;
+    private final StateMachine stateMachine;
+    private final DeltaFileRepo deltaFileRepo;
+    private final ActionEventQueue actionEventQueue;
+    private final ContentStorageService contentStorageService;
+    private final MetricRepository metricRepository;
+    private final CoreAuditLogger coreAuditLogger;
+    private final JoinRepo joinRepo;
 
-    @Mock
-    ContentStorageService contentStorageService;
+    private final DeltaFilesService deltaFilesService;
 
     @Captor
     ArgumentCaptor<List<Segment>> segmentCaptor;
@@ -68,45 +77,42 @@ class DeltaFilesServiceTest {
     @Captor
     ArgumentCaptor<List<String>> stringListCaptor;
 
-    @SuppressWarnings("unused")
-    @Spy
-    DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
+    DeltaFilesServiceTest(@Mock IngressFlowService ingressFlowService, @Mock EnrichFlowService enrichFlowService,
+            @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
+            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
+            @Mock ContentStorageService contentStorageService, @Mock MetricRepository metricRepository,
+            @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo) {
+        this.ingressFlowService = ingressFlowService;
+        this.enrichFlowService = enrichFlowService;
+        this.egressFlowService = egressFlowService;
+        this.stateMachine = stateMachine;
+        this.deltaFileRepo = deltaFileRepo;
+        this.actionEventQueue = actionEventQueue;
+        this.contentStorageService = contentStorageService;
+        this.metricRepository = metricRepository;
+        this.coreAuditLogger = coreAuditLogger;
+        this.joinRepo = joinRepo;
 
-    @SuppressWarnings("unused")
-    @Mock
-    StateMachine stateMachine;
-
-    @Mock
-    EgressFlowService egressFlowService;
-
-    @SuppressWarnings("unused")
-    @Mock
-    ActionEventQueue actionEventQueue;
-
-    @Mock
-    @SuppressWarnings("unused")
-    CoreAuditLogger coreAuditLogger;
-
-    @InjectMocks
-    DeltaFilesService deltaFilesService;
-
-    @Mock
-    MetricRepository metricRepository;
+        deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService,
+                new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
+                actionEventQueue, contentStorageService, metricRepository, coreAuditLogger, joinRepo);
+    }
 
     @Test
     void setsAndGets() {
-        final String flow = "theFlow";
-        SourceInfo sourceInfo = new SourceInfo(null, flow, Map.of());
+        IngressFlow ingressFlow = new IngressFlow();
+        ingressFlow.setName("theFlow");
+        when(ingressFlowService.getRunningFlowByName(ingressFlow.getName())).thenReturn(ingressFlow);
 
         String did = UUID.randomUUID().toString();
-
+        SourceInfo sourceInfo = new SourceInfo(null, ingressFlow.getName(), Map.of());
         List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference("mediaType")).build());
         IngressEvent ingressInput = new IngressEvent(did, sourceInfo, content, OffsetDateTime.now());
 
         DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
 
         assertNotNull(deltaFile);
-        assertEquals(flow, deltaFile.getSourceInfo().getFlow());
+        assertEquals(ingressFlow.getName(), deltaFile.getSourceInfo().getFlow());
         assertEquals(did, deltaFile.getDid());
         assertNotNull(deltaFile.getLastProtocolLayer());
     }
@@ -288,9 +294,9 @@ class DeltaFilesServiceTest {
         flow.setLoadAction(actionConfig);
 
         // "good" flow is available
-        when(flowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
+        when(ingressFlowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
         // "bad" flow is not available
-        when(flowService.getRunningFlowByName(eq("bad"))).thenThrow(new DgsEntityNotFoundException());
+        when(ingressFlowService.getRunningFlowByName(eq("bad"))).thenThrow(new DgsEntityNotFoundException());
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .sourceInfo(SourceInfo.builder().flow("good").build())
@@ -326,7 +332,7 @@ class DeltaFilesServiceTest {
         flow.setLoadAction(actionConfig);
 
         // "good" flow is available
-        when(flowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
+        when(ingressFlowService.getRunningFlowByName(eq("good"))).thenReturn(flow);
         // "bad" flow is not available
 
         DeltaFile deltaFile = DeltaFile.newBuilder()

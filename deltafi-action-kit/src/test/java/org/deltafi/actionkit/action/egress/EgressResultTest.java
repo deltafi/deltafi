@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -21,16 +21,17 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Metric;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-
 import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 public class EgressResultTest {
 
     final String DESTINATION = "overThere";
     final long BYTES_EGRESSED = 42;
-    final ActionContext actionContext = new ActionContext("myDid", "myName", "myIngressFlow", "myEgressFlow", "myHostName", "myActionVersion");
+    final ActionContext actionContext = new ActionContext("myDid", "myName", "myIngressFlow", "myEgressFlow", "myHostName",
+            "myActionVersion", null, null);
     final EgressResult sut = new EgressResult(actionContext, DESTINATION, BYTES_EGRESSED);
     
     @Test

@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Server Sent Events broadcast for deltaFileStats
 - Delete metrics (files and bytes by policy) accumulated and charted on System Status dashboard
 - ContentReferenceSplitter that splits a single ContentReference into multiple ContentReferences pointing to segments of the original data
+- Ingress flows now accept either a load or a join action. A join action will execute when a configurable number of
+files are received or a configurable max age is reached. The join action receives the combined DeltaFile and a list of its
+joined DeltaFiles.
 
 ### Changed
 - Survey endpoint added support for survey subflows and direction

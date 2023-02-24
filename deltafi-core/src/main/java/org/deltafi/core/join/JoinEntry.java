@@ -15,24 +15,36 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.join;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
+@Document
 @Data
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
-public class ActionInput {
-    private DeltaFile deltaFile;
-    private ActionContext actionContext;
-    private Map<String, Object> actionParams;
-    private String queueName;
-    private List<DeltaFile> joinedDeltaFiles;
+public class JoinEntry {
+    @Id
+    private JoinEntryId id;
+
+    private boolean locked;
+    private OffsetDateTime lockedTime;
+
+    private OffsetDateTime joinDate;
+    private Integer maxDeltaFileEntries;
+
+    private List<IndexedDeltaFileEntry> deltaFileEntries;
+
+    public List<IndexedDeltaFileEntry> getSortedDeltaFileEntries() {
+        return deltaFileEntries.stream()
+                .sorted(Comparator.comparing(IndexedDeltaFileEntry::getIndex))
+                .collect(Collectors.toList());
+    }
 }

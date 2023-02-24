@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -29,20 +29,20 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.deltafi.common.constant.DeltaFiConstants.DGS_QUEUE;
-
 /**
  * Service for pushing and popping action events to a redis queue.
  */
 @Slf4j
 public class ActionEventQueue {
+    private static final String DGS_QUEUE = "dgs";
+
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
 
     public ActionEventQueue(ActionEventQueueProperties actionEventQueueProperties, int poolSize) throws URISyntaxException {
         int maxIdle = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxIdle();
         int maxTotal = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxTotal();
         jedisKeyedBlockingQueue = new JedisKeyedBlockingQueue(actionEventQueueProperties.getUrl(),
-                actionEventQueueProperties.getPassword().orElse(""), maxIdle, maxTotal);
+                actionEventQueueProperties.getPassword().orElse(null), maxIdle, maxTotal);
         log.info("Jedis pool size: " + maxTotal);
     }
 

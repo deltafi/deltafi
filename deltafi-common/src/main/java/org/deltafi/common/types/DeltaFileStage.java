@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -23,5 +23,7 @@ public enum DeltaFileStage {
   EGRESS,
   COMPLETE,
   ERROR,
-  CANCELLED
+  CANCELLED,
+  JOINING,
+  JOINED
 }

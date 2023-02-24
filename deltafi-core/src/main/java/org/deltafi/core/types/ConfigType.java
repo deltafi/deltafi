@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -23,6 +23,7 @@ public enum ConfigType {
     EGRESS_FLOW,
     TRANSFORM_ACTION,
     LOAD_ACTION,
+    JOIN_ACTION,
     DOMAIN_ACTION,
     ENRICH_ACTION,
     FORMAT_ACTION,

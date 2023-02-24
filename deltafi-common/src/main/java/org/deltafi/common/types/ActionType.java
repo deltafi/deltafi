@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -18,5 +18,5 @@
 package org.deltafi.common.types;
 
 public enum ActionType {
-    INGRESS, TRANSFORM, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, DELETE, UNKNOWN
+    INGRESS, TRANSFORM, JOIN, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, UNKNOWN
 }

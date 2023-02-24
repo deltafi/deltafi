@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -58,16 +58,14 @@ public abstract class Action<P extends ActionParameters> {
      * Deep introspection to get the ActionParameters type class.  This keeps subclasses
      * from having to pass this type info as a constructor parameter.
      */
+    @SuppressWarnings("unchecked")
     private Class<P> getGenericParameterType() {
-
         Class<?> clazz = getClass();
         Type type = clazz.getGenericSuperclass();
-        while(type != null) {
+        while (type != null) {
             try {
-                return (Class<P>)
-                        ((ParameterizedType) type)
-                                .getActualTypeArguments()[0];
-            } catch(Throwable t) {
+                return (Class<P>) ((ParameterizedType) type).getActualTypeArguments()[0];
+            } catch (Throwable t) {
                 // Must be a non-generic class in the inheritance tree
             }
             clazz = clazz.getSuperclass();
@@ -96,8 +94,9 @@ public abstract class Action<P extends ActionParameters> {
      */
     protected abstract ResultType execute(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull P params);
 
-    public ResultType executeAction(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull Map<String, Object> params) {
-        return execute(deltaFile, context, convertToParams(params));
+    public ResultType executeAction(ActionInput actionInput) {
+        return execute(actionInput.getDeltaFile(), actionInput.getActionContext(),
+                convertToParams(actionInput.getActionParams()));
     }
 
     public ActionDescriptor getActionDescriptor() {

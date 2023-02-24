@@ -1,11 +1,10 @@
 plugins {
-    id 'idea'
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'java-library'
+    id 'maven-publish'
 }
 
 description "Common test library for DeltaFi"
-
-apply plugin: 'maven-publish'
 
 license {
     header(rootProject.file('HEADER'))
@@ -13,9 +12,7 @@ license {
 }
 
 dependencies {
-    implementation "io.minio:minio:${minioVersion}"
-    implementation "org.testcontainers:testcontainers:${testContainersVersion}"
+    api "org.testcontainers:testcontainers:${testContainersVersion}"
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
+    implementation "io.minio:minio:${minioVersion}"
 }

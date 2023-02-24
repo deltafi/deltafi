@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -28,37 +28,41 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ContentUtil;
+import org.deltafi.common.types.*;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.metrics.MetricsUtil;
-import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.UniqueKeyValues;
-import org.deltafi.core.generated.types.*;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.exceptions.UnexpectedActionException;
 import org.deltafi.core.exceptions.UnknownTypeException;
+import org.deltafi.core.generated.types.*;
+import org.deltafi.core.join.*;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.EgressFlow;
+import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -92,6 +96,7 @@ public class DeltaFilesService {
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
+    private final Clock clock;
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
@@ -100,16 +105,28 @@ public class DeltaFilesService {
     private final DeltaFileRepo deltaFileRepo;
     private final ActionEventQueue actionEventQueue;
     private final ContentStorageService contentStorageService;
-    private final MetricRepository metricService;
+    private final MetricRepository metricRepository;
     private final CoreAuditLogger coreAuditLogger;
+    private final JoinRepo joinRepo;
+
     private ExecutorService executor;
 
+    private final ScheduledExecutorService timedOutJoinExecutor = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledFuture<?> timedOutJoinFuture;
+    private final ScheduledExecutorService joinEntryLockCheckExecutor = Executors.newSingleThreadScheduledExecutor();
+
     @PostConstruct
-    private void initializeExecutor() {
+    private void init() {
         DeltaFiProperties properties = getProperties();
         int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
         executor = Executors.newFixedThreadPool(threadCount);
         log.info("Executors pool size: " + threadCount);
+
+        scheduleJoinCheckForSoonestInRepository();
+
+        Duration lockCheckInterval = properties.getJoin().getLockCheckInterval();
+        joinEntryLockCheckExecutor.scheduleAtFixedRate(this::unlockTimedOutJoinEntryLocks,
+                lockCheckInterval.getSeconds(), lockCheckInterval.getSeconds(), TimeUnit.SECONDS);
     }
 
     public DeltaFile getDeltaFile(String did) {
@@ -173,7 +190,7 @@ public class DeltaFilesService {
     public DeltaFile ingress(IngressEvent input, List<String> parentDids) {
         SourceInfo sourceInfo = input.getSourceInfo();
 
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now(clock);
 
         Action ingressAction = Action.newBuilder()
                 .name(INGRESS_ACTION)
@@ -182,12 +199,15 @@ public class DeltaFilesService {
                 .modified(now)
                 .build();
 
+        long contentSize = ContentUtil.computeContentSize(input.getContent());
+
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .did(input.getDid())
                 .parentDids(parentDids)
                 .childDids(Collections.emptyList())
                 .requeueCount(0)
-                .ingressBytes(computeContentSize(input.getContent()))
+                .ingressBytes(contentSize)
+                .totalBytes(contentSize)
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
@@ -204,13 +224,36 @@ public class DeltaFilesService {
         return advanceAndSave(deltaFile);
     }
 
-    private Long computeContentSize(List<Content> content) {
-        if (content == null || content.isEmpty()) {
-            return 0L;
+    public void processActionEvents() {
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                ActionEventInput event = actionEventQueue.takeResult();
+                if (event == null) throw new RuntimeException("ActionEventQueue returned null event.  This should NEVER happen");
+                executor.submit(() -> {
+                    int count = 0;
+                    while (true) {
+                        try {
+                            count += 1;
+                            handleActionEvent(event);
+                            break;
+                        } catch (OptimisticLockingFailureException e) {
+                            if (count > 9) {
+                                throw e;
+                            } else {
+                                log.warn("Retrying after OptimisticLockingFailureException caught processing " + event.getAction() + " for " + event.getDid());
+                            }
+                        } catch (Throwable e) {
+                            StringWriter stackWriter = new StringWriter();
+                            e.printStackTrace(new PrintWriter(stackWriter));
+                            log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
+                            break;
+                        }
+                    }
+                });
+            }
+        } catch (Throwable e) {
+            log.error("Error receiving event: " + e.getMessage());
         }
-        return content.stream()
-                .map(c -> c.getContentReference().getSize())
-                .reduce(0L, Long::sum);
     }
 
     @MongoRetryable
@@ -242,6 +285,10 @@ public class DeltaFilesService {
             case LOAD -> {
                 generateMetrics(metrics, event, deltaFile);
                 returnVal = load(deltaFile, event);
+            }
+            case JOIN -> {
+                generateMetrics(metrics, event, deltaFile);
+                returnVal = join(deltaFile, event);
             }
             case DOMAIN -> {
                 generateMetrics(metrics, event, deltaFile);
@@ -296,7 +343,7 @@ public class DeltaFilesService {
         Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), event.getAction(), deltaFile.getSourceInfo().getFlow(), egressFlow);
         for(Metric metric : metrics) {
             metric.addTags(defaultTags);
-            metricService.increment(metric);
+            metricRepository.increment(metric);
         }
     }
 
@@ -307,6 +354,52 @@ public class DeltaFilesService {
             deltaFile.getProtocolStack().add(protocolLayer);
         }
         deltaFile.completeAction(event);
+
+        return advanceAndSave(deltaFile);
+    }
+
+    public DeltaFile join(DeltaFile deltaFile, ActionEventInput event) {
+        log.debug("Received join for {}", event.getDid());
+
+        if (!event.getJoin().getSourceInfo().getFlow().equals(deltaFile.getSourceInfo().getFlow())) {
+            log.debug("Reinjecting to {} flow", event.getJoin().getSourceInfo().getFlow());
+
+            deltaFile.setSourceInfo(event.getJoin().getSourceInfo());
+
+            OffsetDateTime now = OffsetDateTime.now(clock);
+
+            Action action = Action.newBuilder()
+                    .name(INGRESS_ACTION)
+                    .state(ActionState.COMPLETE)
+                    .created(now)
+                    .modified(now)
+                    .build();
+            deltaFile.setActions(new ArrayList<>(List.of(action)));
+
+            ProtocolLayer protocolLayer = event.getJoin().getProtocolLayer();
+            if (protocolLayer != null) {
+                protocolLayer.setAction(INGRESS_ACTION);
+                deltaFile.setProtocolStack(List.of(protocolLayer));
+            }
+
+            return advanceAndSave(deltaFile);
+        }
+
+        deltaFile.setSourceInfo(event.getJoin().getSourceInfo());
+
+        deltaFile.completeAction(event);
+
+        if (event.getJoin().getProtocolLayer() != null) {
+            deltaFile.setProtocolStack(List.of(event.getJoin().getProtocolLayer()));
+        }
+
+        if (event.getJoin().getDomains() != null) {
+            for (Domain domain : event.getJoin().getDomains()) {
+                deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
+            }
+        }
+
+        deltaFile.setStage(DeltaFileStage.ENRICH);
 
         return advanceAndSave(deltaFile);
     }
@@ -434,13 +527,12 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile) {
-        OffsetDateTime now = OffsetDateTime.now();
+    public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile, OffsetDateTime time) {
         return ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())
                 .action(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION)
-                .start(now)
-                .stop(now)
+                .start(time)
+                .stop(time)
                 .error(ErrorEvent.newBuilder()
                         .cause(NO_EGRESS_CONFIGURED_CAUSE)
                         .context(NO_EGRESS_CONFIGURED_CONTEXT)
@@ -449,13 +541,13 @@ public class DeltaFilesService {
                 .build();
     }
 
-    public static ActionEventInput buildNoChildFlowErrorEvent(DeltaFile deltaFile, String action, String flow) {
-        final OffsetDateTime now = OffsetDateTime.now();
+    public static ActionEventInput buildNoChildFlowErrorEvent(DeltaFile deltaFile, String action, String flow,
+            OffsetDateTime time) {
         return ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())
                 .action(action)
-                .start(now)
-                .stop(now)
+                .start(time)
+                .stop(time)
                 .error(ErrorEvent.newBuilder()
                         .cause(NO_CHILD_INGRESS_CONFIGURED_CAUSE)
                         .context(NO_CHILD_INGRESS_CONFIGURED_CONTEXT + flow)
@@ -480,7 +572,7 @@ public class DeltaFilesService {
                 deltaFile.setChildDids(new ArrayList<>());
             }
 
-            OffsetDateTime now = OffsetDateTime.now();
+            OffsetDateTime now = OffsetDateTime.now(clock);
             Action action = Action.newBuilder()
                     .name(INGRESS_ACTION)
                     .state(ActionState.COMPLETE)
@@ -499,7 +591,8 @@ public class DeltaFilesService {
                 try {
                     ingressFlowService.getRunningFlowByName(split.getSourceInfo().getFlow());
                 } catch (DgsEntityNotFoundException notFound) {
-                    deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getAction(), split.getSourceInfo().getFlow()));
+                    deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getAction(),
+                            split.getSourceInfo().getFlow(), OffsetDateTime.now(clock)));
                     encounteredError.add(deltaFile.getDid());
                     return null;
                 }
@@ -509,7 +602,7 @@ public class DeltaFilesService {
                         .parentDids(List.of(deltaFile.getDid()))
                         .childDids(Collections.emptyList())
                         .requeueCount(0)
-                        .ingressBytes(computeContentSize(split.getContent()))
+                        .ingressBytes(ContentUtil.computeContentSize(split.getContent()))
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
                         .sourceInfo(split.getSourceInfo())
@@ -714,7 +807,7 @@ public class DeltaFilesService {
                             result.setSuccess(false);
                             result.setError("Cannot replay DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
-                            OffsetDateTime now = OffsetDateTime.now();
+                            OffsetDateTime now = OffsetDateTime.now(clock);
                             Action action = Action.newBuilder()
                                     .name(INGRESS_ACTION)
                                     .state(ActionState.COMPLETE)
@@ -774,7 +867,7 @@ public class DeltaFilesService {
     public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {
         Map<String, DeltaFile> deltaFiles = getDeltaFiles(dids);
 
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now(clock);
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
 
         List<AcknowledgeResult> results = dids.stream()
@@ -870,20 +963,38 @@ public class DeltaFilesService {
         // MissingEgressFlowException is not expected when a DeltaFile is entering the INGRESS stage
         // such as from replay or split, since an ingress flow requires at least the Load action to
         // be queued, nor when handling an event for any egress flow action, e.g. format.
-        return stateMachine.advance(deltaFile);
+        List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
+
+        if (deltaFile.getStage() == DeltaFileStage.JOINING) {
+            processJoin(deltaFile, ingressFlowService.getRunningFlowByName(
+                    deltaFile.getSourceInfo().getFlow()).getJoinAction());
+        }
+
+        return enqueueActions;
     }
 
     public DeltaFile advanceAndSave(DeltaFile deltaFile) {
+        List<ActionInput> enqueueActions;
         try {
-            List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
-            deltaFileRepo.save(deltaFile);
-            if (!enqueueActions.isEmpty()) {
-                enqueueActions(enqueueActions);
-            }
+            enqueueActions = stateMachine.advance(deltaFile);
         } catch (MissingEgressFlowException e) {
             handleMissingEgressFlow(deltaFile);
             deltaFileRepo.save(deltaFile);
+            return deltaFile;
         }
+
+        deltaFileRepo.save(deltaFile);
+
+        if (!enqueueActions.isEmpty()) {
+            enqueueActions(enqueueActions);
+            return deltaFile;
+        }
+
+        if (deltaFile.getStage() == DeltaFileStage.JOINING) {
+            processJoin(deltaFile, ingressFlowService.getRunningFlowByName(
+                    deltaFile.getSourceInfo().getFlow()).getJoinAction());
+        }
+
         return deltaFile;
     }
 
@@ -907,12 +1018,19 @@ public class DeltaFilesService {
         if (!enqueueActions.isEmpty()) {
             enqueueActions(enqueueActions);
         }
+
+        deltaFiles.forEach(deltaFile -> {
+            if (deltaFile.getStage() == DeltaFileStage.JOINING) {
+                processJoin(deltaFile, ingressFlowService.getRunningFlowByName(
+                        deltaFile.getSourceInfo().getFlow()).getJoinAction());
+            }
+        });
     }
 
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
         deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
         try {
-            processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile));
+            processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
         } catch (JsonProcessingException e) {
             log.error("Unable to create error file: " + e.getMessage());
         }
@@ -956,17 +1074,17 @@ public class DeltaFilesService {
         long totalBytes = deltaFiles.stream().mapToLong(DeltaFile::getTotalBytes).sum();
 
         deleteContent(deltaFiles, policy, deleteMetadata);
-        metricService.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
-        metricService.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
+        metricRepository.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
+        metricRepository.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
         log.info("Finished deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
 
         return deltaFiles;
     }
 
     public void requeue() {
-        OffsetDateTime modified = OffsetDateTime.now();
+        OffsetDateTime modified = OffsetDateTime.now(clock);
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds());
-        List <ActionInput> actions = requeuedDeltaFiles.stream()
+        List<ActionInput> actions = requeuedDeltaFiles.stream()
                 .map(deltaFile -> requeuedActionInput(deltaFile, modified))
                 .flatMap(Collection::stream)
                 .toList();
@@ -1035,46 +1153,8 @@ public class DeltaFilesService {
         return actionConfiguration.buildActionInput(deltaFile, getProperties().getSystemName(), egressFlow);
     }
 
-    public void processActionEvents() {
-        try {
-            while (!Thread.currentThread().isInterrupted()) {
-                ActionEventInput event = actionEventQueue.takeResult();
-                if (event == null) throw new RuntimeException("ActionEventQueue returned null event.  This should NEVER happen");
-                executor.submit(() -> {
-                    int count = 0;
-                    while (true) {
-                        try {
-                            count += 1;
-                            handleActionEvent(event);
-                            break;
-                        } catch (OptimisticLockingFailureException e) {
-                            if (count > 9) {
-                                throw e;
-                            } else {
-                                log.warn("Retrying after OptimisticLockingFailureException caught processing " + event.getAction() + " for " + event.getDid());
-                            }
-                        } catch (Throwable e) {
-                            StringWriter stackWriter = new StringWriter();
-                            e.printStackTrace(new PrintWriter(stackWriter));
-                            log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
-                            break;
-                        }
-                    }
-                });
-            }
-        } catch (Throwable e) {
-            log.error("Error receiving event: " + e.getMessage());
-        }
-    }
-
     private void enqueueActions(List<ActionInput> enqueueActions) {
-        try {
-            actionEventQueue.putActions(enqueueActions);
-        } catch (JedisConnectionException e) {
-            // This scenario is most likely due to all Redis instances being unavailable
-            // Eating this exception.  Subsequent timeout/retry will ensure the DeltaFile is processed
-            log.error("Unable to post action(s) to Redis queue", e);
-        }
+        actionEventQueue.putActions(enqueueActions);
     }
 
     private void deleteContent(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
@@ -1088,7 +1168,7 @@ public class DeltaFilesService {
         } else {
             deltaFileRepo.setContentDeletedByDidIn(
                     deltaFiles.stream().map(DeltaFile::getDid).distinct().toList(),
-                    OffsetDateTime.now(),
+                    OffsetDateTime.now(clock),
                     policy);
         }
 
@@ -1132,5 +1212,198 @@ public class DeltaFilesService {
 
     public DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent) {
         return deltaFileRepo.deltaFileStats(inFlightOnly, includeDeletedContent);
+    }
+
+    private void scheduleJoinCheckForSoonestInRepository() {
+        List<JoinEntry> joinEntries = joinRepo.findAllByOrderByJoinDate();
+        if (!joinEntries.isEmpty()) {
+            scheduleJoinCheck(joinEntries.get(0).getJoinDate());
+        } else {
+            cancelJoinCheck();
+        }
+    }
+
+    private void scheduleJoinCheck(OffsetDateTime joinDate) {
+        cancelJoinCheck();
+        log.debug("Scheduling next join check in {} seconds",
+                Math.max(joinDate.toEpochSecond() - OffsetDateTime.now(clock).toEpochSecond(), 1));
+        timedOutJoinFuture = timedOutJoinExecutor.schedule(this::queueJoinActionsForTimedOutJoins,
+                Math.max(joinDate.toEpochSecond() - OffsetDateTime.now(clock).toEpochSecond(), 1), TimeUnit.SECONDS);
+    }
+
+    private void cancelJoinCheck() {
+        if (timedOutJoinFuture != null) {
+            timedOutJoinFuture.cancel(false);
+        }
+    }
+
+    private void queueJoinActionsForTimedOutJoins() {
+        log.debug("Queuing join actions for timed out joins");
+
+        JoinEntry joinEntry = joinRepo.lockFirstBefore(OffsetDateTime.now(clock));
+        while (joinEntry != null) {
+            queueJoinAction(joinEntry);
+            joinEntry = joinRepo.lockFirstBefore(OffsetDateTime.now(clock));
+        }
+
+        scheduleJoinCheckForSoonestInRepository();
+    }
+
+    private void queueJoinAction(JoinEntry joinEntry) {
+        List<DeltaFile> joinedDeltaFiles = new ArrayList<>();
+        List<String> missingDeltaFileIds = new ArrayList<>();
+
+        for (IndexedDeltaFileEntry deltaFileEntry : joinEntry.getSortedDeltaFileEntries()) {
+            Optional<DeltaFile> deltaFileToJoin = deltaFileRepo.findById(deltaFileEntry.getDid());
+
+            if (deltaFileToJoin.isPresent()) {
+                joinedDeltaFiles.add(deltaFileToJoin.get());
+            } else {
+                missingDeltaFileIds.add(deltaFileEntry.getDid());
+            }
+        }
+
+        if (!missingDeltaFileIds.isEmpty()) {
+            log.warn("DeltaFiles with the following ids were missing during join: {}",
+                    String.join(", ", missingDeltaFileIds));
+        }
+
+        DeltaFile joinedDeltaFile = buildJoinedDeltaFile(joinEntry.getId().getFlow(), joinedDeltaFiles);
+        joinedDeltaFile.queueNewAction(joinEntry.getId().getAction());
+        deltaFileRepo.save(joinedDeltaFile);
+
+        enqueueActions(List.of(buildJoinActionInput(joinEntry.getId().getFlow(), joinedDeltaFile, joinedDeltaFiles)));
+
+        joinRepo.deleteById(joinEntry.getId());
+    }
+
+    private ActionInput buildJoinActionInput(String flow, DeltaFile joinedDeltaFile, List<DeltaFile> joinedDeltaFiles) {
+        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(flow);
+        return ingressFlow.getJoinAction().buildActionInput(ingressFlow.getName(), joinedDeltaFile, joinedDeltaFiles,
+                getProperties().getSystemName(), null);
+    }
+
+    private static final String JOINED_SOURCE_FILE_NAME = "multiple";
+
+    private DeltaFile buildJoinedDeltaFile(String flow, List<DeltaFile> deltaFiles) {
+        log.debug("Joining {}", deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.joining(",")));
+
+        String joinedDeltaFileId = UUID.randomUUID().toString();
+
+        SourceInfo joinedSourceInfo = new SourceInfo();
+        joinedSourceInfo.setFilename(JOINED_SOURCE_FILE_NAME);
+        joinedSourceInfo.setFlow(flow);
+
+        for (DeltaFile deltaFile : deltaFiles) {
+            deltaFile.setStage(DeltaFileStage.JOINED);
+            deltaFile.setChildDids(List.of(joinedDeltaFileId));
+
+            joinedSourceInfo.addMetadata(deltaFile.getSourceInfo().getMetadata());
+        }
+        deltaFileRepo.saveAll(deltaFiles);
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        return DeltaFile.newBuilder()
+                .did(joinedDeltaFileId)
+                .parentDids(deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()))
+                .childDids(Collections.emptyList())
+                .ingressBytes(0L)
+                .totalBytes(0L)
+                .stage(DeltaFileStage.INGRESS)
+                .actions(new ArrayList<>())
+                .sourceInfo(joinedSourceInfo)
+                .protocolStack(Collections.emptyList())
+                .domains(Collections.emptyList())
+                .enrichment(Collections.emptyList())
+                .formattedData(Collections.emptyList())
+                .created(now)
+                .modified(now)
+                .egressed(false)
+                .filtered(false)
+                .joined(true)
+                .build();
+    }
+
+    private static final String DEFAULT_JOIN_VALUE = "DEFAULT";
+
+    private void processJoin(DeltaFile deltaFile, JoinActionConfiguration joinActionConfiguration) {
+        log.debug("Processing join for deltafile with id {}", deltaFile.getDid());
+
+        String joinGroup = deltaFile.getSourceInfo().getMetadata(joinActionConfiguration.getMetadataKey());
+        if (joinGroup == null) {
+            joinGroup = deltaFile.getLastProtocolLayerMetadata()
+                    .getOrDefault(joinActionConfiguration.getMetadataKey(), DEFAULT_JOIN_VALUE);
+        }
+
+        String joinIndex = Long.toString(clock.millis());
+        if (joinActionConfiguration.getMetadataIndexKey() != null) {
+            String metadataJoinIndex = deltaFile.getSourceInfo().getMetadata(joinActionConfiguration.getMetadataIndexKey());
+            if (metadataJoinIndex == null) {
+                metadataJoinIndex = deltaFile.getLastProtocolLayerMetadata()
+                        .getOrDefault(joinActionConfiguration.getMetadataIndexKey(), joinIndex);
+            }
+            joinIndex = metadataJoinIndex;
+        }
+
+        JoinEntryId joinEntryId = new JoinEntryId(deltaFile.getSourceInfo().getFlow(),
+                joinActionConfiguration.getName(), joinGroup);
+
+        JoinEntry joinEntry = upsertAndLockJoinEntry(joinEntryId, OffsetDateTime.now(clock).plus(Duration.parse(
+                joinActionConfiguration.getMaxAge())), joinActionConfiguration.getMaxNum(), deltaFile.getDid(),
+                joinIndex);
+
+        if (joinEntry == null) {
+            log.debug("Timed out trying to lock join entry {}", joinEntryId);
+            deltaFile.setStage(DeltaFileStage.ERROR);
+            deltaFileRepo.save(deltaFile);
+            return;
+        }
+
+        log.debug("Updated join entry with {} DeltaFiles", joinEntry.getDeltaFileEntries().size());
+
+        if (joinEntry.getDeltaFileEntries().size() < joinActionConfiguration.getMaxNum()) {
+            updateJoinCheck(joinEntry.getJoinDate());
+            joinRepo.unlock(joinEntryId);
+            return;
+        }
+
+        queueJoinAction(joinEntry);
+
+        scheduleJoinCheckForSoonestInRepository();
+    }
+
+    private void updateJoinCheck(OffsetDateTime joinDate) {
+        if ((timedOutJoinFuture == null) || timedOutJoinFuture.isDone() || joinDate.isBefore(
+                OffsetDateTime.now(clock).plus(timedOutJoinFuture.getDelay(TimeUnit.SECONDS), ChronoUnit.SECONDS))) {
+            scheduleJoinCheck(joinDate);
+        }
+    }
+
+    private JoinEntry upsertAndLockJoinEntry(JoinEntryId joinEntryId, OffsetDateTime joinDate,
+            Integer maxDeltaFileEntries, String did, String index) {
+        JoinEntry joinEntry = null;
+        long endTimeMs = clock.millis() + getProperties().getJoin().getAcquireLockTimeoutMs();
+        while ((joinEntry == null) && (clock.millis() < endTimeMs)) {
+            try {
+                joinEntry = joinRepo.upsertAndLock(joinEntryId, joinDate, maxDeltaFileEntries, did, index);
+            } catch (DuplicateKeyException e) {
+                // Tried to insert duplicate while other was locked. Sleep and try again.
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {}
+            }
+        }
+        return joinEntry;
+    }
+
+    public void unlockTimedOutJoinEntryLocks() {
+        long numUnlocked = joinRepo.unlockBefore(
+                OffsetDateTime.now(clock).minus(getProperties().getJoin().getMaxLockDuration()));
+        if (numUnlocked > 0) {
+            log.warn("Unlocked {} join entries", numUnlocked);
+        }
+
+        scheduleJoinCheckForSoonestInRepository();
     }
 }

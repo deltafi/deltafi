@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -45,5 +45,6 @@ public class ActionEventInput {
   private ErrorEvent error;
   private FilterEvent filter;
   private List<SplitEvent> split;
+  private JoinEvent join;
   private List<Metric> metrics;
 }

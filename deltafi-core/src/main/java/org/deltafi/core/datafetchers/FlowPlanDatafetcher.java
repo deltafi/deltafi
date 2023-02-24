@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -223,7 +223,7 @@ public class FlowPlanDatafetcher {
     @DgsQuery
     @NeedsPermission.FlowView
     public List<DeltaFiConfiguration> deltaFiConfigs(ConfigQueryInput configQuery) {
-        List<DeltaFiConfiguration> matchingConfigs = ingressFlowService.getConfigs(configQuery);
+        List<DeltaFiConfiguration> matchingConfigs = new ArrayList<>(ingressFlowService.getConfigs(configQuery));
         matchingConfigs.addAll(enrichFlowService.getConfigs(configQuery));
         matchingConfigs.addAll(egressFlowService.getConfigs(configQuery));
 

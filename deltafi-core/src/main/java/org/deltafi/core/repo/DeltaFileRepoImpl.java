@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -274,7 +274,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
-        Query query = new Query(buildDeltaFilesCriteria(filter));
+        Criteria filterCriteria = buildDeltaFilesCriteria(filter);
+        Query query = new Query(filterCriteria);
 
         if (nonNull(offset) && offset > 0) {
             query.skip(offset);
@@ -303,7 +304,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if ((Objects.isNull(includeFields) || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
             deltaFiles.setTotalCount(deltaFiles.getOffset() + deltaFiles.getCount());
         } else {
-            int total = (int) mongoTemplate.count(new Query(buildDeltaFilesCriteria(filter)).limit(MAX_COUNT), DeltaFile.class);
+            int total = (int) mongoTemplate.count(new Query(filterCriteria).limit(MAX_COUNT), DeltaFile.class);
             deltaFiles.setTotalCount(total);
         }
 
@@ -333,7 +334,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds) {
-        Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
+        Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.JOINED,
+                DeltaFileStage.JOINING, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
 
         long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
         Criteria expired = Criteria.where(MODIFIED).lt(new Date(epochMs));
@@ -344,7 +346,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return requeueQuery;
     }
 
-    private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate, long minBytes, String flowName, boolean deleteMetadata, boolean completeOnly) {
+    private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
+            long minBytes, String flowName, boolean deleteMetadata, boolean completeOnly) {
         Criteria criteria = new Criteria();
         List<Criteria> andCriteria = new ArrayList<>();
 
@@ -365,7 +368,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (completeOnly) {
-            andCriteria.add(Criteria.where(STAGE).in(DeltaFileStage.COMPLETE.name(), DeltaFileStage.CANCELLED.name()));
+            andCriteria.add(Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.JOINED,
+                    DeltaFileStage.CANCELLED));
         }
 
         if (andCriteria.size() == 1) {
@@ -607,7 +611,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {
-        Criteria completed = Criteria.where(STAGE).is(DeltaFileStage.COMPLETE);
+        Criteria completed = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.JOINED);
         Criteria acknowledged = new Criteria().andOperator(
                 Criteria.where(STAGE).is(DeltaFileStage.ERROR),
                 Criteria.where(ERROR_ACKNOWLEDGED).ne(null));

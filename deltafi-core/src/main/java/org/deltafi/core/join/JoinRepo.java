@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,20 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.parameters;
+package org.deltafi.core.join;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-@Data
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
-@NoArgsConstructor
-public class SplitterLoadParameters extends ActionParameters {
-    @JsonProperty(required = true)
-    @JsonPropertyDescription("Flow for content reinjection")
-    public String reinjectFlow;
+import java.util.List;
+
+@Repository
+public interface JoinRepo extends MongoRepository<JoinEntry, JoinEntryId>, JoinRepoCustom {
+    List<JoinEntry> findAllByOrderByJoinDate();
 }

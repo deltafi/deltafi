@@ -148,6 +148,8 @@ enum DeltaFileStage {
   COMPLETE
   ERROR
   CANCELLED
+  JOINING
+  JOINED
 }
 
 enum ActionState {

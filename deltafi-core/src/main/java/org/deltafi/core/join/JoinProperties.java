@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,20 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.join;
 
-public enum ActionEventType {
-  TRANSFORM,
-  LOAD,
-  DOMAIN,
-  ENRICH,
-  FORMAT,
-  FORMAT_MANY,
-  VALIDATE,
-  EGRESS,
-  ERROR,
-  FILTER,
-  SPLIT,
-  JOIN,
-  UNKNOWN
+import lombok.Data;
+
+import java.time.Duration;
+
+@Data
+public class JoinProperties {
+    private long acquireLockTimeoutMs = 30000;
+    private Duration maxLockDuration = Duration.ofMinutes(1);
+    private Duration lockCheckInterval = Duration.ofMinutes(1);
 }

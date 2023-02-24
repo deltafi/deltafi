@@ -6,6 +6,10 @@ spring:
   cloud:
     config:
       enabled: false
+    kubernetes:
+      discovery:
+        catalog-services-watch:
+          enabled: false
   data:
     mongodb:
       database: deltafi-test
@@ -31,7 +35,6 @@ minio:
 
 redis:
   url: http://localhost
-  password: redis
 
 dgs:
   graphql:

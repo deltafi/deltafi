@@ -58,7 +58,8 @@ type IngressFlowPlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   transformActions: [TransformActionConfiguration]
-  loadAction: LoadActionConfiguration!
+  loadAction: LoadActionConfiguration
+  joinAction: JoinActionConfiguration
 }
 
 input IngressFlowPlanInput {
@@ -67,7 +68,8 @@ input IngressFlowPlanInput {
   description: String!
   sourcePlugin: PluginCoordinatesInput!
   transformActions: [TransformActionConfigurationInput]
-  loadAction: LoadActionConfigurationInput!
+  loadAction: LoadActionConfigurationInput
+  joinAction: JoinActionConfigurationInput
 }
 
 type EnrichFlowPlan {
@@ -164,7 +166,8 @@ type IngressFlow {
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
   transformActions: [TransformActionConfiguration]
-  loadAction: LoadActionConfiguration!
+  loadAction: LoadActionConfiguration
+  joinAction: JoinActionConfiguration
   variables: [Variable]!
 }
 

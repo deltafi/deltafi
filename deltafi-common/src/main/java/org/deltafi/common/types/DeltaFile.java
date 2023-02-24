@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -70,6 +70,7 @@ public class DeltaFile {
   private Boolean filtered;
   private OffsetDateTime replayed;
   private String replayDid;
+  private boolean joined;
 
   @Version
   @Getter

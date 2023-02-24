@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -23,7 +23,7 @@ import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
-import org.deltafi.core.parameters.SplitterLoadParameters;
+import org.deltafi.actionkit.action.parameters.ReinjectParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +31,7 @@ import java.util.Collections;
 
 @Component
 @SuppressWarnings("unused")
-public class SplitterLoadAction extends LoadAction<SplitterLoadParameters> {
+public class SplitterLoadAction extends LoadAction<ReinjectParameters> {
 
     public SplitterLoadAction() {
         super("Splits content into multiple parts");
@@ -39,7 +39,7 @@ public class SplitterLoadAction extends LoadAction<SplitterLoadParameters> {
 
     @Override
     public LoadResultType load(@NotNull ActionContext context,
-                               @NotNull SplitterLoadParameters params,
+                               @NotNull ReinjectParameters params,
                                @NotNull LoadInput input) {
         SplitResult result = new SplitResult(context);
 

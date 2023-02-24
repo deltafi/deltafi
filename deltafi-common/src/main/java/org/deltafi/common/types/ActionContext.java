@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -29,7 +29,6 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ActionContext {
-
     private String did;
     private String name;
     private String ingressFlow;
@@ -38,13 +37,4 @@ public class ActionContext {
     private String actionVersion;
     private OffsetDateTime startTime;
     private String systemName;
-
-    public ActionContext(String did, String name, String ingressFlow, String egressFlow, String hostname, String actionVersion) {
-        this.did = did;
-        this.name = name;
-        this.ingressFlow = ingressFlow;
-        this.egressFlow = egressFlow;
-        this.hostname = hostname;
-        this.actionVersion = actionVersion;
-    }
 }
