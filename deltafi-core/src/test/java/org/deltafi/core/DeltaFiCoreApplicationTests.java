@@ -49,6 +49,9 @@ import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.*;
+import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
+import org.deltafi.core.snapshot.SystemSnapshotRepo;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.*;
@@ -201,6 +204,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	PluginImageRepositoryRepo pluginImageRepositoryRepo;
+
+	@Autowired
+	SystemSnapshotRepo systemSnapshotRepo;
 
 	@MockBean
 	StorageConfigurationService storageConfigurationService;
@@ -3254,6 +3260,21 @@ class DeltaFiCoreApplicationTests {
 
 		assertThat(actionDescriptorRepo.countAllByNameIn(List.of("transformAction", "loadAction", "formatAction"))).isEqualTo(2);
 		assertThat(actionDescriptorRepo.count()).isEqualTo(3);
+	}
+
+	@Test
+	void testImportSnapshot() {
+		SystemSnapshot snapshot = SystemSnapshotDatafetcherTestHelper.importSystemSnapshot(dgsQueryExecutor);
+		assertThat(snapshot).isEqualTo(SystemSnapshotDatafetcherTestHelper.expectedSnapshot());
+	}
+
+	@Test
+	void restoreSnapshot() {
+		systemSnapshotRepo.save(SystemSnapshotDatafetcherTestHelper.expectedSnapshot());
+		Result result = SystemSnapshotDatafetcherTestHelper.restoreSnapshot(dgsQueryExecutor);
+
+		// this is not successful b/c it is trying to start flows and put flows in test mode that no longer exist
+		assertThat(result.isSuccess()).isFalse();
 	}
 
 	private DeltaFile loadDeltaFile(String did) {

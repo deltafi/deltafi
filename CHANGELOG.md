@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 
 ### Fixed
+- Bug where durations could not be properly converted when importing a `SystemSnapshot`
 
 ### Tech-Debt/Refactor
 

@@ -17,11 +17,21 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        property = "__typename",
+        defaultImpl = TimedDeletePolicy.class
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = TimedDeletePolicy.class, name = "TimedDeletePolicy")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

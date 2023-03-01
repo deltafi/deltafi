@@ -17,11 +17,21 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        property = "__typename",
+        defaultImpl = DiskSpaceDeletePolicy.class
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = DiskSpaceDeletePolicy.class, name = "DiskSpaceDeletePolicy")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
