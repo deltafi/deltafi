@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 - Bug where durations could not be properly converted when importing a `SystemSnapshot`
+- Cluster command generated warnings on admin.conf mode
+- Cluster uninstall timeouts
 
 ### Tech-Debt/Refactor
 

@@ -149,7 +149,7 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         shift
         cluster "$@"
         ;;
-      version)
+      version|uninstall)
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
         ;;
       *)
@@ -713,7 +713,7 @@ shell() {
 _kind_deltafi() {
   docker exec -i -u="$(id -u):$(id -g)" ${CLUSTER_NAME}-control-plane bash <<EOF
 cd /usr/dev
-TERM=screen-256color deltafi $@
+TERM=screen-256color deltafi $@ 2>&1 | grep -v "WARNING: Kubernetes configuration file"
 EOF
 }
 
