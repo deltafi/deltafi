@@ -82,7 +82,7 @@ public class PluginRegistrar {
                 .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
                 .actions(actions.stream().map(Action::getActionDescriptor).toList());
 
-        Resource flowsDirectory = applicationContext.getResource("flows");
+        Resource flowsDirectory = applicationContext.getResource("classpath:flows");
         if (flowsDirectory.exists()) {
             pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
         } else {
