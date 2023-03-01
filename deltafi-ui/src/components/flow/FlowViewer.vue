@@ -69,10 +69,15 @@
                 <template v-else>
                   <div class="row mx-0 pt-2">
                     <template v-for="(value, actionInfoKey) in flowAction" :key="actionInfoKey">
-                      <div v-if="!_.isEmpty(value) && !_.isEqual(actionInfoKey, 'parameters')" class="col-6 pb-0">
+                      <div v-if="!_.isEmpty(value)" class="col-6 pb-0">
                         <dl>
                           <dt>{{ _.startCase(actionInfoKey) }}</dt>
-                          <dd class="d-flex">
+                          <dd v-if="_.isEqual(actionInfoKey, 'parameters')" class="d-flex">
+                            <ul>
+                              <li v-for="(pVal, pKey) in value" :key="pKey">{{ pKey }}: {{ pVal }}</li>
+                            </ul>
+                          </dd>
+                          <dd v-else class="d-flex">
                             <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
                             <template v-if="_.isEqual(actionInfoKey, 'name')">
                               <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
