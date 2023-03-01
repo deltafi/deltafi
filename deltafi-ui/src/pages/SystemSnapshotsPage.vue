@@ -92,7 +92,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useNotifications from "@/composables/useNotifications";
 import useSystemSnapshots from "@/composables/useSnapshots";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { EnumType } from "json-to-graphql-query";
 
 import Button from "primevue/button";
@@ -115,7 +115,6 @@ const notify = useNotifications();
 const reason = ref("");
 const fileUploader = ref();
 const showSnapshotDialog = ref(false);
-const totalSnaps = ref(0);
 const showCreateSnapshotDialog = ref(false);
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -123,9 +122,10 @@ const filters = ref({
 
 onMounted(async () => {
   await getSystemSnapshots();
-  totalSnaps.value = snapshots.value.length;
   console.log("snaps", snapshots.value.length);
 });
+
+const totalSnaps = computed(() => (snapshots.value || []).length);
 
 const download = (content, fileName, contentType) => {
   const a = document.createElement("a");
@@ -156,10 +156,11 @@ const onPage = (event) => {
 const onRevert = async (id) => {
   await revertSnapshot(id);
   close();
-  if (mutationResponse.value.success === true) {
+  if (mutationResponse.value.success) {
     notify.success("Successfully Reverted to Snapshot ", id);
   } else {
-    notify.error("Failed to Revert to Snapshot");
+    const uniqueErrors = [...new Set(mutationResponse.value.errors)];
+    notify.error("Failed to Revert to Snapshot", uniqueErrors.join("<br />"));
   }
 };
 
@@ -222,6 +223,7 @@ const cleanUpSnapshot = (snapShotData) => {
       snap.pluginVariables[x].variables[y].dataType = new EnumType(snap.pluginVariables[x].variables[y].dataType);
     }
   }
+  snap.deltaFiProperties.setProperties = snap.deltaFiProperties.setProperties.map((p) => new EnumType(p))
   return snap;
 };
 

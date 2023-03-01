@@ -178,16 +178,17 @@ export default function useSystemSnapshots() {
     mutationData.value = response.value.data.resetFromSnapshotWithId;
   };
 
-  const importSnapshot = async (snapShot: JSON) => {
+  const importSnapshot = async (snapshot: JSON) => {
+    console.log(snapshot)
     const query = {
       importSnapshot: {
         __args: {
-          snapshot: snapShot
+          snapshot: snapshot
         },
         id: true,
       },
     };
-    await queryGraphQL(query, "postImportSystemSnapshot", "mutation");
+    await queryGraphQL(query, "postImportSystemSnapshot", "mutation", true);
     mutationData.value = response.value.data.importSnapshot;
   };
 
