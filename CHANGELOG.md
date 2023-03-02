@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Deprecated
 
 ### Removed
+- CLI: Command logging removed.  Not very useful and caused error codes to be hidden
 
 ### Fixed
 - Bug where durations could not be properly converted when importing a `SystemSnapshot`

@@ -194,136 +194,136 @@ fi
 
 case "$1" in
   did)
-    "$DELTAFICLI_WORKDIR/commands/did" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/did.log"
+    "$DELTAFICLI_WORKDIR/commands/did" "$@"
     ;;
   egress-flow)
-    "$DELTAFICLI_WORKDIR/commands/egress-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/egress-flow.log"
+    "$DELTAFICLI_WORKDIR/commands/egress-flow" "$@"
     ;;
   enrich-flow)
-    "$DELTAFICLI_WORKDIR/commands/enrich-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/enrich-flow.log"
+    "$DELTAFICLI_WORKDIR/commands/enrich-flow" "$@"
     ;;
   event)
-    "$DELTAFICLI_WORKDIR/commands/event" "$@" | tee -ia "$DELTAFICLI_WORKDIR/logs/event.log"
+    "$DELTAFICLI_WORKDIR/commands/event" "$@"
     ;;
   export-config)
-    "$DELTAFICLI_WORKDIR/commands/export-config" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-config.log"
+    "$DELTAFICLI_WORKDIR/commands/export-config" "$@"
     ;;
   export-egress-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-egress-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-egress-plan.log"
+    "$DELTAFICLI_WORKDIR/commands/export-egress-plan" "$@"
     ;;
   export-enrich-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-enrich-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-enrich-plan.log"
+    "$DELTAFICLI_WORKDIR/commands/export-enrich-plan" "$@"
     ;;
   export-ingress-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-ingress-plan" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-ingress-plan.log"
+    "$DELTAFICLI_WORKDIR/commands/export-ingress-plan" "$@"
     ;;
   export-rules)
-    "$DELTAFICLI_WORKDIR/commands/export-rules" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/export-rules.log"
+    "$DELTAFICLI_WORKDIR/commands/export-rules" "$@"
     ;;
   ingress)
-    "$DELTAFICLI_WORKDIR/commands/ingress" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/ingress.log"
+    "$DELTAFICLI_WORKDIR/commands/ingress" "$@"
     ;;
   ingress-flow)
-    "$DELTAFICLI_WORKDIR/commands/ingress-flow" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/ingress-flow.log"
+    "$DELTAFICLI_WORKDIR/commands/ingress-flow" "$@"
     ;;
   install|update|upgrade|start)
-    "$DELTAFICLI_WORKDIR/commands/install" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/install.log"
+    "$DELTAFICLI_WORKDIR/commands/install" "$@"
     ;;
   install-plugin)
-    "$DELTAFICLI_WORKDIR/commands/install-plugin" "$@" | tee -ia "$DELTAFICLI_WORKDIR/logs/install-plugin.log"
+    "$DELTAFICLI_WORKDIR/commands/install-plugin" "$@"
     ;;
   list-actions)
-    "$DELTAFICLI_WORKDIR/commands/list-actions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-actions.log"
+    "$DELTAFICLI_WORKDIR/commands/list-actions" "$@"
     ;;
   list-flows)
-    "$DELTAFICLI_WORKDIR/commands/list-flows" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-flows.log"
+    "$DELTAFICLI_WORKDIR/commands/list-flows" "$@"
     ;;
   list-plans)
-    "$DELTAFICLI_WORKDIR/commands/list-plans" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-plans.log"
+    "$DELTAFICLI_WORKDIR/commands/list-plans" "$@"
     ;;
   list-plugins)
-    "$DELTAFICLI_WORKDIR/commands/list-plugins" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-plugins.log"
+    "$DELTAFICLI_WORKDIR/commands/list-plugins" "$@"
     ;;
   list-policies)
-    "$DELTAFICLI_WORKDIR/commands/list-policies" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/list-policies.log"
+    "$DELTAFICLI_WORKDIR/commands/list-policies" "$@"
     ;;
   load-plans)
-    "$DELTAFICLI_WORKDIR/commands/load-plans" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-plans.log"
+    "$DELTAFICLI_WORKDIR/commands/load-plans" "$@"
     ;;
   load-policies)
-    "$DELTAFICLI_WORKDIR/commands/load-policies" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-policies.log"
+    "$DELTAFICLI_WORKDIR/commands/load-policies" "$@"
     ;;
   load-rules)
-    "$DELTAFICLI_WORKDIR/commands/load-rules" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/load-rules.log"
+    "$DELTAFICLI_WORKDIR/commands/load-rules" "$@"
     ;;
   minio-cli)
-    "$DELTAFICLI_WORKDIR/commands/minio-cli" $@
+    "$DELTAFICLI_WORKDIR/commands/minio-cli" "$@"
     ;;
   mongo-cli)
-    "$DELTAFICLI_WORKDIR/commands/mongo-cli" $@
+    "$DELTAFICLI_WORKDIR/commands/mongo-cli" "$@"
     ;;
   mongo-eval)
-      "$DELTAFICLI_WORKDIR/commands/mongo-eval" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/mongo-eval.log"
+      "$DELTAFICLI_WORKDIR/commands/mongo-eval" "$@"
       ;;
   mongo-migrate)
-    "$DELTAFICLI_WORKDIR/commands/mongo-migrate" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/mongo-migrate.log"
+    "$DELTAFICLI_WORKDIR/commands/mongo-migrate" "$@"
     ;;
   performance-test)
-    BUNDLE_GEMFILE=$DELTAFICLI_WORKDIR/Gemfile bundle exec "$DELTAFICLI_WORKDIR/commands/performance-test" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/performance-test.log"
+    BUNDLE_GEMFILE=$DELTAFICLI_WORKDIR/Gemfile bundle exec "$DELTAFICLI_WORKDIR/commands/performance-test" "$@"
     ;;
   plugin-customization)
-    "$DELTAFICLI_WORKDIR/commands/plugin-customization" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/plugin-customization.log"
+    "$DELTAFICLI_WORKDIR/commands/plugin-customization" "$@"
     ;;
   plugin-image-repo)
-    "$DELTAFICLI_WORKDIR/commands/plugin-image-repo" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/plugin-image-repo.log"
+    "$DELTAFICLI_WORKDIR/commands/plugin-image-repo" "$@"
     ;;
   plugin-init)
-    "$DELTAFICLI_WORKDIR/commands/plugin-init" "$@" | tee -ia "$DELTAFICLI_WORKDIR/logs/plugin-init.log"
+    "$DELTAFICLI_WORKDIR/commands/plugin-init" "$@"
     ;;
   query)
-    "$DELTAFICLI_WORKDIR/commands/query" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/query.log"
+    "$DELTAFICLI_WORKDIR/commands/query" "$@"
     ;;
   redis-cli)
-    "$DELTAFICLI_WORKDIR/commands/redis-cli" $@
+    "$DELTAFICLI_WORKDIR/commands/redis-cli" "$@"
     ;;
   redis-latency)
-    "$DELTAFICLI_WORKDIR/commands/redis-latency" $@
+    "$DELTAFICLI_WORKDIR/commands/redis-latency" "$@"
     ;;
   redis-stats)
-    "$DELTAFICLI_WORKDIR/commands/redis-stats" $@
+    "$DELTAFICLI_WORKDIR/commands/redis-stats" "$@"
     ;;
   redis-watch)
-    "$DELTAFICLI_WORKDIR/commands/redis-watch" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/redis-watch.log"
+    "$DELTAFICLI_WORKDIR/commands/redis-watch" "$@"
     ;;
   status)
-    "$DELTAFICLI_WORKDIR/commands/status" $@
+    "$DELTAFICLI_WORKDIR/commands/status" "$@"
     ;;
   uninstall)
-    "$DELTAFICLI_WORKDIR/commands/uninstall" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/uninstall.log"
+    "$DELTAFICLI_WORKDIR/commands/uninstall" "$@"
     ;;
   uninstall-plugin)
-    "$DELTAFICLI_WORKDIR/commands/uninstall-plugin" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/uninstall-plugin.log"
+    "$DELTAFICLI_WORKDIR/commands/uninstall-plugin" "$@"
     ;;
   secrets)
-    "$DELTAFICLI_WORKDIR/commands/secrets" $@
+    "$DELTAFICLI_WORKDIR/commands/secrets" "$@"
     ;;
   serviceip)
-    "$DELTAFICLI_WORKDIR/commands/serviceip" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/serviceip.log"
+    "$DELTAFICLI_WORKDIR/commands/serviceip" "$@"
     ;;
   set-admin-password)
-    "$DELTAFICLI_WORKDIR/commands/set-admin-password" $@
+    "$DELTAFICLI_WORKDIR/commands/set-admin-password" "$@"
     ;;
   system-property)
-    "$DELTAFICLI_WORKDIR/commands/system-property" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/system-property.log"
+    "$DELTAFICLI_WORKDIR/commands/system-property" "$@"
     ;;
   system-snapshot)
-    "$DELTAFICLI_WORKDIR/commands/system-snapshot" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/system-snapshot.log"
+    "$DELTAFICLI_WORKDIR/commands/system-snapshot" "$@"
     ;;
   trace)
-    "$DELTAFICLI_WORKDIR/commands/trace" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/trace.log"
+    "$DELTAFICLI_WORKDIR/commands/trace" "$@"
     ;;
   versions)
-    "$DELTAFICLI_WORKDIR/commands/versions" $@ | tee -ia "$DELTAFICLI_WORKDIR/logs/versions.log"
+    "$DELTAFICLI_WORKDIR/commands/versions" "$@"
     ;;
   version)
     cat "$DELTAFICLI_WORKDIR"/VERSION
