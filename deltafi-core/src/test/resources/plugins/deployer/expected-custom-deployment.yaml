@@ -33,14 +33,11 @@ spec:
                   key: redis-password
                   name: redis-password
             - name: MINIO_ACCESSKEY
-              valueFrom:
-                secretKeyRef:
-                  key: accesskey
-                  name: minio-keys
+              value: deltafi
             - name: MINIO_SECRETKEY
               valueFrom:
                 secretKeyRef:
-                  key: secretkey
+                  key: rootPassword
                   name: minio-keys
           envFrom:
             - secretRef:

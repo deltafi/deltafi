@@ -54,11 +54,9 @@ ingress:
       default: local-deltafi-org
 # MinIO config
 minio:
-  image:
-    # Do not change without extensive minio testing and changes to secret handling
-    tag: RELEASE.2022-08-25T07-17-05Z
   environment:
-    MINIO_API_DELETE_CLEANUP_INTERVAL: 1m
+    MINIO_API_DELETE_CLEANUP_INTERVAL: 1s
+  mode: standalone
   existingSecret: minio-keys
   resources:
     requests:
@@ -67,14 +65,11 @@ minio:
   persistence:
     enabled: true
     existingClaim: deltafi-minio
-  ingress:
-    enabled: false
   service:
     type: NodePort
-    port: 9000
   nodeSelector:
     node-role.deltafi.org/storage: "true"
-# Values for the MongoDB dependency
+# MongoDB config
 mongodb:
   image:
     repository: bitnami/mongodb

@@ -38,6 +38,59 @@ set -- "${POSITIONAL[@]}"
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
+_k8s_add_namespace() {
+  local ns=$1
+  if ! ${KUBECTL_BIN} get namespace "$ns" > /dev/null 2>&1 ; then
+    cat <<EOF | ${KUBECTL_BIN} apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: $ns
+EOF
+    cli_log "Created namespace $ns"
+  fi
+}
+
+_k8s_add_secret() {
+  local name=$1
+  shift
+  if ! ${KUBECTL_BIN} describe secret "$name" 2>&1 | grep "$1" > /dev/null; then
+    ${KUBECTL_BIN} delete secret "$name" 2>&1
+    cli_log "Removed defunct secret $name"
+  fi
+
+  if ! ${KUBECTL_BIN} get secret "$name" > /dev/null 2>&1; then
+    cat <<EOF | ${KUBECTL_BIN} apply -f -
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: $name
+  namespace: deltafi
+data:
+$(while (( "$#" )); do
+local pass
+pass=$(printf '%s' "$2" | base64)
+echo "  $1: $pass"
+shift 2
+done)
+EOF
+    cli_log "Created secret $name"
+  fi
+}
+
+_random_password() {
+  local size=${1:-20}
+  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 | head -c "$size"
+}
+
+cli_log "Initializing k8s prerequisites"
+_k8s_add_namespace deltafi
+_k8s_add_secret mongodb-passwords mongodb-password "$(_random_password 20)" mongodb-root-password "$(_random_password 20)"
+_k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
+_k8s_add_secret redis-password redis-password "$(_random_password 16)"
+_k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
+
 if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
   cli_log "Executing helm dependencies"
   cd $DELTAFICLI_CHART_PATH

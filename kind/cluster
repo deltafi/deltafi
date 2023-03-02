@@ -566,34 +566,6 @@ EOF
   fi
 }
 
-_k8s_add_secret() {
-  local name=$1
-  shift
-
-  if ! kubectl get secret "$name" > /dev/null 2>&1; then
-    cat <<EOF | _conditional "Secret: $name" _annotated_subshell kubectl apply -f -
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: $name
-  namespace: deltafi
-data:
-$(while (( "$#" )); do
-local pass
-pass=$(printf '%s' "$2" | base64)
-echo "  $1: $pass"
-shift 2
-done)
-EOF
-  fi
-}
-
-_random_password() {
-  local size=${1:-20}
-  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 | head -c "$size"
-}
-
 _enable_ui() {
   _check_local_fqdns
   _conditional "Ingress nginx install" _annotated_subshell -v "unchanged" -h "Installing ingress-nginx..." kubectl apply -f "$BASE_PATH/files/ingress-nginx.yaml"
@@ -637,10 +609,6 @@ install() {
 
 _k8s_init() {
   _k8s_add_namespace deltafi
-  _k8s_add_secret mongodb-passwords mongodb-password "bekindbekindbekindbe" mongodb-root-password "$(_random_password 20)"
-  _k8s_add_secret minio-keys accesskey "$(_random_password 20)" secretkey "$(_random_password 40)"
-  _k8s_add_secret redis-password redis-password "$(_random_password 16)"
-  _k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
   _k8s_add_pv mongodb "${PV_STORAGE}" 1001
   _k8s_add_pv minio "${PV_STORAGE}" 1000
   _k8s_add_pv graphite "${PV_STORAGE}" 1000

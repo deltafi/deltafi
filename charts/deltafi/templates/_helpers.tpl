@@ -119,15 +119,12 @@ initContainers:
       name: redis-password
       key: redis-password
 - name: MINIO_ACCESSKEY
-  valueFrom:
-    secretKeyRef:
-      name: minio-keys
-      key: accesskey
+  value: deltafi
 - name: MINIO_SECRETKEY
   valueFrom:
     secretKeyRef:
       name: minio-keys
-      key: secretkey
+      key: rootPassword
 {{- end -}}
 
 {{- define "sslEnvVars" -}}
