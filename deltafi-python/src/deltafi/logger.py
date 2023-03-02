@@ -27,6 +27,7 @@ def get_logger(name: str = None) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.propagate = False
 
     if name is not None:
         logger = logging.LoggerAdapter(logger, dict(action=name))
