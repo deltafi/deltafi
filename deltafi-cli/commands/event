@@ -51,7 +51,7 @@ version_check() {
 list_events() {
   if ! version_check "jq-1.6" "$(jq --version)"; then
     echo "This command requires at least jq version 1.6"
-    return
+    exit 1
   fi
 
   API_URL="http://${API_HOST}/api/v1/events"

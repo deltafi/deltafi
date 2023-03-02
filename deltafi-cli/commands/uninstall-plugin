@@ -39,6 +39,8 @@ cleanup() {
 log_failed() {
   cli_log "${red}${2}: Plugin cannot be removed${normal}"
   echo -e "${red}Error: ${1}${normal}"
+  rm -f $TMPFILE
+  exit 1
 }
 
 GROUP_ID=$(echo "$2" | cut -d ":" -f 1)
@@ -47,7 +49,7 @@ VERSION=$(echo "$2" | cut -d ":" -f 3)
 
 if [[ -z "$GROUP_ID" || -z "$ARTIFACT_ID" || -z "$VERSION" ]]; then
   cli_log "${red}Invalid plugin coordinates: $2${normal}"
-  exit
+  exit 1
 fi
 
 DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)

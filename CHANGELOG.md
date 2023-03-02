@@ -19,6 +19,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - CLI: Command logging removed.  Not very useful and caused error codes to be hidden
 
 ### Fixed
+- `deltafi install-plugin` did not set error codes on failure
+- `deltafi uninstall-plugin` did not set error codes on failure
+- `deltafi serviceip` did not set error codes on failure
 - Bug where durations could not be properly converted when importing a `SystemSnapshot`
 - Cluster command generated warnings on admin.conf mode
 - Cluster uninstall timeouts

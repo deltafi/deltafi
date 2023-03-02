@@ -127,11 +127,13 @@ RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type
 if [[ "$RESPONSE_CODE" != "200" ]]; then
   cli_log "${red}Installing "$2" failed${normal}"
   echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
+  exit 1
 else
   ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
   if [[ "$ERRORS" != "" ]]; then
     cli_log "${red}Installing $2 failed${normal}"
     echo -e "${red}Error: ${ERRORS}${normal}"
+    exit 1
   else
     SUCCESS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.success")
     if [[ $SUCCESS == "true" ]]; then
@@ -139,6 +141,7 @@ else
     else
       ERRORS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.errors | join(\",\")")
       cli_log "${red}$ERRORS${normal}"
+      exit 1
     fi
   fi
 fi
