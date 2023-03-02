@@ -10,8 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Annotation endpoints that add indexedMetadata to a `DeltaFile`:
   - `/deltafile/annotate/{did}?k=v&kn=vn` - if a key already exists the value will not be replaced
   - `/deltafile/annotate/{did}/allowOverwrites?k=v&kn=vn` - if a key already exists the value will be changed
+- `cluster loc destroy` can be used to destroy a cluster when you are doing local KinD cluster operations
 
 ### Changed
+- KinD: `deltafi ingress` works with regular filesystem paths instead of paths relative to the project root
+- KinD: `cluster` command streamlined output for readability
 
 ### Deprecated
 
@@ -25,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Bug where durations could not be properly converted when importing a `SystemSnapshot`
 - Cluster command generated warnings on admin.conf mode
 - Cluster uninstall timeouts
+- KinD: several `deltafi` CLI commands no longer proxy through to the cluster container, improving performance
+- `cluster` command syncs the cluster unnecessarily
 
 ### Tech-Debt/Refactor
 

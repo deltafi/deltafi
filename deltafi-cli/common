@@ -4,17 +4,45 @@ KUBECTL_BIN="kubectl --namespace ${DELTAFICLI_K8S_NAMESPACE}"
 CLI_USER="X-User-Name: deltafi-cli"
 PERMISSION="X-User-Permissions: Admin"
 
-cli_log() {
-  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  echo ">> $timestamp $1"
-}
-
 normal=$(tput sgr0)
 bold=$(tput bold)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
+blue=$(tput setaf 33)
 magenta=$(tput setaf 5)
 cyan=$(tput setaf 6)
 white=$(tput setaf 7)
+black=$(tput setaf 0)
+gray=$(tput setaf 8)
+orange=$(tput setaf 208)
+
+cli_log() {
+  local timestamp
+  timestamp=${gray}$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "${yellow}>  $timestamp${normal} $1"
+}
+
+_attention() {
+  {
+    printf "\n%s\n\n" "${yellow}>  ${green}${*}${normal}"
+  } 1>&2
+}
+
+_warn() {
+  {
+    printf "%s\n" "${red}!  ${normal}${*}"
+  }
+}
+
+_ok() {
+  printf "   [ %s%-4s%s ]  %s\n" "${green}" " OK" "${normal}" "$@"
+}
+
+_down() {
+  printf "   [ %s%-4s%s ]  %s\n" "${yellow}" "DOWN" "${normal}" "$@"
+}
+
+_fail() {
+  printf "   [ %s%-4s%s ]  %s\n" "${red}" "FAIL" "${normal}" "$@"
+}

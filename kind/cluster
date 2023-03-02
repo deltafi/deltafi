@@ -135,6 +135,8 @@ export BASE_PATH
 DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
 ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
 CLUSTER_NAME=deltafi
+PV_DIR=$BASE_PATH/data
+SUDO=$(which sudo)
 
 if [[ "$(basename "$0")" == "deltafi" ]]; then
   # Deltafi wrapper mode
@@ -149,8 +151,20 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         shift
         cluster "$@"
         ;;
-      version|uninstall)
+      # Commands that do not need recursive call into cluster
+      version|versions|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|mongol-cli|mongo-migrate|mongo-eval|redis-watch|redis-cli|redis-stats|redis-latency|serviceip)
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
+        ;;
+      ingress)
+        INGRESS_DIR=$PV_DIR/ingress
+        shift
+        flow=$1
+        filename=$2
+        shift 2
+        mkdir -p "${INGRESS_DIR}"
+        cp "$filename" "${INGRESS_DIR}"
+        docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi ingress "$flow" "/data/deltafi/ingress/$(basename "$filename")"
+        rm "${INGRESS_DIR}/$(basename "$filename")"
         ;;
       *)
         docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi "$@"
@@ -158,7 +172,7 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
     esac
     exit 0
   fi
-  docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi
+  "$DELTAFI_PATH/deltafi-cli/deltafi"
   exit 0
 fi
 
@@ -179,19 +193,18 @@ ___start=$(date +%s)
 
 # Duration trap
 _emit_duration() {
+
   local duration
   duration=$(echo "$(date +%s) - $___start" | bc)
   local execution_time
   execution_time=$(printf "%d seconds" "$duration")
   echo
-  echo "Execution time: $execution_time"
+  _info "Execution time: ${blue}$execution_time${normal}"
   echo
 }
 
 trap _emit_duration EXIT
 
-PV_DIR=$BASE_PATH/data
-SUDO=$(which sudo)
 
 # Load configuration from cluster.yaml
 CONFIG=${BASE_PATH}/cluster.yaml
@@ -213,7 +226,7 @@ _plugin_field() {
 
 _are_you_sure() {
   local prompt=${1:-"Are you sure?"}
-  read -r -p "$prompt [y/N] " response
+  read -r -p "         ${yellow}$prompt${normal} [y/N] " response
   case "$response" in
     [yY][eE][sS]|[yY])
       ;;
@@ -230,7 +243,7 @@ config() {
 
 _check_deltafi_cli() {
   if ! which deltafi >/dev/null; then
-    _debug ">> Installing DeltaFi CLI"
+    _info "Installing DeltaFi CLI"
     pushd "$DELTAFI_PATH/deltafi-cli" > /dev/null
     ./install.sh
     popd > /dev/null
@@ -242,10 +255,10 @@ _check_deltafi_cli() {
   local EXPECTED_DELTAFI_PATH="$BASE_PATH/cluster"
 
   if [[ "$DELTAFI_PATH" != "$EXPECTED_DELTAFI_PATH" ]]; then
-    _warn echo "deltafi command is linked to an unexpected location:"
-    _warn echo "    Expected: " "$EXPECTED_DELTAFI_PATH"
-    _warn echo "    Actual:   " "$DELTAFI_PATH"
-    _warn echo "Run kind/install.sh to reinitialize the links"
+    _warn "deltafi command is linked to an unexpected location:"
+    _warn "    Expected: " "$EXPECTED_DELTAFI_PATH"
+    _warn "    Actual:   " "$DELTAFI_PATH"
+    _warn "Run kind/install.sh to reinitialize the links"
     echo
   fi
 }
@@ -255,7 +268,7 @@ _check_docker() {
   if ! docker network inspect kind 2>/dev/null 1>/dev/null; then
     docker network create kind > /dev/null && _ok "Docker network 'kind' created"
   fi
-  _ok "Docker"
+  _ok "Docker is ready"
 }
 
 _check_java() {
@@ -270,16 +283,14 @@ _check_java() {
 }
 
 _install_node_cli() {
-  _debug ">> Installing DeltaFi CLI in cluster node"
   docker exec -i ${CLUSTER_NAME}-control-plane bash > /dev/null <<"EOF"
 cd /usr/dev/deltafi/deltafi-cli
 ./install.sh
 EOF
-  _ok "Cluster CLI"
+  _ok "CLI enabled in cluster node"
 }
 
 _update_k8s_config_permissions() {
-  _debug ">> Add read access to the k8s admin.conf"
   docker exec -i ${CLUSTER_NAME}-control-plane bash > /dev/null <<"EOF"
 chmod +r /etc/kubernetes/admin.conf
 EOF
@@ -351,9 +362,12 @@ _install_plugins() {
       options=("${options[@]}" "--deployment-extras-file $plugin/$deploymentExtras")
     fi
 
-    _attention "Installing $plugin with coordinates $coordinates and options of \"${options[*]}\""
+    _attention "Installing $plugin"
+    _info -s "Plugin $plugin"
+    _info -a "Coordinates: $coordinates"
+    _info -a "Options:     \"${options[*]}\""
 
-    _kind_deltafi install-plugin "$coordinates" "${options[@]}"
+    _conditional "$plugin plugin" _annotated_subshell _kind_deltafi install-plugin "$coordinates" "${options[@]}"
   done
 }
 
@@ -390,7 +404,7 @@ prerequisites() {
     _attention "Setting up JDK (may require your system password)"
     sudo ln -sfn /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
     _ok "OpenJDK 17"
-    _warn echo "In order to use JDK 17, you may need to update your path like this:"
+    _warn "In order to use JDK 17, you may need to update your path like this:"
     echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@17/bin:\$PATH\"' >> ~/.zshrc"
     echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@17/bin:\$PATH\"' >> ~/.bashrc"
   fi
@@ -423,10 +437,10 @@ up() {
   _create_proxy quay-proxy "https://quay.io" 5004
   _create_proxy k8s-registry-proxy "https://registry.k8s.io" 5005
 
-  if kind get clusters | grep "^${CLUSTER_NAME}$" > /dev/null; then
-    _ok "${CLUSTER_NAME} cluster already instantiated"
+  if kind get clusters -q | grep "^${CLUSTER_NAME}$" > /dev/null; then
+    _ok "KinD ${CLUSTER_NAME} cluster already instantiated"
   else
-    cat <<EOF | kind create cluster --wait 10m --name ${CLUSTER_NAME} --config=-
+    cat <<EOF | _conditional "KinD ${CLUSTER_NAME} cluster initialized" _annotated_subshell -v "•" -v "Not sure" -h "Initialize KinD cluster" kind create cluster -v 0 --wait 10m --name ${CLUSTER_NAME} --config=- || _fail "${CLUSTER_NAME} cluster instantiation"
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -471,26 +485,27 @@ EOF
   local METRICS_SERVER_DEPLOYMENT="${BASE_PATH}/files/kind-metrics-server-deployment.yaml"
   _is_arm && METRICS_SERVER_DEPLOYMENT="${BASE_PATH}/files/kind-metrics-server-deployment-arm64.yaml"
 
-  kubectl apply -f "$METRICS_SERVER_DEPLOYMENT" | while read -r line; do _debug " |  $line"; done
-  kubens deltafi || kubens deltafi # Repeated because kubens fails on first execution in Debian
+  _conditional "Metrics server" _annotated_subshell -v "unchanged" -h "Deploy metrics server" kubectl apply -f "$METRICS_SERVER_DEPLOYMENT"
+  _conditional "Default namespace is deltafi" _annotated_subshell -h "Set DeltaFi namespace" kubens deltafi || _annotated_subshell kubens deltafi # Repeated because kubens fails on first execution in Debian
   _install_node_cli
   _enable_ui
   _update_k8s_config_permissions
   _k8s_init
-  _ok "KinD cluster"
+  _ok "KinD cluster fully instantiated"
 }
 
 _k8s_add_namespace() {
   local ns=$1
   if ! kubectl get namespace "$ns" > /dev/null 2>&1 ; then
-    cat <<EOF | kubectl apply -f -
+    cat <<EOF | _conditional "Create namespace $ns" _annotated_subshell kubectl apply -f -
 apiVersion: v1
 kind: Namespace
 metadata:
   name: $ns
 EOF
+  else
+    _ok "Namespace ${ns} exists"
   fi
-  _ok "Namespace: ${ns}"
 }
 
 _k8s_add_pv() {
@@ -507,7 +522,7 @@ _k8s_add_pv() {
     mkdir -p "${localpath}"
   fi
   if ! kubectl get persistentvolumeclaim "$name" > /dev/null 2>&1 ; then
-    cat <<EOF | kubectl apply -f -
+    cat <<EOF | _conditional "Persistent volume: $name ($path)" _annotated_subshell kubectl apply -f -
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -549,7 +564,6 @@ spec:
 ---
 EOF
   fi
-    _ok "Persistent volume: $name ($path)"
 }
 
 _k8s_add_secret() {
@@ -557,7 +571,7 @@ _k8s_add_secret() {
   shift
 
   if ! kubectl get secret "$name" > /dev/null 2>&1; then
-    cat <<EOF | kubectl apply -f -
+    cat <<EOF | _conditional "Secret: $name" _annotated_subshell kubectl apply -f -
 apiVersion: v1
 kind: Secret
 type: Opaque
@@ -573,7 +587,6 @@ shift 2
 done)
 EOF
   fi
-  _ok " Secret: $name"
 }
 
 _random_password() {
@@ -582,16 +595,13 @@ _random_password() {
 }
 
 _enable_ui() {
-  echo ">> Installing KinD ingress controller..."
   _check_local_fqdns
-  echo " > Installing ingress-nginx..."
-  kubectl apply -f "$BASE_PATH/files/ingress-nginx.yaml" | while read -r line; do _debug " |  $line"; done
-  echo " > Waiting for ingress-nginx..."
-  kubectl wait --namespace ingress-nginx \
+  _conditional "Ingress nginx install" _annotated_subshell -v "unchanged" -h "Installing ingress-nginx..." kubectl apply -f "$BASE_PATH/files/ingress-nginx.yaml"
+  _info -s "Waiting for ingress-nginx..."
+  _conditional "Ingress operational" _annotated_subshell kubectl wait --namespace ingress-nginx \
       --for=condition=ready pod \
       --selector=app.kubernetes.io/component=controller \
-      --timeout=90s | while read -r line; do echo " |  $line"; done
-  _ok "KinD ingress controller"
+      --timeout=90s
 }
 
 _verify_or_replace_fqdn() {
@@ -605,8 +615,8 @@ _verify_or_replace_fqdn() {
 }
 
 _check_local_fqdns() {
-  echo ">> Checking /etc/hosts config"
-  echo "   You may be prompted for your sudo password"
+  _info "Checking /etc/hosts config"
+  _info -h "You may be prompted for your sudo password"
 
   for fqdn in "${FQDNS[@]}"; do
     _verify_or_replace_fqdn "$fqdn"
@@ -616,19 +626,16 @@ _check_local_fqdns() {
 describe install "Initialize a KinD cluster and install core DeltaFi"
 install() {
   up
-  echo ">> Starting deltafi"
   # Detect ARM processor and load arm64 overrides
   local EXTRA=
   _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
-  _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml "$EXTRA" 2>&1 | while read -r line; do [[ "$line" =~ "deprecated" ]] || echo " |  $line"; done
-  _kind_deltafi set-admin-password password
-  _ok "DeltaFi core installed"
-  _warn echo "If basic_auth is enabled user is 'admin', password is 'password'"
-  _ok "Open the UI at http://local.deltafi.org"
+  _conditional "DeltaFi core installed" _annotated_subshell -h "Install DeltaFi core" -v "deprecated" -v "admin.conf" _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml "$EXTRA"
+  _annotated_subshell -h "Set admin password" _kind_deltafi set-admin-password password
+  _info -e "If basic_auth is enabled user is 'admin', password is 'password'"
+  _info "Open the UI at http://local.deltafi.org"
 }
 
 _k8s_init() {
-  _debug ">> Initializing k8s prerequisites"
   _k8s_add_namespace deltafi
   _k8s_add_secret mongodb-passwords mongodb-password "bekindbekindbekindbe" mongodb-root-password "$(_random_password 20)"
   _k8s_add_secret minio-keys accesskey "$(_random_password 20)" secretkey "$(_random_password 40)"
@@ -649,7 +656,7 @@ down() {
   _attention "Shutting down KinD cluster"
   if kind get clusters 2>/dev/null | grep "^${CLUSTER_NAME}$" > /dev/null; then
     [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure
-    kind delete cluster --name ${CLUSTER_NAME}
+    _annotated_subshell kind delete cluster --name ${CLUSTER_NAME}
     if _is_linux; then
       ${SUDO} rm -rf "$PV_DIR/mongodb"
     else
@@ -675,6 +682,7 @@ destroy() {
   else
     rm -rf "$PV_DIR"
   fi
+  _down "KinD cluster destroyed"
 }
 
 describe help "Get additional details on commands"
@@ -713,7 +721,7 @@ shell() {
 _kind_deltafi() {
   docker exec -i -u="$(id -u):$(id -g)" ${CLUSTER_NAME}-control-plane bash <<EOF
 cd /usr/dev
-TERM=screen-256color deltafi $@ 2>&1 | grep -v "WARNING: Kubernetes configuration file"
+TERM=screen-256color deltafi $@ 2>&1
 EOF
 }
 
@@ -728,7 +736,7 @@ EOF
 describe uninstall "Uninstall the DeltaFi instance, leaving cluster intact"
 uninstall() {
   _attention "Uninstalling DeltaFi"
-  deltafi uninstall
+  _conditional "Uninstall DeltaFi" deltafi uninstall
 }
 
 describe loc "Control local builds and local installation to the cluster"
@@ -748,6 +756,7 @@ Options:
   restart     Down a cluster, restart it, and install deltafi and plugins
   bounce      Restart an application (deltafi-api, etc.).  App name must follow command
   nocore      Skips building core DeltaFi and UI (build only)
+  destroy     Destroys the cluster before proceeding
   -f | force  Skip "are you sure?"
 
 Examples:
@@ -777,6 +786,7 @@ loc() {
   local BOUNCE=
   local FORCE=
   local NOCORE=
+  local DESTROY=
 
   [[ -z "$1" ]] && _loc_help
 
@@ -784,6 +794,9 @@ loc() {
     local cmd=$1
     shift
     case "$cmd" in
+      destroy)
+        DESTROY=destroy
+        ;;
       clean)
         CLEAN=clean
         ;;
@@ -821,7 +834,9 @@ loc() {
   _check_java
 
   # Down the cluster for clean, uninstall DeltaFi for restart
-  if [[ -n "$RESTART" ]]; then
+  if [[ -n "$DESTROY" ]]; then
+    destroy
+  elif [[ -n "$RESTART" ]]; then
     down $FORCE
   elif [[ -n "$REINSTALL" ]]; then
     uninstall $FORCE
@@ -829,11 +844,11 @@ loc() {
     uninstall $FORCE
   fi
 
-  up
+  [[ -n "$BUILD" ]] && _conditional "Local build" _local_build $CLEAN
 
-  [[ -n "$BUILD" ]] && _local_build $CLEAN
+  [[ -n "$RESTART" || -n "$REINSTALL" || -n "$INSTALL" ]] && up
 
-  [[ -n "$RESTART" || -n "$REINSTALL" || -n "$BOUNCE" || -n "$INSTALL" ]] && _local_push
+  [[ -n "$BUILD" || -n "$RESTART" || -n "$REINSTALL" || -n "$BOUNCE" || -n "$INSTALL" ]] && _local_push
 
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
     _attention "Installing DeltaFi core"
@@ -843,23 +858,31 @@ loc() {
 
   if [[ -n "$BOUNCE" ]]; then
     _attention "Bouncing $BOUNCE"
-    kubectl get pods | cut -d' ' -f1 | grep "$BOUNCE" | xargs kubectl delete pod
+    local pods
+    pods=$(kubectl get pods | cut -d' ' -f1 | grep "$BOUNCE")
+    _annotated_subshell kubectl delete pod $pods
+    _down "Bounced pods matching $BOUNCE"
   fi
+}
+
+_shoot_pod() {
+  kubectl get pods | cut -d' ' -f1 | grep "$1" | xargs kubectl delete pod
 }
 
 _restart_pod() {
   _attention "Restarting $1"
-  kubectl get pods | cut -d' ' -f1 | grep "$1" | xargs kubectl delete pod
+  _conditional "Plugin $1 restarted" _annotated_subshell -h "$1 restart" _shoot_pod "$1"
 }
 
 _local_build() {
 
   _attention "Building local images"
 
+  _create_registry kind-registry 5000
   local BUILD_TARGETS=( assemble )
 
   cd "$ROOT/deltafi"
-  git pull || echo "Cannot pull latest"
+  _annotated_subshell git pull || _warn "Cannot pull latest"
   if [[ $# -gt 0 && $1 == "clean" ]]; then
     _attention "Cleaning deltafi build environment"
     ./gradlew clean
@@ -886,7 +909,7 @@ _local_build() {
       git clone "$(_url_for_plugin "$plugin")" "$ROOT/$plugin"
     fi
     cd "$ROOT/$plugin"
-    git pull || echo "Cannot pull latest"
+    _annotated_subshell git pull || _warn "Cannot pull latest"
     if [[ $# -gt 0 && $1 == "clean" ]]; then
       _attention "Cleaning $plugin build environment"
       ./gradlew clean
@@ -999,14 +1022,14 @@ _plugin_build() {
       local PLUGIN_URL
       PLUGIN_URL=$(_url_for_plugin "$plugin")
       if [[ "$PLUGIN_URL" != "" ]]; then
-        git clone "$PLUGIN_URL" "$ROOT/$plugin"
+        _annotated_subshell git clone "$PLUGIN_URL" "$ROOT/$plugin"
       else
         _attention "Cannot download source for $plugin"
       fi
     fi
     if [[ -d $ROOT/$plugin ]]; then
       cd "$ROOT/$plugin"
-      [[ -d "$ROOT/$plugin/.git" ]] && git pull || echo "Cannot pull latest"
+      [[ -d "$ROOT/$plugin/.git" ]] && _annotated_subshell git pull || _warn "Cannot pull latest"
       if [[ $# -gt 0 && $1 == "clean" ]]; then
         _attention "Cleaning $plugin build environment"
         ./gradlew clean
@@ -1024,12 +1047,14 @@ _plugin_build() {
 _local_push_one() {
   docker push "$1" 1>/dev/null
   run crictl pull "$1" 1>/dev/null
-  _ok "Push to cluster: $1"
 }
 
 _local_push() {
   pids=()
+  _attention "Syncing docker images"
+  _info -s "Starting sync"
   for img in $(docker images | grep "localhost.*latest" | cut -f1 -d' '); do
+    _info -a "Syncing $img"
     _local_push_one "$img" &
     pids+=($!)
   done
@@ -1037,7 +1062,7 @@ _local_push() {
   for pid in ${pids[*]}; do
     wait "$pid"
   done
-
+  _ok_annotated "Synced all docker images"
 }
 
 _local_cluster() {
@@ -1049,30 +1074,134 @@ _local_cluster() {
   done
 }
 
-_green() {
-  printf "%s" "$(tput setaf 2)${*}$(tput sgr0)"
-}
+normal=$(tput sgr0)
+bold=$(tput bold)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+blue=$(tput setaf 33)
+magenta=$(tput setaf 5)
+cyan=$(tput setaf 6)
+white=$(tput setaf 7)
+black=$(tput setaf 0)
+gray=$(tput setaf 8)
+orange=$(tput setaf 208)
 
-_red() {
-  printf "%s" "$(tput setaf 1)${*}$(tput sgr0)"
+_log() {
+  local timestamp
+  timestamp=${gray}$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "${yellow}>  $timestamp${normal} $1"
 }
 
 _attention() {
   {
-    printf "\n%s\n\n" "$(tput setaf 3)>  $(tput setaf 2)${*}$(tput sgr0)"
+    printf "\n%s\n\n" "${gray}       ▶ ${blue}${*}${normal}"
   } 1>&2
 }
 
+_info() {
+  {
+    local prepend="${orange} ‣ ${normal}"
+    case $1 in
+    -w)
+      prepend="${red} ‼ ${normal}"
+      shift
+      ;;
+    -h)
+      prepend="${yellow} ! ${normal}"
+      shift
+      ;;
+    -s)
+      prepend="${blue} ╭ ${normal}"
+      shift
+      ;;
+    -e)
+      prepend="${blue} ╰ ${normal}"
+      shift
+      ;;
+    -q)
+      prepend="   "
+      shift
+      ;;
+    -a)
+      prepend="${blue} │${gray} "
+      shift
+      ;;
+    esac
+    printf "      %s\n" "${prepend}${*}${normal}"
+  } 1>&2
+}
+
+_warn() {
+  _info -w "$@"
+}
+
+_message() {
+  color="$1"
+  msg="$2"
+  shift 2
+  printf "[%s%-4s%s]   %s\n" "$color" "$msg" "${normal}" "$@"
+}
+
+_ok_annotated() {
+  printf "[%s%-4s%s] ${blue}╰${normal} %s\n" "$green" " OK" "${normal}" "$@"
+}
+
 _ok() {
-  printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 2)" " OK" "$(tput sgr0)" "$@"
+  _message "${green}" " OK " "$@"
 }
 
 _down() {
-  printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 3)" "DOWN" "$(tput sgr0)" "$@"
+  _message "${yellow}" "DOWN" "$@"
 }
 
 _fail() {
-  printf "   [ %s%-4s%s ]  %s\n" "$(tput setaf 1)" "FAIL" "$(tput sgr0)" "$@"
+  _message "${red}" "FAIL" "$@"
+}
+
+_conditional() {
+  title=$1
+  shift
+
+  if "${@}"; then
+    _ok_annotated $title
+  else
+    _fail $title
+    return 1
+  fi
+}
+
+_annotated_subshell() {
+
+  local filters=()
+  while true; do
+    case $1 in
+    -h)
+      _info -s "$2"
+      shift 2
+      ;;
+    -v)
+      filters+=("$2")
+      shift 2
+      ;;
+    *)
+      break
+      ;;
+    esac
+  done
+  {
+    "${@}" 2>&1 | while read -r line; do
+      local remove=
+      for filter in "${filters[@]}"; do
+        if [[ $line =~ $filter ]]; then
+          remove=true
+          continue
+        fi
+      done
+      [[ -n "${remove}" ]] && continue
+      _info -a "$line"
+    done
+  } 2>&1
 }
 
 # Initialize bask framework
