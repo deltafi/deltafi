@@ -40,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Minio chart 5.0.7 and minio RELEASE.2023-02-10T18-48-39Z
   > Helm chart upgrade is required to migrate.  `helm dependency upgrade`
 - KinD kubernetes node updated to 1.24.7
+- KinD metrics server upgrade to 6.2
 
 ## [0.102.0] - 2022-02-24
 
