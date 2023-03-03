@@ -10,7 +10,7 @@
 {{- include "noAuthAnnotations" .}}
 {{- end }}
 nginx.ingress.kubernetes.io/auth-cache-duration: 200 1m
-nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name, X-User-Permissions
+nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name, X-User-Permissions, X-Metrics-Role
 {{- end -}}
 
 {{- define "noAuthAnnotations" -}}

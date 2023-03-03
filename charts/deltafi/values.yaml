@@ -138,10 +138,14 @@ grafana:
     node-role.deltafi.org/storage: "true"
   grafana.ini:
     auth.anonymous:
-      enabled: true
-      org_role: Admin
+      enabled: false
     auth.basic:
       enabled: false
+    auth.proxy:
+      enabled: true
+      header_name: X-User-Name
+      headers: Role:X-Metrics-Role
+      auto_sign_up: true
     analytics:
       reporting_enabled: false
       check_for_updates: false

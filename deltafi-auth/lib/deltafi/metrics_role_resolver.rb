@@ -18,20 +18,14 @@
 
 # frozen_string_literal: true
 
-class AuthApi < Sinatra::Application
-  get '/basic-auth/?' do
-    content_type 'text/plain'
-
-    verify_headers(['X_ORIGINAL_URL'])
-    @original_url = request.env['HTTP_X_ORIGINAL_URL']
-
-    basic_auth!
-
-    response.headers['X-User-ID'] = @user.id.to_s
-    response.headers['X-User-Name'] = @user.username
-    response.headers['X-User-Permissions'] = @user.permissions_csv
-    response.headers['X-Metrics-Role'] = @user.metrics_role
-    logger.info "Authorized: '#{@user.username}' -> '#{@original_url}'"
-    return
+module Deltafi
+  module MetricsRoleResolver
+    def metrics_role
+      # These role names map to Grafana default roles
+      user_permissions = permissions
+      return 'Admin' if !(['MetricsAdmin', 'Admin'] & user_permissions).empty?
+      return 'Editor' if user_permissions.include?('MetricsEdit')
+      return 'Viewer' if user_permissions.include?('MetricsView')
+    end
   end
 end

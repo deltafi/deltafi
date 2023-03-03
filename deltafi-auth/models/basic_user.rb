@@ -22,6 +22,7 @@ require 'forwardable'
 
 class BasicUser
   include Deltafi::EntityResolver
+  include Deltafi::MetricsRoleResolver
   extend Forwardable
 
   attr_reader :user, :identifiers

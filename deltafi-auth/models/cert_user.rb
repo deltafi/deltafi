@@ -20,6 +20,7 @@
 
 class CertUser
   include Deltafi::EntityResolver
+  include Deltafi::MetricsRoleResolver
 
   attr_reader :dn, :identifiers
 

@@ -25,5 +25,6 @@ class AuthApi < Sinatra::Application
     response.headers['X-User-ID'] = '0'
     response.headers['X-User-Name'] = 'Admin'
     response.headers['X-User-Permissions'] = 'Admin'
+    response.headers['X-Metrics-Role'] = 'Admin'
   end
 end

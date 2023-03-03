@@ -31,6 +31,7 @@ class AuthApi < Sinatra::Application
     response.headers['X-User-ID'] = @user.dn
     response.headers['X-User-Name'] = @user.common_name
     response.headers['X-User-Permissions'] = @user.permissions_csv
+    response.headers['X-Metrics-Role'] = @user.metrics_role
     logger.info "Authorized: '#{@user.dn}' -> '#{@original_url}'"
     return
   end

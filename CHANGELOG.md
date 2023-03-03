@@ -12,10 +12,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - `/deltafile/annotate/{did}?k=v&kn=vn` - if a key already exists the value will not be replaced
   - `/deltafile/annotate/{did}/allowOverwrites?k=v&kn=vn` - if a key already exists the value will be changed
 - `cluster loc destroy` can be used to destroy a cluster when you are doing local KinD cluster operations
+- New Metrics-related permissions
+  - `MetricsAdmin` - Grants the `Admin` role in Grafana
+  - `MetricsEdit` - Grants the `Editor` role in Grafana
 
 ### Changed
 - KinD: `deltafi ingress` works with regular filesystem paths instead of paths relative to the project root
 - KinD: `cluster` command streamlined output for readability
+- Metrics: Grafana auth is now tied to DeltaFi auth
 
 ### Deprecated
 
