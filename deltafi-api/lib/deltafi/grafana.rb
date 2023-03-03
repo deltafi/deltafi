@@ -30,12 +30,19 @@ module Deltafi
 
     ALERT_API = "#{GRAFANA_URL}/api/alertmanager/grafana/api/v2/alerts"
 
+    OPTIONS = {
+      headers: {
+        'X-Metrics-Role' => 'Admin',
+        'X-User-Name' => 'admin'
+      }
+    }
+
     def self.alerts(raw: false)
       if raw
-        HTTParty.get(ALERT_API).to_s
+        HTTParty.get(ALERT_API, OPTIONS).to_s
       else
         begin
-          JSON.parse(HTTParty.get(ALERT_API).to_s,
+          JSON.parse(HTTParty.get(ALERT_API, OPTIONS).to_s,
                      symbolize_names: true)
         rescue JSON::ParserError => e
           raise JSON::ParserError, "Failed to parse Grafana alert response: #{e.message}"
