@@ -46,7 +46,7 @@ public class SurveyRest {
     @PostMapping(value = "survey", consumes = MediaType.WILDCARD)
     public ResponseEntity<String> survey(@QueryParam(value = "flow") String flow,
                                          @QueryParam(value = "bytes") Long bytes,
-                                         @QueryParam(value = "count") Long files,
+                                         @QueryParam(value = "files") Long files,
                                          @QueryParam(value = "subflow") String subflow,
                                          @QueryParam(value = "direction") String direction,
                                          @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false, defaultValue = "system") String username) {
@@ -61,7 +61,7 @@ public class SurveyRest {
         if (bytes == null) bytes = 0L;
         if (files == null) files = 1L;
 
-        log.debug("Survey: flow={} subflow={} direction={} bytes={} count={} username={}",
+        log.debug("Survey: flow={} subflow={} direction={} bytes={} files={} username={}",
                 flow,
                 subflow,
                 direction,
@@ -87,7 +87,7 @@ public class SurveyRest {
             return ResponseEntity.ok(null);
         } catch (Throwable exception) {
             log.error("Exception thrown: ", exception);
-            log.error("{} error for flow={} subflow={} direction={} bytes={} count={} username={}: {}", HttpStatus.INTERNAL_SERVER_ERROR.value(), flow, subflow, direction, bytes, files, username, exception.getMessage());
+            log.error("{} error for flow={} subflow={} direction={} bytes={} files={} username={}: {}", HttpStatus.INTERNAL_SERVER_ERROR.value(), flow, subflow, direction, bytes, files, username, exception.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
         }
     }

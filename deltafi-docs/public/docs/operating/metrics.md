@@ -24,6 +24,10 @@ The following metrics are generated to the Graphite time-series database by defa
 | gauge.action_queue.queue_size | queue_name | An instantaneous gauge for the size of an action_queue (number of DeltaFiles waiting on the queue) |
 | gauge.node.disk.limit | hostname | An instantaneous gauge for the maximum aggregate storage limit on a node (bytes) |
 | gauge.node.disk.usage | hostname | An instantaneous gauge for current storage utilization on a node (bytes) |
+| stats_counts.survey.bytes | surveyFlow, surveyDirection | Number of bytes surveyed on a flow |
+| stats_counts.survey.files | surveyFlow, surveyDirection | Number of files surveyed on a flow |
+| stats_counts.survey.subflow.bytes | surveyFlow, surveySubflow, surveyDirection | Number of bytes surveyed on a subflow |
+| stats_counts.survey.subflow.files | surveyFlow, surveySubflow, surveyDirection | Number of files surveyed on a subflow |
 
 ## Custom metrics in Action Kits
 
