@@ -55,7 +55,7 @@ import java.util.Optional;
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
 @MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class,
-        MetricRepository.class, DeltaFiPropertiesRepo.class, JoinRepo.class})
+        MetricRepository.class, DeltaFiPropertiesRepo.class, JoinRepo.class, RetryPolicyService.class})
 @EnableRetry
 class IngressServiceRetryTest {
 

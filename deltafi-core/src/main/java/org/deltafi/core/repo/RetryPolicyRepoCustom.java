@@ -15,31 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.repo;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.OffsetDateTime;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class Action {
-  private String name;
-  private ActionState state;
-  private OffsetDateTime created;
-  private OffsetDateTime queued;
-  private OffsetDateTime start;
-  private OffsetDateTime stop;
-  private OffsetDateTime nextExecution;
-  private OffsetDateTime modified;
-  private String errorCause;
-  private String errorContext;
-  private String filteredCause;
-  @Builder.Default
-  private int attempt = 1;
+public interface RetryPolicyRepoCustom {
+    /**
+     * Ensure all indices are created.
+     */
+    void ensureAllIndices();
 }

@@ -169,10 +169,12 @@ type Action {
   queued: DateTime
   start: DateTime
   stop: DateTime
+  nextExecution: DateTime
   modified: DateTime!
   errorCause: String
   errorContext: String
   filteredCause: String
+  attempt: Int!
 }
 
 type DeltaFile {

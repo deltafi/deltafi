@@ -67,9 +67,19 @@ public interface DeltaFileRepoCustom {
     /**
      * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.
      *
+     * @param requeueTime    age for searching for expired actions to requeue
+     * @param requeueSeconds timestamp for searching and updating actions
      * @return the list of the DeltaFiles to be requeued
      */
     List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds);
+
+    /**
+     * Find deltaFiles that are ready for an automatic retry after encountering an error.
+     *
+     * @param retryTime timestamp for searching and updating actions
+     * @return the list of the DeltaFiles to be retried
+     */
+    List<DeltaFile> findReadyForRetry(OffsetDateTime retryTime);
 
     /**
      * Find DeltaFiles that match the given criteria.

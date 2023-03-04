@@ -33,6 +33,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.datafetchers.RetryPolicyDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.PropertiesDatafetcherTestHelper;
 import org.deltafi.core.delete.DeletePolicyWorker;
@@ -55,6 +56,7 @@ import org.deltafi.core.snapshot.SystemSnapshotRepo;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.RetryPolicy;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -197,6 +199,9 @@ class DeltaFiCoreApplicationTests {
 	PluginVariableRepo pluginVariableRepo;
 
 	@Autowired
+	RetryPolicyRepo retryPolicyRepo;
+
+	@Autowired
 	DeltaFiPropertiesRepo deltaFiPropertiesRepo;
 
 	@Autowired
@@ -272,6 +277,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
 		deltaFileRepo.deleteAll();
 		flowAssignmentRuleRepo.deleteAll();
+		retryPolicyRepo.deleteAll();
 		loadConfig();
 
 		Mockito.clearInvocations(actionEventQueue);
@@ -1944,6 +1950,53 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals("new-name", updated.getName());
 		assertEquals(100, updated.getPriority());
+	}
+
+	@Test
+	void testRetryPolicyDatafetcher() {
+		List<Result> results = RetryPolicyDatafetcherTestHelper.loadRetryPolicyWithDuplicate(dgsQueryExecutor);
+		assertTrue(results.get(0).isSuccess());
+		assertFalse(results.get(1).isSuccess());
+		assertTrue(results.get(1).getErrors().contains("duplicate match criteria"));
+		assertTrue(results.get(2).isSuccess());
+		assertEquals(2, retryPolicyRepo.count());
+
+		List<RetryPolicy> policies = RetryPolicyDatafetcherTestHelper.getAllRetryPolicies(dgsQueryExecutor);
+		assertEquals(2, policies.size());
+		String idToUse;
+		// Result are not ordered explicitly
+		if (RetryPolicyDatafetcherTestHelper.isDefaultFlow(policies.get(0))) {
+			idToUse = policies.get(0).getId();
+			assertTrue(RetryPolicyDatafetcherTestHelper.matchesDefault(policies.get(0)));
+		} else {
+			idToUse = policies.get(1).getId();
+			assertTrue(RetryPolicyDatafetcherTestHelper.matchesDefault(policies.get(1)));
+		}
+
+		RetryPolicy policy = RetryPolicyDatafetcherTestHelper.getRetryPolicy(dgsQueryExecutor, idToUse);
+		assertTrue(RetryPolicyDatafetcherTestHelper.matchesDefault(
+				policy));
+
+		Result updateResult = RetryPolicyDatafetcherTestHelper.updateRetryPolicy(dgsQueryExecutor, "wrong-id");
+		assertFalse(updateResult.isSuccess());
+		assertTrue(updateResult.getErrors().contains("policy not found"));
+
+		updateResult = RetryPolicyDatafetcherTestHelper.updateRetryPolicy(dgsQueryExecutor, idToUse);
+		assertTrue(updateResult.isSuccess());
+
+		RetryPolicy updatedPolicy = RetryPolicyDatafetcherTestHelper.getRetryPolicy(dgsQueryExecutor, idToUse);
+		assertTrue(RetryPolicyDatafetcherTestHelper.matchesUpdated(
+				updatedPolicy));
+
+		boolean wasDeleted = RetryPolicyDatafetcherTestHelper.removeRetryPolicy(dgsQueryExecutor, idToUse);
+		assertTrue(wasDeleted);
+		assertEquals(1, retryPolicyRepo.count());
+
+		wasDeleted = RetryPolicyDatafetcherTestHelper.removeRetryPolicy(dgsQueryExecutor, idToUse);
+		assertFalse(wasDeleted);
+
+		RetryPolicy missing = RetryPolicyDatafetcherTestHelper.getRetryPolicy(dgsQueryExecutor, idToUse);
+		assertNull(missing);
 	}
 
 	@Test

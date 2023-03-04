@@ -90,11 +90,21 @@ public class DeltaFile {
 
   public void queueNewAction(String name) {
     OffsetDateTime now = OffsetDateTime.now();
-    getActions().add(Action.newBuilder().name(name).state(ActionState.QUEUED).created(now).queued(now).modified(now).build());
+    getActions().add(Action.newBuilder()
+            .name(name)
+            .state(ActionState.QUEUED)
+            .created(now)
+            .queued(now)
+            .modified(now)
+            .attempt(1 + getLastAttemptNum(name))
+            .build());
   }
 
-  public void errorAction(ActionEventInput event) {
-    errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(), event.getError().getContext());
+  private int getLastAttemptNum(String name) {
+    Optional<Action> action = getActions().stream()
+            .filter(a -> a.getName().equals(name) && retried(a))
+            .reduce((first, second) -> second);
+    return action.map(Action::getAttempt).orElse(0);
   }
 
   /* Get the most recent action with the given name */
@@ -134,14 +144,27 @@ public class DeltaFile {
             .forEach(action -> setActionState(action, ActionState.SPLIT, event.getStart(), event.getStop()));
   }
 
+  public void errorAction(ActionEventInput event) {
+    errorAction(event, Optional.empty());
+  }
+
+  public void errorAction(ActionEventInput event, Optional<Integer> delay) {
+    errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
+            event.getError().getContext(), delay.map(d -> event.getStop().plusSeconds(d)).orElse(null));
+  }
+
   public void errorAction(ActionEventInput event, String errorCause, String errorContext) {
-    errorAction(event.getAction(), event.getStart(), event.getStop(), errorCause, errorContext);
+    errorAction(event.getAction(), event.getStart(), event.getStop(), errorCause, errorContext, null);
   }
 
   public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext) {
+    errorAction(name, start, stop, errorCause, errorContext, null);
+  }
+
+  public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextExecution) {
     getActions().stream()
             .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
-            .forEach(action -> setActionState(action, ActionState.ERROR, start, stop, errorCause, errorContext));
+            .forEach(action -> setActionState(action, ActionState.ERROR, start, stop, errorCause, errorContext, nextExecution));
   }
 
   public List<String> retryErrors() {
@@ -150,13 +173,16 @@ public class DeltaFile {
             .toList();
 
     // this must be separate from the above stream since it mutates the original list
-    actionsToRetry.forEach(action -> action.setState(ActionState.RETRIED));
+    actionsToRetry.forEach(action -> {
+      action.setState(ActionState.RETRIED);
+      action.setNextExecution(null);
+    });
 
     return actionsToRetry.stream().map(Action::getName).toList();
   }
 
   private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop) {
-    setActionState(action, actionState, start, stop, null, null);
+    setActionState(action, actionState, start, stop, null, null, null);
   }
 
   private void setFilteredActionState(Action action, OffsetDateTime start, OffsetDateTime stop, String filteredCause) {
@@ -164,7 +190,7 @@ public class DeltaFile {
     setActionState(action, ActionState.FILTERED, start, stop);
   }
 
-  private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext) {
+  private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextExecution) {
     OffsetDateTime now = OffsetDateTime.now();
     action.setState(actionState);
     if (action.getCreated() == null) {
@@ -172,6 +198,7 @@ public class DeltaFile {
     }
     action.setStart(start);
     action.setStop(stop);
+    action.setNextExecution(nextExecution);
     action.setModified(now);
     action.setErrorCause(errorCause);
     action.setErrorContext(errorContext);

@@ -240,6 +240,28 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('PluginRegistration'" + OR_ADMIN)
     public @interface PluginRegistration {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyCreate'" + OR_ADMIN)
+    public @interface RetryPolicyCreate {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyDelete'" + OR_ADMIN)
+    public @interface RetryPolicyDelete {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyRead'" + OR_ADMIN)
+    public @interface RetryPolicyRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyUpdate'" + OR_ADMIN)
+    public @interface RetryPolicyUpdate {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

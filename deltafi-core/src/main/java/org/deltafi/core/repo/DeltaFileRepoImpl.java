@@ -91,6 +91,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_STATE = "actions.state";
     public static final String ACTIONS_MODIFIED = "actions.modified";
     public static final String ACTION_MODIFIED = "action.modified";
+    public static final String ACTIONS_NEXT_EXECUTION = "actions.nextExecution";
     public static final String ACTION_STATE = "action.state";
     public static final String ACTIONS_UPDATE_STATE = "actions.$[action].state";
     public static final String ACTIONS_UPDATE_MODIFIED = "actions.$[action].modified";
@@ -224,6 +225,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return requeuedDeltaFiles;
+    }
+
+    @Override
+    public List<DeltaFile> findReadyForRetry(OffsetDateTime retryTime) {
+        return mongoTemplate.find(buildReadyForRetryQuery(retryTime), DeltaFile.class);
+    }
+
+    private Query buildReadyForRetryQuery(OffsetDateTime retryTime) {
+        Criteria inError = Criteria.where(STAGE).is(DeltaFileStage.ERROR);
+        Criteria ready = Criteria.where(ACTIONS_NEXT_EXECUTION).lt(retryTime);
+
+        Query requeueQuery = new Query(new Criteria().andOperator(inError, ready));
+        requeueQuery.fields().include(ID);
+
+        return requeueQuery;
     }
 
     @Override

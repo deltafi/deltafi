@@ -65,6 +65,7 @@ class DeltaFilesServiceTest {
     private final DeltaFileRepo deltaFileRepo;
     private final ActionEventQueue actionEventQueue;
     private final ContentStorageService contentStorageService;
+    private final RetryPolicyService retryPolicyService;
     private final MetricRepository metricRepository;
     private final CoreAuditLogger coreAuditLogger;
     private final JoinRepo joinRepo;
@@ -79,7 +80,7 @@ class DeltaFilesServiceTest {
 
     DeltaFilesServiceTest(@Mock IngressFlowService ingressFlowService, @Mock EnrichFlowService enrichFlowService,
             @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
-            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
+            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock RetryPolicyService retryPolicyService,
             @Mock ContentStorageService contentStorageService, @Mock MetricRepository metricRepository,
             @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo) {
         this.ingressFlowService = ingressFlowService;
@@ -89,13 +90,14 @@ class DeltaFilesServiceTest {
         this.deltaFileRepo = deltaFileRepo;
         this.actionEventQueue = actionEventQueue;
         this.contentStorageService = contentStorageService;
+        this.retryPolicyService = retryPolicyService;
         this.metricRepository = metricRepository;
         this.coreAuditLogger = coreAuditLogger;
         this.joinRepo = joinRepo;
 
         deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService,
                 new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, metricRepository, coreAuditLogger, joinRepo);
+                actionEventQueue, contentStorageService, retryPolicyService, metricRepository, coreAuditLogger, joinRepo);
     }
 
     @Captor
