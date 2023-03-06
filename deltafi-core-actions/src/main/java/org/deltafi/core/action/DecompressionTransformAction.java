@@ -75,7 +75,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                     case TAR_Z -> decompressTarZ(contentStream, result, context.getDid());
                     case TAR_XZ -> decompressTarXZ(contentStream, result, context.getDid());
                     case ZIP -> unarchiveZip(contentStream, result, context.getDid());
-                    case TAR -> inPlaceUnarchiveTar(contentStream, result, content.getContentReference(), context.getDid());
+                    case TAR -> inPlaceUnarchiveTar(contentStream, result, content.getContentReference());
                     case AR -> unarchiveAR(contentStream, result, context.getDid());
                     case GZIP -> decompressGzip(contentStream, result, context.getDid(), content.getName());
                     case XZ -> decompressXZ(contentStream, result, context.getDid(), content.getName());
@@ -127,7 +127,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                 try {
                     String archiveType = ArchiveStreamFactory.detect(buffer);
                     if (DecompressionType.TAR.getValue().equals(archiveType)) {
-                        inPlaceUnarchiveTar(new BufferedInputStream(buffer), result, contentReference, did);
+                        inPlaceUnarchiveTar(new BufferedInputStream(buffer), result, contentReference);
                         decompressionType = archiveType;
                     } else {
                         try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(buffer))) {
@@ -257,7 +257,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         }
     }
 
-    void unarchiveTarOffsets(TarArchiveInputStream archive, @NotNull TransformResult result, @NotNull ContentReference contentReference, @NotNull String did) throws IOException, ObjectStorageException {
+    void unarchiveTarOffsets(TarArchiveInputStream archive, @NotNull TransformResult result, @NotNull ContentReference contentReference) throws IOException {
         TarArchiveEntry entry;
         List<Content> contents = new ArrayList<>();
         while ((entry = archive.getNextTarEntry()) != null) {
@@ -273,13 +273,11 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         result.getContent().addAll(contents);
     }
 
-    void inPlaceUnarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull ContentReference contentReference, @NotNull String did) throws DecompressionTransformException {
+    void inPlaceUnarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull ContentReference contentReference) throws DecompressionTransformException {
         try (TarArchiveInputStream archive = new TarArchiveInputStream(stream)) {
-            unarchiveTarOffsets(archive, result, contentReference, did);
+            unarchiveTarOffsets(archive, result, contentReference);
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to unarchive tar", e);
-        } catch (ObjectStorageException e) {
-            throw new DecompressionTransformException("Unable to store content", e);
         }
     }
 
