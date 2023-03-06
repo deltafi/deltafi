@@ -53,6 +53,11 @@ dependencies {
         }
     }
 
+    compileOnly "org.springframework.boot:spring-boot-starter-cache"
+    testImplementation "org.springframework.boot:spring-boot-starter-cache"
+    compileOnly 'com.github.ben-manes.caffeine:caffeine:3.1.4'
+    testImplementation 'com.github.ben-manes.caffeine:caffeine:3.1.4'
+
     implementation 'ch.qos.logback:logback-classic:1.2.11'
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
     implementation 'net.logstash.logback:logstash-logback-encoder:7.2'
@@ -64,4 +69,5 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
     testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

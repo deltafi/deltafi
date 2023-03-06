@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - New Metrics-related permissions
   - `MetricsAdmin` - Grants the `Admin` role in Grafana
   - `MetricsEdit` - Grants the `Editor` role in Grafana
+- CacheAutoConfiguration to enable caches to be configured in application properties when caffeine is present
 
 ### Changed
 - KinD: `deltafi ingress` works with regular filesystem paths instead of paths relative to the project root

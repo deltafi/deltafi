@@ -1,3 +1,4 @@
+org.deltafi.common.cache.CacheAutoConfiguration
 org.deltafi.common.content.ContentStorageServiceAutoConfiguration
 org.deltafi.common.http.HttpServiceAutoConfiguration
 org.deltafi.common.storage.s3.minio.MinioAutoConfiguration
