@@ -40,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Bug resulting in Grafana Alert Check being denied access to Grafana API
 
 ### Tech-Debt/Refactor
+- Files in minio are now stored in subfolders by the first 3 characters of the did
 
 ### Security
 
@@ -48,6 +49,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   > Helm chart upgrade is required to migrate.  `helm dependency upgrade`
 - KinD kubernetes node updated to 1.24.7
 - KinD metrics server upgrade to 6.2
+- All plugins must be rebuilt against this release
+- Pre-upgraded content in minio will be unreachable until it is migrated. To prevent any disruption to running flows, follow these upgrade procedures:
+1. stop ingress by changing the system property `ingress.enabled` to `false`
+1. wait for all in-flight system in the data to complete processing
+1. perform the system update
+1. run `utils/subfolderize.sh PATH_TO_MINIO_STORAGE` on the minio node,
+where the PATH_TO_MINIO_STORAGE is the location of your storage bucket, e.g. /data/deltafi/minio/storage.  Wait patiently for the script to complete
+1. turn ingress back on by changing the system property `ingress.enabled` to `true`
 
 ## [0.102.0] - 2022-02-24
 

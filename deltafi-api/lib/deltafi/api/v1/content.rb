@@ -63,7 +63,7 @@ module Deltafi
           end
 
           def minio_object_options(content_segment)
-            key = File.join(content_segment[:did], content_segment[:uuid])
+            key = File.join(content_segment[:did][0..2], content_segment[:did], content_segment[:uuid])
             byte_start = content_segment[:offset].to_i
             byte_end = byte_start + content_segment[:size].to_i - 1
             range = "bytes=#{byte_start}-#{byte_end}"

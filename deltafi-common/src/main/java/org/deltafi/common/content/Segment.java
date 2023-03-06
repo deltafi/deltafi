@@ -44,6 +44,6 @@ public class Segment {
     }
 
     public String objectName() {
-        return did + "/" + uuid;
+        return did.substring(0, 3) + "/" + did + "/" + uuid;
     }
 }

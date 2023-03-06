@@ -51,10 +51,10 @@ public class ContentStorageServiceTest {
     public void loadsContent() throws ObjectStorageException, IOException {
         byte[] content = "test".getBytes();
 
-        Segment segment = new Segment("uuid", 0, content.length, "did");
+        Segment segment = new Segment("uuid", 0, content.length, "did12345");
         ContentReference contentReference = new ContentReference("mediaType", segment);
 
-        ObjectReference objectReference = new ObjectReference("storage", "did/uuid", 0, content.length);
+        ObjectReference objectReference = new ObjectReference("storage", "did/did12345/uuid", 0, content.length);
         Mockito.when(objectStorageService.getObject(Mockito.eq(objectReference)))
                 .thenReturn(new ByteArrayInputStream(content));
 
