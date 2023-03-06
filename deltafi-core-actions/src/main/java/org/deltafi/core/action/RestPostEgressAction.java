@@ -56,7 +56,9 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
                             context.getEgressFlow())), inputStream, input.getFormattedData().getContentReference().getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-                return new ErrorResult(context, "Unsuccessful POST: " + response.statusCode() + " " + new String(response.body().readAllBytes())).logErrorTo(log);
+                try (InputStream body = response.body()) {
+                    return new ErrorResult(context, "Unsuccessful POST: " + response.statusCode() + " " + new String(body.readAllBytes())).logErrorTo(log);
+                }
             }
 
         } catch (JsonProcessingException e) {

@@ -64,7 +64,9 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
                 }
                 Response.Status status = Response.Status.fromStatusCode(response.statusCode());
                 if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-                    return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode() + " " + new String(response.body().readAllBytes())).logErrorTo(log);
+                    try (InputStream body = response.body()) {
+                        return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode() + " " + new String(body.readAllBytes())).logErrorTo(log);
+                    }
                 }
             } catch (IOException e) {
                 return new ErrorResult(context, "Unable to extract flowfile content");

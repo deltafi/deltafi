@@ -41,6 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: several `deltafi` CLI commands no longer proxy through to the cluster container, improving performance
 - `cluster` command syncs the cluster unnecessarily
 - Bug resulting in Grafana Alert Check being denied access to Grafana API
+- Possible stream resource leak in egress actions
 
 ### Tech-Debt/Refactor
 - Files in minio are now stored in subfolders by the first 3 characters of the did
