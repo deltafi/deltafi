@@ -108,7 +108,11 @@ module Deltafi
 
         timeout_smoke
         send_smoke
-        send_survey
+        send_survey flow: 'smoke-survey'
+        send_survey flow: 'smoke-sub-survey', subflow: 'lightspeed', direction: 'inbound'
+        send_survey flow: 'smoke-sub-survey', subflow: 'ludicrous', direction: 'outbound'
+        send_survey flow: 'smoke-sub-survey', subflow: 'plaid', direction: 'inbound'
+        send_survey flow: 'smoke-sub-survey', subflow: 'plaid', direction: 'outbound'
       end
 
       def send_smoke
@@ -128,18 +132,21 @@ module Deltafi
         end
       end
 
-      def send_survey
-        count = Random.rand(100)
-        bytes = Random.rand(1000000)
+      def send_survey(flow: 'smoke-survey', subflow: nil, direction: nil)
+        files = Random.rand(100)
+        bytes = Random.rand(1_000_000)
+        parameters = "flow=#{flow}&files=#{files}&bytes=#{bytes}"
+        parameters += "&subflow=#{subflow}" if subflow
+        parameters += "&direction=#{direction}" if direction
 
-        response = HTTParty.post("#{SURVEY_URL}?flow=smoke-survey&count=#{count}&bytes=#{bytes}",
+        response = HTTParty.post("#{SURVEY_URL}?#{parameters}",
                                  body: nil,
                                  headers: { 'Content-Type' => 'application/octet-stream',
                                             'X-User-Name' => 'egress-sink',
-                                            'X-User-Permissions' => 'DeltaFileIngress'})
-        unless response.code == 200
-          @logger.error "Failed to POST to #{SURVEY_URL}: #{response.code} #{response.body}"
-        end
+                                            'X-User-Permissions' => 'DeltaFileIngress' })
+        return if response.code == 200
+
+        @logger.error "Failed to POST to #{SURVEY_URL}: #{response.code} #{response.body}"
       end
     end
   end
