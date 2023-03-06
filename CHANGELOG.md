@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - `deltafi uninstall-plugin` did not set error codes on failure
 - `deltafi serviceip` did not set error codes on failure
 - Bug where durations could not be properly converted when importing a `SystemSnapshot`
+- Diagnostic dashboard latency chart was not displaying properly
 - Cluster command generated warnings on admin.conf mode
 - Cluster uninstall timeouts
 - KinD: several `deltafi` CLI commands no longer proxy through to the cluster container, improving performance
