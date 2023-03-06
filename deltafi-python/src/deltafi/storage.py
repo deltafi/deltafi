@@ -52,7 +52,7 @@ class Segment(NamedTuple):
                        did=did)
 
     def id(self):
-        return f"{self.did}/{self.uuid}"
+        return f"{self.did[:3]}/{self.did}/{self.uuid}"
 
 
 class ContentReference(NamedTuple):

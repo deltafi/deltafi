@@ -26,7 +26,7 @@ from mockito import when, mock, unstub, verifyStubbedInvocationsAreUsed, ANY
 BUCKET = 'storage'
 SEG_1_DATA = "one"
 SEG_2_DATA = "twotwo"
-TEST_DID = "did"
+TEST_DID = "123did"
 
 
 def make_segment(segment_id, data):
@@ -72,7 +72,7 @@ def test_put_str():
     when(minio).Minio(...).thenReturn(minio_mock)
     service = faux_content_service()
 
-    content_reference = service.put_str("did", "the-data", "text")
+    content_reference = service.put_str("123did", "the-data", "text")
     verifyStubbedInvocationsAreUsed(minio_mock)
 
     assert len(content_reference.segments) == 1
@@ -80,7 +80,7 @@ def test_put_str():
     segment = content_reference.segments[0]
     assert segment.offset == 0
     assert segment.size == 8
-    assert segment.did == "did"
+    assert segment.did == "123did"
     assert len(segment.uuid) == 36
 
 
@@ -92,8 +92,8 @@ def test_gett_str():
 
     minio_mock = mock(minio.Minio)
     when(minio_mock).bucket_exists(...).thenReturn(True)
-    when(minio_mock).get_object(BUCKET, "did/seg1", 0, len(SEG_1_DATA)).thenReturn(io.BytesIO(bytes_one))
-    when(minio_mock).get_object(BUCKET, "did/seg2", 0, len(SEG_2_DATA)).thenReturn(io.BytesIO(bytes_two))
+    when(minio_mock).get_object(BUCKET, "123/123did/seg1", 0, len(SEG_1_DATA)).thenReturn(io.BytesIO(bytes_one))
+    when(minio_mock).get_object(BUCKET, "123/123did/seg2", 0, len(SEG_2_DATA)).thenReturn(io.BytesIO(bytes_two))
     when(minio).Minio(...).thenReturn(minio_mock)
     service = faux_content_service()
 
