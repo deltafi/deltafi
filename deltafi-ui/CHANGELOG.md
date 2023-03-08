@@ -4,13 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.102.1] (Unreleased)
+## [0.103.0] (Unreleased)
 
 ### Fixed
 
 - Fixed bug preventing the importing of Snapshots
 - Fixed bug where snapshot count is incorrect after snapshot creation
 - Added better error handling for snapshot errors
+- Fixed bug where parameters were only shown for singular actions (#344)
 
 ## [0.102.0]
 
