@@ -18,6 +18,8 @@
 
 import { rest, graphql } from "msw";
 
+const requestDelay = 500;
+
 export default [
   rest.get("/api/v1/sse", (req, res, ctx) => {
     const status = require(`./api/v1/status.ts`);
@@ -38,7 +40,7 @@ export default [
 
       const mockModule = require(`.${req.url.pathname}/${params.get("title")}`);
       const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-      return res(ctx.delay(500), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
+      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
     } catch (e) {
       console.error(e);
       return;
@@ -53,7 +55,7 @@ export default [
 
       const mockContentModule = require(`.${req.url.pathname}`);
       const responseData = mockContentModule.default(reference);
-      return res(ctx.delay(100), ctx.status(200, "Mocked status"), ctx.body(responseData));
+      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(responseData));
     } catch (e) {
       console.error(e);
       return;
@@ -69,7 +71,7 @@ export default [
 
       const mockModule = require(`.${req.url.pathname}`);
       const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-      return res(ctx.delay(5000), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
+      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
     } catch (e) {
       console.error(e);
       return;
@@ -86,7 +88,7 @@ export default [
 
         const mockModule = require(`./graphql/${req.body.operationName}`);
         const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-        return res(ctx.delay(5000), ctx.data(responseJson));
+        return res(ctx.delay(requestDelay), ctx.data(responseJson));
       }
     } catch (e) {
       console.error(e);
@@ -104,7 +106,7 @@ export default [
 
         const mockModule = require(`./graphql/mutations/${req.body.operationName}`);
         const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-        return res(ctx.delay(100), ctx.data(responseJson));
+        return res(ctx.delay(requestDelay), ctx.data(responseJson));
       }
     } catch (e) {
       console.error(e);
