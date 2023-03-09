@@ -98,10 +98,10 @@ case "$SUBCOMMAND" in
                  type
                  requiresDomains
                  requiresEnrichments
-                 requiresMetadata
-                 key
-                 value
-                 parent
+                 requiresMetadataKeyValues {
+                   key
+                   value
+                 }
                  parameters
                }
                variables {
