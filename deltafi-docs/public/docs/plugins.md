@@ -5,17 +5,18 @@ To create Actions and Flows for your organization, you need to start by creating
 Plugins are delivered in a Docker image. When installed, a Kubernetes pod is launched where the Actions run inside.
 Plugins created with the DeltaFi Action Kit will automatically register with the DeltaFi Core at startup.
 Registration identifies all Actions, Action Parameter classes, and general information about the plugin.
-Typically a plugin includes one or more Flows which use the custom Actions, and Flow Variables, but they are both optional.
-Flows and Flow Variables are also included in the Plugin registration.
+Typically, a plugin includes one or more Flows which use the custom Actions and Flow Variables, but they are both
+optional. Flows and Flow Variables are also included in the Plugin registration.
 
-A plugin project can be created in a variety of ways.
-However, the simplest way to start is using a single Git repository to host a single Plugin, which builds with Gradle. DeltaFi provides two examples for this: one in Java, and one in Python.
-For Java, DeltaFi provides a custom Gradle plugin to facilitate the Docker build, and Plugin structure.
-Tye Python structure requiest a few extra files.
+A plugin project can be created in a variety of ways. The simplest way to start is using a single Git repository to host
+a single Plugin, which builds with Gradle. DeltaFi provides two examples for this: one in Java, and one in Python. For
+Java, DeltaFi provides a custom Gradle plugin to facilitate the Docker build and Plugin structure. The Python structure
+requires a few extra files.
 
 ## Java
 
-The overall Java structure is shown below, and requires downloading the deltafi-action-kit JAR from a Gitlab/Maven repository.
+The overall Java structure is shown below and requires downloading the deltafi-action-kit JAR from a Gitlab/Maven
+repository.
 
 ```
 myplugin/
@@ -261,5 +262,4 @@ Plugin([MyLoadAction, MyTransformAction],
 
 ## Flows
 
-The `/flows` folder contains the flow json files that should be loaded with your plugin. See [Creating Flows](/flows)
-for more details.
+Flows may be defined for a Plugin. See [Flows](/flows).

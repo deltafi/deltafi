@@ -1,42 +1,13 @@
 # Flows
 
-Place flow JSON files in the `/flows` folder of a plugin.
+Flows define the path of actions that data takes through the system.
 
-Flows define the path that data takes through the system.
-
-Actions defined in flows have a `type` which is the fully qualified package and class name and a `name` which is the
+Actions defined in flows have a `type` which is the fully-qualified package and class name and a `name` which is the
 logical name used in the flow. Each `type` of Action can have many named instantiations.
-
-## Variables
-
-The `variables.json` creates variables that can be used in flows and set at runtime by operators.
-
-Variables can be of `dataType`:
-* STRING
-* BOOLEAN
-* NUMBER
-* LIST
-* MAP
-
-To use a variable in Action configuration in a Flow, reference it like `${myVariable}`.
-
-```json
-{
-  "variables": [
-    {
-      "name": "egressUrl",
-      "description": "Egress URL destination",
-      "dataType": "STRING",
-      "required": true,
-      "defaultValue": "http://deltafi-egress-sink-service"
-    }
-  ]
-}
-```
 
 ## Ingress Flows
 
-Ingress flows steer data through a series of 0 to many Transform Actions and into a Load Action.
+Ingress flows steer data through an optional series of Transform Actions and into a Load or Join Action.
 
 ```json
 {
@@ -59,11 +30,36 @@ Ingress flows steer data through a series of 0 to many Transform Actions and int
   }
 }
 ```
+```json
+{
+  "name": "join-max-ingress",
+  "type": "INGRESS",
+  "description": "Collects up to 3 ingress files at a time, waiting up to 1 hour, for processing as a single DeltaFile",
+  "joinAction": {
+    "name": "RoteJoinAction",
+    "actionType": "JOIN",
+    "type": "org.deltafi.passthrough.action.RoteJoinAction",
+    "maxAge": "PT1H",
+    "maxNum": 3,
+    "parameters": {
+      "domains": [
+        "binary"
+      ]
+    }
+  }
+}
+```
 
 ## Enrich Flows
 
-Enrich flows configure Domain Actions and Enrich Actions that should be run with the plugin. Each Domain Action will be triggered when the incoming DeltaFile contains the Domain required by the action. Each Enrich Action can be triggered
-by Domains and by other Enrichment, controlling what data is routed to the Action.
+Enrich flows steer data through an optional series of Domain Actions followed by an optional series of Enrich Actions.
+
+Domain Actions are triggered when the DeltaFile contains all the Domains required by the action. The `requiresDomains`
+list is optional.
+
+Enrich Actions are triggered after Domain Actions when the DeltaFile contains all the Domains, Enrichments, and
+metadata required by the action. The `requiresDomains`, `requiresEnrichments`, and `requiresMetadata` lists are
+optional.
 
 ```json
 {
@@ -73,16 +69,32 @@ by Domains and by other Enrichment, controlling what data is routed to the Actio
   "domainActions": [{
     "name": "BinaryDomainAction",
     "type": "org.deltafi.passthrough.action.RoteDomainAction",
-    "requiresDomain": [
-      "domain"
+    "requiresDomains": [
+      "domain-1",
+      "domain-2"
     ]
   }],
-  "enrichActions": [ {
+  "enrichActions": [{
+      "name": "TestEnrichAction",
+      "type": "org.deltafi.passthrough.action.RoteEnrichAction",
+      "parameters": {
+        "enrichments": {
+          "test-enrichment": "test enrichment value"
+        }
+      }
+    },{
       "name": "BinaryEnrichAction",
       "type": "org.deltafi.passthrough.action.RoteEnrichAction",
       "requiresDomains": [
         "binary"
       ],
+      "requiresEnrichments": [
+        "test-enrichment"
+      ],
+      "requiresMetadata": [{
+        "key": "the-key",
+        "value": "the-value"
+      }],
       "parameters": {
         "enrichments": {
           "binaryEnrichment": "binary enrichment value"
@@ -95,8 +107,11 @@ by Domains and by other Enrichment, controlling what data is routed to the Actio
 
 ## Egress Flows
 
-Egress Flows subscribe to Domains and Enrichment in the same manner as Enrich Flows. Egress consists of a Format Action,
-0 to many Validate Actions, and an Egress Action.
+Egress Flows steer data through a required Format Action, an optional series of Validate Actions, and a required Egress
+Action.
+
+Format Actions are triggered when the DeltaFile contains all the Domains and Enrichments required by the action. The
+`requiresDomains` and `requiresEnrichments` lists are optional.
 
 ```json
 {
@@ -108,23 +123,68 @@ Egress Flows subscribe to Domains and Enrichment in the same manner as Enrich Fl
   ],
   "formatAction": {
     "name": "PassthroughFormatAction",
+    "type": "org.deltafi.passthrough.action.RoteFormatAction",
     "requiresDomains": [
       "binary"
-    ],
-    "type": "org.deltafi.passthrough.action.RoteFormatAction"
+    ]
   },
-  "validateActions": [
-    {
-      "name": "PassthroughValidateAction",
-      "type": "org.deltafi.passthrough.action.RubberStampValidateAction"
-    }
-  ],
+  "validateActions": [{
+    "name": "PassthroughValidateAction",
+    "type": "org.deltafi.passthrough.action.RubberStampValidateAction"
+  }],
   "egressAction": {
     "name": "PassthroughEgressAction",
     "type": "org.deltafi.core.action.RestPostEgressAction",
     "parameters": {
       "egressFlow": "egressFlow",
       "metadataKey": "deltafiMetadata",
+      "url": "${egressUrl}"
+    }
+  }
+}
+```
+
+## Flow Files
+
+JSON files containing Flows should be placed in the `src/main/resources/flows` directory. They will be loaded when the
+plugin is installed.
+
+## Variables File
+
+Flows may use variables that are set at runtime by operators. They are defined in the
+`src/main/resources/flows/variables.json` file:
+
+```json
+[
+  {
+    "name": "egressUrl",
+    "description": "Egress URL destination",
+    "dataType": "STRING",
+    "required": true,
+    "defaultValue": "http://deltafi-egress-sink-service"
+  }
+]
+```
+
+Variables can be of `dataType`:
+* STRING
+* BOOLEAN
+* NUMBER
+* LIST
+* MAP
+
+To use a variable in a Flow, reference it like `${egressUrl}`:
+
+```java
+{
+  "name": "passthrough",
+  "type": "EGRESS",
+  ...
+  "egressAction": {
+    "name": "PassthroughEgressAction",
+    "actionType": "EGRESS",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
       "url": "${egressUrl}"
     }
   }

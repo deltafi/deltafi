@@ -1,27 +1,26 @@
 # Actions
 
 Actions are isolated units of business logic that perform a function within Ingress, Enrichment, and Egress Flows.
-Actions receive a DeltaFile on a queue, perform whatever logic is needed,
-and issue a response that augments the DeltaFile so that it can be handed off to the next Action in the flow.
+Actions receive a DeltaFile on a queue, perform whatever logic is needed, and issue a response that augments the
+DeltaFile so that it can be handed off to the next Action in the flow.
 
-Actions are currently implemented on two platforms. Core actions and several plugins are implemented in Spring Boot and utilize a Java DeltaFi development kit.
-A Python DeltaFi development kit has also been implemented.
-However, Actions can be developed in any language as long as certain integration interfaces are met.
+Actions are currently implemented on two platforms. Core actions and several plugins are implemented in Spring Boot and
+utilize a Java DeltaFi development kit. A Python DeltaFi development kit has also been implemented. However, Actions can
+be developed in any language as long as certain integration interfaces are met.
 
-Actions may be configured differently in each flow that uses them.
-The Action itself defines the configuration knobs that can be used to specialize it.
+Actions may be configured differently in each flow that uses them. The Action itself defines the configuration knobs
+that can be used to specialize it.
 
 ## Common Action Interfaces
 
-All actions are derived from the common `Action` class, which is specialized for each action type.
-The `Action` interface gives access to some common services. Extend the proper `Action` class (see details below) and
-it will be automatically
-be discovered and loaded by the framework when your plugin is installed.
+All actions are derived from the common `Action` class, which is specialized for each action type. The `Action`
+interface gives access to some common services. Extend the proper `Action` class (see details below) and it will be
+automatically discovered and loaded by the framework when your plugin is installed.
 
 ### Context
 
-Execution methods for each Java action type are passed an `ActionContext`. The context gives you access to information about
-where the action is running and the DeltaFile being processed.
+Execution methods for each Java action type are passed an `ActionContext`. The context gives you access to information
+about where the action is running and the DeltaFile being processed.
 
 ```java
 // the did is the DeltaFile's id
@@ -31,10 +30,10 @@ String actionName = context.getName();
 // the ingress flow name
 String ingressFlow = context.getIngressFlow();
 // the egress flow name
-String ingressFlow = context.getEgressFlow();
+String egressFlow = context.getEgressFlow();
 // hostname where the Action is running
 String hostname = context.getHostname();
-// version of the Action
+// version of Core Actions or plugin containing the Action
 String actionVersion = context.getActionVersion();
 // when the Action began execution
 OffsetDateTime startTime = context.getStartTime();
@@ -66,7 +65,7 @@ To retrieve content as a byte array or from a stream:
 
 ```java
 try {
-    byte[]content=loadContent(contentReference);
+    byte[] content = loadContent(contentReference);
     // do something with your content
 } catch (ObjectStorageException e) {
     // something went wrong
@@ -79,7 +78,8 @@ try (InputStream content = loadContentAsInputStream(contentReference)) {
 }
 ```
 
-To retrieve content as a string or byte array in a Python action execution, use the `ContextService` methods `get_str()` or `get_bytes()`. For example, in a Load action execute:
+To retrieve content as a string or byte array in a Python action execution, use the `ContextService` methods `get_str()`
+or `get_bytes()`. For example, in a Load action execute:
 
 ```python
     def load(self, context: Context, params: BaseModel, load_input: LoadInput):
@@ -92,8 +92,8 @@ To store content from a byte array or a stream:
 
 ```java
 try {
-    ContentReference contentRefFromBytes=saveContent(context.getDid(),byteArray,MediaType.APPLICATION_JSON);
-    ContentReference contentRefFromStream=saveContent(context.getDid(),inputStream,MediaType.APPLICATION_JSON);
+    ContentReference contentRefFromBytes = saveContent(context.getDid(), byteArray, MediaType.APPLICATION_JSON);
+    ContentReference contentRefFromStream = saveContent(context.getDid(), inputStream, MediaType.APPLICATION_JSON);
 } catch (ObjectStorageException e) {
     // something went wrong
 }
@@ -134,7 +134,6 @@ public class DecompressionTransformParameters extends ActionParameters {
 ```python
 from pydantic import BaseModel, Field
 
-
 class MyLoadActionParameters(BaseModel):
     domain: str = Field(description="The domain used by the load action")
 ```
@@ -145,7 +144,9 @@ Each `Action` type is provided a `Content` list through the associated `Input` c
 
 ### Input
 
-As metnioned in the previous section, each `Action` has a specific `Input` class passed to the execution mehod. For example, a Load Action receives the `LoadInput` in the `load()` method. Each `Input` class is unique for each Action type, with some combination of the fields below.
+As mentioned in the previous section, each `Action` has a specific `Input` class passed to its execution method. For
+example, a Load Action receives the `LoadInput` in the `load()` method. Each `Input` class is unique for each Action
+type, with some combination of the fields below.
 
 ```java
 /* These first 3 are part of all Input classes: */
@@ -193,15 +194,16 @@ return new FilterResult(context, "Description of why this DeltaFile was filtered
 ```
 
 ## Ingress Flow Actions
-- [Transform Actions](/actions/transform)
-- [Load Actions](/actions/load)
+- [Transform Action](/actions/transform)
+- [Load Action](/actions/load)
+- [Join Action](/actions/join)
 
 ## Enrichment Flow Actions
-- [Domain Actions](/actions/domain)
-- [Enrich Actions](/actions/enrich)
+- [Domain Action](/actions/domain)
+- [Enrich Action](/actions/enrich)
 
 ## Egress Flow Actions
 
-- [Format Actions](/actions/format)
-- [Validate Actions](/actions/validate)
-- [Egress Actions](/actions/egress)
+- [Format Action](/actions/format)
+- [Validate Action](/actions/validate)
+- [Egress Action](/actions/egress)
