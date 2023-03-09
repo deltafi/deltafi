@@ -91,7 +91,7 @@ public class DeltaFilesDatafetcher {
     // remove subfields -- for example if we have did, sourceInfo, and sourceInfo.flow, this should resolve to did and sourceInfo.flow
     List<String> includeFields = rawIncludeFields.stream().filter(f -> rawIncludeFields.stream().noneMatch(p -> p.startsWith(f) && !p.equals(f))).toList();
 
-    return deltaFilesService.getDeltaFiles(offset, limit, filter, orderBy, includeFields);
+    return deltaFilesService.deltaFiles(offset, limit, filter, orderBy, includeFields);
   }
 
   String buildName(SelectedField f) {

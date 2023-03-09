@@ -40,7 +40,7 @@ module Deltafi
                                                format: 'json'
                                              })
 
-              queue_names = [ DGS_QUEUE_NAME ] + action_names
+              queue_names = recent_queues.keys
               queue_list = []
 
               results.each do |metric|
@@ -54,6 +54,13 @@ module Deltafi
               end
 
               queue_list
+            end
+
+            def recent_queues
+              redis_client = DF.redis_client
+              queues = redis_client.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
+              redis_client.close
+              queues.select { |_, v| Time.now - Time.parse(v) < DF::Common::ACTION_HEARTBEAT_THRESHOLD }
             end
 
             def metrics_by_action_by_family(flow:, last: '5min')
@@ -80,29 +87,6 @@ module Deltafi
               end
 
               transform
-            end
-
-            def action_names_by_family
-              action_families = DF.graphql('query { getActionNamesByFamily { family actionNames } }')
-                                  .parsed_response['data']['getActionNamesByFamily']
-
-              output = Hash.new { |hash, key| hash[key] = hash.dup.clear }
-
-              action_families.each_entry do |family_entry|
-                family = family_entry['family']
-                family_entry['actionNames'].each do |action_name|
-                  output[family][action_name] = {}
-                end
-              end
-
-              output
-            end
-
-            def action_names
-              actions = DF.graphql('query { actionDescriptors { name } }')
-                          .parsed_response['data']['actionDescriptors']
-
-              actions.map { |action| action['name'] }.sort
             end
           end
         end

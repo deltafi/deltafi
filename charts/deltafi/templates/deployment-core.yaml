@@ -24,6 +24,8 @@ spec:
         env:
         - name: JDK_JAVA_OPTIONS
           value: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
+        - name: UNIQUE_ID
+          value: core
         {{- include "coreEnvVars" . | nindent 8 }}
         envFrom:
         {{- include "keyStorePasswordSecret" . | nindent 8 }}

@@ -129,6 +129,28 @@ public enum PropertyType {
             target.getDelete().setFrequency(source.getDelete().getFrequency());
         }
     },
+    DELTAFILE_CACHE_ENABLED("deltaFileCache.enabled", "Enables or disables local caching of deltaFiles.", props -> props.getDeltaFileCache().isEnabled()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertBoolean(value);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getDeltaFileCache().setEnabled(source.getDeltaFileCache().isEnabled());
+        }
+    },
+    DELTAFILE_CACHE_SYNC_SECONDS("deltaFileCache.syncSeconds", "Sync all deltaFiles that have not been modified for this many seconds.", props -> props.getDeltaFileCache().getSyncSeconds()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 0);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getDeltaFileCache().setSyncSeconds(source.getDeltaFileCache().getSyncSeconds());
+        }
+    },
     INGRESS_ENABLED("ingress.enabled", "Enables or disables all ingress for the DeltaFi instance.", props -> props.getIngress().isEnabled()) {
         @Override
         public Object convertValue(String value) {

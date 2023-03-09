@@ -20,6 +20,7 @@
 
 require 'deltafi/common'
 require 'deltafi/monitor/status/check'
+require 'time'
 
 module Deltafi
   module Monitor
@@ -28,10 +29,10 @@ module Deltafi
         class ActionQueueCheck < Status::Check
           DEFAULT_SIZE_THRESHOLD = 0
           SIZE_THRESHOLD_PROPERTY = %w[checks actionQueueSizeThreshold].freeze
-          DGS_QUEUE_NAME = 'dgs'
-          INGORED_QUEUE_NAMES = [
+          IGNORED_QUEUE_NAMES = [
             DF::Common::STATUS_REDIS_KEY,
-            DF::Common::HEARTBEAT_REDIS_KEY
+            DF::Common::ACTION_HEARTBEAT_REDIS_KEY,
+            DF::Common::MONITOR_HEARTBEAT_REDIS_KEY
           ].freeze
 
           def initialize
@@ -43,10 +44,10 @@ module Deltafi
           def run
             @redis_client = DF.redis_client
             @threshold = size_threshold
-            @queue_names = [ DGS_QUEUE_NAME ] + action_queue_names
+            recent_queue_names = recent_queues.keys
 
-            check_queue_sizes
-            check_orphan_queues
+            check_queue_sizes(recent_queue_names)
+            check_orphan_queues(recent_queue_names)
 
             unless @queues_over_threshold.empty?
               self.code = 1
@@ -66,23 +67,23 @@ module Deltafi
 
           private
 
-          def check_queue_sizes
-            @queue_names.each do |queue_name|
+          def recent_queues
+            queues = @redis_client.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
+            queues.select { |_, v| Time.now - Time.parse(v) < DF::Common::ACTION_HEARTBEAT_THRESHOLD }
+          end
+
+          def check_queue_sizes(queue_names)
+            queue_names.each do |queue_name|
               queue_size = @redis_client.zcount(queue_name, '-inf', '+inf')
               generate_queue_size_metric(queue_name, queue_size)
               @queues_over_threshold[queue_name] = queue_size if queue_size > @threshold
             end
           end
 
-          def check_orphan_queues
-            (@redis_client.keys - @queue_names - INGORED_QUEUE_NAMES).each do |queue_name|
+          def check_orphan_queues(queue_names)
+            (@redis_client.keys - queue_names - IGNORED_QUEUE_NAMES).each do |queue_name|
               @orphan_queues[queue_name] = @redis_client.zcount(queue_name, '-inf', '+inf')
             end
-          end
-
-          def action_queue_names
-            response = DF.graphql('query { actionDescriptors { name } }')
-            response.parsed_response['data']['actionDescriptors'].map { |a| a['name'] }
           end
 
           def size_threshold

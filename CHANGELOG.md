@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - `MetricsAdmin` - Grants the `Admin` role in Grafana
   - `MetricsEdit` - Grants the `Editor` role in Grafana
 - CacheAutoConfiguration to enable caches to be configured in application properties when caffeine is present
+- Experimental DeltaFile cache feature. By default, this is turned off with the deltaFileCache.enabled feature flag.
+Flip to true to test it. To see if it is working, try processing some files while watching `deltafi redis-watch | grep BZPOPMIN`.
+When enabled you should see delivery to many different topics, one for each core and worker that is running.
+With it off, all messages will be delivered to the dgs topic. When on, DeltaFiles will be cached locally and made eventually
+consistent in the database. This decreases processing latency but does not give a realtime view of the state in the UI.
+>>>>>>> c4e0b372 (add feature flag)
 
 ### Changed
 - KinD: `deltafi ingress` works with regular filesystem paths instead of paths relative to the project root

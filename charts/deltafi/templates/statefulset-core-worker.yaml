@@ -1,11 +1,12 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: deltafi-core-worker
   labels:
     app: deltafi-core
     group: deltafi-core
 spec:
+  serviceName: core-worker
   revisionHistoryLimit: 0
   selector:
     matchLabels:
@@ -24,6 +25,10 @@ spec:
         env:
         - name: JDK_JAVA_OPTIONS
           value: "-Dcom.redhat.fips=false -Dschedule.maintenance=false -Dschedule.diskSpace=false"
+        - name: UNIQUE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         {{- include "coreEnvVars" . | nindent 8 }}
         envFrom:
         {{- include "keyStorePasswordSecret" . | nindent 8 }}
