@@ -58,10 +58,11 @@ QUERY="{
            }
          }
        }"
+QUERY=$(echo $QUERY)
 RESULT=$(deltafi query "$QUERY")
 
 if [[ " ${ARGS[@]} " =~ " --json " || " ${ARGS[@]} " =~ " -j " ]]; then
   echo "$RESULT" | jq -r ".data.plugins"
 else
-  echo "$RESULT" | jq -r "([\"Name\", \"Description\", \"Coordinates\"] | (., map(length*\"=\"))), (.data.plugins[] | [.displayName, .description, (.pluginCoordinates.groupId + \":\" + .pluginCoordinates.artifactId + \":\" + .pluginCoordinates.version)]) | @tsv" | column -ts $'\t'
+  echo "$RESULT" | jq -rM "([\"Name\", \"Description\", \"Coordinates\"] | (., map(length*\"=\"))), (.data.plugins[] | [.displayName, .description, (.pluginCoordinates.groupId + \":\" + .pluginCoordinates.artifactId + \":\" + .pluginCoordinates.version)]) | @tsv" | column -ts $'\t'
 fi

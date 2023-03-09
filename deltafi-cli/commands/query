@@ -7,7 +7,8 @@ cli_help_command() {
 Command: query
 
 Usage:
-  query QUERY"
+  query QUERY
+  -c --color  - Colorize json output"
   exit 1
 }
 
@@ -15,9 +16,15 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
-QUERY=${ARGS[@]:1}
-QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+JQ_ARGS="-M"
+shift 1
+if [[ "$1" == '-c' || "$1" == '--color' ]]; then
+  JQ_ARGS="-C"
+  shift 1
+fi
+
+QUERY=$(echo "$1" | sed 's/"/\\"/g')
 GRAPHQL_IP=$(deltafi serviceip deltafi-core-service)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":null}"
 
-curl -s -X POST -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" http://$GRAPHQL_IP/graphql | jq '.'
+curl -s -X POST -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "http://$GRAPHQL_IP/graphql" | jq "$JQ_ARGS" '.'
