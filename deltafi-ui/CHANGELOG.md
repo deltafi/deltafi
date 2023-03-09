@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added better error handling for snapshot errors
 - Fixed bug where parameters were only shown for singular actions (#344)
 
+### Changed
+
+- Redesigned System Status dialog (#342)
+
 ## [0.102.0]
 
 ### Changed

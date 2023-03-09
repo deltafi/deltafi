@@ -19,13 +19,30 @@
 .status-tag {
   cursor: pointer;
 }
-.message {
-  margin-left: 1rem;
-  margin-right: 1rem;
+.status-dialog {
+  .p-dialog-content {
+    padding: 0.5rem !important;
+  }
 }
-.message pre {
-  background-color: #333333;
-  color: #dddddd;
-  padding: 1em;
-  border-radius: 4px;
+.status-table {
+  .timestamp-column {
+    font-size: 90%;
+    width: 14rem !important;
+  }
+  td.expander-col {
+    padding: 0 0.5rem !important;
+  }
+  td.severity-col {
+    padding: 0 0.5rem !important;
+    width: 1rem;
+  }
+  .message {
+    margin: 0.5rem;
+  }
+  .message pre {
+    background-color: #333333;
+    color: #dddddd;
+    padding: 1em;
+    border-radius: 4px;
+  }
 }

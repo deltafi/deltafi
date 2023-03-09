@@ -49,7 +49,8 @@ const tagIcon = computed(() => {
 });
 
 const badgeText = computed(() => {
-  return severity.value.charAt(0).toUpperCase() + severity.value.slice(1);
+  let text = severity.value.charAt(0).toUpperCase() + severity.value.slice(1);
+  return text === 'Warn' ? 'Warning' : text;
 });
 </script>
 
