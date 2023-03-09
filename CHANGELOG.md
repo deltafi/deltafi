@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased] - 0.102.1 or 0.103.0
+## [0.103.0] - 2023-03-09
 
 ### Added
 - Python Duplicate Log Entry cleared up
@@ -1275,7 +1275,8 @@ No changes.  UI update only
 
 ### Upgrade and Migration
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.102.0...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.103.0...main
+[0.103.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.102.0...0.103.0
 [0.102.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.5...0.102.0
 [0.101.5]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.4...0.101.5
 [0.101.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.3...0.101.4
