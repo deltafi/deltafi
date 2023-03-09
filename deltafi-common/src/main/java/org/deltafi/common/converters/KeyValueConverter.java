@@ -50,7 +50,7 @@ public class KeyValueConverter {
      * This custom collector is needed to deal with the possibility that a value could be null.  The standard
      * collector will NPE.
      *
-     * Scabbed from teh internets: https://kuros.in/java/streams/handle-nullpointerexception-in-collectors-tomap/
+     * <a href="https://kuros.in/java/streams/handle-nullpointerexception-in-collectors-tomap/">Based on this example</a>
      */
     static class CustomCollector {
         public static <T, K, V> Collector<T, Map<K, V>, Map<K, V>> toMap(final Function<? super T, K> keyMapper, final Function<T, V> valueMapper) {

@@ -121,7 +121,7 @@ class ContentSplitterTransformActionTest {
         Assertions.assertEquals("1", name);
 
         name = splitterTransformAction.buildContentName(null, 1);
-        Assertions.assertEquals(null, name);
+        Assertions.assertNull(name);
     }
 
 

@@ -31,7 +31,7 @@ class SplitterParamsTest {
     @Test
     void testMaxSizeValidation() {
         SplitterParams.SplitterParamsBuilder builder = SplitterParams.builder();
-        Assertions.assertThatNoException().isThrownBy(() -> builder.build());
+        Assertions.assertThatNoException().isThrownBy(builder::build);
         Assertions.assertThatThrownBy(() -> builder.maxSize(0).build()).isInstanceOf(IllegalArgumentException.class);
         Assertions.assertThatNoException().isThrownBy(() -> builder.maxSize(1).build());
 
@@ -40,7 +40,7 @@ class SplitterParamsTest {
     @Test
     void testMaxRowValidation() {
         SplitterParams.SplitterParamsBuilder builder = SplitterParams.builder();
-        Assertions.assertThatNoException().isThrownBy(() -> builder.build());
+        Assertions.assertThatNoException().isThrownBy(builder::build);
         Assertions.assertThatThrownBy(() -> builder.maxRows(0).build()).isInstanceOf(IllegalArgumentException.class);
         Assertions.assertThatNoException().isThrownBy(() -> builder.maxRows(1).build());
     }

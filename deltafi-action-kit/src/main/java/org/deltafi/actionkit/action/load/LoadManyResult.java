@@ -28,7 +28,7 @@ import java.util.List;
 
 public class LoadManyResult extends Result implements LoadResultType {
 
-    private List<LoadResult> loadResults = new ArrayList<>();
+    private final List<LoadResult> loadResults = new ArrayList<>();
 
     /**
      * @param context Execution context of the action
