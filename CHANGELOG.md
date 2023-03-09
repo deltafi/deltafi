@@ -46,6 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Bug resulting in Grafana Alert Check being denied access to Grafana API
 - Possible stream resource leak in egress actions
 - CLI: commands for ingress-flow and enrich-flow were broken
+- Fixed issue with generating a metric on an egress URL with encoded parameters
 
 ### Tech-Debt/Refactor
 - Files in minio are now stored in subfolders by the first 3 characters of the did
