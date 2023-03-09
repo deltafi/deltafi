@@ -19,6 +19,7 @@ consistent in the database. This decreases processing latency but does not give 
 ### Removed
 
 ### Fixed
+- DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats.
 
 ### Tech-Debt/Refactor
 

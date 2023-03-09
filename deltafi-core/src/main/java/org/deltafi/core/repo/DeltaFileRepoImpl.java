@@ -882,7 +882,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         List<AggregationOperation> aggregationOps = new ArrayList<>();
         List<Criteria> criteriaList = new ArrayList<>();
         if (inFlightOnly) {
-            criteriaList.add(Criteria.where(STAGE).in(DeltaFileStage.INGRESS, DeltaFileStage.ENRICH, DeltaFileStage.EGRESS));
+            criteriaList.add(Criteria.where(STAGE).in(DeltaFileStage.INGRESS, DeltaFileStage.JOINING,
+                    DeltaFileStage.ENRICH, DeltaFileStage.EGRESS));
         }
         if (!includeDeletedContent) {
             criteriaList.add(Criteria.where(CONTENT_DELETED).isNull());

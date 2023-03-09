@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -235,6 +235,7 @@ public class DeltaFilesDatafetcher {
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
   DeltaFileStats deltaFileStats(Boolean inFlightOnly, Boolean includeDeletedContent) {
-    return deltaFilesService.deltaFileStats(inFlightOnly == null ? false : inFlightOnly, includeDeletedContent == null ? false : includeDeletedContent);
+    return deltaFilesService.deltaFileStats((inFlightOnly != null) && inFlightOnly,
+            (includeDeletedContent != null) && includeDeletedContent);
   }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -179,7 +179,7 @@ public interface DeltaFileRepoCustom {
 
     /**
      * Get count and sizes of deltaFiles in the system
-     * @param inFlightOnly If true, only include deltaFiles in INGRESS, ENRICH, and EGRESS stages
+     * @param inFlightOnly If true, only include deltaFiles in INGRESS, JOINING, ENRICH, and EGRESS stages
      * @param includeDeletedContent include deleted content in the stats
      * @return stats
      */
