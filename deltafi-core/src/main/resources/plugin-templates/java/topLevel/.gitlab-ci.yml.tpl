@@ -43,7 +43,7 @@ docker:
     DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
   script:
     - export DOCKER_NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME//\//_}
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - echo "Building the following image ${DOCKER_NAMED_TAG}"
     - echo "Building the following image ${DOCKER_TAG}"
     # pull latest image if available (performance optimization)

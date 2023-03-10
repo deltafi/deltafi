@@ -64,7 +64,7 @@ build:
     SHA_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
     NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_TAG}
   before_script:
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker buildx create --name multiarch-builder --platform "linux/arm64,linux/amd64"
     - docker run --privileged --rm tonistiigi/binfmt --install all
   script:
@@ -150,7 +150,7 @@ publish-gitlab:
     - python3 -m pip install --upgrade twine
   script:
     - ./gradlew $PROJECT_NAME:build
-    - export TWINE_PASSWORD=${CI_BUILD_TOKEN}
+    - export TWINE_PASSWORD=${CI_JOB_TOKEN}
     - export TWINE_USERNAME=gitlab-ci-token
     - python3 -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi $PROJECT_NAME/src/dist/*
 
