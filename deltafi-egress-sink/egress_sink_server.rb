@@ -47,6 +47,16 @@ class EgressSinkServer < Sinatra::Base
 
   get('/probe') {}
 
+  post '/blackhole' do
+    if params['latency']
+      sleep(params['latency'].to_f)
+    end
+
+    request.body.read
+
+    return 200
+  end
+
   post '/' do
     json = request.env.find { |k, _| k.upcase == METADATA_HEADER }&.last
     raise "Missing metadata header \"#{METADATA_HEADER}\"" if json.nil?

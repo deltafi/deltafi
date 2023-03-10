@@ -43,9 +43,9 @@ public class EgressResult extends Result<EgressResult> implements EgressResultTy
     @Builder
     public EgressResult(@NotNull ActionContext context, String destination, long bytesEgressed) {
         super(context);
-
-        add(new Metric(FILES_OUT, 1).addTag("endpoint", destination.replace(';', '_').replace('=','_')));
-        add(new Metric(BYTES_OUT, bytesEgressed).addTag("endpoint", destination));
+        String endpoint = destination.replace(';', '_').replace('=', '_');
+        add(new Metric(FILES_OUT, 1).addTag("endpoint", endpoint));
+        add(new Metric(BYTES_OUT, bytesEgressed).addTag("endpoint", endpoint));
     }
 
     @Override

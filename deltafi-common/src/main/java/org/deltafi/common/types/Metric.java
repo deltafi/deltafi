@@ -46,11 +46,11 @@ public class Metric {
 
     public Metric addTag(String key, String value) {
         if (key.contains("=") || key.contains(";")) {
-            throw new IllegalArgumentException("Metric keys cannot contain = or ;");
+            throw new IllegalArgumentException("Metric keys (" + key + "," + value + ") cannot contain = or ;");
         }
 
         if (value.contains("=") || value.contains(";")) {
-            throw new IllegalArgumentException("Metric keys cannot contain = or ;");
+            throw new IllegalArgumentException("Metric values (" + key + "," + value + ") cannot contain = or ;");
         }
 
         tags.put(key, value);
