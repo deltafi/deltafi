@@ -35,12 +35,14 @@ import redis.clients.jedis.resps.KeyedZSetElement;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
  * A keyed blocking queue based on the Jedis client library for Redis.
  */
 public class JedisKeyedBlockingQueue {
+    private static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -118,6 +120,16 @@ public class JedisKeyedBlockingQueue {
                         OBJECT_MAPPER.writeValueAsString(item.getValue()), ZAddParams.zAddParams().nx());
             }
             p.sync();
+        }
+    }
+
+    /**
+     * Publish a heartbeat in the form of a timestamp
+     * @param key the name of the component publishing the heartbeat
+     */
+    public void setHeartbeat(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.hset(HEARTBEAT_HASH, key, OffsetDateTime.now().toString());
         }
     }
 

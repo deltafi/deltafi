@@ -56,19 +56,14 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFilesServiceTest {
-    private final Clock clock = new TestClock();
 
     private final IngressFlowService ingressFlowService;
-    private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
-    private final ActionEventQueue actionEventQueue;
     private final ContentStorageService contentStorageService;
-    private final RetryPolicyService retryPolicyService;
     private final MetricRepository metricRepository;
-    private final CoreAuditLogger coreAuditLogger;
-    private final JoinRepo joinRepo;
+    private final DeltaFileCacheService deltaFileCacheService;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -82,22 +77,21 @@ class DeltaFilesServiceTest {
             @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock RetryPolicyService retryPolicyService,
             @Mock ContentStorageService contentStorageService, @Mock MetricRepository metricRepository,
-            @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo) {
+            @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo, @Mock IdentityService identityService,
+            @Mock DidMutexService didMutexService, @Mock DeltaFileCacheService deltaFileCacheService) {
         this.ingressFlowService = ingressFlowService;
-        this.enrichFlowService = enrichFlowService;
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
-        this.actionEventQueue = actionEventQueue;
         this.contentStorageService = contentStorageService;
-        this.retryPolicyService = retryPolicyService;
         this.metricRepository = metricRepository;
-        this.coreAuditLogger = coreAuditLogger;
-        this.joinRepo = joinRepo;
+        this.deltaFileCacheService = deltaFileCacheService;
 
+        Clock clock = new TestClock();
         deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService,
                 new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, retryPolicyService, metricRepository, coreAuditLogger, joinRepo);
+                actionEventQueue, contentStorageService, retryPolicyService, metricRepository, coreAuditLogger, joinRepo,
+                identityService, didMutexService, deltaFileCacheService);
     }
 
     @Captor
@@ -133,7 +127,7 @@ class DeltaFilesServiceTest {
                 .did("hi")
                 .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
                 .build();
-        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
+        when(deltaFileCacheService.get("hi")).thenReturn(deltaFile);
         String json = deltaFilesService.getRawDeltaFile("hi", false);
         assertTrue(json.contains("\"did\":\"hi\""));
         assertTrue(json.contains("\"created\":\"2022-09-29T11:30:00.000Z\""));
@@ -143,7 +137,7 @@ class DeltaFilesServiceTest {
     @Test
     void getRawDeltaFilePretty() throws JsonProcessingException {
         DeltaFile deltaFile = DeltaFile.newBuilder().did("hi").build();
-        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
+        when(deltaFileCacheService.get("hi")).thenReturn(deltaFile);
         String json = deltaFilesService.getRawDeltaFile("hi", true);
         assertTrue(json.contains("  \"did\" : \"hi\",\n"));
         assertNotEquals(1, json.split("\n").length);
@@ -369,7 +363,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.addIndexedMetadata(Map.of("key", "one"));
 
-        Mockito.when(deltaFileRepo.findById("1")).thenReturn(Optional.of(deltaFile));
+        Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
         Mockito.when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
 
         deltaFilesService.addIndexedMetadata("1", Map.of("sys-ack", "true"), false);
@@ -394,7 +388,7 @@ class DeltaFilesServiceTest {
         deltaFile.setIndexedMetadata(new HashMap<>(Map.of("key", "one")));
         deltaFile.setIndexedMetadataKeys(new HashSet<>(Set.of("key")));
 
-        Mockito.when(deltaFileRepo.findById("1")).thenReturn(Optional.of(deltaFile));
+        Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
 
         deltaFilesService.addIndexedMetadata("1", Map.of("key", "changed"), false);
         Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(1).containsEntry("key", "one");

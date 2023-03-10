@@ -1,4 +1,4 @@
-/*
+/**
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,25 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.services;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.util.ConcurrentReferenceHashMap;
 
-import java.util.List;
-import java.util.Map;
+@Service
+public class DidMutexService {
+    private ConcurrentReferenceHashMap<String, Object> map;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ActionInput {
-    private DeltaFile deltaFile;
-    private ActionContext actionContext;
-    private Map<String, Object> actionParams;
-    private String queueName;
-    private List<DeltaFile> joinedDeltaFiles;
-    private String returnAddress;
+    public DidMutexService() {
+        this.map = new ConcurrentReferenceHashMap<>();
+    }
+
+    public Object getMutex(String did) {
+        return this.map.compute(did, (k, v) -> v == null ? new Object() : v);
+    }
 }

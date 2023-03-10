@@ -1,4 +1,4 @@
-/*
+/**
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,25 +15,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.actionkit.action.service;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.deltafi.actionkit.action.Action;
+import org.deltafi.common.action.ActionEventQueue;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ActionInput {
-    private DeltaFile deltaFile;
-    private ActionContext actionContext;
-    private Map<String, Object> actionParams;
-    private String queueName;
-    private List<DeltaFile> joinedDeltaFiles;
-    private String returnAddress;
+public class HeartbeatService {
+    @Autowired
+    private ActionEventQueue actionEventQueue;
+
+    @Autowired(required = false)
+    private List<Action<?>> actions = Collections.emptyList();
+
+    @Scheduled(fixedRate = 10000)
+    void setHeartbeat() {
+        for (Action<?> action : actions) {
+            actionEventQueue.setHeartbeat(action.getClassCanonicalName());
+        }
+    }
 }

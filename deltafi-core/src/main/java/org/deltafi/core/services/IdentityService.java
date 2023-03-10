@@ -1,4 +1,4 @@
-/*
+/**
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,25 +15,29 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.services;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ActionInput {
-    private DeltaFile deltaFile;
-    private ActionContext actionContext;
-    private Map<String, Object> actionParams;
-    private String queueName;
-    private List<DeltaFile> joinedDeltaFiles;
-    private String returnAddress;
+@Service
+@Slf4j
+public class IdentityService {
+
+    @Getter
+    private final String uniqueId;
+
+    public IdentityService(@Value("${UNIQUE_ID:}") String uniqueId) {
+        if (uniqueId == null || uniqueId.isEmpty()) {
+            this.uniqueId = null;
+        } else {
+            this.uniqueId = uniqueId.startsWith("deltafi-") ?
+                    uniqueId.replaceFirst("deltafi-", "") :
+                    uniqueId;
+        }
+    }
 }

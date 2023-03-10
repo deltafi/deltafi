@@ -39,6 +39,7 @@ public class DeltaFiProperties {
     private int scheduledServiceThreads = 32;
     private MetricsProperties metrics = new MetricsProperties();
     private DeleteProperties delete = new DeleteProperties();
+    private DeltaFileCacheProperties deltaFileCache = new DeltaFileCacheProperties();
     private IngressProperties ingress = new IngressProperties();
     private PluginProperties plugins = new PluginProperties();
     private SystemCheckProperties checks = new SystemCheckProperties();

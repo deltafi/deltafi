@@ -65,7 +65,7 @@ class Plugin(object):
         self.coordinates = _coordinates()
 
         self.core_url = os.getenv('CORE_URL')
-        self.queue = _setup_queue(len(self.actions))
+        self.queue = _setup_queue(len(self.actions) + 1)
         self.content_service = _setup_content_service()
 
         if os.getenv('ACTIONS_HOSTNAME'):
@@ -136,8 +136,20 @@ class Plugin(object):
         for action in self.actions:
             threading.Thread(target=self._do_action, args=(action,)).start()
 
+        threading.Thread(target=self._heartbeat).start()
+
         f = open("/running", "w")
         f.close()
+
+    def _heartbeat(self):
+        while True:
+            try:
+                for action in self.actions:
+                    self.queue.heartbeat(self.action_name(action))
+            except Exception as e:
+                self.logger.error(f"Failed to register action queue heartbeat: {e}", e)
+            finally:
+                time.sleep(10)
 
     def _do_action(self, action):
         action_logger = get_logger(self.action_name(action))
@@ -182,7 +194,10 @@ class Plugin(object):
                 if result.result_key is not None:
                     response[result.result_key] = result.response()
 
-                self.queue.put('dgs', json.dumps(response))
+                topic = 'dgs'
+                if event.return_address:
+                    topic += f"-{event.return_address}"
+                self.queue.put(topic, json.dumps(response))
             except BaseException as e:
                 action_logger.error(f"Unexpected {type(e)} error: {str(e)}\n{traceback.format_exc()}")
                 time.sleep(1)

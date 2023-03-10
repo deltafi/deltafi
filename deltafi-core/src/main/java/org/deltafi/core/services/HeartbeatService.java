@@ -15,33 +15,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.schedulers;
+package org.deltafi.core.services;
 
-import lombok.RequiredArgsConstructor;
-import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.IdentityService;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.AllArgsConstructor;
+import org.deltafi.common.action.ActionEventQueue;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+@AllArgsConstructor
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
-@Service
 @EnableScheduling
-@RequiredArgsConstructor
-public class ActionEventScheduler {
+@Service
+public class HeartbeatService {
+    private IdentityService identityService;
+    private ActionEventQueue actionEventQueue;
 
-    final DeltaFilesService deltaFilesService;
-    final IdentityService identityService;
-
-    @Scheduled(fixedDelay = 1000)
-    public void processActionEvents() {
-        deltaFilesService.processActionEvents();
-    }
-
-    @Scheduled(fixedDelay = 1000)
-    public void processUniqueActionEvents() {
-        deltaFilesService.processActionEvents(identityService.getUniqueId());
+    @Scheduled(fixedDelay = 10000)
+    public void heartbeat() {
+        actionEventQueue.setHeartbeat(identityService.getUniqueId());
     }
 }

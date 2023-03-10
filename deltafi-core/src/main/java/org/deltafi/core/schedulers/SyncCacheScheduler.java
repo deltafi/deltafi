@@ -18,9 +18,10 @@
 package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.IdentityService;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.services.DeltaFileCacheService;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -30,18 +31,15 @@ import org.springframework.stereotype.Service;
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
-public class ActionEventScheduler {
+@Slf4j
+public class SyncCacheScheduler {
 
-    final DeltaFilesService deltaFilesService;
-    final IdentityService identityService;
+    final DeltaFileCacheService deltaFileCacheService;
+    final DeltaFiPropertiesService deltaFiPropertiesService;
+    final DeltaFileRepo deltaFileRepo;
 
-    @Scheduled(fixedDelay = 1000)
-    public void processActionEvents() {
-        deltaFilesService.processActionEvents();
-    }
-
-    @Scheduled(fixedDelay = 1000)
-    public void processUniqueActionEvents() {
-        deltaFilesService.processActionEvents(identityService.getUniqueId());
+    @Scheduled(fixedDelay = 2000)
+    public void syncCache() {
+        deltaFileCacheService.removeOlderThan(deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncSeconds());
     }
 }

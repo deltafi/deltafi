@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## [Unreleased] - will be 0.104.0
 
 ### Added
+- Experimental DeltaFile cache feature. By default, this is turned off with the deltaFileCache.enabled feature flag.
+Flip to true to test it. To see if it is working, try processing some files while watching `deltafi redis-watch | grep BZPOPMIN`.
+When enabled you should see delivery to many different topics, one for each core and worker that is running.
+With it off, all messages will be delivered to the dgs topic. When on, DeltaFiles will be cached locally and made eventually
+consistent in the database. This decreases processing latency but does not give a realtime view of the state in the UI.
 
 ### Changed
 

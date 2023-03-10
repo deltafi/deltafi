@@ -48,4 +48,4 @@ def redis_client
   end
 end
 
-exit 1 if redis_client.get(Deltafi::Common::HEARTBEAT_REDIS_KEY).to_i < (Time.now.to_i - THRESHOLD)
+exit 1 if redis_client.get(Deltafi::Common::MONITOR_HEARTBEAT_REDIS_KEY).to_i < (Time.now.to_i - THRESHOLD)
