@@ -26,19 +26,32 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 2035,
   "links": [],
   "liveNow": false,
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 55,
+      "panels": [],
+      "title": "Ingress/Egress",
+      "type": "row"
+    },
     {
       "datasource": {
         "type": "graphite",
         "uid": "${datasource}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "continuous-BlPu"
           },
           "mappings": [],
           "thresholds": {
@@ -47,57 +60,21 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "bps"
+          "unit": "decbytes"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ingress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Egress"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
-        "h": 16,
-        "w": 2,
+        "h": 4,
+        "w": 5,
         "x": 0,
-        "y": 0
+        "y": 1
       },
-      "hideTimeOverride": true,
-      "id": 24,
-      "interval": "1m",
+      "id": 73,
+      "interval": "10s",
       "maxDataPoints": 99999,
       "options": {
         "colorMode": "value",
@@ -106,12 +83,12 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name"
+        "textMode": "auto"
       },
       "pluginVersion": "9.3.2",
       "targets": [
@@ -120,117 +97,14 @@
             "type": "graphite",
             "uid": "${datasource}"
           },
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(scale(scaleToSeconds(sum(seriesByTag('name=stats_counts.bytes_in', 'ingressFlow=~${flow:regex}', 'action=ingress')), 1), 8), 'Ingress')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
           "hide": false,
           "refCount": 0,
-          "refId": "B",
-          "target": "alias(scale(scaleToSeconds(sum(seriesByTag('name=stats_counts.bytes_out', 'ingressFlow=~${flow:regex}')), 1), 8), 'Egress')"
+          "refId": "A",
+          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false))"
         }
       ],
-      "timeShift": "20s",
-      "transformations": [
-        {
-          "disabled": true,
-          "id": "reduce",
-          "options": {
-            "includeTimeField": false,
-            "mode": "reduceFields",
-            "reducers": [
-              "last"
-            ]
-          }
-        }
-      ],
-      "transparent": true,
+      "title": "Total Bytes In",
       "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-BlYlRd"
-          },
-          "mappings": [],
-          "min": 0,
-          "noValue": "0",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 2,
-        "y": 0
-      },
-      "hideTimeOverride": true,
-      "id": 25,
-      "interval": "10s",
-      "maxDataPoints": 99999,
-      "options": {
-        "displayMode": "gradient",
-        "minVizHeight": 10,
-        "minVizWidth": 0,
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^Last$/",
-          "values": true
-        },
-        "showUnfilled": true
-      },
-      "pluginVersion": "9.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "sortByMaxima(aliasByTags(groupByTags(transformNull(scale(scaleToSeconds(seriesByTag('name=stats_counts.bytes_in', 'ingressFlow=~${flow:regex}', 'action=ingress'), 1), 8), 0), 'sum', 'ingressFlow'), 'ingressFlow'))",
-          "textEditor": false
-        }
-      ],
-      "timeShift": "10s",
-      "title": "Ingress Flow Bitrate",
-      "transformations": [
-        {
-          "id": "reduce",
-          "options": {
-            "labelsToFields": false,
-            "reducers": [
-              "last"
-            ]
-          }
-        }
-      ],
-      "type": "bargauge"
     },
     {
       "datasource": {
@@ -294,8 +168,8 @@
       "gridPos": {
         "h": 8,
         "w": 14,
-        "x": 10,
-        "y": 0
+        "x": 5,
+        "y": 1
       },
       "id": 3,
       "interval": "10s",
@@ -332,14 +206,12 @@
         "type": "graphite",
         "uid": "${datasource}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-BlYlRd"
+            "mode": "continuous-BlPu"
           },
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -349,33 +221,32 @@
               }
             ]
           },
-          "unit": "bps"
+          "unit": "decbytes"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 2,
-        "y": 8
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 1
       },
-      "hideTimeOverride": true,
-      "id": 32,
-      "interval": "1m",
+      "id": 74,
+      "interval": "10s",
       "maxDataPoints": 99999,
       "options": {
-        "displayMode": "gradient",
-        "minVizHeight": 10,
-        "minVizWidth": 0,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
-          "fields": "/^Last$/",
-          "values": true
+          "fields": "",
+          "values": false
         },
-        "showUnfilled": true
+        "textMode": "auto"
       },
       "pluginVersion": "9.3.2",
       "targets": [
@@ -387,24 +258,137 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByMaxima(aliasByTags(groupByTags(transformNull(scale(scaleToSeconds(seriesByTag('name=stats_counts.bytes_out', 'ingressFlow=~${flow:regex}'), 1), 8), 0), 'sum', 'ingressFlow'), 'ingressFlow'))",
-          "textEditor": true
+          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1h', 'sum', false))"
         }
       ],
-      "timeShift": "10s",
-      "title": "Egress Flow Bitrate",
-      "transformations": [
-        {
-          "id": "reduce",
-          "options": {
-            "labelsToFields": false,
-            "reducers": [
-              "last"
+      "title": "Total Bytes Out",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlPu"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
             ]
-          }
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 0,
+        "y": 5
+      },
+      "id": 72,
+      "interval": "10s",
+      "maxDataPoints": 99999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow'))"
         }
       ],
-      "type": "bargauge"
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlPu"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 5,
+        "x": 19,
+        "y": 5
+      },
+      "id": 75,
+      "interval": "10s",
+      "maxDataPoints": 99999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow'))"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
     },
     {
       "datasource": {
@@ -469,8 +453,8 @@
       "gridPos": {
         "h": 8,
         "w": 14,
-        "x": 10,
-        "y": 8
+        "x": 5,
+        "y": 9
       },
       "id": 7,
       "interval": "10s",
@@ -611,7 +595,7 @@
         "h": 9,
         "w": 2,
         "x": 0,
-        "y": 16
+        "y": 17
       },
       "id": 34,
       "maxDataPoints": 99999,
@@ -746,7 +730,7 @@
         "h": 9,
         "w": 11,
         "x": 2,
-        "y": 16
+        "y": 17
       },
       "id": 8,
       "interval": "10s",
@@ -839,7 +823,7 @@
         "h": 9,
         "w": 11,
         "x": 13,
-        "y": 16
+        "y": 17
       },
       "id": 9,
       "interval": "10s",
@@ -933,7 +917,7 @@
         "h": 10,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 26
       },
       "id": 41,
       "interval": "10s",
@@ -1029,7 +1013,7 @@
         "h": 10,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 26
       },
       "id": 40,
       "interval": "10s",
@@ -1125,7 +1109,7 @@
         "h": 10,
         "w": 8,
         "x": 16,
-        "y": 25
+        "y": 26
       },
       "id": 39,
       "interval": "10s",
@@ -1160,29 +1144,674 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
+      "collapsed": false,
       "gridPos": {
-        "h": 2,
+        "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 36
       },
-      "id": 30,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
+      "id": 67,
+      "panels": [],
+      "title": "DeltaFile Statistics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Total Deltafiles",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
-        "content": "<br/><center><h1>Action Activity</h1></center>",
-        "mode": "html"
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 37
+      },
+      "id": 47,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
       "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(gauge.deltafile.all.count, 'Total DeltaFiles')"
+        }
+      ],
       "transparent": true,
-      "type": "text"
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "displayName": "Total DeltaFiles",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "string"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 8,
+        "y": 37
+      },
+      "id": 49,
+      "maxDataPoints": 99999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "gauge.deltafile.all.count"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "displayName": "Total Bytes",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 12,
+        "y": 37
+      },
+      "id": 51,
+      "maxDataPoints": 99999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "gauge.deltafile.all.referencedBytes"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Total DeltaFile Bytes",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 37
+      },
+      "id": 57,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(gauge.deltafile.all.referencedBytes, 'Total')"
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "In Flight DeltaFiles",
+            "axisPlacement": "left",
+            "axisWidth": -6,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 43
+      },
+      "id": 59,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(gauge.deltafile.inFlight.count, 'In Flight')"
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "displayName": "In Flight DeltaFiles",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 8,
+        "y": 43
+      },
+      "id": 61,
+      "maxDataPoints": 99999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(gauge.deltafile.inFlight.count, 'Files in flight')"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "displayName": "In Flight Bytes",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 12,
+        "y": 43
+      },
+      "id": 63,
+      "maxDataPoints": 99999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "gauge.deltafile.inFlight.referencedBytes"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "In Flight DeltaFile Bytes",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 43
+      },
+      "id": 65,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "deltafi-graphite"
+          },
+          "refCount": 0,
+          "refId": "A",
+          "target": "alias(gauge.deltafile.inFlight.referencedBytes, 'In Flight')"
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 71,
+      "panels": [],
+      "title": "Action Activity",
+      "type": "row"
     },
     {
       "datasource": {
@@ -1193,7 +1822,7 @@
         "h": 22,
         "w": 8,
         "x": 0,
-        "y": 37
+        "y": 50
       },
       "id": 43,
       "options": {
@@ -1278,7 +1907,7 @@
         "h": 9,
         "w": 16,
         "x": 8,
-        "y": 37
+        "y": 50
       },
       "id": 5,
       "interval": "10s",
@@ -1372,7 +2001,7 @@
         "h": 13,
         "w": 16,
         "x": 8,
-        "y": 46
+        "y": 59
       },
       "id": 17,
       "interval": "10s",
@@ -1405,29 +2034,17 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
+      "collapsed": false,
       "gridPos": {
-        "h": 2,
+        "h": 1,
         "w": 24,
         "x": 0,
-        "y": 59
+        "y": 72
       },
-      "id": 31,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "<br/><center><h1>Disk Status</h1></center>",
-        "mode": "html"
-      },
-      "pluginVersion": "9.3.2",
-      "transparent": true,
-      "type": "text"
+      "id": 69,
+      "panels": [],
+      "title": "Disk Status",
+      "type": "row"
     },
     {
       "datasource": {
@@ -1493,7 +2110,7 @@
         "h": 11,
         "w": 12,
         "x": 0,
-        "y": 61
+        "y": 73
       },
       "id": 20,
       "options": {
@@ -1570,7 +2187,7 @@
         "h": 11,
         "w": 12,
         "x": 12,
-        "y": 61
+        "y": 73
       },
       "id": 28,
       "options": {
@@ -1681,7 +2298,7 @@
         "h": 11,
         "w": 12,
         "x": 0,
-        "y": 72
+        "y": 84
       },
       "id": 44,
       "options": {
@@ -1776,7 +2393,7 @@
         "h": 11,
         "w": 12,
         "x": 12,
-        "y": 72
+        "y": 84
       },
       "id": 45,
       "options": {
@@ -1885,6 +2502,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 6,
+  "version": 7,
   "weekStart": ""
 }

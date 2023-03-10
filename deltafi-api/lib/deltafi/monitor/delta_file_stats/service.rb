@@ -42,10 +42,24 @@ module Deltafi
             result = {
               all: query(in_flight_only: false),
               inFlight: query(in_flight_only: true)
-            }.to_json
-            @redis.publish(SSE_REDIS_CHANNEL, result)
+            }
+
+            @redis.publish(SSE_REDIS_CHANNEL, result.to_json)
+
+            result.each do |mode, metrics|
+              metrics.each do |k, v|
+                DF::Metrics.record_metric(
+                  prefix: "gauge.deltafile.#{mode}",
+                  name: k,
+                  value: v.to_i,
+                  gauge: true
+                )
+              end
+            end
+
           end
         end
+
       end
     end
   end

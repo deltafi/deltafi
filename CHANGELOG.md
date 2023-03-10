@@ -11,6 +11,8 @@ Flip to true to test it. To see if it is working, try processing some files whil
 When enabled you should see delivery to many different topics, one for each core and worker that is running.
 With it off, all messages will be delivered to the dgs topic. When on, DeltaFiles will be cached locally and made eventually
 consistent in the database. This decreases processing latency but does not give a realtime view of the state in the UI.
+- DeltaFile metrics for total/in flight files and bytes
+- DeltaFile metrics graphs added to system summary dashboard
 - Added `/blackhole` endpoint to `deltafi-egress-sink`.  The endpoint will always return a 200 and never write content to disk, acting as a noop egress destination.  The endpoint will take a latency parameter to add latency to the post response (i.e. `/blackhole?latency=0.1` to add 100ms latency)
 
 ### Changed
