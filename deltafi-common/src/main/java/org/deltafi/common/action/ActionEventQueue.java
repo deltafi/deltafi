@@ -70,31 +70,18 @@ public class ActionEventQueue {
         return jedisKeyedBlockingQueue.take(actionClassName, ActionInput.class);
     }
 
-    private String queueName(String returnAddress) {
-        String queueName = DGS_QUEUE;
-        if (returnAddress != null) {
-            queueName += "-" + returnAddress;
-        }
-
-        return queueName;
-    }
-
     /**
      * Submit a result object for action processing
      *
      * @param result ActionEventInput object for the result to be posted to the action queue
      * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */
-    public void putResult(ActionEventInput result, String returnAddress) throws JsonProcessingException, JedisConnectionException {
-        jedisKeyedBlockingQueue.put(queueName(returnAddress), result);
+    public void putResult(ActionEventInput result) throws JsonProcessingException, JedisConnectionException {
+        jedisKeyedBlockingQueue.put(DGS_QUEUE, result);
     }
 
-    public ActionEventInput takeResult(String returnAddress) throws JsonProcessingException {
-        return jedisKeyedBlockingQueue.take(queueName(returnAddress), ActionEventInput.class);
-    }
-
-    public void setHeartbeat(String key) {
-        jedisKeyedBlockingQueue.setHeartbeat(key);
+    public ActionEventInput takeResult() throws JsonProcessingException {
+        return jedisKeyedBlockingQueue.take(DGS_QUEUE, ActionEventInput.class);
     }
 
     public void drop(List<String> actionNames) {

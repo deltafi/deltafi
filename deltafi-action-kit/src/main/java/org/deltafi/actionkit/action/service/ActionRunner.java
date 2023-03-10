@@ -98,7 +98,7 @@ public class ActionRunner {
                 actionInput.getActionContext().setActionVersion(buildProperties.getVersion());
                 actionInput.getActionContext().setHostname(hostnameService.getHostname());
                 actionInput.getActionContext().setStartTime(OffsetDateTime.now());
-                executeAction(action, actionInput, actionInput.getReturnAddress());
+                executeAction(action, actionInput);
             }
         } catch (Throwable e) {
             log.error("Unexpected exception caught at {} thread execution level: ", action.getClassCanonicalName(), e);
@@ -106,7 +106,7 @@ public class ActionRunner {
         }
     }
 
-    private void executeAction(Action<?> action, ActionInput actionInput, String returnAddress) {
+    private void executeAction(Action<?> action, ActionInput actionInput) {
         ActionContext context = actionInput.getActionContext();
         log.trace("Running action {} with input {}", action.getClassCanonicalName(), actionInput);
         ResultType result;
@@ -126,7 +126,7 @@ public class ActionRunner {
         }
 
         try {
-            actionEventQueue.putResult(result.toEvent(), returnAddress);
+            actionEventQueue.putResult(result.toEvent());
         } catch (Throwable e) {
             log.error("Error sending result to redis for did " + context.getDid(), e);
         }

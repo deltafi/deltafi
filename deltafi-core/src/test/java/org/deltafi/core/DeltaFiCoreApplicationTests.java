@@ -240,9 +240,6 @@ class DeltaFiCoreApplicationTests {
 	@MockBean
 	CredentialProvider credentialProvider;
 
-	@Autowired
-	DeltaFileCacheService deltaFileCacheService;
-
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	// mongo eats microseconds, jump through hoops
@@ -281,7 +278,6 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.deleteAll();
 		flowAssignmentRuleRepo.deleteAll();
 		retryPolicyRepo.deleteAll();
-		deltaFileCacheService.clearCache();
 		loadConfig();
 
 		Mockito.clearInvocations(actionEventQueue);
@@ -811,7 +807,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, deltaFile.getChildDids().size());
 		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
 
-		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
+		List<DeltaFile> children = deltaFilesService.getDeltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
 
 		DeltaFile child1 = children.get(0);
@@ -853,7 +849,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, deltaFile.getChildDids().size());
 		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
 
-		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
+		List<DeltaFile> children = deltaFilesService.getDeltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
 
 		DeltaFile child1 = children.get(0);
@@ -1001,7 +997,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, deltaFile.getChildDids().size());
 		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
 
-		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
+		List<DeltaFile> children = deltaFilesService.getDeltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
 
 		DeltaFile child1 = children.get(0);
@@ -2030,9 +2026,6 @@ class DeltaFiCoreApplicationTests {
 				.deltaFiles(List.of(deltaFilesService.ingress(INGRESS_INPUT)))
 				.build();
 
-		// sync to mongo
-		deltaFileCacheService.removeOlderThan(0);
-
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new DeltaFilesGraphQLQuery.Builder()
 						.limit(5)
@@ -2063,9 +2056,6 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.errorAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME, "blah", "blah");
 		deltaFilesService.advanceAndSave(deltaFile);
 
-		// flush the incomplete deltaFile to mongo
-		deltaFileCacheService.removeOlderThan(0);
-
 		DeltaFile erroredFile = deltaFilesService.getDeltaFile(input.getDid());
 		assertEquals(2, erroredFile.getActions().size());
 
@@ -2081,9 +2071,6 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {}
 		);
-
-		// flush the retried deltaFile to mongo
-		deltaFileCacheService.removeOlderThan(0);
 
 		assertEquals(3, results.size());
 

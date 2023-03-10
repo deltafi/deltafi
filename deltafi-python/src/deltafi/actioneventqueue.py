@@ -16,11 +16,10 @@
 #    limitations under the License.
 #
 
-from datetime import datetime, timezone
+import time
 from urllib.parse import urlparse
 
 import redis
-import time
 
 
 class ActionEventQueue:
@@ -53,8 +52,3 @@ class ActionEventQueue:
         conn = self.get_connection()
         setkey, item, score = conn.bzpopmin(name, 0)
         return item
-
-    def heartbeat(self, name: str):
-        conn = self.get_connection()
-        utcnow = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        conn.hset("org.deltafi.action-queue.heartbeat", name, utcnow)

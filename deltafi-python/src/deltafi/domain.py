@@ -171,14 +171,10 @@ class Event(NamedTuple):
     delta_file: DeltaFile
     context: Context
     params: dict
-    return_address: str
 
     @classmethod
     def create(cls, event: dict, hostname: str, content_service: ContentService, logger: Logger):
         delta_file = DeltaFile.from_dict(event['deltaFile'])
         context = Context.create(event['actionContext'], hostname, content_service, logger)
         params = event['actionParams']
-        return_address = None
-        if 'returnAddress' in event:
-            return_address = event['returnAddress']
-        return Event(delta_file, context, params, return_address)
+        return Event(delta_file, context, params)

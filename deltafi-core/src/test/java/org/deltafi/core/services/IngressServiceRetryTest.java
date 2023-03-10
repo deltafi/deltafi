@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -46,25 +48,24 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
 @MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class,
-        MetricRepository.class, DeltaFiPropertiesRepo.class, JoinRepo.class, RetryPolicyService.class,
-        IdentityService.class, DeltaFileRepo.class})
+        MetricRepository.class, DeltaFiPropertiesRepo.class, JoinRepo.class, RetryPolicyService.class})
 @EnableRetry
-class MongoRetryTest {
+class IngressServiceRetryTest {
 
     @Autowired
     private DeltaFilesService deltaFilesService;
 
     @MockBean
-    private DeltaFileCacheService deltaFileCacheService;
+    private DeltaFileRepo deltaFileRepo;
 
     @MockBean
-    @SuppressWarnings("unused")
     private JoinRepo joinRepo;
 
     @TestConfiguration
@@ -73,26 +74,39 @@ class MongoRetryTest {
         public DeltaFiPropertiesService deltaFiPropertiesService() {
             return new MockDeltaFiPropertiesService();
         }
-
-        @Bean
-        public DidMutexService didMutexService() { return new DidMutexService(); }
     }
 
+
     @Test
-    void testRetryOnOptimisticLockingFailure() {
+    void testRetry() {
+
         String did = "abc";
-        String fromAction = "egressAction";
+        String fromAction = "validateAction";
 
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
-        deltaFile.setActions(new ArrayList<>(Collections.singletonList(Action.newBuilder().name(fromAction).state(ActionState.QUEUED).build())));
-        // contrived, but it won't try to save if it's not complete, and the state machine flows aren't populated
-        deltaFile.setStage(DeltaFileStage.COMPLETE);
 
-        Mockito.when(deltaFileCacheService.get(did)).thenReturn(deltaFile);
+        Mockito.when(deltaFileRepo.findById(did)).thenAnswer((Answer<Optional<DeltaFile>>) invocationOnMock -> {
+            Action action = Action.newBuilder().name(fromAction).state(ActionState.QUEUED).build();
+            deltaFile.setActions(new ArrayList<>(Collections.singletonList(action)));
+            return Optional.of(deltaFile);
+        });
 
-        Mockito.doThrow(new OptimisticLockingFailureException("failed")).doNothing().when(deltaFileCacheService).save(Mockito.any());
+        Mockito.when(deltaFileRepo.save(Mockito.any())).thenAnswer(new Answer<DeltaFile>() {
+            int count = 0;
 
-        Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEventInput.newBuilder().type(ActionEventType.EGRESS).did(did).action(fromAction).time(OffsetDateTime.now()).build()));
+            @Override
+            public DeltaFile answer(InvocationOnMock invocationOnMock) {
+                if (count == 0) {
+                    count++;
+                    throw new OptimisticLockingFailureException("");
+                }
+                return new DeltaFile();
+            }
+
+        });
+
+        Assertions.assertDoesNotThrow(() -> deltaFilesService.handleActionEvent(ActionEventInput.newBuilder().type(ActionEventType.VALIDATE).did(did).action(fromAction).time(OffsetDateTime.now()).build()));
+        Mockito.verify(deltaFileRepo, Mockito.times(2)).save(Mockito.any());
     }
 
 }

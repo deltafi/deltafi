@@ -41,21 +41,15 @@ public class StateMachine {
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final IdentityService identityService;
-
-    public List<ActionInput> advance(DeltaFile deltaFile) {
-        return advance(deltaFile, false);
-    }
 
     /**
      * Advance the state of the given DeltaFile
      *
      * @param deltaFile The deltaFile to advance
-     * @param newDeltaFile Whether this is a new DeltaFile. Used to determine whether routing affinity is needed
      * @return a list of actions that should receive this DeltaFile next
      * @throws MissingEgressFlowException when a DeltaFile advances into the EGRESS stage, but does not have an egress flow configured.
      */
-    public List<ActionInput> advance(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
+    public List<ActionInput> advance(DeltaFile deltaFile) throws MissingEgressFlowException {
         List<ActionInput> enqueueActions = new ArrayList<>();
         switch (deltaFile.getStage()) {
             case INGRESS:
@@ -69,7 +63,7 @@ public class StateMachine {
                 TransformActionConfiguration nextTransformAction = getTransformAction(ingressFlow, deltaFile);
                 if (nextTransformAction != null) {
                     deltaFile.queueAction(nextTransformAction.getName());
-                    enqueueActions.add(buildActionInput(nextTransformAction, deltaFile, null, newDeltaFile));
+                    enqueueActions.add(buildActionInput(nextTransformAction, deltaFile, null));
                     break;
                 }
 
@@ -84,7 +78,7 @@ public class StateMachine {
                 LoadActionConfiguration loadAction = ingressFlow.getLoadAction();
                 if (loadAction != null && !deltaFile.hasTerminalAction(loadAction.getName())) {
                     deltaFile.queueAction(loadAction.getName());
-                    enqueueActions.add(buildActionInput(loadAction, deltaFile, null, newDeltaFile));
+                    enqueueActions.add(buildActionInput(loadAction, deltaFile, null));
                     break;
                 }
 
@@ -96,7 +90,7 @@ public class StateMachine {
                 }
 
                 List<ActionInput> enrichActions = enrichFlowService.getRunningFlows().stream()
-                        .map(enrichFlow -> advanceEnrichStage(enrichFlow, deltaFile, newDeltaFile))
+                        .map(enrichFlow -> advanceEnrichStage(enrichFlow, deltaFile))
                         .flatMap(Collection::stream)
                         .toList();
 
@@ -114,7 +108,7 @@ public class StateMachine {
                 }
             case EGRESS:
                 List<ActionInput> egressActions = egressFlowService.getMatchingFlows(deltaFile.getSourceInfo().getFlow()).stream()
-                        .map(egressFlow -> advanceEgress(egressFlow, deltaFile, newDeltaFile))
+                        .map(egressFlow -> advanceEgress(egressFlow, deltaFile))
                         .flatMap(Collection::stream)
                         .toList();
 
@@ -146,32 +140,32 @@ public class StateMachine {
                 .findFirst().orElse(null);
     }
 
-    List<ActionInput> advanceEnrichStage(EnrichFlow enrichFlow, DeltaFile deltaFile, boolean newDeltaFile) {
-        List<ActionInput> domainActions = nextDomainActions(enrichFlow, deltaFile, newDeltaFile);
+    List<ActionInput> advanceEnrichStage(EnrichFlow enrichFlow, DeltaFile deltaFile) {
+        List<ActionInput> domainActions = nextDomainActions(enrichFlow, deltaFile);
 
-        return domainActions.isEmpty() ? nextEnrichActions(enrichFlow, deltaFile, newDeltaFile) : domainActions;
+        return domainActions.isEmpty() ? nextEnrichActions(enrichFlow, deltaFile) : domainActions;
     }
 
-    List<ActionInput> nextDomainActions(EnrichFlow enrichFlow, DeltaFile deltaFile, boolean newDeltaFile) {
+    List<ActionInput> nextDomainActions(EnrichFlow enrichFlow, DeltaFile deltaFile) {
         return enrichFlow.getDomainActions().stream()
                 .filter(domainActionConfiguration -> domainActionReady(domainActionConfiguration, deltaFile))
                 .filter(domainActionConfiguration -> isNewAction(domainActionConfiguration, deltaFile))
-                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null, newDeltaFile))
+                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null))
                 .toList();
     }
 
-    List<ActionInput> nextEnrichActions(EnrichFlow enrichFlow, DeltaFile deltaFile, boolean newDeltaFile) {
+    List<ActionInput> nextEnrichActions(EnrichFlow enrichFlow, DeltaFile deltaFile) {
         return enrichFlow.getEnrichActions().stream()
                 .filter(enrichActionConfiguration -> enrichActionReady(enrichActionConfiguration, deltaFile))
                 .filter(enrichActionConfiguration -> isNewAction(enrichActionConfiguration, deltaFile))
-                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null, newDeltaFile))
+                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, null))
                 .toList();
     }
 
-    List<ActionInput> advanceEgress(EgressFlow egressFlow, DeltaFile deltaFile, boolean newDeltaFile) {
+    List<ActionInput> advanceEgress(EgressFlow egressFlow, DeltaFile deltaFile) {
         return nextEgressActions(egressFlow, deltaFile).stream()
                 .filter(actionConfiguration -> isNewAction(actionConfiguration, deltaFile))
-                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, egressFlow.getName(), newDeltaFile))
+                .map(actionConfiguration -> buildActionInput(actionConfiguration, deltaFile, egressFlow.getName()))
                 .toList();
     }
 
@@ -270,8 +264,8 @@ public class StateMachine {
                 !deltaFile.hasTerminalAction(egressFlow.getName() + "." + SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS);
     }
 
-    private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile, String egressFlow, boolean newDeltaFile) {
-        String returnAddress = !newDeltaFile && deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ? identityService.getUniqueId() : null;
-        return actionConfiguration.buildActionInput(deltaFile, deltaFiPropertiesService.getDeltaFiProperties().getSystemName(), egressFlow, returnAddress);
+    private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile, String egressFlow) {
+        return actionConfiguration.buildActionInput(deltaFile, deltaFiPropertiesService.getDeltaFiProperties().getSystemName(), egressFlow);
     }
+
 }

@@ -35,5 +35,4 @@ public class ActionInput {
     private Map<String, Object> actionParams;
     private String queueName;
     private List<DeltaFile> joinedDeltaFiles;
-    private String returnAddress;
 }

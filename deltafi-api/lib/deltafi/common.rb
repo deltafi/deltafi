@@ -23,8 +23,6 @@ module Deltafi
     K8S_NAMESPACE = 'deltafi'
     STATUS_REDIS_KEY = 'org.deltafi.monitor.status'
     SSE_REDIS_CHANNEL_PREFIX = 'org.deltafi.ui.sse'
-    ACTION_HEARTBEAT_REDIS_KEY = 'org.deltafi.action-queue.heartbeat'
-    ACTION_HEARTBEAT_THRESHOLD = 60
-    MONITOR_HEARTBEAT_REDIS_KEY = 'org.deltafi.monitor.heartbeat'
+    HEARTBEAT_REDIS_KEY = 'org.deltafi.monitor.heartbeat'
   end
 end

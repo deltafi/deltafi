@@ -46,6 +46,8 @@ public class DeltaFilesDatafetcherTestHelper {
     static final ContentReference CONTENT_REFERENCE_2 = new ContentReference(MEDIA_TYPE, new Segment(OBJECT_UUID_2, 0, SIZE, DID));
     static final List<Content> CONTENT_2 = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE_2).build());
     static final SourceInfo SOURCE_INFO = new SourceInfo(FILENAME, FLOW, METADATA);
+    static final SourceInfo SOURCE_INFO_EMPTY_METADATA = new SourceInfo(FILENAME, FLOW, Collections.emptyMap());
+    public static final IngressEvent INGRESS_INPUT_EMPTY_METADATA = new IngressEvent(DID, SOURCE_INFO_EMPTY_METADATA, CONTENT, OffsetDateTime.now());
     public static final IngressEvent INGRESS_INPUT = new IngressEvent(DID, SOURCE_INFO, CONTENT, OffsetDateTime.now());
     public static final IngressEvent INGRESS_INPUT_2 = new IngressEvent(DID_2, SOURCE_INFO, CONTENT_2, OffsetDateTime.now());
 

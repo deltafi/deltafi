@@ -19,8 +19,6 @@ package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.IdentityService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,15 +31,9 @@ import org.springframework.stereotype.Service;
 public class ActionEventScheduler {
 
     final DeltaFilesService deltaFilesService;
-    final IdentityService identityService;
 
     @Scheduled(fixedDelay = 1000)
     public void processActionEvents() {
         deltaFilesService.processActionEvents();
-    }
-
-    @Scheduled(fixedDelay = 1000)
-    public void processUniqueActionEvents() {
-        deltaFilesService.processActionEvents(identityService.getUniqueId());
     }
 }

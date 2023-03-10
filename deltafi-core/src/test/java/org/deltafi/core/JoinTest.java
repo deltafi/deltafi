@@ -46,7 +46,6 @@ import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.IngressFlowRepo;
-import org.deltafi.core.services.DeltaFileCacheService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.IngressFlowService;
 import org.deltafi.core.services.IngressService;
@@ -71,7 +70,6 @@ import org.testcontainers.utility.DockerImageName;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
@@ -211,9 +209,6 @@ public class JoinTest {
 
     @Autowired
     DeltaFileRepo deltaFileRepo;
-
-    @Autowired
-    DeltaFileCacheService deltaFileCacheService;
 
     @MockBean
     IngressService ingressService;

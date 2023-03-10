@@ -69,11 +69,9 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @param deltaFile DeltaFile that will be acted upon
      * @param systemName system name to set in context
      * @param egressFlow the egress flow for this action
-     * @param returnAddress the unique address of this core instance
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildActionInput(DeltaFile deltaFile, String systemName, String egressFlow, String returnAddress) {
-
+    public ActionInput buildActionInput(DeltaFile deltaFile, String systemName, String egressFlow) {
         if (Objects.isNull(parameters)) {
             setParameters(Collections.emptyMap());
         }
@@ -89,7 +87,6 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .build())
                 .actionParams(parameters)
                 .deltaFile(deltaFile.forQueue(name))
-                .returnAddress(returnAddress)
                 .build();
     }
 

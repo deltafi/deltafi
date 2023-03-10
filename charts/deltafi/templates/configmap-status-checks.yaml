@@ -6,7 +6,6 @@ metadata:
 data:
   StatefulSetCheck: |
     expected_stateful_sets:
-    - deltafi-core-worker
     - deltafi-graphite
     - deltafi-loki
     - deltafi-redis-master
@@ -15,6 +14,7 @@ data:
     - deltafi-api
     - deltafi-core-actions
     - deltafi-core
+    - deltafi-core-worker
     - deltafi-egress-sink
     - deltafi-ingress
     - deltafi-grafana
