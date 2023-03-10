@@ -3,7 +3,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [Unreleased] - will be 0.104.0
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Tech-Debt/Refactor
+
+### Security
+
+### Upgrade and Migration
+
 ## [0.103.0] - 2023-03-09
+
+### Marquee
+- New annotation endpoint supports external annotation of indexed metadata
+- Grafana has been integrated with DeltaFi RBAC
+- CLI and `cluster` command have been streamlined and improved
+- Minio upgrades and performance optimizations
+- Full support for Kubernetes 1.24
 
 ### Added
 - Python Duplicate Log Entry cleared up
@@ -24,8 +49,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - KinD: `cluster` command streamlined output for readability
 - CLI: `deltafi query` does not colorize results as default behavior
 - Metrics: Grafana auth is now tied to DeltaFi auth
-
-### Deprecated
 
 ### Removed
 - CLI: Command logging removed.  Not very useful and caused error codes to be hidden
@@ -50,8 +73,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Tech-Debt/Refactor
 - Files in minio are now stored in subfolders by the first 3 characters of the did
-
-### Security
 
 ### Upgrade and Migration
 - Minio chart 5.0.7 and minio RELEASE.2023-02-10T18-48-39Z
