@@ -26,6 +26,7 @@ consistent in the database. This decreases processing latency but does not give 
 - DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats.
 
 ### Tech-Debt/Refactor
+- Perform batched delete updates in a bulk operation.
 
 ### Security
 

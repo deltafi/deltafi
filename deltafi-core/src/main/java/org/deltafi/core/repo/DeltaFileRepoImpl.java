@@ -30,6 +30,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.DeltaFiles;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.index.Index;
@@ -865,11 +866,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason) {
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
         Update update = new Update().set(CONTENT_DELETED, now).set(CONTENT_DELETED_REASON, reason);
         for (List<String> batch : Lists.partition(dids, 1000)) {
             Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
-            mongoTemplate.updateMulti(query, update, DeltaFile.class);
+            bulkOps.updateMulti(query, update);
         }
+        bulkOps.execute();
     }
 
     @Override

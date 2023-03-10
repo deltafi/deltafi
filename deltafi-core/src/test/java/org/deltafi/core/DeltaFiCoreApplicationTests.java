@@ -3763,15 +3763,23 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFileRepo.save(deltaFile3);
 
-		deltaFileRepo.setContentDeletedByDidIn(List.of("1", "3", "4"), MONGO_NOW, "MyPolicy");
+		List<String> dids = new ArrayList<>();
+		dids.add("1");
+		dids.add("3");
+		Random rand = new Random();
+		for (int i = 0; i < 3000; i++) {
+			String str = String.valueOf(rand.nextInt(10000));
+			dids.add(str);
+		}
+		Collections.shuffle(dids);
+
+		deltaFileRepo.setContentDeletedByDidIn(dids, MONGO_NOW, "MyPolicy");
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setContentDeletedReason("MyPolicy");
-		deltaFile1.setVersion(2);
 		deltaFile3.setContentDeleted(MONGO_NOW);
 		deltaFile3.setContentDeletedReason("MyPolicy");
-		deltaFile3.setVersion(2);
-		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile3, deltaFile2, deltaFile1));
+		assertEquals(List.of(deltaFile3, deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
 		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
