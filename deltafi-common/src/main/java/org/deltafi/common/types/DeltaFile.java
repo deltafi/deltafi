@@ -19,7 +19,6 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.content.Segment;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
@@ -415,24 +414,8 @@ public class DeltaFile {
   }
 
   public void recalculateBytes() {
-    setReferencedBytes(recalculateBytes(referencedSegments()));
-    setTotalBytes(recalculateBytes(storedSegments()));
-  }
-
-  private static long recalculateBytes(List<Segment> inputSegments) {
-    // keep track of the first and last offset for each unique uuid contentReference
-    // make an assumption that we won't have disjoint segments
-    Map<String, Pair<Long, Long>> segments = new HashMap<>();
-    inputSegments.forEach(storedSegment -> {
-      if (segments.containsKey(storedSegment.getUuid())) {
-        Pair<Long, Long> segment = segments.get(storedSegment.getUuid());
-        segments.put(storedSegment.getUuid(), Pair.of(Math.min(segment.getLeft(), storedSegment.getOffset()), Math.max(segment.getRight(), storedSegment.getOffset() + storedSegment.getSize())));
-      } else {
-        segments.put(storedSegment.getUuid(), Pair.of(storedSegment.getOffset(), storedSegment.getOffset() + storedSegment.getSize()));
-      }
-    });
-
-    return segments.values().stream().map(p -> p.getRight() - p.getLeft()).mapToLong(Long::longValue).sum();
+    setReferencedBytes(Segment.calculateTotalSize(referencedSegments()));
+    setTotalBytes(Segment.calculateTotalSize(storedSegments()));
   }
 
   public void cancelQueuedActions() {
