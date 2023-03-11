@@ -20,7 +20,7 @@ package org.deltafi.common.content;
 import lombok.*;
 import org.deltafi.common.storage.s3.ObjectReference;
 
-import java.util.*;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -45,57 +45,5 @@ public class Segment {
 
     public String objectName() {
         return did.substring(0, 3) + "/" + did + "/" + uuid;
-    }
-
-    public static long calculateTotalSize(List<Segment> segments) {
-        Map<String, List<Segment>> segmentsByObjectName = new HashMap<>();
-
-        // Group segments by objectName
-        for (Segment segment : segments) {
-            List<Segment> segmentsForObjectName = segmentsByObjectName.computeIfAbsent(segment.objectName(), k -> new ArrayList<>());
-            segmentsForObjectName.add(segment);
-        }
-
-        // Calculate total size, minus overlap between segments with the same objectName
-        long totalSize = 0;
-        for (List<Segment> objectSegments : segmentsByObjectName.values()) {
-            if (objectSegments.size() == 1) {
-                totalSize += objectSegments.get(0).getSize();
-            } else {
-                List<Segment> nonOverlappingSegments = getNonOverlappingSegments(objectSegments);
-                for (Segment segment : nonOverlappingSegments) {
-                    totalSize += segment.getSize();
-                }
-            }
-        }
-
-        return totalSize;
-    }
-
-    // Helper function to get the non-overlapping segments for a given object name
-    private static List<Segment> getNonOverlappingSegments(List<Segment> uuidSegments) {
-        List<Segment> nonOverlappingSegments = new ArrayList<>();
-
-        // Create a copy of the original list and sort by offset
-        List<Segment> sortedSegments = new ArrayList<>(uuidSegments);
-        sortedSegments.sort(Comparator.comparingLong(Segment::getOffset));
-
-        // Merge overlapping segments
-        Segment mergedSegment = sortedSegments.get(0);
-        for (int i = 1; i < sortedSegments.size(); i++) {
-            Segment segment = sortedSegments.get(i);
-            if (segment.getOffset() >= mergedSegment.getOffset() + mergedSegment.getSize()) {
-                // Non-overlapping segment found
-                nonOverlappingSegments.add(mergedSegment);
-                mergedSegment = segment;
-            } else {
-                // Merge overlapping segments
-                long endPosition = Math.max(mergedSegment.getOffset() + mergedSegment.getSize(), segment.getOffset() + segment.getSize());
-                mergedSegment = new Segment(mergedSegment.getUuid(), mergedSegment.getOffset(), endPosition - mergedSegment.getOffset(), mergedSegment.getDid());
-            }
-        }
-        nonOverlappingSegments.add(mergedSegment);
-
-        return nonOverlappingSegments;
     }
 }

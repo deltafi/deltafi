@@ -26,7 +26,6 @@ consistent in the database. This decreases processing latency but does not give 
 - DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats.
 
 ### Tech-Debt/Refactor
-- More precise calculation of referencedBytes and totalBytes - remove assumption that segments are contiguous.
 - Perform batched delete updates in a bulk operation.
 
 ### Security
