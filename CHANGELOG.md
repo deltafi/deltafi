@@ -18,6 +18,7 @@ consistent in the database. This decreases processing latency but does not give 
 - Added ingress, survey, and error documentation
 
 ### Changed
+- Updated the load-plans command to take plugin coordinates as an argument.
 
 ### Deprecated
 
