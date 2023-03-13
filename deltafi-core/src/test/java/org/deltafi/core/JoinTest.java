@@ -33,7 +33,6 @@ import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.action.ActionEventQueueProperties;
-import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
@@ -404,8 +403,8 @@ public class JoinTest {
         await().until(() -> deltaFileRepo.count() == 3); // 2 ingested + 1 joined
 
         DeltaFile deltaFile1 = deltaFileRepo.findById(did1).orElseThrow();
-        await().until(() -> deltaFileHasActionWithState(deltaFile1.getChildDids().get(0),
-                DeltaFiConstants.INGRESS_ACTION, ActionState.COMPLETE));
+        await().until(() -> deltaFileHasActionWithState(deltaFile1.getChildDids().get(0), REINJECT_ACTION,
+                ActionState.COMPLETE));
 
         DeltaFile joinedDeltaFile = deltaFileRepo.findById(deltaFile1.getChildDids().get(0)).orElseThrow();
 

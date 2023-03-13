@@ -343,16 +343,18 @@ public class DeltaFilesService {
             OffsetDateTime now = OffsetDateTime.now(clock);
 
             Action action = Action.newBuilder()
-                    .name(INGRESS_ACTION)
+                    .name(event.getAction())
                     .state(ActionState.COMPLETE)
                     .created(now)
                     .modified(now)
+                    .start(event.getStart())
+                    .stop(event.getStop())
                     .build();
             deltaFile.setActions(new ArrayList<>(List.of(action)));
 
             ProtocolLayer protocolLayer = event.getJoin().getProtocolLayer();
             if (protocolLayer != null) {
-                protocolLayer.setAction(INGRESS_ACTION);
+                protocolLayer.setAction(event.getAction());
                 deltaFile.setProtocolStack(List.of(protocolLayer));
             }
 

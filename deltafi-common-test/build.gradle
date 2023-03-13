@@ -12,6 +12,8 @@ license {
 }
 
 dependencies {
+    implementation project(':deltafi-common')
+
     api "org.testcontainers:testcontainers:${testContainersVersion}"
 
     implementation "io.minio:minio:${minioVersion}"

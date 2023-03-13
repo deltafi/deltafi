@@ -18,18 +18,18 @@
 package org.deltafi.core.parameters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-
-@Data
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
-@NoArgsConstructor
-public class DecompressionTransformParameters extends ActionParameters {
-    @JsonProperty(required = true)
-    @JsonPropertyDescription("Decompression type: tar, zip, ar, gzip, xz, z, tar.gz, tar.xz, tar.z")
-    public DecompressionType decompressionType;
+@Getter
+public enum ArchiveType {
+    @JsonProperty("tar") TAR("tar", "application/x-tar"),
+    @JsonProperty("zip") ZIP("zip", "application/x-zip"),
+    @JsonProperty("ar") AR("ar", "application/x-archive"),
+    @JsonProperty("tar.xz") TAR_XZ("tar.xz", "application/x-gtar"),
+    @JsonProperty("tar.gz") TAR_GZIP("tar.gz", "application/x-gtar");
+
+    private final String value;
+    private final String mediaType;
 }

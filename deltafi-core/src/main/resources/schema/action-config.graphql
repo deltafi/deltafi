@@ -66,7 +66,6 @@ type JoinActionConfiguration implements ActionConfiguration & DeltaFiConfigurati
     maxNum: Int
     metadataKey: String
     metadataIndexKey: String
-    reinjectFlow: String
 }
 
 input JoinActionConfigurationInput {
@@ -79,7 +78,6 @@ input JoinActionConfigurationInput {
     maxNum: Int
     metadataKey: String
     metadataIndexKey: String
-    reinjectFlow: String
 }
 
 type DomainActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {

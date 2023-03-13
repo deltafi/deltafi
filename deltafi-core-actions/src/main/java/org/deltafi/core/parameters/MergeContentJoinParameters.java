@@ -20,16 +20,15 @@ package org.deltafi.core.parameters;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-
+import org.deltafi.actionkit.action.parameters.ReinjectParameters;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class DecompressionTransformParameters extends ActionParameters {
-    @JsonProperty(required = true)
-    @JsonPropertyDescription("Decompression type: tar, zip, ar, gzip, xz, z, tar.gz, tar.xz, tar.z")
-    public DecompressionType decompressionType;
+public class MergeContentJoinParameters extends ReinjectParameters {
+    @JsonProperty
+    @JsonPropertyDescription("Archive type: tar, zip, ar, tar.xz, tar.gz")
+    public ArchiveType archiveType;
 }

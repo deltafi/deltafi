@@ -11,11 +11,13 @@ license {
 
 dependencies {
     implementation project(':deltafi-action-kit')
-    testImplementation project(':deltafi-action-kit-test')
 
     implementation 'org.apache.commons:commons-compress:1.21'
     implementation 'org.tukaani:xz:1.9'
     implementation 'org.apache.nifi:nifi-flowfile-packager:1.18.0'
+
+    testImplementation project(':deltafi-common-test')
+    testImplementation project(':deltafi-action-kit-test')
 
     testImplementation 'io.rest-assured:rest-assured:5.2.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:4.9.0'

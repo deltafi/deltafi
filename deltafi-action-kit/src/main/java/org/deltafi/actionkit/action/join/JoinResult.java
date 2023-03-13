@@ -17,6 +17,7 @@
  */
 package org.deltafi.actionkit.action.join;
 
+import lombok.Getter;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.common.types.*;
 
@@ -26,6 +27,7 @@ import java.util.List;
 /**
  * Specialized result class for JOIN actions
  */
+@Getter
 public class JoinResult extends DataAmendedResult {
     private final SourceInfo sourceInfo;
     private final List<Domain> domains = new ArrayList<>();
