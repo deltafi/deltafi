@@ -371,6 +371,11 @@ _install_plugins() {
   done
 }
 
+_restart_plugins() {
+  _attention "Restarting all plugins"
+  _conditional "Plugin restart" _annotated_subshell -h "Restarting deltafi-plugin group" kubectl delete pods --grace-period=0 -l group=deltafi-plugins
+}
+
 describe prerequisites "Install or warn about prerequisites for the KinD cluster"
 prerequisites() {
   _check_docker
@@ -821,6 +826,7 @@ loc() {
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
     _attention "Installing DeltaFi core"
     install -f deltafi/charts/deltafi/values-kind.yaml -f deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
+
     _install_plugins
   fi
 
@@ -828,19 +834,11 @@ loc() {
     _attention "Bouncing $BOUNCE"
     local pods
     pods=$(kubectl get pods | cut -d' ' -f1 | grep "$BOUNCE")
-    _annotated_subshell kubectl delete pod $pods
+    _annotated_subshell -v "Warning" kubectl delete pod --grace-period=0 --force $pods
     _down "Bounced pods matching $BOUNCE"
   fi
 }
 
-_shoot_pod() {
-  kubectl get pods | cut -d' ' -f1 | grep "$1" | xargs kubectl delete pod
-}
-
-_restart_pod() {
-  _attention "Restarting $1"
-  _conditional "Plugin $1 restarted" _annotated_subshell -h "$1 restart" _shoot_pod "$1"
-}
 
 _local_build() {
 
@@ -900,6 +898,7 @@ Options:
   clean                          Modifies build to do a clean build
   build                          Build all plugin artifacts locally
   install                        Install plugins into an existing system
+  restart                        Restart all plugins running on system
   add <name> <coordinates> <url> Add a plugin to the configuration
   add-local <name> <group>       Add a local plugin to the configuration
   -f | force                     Skip "are you sure?"
@@ -918,6 +917,7 @@ plugin() {
   local BUILD=
   local INSTALL=
   local FORCE=
+  local RESTART=
 
   [[ -z "$1" ]] && _plugin_help
 
@@ -946,6 +946,9 @@ plugin() {
       install)
         INSTALL=install
         ;;
+      restart)
+        RESTART=restart
+        ;;
       force|-f)
         FORCE=-f
         ;;
@@ -960,12 +963,11 @@ plugin() {
   [[ -n "$BUILD" ]] && _plugin_build $CLEAN
 
   if [[ -n "$INSTALL" ]]; then
-    _attention "Installing Plugins"
     _install_plugins
+  fi
 
-    for plugin in "${PLUGINS[@]}"; do
-      _restart_pod "$plugin"
-    done
+  if [[ -n "$INSTALL" || -n "$RESTART" ]]; then
+    _restart_plugins
   fi
 }
 

@@ -23,6 +23,7 @@ consistent in the database. This decreases processing latency but does not give 
 ### Removed
 
 ### Fixed
+- Improved bounce and plugin restart performance in `cluster`
 - A metric bug with illegal characters in tags
 - DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats.
 
