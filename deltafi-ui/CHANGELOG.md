@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed bug where snapshot count is incorrect after snapshot creation
 - Added better error handling for snapshot errors
 - Fixed bug where parameters were only shown for singular actions (#344)
+- Join actions now display correctly on the Flows page
 
 ### Changed
 

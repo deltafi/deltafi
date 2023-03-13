@@ -62,6 +62,12 @@ export default function useFlowQueryBuilder() {
             parameters: true,
             apiVersion: true,
           },
+          joinAction: {
+            name: true,
+            type: true,
+            parameters: true,
+            apiVersion: true,
+          },
         },
         enrichFlows: {
           name: true,
@@ -169,6 +175,12 @@ export default function useFlowQueryBuilder() {
             apiVersion: true,
           },
           loadAction: {
+            name: true,
+            type: true,
+            parameters: true,
+            apiVersion: true,
+          },
+          joinAction: {
             name: true,
             type: true,
             parameters: true,
@@ -300,6 +312,12 @@ export default function useFlowQueryBuilder() {
           apiVersion: true,
         },
         loadAction: {
+          name: true,
+          type: true,
+          parameters: true,
+          apiVersion: true,
+        },
+        joinAction: {
           name: true,
           type: true,
           parameters: true,
