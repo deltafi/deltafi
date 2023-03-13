@@ -3768,7 +3768,7 @@ class DeltaFiCoreApplicationTests {
 		dids.add("3");
 		Random rand = new Random();
 		for (int i = 0; i < 3000; i++) {
-			String str = String.valueOf(rand.nextInt(10000));
+			String str = String.valueOf(4 + rand.nextInt(10000));
 			dids.add(str);
 		}
 		Collections.shuffle(dids);
