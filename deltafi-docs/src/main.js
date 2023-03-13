@@ -130,6 +130,10 @@ new Docute({
       title: 'Operating',
       children: [
         {
+          title: 'Ingress',
+          link: '/operating/ingress'
+        },
+        {
           title: 'CLI',
           link: '/operating/CLI'
         },
@@ -142,8 +146,16 @@ new Docute({
           link: '/operating/configuration'
         },
         {
+          title: 'Error Handling',
+          link: '/operating/errors'
+        },
+        {
           title: 'Metrics',
           link: '/operating/metrics'
+        },
+        {
+          title: 'Survey',
+          link: '/operating/survey'
         },
       ]
     },
