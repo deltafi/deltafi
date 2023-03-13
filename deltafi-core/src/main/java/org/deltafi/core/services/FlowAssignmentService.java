@@ -191,7 +191,7 @@ public class FlowAssignmentService implements Snapshotter {
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         if (hardReset) {
-            flowAssignmentRuleRepo.deleteAll();
+            removeAll();
         }
 
         return saveAll(systemSnapshot.getFlowAssignmentRules());

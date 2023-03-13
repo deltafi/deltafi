@@ -25,33 +25,29 @@ import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.generated.types.BackOff;
-import org.deltafi.core.repo.RetryPolicyRepo;
+import org.deltafi.core.repo.ResumePolicyRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.RetryPolicy;
+import org.deltafi.core.types.ResumePolicy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
 @AllArgsConstructor
-//public class RetryPolicyService implements Snapshotter {
-public class RetryPolicyService {
+public class ResumePolicyService implements Snapshotter {
 
-    private final RetryPolicyRepo retryPolicyRepo;
+    private final ResumePolicyRepo resumePolicyRepo;
 
-    private List<RetryPolicy> policiesCache;
+    private List<ResumePolicy> policiesCache;
 
     @PostConstruct
     private void init() {
-        retryPolicyRepo.ensureAllIndices();
+        resumePolicyRepo.ensureAllIndices();
         refreshCache();
     }
 
@@ -60,16 +56,16 @@ public class RetryPolicyService {
     }
 
     /**
-     * Find a retry policy for the specified criteria.
+     * Find a resume policy for the specified criteria.
      *
      * @param errorCause error cause text.
      * @param flow       flow where error occurred.
      * @param action     name of action with error.
      * @param actionType type of action with error.
-     * @return Optional RetryPolicy if found, else empty.
+     * @return Optional ResumePolicy if found, else empty.
      */
-    Optional<RetryPolicy> find(String errorCause, String flow, String action, String actionType) {
-        for (RetryPolicy policy : policiesCache) {
+    Optional<ResumePolicy> find(String errorCause, String flow, String action, String actionType) {
+        for (ResumePolicy policy : policiesCache) {
             if (policy.isMatch(errorCause, flow, action, actionType)) {
                 return Optional.of(policy);
             }
@@ -78,22 +74,22 @@ public class RetryPolicyService {
     }
 
     /**
-     * Search for a retry policy matching the action error, and apply retry policy if found and appropriate.
+     * Search for a resume policy matching the action error, and apply resume policy if found and appropriate.
      *
      * @param deltaFile  - The DeltaFile being acted upon
      * @param event      - The error event
      * @param actionType - The action's type
      * @return An Optional of the delay for the next execution
      */
-    public Optional<Integer> getRetryDelay(DeltaFile deltaFile, ActionEventInput event, String actionType) {
-        Optional<RetryPolicy> policy = find(
+    public Optional<Integer> getAutoResumeDelay(DeltaFile deltaFile, ActionEventInput event, String actionType) {
+        Optional<ResumePolicy> policy = find(
                 event.getError().getCause(),
                 deltaFile.getSourceInfo().getFlow(),
                 event.getAction(),
                 actionType);
-        if (!policy.isEmpty()) {
+        if (policy.isPresent()) {
             Optional<Action> action = deltaFile.actionNamed(event.getAction());
-            if (!action.isEmpty() && action.get().getAttempt() < policy.get().getMaxAttempts()) {
+            if (action.isPresent() && action.get().getAttempt() < policy.get().getMaxAttempts()) {
                 return Optional.of(computeDelay(policy.get().getBackOff(), action.get().getAttempt()));
             }
         }
@@ -103,7 +99,7 @@ public class RetryPolicyService {
 
     int computeDelay(BackOff backOff, int attempt) {
         int delay = backOff.getDelay();
-        boolean randomDelay = null != backOff.getRandom() && backOff.getRandom().booleanValue();
+        boolean randomDelay = null != backOff.getRandom() && backOff.getRandom();
         if (randomDelay) {
             delay = new Random().nextInt(delay, 1 + backOff.getMaxDelay());
         } else if (null != backOff.getMultiplier()) {
@@ -119,35 +115,35 @@ public class RetryPolicyService {
      * Retrieve a policy by id.
      *
      * @param id id of the policy to find.
-     * @return RetryPolicy if found.
+     * @return ResumePolicy if found.
      */
-    public Optional<RetryPolicy> get(String id) {
-        return retryPolicyRepo.findById(id);
+    public Optional<ResumePolicy> get(String id) {
+        return resumePolicyRepo.findById(id);
     }
 
     /**
-     * Get all retry policies.
+     * Get all resume policies.
      *
-     * @return List of RetryPolicy
+     * @return List of ResumePolicy
      */
-    public List<RetryPolicy> getAll() {
-        return retryPolicyRepo.findAll();
+    public List<ResumePolicy> getAll() {
+        return resumePolicyRepo.findAll();
     }
 
     /**
-     * Save/replace a retry policy.
+     * Save/replace a resume policy.
      *
-     * @param retryPolicy retry policy to save
+     * @param resumePolicy resume policy to save
      * @return Result of operation
      */
-    public Result save(RetryPolicy retryPolicy) {
-        if (retryPolicy.getId() == null) {
-            retryPolicy.setId(UUID.randomUUID().toString());
+    public Result save(ResumePolicy resumePolicy) {
+        if (resumePolicy.getId() == null) {
+            resumePolicy.setId(UUID.randomUUID().toString());
         }
-        List<String> errors = retryPolicy.validate();
+        List<String> errors = resumePolicy.validate();
         if (errors.isEmpty()) {
             try {
-                retryPolicyRepo.save(retryPolicy);
+                resumePolicyRepo.save(resumePolicy);
                 refreshCache();
                 return new Result();
             } catch (DuplicateKeyException e) {
@@ -158,12 +154,12 @@ public class RetryPolicyService {
     }
 
     /**
-     * Set new properties for an existing retry policy.
+     * Set new properties for an existing resume policy.
      *
      * @param policy The new policy properties
      * @return Result
      */
-    public Result update(RetryPolicy policy) {
+    public Result update(ResumePolicy policy) {
         if (StringUtils.isBlank(policy.getId())) {
             return Result.newBuilder().success(false).errors(List.of("id is missing")).build();
         } else if (get(policy.getId()).isEmpty()) {
@@ -173,14 +169,14 @@ public class RetryPolicyService {
     }
 
     /**
-     * Delete a retry policy by id.
+     * Delete a resume policy by id.
      *
      * @param id id of the policy to delete.
      * @return true if deleted; false if not found
      */
     public boolean remove(String id) {
         if (get(id).isPresent()) {
-            retryPolicyRepo.deleteById(id);
+            resumePolicyRepo.deleteById(id);
             refreshCache();
             return true;
         }
@@ -188,46 +184,56 @@ public class RetryPolicyService {
     }
 
     /**
-     * Remove all retry policies.
+     * Remove all resume policies.
      */
     public void removeAll() {
-        retryPolicyRepo.deleteAll();
+        resumePolicyRepo.deleteAll();
         refreshCache();
     }
 
-    /*
-    @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        RetryPolicies deletePolicies = new RetryPolicies();
-        List<RetryPolicy> allPolicies = retryPolicyRepo.findAll();
-
-        for (RetryPolicy deletePolicy : allPolicies) {
-            if (deletePolicy instanceof TimedRetryPolicy) {
-                deletePolicies.getTimedPolicies().add((TimedRetryPolicy) deletePolicy);
-            } else if (deletePolicy instanceof DiskSpaceRetryPolicy) {
-                deletePolicies.getDiskSpacePolicies().add((DiskSpaceRetryPolicy) deletePolicy);
+    private Result saveAll(List<ResumePolicy> policies) {
+        Result result = new Result();
+        List<ResumePolicy> valid = new ArrayList<>();
+        for (ResumePolicy policy : policies) {
+            if (policy.getId() == null) {
+                policy.setId(UUID.randomUUID().toString());
+            }
+            List<String> errors = policy.validate();
+            if (errors.isEmpty()) {
+                valid.add(policy);
             } else {
-                String type = null != deletePolicy ? deletePolicy.getClass().getName() : "null";
-                throw new IllegalStateException("Retry Policy is not a known instance type: " + type);
+                result.setSuccess(false);
+                result.getErrors().addAll(errors);
             }
         }
 
-        systemSnapshot.setRetryPolicies(deletePolicies);
+        if (!valid.isEmpty()) {
+            try {
+                resumePolicyRepo.saveAll(valid);
+                refreshCache();
+            } catch (DuplicateKeyException e) {
+                result.getErrors().add("duplicate match criteria");
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setResumePolicies(resumePolicyRepo.findAll());
     }
 
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         if (hardReset) {
-            retryPolicyRepo.deleteAll();
+            removeAll();
         }
 
-        retryPolicyRepo.saveAll(systemSnapshot.getRetryPolicies().allPolicies());
-        return Result.newBuilder().success(true).build();
+        return saveAll(systemSnapshot.getResumePolicies());
     }
 
     @Override
     public int getOrder() {
-        return SnapshotRestoreOrder.RETRY_POLICY_ORDER;
+        return SnapshotRestoreOrder.RESUME_POLICY_ORDER;
     }
-    */
 }

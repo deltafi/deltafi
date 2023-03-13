@@ -26,6 +26,7 @@ import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
+import org.deltafi.core.types.ResumePolicy;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -54,4 +55,5 @@ public class SystemSnapshot {
     private Set<PluginCoordinates> installedPlugins;
     private List<PluginCustomizationConfig> pluginCustomizationConfigs = new ArrayList<>();
     private List<PluginImageRepository> pluginImageRepositories = new ArrayList<>();
+    private List<ResumePolicy> resumePolicies = new ArrayList<>();
 }

@@ -21,6 +21,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.junit.jupiter.api.Test;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +48,7 @@ class DeltaFileTest {
 
     @Test
     void testRetryErrors() {
+        OffsetDateTime now = OffsetDateTime.now();
         Action action1 = Action.newBuilder()
                 .name("action1")
                 .state(ActionState.ERROR)
@@ -62,9 +64,11 @@ class DeltaFileTest {
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .actions(new ArrayList<>(List.of(action1, action2, action3)))
+                .nextAutoResume(now)
                 .build();
 
         List<String> retried = deltaFile.retryErrors();
+        assertNull(deltaFile.getNextAutoResume());
         assertEquals(List.of("action1", "action3"), retried);
 
         assertEquals(3, deltaFile.getActions().size());

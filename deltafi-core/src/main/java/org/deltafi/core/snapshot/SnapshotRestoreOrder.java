@@ -24,6 +24,7 @@ public class SnapshotRestoreOrder {
     public static final int PROPERTIES_ORDER = Ordered.HIGHEST_PRECEDENCE;
     public static final int DELETE_POLICY_ORDER = Ordered.HIGHEST_PRECEDENCE + 10;
     public static final int FLOW_ASSIGNMENT_ORDER = Ordered.HIGHEST_PRECEDENCE + 10;
+    public static final int RESUME_POLICY_ORDER = Ordered.HIGHEST_PRECEDENCE + 15;
     public static final int PLUGIN_CUSTOMIZATION_CONFIG_ORDER = Ordered.HIGHEST_PRECEDENCE + 15;
     public static final int PLUGIN_IMAGE_REPO_ORDER = Ordered.HIGHEST_PRECEDENCE + 15;
     public static final int PLUGIN_REGISTRY_ORDER = Ordered.HIGHEST_PRECEDENCE + 20;

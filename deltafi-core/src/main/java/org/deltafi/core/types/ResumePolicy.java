@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RetryPolicy extends org.deltafi.core.generated.types.RetryPolicy {
+public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy {
     public static final String INVALID_DELAY = "delay must not be negative";
     public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be positive";
     public static final String INVALID_MAX_DELAY = "maxDelay must not be negative";
@@ -35,7 +35,7 @@ public class RetryPolicy extends org.deltafi.core.generated.types.RetryPolicy {
     public static final String MISSING_MAX_DELAY = "Must set maxDelay when random is true";
 
     /**
-     * Validate the retry policy for any errors.
+     * Validate the resume policy for any errors.
      *
      * @return a list of errors, or an empty list if none found
      */

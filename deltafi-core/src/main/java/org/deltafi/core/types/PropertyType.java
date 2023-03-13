@@ -81,6 +81,21 @@ public enum PropertyType {
             target.setRequeueSeconds(source.getRequeueSeconds());
         }
     },
+    AUTO_RESUME_CHECK_FREQUENCY("autoResumeCheckFrequency", "Frequency that the auto-resume check is triggered.", props -> props.getAutoResumeCheckFrequency()) {
+        @Override
+        public Object convertValue(String value) {
+            Duration duration = DurationReadConverter.doConvert(value);
+            if (duration.toMillis() < 0) {
+                throw new IllegalArgumentException("The auto-resume check frequency must be greater than 0");
+            }
+            return value; // store the original string value so a simple duration isn't converted to ISO-8601
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.setAutoResumeCheckFrequency(source.getAutoResumeCheckFrequency());
+        }
+    },
     CORE_SERVICE_THREADS("coreServiceThreads", "The number of threads used in core processing.", DeltaFiProperties::getCoreServiceThreads) {
         @Override
         public Object convertValue(String value) {

@@ -17,23 +17,27 @@
  */
 package org.deltafi.core.schedulers;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.services.RetryPolicyService;
+import org.deltafi.core.schedulers.trigger.ResumeTrigger;
+import org.deltafi.core.services.DeltaFilesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-@ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
-public class RetryPolicyCacheScheduler {
+public class ResumeScheduler {
 
-    private final RetryPolicyService retryPolicyService;
+    private final DeltaFilesService deltaFilesService;
+    private final TaskScheduler taskScheduler;
+    private final ResumeTrigger resumeTrigger;
 
-    @Scheduled(fixedDelay = 60000)
-    public void cacheEvict() {
-        retryPolicyService.refreshCache();
+    @PostConstruct
+    public void resume() {
+        taskScheduler.schedule(deltaFilesService::autoResume, resumeTrigger);
     }
 }

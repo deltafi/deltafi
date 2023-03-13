@@ -30,7 +30,7 @@ input BackOffInput {
     random: Boolean
 }
 
-type RetryPolicy {
+type ResumePolicy {
     id: String!
     errorSubstring: String
     flow: String
@@ -40,7 +40,7 @@ type RetryPolicy {
     backOff: BackOff!
 }
 
-input RetryPolicyInput {
+input ResumePolicyInput {
     id: String
     errorSubstring: String
     flow: String
@@ -51,12 +51,12 @@ input RetryPolicyInput {
 }
 
 extend type Query {
-    getAllRetryPolicies: [RetryPolicy!]!
-    getRetryPolicy(id: String!): RetryPolicy
+    getAllResumePolicies: [ResumePolicy!]!
+    getResumePolicy(id: String!): ResumePolicy
 }
 
 extend type Mutation {
-  loadRetryPolicies(replaceAll: Boolean!, policies: [RetryPolicyInput!]!): [Result!]!
-    removeRetryPolicy(id: String!) : Boolean!
-    updateRetryPolicy(retryPolicy: RetryPolicyInput!) : Result!
+  loadResumePolicies(replaceAll: Boolean!, policies: [ResumePolicyInput!]!): [Result!]!
+    removeResumePolicy(id: String!) : Boolean!
+    updateResumePolicy(resumePolicy: ResumePolicyInput!) : Result!
 }

@@ -105,7 +105,7 @@ public class DeltaFilesService {
     private final DeltaFileRepo deltaFileRepo;
     private final ActionEventQueue actionEventQueue;
     private final ContentStorageService contentStorageService;
-    private final RetryPolicyService retryPolicyService;
+    private final ResumePolicyService resumePolicyService;
     private final MetricRepository metricRepository;
     private final CoreAuditLogger coreAuditLogger;
     private final JoinRepo joinRepo;
@@ -498,12 +498,10 @@ public class DeltaFilesService {
         }
 
         Optional<Integer> delay = Optional.empty();
-        /*
         ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
         if (actionConfiguration != null) {
-            delay = retryPolicyService.getRetryDelay(deltaFile, event, actionConfiguration.getActionType().name());
+            delay = resumePolicyService.getAutoResumeDelay(deltaFile, event, actionConfiguration.getActionType().name());
         }
-        */
         deltaFile.errorAction(event, delay);
         generateMetrics(List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile);
 
@@ -1147,24 +1145,25 @@ public class DeltaFilesService {
                 .toList();
     }
 
-    /*
-    public void retry() {
-        OffsetDateTime now = OffsetDateTime.now();
-        List<DeltaFile> retryDeltaFiles = deltaFileRepo.findReadyForRetry(now);
-        List<String> dids = retryDeltaFiles.stream().map(DeltaFile::getDid).toList();
+    public int autoResume() {
+        return autoResume(OffsetDateTime.now(clock));
+    }
+
+    public int autoResume(OffsetDateTime timestamp) {
+        List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp);
+        List<String> dids = autoResumeDeltaFiles.stream().map(DeltaFile::getDid).toList();
         List<RetryResult> results = resume(dids, Collections.emptyList(), Collections.emptyList());
         int queued = 0;
-        for (RetryResult r : results) {
-            if (r.getSuccess()) {
+        for (RetryResult result : results) {
+            if (result.getSuccess()) {
                 ++queued;
+            } else {
+                log.error("Auto-resume: " + result.getError());
             }
         }
-        log.info("Queued {} DeltaFiles for auto-retry", queued);
-        if (queued != results.size()) {
-            log.error("Auto-retry encountered {} failures", results.size() - queued);
-        }
+        log.info("Queued {} DeltaFiles for auto-resume", queued);
+        return queued;
     }
-    */
 
     private ActionConfiguration actionConfiguration(String actionName, DeltaFile deltaFile) {
         try {

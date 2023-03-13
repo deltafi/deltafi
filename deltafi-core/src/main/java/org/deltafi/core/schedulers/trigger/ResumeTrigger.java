@@ -15,11 +15,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.repo;
+package org.deltafi.core.schedulers.trigger;
 
-public interface RetryPolicyRepoCustom {
-    /**
-     * Ensure all indices are created.
-     */
-    void ensureAllIndices();
+import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+
+/**
+ * Calculates the next execution time based on the autoResumeCheckFrequency in the DeltaFiProperties.
+ */
+@Service
+public class ResumeTrigger extends ConfigurableFixedDelayTrigger {
+
+    public ResumeTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
+        super(deltaFiPropertiesService, (props) -> props.getAutoResumeCheckFrequency(), 15_000L);
+    }
+
 }

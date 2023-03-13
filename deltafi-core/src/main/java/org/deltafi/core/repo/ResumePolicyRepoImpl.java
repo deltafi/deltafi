@@ -19,7 +19,7 @@ package org.deltafi.core.repo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.types.RetryPolicy;
+import org.deltafi.core.types.ResumePolicy;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -32,7 +32,7 @@ import java.util.Map;
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
 @Slf4j
-public class RetryPolicyRepoImpl implements RetryPolicyRepoCustom {
+public class ResumePolicyRepoImpl implements ResumePolicyRepoCustom {
 
     private static final String ERROR_SUBSTRING = "errorSubstring";
     private static final String FLOW = "flow";
@@ -50,7 +50,7 @@ public class RetryPolicyRepoImpl implements RetryPolicyRepoCustom {
     private final MongoTemplate mongoTemplate;
 
     public void ensureAllIndices() {
-        IndexOperations idxOps = mongoTemplate.indexOps(RetryPolicy.class);
+        IndexOperations idxOps = mongoTemplate.indexOps(ResumePolicy.class);
         List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
 
         INDICES.forEach((indexName, indexDef) -> IndexUtils.updateIndices(idxOps, indexName, indexDef, existingIndexes));

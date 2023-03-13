@@ -52,7 +52,7 @@ import java.util.Collections;
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
 @MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class,
-        MetricRepository.class, DeltaFiPropertiesRepo.class, JoinRepo.class, RetryPolicyService.class,
+        MetricRepository.class, DeltaFiPropertiesRepo.class, JoinRepo.class, ResumePolicyService.class,
         IdentityService.class, DeltaFileRepo.class})
 @EnableRetry
 class MongoRetryTest {

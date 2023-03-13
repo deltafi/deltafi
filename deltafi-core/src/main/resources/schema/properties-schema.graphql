@@ -85,6 +85,7 @@ enum PropertyType {
     INGRESS_ENABLED
     METRICS_ENABLED
     REQUEUE_SECONDS
+    AUTO_RESUME_CHECK_FREQUENCY
     SCHEDULER_POOL_SIZE
     SECURITY_BANNER_BACKGROUND_COLOR
     SECURITY_BANNER_ENABLED
@@ -200,6 +201,7 @@ input UiPropertiesInput {
 type DeltaFiProperties {
     systemName: String!
     requeueSeconds: Int!
+    autoResumeCheckFrequency: String!
     coreServiceThreads: Int!
     scheduledServiceThreads: Int!
     delete: DeleteProperties!
@@ -214,6 +216,7 @@ type DeltaFiProperties {
 input DeltaFiPropertiesInput {
     systemName: String!
     requeueSeconds: Int!
+    autoResumeCheckFrequency: String!
     coreServiceThreads: Int!
     scheduledServiceThreads: Int!
     delete: DeletePropertiesInput!

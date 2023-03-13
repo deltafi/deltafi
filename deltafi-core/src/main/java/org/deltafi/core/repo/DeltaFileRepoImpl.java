@@ -79,6 +79,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String TOTAL_BYTES = "totalBytes";
     public static final String INGRESS_BYTES = "ingressBytes";
     public static final String REQUEUE_COUNT = "requeueCount";
+    public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
@@ -92,7 +93,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_STATE = "actions.state";
     public static final String ACTIONS_MODIFIED = "actions.modified";
     public static final String ACTION_MODIFIED = "action.modified";
-    public static final String ACTIONS_NEXT_EXECUTION = "actions.nextExecution";
     public static final String ACTION_STATE = "action.state";
     public static final String ACTIONS_UPDATE_STATE = "actions.$[action].state";
     public static final String ACTIONS_UPDATE_MODIFIED = "actions.$[action].modified";
@@ -153,6 +153,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
+        INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
         INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC));
         INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
@@ -229,13 +230,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findReadyForRetry(OffsetDateTime retryTime) {
-        return mongoTemplate.find(buildReadyForRetryQuery(retryTime), DeltaFile.class);
+    public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
+        return mongoTemplate.find(buildReadyForAutoResume(maxReadyTime), DeltaFile.class);
     }
 
-    private Query buildReadyForRetryQuery(OffsetDateTime retryTime) {
+    private Query buildReadyForAutoResume(OffsetDateTime maxReadyTime) {
         Criteria inError = Criteria.where(STAGE).is(DeltaFileStage.ERROR);
-        Criteria ready = Criteria.where(ACTIONS_NEXT_EXECUTION).lt(retryTime);
+        Criteria ready = Criteria.where(NEXT_AUTO_RESUME).lt(maxReadyTime);
 
         Query requeueQuery = new Query(new Criteria().andOperator(inError, ready));
         requeueQuery.fields().include(ID);

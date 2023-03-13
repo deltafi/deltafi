@@ -24,58 +24,58 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.generated.types.RetryPolicyInput;
+import org.deltafi.core.generated.types.ResumePolicyInput;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.RetryPolicyService;
+import org.deltafi.core.services.ResumePolicyService;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.RetryPolicy;
+import org.deltafi.core.types.ResumePolicy;
 
 import java.util.Collection;
 import java.util.List;
 
 @DgsComponent
 @RequiredArgsConstructor
-public class RetryPolicyDatafetcher {
+public class ResumePolicyDatafetcher {
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    private final RetryPolicyService retryPolicyService;
+    private final ResumePolicyService resumePolicyService;
 
     @DgsQuery
-    @NeedsPermission.RetryPolicyRead
-    public Collection<RetryPolicy> getAllRetryPolicies() {
-        return retryPolicyService.getAll();
+    @NeedsPermission.ResumePolicyRead
+    public Collection<ResumePolicy> getAllResumePolicies() {
+        return resumePolicyService.getAll();
     }
 
     @DgsQuery
-    @NeedsPermission.RetryPolicyRead
-    public RetryPolicy getRetryPolicy(@InputArgument String id) {
-        return retryPolicyService.get(id).orElse(null);
+    @NeedsPermission.ResumePolicyRead
+    public ResumePolicy getResumePolicy(@InputArgument String id) {
+        return resumePolicyService.get(id).orElse(null);
     }
 
     @DgsMutation
-    @NeedsPermission.RetryPolicyCreate
-    public List<Result> loadRetryPolicies(@InputArgument Boolean replaceAll, @InputArgument List<RetryPolicyInput> policies) {
+    @NeedsPermission.ResumePolicyCreate
+    public List<Result> loadResumePolicies(@InputArgument Boolean replaceAll, @InputArgument List<ResumePolicyInput> policies) {
         if (replaceAll) {
-            retryPolicyService.removeAll();
+            resumePolicyService.removeAll();
         }
         return policies.stream().map(this::convertAndSave).toList();
     }
 
     @DgsMutation
-    @NeedsPermission.RetryPolicyDelete
-    public boolean removeRetryPolicy(@InputArgument String id) {
-        return retryPolicyService.remove(id);
+    @NeedsPermission.ResumePolicyDelete
+    public boolean removeResumePolicy(@InputArgument String id) {
+        return resumePolicyService.remove(id);
     }
 
     @DgsMutation
-    @NeedsPermission.RetryPolicyUpdate
-    public Result updateRetryPolicy(@InputArgument RetryPolicyInput retryPolicy) {
-        RetryPolicy policy = OBJECT_MAPPER.convertValue(retryPolicy, RetryPolicy.class);
-        return retryPolicyService.update(policy);
+    @NeedsPermission.ResumePolicyUpdate
+    public Result updateResumePolicy(@InputArgument ResumePolicyInput resumePolicy) {
+        ResumePolicy policy = OBJECT_MAPPER.convertValue(resumePolicy, ResumePolicy.class);
+        return resumePolicyService.update(policy);
     }
 
-    private Result convertAndSave(RetryPolicyInput retryPolicyInput) {
-        RetryPolicy retryPolicy = OBJECT_MAPPER.convertValue(retryPolicyInput, RetryPolicy.class);
-        return retryPolicyService.save(retryPolicy);
+    private Result convertAndSave(ResumePolicyInput resumePolicyInput) {
+        ResumePolicy resumePolicy = OBJECT_MAPPER.convertValue(resumePolicyInput, ResumePolicy.class);
+        return resumePolicyService.save(resumePolicy);
     }
 }

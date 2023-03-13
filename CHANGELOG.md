@@ -16,13 +16,23 @@ consistent in the database. This decreases processing latency but does not give 
 - Added `/blackhole` endpoint to `deltafi-egress-sink`.  The endpoint will always return a 200 and never write content to disk, acting as a noop egress destination.  The endpoint will take a latency parameter to add latency to the post response (i.e. `/blackhole?latency=0.1` to add 100ms latency)
 - MergeContentJoinAction that merges content by binary concatenation, TAR, ZIP, AR, TAR.GZ, or TAR.XZ.
 - Added ingress, survey, and error documentation
+- Resume policies are examined when an action ERROR occurs to see if the action can be automatically scheduled for resume
+- New Resume Policy permissions
+  - `ResumePolicyCreate` - allows user to create a auto-resume policy
+  - `ResumePolicyRead` - allows user to view auto-resume policies
+  - `ResumePolicyUpdate` - allows user to edit a auto-resume policy
+  - `ResumePolicyDelete` - allows user to remove a auto-resume policy
+- New `autoResumeCheckFrequency` system property to control how often the auto-resume task runs.
+- Added `nextAutoResume` timestmap to DeltaFile
 
 ### Changed
 - Updated the load-plans command to take plugin coordinates as an argument.
+- Updated system snapshots to include new `autoResumeCheckFrequency` property and auto-resume policies
 
 ### Deprecated
 
 ### Removed
+- Removed `nextExecution` timestamp from Action; no migration required since it had not been used previously
 
 ### Fixed
 - Improved bounce and plugin restart performance in `cluster`
@@ -33,6 +43,7 @@ consistent in the database. This decreases processing latency but does not give 
 ### Tech-Debt/Refactor
 - More precise calculation of referencedBytes and totalBytes - remove assumption that segments are contiguous.
 - Perform batched delete updates in a bulk operation.
+- Ingress routing rules cache did not clear when restoring a snapshot with no rules
 
 ### Security
 

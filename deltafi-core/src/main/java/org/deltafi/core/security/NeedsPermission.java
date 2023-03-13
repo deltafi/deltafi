@@ -242,25 +242,25 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyCreate'" + OR_ADMIN)
-    public @interface RetryPolicyCreate {}
+    @PreAuthorize(value = "hasAnyAuthority('ResumePolicyCreate'" + OR_ADMIN)
+    public @interface ResumePolicyCreate {}
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyDelete'" + OR_ADMIN)
-    public @interface RetryPolicyDelete {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyRead'" + OR_ADMIN)
-    public @interface RetryPolicyRead {}
+    @PreAuthorize(value = "hasAnyAuthority('ResumePolicyDelete'" + OR_ADMIN)
+    public @interface ResumePolicyDelete {}
 
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('RetryPolicyUpdate'" + OR_ADMIN)
-    public @interface RetryPolicyUpdate {}
+    @PreAuthorize(value = "hasAnyAuthority('ResumePolicyRead'" + OR_ADMIN)
+    public @interface ResumePolicyRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('ResumePolicyUpdate'" + OR_ADMIN)
+    public @interface ResumePolicyUpdate {}
 
 
     @Target(ElementType.METHOD)

@@ -25,7 +25,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RetryPolicyTest {
+class ResumePolicyTest {
 
     @Test
     void testValid() {
@@ -34,47 +34,47 @@ class RetryPolicyTest {
 
     @Test
     void testMissingAll() {
-        assertTrue(new RetryPolicy().validate().containsAll(List.of(
-                RetryPolicy.MISSING_ID,
-                RetryPolicy.MISSING_CRITERIA,
-                RetryPolicy.INVALID_MAX_ATTEMPTS,
-                RetryPolicy.MISSING_BACKOFF)));
+        assertTrue(new ResumePolicy().validate().containsAll(List.of(
+                ResumePolicy.MISSING_ID,
+                ResumePolicy.MISSING_CRITERIA,
+                ResumePolicy.INVALID_MAX_ATTEMPTS,
+                ResumePolicy.MISSING_BACKOFF)));
     }
 
     @Test
     void testValidateBackOff() {
-        RetryPolicy invalidDelay = getValid();
+        ResumePolicy invalidDelay = getValid();
         invalidDelay.getBackOff().setDelay(-1);
-        assertEquals(invalidDelay.validate(), List.of(RetryPolicy.INVALID_DELAY));
+        assertEquals(invalidDelay.validate(), List.of(ResumePolicy.INVALID_DELAY));
 
-        RetryPolicy invalidRandom = getValid();
+        ResumePolicy invalidRandom = getValid();
         invalidRandom.getBackOff().setRandom(true);
-        assertEquals(invalidRandom.validate(), List.of(RetryPolicy.MISSING_MAX_DELAY));
+        assertEquals(invalidRandom.validate(), List.of(ResumePolicy.MISSING_MAX_DELAY));
 
-        RetryPolicy randomIsNull = getValid();
+        ResumePolicy randomIsNull = getValid();
         randomIsNull.getBackOff().setRandom(null);
         randomIsNull.getBackOff().setMaxDelay(9999);
         assertEquals(randomIsNull.validate(), Collections.emptyList());
 
-        RetryPolicy validRandom = getValid();
+        ResumePolicy validRandom = getValid();
         validRandom.getBackOff().setRandom(true);
         validRandom.getBackOff().setMaxDelay(9999);
         assertEquals(validRandom.validate(), Collections.emptyList());
 
-        RetryPolicy invalidMaxDelay = getValid();
+        ResumePolicy invalidMaxDelay = getValid();
         invalidMaxDelay.getBackOff().setRandom(true);
         invalidMaxDelay.getBackOff().setMaxDelay(-1);
-        assertEquals(invalidMaxDelay.validate(), List.of(RetryPolicy.MAX_DELAY_ERROR, RetryPolicy.INVALID_MAX_DELAY));
+        assertEquals(invalidMaxDelay.validate(), List.of(ResumePolicy.MAX_DELAY_ERROR, ResumePolicy.INVALID_MAX_DELAY));
 
-        RetryPolicy notRandom = getValid();
+        ResumePolicy notRandom = getValid();
         notRandom.getBackOff().setRandom(false);
         assertEquals(notRandom.validate(), Collections.emptyList());
 
-        RetryPolicy badMultiplier = getValid();
+        ResumePolicy badMultiplier = getValid();
         badMultiplier.getBackOff().setMultiplier(0);
-        assertEquals(badMultiplier.validate(), List.of(RetryPolicy.INVALID_MULTIPLIER));
+        assertEquals(badMultiplier.validate(), List.of(ResumePolicy.INVALID_MULTIPLIER));
 
-        RetryPolicy goodMultiplier = getValid();
+        ResumePolicy goodMultiplier = getValid();
         goodMultiplier.getBackOff().setMultiplier(1);
         assertEquals(goodMultiplier.validate(), Collections.emptyList());
     }
@@ -119,8 +119,8 @@ class RetryPolicyTest {
                 .isMatch("the error message", "flow", "other", "type"));
     }
 
-    private RetryPolicy getValid() {
-        RetryPolicy policy = new RetryPolicy();
+    private ResumePolicy getValid() {
+        ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
         policy.setFlow("name");
         policy.setMaxAttempts(1);
@@ -133,8 +133,8 @@ class RetryPolicyTest {
         return policy;
     }
 
-    private RetryPolicy policy(String error, String flow, String action, String actionType) {
-        RetryPolicy policy = new RetryPolicy();
+    private ResumePolicy policy(String error, String flow, String action, String actionType) {
+        ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
         policy.setMaxAttempts(1);
 

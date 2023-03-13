@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.types.RetryPolicy;
+import org.deltafi.core.types.ResumePolicy;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface RetryPolicyRepo extends MongoRepository<RetryPolicy, String>, RetryPolicyRepoCustom {
+public interface ResumePolicyRepo extends MongoRepository<ResumePolicy, String>, ResumePolicyRepoCustom {
 }

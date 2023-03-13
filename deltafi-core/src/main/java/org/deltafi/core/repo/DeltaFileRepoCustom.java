@@ -74,12 +74,12 @@ public interface DeltaFileRepoCustom {
     List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds);
 
     /**
-     * Find deltaFiles that are ready for an automatic retry after encountering an error.
+     * Find DeltaFiles that are ready for an automatic resume after encountering an error.
      *
-     * @param retryTime timestamp for searching and updating actions
-     * @return the list of the DeltaFiles to be retried
+     * @param maxReadyTime upper limit for finding matching DeltaFiles
+     * @return the list of the DeltaFiles to be resumed
      */
-    List<DeltaFile> findReadyForRetry(OffsetDateTime retryTime);
+    List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime);
 
     /**
      * Find DeltaFiles that match the given criteria.

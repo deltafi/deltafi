@@ -70,6 +70,7 @@ public class DeltaFile {
   private Boolean filtered;
   private OffsetDateTime replayed;
   private String replayDid;
+  private OffsetDateTime nextAutoResume;
   private boolean joined;
 
   @Version
@@ -160,10 +161,10 @@ public class DeltaFile {
     errorAction(name, start, stop, errorCause, errorContext, null);
   }
 
-  public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextExecution) {
+  public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
     getActions().stream()
             .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
-            .forEach(action -> setActionState(action, ActionState.ERROR, start, stop, errorCause, errorContext, nextExecution));
+            .forEach(action -> setActionState(action, ActionState.ERROR, start, stop, errorCause, errorContext, nextAutoResume));
   }
 
   public List<String> retryErrors() {
@@ -174,8 +175,8 @@ public class DeltaFile {
     // this must be separate from the above stream since it mutates the original list
     actionsToRetry.forEach(action -> {
       action.setState(ActionState.RETRIED);
-      action.setNextExecution(null);
     });
+    setNextAutoResume(null);
 
     return actionsToRetry.stream().map(Action::getName).toList();
   }
@@ -189,7 +190,7 @@ public class DeltaFile {
     setActionState(action, ActionState.FILTERED, start, stop);
   }
 
-  private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextExecution) {
+  private void setActionState(Action action, ActionState actionState, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
     OffsetDateTime now = OffsetDateTime.now();
     action.setState(actionState);
     if (action.getCreated() == null) {
@@ -197,11 +198,11 @@ public class DeltaFile {
     }
     action.setStart(start);
     action.setStop(stop);
-    action.setNextExecution(nextExecution);
     action.setModified(now);
     action.setErrorCause(errorCause);
     action.setErrorContext(errorContext);
     setModified(now);
+    setNextAutoResume(nextAutoResume);
   }
 
   public void setTestModeReason(String reason) {

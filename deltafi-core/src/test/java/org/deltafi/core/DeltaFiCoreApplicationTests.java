@@ -33,7 +33,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.datafetchers.RetryPolicyDatafetcherTestHelper;
+import org.deltafi.core.datafetchers.ResumePolicyDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.PropertiesDatafetcherTestHelper;
 import org.deltafi.core.delete.DeletePolicyWorker;
@@ -56,7 +56,7 @@ import org.deltafi.core.snapshot.SystemSnapshotRepo;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.RetryPolicy;
+import org.deltafi.core.types.ResumePolicy;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -142,6 +142,9 @@ class DeltaFiCoreApplicationTests {
 	DgsQueryExecutor dgsQueryExecutor;
 
 	@Autowired
+	ResumePolicyService resumePolicyService;
+
+	@Autowired
 	DeltaFilesService deltaFilesService;
 
 	@Autowired
@@ -199,7 +202,7 @@ class DeltaFiCoreApplicationTests {
 	PluginVariableRepo pluginVariableRepo;
 
 	@Autowired
-	RetryPolicyRepo retryPolicyRepo;
+	ResumePolicyRepo resumePolicyRepo;
 
 	@Autowired
 	DeltaFiPropertiesRepo deltaFiPropertiesRepo;
@@ -280,7 +283,8 @@ class DeltaFiCoreApplicationTests {
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
 		deltaFileRepo.deleteAll();
 		flowAssignmentRuleRepo.deleteAll();
-		retryPolicyRepo.deleteAll();
+		resumePolicyRepo.deleteAll();
+		resumePolicyService.refreshCache();
 		deltaFileCacheService.clearCache();
 		loadConfig();
 
@@ -690,7 +694,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
 		deltaFile.retryErrors();
 		deltaFile.setStage(DeltaFileStage.INGRESS);
-		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).build());
+		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).attempt(2).build());
 		deltaFile.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
 		return deltaFile;
 	}
@@ -1053,33 +1057,64 @@ class DeltaFiCoreApplicationTests {
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.SampleValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
 		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
-
 	}
 
 	DeltaFile postErrorDeltaFile(String did) {
+		return postErrorDeltaFile(did, Optional.empty());
+	}
+
+	DeltaFile postErrorDeltaFile(String did, Optional<Integer> autoRetryDelay) {
+		OffsetDateTime nextAutoResume = autoRetryDelay.isEmpty() ? null : STOP_TIME.plusSeconds(autoRetryDelay.get());
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR);
-		deltaFile.errorAction("sampleEgress.AuthorityValidateAction", START_TIME, STOP_TIME, "Authority XYZ not recognized", "Dead beef feed face cafe");
+		deltaFile.errorAction(
+				"sampleEgress.AuthorityValidateAction",
+				START_TIME,
+				STOP_TIME,
+				"Authority XYZ not recognized",
+				"Dead beef feed face cafe",
+				nextAutoResume);
 		return deltaFile;
 	}
 
-	@Test
-	void testError() throws IOException {
+	void runErrorWithRetry(Optional<Integer> autoRetryDelay) throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postValidateDeltaFile(did));
+		DeltaFile original = postValidateDeltaFile(did);
+		deltaFileRepo.save(original);
+
+		if (!autoRetryDelay.isEmpty()) {
+			BackOff backOff = BackOff.newBuilder()
+					.delay(autoRetryDelay.get())
+					.build();
+
+			ResumePolicy resumePolicy = new ResumePolicy();
+			resumePolicy.setFlow(original.getSourceInfo().getFlow());
+			resumePolicy.setMaxAttempts(2);
+			resumePolicy.setBackOff(backOff);
+			Result result = resumePolicyService.save(resumePolicy);
+			assertTrue(result.getErrors().isEmpty());
+		}
 
 		deltaFilesService.handleActionEvent(actionEvent("error", did));
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
-
-		DeltaFile expected = postErrorDeltaFile(did);
+		DeltaFile expected = postErrorDeltaFile(did, autoRetryDelay);
 		assertEqualsIgnoringDates(expected, actual);
 
 		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
 		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
+	}
 
+	@Test
+	void testError() throws IOException {
+		runErrorWithRetry(Optional.empty());
+	}
+
+	@Test
+	void testAutoRetry() throws IOException {
+		runErrorWithRetry(Optional.of(100));
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -1087,7 +1122,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = postErrorDeltaFile(did);
 		deltaFile.retryErrors();
 		deltaFile.setStage(DeltaFileStage.EGRESS);
-		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).build());
+		deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(ActionState.QUEUED).attempt(2).build());
 		deltaFile.getSourceInfo().addMetadata("a", "b");
 		return deltaFile;
 	}
@@ -1957,49 +1992,49 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testRetryPolicyDatafetcher() {
-		List<Result> results = RetryPolicyDatafetcherTestHelper.loadRetryPolicyWithDuplicate(dgsQueryExecutor);
+	void testResumePolicyDatafetcher() {
+		List<Result> results = ResumePolicyDatafetcherTestHelper.loadResumePolicyWithDuplicate(dgsQueryExecutor);
 		assertTrue(results.get(0).isSuccess());
 		assertFalse(results.get(1).isSuccess());
 		assertTrue(results.get(1).getErrors().contains("duplicate match criteria"));
 		assertTrue(results.get(2).isSuccess());
-		assertEquals(2, retryPolicyRepo.count());
+		assertEquals(2, resumePolicyRepo.count());
 
-		List<RetryPolicy> policies = RetryPolicyDatafetcherTestHelper.getAllRetryPolicies(dgsQueryExecutor);
+		List<ResumePolicy> policies = ResumePolicyDatafetcherTestHelper.getAllResumePolicies(dgsQueryExecutor);
 		assertEquals(2, policies.size());
 		String idToUse;
 		// Result are not ordered explicitly
-		if (RetryPolicyDatafetcherTestHelper.isDefaultFlow(policies.get(0))) {
+		if (ResumePolicyDatafetcherTestHelper.isDefaultFlow(policies.get(0))) {
 			idToUse = policies.get(0).getId();
-			assertTrue(RetryPolicyDatafetcherTestHelper.matchesDefault(policies.get(0)));
+			assertTrue(ResumePolicyDatafetcherTestHelper.matchesDefault(policies.get(0)));
 		} else {
 			idToUse = policies.get(1).getId();
-			assertTrue(RetryPolicyDatafetcherTestHelper.matchesDefault(policies.get(1)));
+			assertTrue(ResumePolicyDatafetcherTestHelper.matchesDefault(policies.get(1)));
 		}
 
-		RetryPolicy policy = RetryPolicyDatafetcherTestHelper.getRetryPolicy(dgsQueryExecutor, idToUse);
-		assertTrue(RetryPolicyDatafetcherTestHelper.matchesDefault(
+		ResumePolicy policy = ResumePolicyDatafetcherTestHelper.getResumePolicy(dgsQueryExecutor, idToUse);
+		assertTrue(ResumePolicyDatafetcherTestHelper.matchesDefault(
 				policy));
 
-		Result updateResult = RetryPolicyDatafetcherTestHelper.updateRetryPolicy(dgsQueryExecutor, "wrong-id");
+		Result updateResult = ResumePolicyDatafetcherTestHelper.updateResumePolicy(dgsQueryExecutor, "wrong-id");
 		assertFalse(updateResult.isSuccess());
 		assertTrue(updateResult.getErrors().contains("policy not found"));
 
-		updateResult = RetryPolicyDatafetcherTestHelper.updateRetryPolicy(dgsQueryExecutor, idToUse);
+		updateResult = ResumePolicyDatafetcherTestHelper.updateResumePolicy(dgsQueryExecutor, idToUse);
 		assertTrue(updateResult.isSuccess());
 
-		RetryPolicy updatedPolicy = RetryPolicyDatafetcherTestHelper.getRetryPolicy(dgsQueryExecutor, idToUse);
-		assertTrue(RetryPolicyDatafetcherTestHelper.matchesUpdated(
+		ResumePolicy updatedPolicy = ResumePolicyDatafetcherTestHelper.getResumePolicy(dgsQueryExecutor, idToUse);
+		assertTrue(ResumePolicyDatafetcherTestHelper.matchesUpdated(
 				updatedPolicy));
 
-		boolean wasDeleted = RetryPolicyDatafetcherTestHelper.removeRetryPolicy(dgsQueryExecutor, idToUse);
+		boolean wasDeleted = ResumePolicyDatafetcherTestHelper.removeResumePolicy(dgsQueryExecutor, idToUse);
 		assertTrue(wasDeleted);
-		assertEquals(1, retryPolicyRepo.count());
+		assertEquals(1, resumePolicyRepo.count());
 
-		wasDeleted = RetryPolicyDatafetcherTestHelper.removeRetryPolicy(dgsQueryExecutor, idToUse);
+		wasDeleted = ResumePolicyDatafetcherTestHelper.removeResumePolicy(dgsQueryExecutor, idToUse);
 		assertFalse(wasDeleted);
 
-		RetryPolicy missing = RetryPolicyDatafetcherTestHelper.getRetryPolicy(dgsQueryExecutor, idToUse);
+		ResumePolicy missing = ResumePolicyDatafetcherTestHelper.getResumePolicy(dgsQueryExecutor, idToUse);
 		assertNull(missing);
 	}
 
@@ -2265,6 +2300,48 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(3, didsRead.size());
 		assertTrue(didsRead.containsAll(dids));
+	}
+
+
+	@Test
+	void testFindReadyForAutoResume() {
+		Action ingress = Action.newBuilder().name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
+		Action hit = Action.newBuilder().name("hit").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action miss = Action.newBuilder().name("miss").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action notSet = Action.newBuilder().name("notSet").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action other = Action.newBuilder().name("other").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
+
+		DeltaFile shouldResume = buildDeltaFile("did", INGRESS_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		shouldResume.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
+		shouldResume.setActions(Arrays.asList(ingress, hit, other));
+		deltaFileRepo.save(shouldResume);
+
+		DeltaFile shouldNotResume = buildDeltaFile("did2", INGRESS_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		shouldNotResume.setNextAutoResume(MONGO_NOW.plusSeconds(1000));
+		shouldNotResume.setActions(Arrays.asList(ingress, miss));
+		deltaFileRepo.save(shouldNotResume);
+
+		DeltaFile notResumable = buildDeltaFile("did3", INGRESS_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		notResumable.setActions(Arrays.asList(ingress, notSet));
+		deltaFileRepo.save(notResumable);
+
+		DeltaFile cancelled = buildDeltaFile("did4", INGRESS_FLOW_NAME, DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW);
+		cancelled.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
+		cancelled.setActions(Arrays.asList(ingress, hit, other));
+		deltaFileRepo.save(cancelled);
+
+		DeltaFile contentDeleted = buildDeltaFile("did5", INGRESS_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		contentDeleted.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
+		contentDeleted.setActions(Arrays.asList(ingress, hit, other));
+		contentDeleted.setContentDeleted(MONGO_NOW);
+		deltaFileRepo.save(contentDeleted);
+
+		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(MONGO_NOW);
+		assertEquals(2, hits.size());
+		assertEquals(shouldResume.getDid(), hits.get(0).getDid());
+		assertEquals(contentDeleted.getDid(), hits.get(1).getDid());
+
+		assertEquals(1, deltaFilesService.autoResume(MONGO_NOW));
 	}
 
 	@Test

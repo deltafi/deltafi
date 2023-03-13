@@ -22,13 +22,13 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.BackOffInput;
-import org.deltafi.core.generated.types.RetryPolicyInput;
+import org.deltafi.core.generated.types.ResumePolicyInput;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.RetryPolicy;
+import org.deltafi.core.types.ResumePolicy;
 
 import java.util.List;
 
-public class RetryPolicyDatafetcherTestHelper {
+public class ResumePolicyDatafetcherTestHelper {
 
     public static final String ERROR_SUBSTRING = "failure";
     public static final String FLOW_NAME1 = "flowName1";
@@ -42,8 +42,8 @@ public class RetryPolicyDatafetcherTestHelper {
     public static final int MULTIPLIER = 1;
     public static final boolean RANDOM = false;
 
-    static public List<RetryPolicy> getAllRetryPolicies(DgsQueryExecutor dgsQueryExecutor) {
-        GetAllRetryPoliciesProjectionRoot projection = new GetAllRetryPoliciesProjectionRoot()
+    static public List<ResumePolicy> getAllResumePolicies(DgsQueryExecutor dgsQueryExecutor) {
+        GetAllResumePoliciesProjectionRoot projection = new GetAllResumePoliciesProjectionRoot()
                 .id()
                 .errorSubstring()
                 .flow()
@@ -57,12 +57,12 @@ public class RetryPolicyDatafetcherTestHelper {
                 .random()
                 .parent();
 
-        GetAllRetryPoliciesGraphQLQuery query =
-                GetAllRetryPoliciesGraphQLQuery.newRequest().build();
+        GetAllResumePoliciesGraphQLQuery query =
+                GetAllResumePoliciesGraphQLQuery.newRequest().build();
         GraphQLQueryRequest graphQLQueryRequest =
                 new GraphQLQueryRequest(query, projection);
 
-        TypeRef<List<RetryPolicy>> policyListType = new TypeRef<>() {
+        TypeRef<List<ResumePolicy>> policyListType = new TypeRef<>() {
         };
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -71,8 +71,8 @@ public class RetryPolicyDatafetcherTestHelper {
                 policyListType);
     }
 
-    static public RetryPolicy getRetryPolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
-        GetRetryPolicyProjectionRoot projection = new GetRetryPolicyProjectionRoot()
+    static public ResumePolicy getResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+        GetResumePolicyProjectionRoot projection = new GetResumePolicyProjectionRoot()
                 .id()
                 .errorSubstring()
                 .flow()
@@ -86,21 +86,21 @@ public class RetryPolicyDatafetcherTestHelper {
                 .random()
                 .parent();
 
-        GetRetryPolicyGraphQLQuery query =
-                GetRetryPolicyGraphQLQuery.newRequest().id(id).build();
+        GetResumePolicyGraphQLQuery query =
+                GetResumePolicyGraphQLQuery.newRequest().id(id).build();
         GraphQLQueryRequest graphQLQueryRequest =
                 new GraphQLQueryRequest(query, projection);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(),
-                RetryPolicy.class);
+                ResumePolicy.class);
     }
 
-    static public List<Result> loadRetryPolicyWithDuplicate(DgsQueryExecutor dgsQueryExecutor) {
-        RetryPolicyInput input = makeRetryPolicy(ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
-        RetryPolicyInput duplicate = makeRetryPolicy(ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, 2 * MAX_ATTEMPTS, DELAY);
-        RetryPolicyInput third = makeRetryPolicy(ERROR_SUBSTRING, FLOW_NAME2, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
+    static public List<Result> loadResumePolicyWithDuplicate(DgsQueryExecutor dgsQueryExecutor) {
+        ResumePolicyInput input = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
+        ResumePolicyInput duplicate = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, 2 * MAX_ATTEMPTS, DELAY);
+        ResumePolicyInput third = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME2, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
         return executeLoadPolicies(dgsQueryExecutor, true, List.of(input, duplicate, third));
     }
 
@@ -113,14 +113,14 @@ public class RetryPolicyDatafetcherTestHelper {
                 .build();
     }
 
-    static public RetryPolicyInput makeRetryPolicy(
+    static public ResumePolicyInput makeResumePolicy(
             String errorSubstring,
             String flow,
             String action,
             String actionType,
             int maxAttempts,
             int delay) {
-        return RetryPolicyInput.newBuilder()
+        return ResumePolicyInput.newBuilder()
                 .errorSubstring(errorSubstring)
                 .flow(flow)
                 .action(action)
@@ -130,11 +130,11 @@ public class RetryPolicyDatafetcherTestHelper {
                 .build();
     }
 
-    static public boolean isDefaultFlow(RetryPolicy policy) {
+    static public boolean isDefaultFlow(ResumePolicy policy) {
         return policy.getFlow().equals(FLOW_NAME1);
     }
 
-    static public boolean matchesDefault(RetryPolicy policy) {
+    static public boolean matchesDefault(ResumePolicy policy) {
         return policy.getErrorSubstring().equals(ERROR_SUBSTRING) &&
                 policy.getFlow().equals(FLOW_NAME1) &&
                 policy.getAction().equals(ACTION) &&
@@ -146,7 +146,7 @@ public class RetryPolicyDatafetcherTestHelper {
                 policy.getBackOff().getRandom() == RANDOM;
     }
 
-    static public boolean matchesUpdated(RetryPolicy policy) {
+    static public boolean matchesUpdated(ResumePolicy policy) {
         return policy.getErrorSubstring().equals(ERROR_SUBSTRING) &&
                 policy.getFlow().equals(FLOW_NAME3) &&
                 policy.getAction().equals(ACTION) &&
@@ -158,9 +158,9 @@ public class RetryPolicyDatafetcherTestHelper {
                 policy.getBackOff().getRandom() == RANDOM;
     }
 
-    static private List<Result> executeLoadPolicies(DgsQueryExecutor dgsQueryExecutor, boolean replaceAll, List<RetryPolicyInput> policies) {
-        LoadRetryPoliciesGraphQLQuery query = LoadRetryPoliciesGraphQLQuery.newRequest().replaceAll(replaceAll).policies(policies).build();
-        LoadRetryPoliciesProjectionRoot projection = new LoadRetryPoliciesProjectionRoot()
+    static private List<Result> executeLoadPolicies(DgsQueryExecutor dgsQueryExecutor, boolean replaceAll, List<ResumePolicyInput> policies) {
+        LoadResumePoliciesGraphQLQuery query = LoadResumePoliciesGraphQLQuery.newRequest().replaceAll(replaceAll).policies(policies).build();
+        LoadResumePoliciesProjectionRoot projection = new LoadResumePoliciesProjectionRoot()
                 .success()
                 .errors();
 
@@ -175,8 +175,8 @@ public class RetryPolicyDatafetcherTestHelper {
                 resultListType);
     }
 
-    static public boolean removeRetryPolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
-        RemoveRetryPolicyGraphQLQuery query = RemoveRetryPolicyGraphQLQuery.newRequest().id(id).build();
+    static public boolean removeResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+        RemoveResumePolicyGraphQLQuery query = RemoveResumePolicyGraphQLQuery.newRequest().id(id).build();
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
 
@@ -185,16 +185,16 @@ public class RetryPolicyDatafetcherTestHelper {
                 "data." + query.getOperationName(), Boolean.class);
     }
 
-    static public Result updateRetryPolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
-        RetryPolicyInput input = makeRetryPolicy(ERROR_SUBSTRING, FLOW_NAME3, ACTION, ACTION_TYPE, MAX_ATTEMPTS, 2 * DELAY);
+    static public Result updateResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+        ResumePolicyInput input = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME3, ACTION, ACTION_TYPE, MAX_ATTEMPTS, 2 * DELAY);
         input.setId(id);
 
-        UpdateRetryPolicyProjectionRoot projection = new UpdateRetryPolicyProjectionRoot()
+        UpdateResumePolicyProjectionRoot projection = new UpdateResumePolicyProjectionRoot()
                 .success()
                 .errors();
 
-        UpdateRetryPolicyGraphQLQuery query =
-                UpdateRetryPolicyGraphQLQuery.newRequest().retryPolicy(input).build();
+        UpdateResumePolicyGraphQLQuery query =
+                UpdateResumePolicyGraphQLQuery.newRequest().resumePolicy(input).build();
         GraphQLQueryRequest graphQLQueryRequest =
                 new GraphQLQueryRequest(query, projection);
 

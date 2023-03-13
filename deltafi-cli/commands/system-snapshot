@@ -71,6 +71,7 @@ ALL_SNAPSHOT_FIELDS="id
             deltaFiProperties {
               systemName
               requeueSeconds
+              autoResumeCheckFrequency
               coreServiceThreads
               scheduledServiceThreads
               delete {
@@ -171,6 +172,20 @@ ALL_SNAPSHOT_FIELDS="id
               requiredMetadata {
                 key
                 value
+              }
+            }
+            resumePolicies {
+              id
+              errorSubstring
+              flow
+              action
+              actionType
+              maxAttempts
+              backOff {
+                delay
+                maxDelay
+                multiplier
+                random
               }
             }
             testIngressFlows

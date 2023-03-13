@@ -23,6 +23,7 @@ import org.deltafi.core.join.JoinProperties;
 import org.deltafi.core.types.PropertyType;
 import org.springframework.data.annotation.Id;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,6 +36,7 @@ public class DeltaFiProperties {
     private String id = PROPERTY_ID;
     private String systemName = "DeltaFi";
     private int requeueSeconds = 300;
+    private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
     private int coreServiceThreads = 16;
     private int scheduledServiceThreads = 32;
     private MetricsProperties metrics = new MetricsProperties();

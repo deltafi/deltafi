@@ -224,6 +224,31 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 }
                             ]
                         }
+                        resumePolicies: [
+                            {
+                                id: "88bc7429-7adf-4bb1-b23f-3922993e0a1a"
+                                flow: "passthrough"
+                                maxAttempts: 10
+                                backOff:
+                                    {
+                                        delay: 100
+                                        maxDelay: 260
+                                        multiplier: 1
+                                    }
+                            }
+                            {
+                                id: "a2b08968-866a-4080-bc28-1d7e7c81ada8"
+                                errorSubstring: "JsonException"
+                                actionType: "ENRICH"
+                                maxAttempts: 4
+                                backOff:
+                                    {
+                                        delay: 60
+                                        maxDelay: 120
+                                        random: true
+                                    }
+                            }
+                        ]
                         flowAssignmentRules: [
                             {
                                 id: "0d6b8146-53e8-43cc-b56d-f8812cb64252"
@@ -248,6 +273,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                         deltaFiProperties: {
                             systemName: "DeltaFi"
                             requeueSeconds: 300
+                            autoResumeCheckFrequency: "PT10M"
                             coreServiceThreads: 16
                             scheduledServiceThreads: 32
                             ui: {

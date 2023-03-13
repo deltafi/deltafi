@@ -169,7 +169,6 @@ type Action {
   queued: DateTime
   start: DateTime
   stop: DateTime
-  nextExecution: DateTime
   modified: DateTime!
   errorCause: String
   errorContext: String
@@ -206,6 +205,7 @@ type DeltaFile {
   filtered: Boolean
   replayed: DateTime
   replayDid: String
+  nextAutoResume: DateTime
 }
 
 type DeltaFiles {

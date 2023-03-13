@@ -75,7 +75,7 @@ class DeltaFilesServiceTest {
 
     DeltaFilesServiceTest(@Mock IngressFlowService ingressFlowService, @Mock EnrichFlowService enrichFlowService,
             @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
-            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock RetryPolicyService retryPolicyService,
+            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
             @Mock ContentStorageService contentStorageService, @Mock MetricRepository metricRepository,
             @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo, @Mock IdentityService identityService,
             @Mock DidMutexService didMutexService, @Mock DeltaFileCacheService deltaFileCacheService) {
@@ -90,7 +90,7 @@ class DeltaFilesServiceTest {
         Clock clock = new TestClock();
         deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService,
                 new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, retryPolicyService, metricRepository, coreAuditLogger, joinRepo,
+                actionEventQueue, contentStorageService, resumePolicyService, metricRepository, coreAuditLogger, joinRepo,
                 identityService, didMutexService, deltaFileCacheService);
     }
 
