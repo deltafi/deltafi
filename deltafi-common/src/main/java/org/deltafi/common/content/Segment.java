@@ -48,45 +48,40 @@ public class Segment {
     }
 
     public static long calculateTotalSize(List<Segment> segments) {
-        Map<String, List<Segment>> segmentsByObjectName = new HashMap<>();
+        Map<String, List<Segment>> segmentsByUuid = new HashMap<>();
 
         // Group segments by objectName
         for (Segment segment : segments) {
-            List<Segment> segmentsForObjectName = segmentsByObjectName.computeIfAbsent(segment.objectName(), k -> new ArrayList<>());
-            segmentsForObjectName.add(segment);
+            segmentsByUuid.computeIfAbsent(segment.getUuid(), k -> new ArrayList<>()).add(segment);
         }
 
         // Calculate total size, minus overlap between segments with the same objectName
         long totalSize = 0;
-        for (List<Segment> objectSegments : segmentsByObjectName.values()) {
-            if (objectSegments.size() == 1) {
-                totalSize += objectSegments.get(0).getSize();
-            } else {
-                List<Segment> nonOverlappingSegments = getNonOverlappingSegments(objectSegments);
-                for (Segment segment : nonOverlappingSegments) {
-                    totalSize += segment.getSize();
-                }
-            }
+        for (List<Segment> uuidSegments : segmentsByUuid.values()) {
+            totalSize += calculateNonOverlappingSize(uuidSegments);
         }
 
         return totalSize;
     }
 
     // Helper function to get the non-overlapping segments for a given object name
-    private static List<Segment> getNonOverlappingSegments(List<Segment> uuidSegments) {
-        List<Segment> nonOverlappingSegments = new ArrayList<>();
+    private static long calculateNonOverlappingSize(List<Segment> uuidSegments) {
+        if (uuidSegments.size() == 1) {
+            return uuidSegments.get(0).getSize();
+        }
 
         // Create a copy of the original list and sort by offset
         List<Segment> sortedSegments = new ArrayList<>(uuidSegments);
         sortedSegments.sort(Comparator.comparingLong(Segment::getOffset));
 
-        // Merge overlapping segments
+        // Merge overlapping segments and calculate total size
+        long totalSize = 0;
         Segment mergedSegment = sortedSegments.get(0);
         for (int i = 1; i < sortedSegments.size(); i++) {
             Segment segment = sortedSegments.get(i);
             if (segment.getOffset() >= mergedSegment.getOffset() + mergedSegment.getSize()) {
                 // Non-overlapping segment found
-                nonOverlappingSegments.add(mergedSegment);
+                totalSize += mergedSegment.getSize();
                 mergedSegment = segment;
             } else {
                 // Merge overlapping segments
@@ -94,8 +89,8 @@ public class Segment {
                 mergedSegment = new Segment(mergedSegment.getUuid(), mergedSegment.getOffset(), endPosition - mergedSegment.getOffset(), mergedSegment.getDid());
             }
         }
-        nonOverlappingSegments.add(mergedSegment);
+        totalSize += mergedSegment.getSize();
 
-        return nonOverlappingSegments;
+        return totalSize;
     }
 }
