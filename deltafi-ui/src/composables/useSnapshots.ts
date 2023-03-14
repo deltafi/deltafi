@@ -59,9 +59,24 @@ export default function useSystemSnapshots() {
             value: true
           }
         },
+        resumePolicies: {
+          id: true,
+          errorSubstring: true,
+          flow: true,
+          action: true,
+          actionType: true,
+          maxAttempts: true,
+          backOff: {
+            delay: true,
+            maxDelay: true,
+            multiplier: true,
+            random: true
+          }
+        },
         deltaFiProperties: {
           systemName: true,
           requeueSeconds: true,
+          autoResumeCheckFrequency: true,
           coreServiceThreads: true,
           scheduledServiceThreads: true,
           ui: {
