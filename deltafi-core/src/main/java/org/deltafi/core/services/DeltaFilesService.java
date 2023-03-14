@@ -1161,7 +1161,7 @@ public class DeltaFilesService {
                 log.error("Auto-resume: " + result.getError());
             }
         }
-        log.info("Queued {} DeltaFiles for auto-resume", queued);
+        if (queued > 0) log.info("Queued {} DeltaFiles for auto-resume", queued);
         return queued;
     }
 
