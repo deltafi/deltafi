@@ -863,7 +863,7 @@ _local_build() {
       git clone git@gitlab.com:systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui" || git clone https://gitlab.com/systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui"
     fi
     cd "$ROOT/deltafi-ui"
-    docker build -t localhost:5000/deltafi-ui:latest .
+    time docker build -t localhost:5000/deltafi-ui:latest .
     docker push localhost:5000/deltafi-ui:latest
   fi
 
