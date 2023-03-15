@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -26,62 +26,8 @@ import java.time.Duration;
 import java.util.function.Function;
 
 public enum PropertyType {
-    METRICS_ENABLED("metrics.enabled", "Enable reporting of metrics to statsd/graphite", props -> props.getMetrics().isEnabled(), false) {
-        @Override
-        public Object convertValue(String value) {
-            return convertBoolean(value);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-             target.getMetrics().setEnabled(source.getMetrics().isEnabled());
-        }
-    },
-    SCHEDULER_POOL_SIZE("scheduledServiceThreads", "Maximum allowed number of threads.", DeltaFiProperties::getScheduledServiceThreads) {
-        @Override
-        public Object convertValue(String value) {
-            return convertInt(value, 1);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.setScheduledServiceThreads(source.getScheduledServiceThreads());
-        }
-    },
-    ACTION_QUEUE_THRESHOLD("checks.actionQueueSizeThreshold", "Threshold for Action Queue size check.", props -> props.getChecks().getActionQueueSizeThreshold()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertInt(value, 0);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getChecks().setActionQueueSizeThreshold(source.getChecks().getActionQueueSizeThreshold());
-        }
-    },
-    CONTENT_STORAGE_THRESHOLD("checks.contentStoragePercentThreshold", "Threshold for content storage usage check.", props -> props.getChecks().getContentStoragePercentThreshold()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertInt(value, 0, 100);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getChecks().setContentStoragePercentThreshold(source.getChecks().getContentStoragePercentThreshold());
-        }
-    },
-    REQUEUE_SECONDS("requeueSeconds", "Time to wait for an action to finish processing a DeltaFile before requeuing the action.", DeltaFiProperties::getRequeueSeconds) {
-        @Override
-        public Object convertValue(String value) {
-            return convertInt(value, 1);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.setRequeueSeconds(source.getRequeueSeconds());
-        }
-    },
-    AUTO_RESUME_CHECK_FREQUENCY("autoResumeCheckFrequency", "Frequency that the auto-resume check is triggered.", DeltaFiProperties::getAutoResumeCheckFrequency) {
+    AUTO_RESUME_CHECK_FREQUENCY("autoResumeCheckFrequency", "Frequency that the auto-resume check is triggered",
+            DeltaFiProperties::getAutoResumeCheckFrequency) {
         @Override
         public Object convertValue(String value) {
             Duration duration = DurationReadConverter.doConvert(value);
@@ -96,7 +42,32 @@ public enum PropertyType {
             target.setAutoResumeCheckFrequency(source.getAutoResumeCheckFrequency());
         }
     },
-    CORE_SERVICE_THREADS("coreServiceThreads", "The number of threads used in core processing.", DeltaFiProperties::getCoreServiceThreads) {
+    CHECKS_ACTION_QUEUE_SIZE_THRESHOLD("checks.actionQueueSizeThreshold", "Threshold for Action Queue size check",
+            props -> props.getChecks().getActionQueueSizeThreshold()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 0);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getChecks().setActionQueueSizeThreshold(source.getChecks().getActionQueueSizeThreshold());
+        }
+    },
+    CHECKS_CONTENT_STORAGE_PERCENT_THRESHOLD("checks.contentStoragePercentThreshold",
+            "Threshold for content storage usage check", props -> props.getChecks().getContentStoragePercentThreshold()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 0, 100);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getChecks().setContentStoragePercentThreshold(source.getChecks().getContentStoragePercentThreshold());
+        }
+    },
+    CORE_SERVICE_THREADS("coreServiceThreads", "The number of threads used in core processing",
+            DeltaFiProperties::getCoreServiceThreads) {
         @Override
         public Object convertValue(String value) {
             return convertInt(value, 1);
@@ -107,7 +78,8 @@ public enum PropertyType {
             target.setCoreServiceThreads(source.getCoreServiceThreads());
         }
     },
-    AGE_OFF_DAYS("delete.ageOffDays", "Number of days that a DeltaFile should live, any records older will be removed.", props -> props.getDelete().getAgeOffDays()) {
+    DELETE_AGE_OFF_DAYS("delete.ageOffDays", "Number of days that a DeltaFile should live, any records older will be removed",
+            props -> props.getDelete().getAgeOffDays()) {
         @Override
         public Object convertValue(String value) {
             return convertInt(value, 1);
@@ -118,18 +90,8 @@ public enum PropertyType {
             target.getDelete().setAgeOffDays(source.getDelete().getAgeOffDays());
         }
     },
-    DELETE_BATCH_SIZE("delete.policyBatchSize", "Maximum deletes per policy iteration loop", props -> props.getDelete().getPolicyBatchSize()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertInt(value, 1);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getDelete().setPolicyBatchSize(source.getDelete().getPolicyBatchSize());
-        }
-    },
-    DELETE_FREQUENCY("delete.frequency", "Frequency that the delete action is triggered.", props -> props.getDelete().getFrequency()) {
+    DELETE_FREQUENCY("delete.frequency", "Frequency that the delete action is triggered",
+            props -> props.getDelete().getFrequency()) {
         @Override
         public Object convertValue(String value) {
             return convertDuration(value, "The delete frequency must be greater than 0");
@@ -140,7 +102,20 @@ public enum PropertyType {
             target.getDelete().setFrequency(source.getDelete().getFrequency());
         }
     },
-    DELTAFILE_CACHE_ENABLED("deltaFileCache.enabled", "Enables or disables local caching of deltaFiles.", props -> props.getDeltaFileCache().isEnabled()) {
+    DELETE_POLICY_BATCH_SIZE("delete.policyBatchSize", "Maximum deletes per policy iteration loop",
+            props -> props.getDelete().getPolicyBatchSize()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 1);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getDelete().setPolicyBatchSize(source.getDelete().getPolicyBatchSize());
+        }
+    },
+    DELTA_FILE_CACHE_ENABLED("deltaFileCache.enabled", "Enables or disables local caching of DeltaFiles",
+            props -> props.getDeltaFileCache().isEnabled()) {
         @Override
         public Object convertValue(String value) {
             return convertBoolean(value);
@@ -151,7 +126,8 @@ public enum PropertyType {
             target.getDeltaFileCache().setEnabled(source.getDeltaFileCache().isEnabled());
         }
     },
-    DELTAFILE_CACHE_SYNC_SECONDS("deltaFileCache.syncSeconds", "Sync all deltaFiles that have not been modified for this many seconds.", props -> props.getDeltaFileCache().getSyncSeconds()) {
+    DELTA_FILE_CACHE_SYNC_SECONDS("deltaFileCache.syncSeconds", "Sync all DeltaFiles that have not been modified for this many seconds",
+            props -> props.getDeltaFileCache().getSyncSeconds()) {
         @Override
         public Object convertValue(String value) {
             return convertInt(value, 0);
@@ -162,18 +138,8 @@ public enum PropertyType {
             target.getDeltaFileCache().setSyncSeconds(source.getDeltaFileCache().getSyncSeconds());
         }
     },
-    INGRESS_ENABLED("ingress.enabled", "Enables or disables all ingress for the DeltaFi instance.", props -> props.getIngress().isEnabled()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertBoolean(value);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getIngress().setEnabled(source.getIngress().isEnabled());
-        }
-    },
-    INGRESS_DISK_SPACE_REQUIRED("ingress.diskSpaceRequirementInMb", "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", props -> props.getIngress().getDiskSpaceRequirementInMb()) {
+    INGRESS_DISK_SPACE_REQUIREMENT_IN_MB("ingress.diskSpaceRequirementInMb", "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.",
+            props -> props.getIngress().getDiskSpaceRequirementInMb()) {
         @Override
         public Object convertValue(String value) {
             return convertLong(value, 1);
@@ -184,20 +150,62 @@ public enum PropertyType {
             target.getIngress().setDiskSpaceRequirementInMb(source.getIngress().getDiskSpaceRequirementInMb());
         }
     },
-    IMAGE_REPOSITORY_BASE("plugins.imageRepositoryBase", "Base of the default image repository used for plugins.", props -> props.getPlugins().getImageRepositoryBase()) {
+    INGRESS_ENABLED("ingress.enabled", "Enables or disables all ingress", props -> props.getIngress().isEnabled()) {
         @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getPlugins().setImageRepositoryBase(source.getPlugins().getImageRepositoryBase());
+        public Object convertValue(String value) {
+            return convertBoolean(value);
         }
-    },
-    IMAGE_PULL_SECRET("plugins.imagePullSecret", "Default imagePullSecret used in plugin deployments", props -> props.getPlugins().getImagePullSecret()) {
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getPlugins().setImagePullSecret(source.getPlugins().getImagePullSecret());
-        }
-    },
-    PLUGINS_AUTO_ROLLBACK("plugins.autoRollback", "Rollback failed plugin deployments", props -> props.getPlugins().isAutoRollback()) {
 
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getIngress().setEnabled(source.getIngress().isEnabled());
+        }
+    },
+    JOIN_ACQUIRE_LOCK_TIMEOUT_MS("join.acquireLockTimeoutMs", "Timeout for acquiring a database lock on a join",
+            props -> props.getJoin().getAcquireLockTimeoutMs()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getJoin().setAcquireLockTimeoutMs(source.getJoin().getAcquireLockTimeoutMs());
+        }
+    },
+    JOIN_LOCK_CHECK_INTERVAL("join.lockCheckInterval", "Frequency that database locks on joins are checked for expiration (ISO 8601)",
+            props -> props.getJoin().getLockCheckInterval()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertDuration(value, "The join.lockCheckInterval must be greater than 0");
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getJoin().setLockCheckInterval(source.getJoin().getLockCheckInterval());
+        }
+    },
+    JOIN_MAX_LOCK_DURATION("join.maxLockDuration", "Maximum duration to hold a database lock on a join (ISO 8601)",
+            props -> props.getJoin().getMaxLockDuration()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertDuration(value, "The join.maxLockDuration must be greater than 0");
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getJoin().setMaxLockDuration(source.getJoin().getMaxLockDuration());
+        }
+    },
+    METRICS_ENABLED("metrics.enabled", "Enable reporting of metrics to statsd/graphite",
+            props -> props.getMetrics().isEnabled(), false) {
+        @Override
+        public Object convertValue(String value) {
+            return convertBoolean(value);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+             target.getMetrics().setEnabled(source.getMetrics().isEnabled());
+        }
+    },
+    PLUGINS_AUTO_ROLLBACK("plugins.autoRollback", "Rollback failed plugin deployments",
+            props -> props.getPlugins().isAutoRollback()) {
         @Override
         public Object convertValue(String value) {
             return convertBoolean(value);
@@ -208,7 +216,8 @@ public enum PropertyType {
             target.getPlugins().setAutoRollback(source.getPlugins().isAutoRollback());
         }
     },
-    PLUGINS_DEPLOY_TIMEOUT("plugins.deployTimeout", "Max time to wait for a plugin deployment to succeed", props -> props.getPlugins().getDeployTimeout()) {
+    PLUGINS_DEPLOY_TIMEOUT("plugins.deployTimeout", "Max time to wait for a plugin deployment to succeed",
+            props -> props.getPlugins().getDeployTimeout()) {
         @Override
         public Object convertValue(String value) {
             return convertDuration(value, "The plugin deploy timeout must be greater than 0");
@@ -217,6 +226,44 @@ public enum PropertyType {
         @Override
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
             target.getPlugins().setDeployTimeout(source.getPlugins().getDeployTimeout());
+        }
+    },
+    PLUGINS_IMAGE_PULL_SECRET("plugins.imagePullSecret", "Default imagePullSecret used in plugin deployments",
+            props -> props.getPlugins().getImagePullSecret()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getPlugins().setImagePullSecret(source.getPlugins().getImagePullSecret());
+        }
+    },
+    PLUGINS_IMAGE_REPOSITORY_BASE("plugins.imageRepositoryBase", "Base of the default image repository used for plugins",
+            props -> props.getPlugins().getImageRepositoryBase()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getPlugins().setImageRepositoryBase(source.getPlugins().getImageRepositoryBase());
+        }
+    },
+    REQUEUE_SECONDS("requeueSeconds", "Time to wait for an action to finish processing a DeltaFile before requeuing the action",
+            DeltaFiProperties::getRequeueSeconds) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 1);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.setRequeueSeconds(source.getRequeueSeconds());
+        }
+    },
+    SCHEDULED_SERVICE_THREADS("scheduledServiceThreads", "Maximum allowed number of threads",
+            DeltaFiProperties::getScheduledServiceThreads) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 1);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.setScheduledServiceThreads(source.getScheduledServiceThreads());
         }
     },
     SYSTEM_NAME("systemName", "Name of the DeltaFi cluster", DeltaFiProperties::getSystemName) {
@@ -233,6 +280,53 @@ public enum PropertyType {
             target.setSystemName(source.getSystemName());
         }
     },
+    UI_SECURITY_BANNER_BACKGROUND_COLOR("ui.securityBanner.backgroundColor", "Background color of the security banner",
+            props -> props.getUi().getSecurityBanner().getBackgroundColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setBackgroundColor(source.getUi().getSecurityBanner().getBackgroundColor());
+        }
+    },
+    UI_SECURITY_BANNER_ENABLED("ui.securityBanner.enabled", "Toggles the security banner display",
+            props -> props.getUi().getSecurityBanner().isEnabled()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertBoolean(value);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setEnabled(source.getUi().getSecurityBanner().isEnabled());
+        }
+    },
+    UI_SECURITY_BANNER_TEXT("ui.securityBanner.text", "Text to display in the security banner",
+            props -> props.getUi().getSecurityBanner().getText()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setText(source.getUi().getSecurityBanner().getText());
+        }
+    },
+    UI_SECURITY_BANNER_TEXT_COLOR("ui.securityBanner.textColor", "Color of the text in the security banner",
+            props -> props.getUi().getSecurityBanner().getTextColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getSecurityBanner().setTextColor(source.getUi().getSecurityBanner().getTextColor());
+        }
+    },
+    UI_TOP_BAR_BACKGROUND_COLOR("ui.topBar.backgroundColor", "Background color of the top bar",
+            props -> props.getUi().getTopBar().getBackgroundColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getTopBar().setBackgroundColor(source.getUi().getTopBar().getBackgroundColor());
+        }
+    },
+    UI_TOP_BAR_TEXT_COLOR("ui.topBar.textColor", "Text color of the top bar",
+            props -> props.getUi().getTopBar().getTextColor()) {
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getUi().getTopBar().setTextColor(source.getUi().getTopBar().getTextColor());
+        }
+    },
     UI_USE_UTC("ui.useUTC", "Display times in UTC", props -> props.getUi().isUseUTC()) {
         @Override
         public Object convertValue(String value) {
@@ -242,47 +336,6 @@ public enum PropertyType {
         @Override
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
             target.getUi().setUseUTC(source.getUi().isUseUTC());
-        }
-    },
-    TOP_BAR_BACKGROUND_COLOR("ui.topBar.backgroundColor", "Background color of the top bar", props -> props.getUi().getTopBar().getBackgroundColor()) {
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getUi().getTopBar().setBackgroundColor(source.getUi().getTopBar().getBackgroundColor());
-        }
-    },
-    TOP_BAR_TEXT_COLOR("ui.topBar.textColor", "Text color of the top bar", props -> props.getUi().getTopBar().getTextColor()) {
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getUi().getTopBar().setTextColor(source.getUi().getTopBar().getTextColor());
-        }
-    },
-    SECURITY_BANNER_TEXT("ui.securityBanner.text", "Text to display in the security banner", props -> props.getUi().getSecurityBanner().getText()) {
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getUi().getSecurityBanner().setText(source.getUi().getSecurityBanner().getText());
-        }
-    },
-    SECURITY_BANNER_BACKGROUND_COLOR("ui.securityBanner.backgroundColor", "Background color of the security banner", props -> props.getUi().getSecurityBanner().getBackgroundColor()) {
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getUi().getSecurityBanner().setBackgroundColor(source.getUi().getSecurityBanner().getBackgroundColor());
-        }
-    },
-    SECURITY_BANNER_TEXT_COLOR("ui.securityBanner.textColor", "Color of the text in the security banner", props -> props.getUi().getSecurityBanner().getTextColor()) {
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getUi().getSecurityBanner().setTextColor(source.getUi().getSecurityBanner().getTextColor());
-        }
-    },
-    SECURITY_BANNER_ENABLED("ui.securityBanner.enabled", "Toggles the security banner display", props -> props.getUi().getSecurityBanner().isEnabled()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertBoolean(value);
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getUi().getSecurityBanner().setEnabled(source.getUi().getSecurityBanner().isEnabled());
         }
     };
 

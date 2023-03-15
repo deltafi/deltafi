@@ -42,19 +42,19 @@ let propertySetMapping = [
         "setter": (deltaFiProps, value) => { deltaFiProps["metrics"]["enabled"] = value === 'true' }
     }, {
         "propertySetKey": "spring.task.scheduling.pool.size",
-        "propertyType": "SCHEDULER_POOL_SIZE",
+        "propertyType": "SCHEDULED_SERVICE_THREADS",
         "setter": (deltaFiProps, value) => { deltaFiProps["scheduledServiceThreads"] = parseInt(value) }
     }, {
         "propertySetKey": "deltafi.scheduledServiceThreads",
-        "propertyType": "SCHEDULER_POOL_SIZE",
+        "propertyType": "SCHEDULED_SERVICE_THREADS",
         "setter": (deltaFiProps, value) => { deltaFiProps["scheduledServiceThreads"] = parseInt(value) }
     }, {
         "propertySetKey": "deltafi.checks.actionQueue.sizeThreshold",
-        "propertyType": "ACTION_QUEUE_THRESHOLD",
+        "propertyType": "CHECKS_ACTION_QUEUE_SIZE_THRESHOLD",
         "setter": (deltaFiProps, value) => { deltaFiProps["checks"]["actionQueueSizeThreshold"] = parseInt(value) }
     }, {
         "propertySetKey": "deltafi.checks.contentStorage.percentThreshold",
-        "propertyType": "CONTENT_STORAGE_THRESHOLD",
+        "propertyType": "CHECKS_CONTENT_STORAGE_PERCENT_THRESHOLD",
         "setter": (deltaFiProps, value) => { deltaFiProps["checks"]["contentStoragePercentThreshold"] = parseInt(value) }
     }, {
         "propertySetKey": "deltafi.requeueSeconds",
@@ -66,11 +66,11 @@ let propertySetMapping = [
         "setter": (deltaFiProps, value) => { deltaFiProps["coreServiceThreads"] = parseInt(value) }
     }, {
         "propertySetKey": "deltafi.delete.ageOffDays",
-        "propertyType": "AGE_OFF_DAYS",
+        "propertyType": "DELETE_AGE_OFF_DAYS",
         "setter": (deltaFiProps, value) => { deltaFiProps["delete"]["ageOffDays"] = parseInt(value) }
     }, {
         "propertySetKey": "deltafi.delete.policyBatchSize",
-        "propertyType": "DELETE_BATCH_SIZE",
+        "propertyType": "DELETE_POLICY_BATCH_SIZE",
         "setter": (deltaFiProps, value) => { deltaFiProps["delete"]["policyBatchSize"] = parseInt(value) }
     }, {
         "propertySetKey": "deltafi.delete.frequency",
@@ -82,15 +82,15 @@ let propertySetMapping = [
         "setter": (deltaFiProps, value) => { deltaFiProps["ingress"]["enabled"] = value === 'true' }
     }, {
         "propertySetKey": "deltafi.ingress.diskSpaceRequirementInMb",
-        "propertyType": "INGRESS_DISK_SPACE_REQUIRED",
+        "propertyType": "INGRESS_DISK_SPACE_REQUIREMENT_IN_MB",
         "setter": (deltaFiProps, value) => { deltaFiProps["ingress"]["diskSpaceRequirementInMb"] = new NumberLong(value) }
     }, {
         "propertySetKey": "deltafi.plugins.imageRepositoryBase",
-        "propertyType": "IMAGE_REPOSITORY_BASE",
+        "propertyType": "PLUGINS_IMAGE_REPOSITORY_BASE",
         "setter": (deltaFiProps, value) => { deltaFiProps["plugins"]["imageRepositoryBase"] = value }
     }, {
         "propertySetKey": "deltafi.plugins.imagePullSecret",
-        "propertyType": "IMAGE_PULL_SECRET",
+        "propertyType": "PLUGINS_IMAGE_PULL_SECRET",
         "setter": (deltaFiProps, value) => { deltaFiProps["plugins"]["imagePullSecret"] = value }
     }, {
         "propertySetKey": "deltafi.systemName",

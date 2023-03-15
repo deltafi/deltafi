@@ -26,14 +26,14 @@ getSetProperties = function(uiConfig) {
     addIfSet(uiConfig, 'useUTC', 'UI_USE_UTC', setProperties)
 
     let topBar = uiConfig['topBar'] || {}
-    addIfSet(topBar, 'textColor', 'TOP_BAR_TEXT_COLOR', setProperties)
-    addIfSet(topBar, 'backgroundColor', 'TOP_BAR_BACKGROUND_COLOR', setProperties)
+    addIfSet(topBar, 'textColor', 'UI_TOP_BAR_TEXT_COLOR', setProperties)
+    addIfSet(topBar, 'backgroundColor', 'UI_TOP_BAR_BACKGROUND_COLOR', setProperties)
 
     let securityBanner = uiConfig['securityBanner'] || {}
-    addIfSet(securityBanner, 'enabled', 'SECURITY_BANNER_ENABLED', setProperties)
-    addIfSet(securityBanner, 'text', 'SECURITY_BANNER_TEXT', setProperties)
-    addIfSet(securityBanner, 'textColor', 'SECURITY_BANNER_TEXT_COLOR', setProperties)
-    addIfSet(securityBanner, 'backgroundColor', 'SECURITY_BANNER_BACKGROUND_COLOR', setProperties)
+    addIfSet(securityBanner, 'enabled', 'UI_SECURITY_BANNER_ENABLED', setProperties)
+    addIfSet(securityBanner, 'text', 'UI_SECURITY_BANNER_TEXT', setProperties)
+    addIfSet(securityBanner, 'textColor', 'UI_SECURITY_BANNER_TEXT_COLOR', setProperties)
+    addIfSet(securityBanner, 'backgroundColor', 'UI_SECURITY_BANNER_BACKGROUND_COLOR', setProperties)
 
     return setProperties
 }

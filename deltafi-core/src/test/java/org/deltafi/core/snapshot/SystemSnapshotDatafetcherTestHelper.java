@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -140,7 +140,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         deltaFiProperties.getDelete().setFrequency(Duration.ofSeconds(30));
         deltaFiProperties.getDelete().setPolicyBatchSize(5000);
         deltaFiProperties.setAutoResumeCheckFrequency(Duration.ofMinutes(10));
-        Set<String> props = Stream.of(PropertyType.UI_USE_UTC, PropertyType.ACTION_QUEUE_THRESHOLD, PropertyType.INGRESS_DISK_SPACE_REQUIRED, PropertyType.INGRESS_ENABLED, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_BATCH_SIZE, PropertyType.AUTO_RESUME_CHECK_FREQUENCY)
+        Set<String> props = Stream.of(PropertyType.AUTO_RESUME_CHECK_FREQUENCY, PropertyType.CHECKS_ACTION_QUEUE_SIZE_THRESHOLD, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_POLICY_BATCH_SIZE, PropertyType.INGRESS_DISK_SPACE_REQUIREMENT_IN_MB, PropertyType.INGRESS_ENABLED, PropertyType.UI_USE_UTC)
                 .map(Enum::name).collect(Collectors.toSet());
         deltaFiProperties.setSetProperties(props);
 
@@ -330,13 +330,13 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 contentStoragePercentThreshold: 90
                             }
                             setProperties: [
-                                "UI_USE_UTC"
-                                "ACTION_QUEUE_THRESHOLD"
-                                "INGRESS_DISK_SPACE_REQUIRED"
-                                "INGRESS_ENABLED"
-                                "DELETE_FREQUENCY"
-                                "DELETE_BATCH_SIZE"
                                 "AUTO_RESUME_CHECK_FREQUENCY"
+                                "CHECKS_ACTION_QUEUE_SIZE_THRESHOLD"
+                                "DELETE_FREQUENCY"
+                                "DELETE_POLICY_BATCH_SIZE"
+                                "INGRESS_DISK_SPACE_REQUIREMENT_IN_MB"
+                                "INGRESS_ENABLED"
+                                "UI_USE_UTC"
                             ]
                         }
                         pluginImageRepositories: [

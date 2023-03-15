@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -85,12 +85,12 @@ class DeltaFiPropertiesServiceTest {
 
     @Test
     void testMergeProperties() {
-        Set<String> setInBoth = Stream.of(PropertyType.REQUEUE_SECONDS, PropertyType.AGE_OFF_DAYS).map(Enum::name).collect(Collectors.toSet());
+        Set<String> setInBoth = Stream.of(PropertyType.REQUEUE_SECONDS, PropertyType.DELETE_AGE_OFF_DAYS).map(Enum::name).collect(Collectors.toSet());
 
         Link targetCommon = link("both", "target.both.com", "target both");
         Link targetOnly = link("target", "target.com", "target only");
 
-        Set<String> setTargetProps = Stream.of(PropertyType.SYSTEM_NAME, PropertyType.SECURITY_BANNER_ENABLED, PropertyType.SECURITY_BANNER_BACKGROUND_COLOR, PropertyType.SECURITY_BANNER_TEXT, PropertyType.SECURITY_BANNER_TEXT_COLOR)
+        Set<String> setTargetProps = Stream.of(PropertyType.SYSTEM_NAME, PropertyType.UI_SECURITY_BANNER_ENABLED, PropertyType.UI_SECURITY_BANNER_BACKGROUND_COLOR, PropertyType.UI_SECURITY_BANNER_TEXT, PropertyType.UI_SECURITY_BANNER_TEXT_COLOR)
                 .map(Enum::name).collect(Collectors.toSet());;
         DeltaFiProperties targetProperties = new DeltaFiProperties();
         targetProperties.setRequeueSeconds(1);
@@ -106,7 +106,7 @@ class DeltaFiPropertiesServiceTest {
         Link sourceCommon = link("both", "source.both.com", "source both");
         Link sourceOnly = link("source", "source.com", "source only");
         DeltaFiProperties snapshotSource = new DeltaFiProperties();
-        Set<String> setSourceProps = Stream.of(PropertyType.UI_USE_UTC, PropertyType.TOP_BAR_TEXT_COLOR, PropertyType.TOP_BAR_BACKGROUND_COLOR).map(Enum::name).collect(Collectors.toSet());;
+        Set<String> setSourceProps = Stream.of(PropertyType.UI_USE_UTC, PropertyType.UI_TOP_BAR_TEXT_COLOR, PropertyType.UI_TOP_BAR_BACKGROUND_COLOR).map(Enum::name).collect(Collectors.toSet());;
         snapshotSource.setRequeueSeconds(2);
         snapshotSource.getDelete().setAgeOffDays(2);
         snapshotSource.getUi().setUseUTC(false);
