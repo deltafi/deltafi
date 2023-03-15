@@ -24,8 +24,8 @@ const generateData = (count: number) => {
     return {
       did: faker.datatype.uuid(),
       stage: "ERROR",
-      created: "2021-2023-03-03T19:23:20.823Z",
-      modified: "2021-2023-03-03T19:23:20.888Z",
+      created: "2022-03-03T19:23:20.823Z",
+      modified: "2022-03-03T19:23:20.888Z",
       sourceInfo: {
         filename: faker.system.commonFileName("txt"),
         flow: "mock.ingressFlow",

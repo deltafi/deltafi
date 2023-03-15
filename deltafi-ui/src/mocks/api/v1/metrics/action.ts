@@ -91,7 +91,7 @@ const generateData = () => {
         "stix2_1.Stix2_1EgressAction": {},
       },
     },
-    timestamp: "2021-2023-06-23 07:57:51 +0000",
+    timestamp: "2022-06-23 07:57:51 +0000",
   };
 };
 

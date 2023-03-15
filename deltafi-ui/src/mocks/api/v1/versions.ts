@@ -209,7 +209,7 @@ const generateData = () => {
         group: "deltafi-plugins",
       },
     ],
-    timestamp: "2021-2023-04-01 16:06:14 -0400",
+    timestamp: "2022-04-01 16:06:14 -0400",
   };
 };
 

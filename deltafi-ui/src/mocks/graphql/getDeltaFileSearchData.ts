@@ -26,8 +26,8 @@ const generateData = () => {
         did: "27186720-723a-4f82-a5ab-2fff441b2c9b",
         stage: "ERROR",
         totalBytes: 65535,
-        modified: "2021-2023-02-23T15:19:39.549Z",
-        created: "2021-2023-02-23T15:19:39.434Z",
+        modified: "2022-02-23T15:19:39.549Z",
+        created: "2022-02-23T15:19:39.434Z",
         sourceInfo: {
           filename: "fakeData.txt",
           flow: "smoke",
