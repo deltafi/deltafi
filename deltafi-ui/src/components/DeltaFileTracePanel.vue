@@ -145,18 +145,18 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .attr("viewBox", `0 10 ${svgWidth} ${svgHeight - rowWidth}`);
 
   // create tooltip element
-  // const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "10").style("visibility", "hidden");
-  // const showToolTip = (d, event) => {
-  //   let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
-  //   tooltip
-  //     .html(tipString)
-  //     .style("visibility", "visible")
-  //     .style("top", `${event.offsetY - 15}px`)
-  //     .style("left", `${event.offsetX}px`);
-  // };
-  // const hideToolTip = () => {
-  //   tooltip.html("").style("visibility", "hidden");
-  // };
+  const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "2000").style("visibility", "hidden");
+  const showToolTip = (d, event) => {
+    let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
+    tooltip
+      .html(tipString)
+      .style("visibility", "visible")
+      .style("top", `${event.offsetY - 14}px`)
+      .style("left", `${event.offsetX}px`);
+  };
+  const hideToolTip = () => {
+    tooltip.html("").style("visibility", "hidden");
+  };
 
   // Set the x-axis scale
   let x = d3.scale.linear().domain([0, maxData]).range(["0px", "400px"]);
@@ -225,18 +225,12 @@ const HorizontalWaterfallChart = (attachTo, data) => {
       return d.name;
     })
     .on("mouseover", function (d) {
-      let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? ` Action: ${d.name} &#013; Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} &#013; Modified: ${formatTimestamp(d.modifiedOrginal, timestampFormat)} &#013; Total Elapsed: ${d.elapsed} ms&#013; Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} &#013; Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} &#013; Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : ` Action: ${d.name} &#013; Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} &#013; Modified: ${formatTimestamp(d.modifiedOrginal, timestampFormat)} &#013; Total Elapsed: ${d.elapsed}ms `;
-      // showToolTip(d, d3.event);
+      showToolTip(d, d3.event);
       d3.selectAll(".rectWF").style("opacity", 0.5);
       d3.select(this).style("opacity", 1);
-      d3.select(this).append("title").attr("id", () => {
-        return "actionsToolTip";
-      }).html(tipString)
     })
     .on("mouseout", function () {
-      //hideToolTip();
-      d3.selectAll(".rectWF").style("opacity", 1)
-      d3.select("#actionsToolTip").remove()
+      hideToolTip();
     })
     .transition()
     .duration(1000)
@@ -274,17 +268,12 @@ const HorizontalWaterfallChart = (attachTo, data) => {
       return d.name;
     })
     .on("mouseover", function (d) {
-      let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? ` Action: ${d.name} &#013; Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} &#013; Modified: ${formatTimestamp(d.modifiedOrginal, timestampFormat)} &#013; Total Elapsed: ${d.elapsed} ms&#013; Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} &#013; Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} &#013; Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : ` Action: ${d.name} &#013; Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} &#013; Modified: ${formatTimestamp(d.modifiedOrginal, timestampFormat)} &#013; Total Elapsed: ${d.elapsed}ms `;
-      //showToolTip(d, d3.event);
+      showToolTip(d, d3.event);
       d3.selectAll(".rectWF").style("opacity", 0.5);
-      d3.select(this).append("title").attr("id", () => {
-        return "actionsToolTip";
-      }).html(tipString)
     })
     .on("mouseout", function () {
-      // d3.selectAll(".rectWF").style("opacity", 0)
-      d3.select("#actionsToolTip").remove()
-      //hideToolTip();;
+      d3.selectAll(".rectWF").style("opacity", 0)
+      hideToolTip();
     })
     .transition()
     .duration(1000)
@@ -311,9 +300,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
       }
     })
     .on("mouseover", function (d) {
-      //showToolTip(d, d3.event);
-      d3.selectAll(".rectWF").style("opacity", 0.5);
-      d3.select(`#${d.name}`).style("opacity", 1);
+      showToolTip(d, d3.event);
     })
     .attr("x", function (d) {
       return x(d.end - d.elapsed / 2);
