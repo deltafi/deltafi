@@ -25,6 +25,7 @@ import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
+import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.*;
 
@@ -65,6 +66,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         systemSnapshot.setId("63fe71a7d021eb040c97bda2");
         systemSnapshot.setReason("TEST");
         systemSnapshot.setCreated(OffsetDateTime.parse("2023-02-28T21:27:03.407Z"));
+        setResumePolicies(systemSnapshot);
         setDeletePolicies(systemSnapshot);
         setFlowAssignmentRules(systemSnapshot);
         setDeltaFiProperties(systemSnapshot);
@@ -73,6 +75,23 @@ public class SystemSnapshotDatafetcherTestHelper {
         setInstalledPlugins(systemSnapshot);
         setFlowInfo(systemSnapshot);
         return systemSnapshot;
+    }
+
+    private static void setResumePolicies(SystemSnapshot systemSnapshot) {
+        ResumePolicy first = new ResumePolicy();
+        first.setId("88bc7429-7adf-4bb1-b23f-3922993e0a1a");
+        first.setFlow("passthrough");
+        first.setMaxAttempts(10);
+        first.setBackOff(BackOff.newBuilder().delay(100).maxDelay(200).multiplier(1).build());
+
+        ResumePolicy second = new ResumePolicy();
+        second.setId("a2b08968-866a-4080-bc28-1d7e7c81ada8");
+        second.setErrorSubstring("JsonException");
+        second.setActionType("ENRICH");
+        second.setMaxAttempts(4);
+        second.setBackOff(BackOff.newBuilder().delay(60).maxDelay(120).random(true).build());
+
+        systemSnapshot.setResumePolicies(List.of(first, second));
     }
 
     private static void setDeletePolicies(SystemSnapshot systemSnapshot) {
@@ -120,7 +139,8 @@ public class SystemSnapshotDatafetcherTestHelper {
         deltaFiProperties.getIngress().setEnabled(true);
         deltaFiProperties.getDelete().setFrequency(Duration.ofSeconds(30));
         deltaFiProperties.getDelete().setPolicyBatchSize(5000);
-        Set<String> props = Stream.of(PropertyType.UI_USE_UTC, PropertyType.ACTION_QUEUE_THRESHOLD, PropertyType.INGRESS_DISK_SPACE_REQUIRED, PropertyType.INGRESS_ENABLED, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_BATCH_SIZE)
+        deltaFiProperties.setAutoResumeCheckFrequency(Duration.ofMinutes(10));
+        Set<String> props = Stream.of(PropertyType.UI_USE_UTC, PropertyType.ACTION_QUEUE_THRESHOLD, PropertyType.INGRESS_DISK_SPACE_REQUIRED, PropertyType.INGRESS_ENABLED, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_BATCH_SIZE, PropertyType.AUTO_RESUME_CHECK_FREQUENCY)
                 .map(Enum::name).collect(Collectors.toSet());
         deltaFiProperties.setSetProperties(props);
 
@@ -236,7 +256,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 backOff:
                                     {
                                         delay: 100
-                                        maxDelay: 260
+                                        maxDelay: 200
                                         multiplier: 1
                                     }
                             }
@@ -316,6 +336,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 "INGRESS_ENABLED"
                                 "DELETE_FREQUENCY"
                                 "DELETE_BATCH_SIZE"
+                                "AUTO_RESUME_CHECK_FREQUENCY"
                             ]
                         }
                         pluginImageRepositories: [
@@ -424,6 +445,7 @@ public class SystemSnapshotDatafetcherTestHelper {
             deltaFiProperties {
               systemName
               requeueSeconds
+              autoResumeCheckFrequency
               coreServiceThreads
               scheduledServiceThreads
               delete {
@@ -513,6 +535,20 @@ public class SystemSnapshotDatafetcherTestHelper {
                 required
                 defaultValue
                 value
+              }
+            }
+            resumePolicies {
+              id
+              flow
+              errorSubstring
+              action
+              actionType
+              maxAttempts
+              backOff {
+                delay
+                maxDelay
+                multiplier
+                random
               }
             }
             flowAssignmentRules {

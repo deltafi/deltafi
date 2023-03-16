@@ -24,6 +24,7 @@ consistent in the database. This decreases processing latency but does not give 
   - `ResumePolicyDelete` - allows user to remove a auto-resume policy
 - New `autoResumeCheckFrequency` system property to control how often the auto-resume task runs.
 - Added `nextAutoResume` timestmap to DeltaFile
+- Added auto-resume documentation
 
 ### Changed
 - Updated the load-plans command to take plugin coordinates as an argument.

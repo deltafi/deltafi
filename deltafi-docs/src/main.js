@@ -167,6 +167,10 @@ new Docute({
           link: '/advanced/architecture'
         },
         {
+          title: 'Automatic Resume',
+          link: '/advanced/auto_resume'
+        },
+        {
           title: 'Advanced Routing',
           link: '/advanced/advanced_routing'
         },
