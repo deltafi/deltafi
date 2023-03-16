@@ -114,7 +114,8 @@ else
     log_failed "$DGS_ERRORS"
   elif [[ "$SUBCOMMAND" == "set" ]]; then
     UPDATED=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}")
-    if [[ "$UPDATED" == "1" ]]; then
+
+    if [[ "$UPDATED" == "true" ]]; then
       cli_log "${green}Successfully set ${bold}$PROPERTY_SET:$PROPERTY_KEY${normal}${green} to ${bold}$PROPERTY_VALUE${normal}"
     else
       cli_log "${yellow}Property $PROPERTY_KEY in property set $PROPERTY_SET was not updated${normal}"

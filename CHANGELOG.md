@@ -39,6 +39,7 @@ consistent in the database. This decreases processing latency but does not give 
 - A metric bug with illegal characters in tags
 - DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats.
 - Replaced deprecated GitLab CI variables
+- Fixed unknown enum startup errors when rolling back DeltaFi
 
 ### Tech-Debt/Refactor
 - More precise calculation of referencedBytes and totalBytes - remove assumption that segments are contiguous.

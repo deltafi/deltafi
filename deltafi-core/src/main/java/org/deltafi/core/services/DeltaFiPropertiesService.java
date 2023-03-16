@@ -186,9 +186,12 @@ public class DeltaFiPropertiesService implements Snapshotter {
     DeltaFiProperties mergeProperties(DeltaFiProperties source) {
         DeltaFiProperties target = getDeltaFiPropertiesFromRepo();
 
-        for (PropertyType propertyType : source.getSetProperties()) {
-            propertyType.copyValue(target, source);
-            target.getSetProperties().add(propertyType);
+        for (String propertyName : source.getSetProperties()) {
+            PropertyType propertyType = propertyTypeFromName(propertyName);
+            if (propertyType != null) {
+                propertyType.copyValue(target, source);
+                target.getSetProperties().add(propertyType.name());
+            }
         }
 
         target.getUi().mergeLinkLists(source.getUi());
@@ -227,5 +230,13 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     private void warnInvalidProperty(String key) {
         log.warn("Invalid property update received with key of {}", key);
+    }
+
+    private PropertyType propertyTypeFromName(String name) {
+        try {
+            return PropertyType.valueOf(name);
+        } catch (IllegalStateException e) {
+            return null;
+        }
     }
 }

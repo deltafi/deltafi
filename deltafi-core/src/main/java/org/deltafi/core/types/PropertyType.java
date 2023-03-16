@@ -322,7 +322,7 @@ public enum PropertyType {
         Object defaultValue = getProperty(DEFAULT);
         property.setValue(setValue != null ? setValue.toString() : null);
         property.setDefaultValue(defaultValue != null ? defaultValue.toString() : null);
-        property.setPropertySource(deltaFiProperties.getSetProperties().contains(this) ? PropertySource.MONGO : PropertySource.DEFAULT);
+        property.setPropertySource(deltaFiProperties.getSetProperties().contains(this.name()) ? PropertySource.MONGO : PropertySource.DEFAULT);
         return property;
     }
 

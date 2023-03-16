@@ -69,34 +69,6 @@ input PropertyId {
     key: String!
 }
 
-enum PropertyType {
-    ACTION_QUEUE_THRESHOLD
-    AGE_OFF_DAYS
-    CONTENT_STORAGE_THRESHOLD
-    CORE_SERVICE_THREADS
-    DELETE_BATCH_SIZE
-    DELETE_FREQUENCY
-    DELETE_ON_COMPLETION
-    DELTAFILE_CACHE_ENABLED
-    DELTAFILE_CACHE_SYNC_SECONDS
-    IMAGE_PULL_SECRET
-    IMAGE_REPOSITORY_BASE
-    INGRESS_DISK_SPACE_REQUIRED
-    INGRESS_ENABLED
-    METRICS_ENABLED
-    REQUEUE_SECONDS
-    AUTO_RESUME_CHECK_FREQUENCY
-    SCHEDULER_POOL_SIZE
-    SECURITY_BANNER_BACKGROUND_COLOR
-    SECURITY_BANNER_ENABLED
-    SECURITY_BANNER_TEXT
-    SECURITY_BANNER_TEXT_COLOR
-    SYSTEM_NAME
-    TOP_BAR_BACKGROUND_COLOR
-    TOP_BAR_TEXT_COLOR
-    UI_USE_UTC
-}
-
 type DeleteProperties {
     ageOffDays: Int!
     frequency: String!
@@ -210,7 +182,7 @@ type DeltaFiProperties {
     plugins: PluginProperties!
     checks: SystemCheckProperties!
     ui: UiProperties!
-    setProperties: [PropertyType]!
+    setProperties: [String]!
 }
 
 input DeltaFiPropertiesInput {
@@ -225,7 +197,7 @@ input DeltaFiPropertiesInput {
     plugins: PluginPropertiesInput!
     checks: SystemCheckPropertiesInput!
     ui: UiPropertiesInput!
-    setProperties: [PropertyType]!
+    setProperties: [String]!
 }
 
 extend type Query {

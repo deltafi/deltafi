@@ -3358,7 +3358,7 @@ class DeltaFiCoreApplicationTests {
 		current = deltaFiPropertiesService.getDeltaFiProperties();
 
 		assertThat(current.getSystemName()).isEqualTo("newName");
-		assertThat(current.getSetProperties()).hasSize(1).contains(PropertyType.SYSTEM_NAME);
+		assertThat(current.getSetProperties()).hasSize(1).contains(PropertyType.SYSTEM_NAME.name());
 
 		// already newName no changes made, return false
 		assertThat(deltaFiPropertiesRepo.updateProperties(Map.of(PropertyType.SYSTEM_NAME, "newName"))).isFalse();
@@ -3368,14 +3368,14 @@ class DeltaFiCoreApplicationTests {
 	void unsetProperties() {
 		DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
 		deltaFiProperties.setSystemName("newName");
-		deltaFiProperties.getSetProperties().add(PropertyType.SYSTEM_NAME);
+		deltaFiProperties.getSetProperties().add(PropertyType.SYSTEM_NAME.name());
 
 		deltaFiPropertiesRepo.save(deltaFiProperties);
 		deltaFiPropertiesService.refreshProperties();
 
 		DeltaFiProperties current = deltaFiPropertiesService.getDeltaFiProperties();
 		assertThat(current.getSystemName()).isEqualTo("newName");
-		assertThat(current.getSetProperties()).hasSize(1).contains(PropertyType.SYSTEM_NAME);
+		assertThat(current.getSetProperties()).hasSize(1).contains(PropertyType.SYSTEM_NAME.name());
 
 
 		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(PropertyType.SYSTEM_NAME))).isTrue();

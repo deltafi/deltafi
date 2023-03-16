@@ -32,6 +32,8 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SystemSnapshotDatafetcherTestHelper {
 
@@ -118,7 +120,9 @@ public class SystemSnapshotDatafetcherTestHelper {
         deltaFiProperties.getIngress().setEnabled(true);
         deltaFiProperties.getDelete().setFrequency(Duration.ofSeconds(30));
         deltaFiProperties.getDelete().setPolicyBatchSize(5000);
-        deltaFiProperties.setSetProperties(Set.of(PropertyType.UI_USE_UTC, PropertyType.ACTION_QUEUE_THRESHOLD, PropertyType.INGRESS_DISK_SPACE_REQUIRED, PropertyType.INGRESS_ENABLED, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_BATCH_SIZE));
+        Set<String> props = Stream.of(PropertyType.UI_USE_UTC, PropertyType.ACTION_QUEUE_THRESHOLD, PropertyType.INGRESS_DISK_SPACE_REQUIRED, PropertyType.INGRESS_ENABLED, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_BATCH_SIZE)
+                .map(Enum::name).collect(Collectors.toSet());
+        deltaFiProperties.setSetProperties(props);
 
         systemSnapshot.setDeltaFiProperties(deltaFiProperties);
     }
@@ -306,12 +310,12 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 contentStoragePercentThreshold: 90
                             }
                             setProperties: [
-                                UI_USE_UTC
-                                ACTION_QUEUE_THRESHOLD
-                                INGRESS_DISK_SPACE_REQUIRED
-                                INGRESS_ENABLED
-                                DELETE_FREQUENCY
-                                DELETE_BATCH_SIZE
+                                "UI_USE_UTC"
+                                "ACTION_QUEUE_THRESHOLD"
+                                "INGRESS_DISK_SPACE_REQUIRED"
+                                "INGRESS_ENABLED"
+                                "DELETE_FREQUENCY"
+                                "DELETE_BATCH_SIZE"
                             ]
                         }
                         pluginImageRepositories: [

@@ -47,7 +47,7 @@ public class DeltaFiProperties {
     private SystemCheckProperties checks = new SystemCheckProperties();
     private UiProperties ui = new UiProperties();
 
-    private Set<PropertyType> setProperties = new HashSet<>();
+    private Set<String> setProperties = new HashSet<>();
 
     private JoinProperties join = new JoinProperties();
 }
