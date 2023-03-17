@@ -87,6 +87,8 @@ type MetricsProperties {
 type PluginProperties {
     imageRepositoryBase: String
     imagePullSecret: String
+    autoRollback: Boolean
+    deployTimeout: String
 }
 
 type SystemCheckProperties {
@@ -137,6 +139,8 @@ input MetricsPropertiesInput {
 input PluginPropertiesInput {
     imageRepositoryBase: String
     imagePullSecret: String
+    autoRollback: Boolean
+    deployTimeout: String
 }
 
 input SystemCheckPropertiesInput {

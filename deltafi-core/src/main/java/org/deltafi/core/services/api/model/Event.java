@@ -20,6 +20,7 @@ package org.deltafi.core.services.api.model;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.List;
 
@@ -53,14 +54,54 @@ public class Event {
 
     // Just to make javadocs happy
     public static class EventBuilder {
+
+        private static final String COLUMN_SEP = "|";
+        private static final String HEADER_SEP = "-";
+        public static final String ESCAPED_NEWLINE = "\\n";
+
         public EventBuilder addList(String title, List<String> items) {
             if(items != null && !items.isEmpty()) {
-                String blob = title + "\\n* " + String.join("\\n* ", items) + "\\n";
+                String blob = title + "\\n* " + String.join("\\n* ", items) + ESCAPED_NEWLINE;
                 if (content$set) {
-                    content(content$value + "\\n" + blob);
+                    content(content$value + ESCAPED_NEWLINE + blob);
                 } else {
                     content(blob);
                 }
+            }
+            return this;
+        }
+
+        public EventBuilder addTable(String title, List<String> headers, List<List<String>> rows) {
+            if (rows != null && !rows.isEmpty()) {
+                StringBuilder table = new StringBuilder(title);
+                table.append(ESCAPED_NEWLINE);
+                table.append(COLUMN_SEP).append(String.join(COLUMN_SEP, headers)).append(COLUMN_SEP).append(ESCAPED_NEWLINE);
+                table.append(COLUMN_SEP);
+                headers.forEach(header -> table.append(HEADER_SEP.repeat(header.length())).append(COLUMN_SEP));
+                table.append(ESCAPED_NEWLINE);
+                rows.forEach(row -> addRow(table, row));
+
+                if (content$set) {
+                    content(content$value + ESCAPED_NEWLINE + table);
+                } else {
+                    content(table.toString());
+                }
+            }
+            return this;
+        }
+
+        private void addRow(StringBuilder content, List<String> row) {
+            content.append(COLUMN_SEP);
+            row.forEach(value -> content.append(StringEscapeUtils.escapeJson(value)).append(COLUMN_SEP));
+            content.append(ESCAPED_NEWLINE);
+        }
+
+        public EventBuilder addJsonLog(String title, String jsonLog) {
+            String blob = title + "\\n```json\\n" + StringEscapeUtils.escapeJson(jsonLog) +"```";
+            if (content$set) {
+                content(content$value + ESCAPED_NEWLINE + blob);
+            } else {
+                content(blob);
             }
             return this;
         }

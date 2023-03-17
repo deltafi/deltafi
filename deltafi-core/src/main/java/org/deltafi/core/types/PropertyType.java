@@ -81,7 +81,7 @@ public enum PropertyType {
             target.setRequeueSeconds(source.getRequeueSeconds());
         }
     },
-    AUTO_RESUME_CHECK_FREQUENCY("autoResumeCheckFrequency", "Frequency that the auto-resume check is triggered.", props -> props.getAutoResumeCheckFrequency()) {
+    AUTO_RESUME_CHECK_FREQUENCY("autoResumeCheckFrequency", "Frequency that the auto-resume check is triggered.", DeltaFiProperties::getAutoResumeCheckFrequency) {
         @Override
         public Object convertValue(String value) {
             Duration duration = DurationReadConverter.doConvert(value);
@@ -132,11 +132,7 @@ public enum PropertyType {
     DELETE_FREQUENCY("delete.frequency", "Frequency that the delete action is triggered.", props -> props.getDelete().getFrequency()) {
         @Override
         public Object convertValue(String value) {
-            Duration duration = DurationReadConverter.doConvert(value);
-            if (duration.toMillis() < 0) {
-                throw new IllegalArgumentException("The delete frequency must be greater than 0");
-            }
-            return value; // store the original string value so a simple duration isn't converted to ISO-8601
+            return convertDuration(value, "The delete frequency must be greater than 0");
         }
 
         @Override
@@ -198,6 +194,29 @@ public enum PropertyType {
         @Override
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
             target.getPlugins().setImagePullSecret(source.getPlugins().getImagePullSecret());
+        }
+    },
+    PLUGINS_AUTO_ROLLBACK("plugins.autoRollback", "Rollback failed plugin deployments", props -> props.getPlugins().isAutoRollback()) {
+
+        @Override
+        public Object convertValue(String value) {
+            return convertBoolean(value);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getPlugins().setAutoRollback(source.getPlugins().isAutoRollback());
+        }
+    },
+    PLUGINS_DEPLOY_TIMEOUT("plugins.deployTimeout", "Max time to wait for a plugin deployment to succeed", props -> props.getPlugins().getDeployTimeout()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertDuration(value, "The plugin deploy timeout must be greater than 0");
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getPlugins().setDeployTimeout(source.getPlugins().getDeployTimeout());
         }
     },
     SYSTEM_NAME("systemName", "Name of the DeltaFi cluster", DeltaFiProperties::getSystemName) {
@@ -356,5 +375,13 @@ public enum PropertyType {
             throw new IllegalArgumentException(INVALID_VALUE + value + ", integer must be greater than or equal to " + min + " and less than or equal to " + max);
         }
         return intValue;
+    }
+
+    static String convertDuration(String value, String errorMessage) {
+        Duration duration = DurationReadConverter.doConvert(value);
+        if (duration.toMillis() < 0) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        return value; // store the original string value so a simple duration isn't converted to ISO-8601
     }
 }

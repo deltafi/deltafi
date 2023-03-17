@@ -40,7 +40,7 @@ class K8sDeployerServiceTest {
             .build();
 
 
-    final K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null);
+    final K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null, null, null);
 
     @BeforeEach
     public void setDeploymentTemplate() {
@@ -59,7 +59,7 @@ class K8sDeployerServiceTest {
 
         pluginCustomization.setExtraContainers(List.of(container));
 
-        Deployment deployment = k8sDeployerService.createDeployment(PLUGIN_COORDINATES, pluginImageRepository, pluginCustomization);
+        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, pluginImageRepository, pluginCustomization, List.of());
 
         Assertions.assertThat(deployment).isEqualTo(expectedDeployment("plugins/deployer/expected-deployment.yaml"));
     }
@@ -69,10 +69,10 @@ class K8sDeployerServiceTest {
         Deployment withReplicas = expectedDeployment("plugins/deployer/expected-deployment.yaml");
         withReplicas.getSpec().setReplicas(2);
 
-        Deployment deployment = k8sDeployerService.createDeployment(PLUGIN_COORDINATES, getPluginImageRepository(), new PluginCustomization());
+        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, getPluginImageRepository(), new PluginCustomization(), List.of());
 
         Assertions.assertThat(deployment.getSpec().getReplicas()).isNull();
-        k8sDeployerService.preserveValuesIfUpgrade(deployment, withReplicas);
+        k8sDeployerService.preserveValues(deployment, withReplicas);
         Assertions.assertThat(deployment.getSpec().getReplicas()).isEqualTo(2);
     }
 

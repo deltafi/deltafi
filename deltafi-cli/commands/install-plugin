@@ -139,8 +139,9 @@ else
     if [[ $SUCCESS == "true" ]]; then
       cli_log "${green}Plugin ${bold}$ARTIFACT_ID${normal}${green} was successfully installed${normal}"
     else
-      ERRORS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.errors | join(\",\")")
-      cli_log "${red}$ERRORS${normal}"
+      ERRORS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.errors | join(\"\n\")")
+      cli_log "${red}Installing $2 failed:"
+      echo -e "${red}$ERRORS${normal}"
       exit 1
     fi
   fi

@@ -17,7 +17,8 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
@@ -33,41 +34,41 @@ import org.springframework.security.core.userdetails.User;
 
 import java.util.List;
 
-@Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BaseDeployerService implements DeployerService {
 
-    private final PluginRegistryService pluginRegistryService;
 
     final PluginImageRepositoryService pluginImageRepositoryService;
+    private final PluginRegistryService pluginRegistryService;
     final PluginCustomizationService pluginCustomizationService;
     private final SystemSnapshotService systemSnapshotService;
     private final EventService eventService;
 
-    public BaseDeployerService(PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        this.pluginImageRepositoryService = pluginImageRepositoryService;
-        this.pluginRegistryService = pluginRegistryService;
-        this.pluginCustomizationService = pluginCustomizationService;
-        this.systemSnapshotService = systemSnapshotService;
-        this.eventService = eventService;
-    }
-
     @Override
     public Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
         systemSnapshotService.createSnapshot(preUpgradeMessage(pluginCoordinates));
+        DeployResult deployResult = deploy(pluginCoordinates, imageRepoOverride, imagePullSecretOverride, customDeploymentOverride);
+        publishEvent(pluginCoordinates, deployResult);
+        return deployResult.detailedResult();
+    }
 
-        Result retval = deploy(pluginCoordinates, imageRepoOverride, imagePullSecretOverride, customDeploymentOverride);
+    private void publishEvent(PluginCoordinates pluginCoordinates, DeployResult retval) {
+        Event.EventBuilder eventBuilder = Event.builder("Plugin installed: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
+                .notification(true)
+                .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
+                .content(pluginCoordinates + "\\n\\n")
+                .addList("Additional information:", retval.getInfo())
+                .addList("Errors:", retval.getErrors());
 
-        eventService.publishEvent(
-                Event.builder("Plugin installed: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
-                        .notification(true)
-                        .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
-                        .content(pluginCoordinates.toString() + "\\n\\n")
-                        .addList("Additional information:", retval.getInfo())
-                        .addList("Errors:", retval.getErrors())
-                        .build()
-        );
+        if (retval.hasEvents()) {
+            eventBuilder.addTable("#### Events:", K8sEventUtil.EVENT_COLUMNS, retval.getEvents());
+        }
 
-        return retval;
+        if (retval.getLogs() != null) {
+            eventBuilder.addJsonLog("#### Plugin Logs:", retval.getLogs());
+        }
+
+        eventService.publishEvent(eventBuilder.build());
     }
 
     @Override
@@ -78,13 +79,13 @@ public abstract class BaseDeployerService implements DeployerService {
         }
 
         pluginRegistryService.uninstallPlugin(pluginCoordinates);
-        Result retval = removeDeployment(pluginCoordinates);
+        Result retval = removePluginResources(pluginCoordinates);
 
         eventService.publishEvent(
                 Event.builder("Plugin uninstalled: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
                         .notification(true)
                         .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
-                        .content(pluginCoordinates.toString() + "\\n\\n")
+                        .content(pluginCoordinates + "\\n\\n")
                         .addList("Additional information:", retval.getInfo())
                         .addList("Errors:", retval.getErrors())
                         .build()
@@ -93,9 +94,9 @@ public abstract class BaseDeployerService implements DeployerService {
         return retval;
     }
 
-    abstract Result deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride);
+    abstract DeployResult deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride);
 
-    abstract Result removeDeployment(PluginCoordinates pluginCoordinates);
+    abstract Result removePluginResources(PluginCoordinates pluginCoordinates);
 
     @Override
     public List<PluginCustomizationConfig> getPluginCustomizationConfigs() {

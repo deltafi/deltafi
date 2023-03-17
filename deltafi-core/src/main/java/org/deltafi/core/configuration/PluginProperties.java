@@ -19,8 +19,12 @@ package org.deltafi.core.configuration;
 
 import lombok.Data;
 
+import java.time.Duration;
+
 @Data
 public class PluginProperties {
     private String imageRepositoryBase = "docker.io/deltafi/";
     private String imagePullSecret;
+    private boolean autoRollback = false;
+    private Duration deployTimeout = Duration.ofMinutes(1);
 }

@@ -22,12 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.K8sDeployerService;
+import org.deltafi.core.plugin.deployer.PodService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.credential.SecretCredentialProvider;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfigRepo;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationRepo;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
@@ -59,8 +61,13 @@ public class K8sConfiguration {
     }
 
     @Bean
-    public DeployerService deployerService(PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient kubernetesClient, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        return new K8sDeployerService(pluginImageRepositoryService, kubernetesClient, pluginCustomizationService, pluginRegistryService, systemSnapshotService, eventService);
+    public PodService podService(KubernetesClient kubernetesClient) {
+        return new PodService(kubernetesClient);
+    }
+
+    @Bean
+    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient kubernetesClient, PodService podService, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        return new K8sDeployerService(deltaFiPropertiesService, pluginImageRepositoryService, kubernetesClient, podService, pluginCustomizationService, pluginRegistryService, systemSnapshotService, eventService);
     }
 
 }

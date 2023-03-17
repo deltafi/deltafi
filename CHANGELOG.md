@@ -25,10 +25,15 @@ consistent in the database. This decreases processing latency but does not give 
 - New `autoResumeCheckFrequency` system property to control how often the auto-resume task runs.
 - Added `nextAutoResume` timestmap to DeltaFile
 - Added auto-resume documentation
+- New properties for plugin deployments
+  - `plugins.deployTimeout` - controls how long to wait for a plugin to successfully deploy
+  - `plugins.autoRollback` - when true, rollback deployments that do not succeed prior to the deployTimeout elapsing
 
 ### Changed
 - Updated the load-plans command to take plugin coordinates as an argument.
 - Updated system snapshots to include new `autoResumeCheckFrequency` property and auto-resume policies
+- Plugin installations will wait until the deployment has rolled out successfully
+- Failed plugin installations will now return related events and logs in the list of errors
 
 ### Deprecated
 
@@ -46,6 +51,8 @@ consistent in the database. This decreases processing latency but does not give 
 - More precise calculation of referencedBytes and totalBytes - remove assumption that segments are contiguous.
 - Perform batched delete updates in a bulk operation.
 - Ingress routing rules cache did not clear when restoring a snapshot with no rules
+- Fix the check to determine if a plugin-uninstall was successful
+- Services that were created for a plugin are removed when the plugin is uninstalled
 
 ### Security
 
