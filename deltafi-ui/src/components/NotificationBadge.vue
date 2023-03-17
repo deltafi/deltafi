@@ -17,22 +17,23 @@
 -->
 
 <template>
-  <span>
+  <span class="notifications-wrapper">
+
     <Tag v-tooltip.bottom="tooltip" :class="tagClass" icon="pi pi-bell" :value="tagValue" @click="openNotificationsPanel" />
-    <OverlayPanel ref="notificationOP" style="width: 38.25rem; min-width: 31.25rem; top: 2.7rem; max-height: 90vh; overflow: scroll" :base-z-index="2000">
+    <OverlayPanel ref="notificationOverlayPanel" class="notification-overlay-panel" append-to=".notifications-wrapper">
       <div class="list-group list-group-flush">
         <div style="text-align: right; margin-bottom: 0.5rem">
           <router-link v-slot="{ navigate }" to="/events" custom>
             <Button label="View All Events" class="p-button-sm p-button-text mr-2" @click="navigate(); closeNotificationsPanel();"></Button>
           </router-link>
-          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="ackAllNotifications()"></Button>
+          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="onAckAll()"></Button>
         </div>
         <div v-if="notifications.length > 0">
           <div v-for="msg in notifications" :key="msg._id" :class="severityClass(msg.severity)" @click="showEvent(msg, $event)">
             <div class="d-flex w-100 justify-content-between">
               <strong class="mb-0">{{ msg.summary }}</strong>
               <div>
-                <i v-if="$hasPermission('EventAcknowledge')" v-tooltip.top="'Click to Acknowledge'" class="fas fa-solid fa-thumbs-up cursor-pointer notification-ack-button" @click="ackNotification(msg._id)" />
+                <i v-if="$hasPermission('EventAcknowledge')" v-tooltip.top="'Click to Acknowledge'" class="fas fa-solid fa-thumbs-up cursor-pointer notification-ack-button" @click="onAck(msg._id)" />
               </div>
             </div>
             <small class="mb-1 text-muted d-flex w-100 justify-content-between">
@@ -65,7 +66,7 @@ import useServerSentEvents from "@/composables/useServerSentEvents";
 const { serverSentEvents } = useServerSentEvents();
 const { pluralize } = useUtilFunctions();
 const { notifications, fetchNotifications, ackNotification, ackAllNotifications } = useEventsNotifications();
-const notificationOP = ref(null);
+const notificationOverlayPanel = ref(null);
 const showEventDialog = ref(false);
 const activeEvent = ref({});
 
@@ -87,7 +88,7 @@ const tagValue = computed(() => {
 
 const openNotificationsPanel = (event) => {
   fetchNotifications();
-  notificationOP.value.toggle(event);
+  notificationOverlayPanel.value.toggle(event);
 };
 
 const showEvent = (msg, $event) => {
@@ -99,8 +100,18 @@ const showEvent = (msg, $event) => {
 };
 
 const closeNotificationsPanel = () => {
-  notificationOP.value.hide();
+  notificationOverlayPanel.value.hide();
 };
+
+const onAck = async (id) => {
+  await ackNotification(id);
+  if (notifications.value.length == 0) closeNotificationsPanel();
+}
+
+const onAckAll = async () => {
+  await ackAllNotifications();
+  closeNotificationsPanel();
+}
 
 const tagClass = computed(() => {
   return [
@@ -139,35 +150,64 @@ const tooltip = computed(() => {
 </script>
 
 <style lang="scss">
-.notification-badge {
-  cursor: pointer;
-}
-
-.notification-badge.no-notifications {
-  background-color: var(--gray-700) !important;
-
-  .p-tag-icon {
-    margin-right: 0 !important;
+.notifications-wrapper {
+  .notification-badge {
+    cursor: pointer;
   }
-}
 
-.notification-severity-info {
-  border-left: 6px solid #17a2b8 !important;
-}
+  .notification-badge.no-notifications {
+    background-color: var(--gray-700) !important;
 
-.notification-severity-warning {
-  border-left: 6px solid #ffc107 !important;
-}
+    .p-tag-icon {
+      margin-right: 0 !important;
+    }
+  }
 
-.notification-severity-danger {
-  border-left: 6px solid #dc3545 !important;
-}
+  .notification-severity-info {
+    border-left: 6px solid #17a2b8 !important;
+  }
 
-.notification-severity-success {
-  border-left: 6px solid #28a745 !important;
-}
+  .notification-severity-warning {
+    border-left: 6px solid #ffc107 !important;
+  }
 
-.notification-ack-button {
-  margin-left: 0.5rem;
+  .notification-severity-danger {
+    border-left: 6px solid #dc3545 !important;
+  }
+
+  .notification-severity-success {
+    border-left: 6px solid #28a745 !important;
+  }
+
+  .notification-ack-button {
+    margin-left: 0.5rem;
+  }
+
+  .notification-overlay-panel {
+    top: 46px !important;
+    margin-top: 0 !important;
+
+    .p-overlaypanel-content {
+      padding: 0.5rem;
+
+      .list-group {
+        padding: 0.5rem;
+        width: 38.25rem;
+        min-width: 31.25rem;
+        max-height: 88vh;
+        overflow: scroll;
+      }
+    }
+  }
+
+  .notification-overlay-panel:before {
+    border-width: 7px !important;
+    margin-left: -15px !important;
+  }
+
+  .notification-overlay-panel:after {
+    border-width: 6px !important;
+    margin-left: -14px !important;
+  }
 }
 </style>

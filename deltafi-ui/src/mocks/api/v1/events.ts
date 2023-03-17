@@ -17,46 +17,47 @@
 */
 
 const generateData = () => {
-  console.log('yay')
-  return [{
-    "_id": "e91b456e-f91f-4254-a1fb-56dda810853c",
-    "severity": "info",
-    "content": "Blah",
-    "summary": "This is a warning!",
-    "timestamp": "2023-01-03T15:42:06.285Z",
-    "source": "grafana",
-    "notification": true,
-    "acknowledged": false
-  },
-  {
-    "_id": "e91b456e-f91f-4254-a1fb-5457884",
-    "severity": "info",
-    "content": "Blah blah blah",
-    "summary": "This is a warning!",
-    "timestamp": "2023-01-05T15:42:06.285Z",
-    "source": "grafana",
-    "notification": true,
-    "acknowledged": false
-  },
-  {
-    "_id": "e91b456e-f91f-4254-a1fb-34ere4454",
-    "severity": "warn",
-    "content": "Blah",
-    "summary": "This is a warning!",
-    "timestamp": "2023-01-03T15:42:06.285Z",
-    "source": "grafana",
-    "notification": true,
-    "acknowledged": true
-  },
-  {
-    "_id": "e91b456e-f91f-4254-a1fb-5312tggr45",
-    "severity": "success",
-    "content": "Blah blah blah",
-    "summary": "This is a warning!",    
-    "timestamp": "2023-01-05T15:42:06.285Z",
-    "source": "grafana",
-    "notification": true,
-    "acknowledged": true
-  }];
+  return [
+    {
+      "_id": "e91b456e-f91f-4254-a1fb-5312tggr45",
+      "severity": "success",
+      "content": "This is a successful test message",
+      "summary": "Successful message",
+      "timestamp": "2023-03-16T13:00:00.000Z",
+      "source": "myapp",
+      "notification": true,
+      "acknowledged": false
+    },
+    {
+      "_id": "d3a4b4c6-7f8e-4d7c-a08f-e0e20f562fb5",
+      "severity": "warn",
+      "content": "This is a warning test message",
+      "summary": "Warning message",
+      "timestamp": "2023-03-16T14:00:00.000Z",
+      "source": "myapp",
+      "notification": true,
+      "acknowledged": false
+    },
+    {
+      "_id": "a6b7c8d9-e0f1-2g3h-4i5j-6k7l8m9n0o1p",
+      "severity": "error",
+      "content": "This is an error test message",
+      "summary": "Error message",
+      "timestamp": "2023-03-16T15:00:00.000Z",
+      "source": "myapp",
+      "notification": true,
+      "acknowledged": false
+    },
+    {
+      "_id": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
+      "severity": "info",
+      "content": "This is an informational test message",
+      "summary": "Informational message",
+      "timestamp": "2023-03-16T16:00:00.000Z",
+      "source": "myapp",
+      "notification": true,
+      "acknowledged": false
+    },
+  ];
 };
 export default generateData();
