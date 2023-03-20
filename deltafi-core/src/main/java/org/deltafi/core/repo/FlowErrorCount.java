@@ -17,9 +17,10 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.types.IngressFlow;
-import org.springframework.stereotype.Repository;
+import lombok.Data;
 
-@Repository
-public interface IngressFlowRepo extends FlowRepo<IngressFlow>, IngressFlowRepoCustom {
+@Data
+public class FlowErrorCount {
+    private String flow;
+    private Integer errorCount;
 }

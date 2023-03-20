@@ -15,23 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.schedulers.trigger;
+package org.deltafi.core.repo;
 
-import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
+import org.deltafi.core.types.IngressFlow;
 
-import java.time.Duration;
-
-/**
- * Calculates the next execution time based on the delete.frequency in the DeltaFiProperties.
- */
-@ConditionalOnProperty(value = "schedule.diskSpace", havingValue = "true", matchIfMissing = true)
-@Service
-public class DiskSpaceTrigger extends ConfigurableFixedDelayTrigger {
-
-    public DiskSpaceTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(deltaFiPropertiesService, (props) -> Duration.ofSeconds(5), 5_000L);
-    }
-
+public interface IngressFlowRepoCustom extends FlowRepoCustom<IngressFlow> {
+    boolean updateMaxErrors(String flowName, int maxErrors);
 }

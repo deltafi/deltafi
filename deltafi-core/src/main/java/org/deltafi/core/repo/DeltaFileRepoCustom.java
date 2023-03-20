@@ -25,6 +25,8 @@ import org.springframework.data.mongodb.core.index.IndexInfo;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface DeltaFileRepoCustom {
     /**
@@ -146,6 +148,14 @@ public interface DeltaFileRepoCustom {
      * @return the ErrorsByMessage
      */
     ErrorsByMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy);
+
+    /**
+     * Retrieves the error counts for the specified set of flows.  Only unacknowledged errors are considered.
+     *
+     * @param flows A set of {@code String} values representing the flow names for which to retrieve error counts.
+     * @return A {@code Map<String, Integer>} where the key is the flow name and the value is the error count for that flow.
+     */
+    Map<String, Integer> errorCountsByFlow(Set<String> flows);
 
     /**
      * Get a list of all domains that are currently assigned deltaFiles

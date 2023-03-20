@@ -23,7 +23,7 @@ spec:
         image: {{ .Values.deltafi.core.image }}
         env:
         - name: JDK_JAVA_OPTIONS
-          value: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
+          value: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false -Dschedule.errorCount=false"
         - name: UNIQUE_ID
           value: core
         {{- include "coreEnvVars" . | nindent 8 }}

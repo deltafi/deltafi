@@ -165,6 +165,7 @@ type IngressFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
+  maxErrors: Int!
   transformActions: [TransformActionConfiguration]
   loadAction: LoadActionConfiguration
   joinAction: JoinActionConfiguration

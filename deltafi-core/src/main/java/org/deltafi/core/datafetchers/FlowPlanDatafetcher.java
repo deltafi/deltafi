@@ -85,6 +85,10 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
+    public boolean setMaxErrors(@InputArgument String flowName, @InputArgument Integer maxErrors) { return ingressFlowService.setMaxErrors(flowName, maxErrors); }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
     public boolean enableIngressTestMode(@InputArgument String flowName) { return ingressFlowService.enableTestMode(flowName); }
 
     @DgsMutation

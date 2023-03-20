@@ -39,3 +39,35 @@ Note that, as with Resume, it is not possible to modify any other part of the De
 You can also acknowledge an error, which provides a reason for why the error occurred. This action will remove the error from the list of errors displayed in the UI, even if the DeltaFile was not completed.
 
 Acknowledge can be performed from either the Errors page or the DeltaFile Viewer.
+
+## Error Thresholds and Ingress Flow Blocking
+
+In order to maintain a high level of data quality and system stability, DeltaFi allows you to set a maximum number of allowable errors within an ingress flow. This error threshold ensures that when a specific number of unacknowledged errors are reached, the ingress flow will be blocked, preventing any further data from entering the flow. This feature is particularly useful for identifying and addressing issues within a flow before they have a significant impact on the overall data processing pipeline.
+
+### Configuring Error Thresholds
+
+To configure an error threshold for an ingress flow, use the setMaxErrors GraphQL mutation:
+
+```graphql
+mutation {
+  setMaxErrors(flowName: "example-ingress-flow", maxErrors: 10)
+}
+```
+
+In this example, the error threshold is set to 10. This means that if there are 10 or more unacknowledged active errors
+within this ingress flow, the flow will be blocked, and no further data will be allowed to enter.
+
+_NOTE: GUI support for setting maxErrors will be coming shortly._
+
+### Unblocking an Ingress Flow
+
+When an ingress flow is blocked due to reaching the error threshold, it is important to address the underlying issues
+causing the errors. Errors can be handled in two ways: by acknowledging the errors or by retrying the actions that led
+to the errors. If the retries are successful, the errors will be considered resolved.
+
+After handling the errors, either by acknowledging them or successfully retrying the actions as documented earlier in
+this guide, the system will reevaluate the ingress flow's status. If the number of unacknowledged active errors falls
+below the threshold, the flow will be unblocked and new data will be allowed to enter once again.
+
+By utilizing this error threshold feature, you can effectively manage the error handling process within your DeltaFi
+system, ensuring that data quality and system stability are maintained throughout your data processing pipeline.

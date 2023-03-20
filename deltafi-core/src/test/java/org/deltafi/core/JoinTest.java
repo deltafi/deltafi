@@ -81,6 +81,7 @@ import static org.junit.jupiter.api.Assertions.*;
         "schedule.maintenance=false",
         "schedule.flowSync=false",
         "schedule.diskSpace=false",
+        "schedule.errorCount=false",
         "schedule.propertySync=false"})
 @EnableAutoConfiguration(exclude = { ActionKitAutoConfiguration.class })
 public class JoinTest {

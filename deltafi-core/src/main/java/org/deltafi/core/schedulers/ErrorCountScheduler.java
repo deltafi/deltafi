@@ -20,7 +20,7 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.services.DiskSpaceService;
+import org.deltafi.core.services.ErrorCountService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -29,17 +29,17 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 
-@ConditionalOnProperty(value = "schedule.diskSpace", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "schedule.errorCount", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
-public class DiskSpaceScheduler {
+public class ErrorCountScheduler {
 
-    private final DiskSpaceService diskSpaceService;
+    private final ErrorCountService errorCountService;
     private final TaskScheduler taskScheduler;
 
     @PostConstruct
     public void schedule() {
-        taskScheduler.scheduleAtFixedRate(diskSpaceService::getContentStorageDiskMetrics, Instant.now().plusMillis(5000), Duration.ofSeconds(5));
+        taskScheduler.scheduleAtFixedRate(errorCountService::populateErrorCounts, Instant.now().plusSeconds(5), Duration.ofSeconds(5));
     }
 }

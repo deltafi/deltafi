@@ -126,6 +126,7 @@ import static org.mockito.Mockito.never;
 		"schedule.maintenance=false",
 		"schedule.flowSync=false",
 		"schedule.diskSpace=false",
+		"schedule.errorCount=false",
 		"schedule.propertySync=false"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
@@ -1060,11 +1061,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	DeltaFile postErrorDeltaFile(String did) {
-		return postErrorDeltaFile(did, Optional.empty());
+		return postErrorDeltaFile(did, null);
 	}
 
-	DeltaFile postErrorDeltaFile(String did, Optional<Integer> autoRetryDelay) {
-		OffsetDateTime nextAutoResume = autoRetryDelay.isEmpty() ? null : STOP_TIME.plusSeconds(autoRetryDelay.get());
+	DeltaFile postErrorDeltaFile(String did, Integer autoRetryDelay) {
+		OffsetDateTime nextAutoResume = autoRetryDelay == null ? null : STOP_TIME.plusSeconds(autoRetryDelay);
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR);
 		deltaFile.errorAction(
@@ -1077,14 +1078,14 @@ class DeltaFiCoreApplicationTests {
 		return deltaFile;
 	}
 
-	void runErrorWithRetry(Optional<Integer> autoRetryDelay) throws IOException {
+	void runErrorWithRetry(Integer autoRetryDelay) throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile original = postValidateDeltaFile(did);
 		deltaFileRepo.save(original);
 
-		if (!autoRetryDelay.isEmpty()) {
+		if (autoRetryDelay != null) {
 			BackOff backOff = BackOff.newBuilder()
-					.delay(autoRetryDelay.get())
+					.delay(autoRetryDelay)
 					.build();
 
 			ResumePolicy resumePolicy = new ResumePolicy();
@@ -1109,12 +1110,12 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testError() throws IOException {
-		runErrorWithRetry(Optional.empty());
+		runErrorWithRetry(null);
 	}
 
 	@Test
 	void testAutoRetry() throws IOException {
-		runErrorWithRetry(Optional.of(100));
+		runErrorWithRetry(100);
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -3075,6 +3076,47 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0, noneFound.getOffset());
 		assertEquals(0, noneFound.getTotalCount());
 		assertEquals(0, noneFound.getCountPerFlow().size());
+	}
+
+	@Test
+	void testErrorCountsByFlow() {
+		OffsetDateTime now = OffsetDateTime.now();
+
+		DeltaFile deltaFile1 = buildDeltaFile("1", "flow1", DeltaFileStage.ERROR, now, null);
+		deltaFileRepo.save(deltaFile1);
+
+		DeltaFile deltaFile2 = buildDeltaFile("2", "flow1", DeltaFileStage.COMPLETE, now, now);
+		deltaFileRepo.save(deltaFile2);
+
+		DeltaFile deltaFile3 = buildDeltaFile("3", "flow2", DeltaFileStage.ERROR, now, null);
+		deltaFileRepo.save(deltaFile3);
+
+		DeltaFile deltaFile4 = buildDeltaFile("4", "flow1", DeltaFileStage.ERROR, now, now);
+		deltaFileRepo.save(deltaFile4);
+
+		DeltaFile deltaFile5 = buildDeltaFile("5", "flow3", DeltaFileStage.ERROR, now, null);
+		deltaFileRepo.save(deltaFile5);
+
+		Set<String> flowSet = new HashSet<>(Arrays.asList("flow1", "flow2", "flow3"));
+		Map<String, Integer> errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+
+		assertEquals(3, errorCountsByFlow.size());
+		assertEquals(2, errorCountsByFlow.get("flow1").intValue());
+		assertEquals(1, errorCountsByFlow.get("flow2").intValue());
+		assertEquals(1, errorCountsByFlow.get("flow3").intValue());
+
+		// Test with a non-existing flow in the set
+		flowSet.add("flowNotFound");
+		errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+
+		assertEquals(3, errorCountsByFlow.size());
+		assertNull(errorCountsByFlow.get("flowNotFound"));
+
+		// Test with an empty set
+		flowSet.clear();
+		errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+
+		assertEquals(0, errorCountsByFlow.size());
 	}
 
 	@Test

@@ -390,6 +390,7 @@ type Mutation {
   startEnrichFlow(flowName: String!) : Boolean!
   stopEnrichFlow(flowName: String!) : Boolean!
 
+  setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
   enableIngressTestMode(flowName: String!) : Boolean!
   disableIngressTestMode(flowName: String!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!

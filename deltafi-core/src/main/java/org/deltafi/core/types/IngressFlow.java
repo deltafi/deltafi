@@ -35,6 +35,7 @@ public class IngressFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
     private JoinActionConfiguration joinAction;
+    private int maxErrors = 0;
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionNamed) {

@@ -19,12 +19,23 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.IngressFlow;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @SuppressWarnings("unused")
-public class IngressFlowRepoImpl extends BaseFlowRepoImpl<IngressFlow> {
+public class IngressFlowRepoImpl extends BaseFlowRepoImpl<IngressFlow> implements IngressFlowRepoCustom {
+
+    private static final String MAX_ERRORS = "maxErrors";
 
     public IngressFlowRepoImpl(MongoTemplate mongoTemplate) {
         super(mongoTemplate, IngressFlow.class);
     }
 
+    @Override
+    public boolean updateMaxErrors(String flowName, int maxErrors) {
+        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(MAX_ERRORS).ne(maxErrors));
+        Update maxErrorsUpdate = Update.update(MAX_ERRORS, maxErrors);
+        return 1 == mongoTemplate.updateFirst(idMatches, maxErrorsUpdate, IngressFlow.class).getModifiedCount();
+    }
 }

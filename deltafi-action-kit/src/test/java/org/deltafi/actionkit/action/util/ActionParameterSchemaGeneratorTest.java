@@ -28,7 +28,6 @@ import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ActionParameterSchemaGeneratorTest {
-
     @Test
     void testGetSchema() throws IOException {
         JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(TestActionParameters.class);

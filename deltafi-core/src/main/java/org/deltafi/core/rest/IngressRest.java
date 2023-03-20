@@ -86,7 +86,7 @@ public class IngressRest {
                                               @RequestHeader(value = DeltaFiConstants.USER_HEADER, required = false, defaultValue = "system") String username) {
         username = StringUtils.isNotBlank(username) ? username : "system";
 
-        if (! ingressService.isEnabled()) {
+        if (!ingressService.isEnabled()) {
             return errorResponse(HttpStatus.SERVICE_UNAVAILABLE,
                     "Ingress disabled for this instance of DeltaFi",
                     flow, filename, contentType, username);

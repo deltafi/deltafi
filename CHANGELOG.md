@@ -28,6 +28,10 @@ consistent in the database. This decreases processing latency but does not give 
 - New properties for plugin deployments
   - `plugins.deployTimeout` - controls how long to wait for a plugin to successfully deploy
   - `plugins.autoRollback` - when true, rollback deployments that do not succeed prior to the deployTimeout elapsing
+- Added `maxErrors` property to ingress flows. By default this is set to 0. If set to a number greater than 0,
+ingress for a flow with at least that many unacknowledged errors will be blocked. This is based on a cached value,
+so ingress cutoffs will not be exact, meaning more errors than what has been configured can accumulate before ingress
+is stopped.
 
 ### Changed
 - Updated the load-plans command to take plugin coordinates as an argument.

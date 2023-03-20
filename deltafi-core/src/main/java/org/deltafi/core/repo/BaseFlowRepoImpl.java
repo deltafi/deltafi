@@ -29,12 +29,12 @@ import java.util.List;
 
 public abstract class BaseFlowRepoImpl<T extends Flow> implements FlowRepoCustom<T> {
 
-    private static final String ID = "_id";
+    protected static final String ID = "_id";
     private static final String SOURCE_PLUGIN = "sourcePlugin";
     private static final String FLOW_STATUS_STATE = "flowStatus.state";
     private static final String TEST_MODE = "flowStatus.testMode";
 
-    private final MongoTemplate mongoTemplate;
+    protected final MongoTemplate mongoTemplate;
     private final Class<T> entityType;
 
     protected BaseFlowRepoImpl(MongoTemplate mongoTemplate, Class<T> entityType) {
@@ -67,5 +67,4 @@ public abstract class BaseFlowRepoImpl<T extends Flow> implements FlowRepoCustom
         Update testModeUpdate = Update.update(TEST_MODE, testMode);
         return 1 == mongoTemplate.updateFirst(idMatches, testModeUpdate, entityType).getModifiedCount();
     }
-
 }

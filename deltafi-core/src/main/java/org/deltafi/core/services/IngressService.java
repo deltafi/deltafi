@@ -49,6 +49,7 @@ public class IngressService {
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final FlowAssignmentService flowAssignmentService;
     private final IngressFlowService ingressFlowService;
+    private final ErrorCountService errorCountService;
 
     @RequiredArgsConstructor
     @Data
@@ -108,6 +109,11 @@ public class IngressService {
                         .metadata(metadata)
                         .build()
         );
+
+        String error = errorCountService.flowErrorsExceeded(sourceInfo.getFlow());
+        if (error != null) {
+            throw new IngressException(error);
+        }
 
         String did = UUID.randomUUID().toString();
         OffsetDateTime created = OffsetDateTime.now();

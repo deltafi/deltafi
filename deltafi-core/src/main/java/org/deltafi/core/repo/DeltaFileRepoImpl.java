@@ -772,6 +772,39 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 .build();
     }
 
+    public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
+        // Match flows in the given set, ERROR_ACKNOWLEDGED is null, and STAGE is DeltaFileStage.ERROR
+        Criteria flowsCriteria = Criteria.where(SOURCE_INFO_FLOW).in(flows)
+                .and(ERROR_ACKNOWLEDGED).is(null)
+                .and(STAGE).is(DeltaFileStage.ERROR);
+        MatchOperation matchFlowsStage = Aggregation.match(flowsCriteria);
+
+        // Group by flow and count errors
+        GroupOperation groupByFlowAndCountErrorsStage = Aggregation.group(SOURCE_INFO_FLOW).count().as("errorCount");
+
+        // clean up field names to match the FlowErrorCount class
+        ProjectionOperation projectStage = Aggregation.project("errorCount").and("_id").as("flow");
+
+        // Build the aggregation pipeline
+        Aggregation aggregation = Aggregation.newAggregation(
+                        matchFlowsStage,
+                        groupByFlowAndCountErrorsStage,
+                        projectStage)
+                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
+
+        // Execute the aggregation and map results to FlowErrorCount objects
+        AggregationResults<FlowErrorCount> aggResults = mongoTemplate.aggregate(
+                aggregation, COLLECTION, FlowErrorCount.class);
+
+        // Convert the list of FlowErrorCount objects to a Map<String, Integer>
+        Map<String, Integer> errorCountsByFlow = new HashMap<>();
+        for (FlowErrorCount result : aggResults.getMappedResults()) {
+            errorCountsByFlow.put(result.getFlow(), result.getErrorCount());
+        }
+
+        return errorCountsByFlow;
+    }
+
     private SortOperation errorSummaryByFlowSort(DeltaFileOrder orderBy) {
         String sortField = SOURCE_INFO_FLOW;
         Sort.Direction direction = Sort.Direction.ASC;

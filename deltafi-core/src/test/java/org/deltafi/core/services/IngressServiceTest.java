@@ -69,6 +69,10 @@ class IngressServiceTest {
     @Mock
     FlowAssignmentService flowAssignmentService;
 
+    @Mock
+    @SuppressWarnings("unused")
+    ErrorCountService errorCountService;
+
     @Spy
     DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
