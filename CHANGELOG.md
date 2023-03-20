@@ -39,6 +39,7 @@ consistent in the database. This decreases processing latency but does not give 
 
 ### Removed
 - Removed `nextExecution` timestamp from Action; no migration required since it had not been used previously
+- Removed blackhole pod, which was superceded by the egress-sink blackhole endpoint
 
 ### Fixed
 - Improved bounce and plugin restart performance in `cluster`

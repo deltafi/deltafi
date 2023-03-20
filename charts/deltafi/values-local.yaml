@@ -22,5 +22,3 @@ deltafi:
     image: localhost:5000/deltafi-egress-sink:latest
   nodemonitor:
     image: localhost:5000/deltafi-nodemonitor:latest
-blackhole:
-  enabled: false
