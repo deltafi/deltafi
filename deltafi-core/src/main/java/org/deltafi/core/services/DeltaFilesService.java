@@ -586,7 +586,7 @@ public class DeltaFilesService {
     }
 
     private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEventInput actionEventInput, LoadEvent loadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
-        DeltaFile child = createChildDeltaFile(parentDeltaFile, actionEventInput);
+        DeltaFile child = createChildDeltaFile(parentDeltaFile, actionEventInput, loadEvent.getDid());
         child.setModified(now);
 
         parentDeltaFile.getChildDids().add(child.getDid());
@@ -714,7 +714,7 @@ public class DeltaFilesService {
             EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
 
             childDeltaFiles = formatInputs.stream().map(formatInput -> {
-                DeltaFile child = createChildDeltaFile(deltaFile, event);
+                DeltaFile child = createChildDeltaFile(deltaFile, event, UUID.randomUUID().toString());
                 deltaFile.getChildDids().add(child.getDid());
 
                 FormattedData formattedData = FormattedData.newBuilder()
@@ -747,10 +747,10 @@ public class DeltaFilesService {
         enqueueActions(enqueueActions);
     }
 
-    private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, ActionEventInput event) {
+    private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, ActionEventInput event, String childDid) {
         DeltaFile child = OBJECT_MAPPER.convertValue(deltaFile, DeltaFile.class);
         child.setVersion(0);
-        child.setDid(UUID.randomUUID().toString());
+        child.setDid(childDid);
         child.setChildDids(Collections.emptyList());
         child.setParentDids(List.of(deltaFile.getDid()));
         child.completeAction(event);

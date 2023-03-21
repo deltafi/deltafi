@@ -17,6 +17,7 @@
  */
 package org.deltafi.actionkit.action.load;
 
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
@@ -26,9 +27,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LoadManyResult extends Result implements LoadResultType {
+@EqualsAndHashCode(callSuper = true)
+public class LoadManyResult extends Result<LoadManyResult> implements LoadResultType {
 
-    private final List<LoadResult> loadResults = new ArrayList<>();
+    private final List<ChildLoadResult> loadResults = new ArrayList<>();
 
     /**
      * @param context Execution context of the action
@@ -38,16 +40,36 @@ public class LoadManyResult extends Result implements LoadResultType {
     }
 
     /**
-     * Add a new load result
+     * Add a load result to the list of results
      * @param loadResult A load result to be added to the result object
      */
-    @SuppressWarnings("unused")
     public void add(LoadResult loadResult) {
+        loadResults.add(new ChildLoadResult(loadResult));
+    }
+
+    /**
+     * Add a load result to the list of results
+     * @param loadResult A load result to be added to the result object
+     */
+    public void add(ChildLoadResult loadResult) {
         loadResults.add(loadResult);
     }
 
-    @SuppressWarnings("unused")
-    public List<LoadResult> getLoadResults() { return loadResults; }
+    /**
+     * Get the list of LoadResults held in the child results
+     * @return list of LoadResults
+     */
+    public List<LoadResult> getLoadResults() {
+        return loadResults.stream().map(ChildLoadResult::getLoadResult).toList();
+    }
+
+    /**
+     * Get the list of child results
+     * @return list of ChildLoadResults
+     */
+    public List<ChildLoadResult> getChildLoadResults() {
+        return loadResults;
+    }
 
     @Override
     public ActionEventType actionEventType() {
@@ -57,7 +79,7 @@ public class LoadManyResult extends Result implements LoadResultType {
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setLoadMany(loadResults.stream().map(l -> l.toEvent().getLoad()).toList());
+        event.setLoadMany(loadResults.stream().map(ChildLoadResult::toEvent).toList());
         return event;
     }
 }

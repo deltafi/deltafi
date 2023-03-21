@@ -6,6 +6,7 @@
   "type": "LOAD_MANY",
   "loadMany": [
     {
+      "did": "child1",
       "domains": [
         {
           "name": "sampleDomain",
@@ -37,6 +38,7 @@
       }
     },
     {
+      "did": "child2",
       "domains": [
         {
           "name": "sampleDomain",

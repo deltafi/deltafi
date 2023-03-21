@@ -862,6 +862,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, children.size());
 
 		DeltaFile child1 = children.get(0);
+		assertEquals("child1", child1.getDid());
 		assertEquals(DeltaFileStage.ENRICH, child1.getStage());
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
@@ -883,6 +884,7 @@ class DeltaFiCoreApplicationTests {
 		org.assertj.core.api.Assertions.assertThat(child1.getDomains()).hasSize(1).contains(child1Domain);
 
 		DeltaFile child2 = children.get(1);
+		assertEquals("child2", child2.getDid());
 		assertEquals(DeltaFileStage.ENRICH, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(did), child2.getParentDids());

@@ -31,4 +31,5 @@ import java.util.List;
 public class LoadEvent {
   private List<Domain> domains;
   private ProtocolLayer protocolLayer;
+  private String did;
 }

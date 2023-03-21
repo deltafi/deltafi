@@ -38,6 +38,7 @@ is stopped.
 - Updated system snapshots to include new `autoResumeCheckFrequency` property and auto-resume policies
 - Plugin installations will wait until the deployment has rolled out successfully
 - Failed plugin installations will now return related events and logs in the list of errors
+- Create the child dids in the action-kit for LoadManyResults so they can be used in the load action
 
 ### Deprecated
 
