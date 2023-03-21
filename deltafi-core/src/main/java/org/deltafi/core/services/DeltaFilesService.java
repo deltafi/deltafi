@@ -134,6 +134,10 @@ public class DeltaFilesService {
     }
 
     public DeltaFile getDeltaFile(String did) {
+        return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
+    }
+
+    public DeltaFile getCachedDeltaFile(String did) {
         return deltaFileCacheService.get(did);
     }
 
@@ -230,7 +234,7 @@ public class DeltaFilesService {
 
     public void handleActionEvent(ActionEventInput event) throws JsonProcessingException {
         synchronized(didMutexService.getMutex(event.getDid())) {
-            DeltaFile deltaFile = getDeltaFile(event.getDid());
+            DeltaFile deltaFile = getCachedDeltaFile(event.getDid());
 
             if (deltaFile == null) {
                 throw new DgsEntityNotFoundException("Received event for unknown did: " + event);
@@ -510,20 +514,22 @@ public class DeltaFilesService {
 
     @MongoRetryable
     public void addIndexedMetadata(String did, Map<String, String> metadata, boolean allowOverwrites) {
-        DeltaFile deltaFile = getDeltaFile(did);
+        synchronized(didMutexService.getMutex(did)) {
+            DeltaFile deltaFile = getCachedDeltaFile(did);
 
-        if (deltaFile == null) {
-            throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
+            if (deltaFile == null) {
+                throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
+            }
+
+            if (allowOverwrites) {
+                deltaFile.addIndexedMetadata(metadata);
+            } else {
+                deltaFile.addIndexedMetadataIfAbsent(metadata);
+            }
+
+            deltaFile.setModified(OffsetDateTime.now());
+            deltaFileCacheService.save(deltaFile);
         }
-
-        if (allowOverwrites) {
-            deltaFile.addIndexedMetadata(metadata);
-        } else {
-            deltaFile.addIndexedMetadataIfAbsent(metadata);
-        }
-
-        deltaFile.setModified(OffsetDateTime.now());
-        deltaFileRepo.save(deltaFile);
     }
 
     public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile, OffsetDateTime time) {

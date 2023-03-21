@@ -78,7 +78,7 @@ class DeltaFilesServiceTest {
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
             @Mock ContentStorageService contentStorageService, @Mock MetricRepository metricRepository,
             @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo, @Mock IdentityService identityService,
-            @Mock DidMutexService didMutexService, @Mock DeltaFileCacheService deltaFileCacheService) {
+            @Mock DeltaFileCacheService deltaFileCacheService) {
         this.ingressFlowService = ingressFlowService;
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
@@ -91,7 +91,7 @@ class DeltaFilesServiceTest {
         deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService,
                 new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
                 actionEventQueue, contentStorageService, resumePolicyService, metricRepository, coreAuditLogger, joinRepo,
-                identityService, didMutexService, deltaFileCacheService);
+                identityService, new DidMutexService(), deltaFileCacheService);
     }
 
     @Captor
@@ -127,7 +127,7 @@ class DeltaFilesServiceTest {
                 .did("hi")
                 .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
                 .build();
-        when(deltaFileCacheService.get("hi")).thenReturn(deltaFile);
+        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile("hi", false);
         assertTrue(json.contains("\"did\":\"hi\""));
         assertTrue(json.contains("\"created\":\"2022-09-29T11:30:00.000Z\""));
@@ -137,7 +137,7 @@ class DeltaFilesServiceTest {
     @Test
     void getRawDeltaFilePretty() throws JsonProcessingException {
         DeltaFile deltaFile = DeltaFile.newBuilder().did("hi").build();
-        when(deltaFileCacheService.get("hi")).thenReturn(deltaFile);
+        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile("hi", true);
         assertTrue(json.contains("  \"did\" : \"hi\",\n"));
         assertNotEquals(1, json.split("\n").length);
@@ -367,7 +367,7 @@ class DeltaFilesServiceTest {
         Mockito.when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
 
         deltaFilesService.addIndexedMetadata("1", Map.of("sys-ack", "true"), false);
-        Mockito.verify(deltaFileRepo).save(deltaFileCaptor.capture());
+        Mockito.verify(deltaFileCacheService).save(deltaFileCaptor.capture());
 
         DeltaFile after = deltaFileCaptor.getValue();
         Assertions.assertThat(after.getIndexedMetadata()).hasSize(2).containsEntry("key", "one").containsEntry("sys-ack", "true");

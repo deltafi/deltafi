@@ -18,23 +18,33 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+@Service
+@ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "false")
+public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
+    final DeltaFileRepo deltaFileRepo;
 
-public abstract class DeltaFileCacheService {
+    public DeltaFileCacheServicePassthrough(DeltaFileRepo deltaFileRepo) {
+        this.deltaFileRepo = deltaFileRepo;
+    }
 
-    public abstract void clearCache();
+    public void clearCache() {}
 
-    public abstract DeltaFile get(String did);
+    public DeltaFile get(String did) {
+        return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
+    }
 
-    public abstract void removeOlderThan(int seconds);
+    public void removeOlderThan(int seconds) {}
 
-    public abstract void save(DeltaFile deltaFile);
+    public void save(DeltaFile deltaFile) {
+        // optimize saving new documents by avoiding the upsert check
+        if (deltaFile.getVersion() == 0) {
+            deltaFileRepo.insert(deltaFile);
+        } else {
+            deltaFileRepo.save(deltaFile);
+        }
+    }
 }

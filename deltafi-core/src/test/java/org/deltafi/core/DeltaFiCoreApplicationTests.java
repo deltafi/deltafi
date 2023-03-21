@@ -244,9 +244,6 @@ class DeltaFiCoreApplicationTests {
 	@MockBean
 	CredentialProvider credentialProvider;
 
-	@Autowired
-	DeltaFileCacheService deltaFileCacheService;
-
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	// mongo eats microseconds, jump through hoops
@@ -286,7 +283,6 @@ class DeltaFiCoreApplicationTests {
 		flowAssignmentRuleRepo.deleteAll();
 		resumePolicyRepo.deleteAll();
 		resumePolicyService.refreshCache();
-		deltaFileCacheService.clearCache();
 		loadConfig();
 
 		Mockito.clearInvocations(actionEventQueue);
@@ -2068,9 +2064,6 @@ class DeltaFiCoreApplicationTests {
 				.deltaFiles(List.of(deltaFilesService.ingress(INGRESS_INPUT)))
 				.build();
 
-		// sync to mongo
-		deltaFileCacheService.removeOlderThan(0);
-
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new DeltaFilesGraphQLQuery.Builder()
 						.limit(5)
@@ -2101,9 +2094,6 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.errorAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME, "blah", "blah");
 		deltaFilesService.advanceAndSave(deltaFile);
 
-		// flush the incomplete deltaFile to mongo
-		deltaFileCacheService.removeOlderThan(0);
-
 		DeltaFile erroredFile = deltaFilesService.getDeltaFile(input.getDid());
 		assertEquals(2, erroredFile.getActions().size());
 
@@ -2119,9 +2109,6 @@ class DeltaFiCoreApplicationTests {
 				"data." + DgsConstants.MUTATION.Resume,
 				new TypeRef<>() {}
 		);
-
-		// flush the retried deltaFile to mongo
-		deltaFileCacheService.removeOlderThan(0);
 
 		assertEquals(3, results.size());
 

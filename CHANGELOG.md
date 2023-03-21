@@ -52,6 +52,8 @@ is stopped.
 - DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats.
 - Replaced deprecated GitLab CI variables
 - Fixed unknown enum startup errors when rolling back DeltaFi
+- Fix memory leak in ingress when using deltaFileCache
+- Fix deltaFileCache race condition where querying from the UI could cause the cache to repopulate from the database and lose state
 
 ### Tech-Debt/Refactor
 - More precise calculation of referencedBytes and totalBytes - remove assumption that segments are contiguous.
