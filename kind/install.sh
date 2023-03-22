@@ -117,7 +117,7 @@ export WORKDIR
 export CLUSTER=${WORKDIR}/cluster
 if [[ $(_readlink /usr/local/bin/cluster) != "${CLUSTER}" ]]; then
   [[ -L /usr/local/bin/cluster ]] && echo "    Replacing existing cluster CLI installation"
-  ${SUDO} ln -fs "${CLUSTER}" /usr/local/bin || ln -fs "${CLUSTER}" /usr/local/bin
+  ${SUDO} ln -fs "${CLUSTER}" /usr/local/bin/cluster || ln -fs "${CLUSTER}" /usr/local/bin/cluster
   echo "    $(ls -la /usr/local/bin/cluster)"
 else
   echo "    Cluster CLI is up to date at $(which cluster)"

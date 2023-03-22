@@ -113,7 +113,7 @@ export SUDO=$(which sudo)
 export DELTAFICLI_WORKDIR=$(cd $(dirname $(_readlink -f $0)) && pwd)
 export DELTAFI=${DELTAFICLI_WORKDIR}/deltafi
 [[ -L /usr/local/bin/deltafi ]] && echo "Replacing existing deltafi CLI installation $(ls -la /usr/local/bin/deltafi)"
-${SUDO} ln -fs ${DELTAFI} /usr/local/bin || ln -fs ${DELTAFI} /usr/local/bin
+${SUDO} ln -fs ${DELTAFI} /usr/local/bin/deltafi || ln -fs ${DELTAFI} /usr/local/bin/deltafi
 if [[ ! -f ${DELTAFICLI_WORKDIR}/config ]]; then
     cp ${DELTAFICLI_WORKDIR}/config.template ${DELTAFICLI_WORKDIR}/config
     echo "Installing default config at ${DELTAFICLI_WORKDIR}/config"
