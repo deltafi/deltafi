@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -27,120 +27,159 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.nifi.FlowFile;
+import org.deltafi.common.nifi.FlowFileUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressEvent;
 import org.deltafi.common.types.SourceInfo;
-import org.deltafi.core.exceptions.EnqueueActionException;
-import org.deltafi.core.exceptions.IngressException;
-import org.deltafi.core.exceptions.IngressMetadataException;
-import org.deltafi.core.nifi.FlowFile;
-import org.deltafi.core.nifi.FlowFileUtil;
+import org.deltafi.common.uuid.UUIDGenerator;
+import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.exceptions.*;
+import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.types.IngressResult;
 import org.springframework.stereotype.Service;
 
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.common.nifi.ContentType.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class IngressService {
-
-    public static final String FLOWFILE_MEDIA_TYPE = "application/flowfile";
-    public static final String FLOWFILE_V1_MEDIA_TYPE = "application/flowfile-v1";
-
+    private final MetricRepository metricRepository;
+    private final CoreAuditLogger coreAuditLogger;
+    private final DiskSpaceService diskSpaceService;
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
-    private final ObjectMapper objectMapper;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final FlowAssignmentService flowAssignmentService;
     private final IngressFlowService ingressFlowService;
     private final ErrorCountService errorCountService;
+    private final UUIDGenerator uuidGenerator;
+    private final Clock clock;
 
-    /**
-     * Check to see if the ingress is globally enabled
-     * @return true if ingress is enabled, false otherwise
-     */
-    public boolean isEnabled() {
-        return deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled();
-    }
-
-    /**
-     * Evaluate source info validity:
-     * <ul>
-     *     <li>Check if filename is present</li>
-     *     <li>Check if flow is present or resolvable</li>
-     *     <li>Check if flow is running</li>
-     * </ul>
-     * @param sourceInfo source info to validate
-     * @return Source info with resolved flow (if necessary)
-     * @throws IngressException if source info is malformed, unresolvable, or for an inactive flow
-     */
-    private SourceInfo validateSourceInfo(SourceInfo sourceInfo) throws IngressException {
-        if (sourceInfo.getFilename() == null) throw new IngressException("filename required in source info");
-
-        if (flowIsNullOrAutoResolve(sourceInfo.getFlow())) {
-            String lookup = flowAssignmentService.findFlow(sourceInfo);
-            if (lookup == null) throw new IngressException("Unable to resolve flow based on current flow assignment rules");
-            sourceInfo.setFlow(lookup);
+    public IngressResult ingress(String flow, String filename, String contentType, String username,
+            String headerMetadataString, InputStream dataStream) throws IngressMetadataException,
+            ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException {
+        if (!deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled()) {
+            log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
+                    contentType, username, "Ingress disabled for this instance of DeltaFi");
+            throw new IngressUnavailableException("Ingress disabled for this instance of DeltaFi");
         }
 
-        // ensure flow is running before accepting ingress
+        if (diskSpaceService.isContentStorageDepleted()) {
+            log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
+                    contentType, username, "Ingress temporarily disabled due to storage limits");
+            throw new IngressStorageException("Ingress temporarily disabled due to storage limits");
+        }
+
+        log.debug("Ingressing: flow={} filename={} contentType={} username={}", flow, filename, contentType, username);
+
+        IngressResult ingressResult;
         try {
-            ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
-        } catch (DgsEntityNotFoundException e) {
-            throw new IngressException("Flow " + sourceInfo.getFlow() + "is not running", e);
+            Map<String, String> headerMetadata = parseMetadata(headerMetadataString);
+
+            ingressResult = switch (contentType) {
+                case APPLICATION_FLOWFILE, APPLICATION_FLOWFILE_V_1, APPLICATION_FLOWFILE_V_2,
+                        APPLICATION_FLOWFILE_V_3 -> ingressFlowFile(flow, filename, contentType, headerMetadata, dataStream);
+                default -> ingressBinary(flow, filename, contentType, headerMetadata, dataStream);
+            };
+        } catch (IngressMetadataException | ObjectStorageException | IngressException e) {
+            log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
+                    contentType, username, e.getMessage());
+            metricRepository.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(flow), 1);
+            throw e;
         }
 
-        return sourceInfo;
+        coreAuditLogger.logIngress(username, ingressResult.filename());
+
+        Map<String, String> tags = tagsFor(ingressResult.flow());
+        metricRepository.increment(DeltaFiConstants.FILES_IN, tags, 1);
+        metricRepository.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.contentReference().getSize());
+
+        return ingressResult;
     }
 
-    public IngressResult ingressData(InputStream dataStream, String filename, String flow, String metadataString, String mediaType) throws IngressMetadataException, ObjectStorageException, IngressException {
-        Map<String, String> metadata = fromMetadataString(metadataString);
-        return switch (mediaType) {
-            case FLOWFILE_MEDIA_TYPE, FLOWFILE_V1_MEDIA_TYPE -> ingressFlowfileV1(dataStream, filename, flow, metadata);
-            default -> ingressBinary(dataStream, filename, flow, metadata, mediaType);
-        };
-    }
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private IngressResult ingressBinary(InputStream dataStream, String filename, String flow, Map<String, String> metadata, String mediaType) throws IngressMetadataException, IngressException, ObjectStorageException {
-        if (filename == null) {
-            throw new IngressMetadataException("Filename must be passed in as a header");
+    Map<String, String> parseMetadata(String metadataString) throws IngressMetadataException {
+        if (metadataString == null) {
+            return Collections.emptyMap();
         }
 
-        return ingressData(dataStream, filename, flow, metadata, mediaType);
+        try {
+            Map<String, JsonNode> keyValueMap = OBJECT_MAPPER.readValue(metadataString, new TypeReference<>() {});
+
+            return keyValueMap.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey,
+                            e -> e.getValue().isTextual() ? e.getValue().asText() : e.getValue().toString()));
+        } catch (JsonProcessingException e) {
+            throw new IngressMetadataException(
+                    "Could not parse metadata, metadata must be a JSON Object: " + e.getMessage());
+        }
     }
 
-    private IngressResult ingressFlowfileV1(InputStream dataStream, String filename, String flow, Map<String, String> metadata) throws IngressMetadataException, IngressException, ObjectStorageException {
-        FlowFile flowfile = FlowFileUtil.unarchiveFlowfileV1(dataStream, metadata);
+    private IngressResult ingressFlowFile(String flow, String filename, String contentType,
+            Map<String, String> headerMetadata, InputStream contentInputStream) throws ObjectStorageException,
+            IngressException, IngressMetadataException {
+        FlowFile flowFile;
+        try {
+            flowFile = FlowFileUtil.unpackageFlowFile(contentType, contentInputStream);
+        } catch (IOException e) {
+            throw new IngressException("Unable to unpack FlowFile", e);
+        }
+
+        Map<String, String> combinedMetadata = new HashMap<>(flowFile.attributes());
+        combinedMetadata.putAll(headerMetadata); // Metadata from header overrides attributes contained in FlowFile
+
         if (flow == null) {
-            flow = flowfile.metadata().get("flow");
+            flow = combinedMetadata.get("flow");
         }
-
         if (filename == null) {
-            filename = flowfile.metadata().get("filename");
+            filename = combinedMetadata.get("filename");
         }
-
         if (filename == null) {
             throw new IngressMetadataException("Filename must be passed in as a header or flowfile attribute");
         }
-
-        return ingressData(new ByteArrayInputStream(flowfile.content()), filename, flow, flowfile.metadata(), MediaType.APPLICATION_OCTET_STREAM);
+        return ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM, new ByteArrayInputStream(flowFile.content()),
+                combinedMetadata);
     }
 
-    private IngressResult ingressData(InputStream inputStream, String sourceFileName, String flow, Map<String, String> metadata, String mediaType) throws ObjectStorageException, IngressException {
-        SourceInfo sourceInfo = validateSourceInfo(
-                SourceInfo.builder()
-                        .filename(sourceFileName)
-                        .flow(flow)
-                        .metadata(metadata)
-                        .build()
-        );
+    private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
+            Map<String, String> metadata) throws ObjectStorageException, IngressException {
+        SourceInfo sourceInfo = SourceInfo.builder()
+                .flow(flow)
+                .filename(filename)
+                .metadata(metadata)
+                .build();
+
+        if ((sourceInfo.getFlow() == null) || sourceInfo.getFlow().equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
+            String lookup = flowAssignmentService.findFlow(sourceInfo);
+            if (lookup == null) {
+                throw new IngressException("Unable to resolve flow based on current flow assignment rules");
+            }
+            sourceInfo.setFlow(lookup);
+        }
+        try {
+            ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
+        } catch (DgsEntityNotFoundException e) {
+            throw new IngressException("Flow " + sourceInfo.getFlow() + " is not running", e);
+        }
 
         Integer maxErrors = ingressFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
         if (maxErrors != null && maxErrors >= 0) {
@@ -150,56 +189,40 @@ public class IngressService {
             }
         }
 
-        String did = UUID.randomUUID().toString();
-        OffsetDateTime created = OffsetDateTime.now();
+        String did = uuidGenerator.generate();
 
-        ContentReference contentReference = contentStorageService.save(did, inputStream, mediaType);
-        List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(contentReference).name(sourceFileName).build());
+        ContentReference contentReference = contentStorageService.save(did, contentInputStream, mediaType);
 
-        IngressEvent ingressInput = IngressEvent.newBuilder()
+        IngressEvent ingressEvent = IngressEvent.newBuilder()
                 .did(did)
                 .sourceInfo(sourceInfo)
-                .content(content)
-                .created(created)
+                .content(List.of(Content.newBuilder().contentReference(contentReference).name(filename).build()))
+                .created(OffsetDateTime.now(clock))
                 .build();
 
         try {
-            deltaFilesService.ingress(ingressInput);
-            return new IngressResult(contentReference, sourceInfo.getFlow(), sourceFileName, did);
+            deltaFilesService.ingress(ingressEvent);
+            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(contentReference, sourceInfo.getFlow(), sourceFileName, did);
+            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference);
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
             deltaFilesService.deleteContentAndMetadata(did, contentReference);
-            throw e;
+            throw new IngressException("Ingress failed", e);
         }
     }
 
-    private static boolean flowIsNullOrAutoResolve(String flow) {
-        return flow == null || DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME.equals(flow);
+    private IngressResult ingressBinary(String flow, String filename, String mediaType,
+            Map<String, String> headerMetadata, InputStream contentInputStream) throws IngressMetadataException,
+            IngressException, ObjectStorageException {
+        if (filename == null) {
+            throw new IngressMetadataException("Filename must be passed in as a header");
+        }
+        return ingress(flow, filename, mediaType, contentInputStream, headerMetadata);
     }
 
-    private static String nodeValue(JsonNode node) {
-        return node.isTextual() ? node.asText() : node.toString();
-    }
-
-    Map<String, String> fromMetadataString(String metadata) throws IngressMetadataException {
-        if (Objects.isNull(metadata)) {
-            return Collections.emptyMap();
-        }
-
-        try {
-            Map<String, JsonNode> keyValueMap = objectMapper.readValue(metadata, new TypeReference<>() {});
-
-            return keyValueMap.entrySet().
-                    stream()
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> nodeValue(e.getValue())
-                    ));
-        } catch (JsonProcessingException e) {
-            throw new IngressMetadataException("Could not parse metadata, metadata must be a JSON Object: " + e.getMessage());
-        }
+    private Map<String, String> tagsFor(String ingressFlow) {
+        return MetricsUtil.tagsFor(ActionType.INGRESS.name(), INGRESS_ACTION, ingressFlow, null);
     }
 }

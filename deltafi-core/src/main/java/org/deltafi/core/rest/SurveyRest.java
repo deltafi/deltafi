@@ -39,7 +39,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RestController
 public class SurveyRest {
-    private final MetricRepository metricService;
+    private final MetricRepository metricRepository;
     private final CoreAuditLogger coreAuditLogger;
 
     @NeedsPermission.DeltaFileIngress
@@ -74,14 +74,14 @@ public class SurveyRest {
             Map<String, String> tags = new HashMap<>();
             tags.put("surveyFlow", flow);
             tags.put("surveyDirection", direction);
-            metricService.increment(DeltaFiConstants.SURVEY_FILES, tags, files);
-            metricService.increment(DeltaFiConstants.SURVEY_BYTES, tags, bytes);
+            metricRepository.increment(DeltaFiConstants.SURVEY_FILES, tags, files);
+            metricRepository.increment(DeltaFiConstants.SURVEY_BYTES, tags, bytes);
 
             if (subflow != null && !subflow.isBlank()) {
                 Map<String, String> subflowTags = new HashMap<>(tags);
                 subflowTags.put("surveySubflow", subflow);
-                metricService.increment(DeltaFiConstants.SURVEY_SUBFLOW_FILES, subflowTags, files);
-                metricService.increment(DeltaFiConstants.SURVEY_SUBFLOW_BYTES, subflowTags, bytes);
+                metricRepository.increment(DeltaFiConstants.SURVEY_SUBFLOW_FILES, subflowTags, files);
+                metricRepository.increment(DeltaFiConstants.SURVEY_SUBFLOW_BYTES, subflowTags, bytes);
             }
 
             return ResponseEntity.ok(null);

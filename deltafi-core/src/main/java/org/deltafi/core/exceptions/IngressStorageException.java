@@ -15,8 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.core.exceptions;
 
-import org.deltafi.common.content.ContentReference;
-
-public record IngressResult(String flow, String filename, String did, ContentReference contentReference) {}
+public class IngressStorageException extends Exception {
+    public IngressStorageException(String message) {
+        super(message);
+    }
+}

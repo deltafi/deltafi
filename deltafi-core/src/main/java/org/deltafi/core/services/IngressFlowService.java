@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -18,13 +18,12 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.core.converters.IngressFlowPlanConverter;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.IngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.IngressFlow;
-import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.core.validation.IngressFlowValidator;
 import org.springframework.stereotype.Service;
 
@@ -100,8 +99,8 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
      */
     public Map<String, Integer> maxErrorsPerFlow() {
         return getRunningFlows().stream()
-                .filter(e -> e.isRunning() && e.getMaxErrors() >= 0)
-                .collect(Collectors.toMap(Flow::getName, IngressFlow::getMaxErrors));
+                .filter(e -> e.getMaxErrors() >= 0)
+                .collect(Collectors.toMap(IngressFlow::getName, IngressFlow::getMaxErrors));
     }
 
     public List<IngressFlowErrorState> ingressFlowErrorsExceeded() {

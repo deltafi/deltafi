@@ -15,8 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.common.uuid;
 
-import org.deltafi.common.content.ContentReference;
-
-public record IngressResult(String flow, String filename, String did, ContentReference contentReference) {}
+public interface UUIDGenerator {
+    String generate();
+}

@@ -39,6 +39,7 @@ dependencies {
     api 'org.springframework.data:spring-data-mongodb'
     api "org.springframework.retry:spring-retry"
     api "redis.clients:jedis"
+    api 'org.apache.nifi:nifi-flowfile-packager:1.18.0'
 
     implementation 'org.apache.commons:commons-text'
     constraints {

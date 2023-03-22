@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -26,6 +26,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.nifi.ContentType;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
@@ -52,7 +53,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.deltafi.core.action.FlowfileEgressAction.FLOWFILE_V1_CONTENT_TYPE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -74,7 +74,7 @@ class FlowfileEgressActionTest {
     private static final String EGRESS_FLOW = "outFlow";
     private static final String URL = "https://url.com";
 
-    private static final String CONTENT_TYPE = FLOWFILE_V1_CONTENT_TYPE;
+    private static final String CONTENT_TYPE = ContentType.APPLICATION_FLOWFILE;
 
     private static final Map<String, String> ADDITIONAL_METADATA = Map.of(
             "did", DID,

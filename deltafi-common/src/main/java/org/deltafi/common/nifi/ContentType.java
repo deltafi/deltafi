@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,25 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.nifi;
+package org.deltafi.common.nifi;
 
-import lombok.SneakyThrows;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.springframework.core.io.ClassPathResource;
-
-import java.io.InputStream;
-import java.util.HashMap;
-
-class FlowFileUtilTest {
-
-    @Test
-    @SneakyThrows
-    void testUTF32Metadata() {
-        InputStream dataStream = new ClassPathResource("rest-test/flowfile").getInputStream();
-        FlowFile flowFile = FlowFileUtil.unarchiveFlowfileV1(dataStream, new HashMap<>());
-        Assertions.assertEquals("\uD84E\uDCE7", flowFile.metadata().get("encodedString"));
-        Assertions.assertEquals(12, flowFile.metadata().size());
-    }
-
+public class ContentType {
+    public static final String APPLICATION_FLOWFILE = "application/flowfile";
+    public static final String APPLICATION_FLOWFILE_V_1 = "application/flowfile-v1";
+    public static final String APPLICATION_FLOWFILE_V_2 = "application/flowfile-v2";
+    public static final String APPLICATION_FLOWFILE_V_3 = "application/flowfile-v3";
 }

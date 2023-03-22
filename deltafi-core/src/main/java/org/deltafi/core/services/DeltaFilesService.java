@@ -192,26 +192,26 @@ public class DeltaFilesService {
         return matches.isEmpty() ? null : matches.get(0);
     }
 
-    public DeltaFile ingress(IngressEvent input) {
-        return ingress(input, Collections.emptyList());
+    public DeltaFile ingress(IngressEvent ingressEvent) {
+        return ingress(ingressEvent, Collections.emptyList());
     }
 
-    public DeltaFile ingress(IngressEvent input, List<String> parentDids) {
-        SourceInfo sourceInfo = input.getSourceInfo();
+    public DeltaFile ingress(IngressEvent ingressEvent, List<String> parentDids) {
+        SourceInfo sourceInfo = ingressEvent.getSourceInfo();
 
         OffsetDateTime now = OffsetDateTime.now(clock);
 
         Action ingressAction = Action.newBuilder()
                 .name(INGRESS_ACTION)
                 .state(ActionState.COMPLETE)
-                .created(input.getCreated())
+                .created(ingressEvent.getCreated())
                 .modified(now)
                 .build();
 
-        long contentSize = ContentUtil.computeContentSize(input.getContent());
+        long contentSize = ContentUtil.computeContentSize(ingressEvent.getContent());
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
-                .did(input.getDid())
+                .did(ingressEvent.getDid())
                 .parentDids(parentDids)
                 .childDids(Collections.emptyList())
                 .requeueCount(0)
@@ -220,11 +220,11 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
-                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, input.getContent(), null)))
+                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, ingressEvent.getContent(), null)))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())
-                .created(input.getCreated())
+                .created(ingressEvent.getCreated())
                 .modified(now)
                 .egressed(false)
                 .filtered(false)

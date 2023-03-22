@@ -15,8 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.common.test.uuid;
 
-import org.deltafi.common.content.ContentReference;
+import lombok.Data;
+import org.deltafi.common.uuid.UUIDGenerator;
 
-public record IngressResult(String flow, String filename, String did, ContentReference contentReference) {}
+@Data
+public class TestUUIDGenerator implements UUIDGenerator {
+    private String uuid;
+
+    @Override
+    public String generate() {
+        return uuid;
+    }
+}

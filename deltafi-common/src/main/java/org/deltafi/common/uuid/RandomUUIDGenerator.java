@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,8 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.nifi;
+package org.deltafi.common.uuid;
 
-import java.util.Map;
+import java.util.UUID;
 
-public record FlowFile(byte[] content,  Map<String, String> metadata) {}
+public class RandomUUIDGenerator implements UUIDGenerator {
+    @Override
+    public String generate() {
+        return UUID.randomUUID().toString();
+    }
+}

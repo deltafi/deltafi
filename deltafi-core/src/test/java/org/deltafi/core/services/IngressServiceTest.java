@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -19,186 +19,477 @@ package org.deltafi.core.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
-import lombok.SneakyThrows;
-import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.content.Segment;
+import org.deltafi.common.nifi.ContentType;
+import org.deltafi.common.nifi.FlowFileUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.time.TestClock;
+import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.IngressEvent;
 import org.deltafi.common.types.SourceInfo;
-import org.deltafi.core.MockDeltaFiPropertiesService;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.IngressProperties;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
+import org.deltafi.core.exceptions.IngressStorageException;
+import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.IngressResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.io.ClassPathResource;
 
 import javax.ws.rs.core.MediaType;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class IngressServiceTest {
+    private static final TestUUIDGenerator UUID_GENERATOR = new TestUUIDGenerator();
+    private static final TestClock CLOCK = new TestClock();
 
-    public static final String OBJECT_NAME = "in.txt";
-    public static final String FLOW = "flow";
-    public static final String FLOW_PLAN = "namespace";
-    public static final String FULL_FLOW_NAME = FLOW_PLAN + "." + FLOW;
-    private static final String EMPTY_METADATA = "{}";
+    private static final ContentStorageService CONTENT_STORAGE_SERVICE =
+            new ContentStorageService(new InMemoryObjectStorageService());
 
-    @InjectMocks
-    IngressService ingressService;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    @Mock
-    ContentStorageService contentStorageService;
+    private final MetricRepository metricRepository;
+    private final CoreAuditLogger coreAuditLogger;
+    private final DiskSpaceService diskSpaceService;
+    private final DeltaFilesService deltaFilesService;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final FlowAssignmentService flowAssignmentService;
+    private final IngressFlowService ingressFlowService;
+    private final ErrorCountService errorCountService;
 
-    @Mock
-    DeltaFilesService deltaFilesService;
+    private final IngressService ingressService;
 
-    @Mock
-    IngressFlowService ingressFlowService;
+    @Captor
+    ArgumentCaptor<IngressEvent> ingressEventCaptor;
 
-    @Mock
-    FlowAssignmentService flowAssignmentService;
+    IngressServiceTest(@Mock MetricRepository metricRepository, @Mock CoreAuditLogger coreAuditLogger,
+            @Mock DiskSpaceService diskSpaceService, @Mock DeltaFilesService deltaFilesService,
+            @Mock DeltaFiPropertiesService deltaFiPropertiesService, @Mock FlowAssignmentService flowAssignmentService,
+            @Mock IngressFlowService ingressFlowService, @Mock ErrorCountService errorCountService) {
+        this.metricRepository = metricRepository;
+        this.coreAuditLogger = coreAuditLogger;
+        this.diskSpaceService = diskSpaceService;
+        this.deltaFilesService = deltaFilesService;
+        this.deltaFiPropertiesService = deltaFiPropertiesService;
+        this.flowAssignmentService = flowAssignmentService;
+        this.ingressFlowService = ingressFlowService;
+        this.errorCountService = errorCountService;
 
-    @Mock
-    @SuppressWarnings("unused")
-    ErrorCountService errorCountService;
-
-    @Spy
-    DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
-
-    @Spy
-    @SuppressWarnings("unused")
-    ObjectMapper objectMapper = new ObjectMapper();
-
-    @Test @SneakyThrows
-    void ingressBinaryData() {
-        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("fileName", "did"));
-        Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
-
-        DeltaFile deltaFile = DeltaFile.newBuilder().sourceInfo(SourceInfo.builder().flow("namespace.flow").build()).build();
-        Mockito.when(deltaFilesService.ingress(any())).thenReturn(deltaFile);
-
-        IngressResult created = ingressService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, EMPTY_METADATA, MediaType.APPLICATION_JSON);
-
-        Mockito.verify(contentStorageService).save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
-        Mockito.verify(deltaFilesService).ingress(any());
-        Assertions.assertNotNull(created.contentReference().getSegments().get(0).getDid());
+        ingressService = new IngressService(metricRepository, coreAuditLogger, diskSpaceService, CONTENT_STORAGE_SERVICE,
+                deltaFilesService, deltaFiPropertiesService, flowAssignmentService, ingressFlowService,
+                errorCountService, UUID_GENERATOR, CLOCK);
     }
 
     @Test
-    void ingressFlowFile() throws ObjectStorageException, IngressMetadataException, IngressException, IOException {
-        InputStream dataStream = new ClassPathResource("rest-test/flowfile").getInputStream();
-        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("fileName", "did"));
-        Mockito.when(contentStorageService.save(any(), (InputStream) any(), eq(MediaType.APPLICATION_OCTET_STREAM))).thenReturn(contentReference);
+    void ingressBinaryFile() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
+            IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
 
-        // get the filename from the flowfile metadata
-        IngressResult created = ingressService.ingressData(dataStream, null, FULL_FLOW_NAME, EMPTY_METADATA, IngressService.FLOWFILE_V1_MEDIA_TYPE);
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        verifyNormalExecution(ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8))
+        ));
 
-        Mockito.verify(contentStorageService).save(any(), (InputStream) any(), eq(MediaType.APPLICATION_OCTET_STREAM));
-
-        org.assertj.core.api.Assertions.assertThat(created.did()).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(created.flow()).isEqualTo(FULL_FLOW_NAME);
-        org.assertj.core.api.Assertions.assertThat(created.filename()).isEqualTo("1c86ee54-066c-4020-9a9f-83e1b8971098");
-        org.assertj.core.api.Assertions.assertThat(created.contentReference()).isEqualTo(contentReference);
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(2, ingressEvent.getSourceInfo().getMetadata().size());
     }
 
-    @Test @SneakyThrows
-    void isEnabled() {
-        Assertions.assertTrue(ingressService.isEnabled());
-        deltaFiProperties().getIngress().setEnabled(false);
-        Assertions.assertFalse(ingressService.isEnabled());
+    private void mockNormalExecution() {
+        DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+        IngressProperties ingressProperties = new IngressProperties();
+        ingressProperties.setEnabled(true);
+        deltaFiProperties.setIngress(ingressProperties);
+        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
+        Mockito.when(ingressFlowService.maxErrorsPerFlow()).thenReturn(Map.of("flow", 1));
+        Mockito.when(ingressFlowService.getRunningFlowByName("flow")).thenReturn(new IngressFlow());
+        Mockito.when(errorCountService.generateErrorMessage("flow", 1)).thenReturn(null);
+        DeltaFile deltaFile = DeltaFile.newBuilder().sourceInfo(SourceInfo.builder().flow("flow").build()).build();
+        Mockito.when(deltaFilesService.ingress(ingressEventCaptor.capture())).thenReturn(deltaFile);
+
+        UUID_GENERATOR.setUuid("TEST-UUID");
+        CLOCK.setInstant(Instant.ofEpochMilli(12345));
+    }
+
+    private void verifyNormalExecution(IngressResult ingressResult) throws IOException, ObjectStorageException {
+        Mockito.verify(coreAuditLogger).logIngress("username", "filename");
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress",
+                DeltaFiConstants.SOURCE, DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_IN, metricTags, 1);
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.BYTES_IN, metricTags, "content".length());
+
+        String content;
+        try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResult.contentReference())) {
+            content = new String(contentInputStream.readAllBytes());
+        }
+        assertEquals("content", content);
+        assertEquals("flow", ingressResult.flow());
+        assertEquals("filename", ingressResult.filename());
+        assertEquals("TEST-UUID", ingressResult.did());
     }
 
     @Test
-    void isStorageAvailable() {
+    void ingressFlowFileV1() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
+            IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
+        verifyNormalExecution(ingressService.ingress("flow", "filename", ContentType.APPLICATION_FLOWFILE_V_1,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream(
+                        "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
+
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+        assertEquals("\uD84E\uDCE7", ingressEvent.getSourceInfo().getMetadata().get("encodedString"));
     }
 
-    @Test @SneakyThrows
-    void ingressDataThrowsOnMissingFlow() {
-        Mockito.when(ingressFlowService.getRunningFlowByName(any())).thenThrow(new DgsEntityNotFoundException("Not here"));
+    @Test
+    void ingressFlowFileV2() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
+            IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
 
-        assertThrows(
-                IngressException.class,
-                () -> ingressService.ingressData(null, OBJECT_NAME, "blarg", EMPTY_METADATA, MediaType.APPLICATION_JSON)
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
+        verifyNormalExecution(ingressService.ingress("flow", "filename", ContentType.APPLICATION_FLOWFILE_V_2,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV2(
+                        flowFileAttributes, new ByteArrayInputStream(
+                        "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
+
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+        assertEquals("\uD84E\uDCE7", ingressEvent.getSourceInfo().getMetadata().get("encodedString"));
+    }
+
+    @Test
+    void ingressFlowFileV3() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
+            IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
+        verifyNormalExecution(ingressService.ingress("flow", "filename", ContentType.APPLICATION_FLOWFILE_V_3,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV3(
+                        flowFileAttributes, new ByteArrayInputStream(
+                        "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
+
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+        assertEquals("\uD84E\uDCE7", ingressEvent.getSourceInfo().getMetadata().get("encodedString"));
+    }
+
+    @Test
+    void ingressDisabled() {
+        DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+        IngressProperties ingressProperties = new IngressProperties();
+        ingressProperties.setEnabled(false);
+        deltaFiProperties.setIngress(ingressProperties);
+        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+
+        assertThrows(IngressUnavailableException.class,
+                () -> ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(Map.of()), new ByteArrayInputStream("binary content".getBytes(StandardCharsets.UTF_8))
+                )
+        );
+    }
+
+    @Test
+    void ingressStorageDepleted() {
+        DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+        IngressProperties ingressProperties = new IngressProperties();
+        ingressProperties.setEnabled(true);
+        deltaFiProperties.setIngress(ingressProperties);
+        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(true);
+
+        assertThrows(IngressStorageException.class,
+                () -> ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(Map.of()), new ByteArrayInputStream("binary content".getBytes(StandardCharsets.UTF_8))
+                )
+        );
+    }
+
+    @Test
+    void ingressBadHeaderMetadata() {
+        DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+        IngressProperties ingressProperties = new IngressProperties();
+        ingressProperties.setEnabled(true);
+        deltaFiProperties.setIngress(ingressProperties);
+        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
+
+        assertThrows(IngressMetadataException.class,
+                () -> ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", "bad header metadata", new ByteArrayInputStream("binary content".getBytes(StandardCharsets.UTF_8))
+                )
         );
 
-        Mockito.verifyNoInteractions(contentStorageService);
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
-    @Test @SneakyThrows
-    void ingressDataThrowsOnMissingFilename() {
-        assertThrows(
-                IngressMetadataException.class,
-                () -> ingressService.ingressData(null, null, FULL_FLOW_NAME, EMPTY_METADATA, MediaType.APPLICATION_JSON)
+    @Test
+    void ingressBinaryFileMissingFilename() {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        assertThrows(IngressMetadataException.class,
+                () -> ingressService.ingress("flow", null, MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8))
+                )
         );
 
-        Mockito.verifyNoInteractions(contentStorageService);
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
-    @Test @SneakyThrows
-    void ingressDataThrowsOnFailedFlowLookup() {
+    @Test
+    void ingressFlowFileV1FlowInHeader() throws IngressUnavailableException, ObjectStorageException,
+            IngressStorageException, IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
 
-        Mockito.when(flowAssignmentService.findFlow(any())).thenReturn(null);
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "flow", "flow");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
+        verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream(
+                        "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
 
-        assertThrows(
-                IngressException.class,
-                () -> ingressService.ingressData(null, OBJECT_NAME, null, EMPTY_METADATA, MediaType.APPLICATION_JSON)
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+        assertEquals("\uD84E\uDCE7", ingressEvent.getSourceInfo().getMetadata().get("encodedString"));
+    }
+
+    @Test
+    void ingressFlowFileV1FlowInAttributes() throws IngressUnavailableException, ObjectStorageException,
+            IngressStorageException, IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "flow", "flow");
+        verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream(
+                        "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
+
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+    }
+
+    @Test
+    void ingressFlowFileV1AutoResolvesFlow() throws IOException, IngressUnavailableException, ObjectStorageException,
+            IngressStorageException, IngressMetadataException, IngressException {
+        mockNormalExecution();
+
+        Mockito.when(flowAssignmentService.findFlow(Mockito.any())).thenReturn("flow");
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
+        verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream(
+                                "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
+
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+    }
+
+    @Test
+    void ingressFlowFileV1FilenameInHeader() throws IngressUnavailableException, ObjectStorageException,
+            IngressStorageException, IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "filename", "filename");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
+        verifyNormalExecution(ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream(
+                        "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
+
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+        assertEquals("\uD84E\uDCE7", ingressEvent.getSourceInfo().getMetadata().get("encodedString"));
+    }
+
+    @Test
+    void ingressFlowFileV1FilenameInAttributes() throws IngressUnavailableException, ObjectStorageException,
+            IngressStorageException, IngressMetadataException, IngressException, IOException {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "filename", "filename");
+        verifyNormalExecution(ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream(
+                        "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+        ));
+
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(3, ingressEvent.getSourceInfo().getMetadata().size());
+        assertEquals("v1", ingressEvent.getSourceInfo().getMetadata().get("k1"));
+    }
+
+    @Test
+    void ingressFlowFileV1MissingFilename() {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
+        assertThrows(IngressMetadataException.class,
+                () -> ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(
+                                FlowFileUtil.packageFlowFileV1(
+                                flowFileAttributes, new ByteArrayInputStream(
+                                "content".getBytes(StandardCharsets.UTF_8)), "content".length()))
+                )
         );
 
-        Mockito.verifyNoInteractions(contentStorageService);
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
-    @Test @SneakyThrows
-    void ingressData_unexpectedException() {
-        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("fileName", "did"));
-        Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
+    @Test
+    void ingressBinaryAutoResolvesFlow() throws IOException, IngressUnavailableException, ObjectStorageException,
+            IngressStorageException, IngressMetadataException, IngressException {
+        mockNormalExecution();
 
-        Mockito.when(deltaFilesService.ingress(any())).thenThrow(new RuntimeException("failed to send to dgs"));
+        Mockito.when(flowAssignmentService.findFlow(Mockito.any())).thenReturn("flow");
 
-        Assertions.assertThrows(RuntimeException.class, () -> ingressService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, EMPTY_METADATA, MediaType.APPLICATION_JSON));
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        verifyNormalExecution(ingressService.ingress(null, "filename", MediaType.APPLICATION_OCTET_STREAM,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8))
+        ));
 
-        Mockito.verify(deltaFilesService).deleteContentAndMetadata(Mockito.any(), Mockito.eq(contentReference));
+        IngressEvent ingressEvent = ingressEventCaptor.getValue();
+        assertEquals(2, ingressEvent.getSourceInfo().getMetadata().size());
     }
 
-    @Test @SneakyThrows
-    void fromMetadataString() {
-        String metadata = "{\"simple\": \"value\"}";
+    @Test
+    void ingressBinaryAutoResolveFlowFails() {
+        mockNormalExecution();
 
-        Map<String, String> map = ingressService.fromMetadataString(metadata);
-        Assertions.assertEquals(1, map.size());
-        Assertions.assertEquals("value", map.get("simple"));
+        Mockito.when(flowAssignmentService.findFlow(Mockito.any())).thenReturn(null);
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        assertThrows(IngressException.class,
+                () -> ingressService.ingress(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME, "filename",
+                        MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8))
+                )
+        );
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME);
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
-    @Test @SneakyThrows
-    void fromMetadataString_subObject() {
+    @Test
+    void ingressBinaryFlowNotRunning() {
+        mockNormalExecution();
+
+        Mockito.when(ingressFlowService.getRunningFlowByName("flow")).thenThrow(new DgsEntityNotFoundException());
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        IngressException ingressException = assertThrows(IngressException.class,
+                () -> ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8))
+                )
+        );
+
+        assertEquals("Flow flow is not running", ingressException.getMessage());
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+    }
+
+    @Test
+    void ingressBinaryFlowErrorsExceeded() {
+        mockNormalExecution();
+
+        Mockito.when(errorCountService.generateErrorMessage("flow", 1)).thenReturn("errors exceeded");
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        IngressException ingressException = assertThrows(IngressException.class,
+                () -> ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8))
+                )
+        );
+
+        assertEquals("errors exceeded", ingressException.getMessage());
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+    }
+
+    @Test
+    void ingressBinaryServiceException() {
+        mockNormalExecution();
+
+        Mockito.when(deltaFilesService.ingress(ingressEventCaptor.capture())).thenThrow(new RuntimeException());
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        assertThrows(IngressException.class,
+                () -> ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8))
+                )
+        );
+
+        Mockito.verify(deltaFilesService).deleteContentAndMetadata(Mockito.any(), Mockito.any());
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+    }
+
+    @Test
+    void parseMetadataStringWithSubObject() throws IngressMetadataException {
         String metadata = "{\"complex\": {\"key\": {\"list\": [1, 2, 3]}}}";
 
-        Map<String, String> map = ingressService.fromMetadataString(metadata);
+        Map<String, String> map = ingressService.parseMetadata(metadata);
         Assertions.assertEquals(1, map.size());
         Assertions.assertEquals("{\"key\":{\"list\":[1,2,3]}}", map.get("complex"));
-    }
-
-    @Test
-    void fromMetadataString_fail() {
-        String metadata = "[\"bad\"]";
-        Assertions.assertThrows(IngressMetadataException.class, () -> ingressService.fromMetadataString(metadata));
-    }
-
-    private DeltaFiProperties deltaFiProperties() {
-        return deltaFiPropertiesService.getDeltaFiProperties();
     }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -18,12 +18,12 @@
 package org.deltafi.core.action;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
+import org.deltafi.common.nifi.FlowFileUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.core.parameters.HttpEgressParameters;
@@ -32,44 +32,42 @@ import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
+
 @Component
 @Slf4j
 public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParameters> {
-    static final String FLOWFILE_V1_CONTENT_TYPE = "application/flowfile";
-
     public FlowfileEgressAction() {
-        super("Egresses content and attributes in a NiFi V1 FlowFile (application/flowfile)");
+        super(String.format("Egresses content and attributes in a NiFi V1 FlowFile (%s)", APPLICATION_FLOWFILE));
     }
 
-    protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params, @NotNull EgressInput input) {
+    protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params,
+            @NotNull EgressInput input) {
         try (InputStream inputStream = loadContentAsInputStream(input.getFormattedData().getContentReference())) {
-            FlowFilePackagerV1 packager = new FlowFilePackagerV1();
-            try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                packager.packageFlowFile(inputStream, out,
-                        buildHeadersMap(context.getDid(), input.getSourceFilename(), input.getIngressFlow(),
-                                input.getFormattedData(), context.getEgressFlow()),
-                                input.getFormattedData().getContentReference().getSize());
-                HttpResponse<InputStream> response;
-                try (ByteArrayInputStream flowfile = new ByteArrayInputStream(out.toByteArray())) {
-                    response = httpPostService.post(params.getUrl(), Map.of(), flowfile, FLOWFILE_V1_CONTENT_TYPE);
-                } catch (IOException e) {
-                    return new ErrorResult(context, "Unable to process flowfile stream", e);
-                }
-                Response.Status status = Response.Status.fromStatusCode(response.statusCode());
-                if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-                    try (InputStream body = response.body()) {
-                        return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode() + " " + new String(body.readAllBytes())).logErrorTo(log);
-                    }
-                }
+            Map<String, String> attributes = buildHeadersMap(context.getDid(), input.getSourceFilename(),
+                    input.getIngressFlow(), input.getFormattedData(), context.getEgressFlow());
+            byte[] flowFile = FlowFileUtil.packageFlowFileV1(attributes, inputStream,
+                    input.getFormattedData().getContentReference().getSize());
+
+            HttpResponse<InputStream> response;
+            try (ByteArrayInputStream flowFileInputStream = new ByteArrayInputStream(flowFile)) {
+                response = httpPostService.post(params.getUrl(), Map.of(), flowFileInputStream, APPLICATION_FLOWFILE);
             } catch (IOException e) {
-                return new ErrorResult(context, "Unable to extract flowfile content");
+                return new ErrorResult(context, "Unable to process flowfile stream", e);
+            }
+
+            Response.Status status = Response.Status.fromStatusCode(response.statusCode());
+            if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
+                try (InputStream body = response.body()) {
+                    return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode() + " " +
+                            new String(body.readAllBytes())).logErrorTo(log);
+                }
             }
         } catch (ObjectStorageException e) {
             return new ErrorResult(context, "Unable to get object from content storage", e);
@@ -81,5 +79,4 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
 
         return new EgressResult(context, params.getUrl(), input.getFormattedData().getContentReference().getSize());
     }
-
 }

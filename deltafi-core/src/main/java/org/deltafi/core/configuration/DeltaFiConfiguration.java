@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -19,6 +19,8 @@ package org.deltafi.core.configuration;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.action.ActionEventQueueProperties;
+import org.deltafi.common.uuid.RandomUUIDGenerator;
+import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.task.TaskSchedulerCustomizer;
@@ -39,5 +41,10 @@ public class DeltaFiConfiguration {
     @Bean
     public TaskSchedulerCustomizer taskSchedulerCustomizer(DeltaFiPropertiesService deltaFiPropertiesService) {
         return taskScheduler ->  taskScheduler.setPoolSize(deltaFiPropertiesService.getDeltaFiProperties().getScheduledServiceThreads());
+    }
+
+    @Bean
+    public UUIDGenerator uuidGenerator() {
+        return new RandomUUIDGenerator();
     }
 }

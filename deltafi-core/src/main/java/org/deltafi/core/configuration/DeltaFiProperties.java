@@ -20,7 +20,6 @@ package org.deltafi.core.configuration;
 import lombok.Data;
 import org.deltafi.core.configuration.ui.UiProperties;
 import org.deltafi.core.join.JoinProperties;
-import org.deltafi.core.types.PropertyType;
 import org.springframework.data.annotation.Id;
 
 import java.time.Duration;
