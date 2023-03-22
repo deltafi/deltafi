@@ -19,7 +19,7 @@
 import abc
 from typing import Dict, List
 
-from deltafi.domain import Content
+from deltafi.domain import Content, SourceInfo
 from deltafi.metric import Metric
 from deltafi.storage import ContentReference
 
@@ -150,6 +150,40 @@ class FormatManyResult(Result):
         return [format_result.response() for format_result in self.format_results]
 
 
+class JoinResult(Result):
+    def __init__(self, source_info: SourceInfo):
+        super().__init__('join', 'JOIN')
+        self.content = []
+        self.metadata = {}
+        self.source_info = source_info
+        self.domains = []
+
+    def add_content(self, content_list: List[Content]):
+        self.content.extend(content_list)
+        return self
+
+    def add_metadata(self, key: str, value: str):
+        self.metadata[key] = value
+        return self
+
+    def add_domain(self, name: str, value: str, media_type: str):
+        self.domains.append({
+            'name': name,
+            'value': value,
+            'mediaType': media_type})
+        return self
+
+    def response(self):
+        return {
+            'sourceInfo': self.source_info.json(),
+            'domains': self.domains,
+            'protocolLayer': {
+                'content': [content.json() for content in self.content],
+                'metadata': self.metadata
+            }
+        }
+
+
 class LoadResult(Result):
     def __init__(self):
         super().__init__('load', 'LOAD')
@@ -185,19 +219,13 @@ class LoadResult(Result):
 
 class SplitResult(Result):
     class SplitChild:
-        def __init__(self, filename: str, flow: str, metadata: Dict[str, str], content: List[Content]):
-            self.filename = filename
-            self.flow = flow
-            self.metadata = metadata
+        def __init__(self, source_info: SourceInfo, content: List[Content]):
+            self.source_info = source_info
             self.content = content
 
         def json(self):
             return {
-                'sourceInfo': {
-                    'filename': self.filename,
-                    'flow': self.flow,
-                    'metadata': self.metadata
-                },
+                'sourceInfo': self.source_info.json(),
                 'content': [content.json() for content in self.content]
             }
 
@@ -206,7 +234,7 @@ class SplitResult(Result):
         self.children = []
 
     def add_child(self, filename: str, flow: str, metadata: Dict[str, str], content: List[Content]):
-        child = SplitResult.SplitChild(filename, flow, metadata, content)
+        child = SplitResult.SplitChild(SourceInfo(filename, flow, metadata), content)
         self.children.append(child)
 
     def response(self):

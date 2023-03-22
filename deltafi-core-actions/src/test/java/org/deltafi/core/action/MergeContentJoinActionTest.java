@@ -26,6 +26,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.deltafi.actionkit.action.join.JoinResult;
+import org.deltafi.actionkit.action.join.JoinResultType;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -95,12 +96,12 @@ public class MergeContentJoinActionTest {
     public void mergesToBinaryConcatenation() throws ObjectStorageException, IOException {
         actionInput.setActionParams(Map.of());
 
-        JoinResult joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
+        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
 
-        assertEquals(JOINED_DID, joinResult.getSourceInfo().getFilename());
-
+        assertInstanceOf(JoinResult.class, joinResult);
+        assertEquals(JOINED_DID, ((JoinResult) joinResult).getSourceInfo().getFilename());
         try (InputStream joinedContentInputStream = CONTENT_STORAGE_SERVICE.load(
-                joinResult.getContent().get(0).getContentReference())) {
+                ((JoinResult) joinResult).getContent().get(0).getContentReference())) {
             assertArrayEquals("join 1 contentjoin 2 content".getBytes(StandardCharsets.UTF_8),
                     joinedContentInputStream.readAllBytes());
         }
@@ -147,9 +148,10 @@ public class MergeContentJoinActionTest {
     public void mergesAndReinjects() {
         actionInput.setActionParams(Map.of("reinjectFlow", "new-flow"));
 
-        JoinResult joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
+        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
 
-        assertEquals("new-flow", joinResult.getSourceInfo().getFlow());
+        assertInstanceOf(JoinResult.class, joinResult);
+        assertEquals("new-flow", ((JoinResult) joinResult).getSourceInfo().getFlow());
     }
 
     private void execute(ArchiveType archiveType, Function<InputStream, InputStream> joinedContentInputStreamSupplier,
@@ -157,13 +159,15 @@ public class MergeContentJoinActionTest {
             throws IOException, ObjectStorageException {
         actionInput.setActionParams(Map.of("archiveType", archiveType));
 
-        JoinResult joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
+        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
 
-        assertEquals(JOINED_DID + "." + archiveType.getValue(), joinResult.getSourceInfo().getFilename());
-        assertEquals(archiveType.getMediaType(), joinResult.getContent().get(0).getContentReference().getMediaType());
-
+        assertInstanceOf(JoinResult.class, joinResult);
+        assertEquals(JOINED_DID + "." + archiveType.getValue(),
+                ((JoinResult) joinResult).getSourceInfo().getFilename());
+        assertEquals(archiveType.getMediaType(),
+                ((JoinResult) joinResult).getContent().get(0).getContentReference().getMediaType());
         try (InputStream joinedContentInputStream = CONTENT_STORAGE_SERVICE.load(
-                joinResult.getContent().get(0).getContentReference())) {
+                ((JoinResult) joinResult).getContent().get(0).getContentReference())) {
             validate(joinedContentInputStreamSupplier.apply(joinedContentInputStream), archiveInputStreamSupplier);
         }
     }

@@ -19,7 +19,7 @@
 from abc import ABC, abstractmethod
 
 from deltafi.actiontype import ActionType
-from deltafi.domain import Context
+from deltafi.domain import Context, DeltaFile
 from deltafi.input import DomainInput, EgressInput, EnrichInput, FormatInput, LoadInput, TransformInput, ValidateInput
 from deltafi.result import *
 from pydantic import BaseModel
@@ -40,10 +40,10 @@ class Action(ABC):
     def param_class(self):
         return BaseModel
 
-    def validate_type(self, result, types):
+    def validate_type(self, result, types: tuple):
         if not isinstance(result, types):
             raise ValueError(f"{self.__class__.__name__} must return one of "
-                             f"{[result_type.__name__ for result_type in list(types)]} "
+                             f"{[result_type.__name__ for result_type in types]} "
                              f"but a {result.__class__.__name__} was returned")
 
 
@@ -123,6 +123,21 @@ class FormatAction(Action):
 
     @abstractmethod
     def format(self, context: Context, params: BaseModel, format_input: FormatInput):
+        pass
+
+
+class JoinAction(Action):
+    def __init__(self, description: str):
+        super().__init__(ActionType.JOIN, description, [], [])
+
+    def execute(self, event):
+        result = self.join(event.delta_file, event.joined_delta_files, event.context,
+                           self.param_class().parse_obj(event.params))
+        self.validate_type(result, (JoinResult, ErrorResult, FilterResult))
+        return result
+
+    @abstractmethod
+    def join(self, delta_file: DeltaFile, joined_delta_files: List[DeltaFile], context: Context, params: BaseModel):
         pass
 
 

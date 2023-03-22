@@ -39,6 +39,7 @@ actions:
   actionThreads:
     org.deltafi.core.action.FilterEgressAction: 2
 ```
+- Join action support to the Python DeltaFi Action Kit
 
 ### Changed
 - Updated the load-plans command to take plugin coordinates as an argument.
@@ -47,6 +48,7 @@ actions:
 - Failed plugin installations will now return related events and logs in the list of errors
 - Create the child dids in the action-kit for LoadManyResults so they can be used in the load action
 - Changed location for plugin running file to /tmp directory to allow running outside of docker for testing purposes
+- Join actions can now return ErrorResult and FilterResult
 
 ### Deprecated
 

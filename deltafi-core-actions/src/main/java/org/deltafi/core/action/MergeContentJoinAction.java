@@ -28,8 +28,10 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
+import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.join.JoinAction;
 import org.deltafi.actionkit.action.join.JoinResult;
+import org.deltafi.actionkit.action.join.JoinResultType;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
@@ -186,7 +188,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
     }
 
     @Override
-    protected JoinResult join(DeltaFile deltaFile, List<DeltaFile> joinedDeltaFiles, ActionContext context,
+    protected JoinResultType join(DeltaFile deltaFile, List<DeltaFile> joinedDeltaFiles, ActionContext context,
             MergeContentJoinParameters params) {
         String fileName = context.getDid() +
                 (params.getArchiveType() == null ? "" : ("." + params.getArchiveType().getValue()));
@@ -208,7 +210,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
 
             return new JoinResult(context, sourceInfo, new Content(fileName, Collections.emptyMap(), contentReference));
         } catch (IOException | ObjectStorageException e) {
-            throw new RuntimeException(e);
+            return new ErrorResult(context, "Unable to write joined content", e);
         }
     }
 

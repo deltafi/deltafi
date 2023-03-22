@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.domain.DomainResultType;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.enrich.EnrichResultType;
 import org.deltafi.actionkit.action.format.FormatResultType;
+import org.deltafi.actionkit.action.join.JoinResultType;
 import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.actionkit.action.validate.ValidateResultType;
@@ -42,8 +43,8 @@ import java.io.StringWriter;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class ErrorResult extends Result<ErrorResult> implements
-        DomainResultType, EgressResultType, EnrichResultType, FormatResultType, LoadResultType, TransformResultType, ValidateResultType {
+public class ErrorResult extends Result<ErrorResult> implements DomainResultType, EgressResultType, EnrichResultType,
+        FormatResultType, JoinResultType, LoadResultType, TransformResultType, ValidateResultType {
     private final String errorCause;
     private final String errorContext;
     private final String errorSummary;

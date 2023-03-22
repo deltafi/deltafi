@@ -13,7 +13,7 @@ task setupPoetry(type: Exec) {
 task copyTemplate(type: Copy) {
     from file('src/pyproject.toml.template')
     into 'src'
-    rename {  'pyproject.toml' }
+    rename { 'pyproject.toml' }
 }
 
 task poetryVersion(type: Exec) {

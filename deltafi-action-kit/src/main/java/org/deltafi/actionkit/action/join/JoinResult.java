@@ -28,7 +28,7 @@ import java.util.List;
  * Specialized result class for JOIN actions
  */
 @Getter
-public class JoinResult extends DataAmendedResult {
+public class JoinResult extends DataAmendedResult implements JoinResultType {
     private final SourceInfo sourceInfo;
     private final List<Domain> domains = new ArrayList<>();
 

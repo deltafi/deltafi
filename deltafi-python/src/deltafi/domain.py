@@ -136,6 +136,13 @@ class SourceInfo(NamedTuple):
                           flow=flow,
                           metadata=metadata)
 
+    def json(self):
+        return {
+            'filename': self.filename,
+            'flow': self.flow,
+            'metadata': self.metadata
+        }
+
 
 class DeltaFile(NamedTuple):
     did: str
@@ -150,7 +157,9 @@ class DeltaFile(NamedTuple):
     def from_dict(cls, delta_file: dict):
         did = delta_file['did']
         source_info = SourceInfo.from_dict(delta_file['sourceInfo'])
-        protocol_stack = [ProtocolLayer.from_dict(layer) for layer in delta_file['protocolStack']]
+        protocol_stack = []
+        if 'protocolStack' in delta_file:
+            protocol_stack = [ProtocolLayer.from_dict(layer) for layer in delta_file['protocolStack']]
         domains = [Domain.from_dict(domain) for domain in delta_file['domains']]
         indexed_metadata = delta_file['indexedMetadata']
         enrichment = [Domain.from_dict(domain) for domain in delta_file['enrichment']]
@@ -171,6 +180,8 @@ class Event(NamedTuple):
     delta_file: DeltaFile
     context: Context
     params: dict
+    queue_name: str
+    joined_delta_files: List[DeltaFile]
     return_address: str
 
     @classmethod
@@ -178,7 +189,13 @@ class Event(NamedTuple):
         delta_file = DeltaFile.from_dict(event['deltaFile'])
         context = Context.create(event['actionContext'], hostname, content_service, logger)
         params = event['actionParams']
+        queue_name = None
+        if 'queueName' in event:
+            queue_name = event['queueName']
+        joined_delta_files = []
+        if 'joinedDeltaFiles' in event:
+            joined_delta_files = [DeltaFile.from_dict(joined_delta_file) for joined_delta_file in event['joinedDeltaFiles']]
         return_address = None
         if 'returnAddress' in event:
             return_address = event['returnAddress']
-        return Event(delta_file, context, params, return_address)
+        return Event(delta_file, context, params, queue_name, joined_delta_files, return_address)

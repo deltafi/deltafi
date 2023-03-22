@@ -371,6 +371,7 @@ public class DeltaFilesService {
         deltaFile.completeAction(event);
 
         if (event.getJoin().getProtocolLayer() != null) {
+            event.getJoin().getProtocolLayer().setAction(event.getAction());
             deltaFile.setProtocolStack(List.of(event.getJoin().getProtocolLayer()));
         }
 

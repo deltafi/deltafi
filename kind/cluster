@@ -987,6 +987,9 @@ _plugin_build() {
 
   local BUILD_TARGETS=( assemble )
 
+  export DELTAFI_PYTHON
+  DELTAFI_PYTHON="$ROOT/deltafi/deltafi-python/src"
+
   for plugin in "${PLUGINS[@]}"; do
     if [[ ! -d $ROOT/$plugin ]]; then
       local PLUGIN_URL
