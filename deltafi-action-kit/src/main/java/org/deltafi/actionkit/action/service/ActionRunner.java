@@ -134,7 +134,7 @@ public class ActionRunner {
 
     private void markRunning() {
         try {
-            Files.createFile(Path.of("/running"));
+            Files.createFile(Path.of("/tmp/running"));
         } catch (IOException e) {
             throw new StartupException("Failed to write running file: " + e.getMessage());
         }

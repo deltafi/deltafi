@@ -64,7 +64,7 @@ startupProbe:
   exec:
     command:
     - cat
-    - /running
+    - /tmp/running
   initialDelaySeconds: 5
   periodSeconds: 3
   timeoutSeconds: 1

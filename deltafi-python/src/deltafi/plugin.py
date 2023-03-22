@@ -138,7 +138,7 @@ class Plugin(object):
 
         threading.Thread(target=self._heartbeat).start()
 
-        f = open("/running", "w")
+        f = open("/tmp/running", "w")
         f.close()
 
     def _heartbeat(self):
