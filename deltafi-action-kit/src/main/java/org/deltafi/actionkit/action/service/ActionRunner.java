@@ -40,9 +40,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -66,7 +64,7 @@ public class ActionRunner {
     @Autowired
     PluginRegistrar pluginRegistrar;
 
-    private ExecutorService executor;
+    private final Map<String, ExecutorService> executors = new HashMap<>();
 
     /**
      * Automatically called after construction to initiate polling for inbound actions to be executed
@@ -80,10 +78,16 @@ public class ActionRunner {
 
         pluginRegistrar.register();
 
-        executor = Executors.newFixedThreadPool(actions.size());
         for (Action<?> action : actions) {
-            log.info("Starting action: {}", action.getClassCanonicalName());
-            executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
+            String actionName = action.getClassCanonicalName();
+            int numThreads = actionsProperties.getActionThreads().getOrDefault(actionName, 1);
+            ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+            executors.put(actionName, executor);
+
+            log.info("Starting action: {}", actionName);
+            for (int i = 0; i < numThreads; i++) {
+                executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
+            }
         }
 
         markRunning();
@@ -102,7 +106,8 @@ public class ActionRunner {
             }
         } catch (Throwable e) {
             log.error("Unexpected exception caught at {} thread execution level: ", action.getClassCanonicalName(), e);
-            executor.submit(() -> listen(action, actionsProperties.getActionPollingPeriodMs()));
+            ExecutorService actionExecutor = executors.get(action.getClassCanonicalName());
+            actionExecutor.submit(() -> listen(action, actionsProperties.getActionPollingPeriodMs()));
         }
     }
 

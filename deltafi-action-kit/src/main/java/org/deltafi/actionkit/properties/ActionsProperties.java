@@ -20,11 +20,17 @@ package org.deltafi.actionkit.properties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @ConfigurationProperties("actions")
 @Data
 public class ActionsProperties {
     private long actionPollingInitialDelayMs = 3000L;
     private long actionPollingPeriodMs = 100L;
+    // TODO: find a more interactive way to set this via the UI
+    // for now, allow customization through the shipped application.yaml
+    private Map<String, Integer> actionThreads = new HashMap<>();
 
     private String hostname;
 }

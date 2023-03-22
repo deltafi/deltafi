@@ -185,6 +185,10 @@ new Docute({
         {
           title: 'DeltaFile Annotations',
           link: '/advanced/deltafile_annotations'
+        },
+        {
+          title: 'Multithreading Java Actions',
+          link: '/advanced/multithreading_java_action_kit'
         }
       ]
     }

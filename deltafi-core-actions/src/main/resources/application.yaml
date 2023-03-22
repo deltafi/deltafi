@@ -10,3 +10,7 @@ spring:
 logging:
   level:
     org.springframework.data.convert.CustomConversions: ERROR
+
+actions:
+  actionThreads:
+    org.deltafi.core.action.FilterEgressAction: 2

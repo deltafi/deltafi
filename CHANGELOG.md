@@ -32,6 +32,13 @@ consistent in the database. This decreases processing latency but does not give 
 ingress for a flow with at least that many unacknowledged errors will be blocked. This is based on a cached value,
 so ingress cutoffs will not be exact, meaning more errors than what has been configured can accumulate before ingress
 is stopped.
+- Added support for configuring the number of threads per Java action type via properties. To specify the thread count
+for an action type, include a section like the following in your application.yaml file:
+```yaml
+actions:
+  actionThreads:
+    org.deltafi.core.action.FilterEgressAction: 2
+```
 
 ### Changed
 - Updated the load-plans command to take plugin coordinates as an argument.
