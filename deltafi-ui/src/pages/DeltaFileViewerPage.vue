@@ -46,8 +46,11 @@
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-12">
-          <DeltaFileParentChildPanel :delta-file-data="deltaFile" />
+        <div class="col-6">
+          <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="parentDids" />
+          </div>
+          <div class="col-6">
+          <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="childDids" />
         </div>
       </div>
       <div class="row mb-3">

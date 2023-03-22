@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.104.0] (Unreleased)
 
+### Changed
+
+- Refactored Parent/Child DeltaFiles on Viewer
+
 ### Fixed
 
 - Fixed tooltips on trace chart

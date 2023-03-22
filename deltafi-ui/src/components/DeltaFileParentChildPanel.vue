@@ -18,95 +18,77 @@
 
 <template>
   <div class="deltafile-parent-child-panel">
-    <CollapsiblePanel header="Parent/Child DeltaFiles" class="table-panel">
-      <DataTable v-model:expandedRowGroups="expandedRowGroups" :paginator="didsList.length < 10 ? false : true" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="didsList" row-group-mode="subheader" group-rows-by="didType" :loading="loading && !loaded" :expandable-row-groups="true" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
-        <template #empty>No Parent/Child DeltaFiles found.</template>
-        <template #loading>Loading Parent/Child DeltaFiles. Please wait.</template>
-        <Column field="didType" header="DID Type" :hidden="false" :sortable="true" />
-        <Column field="did" header="DID" class="col-4">
+    <CollapsiblePanel :header="header" class="table-panel">
+      <DataTable :paginator="didsList.length < 10 ? false : true" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="didsList" :loading="loading && !loaded" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
+        <template #empty>{{ `No ${header} found.` }}</template>
+        <template #loading>Loading {{ header }}. Please wait.</template>
+        <Column field="did" header="DID" class="did-col">
           <template #body="{ data }">
             <DidLink :did="data.did" />
           </template>
         </Column>
-        <Column field="sourceInfo.filename" header="Filename" class="col-4" :sortable="true" />
-        <Column field="stage" header="Stage" class="col-4" :sortable="true" />
-        <template #groupheader="slotProps">
-          <span>{{ slotProps.data.didType }}</span>
-        </template>
+        <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
+        <Column field="stage" header="Stage" class="stage-col" :sortable="true" />
       </DataTable>
     </CollapsiblePanel>
   </div>
 </template>
-
 <script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DidLink from "@/components/DidLink.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
-import { defineProps, onMounted, reactive, ref, watch } from "vue";
-import useUtilFunctions from "@/composables/useUtilFunctions";
+import { computed, defineProps, onMounted, reactive, ref, watch } from "vue";
 import _ from "lodash";
 
 const { getDeltaFilesByDIDs } = useDeltaFilesQueryBuilder();
-const { pluralize } = useUtilFunctions();
 
 const props = defineProps({
+  field: {
+    type: String,
+    required: true,
+  },
   deltaFileData: {
     type: Object,
     required: true,
   },
 });
 
-const expandedRowGroups = ref();
 const didsList = ref([]);
 const deltaFile = reactive(props.deltaFileData);
 const loading = ref(true);
 const loaded = ref(false);
 
 onMounted(() => {
-  fetchParentChildDidsArrayData();
+  fetchDidsArrayData();
 });
 
-const fetchParentChildDidsArrayData = async () => {
-  const didTypes = ["parentDids", "childDids"];
-  loading.value = true;
-  let combinDidsList = [];
-  for (let didType of didTypes) {
-    if (_.isEmpty(deltaFile[didType])) {
-      continue;
-    } else {
-      let newDidsArrayData = [];
-      let didsArrayData = await getDeltaFilesByDIDs(deltaFile[didType]);
-      let deltaFilesObjectsArray = didsArrayData.data.deltaFiles.deltaFiles;
-      for (let deltaFi of deltaFilesObjectsArray) {
-        if (didType === "parentDids") {
-          deltaFi["didType"] = pluralizeWithCount(deltaFilesObjectsArray.length, "Parent");
-        } else {
-          deltaFi["didType"] = pluralizeWithCount(deltaFilesObjectsArray.length, "Child", "Children");
-        }
-        newDidsArrayData.push(deltaFi);
-      }
-      combinDidsList = _.concat(combinDidsList, newDidsArrayData);
+const header = computed(() => {
+  const relationship = props.field === 'parentDids' ? 'Parent' : 'Child';
+  return `${relationship} DeltaFiles`;
+});
+
+const fetchDidsArrayData = async () => {
+  let didLists = [];
+  if (!_.isEmpty(deltaFile[props.field])) {
+    let didsArrayData = await getDeltaFilesByDIDs(deltaFile[props.field]);
+    let deltaFilesObjectsArray = didsArrayData.data.deltaFiles.deltaFiles;
+    for (let deltaFi of deltaFilesObjectsArray) {
+      didLists.push(deltaFi);
     }
   }
+  didsList.value = didLists;
   loading.value = false;
   loaded.value = true;
-  didsList.value = combinDidsList;
-};
+}
 
-watch(() => deltaFile, fetchParentChildDidsArrayData, { deep: true });
-
-const pluralizeWithCount = (count, singular, plural) => {
-  let pluralized = pluralize(count, singular, plural, false);
-  return count > 1 ? `${pluralized} (${count})` : pluralized;
-};
+watch(() => deltaFile, fetchDidsArrayData, { deep: true });
 
 const actionRowClass = (data) => {
   return data.stage === "ERROR" ? "table-danger action-error" : null;
 };
 </script>
-
 <style lang="scss">
 @import "@/styles/components/deltafile-parent-child-panel.scss";
 </style>
