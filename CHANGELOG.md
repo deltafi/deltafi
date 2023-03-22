@@ -71,6 +71,7 @@ actions:
 - Ingress routing rules cache did not clear when restoring a snapshot with no rules
 - Fix the check to determine if a plugin-uninstall was successful
 - Services that were created for a plugin are removed when the plugin is uninstalled
+- Refactored StateMachine
 
 ### Security
 
