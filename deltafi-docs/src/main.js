@@ -179,6 +179,10 @@ new Docute({
           link: '/advanced/kind'
         },
         {
+          title: 'Core Development and Contribution',
+          link: '/advanced/contribution'
+        },
+        {
           title: 'Data Retention',
           link: '/advanced/data_retention'
         },
