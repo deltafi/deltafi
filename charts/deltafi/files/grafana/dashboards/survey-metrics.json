@@ -27,7 +27,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 20,
+  "id": 24,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -126,7 +126,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.survey.bytes', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), '1d', 'sum', false), 'surveyFlow', 'surveyDirection')"
+          "target": "filterSeries(aliasByTags(summarize(seriesByTag('name=stats_counts.survey.bytes', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), '1d', 'sum', false), 'surveyFlow', 'surveyDirection'), 'sum', '>', 0)"
         }
       ],
       "title": "Total Bytes",
@@ -283,7 +283,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(seriesByTag('name=stats_counts.survey.bytes', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), 'surveyFlow', 'surveyDirection')"
+          "target": "filterSeries(aliasByTags(seriesByTag('name=stats_counts.survey.bytes', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), 'surveyFlow', 'surveyDirection'), 'sum', '>', 0)"
         }
       ],
       "title": "Bytes",
@@ -346,7 +346,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.survey.files', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), '1d', 'sum', false), 'surveyFlow', 'surveyDirection')"
+          "target": "filterSeries(aliasByTags(summarize(seriesByTag('name=stats_counts.survey.files', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), '1d', 'sum', false), 'surveyFlow', 'surveyDirection'), 'sum', '>', 0)"
         }
       ],
       "title": "Total Files",
@@ -503,7 +503,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(seriesByTag('name=stats_counts.survey.files', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), 'surveyFlow', 'surveyDirection')"
+          "target": "filterSeries(aliasByTags(seriesByTag('name=stats_counts.survey.files', 'surveyFlow=~${flow:regex}', 'surveyDirection=~${direction:regex}'), 'surveyFlow', 'surveyDirection'), 'sum', '>', 0)"
         }
       ],
       "title": "Files",
@@ -623,6 +623,24 @@
                 "operation": "groupby"
               }
             }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "greater",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "Total"
+              }
+            ],
+            "match": "any",
+            "type": "include"
           }
         },
         {
@@ -751,6 +769,24 @@
           }
         },
         {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "greater",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "Total"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
           "id": "groupingToMatrix",
           "options": {
             "columnField": "surveyDirection",
@@ -836,7 +872,7 @@
       {
         "allValue": "",
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -888,6 +924,6 @@
   "timezone": "",
   "title": "Survey Metrics",
   "uid": "survey-metrics",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
