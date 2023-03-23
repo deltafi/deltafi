@@ -239,7 +239,7 @@ case "$1" in
     "$DELTAFICLI_WORKDIR/commands/list-flows" "$@"
     ;;
   list-plans)
-    "$DELTAFICLI_WORKDIR/commands/list-plans" "$@"
+    "$DELTAFICLI_WORKDIR/commands/list-plans" "$@" | less -XSE
     ;;
   list-plugins)
     "$DELTAFICLI_WORKDIR/commands/list-plugins" "$@"
