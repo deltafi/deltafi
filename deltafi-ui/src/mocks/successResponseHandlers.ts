@@ -87,7 +87,16 @@ export default [
         }
 
         const mockModule = require(`./graphql/${req.body.operationName}`);
-        const responseJson = "default" in mockModule ? mockModule.default : mockModule;
+        let responseJson;
+        if ("default" in mockModule) {
+          if (typeof mockModule.default === 'function') {
+            responseJson = mockModule.default(req)
+          } else {
+            responseJson = mockModule.default
+          }
+        } else {
+          responseJson = mockModule
+        }
         return res(ctx.delay(requestDelay), ctx.data(responseJson));
       }
     } catch (e) {
