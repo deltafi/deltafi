@@ -18,6 +18,7 @@
 
 import abc
 from typing import Dict, List
+import uuid
 
 from deltafi.domain import Content, SourceInfo
 from deltafi.metric import Metric
@@ -215,6 +216,37 @@ class LoadResult(Result):
                 'metadata': self.metadata
             }
         }
+
+
+class ChildLoadResult:
+    def __init__(self, load_result: LoadResult = None):
+        self._did = str(uuid.uuid4())
+        self.load_result = load_result
+
+    @property
+    def did(self):
+        return self._did
+
+    def response(self):
+        res = self.load_result.response()
+        res["did"] = self._did
+        return res
+
+
+class LoadManyResult(Result):
+    def __init__(self):
+        super().__init__('loadMany', 'LOAD_MANY')
+        self.load_results = []
+
+    def add_load_result(self, load_result):
+        if isinstance(load_result, ChildLoadResult):
+            self.load_results.append(load_result)
+        else:
+            self.load_results.append(ChildLoadResult(load_result))
+        return self
+
+    def response(self):
+        return [load_result.response() for load_result in self.load_results]
 
 
 class SplitResult(Result):

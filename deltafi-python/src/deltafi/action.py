@@ -152,7 +152,7 @@ class LoadAction(Action):
                                content=event.delta_file.protocol_stack[-1].content,
                                metadata=event.delta_file.protocol_stack[-1].metadata)
         result = self.load(event.context, self.param_class().parse_obj(event.params), load_input)
-        self.validate_type(result, (LoadResult, ErrorResult, FilterResult, SplitResult))
+        self.validate_type(result, (LoadResult, LoadManyResult, ErrorResult, FilterResult, SplitResult))
         return result
 
     @abstractmethod

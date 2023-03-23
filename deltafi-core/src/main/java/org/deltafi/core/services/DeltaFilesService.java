@@ -600,6 +600,7 @@ public class DeltaFilesService {
 
         ProtocolLayer protocolLayer = loadEvent.getProtocolLayer();
         if (protocolLayer != null) {
+            protocolLayer.setAction(actionEventInput.getAction());
             child.getProtocolStack().add(protocolLayer);
         }
 
