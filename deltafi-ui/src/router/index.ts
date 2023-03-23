@@ -125,6 +125,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: "/config/flow-plan-builder",
+    name: "Flow Plan Builder",
+    component: () => import("@/pages/FlowPlanBuilderPage.vue"),
+    meta: {
+      permission: "FlowView",
+    },
+  },
+  {
     path: "/config/snapshots",
     name: "System Snapshots",
     component: () => import("@/pages/SystemSnapshotsPage.vue"),

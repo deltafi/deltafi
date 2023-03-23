@@ -13,6 +13,9 @@
     "test": "mocha"
   },
   "dependencies": {
+    "@jsonforms/core": "^3.0.0",
+    "@jsonforms/vue": "^3.0.0",
+    "@jsonforms/vue-vanilla": "^3.0.0",
     "@faker-js/faker": "^7.6.0",
     "@vue/cli": "^5.0.8",
     "@vueuse/core": "^9.12.0",
@@ -43,14 +46,15 @@
     "markdown-it": "^13.0.1",
     "morgan": "~1.10.0",
     "primeicons": "^6.0.1",
-    "primevue": "^3.23.0",
+    "primevue": "^3.25.0",
     "pug": "3.0.2",
     "reconnecting-eventsource": "^1.6.2",
     "register-service-worker": "^1.7.2",
     "vkbeautify": "^0.99.3",
     "vue": "^3.2.47",
     "vue-class-component": "^8.0.0-0",
-    "vue-router": "^4.1.6"
+    "vue-router": "^4.1.6",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.3.0",

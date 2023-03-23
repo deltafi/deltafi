@@ -35,15 +35,22 @@ import InputText from "primevue/inputtext";
 const emit = defineEmits(["update:modelValue"]);
 const props = defineProps({
   modelValue: {
-    type: String,
+    type: [String, Array],
     required: false,
     default: "",
   },
 });
+
 const list = ref([]);
 
 const loadListFromModelValue = () => {
-  list.value = props.modelValue !== null ? props.modelValue.split(",").map((i) => i.trim()) : [];
+  if (props.modelValue !== null) {
+    if (Array.isArray(props.modelValue)) {
+      list.value = props.modelValue;
+    } else {
+      list.value = props.modelValue.split(",").map((i) => i.trim());
+    }
+  }
 };
 
 onMounted(() => {
@@ -78,9 +85,9 @@ const removeItem = (index) => {
     display: flex;
   }
 
-  .list-row>* {
-    flex: 1 1 auto;
-  }
+.list-row > * {
+  flex: 1 1 auto;
+}
 
   .remove-button {
     flex: 0 0 auto;

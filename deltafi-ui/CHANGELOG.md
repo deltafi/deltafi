@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Added Flow Plan Builder
 - Refactored Parent/Child DeltaFiles on Viewer
 
 ### Fixed

@@ -21,6 +21,7 @@ module.exports = {
       icons: [],
     },
   },
+  transpileDependencies: ["@jsonforms/core", "@jsonforms/vue", "@jsonforms/vue-vanilla"],
   configureWebpack: (config) => {
     config.module.rules = [
       {
