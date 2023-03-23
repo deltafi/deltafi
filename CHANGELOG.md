@@ -301,14 +301,14 @@ joined DeltaFiles.
 
 ### Added
 - Added Summary field to Events
-- CLI: `deltafi event list` and `deltafi event create` commands added (#410)
-- Grafana alerts create events when they are initiated and cleared (#409)
+- CLI: `deltafi event list` and `deltafi event create` commands added
+- Grafana alerts create events when they are initiated and cleared
 
 ### Changed
 - Upgrade all Java containers to build with JDK17 and excute with JVM17
 
 ### Removed
-- Alerts from Grafana no longer trigger a failed status check.  Events will be used to track alerts (#409)
+- Alerts from Grafana no longer trigger a failed status check.  Events will be used to track alerts
 
 ### Fixed
 - Corrected Python license headers
