@@ -51,8 +51,8 @@
                 <label for="stageId" class="mt-2">Size:</label>
                 <div class="size-container">
                   <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
-                  <InputNumber v-model="sizeMin" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Min" /> -
-                  <InputNumber v-model="sizeMax" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Max" />
+                  <InputNumber v-model="sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" /> -
+                  <InputNumber v-model="sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Max" />
                   <Dropdown v-model="sizeUnitSelected" :options="sizeUnits" option-label="name" class="deltafi-input-field ml-2" />
                 </div>
               </div>
@@ -68,7 +68,7 @@
               </div>
               <div class="flex-column">
                 <label for="requeueMinId">Requeue Count:</label>
-                <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" input-style="width: 6rem" placeholder="Min" />
+                <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" />
                 <label for="stageId" class="mt-2">Stage:</label>
                 <Dropdown id="stageId" v-model="stageOptionSelected" placeholder="Select a Stage" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="filteredState" class="mt-2">Domain:</label>

@@ -21,7 +21,7 @@
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
-        <div class="flex p-4">
+        <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
           <p class="pl-2">
             {{ slotProps.message.message }}
@@ -50,7 +50,7 @@ import _ from "lodash";
 const confirm = useConfirm();
 const { enableTestIngressFlowByName, disableTestIngressFlowByName, enableTestEgressFlowByName, disableTestEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
-const emit = defineEmits(['updateFlows'])
+const emit = defineEmits(["updateFlows"]);
 
 const props = defineProps({
   rowDataProp: {
@@ -64,12 +64,13 @@ const checked = ref(rowData.value.flowStatus.testMode);
 const checkedTooltip = ref();
 checkedTooltip.value = props.rowDataProp.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";
 
-watch(props,
+watch(
+  props,
   () => {
     checked.value = rowData.value.flowStatus.testMode;
   },
   { deep: true }
-)
+);
 
 const testModeToolTip = computed(() => {
   return _.isEqual(checked.value, true) ? "Enabled" : "Disabled";
@@ -91,9 +92,9 @@ const confirmationPopup = (event, name, testMode, flowType) => {
       accept: async () => {
         notify.info("Disabling Test Mode", `Disabling Test Mode for ${flowType} flow ${name}.`, 3000);
         await toggleFlowState(name, testMode, flowType);
-        emit('updateFlows')
+        emit("updateFlows");
       },
-      reject: () => { },
+      reject: () => {},
     });
   } else {
     confirm.require({
@@ -106,9 +107,9 @@ const confirmationPopup = (event, name, testMode, flowType) => {
       accept: async () => {
         notify.info("Enable Test Mode", `Enable Test Mode for ${flowType} flow ${name}.`, 3000);
         await toggleFlowState(name, testMode, flowType);
-        emit('updateFlows')
+        emit("updateFlows");
       },
-      reject: () => { },
+      reject: () => {},
     });
   }
 };

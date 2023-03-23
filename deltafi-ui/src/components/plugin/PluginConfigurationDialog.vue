@@ -47,7 +47,7 @@
     </div>
     <teleport v-if="isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">
-        <Button label="Submit" :disabled="disableSubmit" @click="submit()" />
+        <Button label="Submit" :disabled="disableSubmit" :loading="submitLoad" @click="submit()" />
       </div>
     </teleport>
   </div>
@@ -83,6 +83,7 @@ const pluginCoordinates = {
 };
 
 const notify = useNotifications();
+const submitLoad = ref(false);
 const { installPlugin, uninstallPlugin } = usePlugins();
 const { closeDialogCommand } = reactive(props);
 const rowData = ref(Object.assign({}, props.rowDataProp || pluginCoordinates));
@@ -118,7 +119,9 @@ const clearErrors = () => {
 };
 
 const submit = async () => {
+  submitLoad.value = true;
   await pluginUpdateFlow();
+  submitLoad.value = false;
 
   if (errorsList.value.length === 0) {
     closeDialogCommand.command();

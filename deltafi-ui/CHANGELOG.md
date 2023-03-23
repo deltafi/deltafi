@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.104.0] (Unreleased)
+## [0.104.1] (Unreleased)
+
+### Fixed
+
+- Fixed bug where you couldn't delete two plugins in a row on Plugins Page
+
+
+## [0.104.0]
 
 ### Changed
 

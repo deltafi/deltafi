@@ -21,7 +21,7 @@
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.id + '_' + rowData.name">
       <template #message="slotProps">
-        <div class="flex p-4">
+        <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
           <p class="pl-2">
             {{ slotProps.message.message }}
@@ -84,7 +84,7 @@ const confirmationPopup = (event, policyId, policyName, state) => {
         notify.info("Disabling Delete Policy", `Disabling policy ${policyName}.`, 3000);
         toggleDeletePolicyState(policyId, !state);
       },
-      reject: () => { },
+      reject: () => {},
     });
   } else {
     toggleDeletePolicyState(policyId, !state);

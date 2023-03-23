@@ -21,7 +21,7 @@
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.combinedPluginCoordinates">
       <template #message="slotProps">
-        <div class="flex p-4">
+        <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
           <p class="pl-2">
             {{ slotProps.message.message }}
@@ -36,7 +36,7 @@
 <script setup>
 import usePlugins from "@/composables/usePlugins";
 import useNotifications from "@/composables/useNotifications";
-import { defineEmits, defineProps, reactive } from "vue";
+import { defineEmits, defineProps, toRefs } from "vue";
 
 import _ from "lodash";
 
@@ -57,7 +57,7 @@ const props = defineProps({
   },
 });
 
-const { rowDataProp: rowData } = reactive(props);
+const { rowDataProp: rowData } = toRefs(props);
 
 const confirmationPopup = (event, combinedPluginCoordinates, displayName, pluginCoordinates) => {
   confirm.require({
@@ -82,6 +82,7 @@ const confirmedRemovePlugin = async (displayName, pluginCoordinates) => {
     notify.error(`Removing plugin ${displayName} failed`, `Plugin ${displayName} was not removed.`, 4000);
     emit("pluginRemovalErrors", responseErrors);
   } else {
+    delete rowData.value;
     notify.success(`Removed ${displayName}`, `Successfully Removed ${displayName}.`, 4000);
     emit("reloadPlugins");
   }

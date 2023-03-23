@@ -21,7 +21,7 @@
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
-        <div class="flex p-4">
+        <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
           <p class="pl-2">
             {{ slotProps.message.message }}
@@ -50,7 +50,7 @@ import _ from "lodash";
 const confirm = useConfirm();
 const { startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
-const emit = defineEmits(['updateFlows'])
+const emit = defineEmits(["updateFlows"]);
 
 const props = defineProps({
   rowDataProp: {
@@ -63,12 +63,13 @@ const { rowDataProp: rowData } = toRefs(props);
 
 const checked = ref(rowData.value.flowStatus.state);
 
-watch(props,
+watch(
+  props,
   () => {
     checked.value = rowData.value.flowStatus.state;
   },
   { deep: true }
-)
+);
 
 const buttonClass = computed(() => {
   return _.isEqual(checked.value, "RUNNING") ? "p-button-primary" : "p-button-secondary";
@@ -86,13 +87,13 @@ const confirmationPopup = async (event, name, state, flowType) => {
       accept: async () => {
         notify.info("Stopping Flow", `Stopping ${flowType} flow ${name}.`, 3000);
         await toggleFlowState(name, state, flowType);
-        emit('updateFlows')
+        emit("updateFlows");
       },
-      reject: () => { },
+      reject: () => {},
     });
   } else {
     await toggleFlowState(name, state, flowType);
-    emit('updateFlows')
+    emit("updateFlows");
   }
 };
 
