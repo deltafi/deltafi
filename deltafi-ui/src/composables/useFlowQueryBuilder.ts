@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 
 export default function useFlowQueryBuilder() {
-  const { response, queryGraphQL,loaded,loading } = useGraphQL();
+  const { response, errors, queryGraphQL,loaded,loading } = useGraphQL();
 
   // Get all flows grouped by plugin
   const getFlowsGroupedByPlugin = () => {
@@ -50,6 +50,7 @@ export default function useFlowQueryBuilder() {
             },
             testMode: true,
           },
+          maxErrors: true,
           transformActions: {
             name: true,
             type: true,
@@ -168,6 +169,7 @@ export default function useFlowQueryBuilder() {
             },
             testMode: true,
           },
+          maxErrors: true,
           transformActions: {
             name: true,
             type: true,
@@ -633,6 +635,19 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
   };
 
+    // sets max errors for an an ingress flow
+    const setMaxErrors = (flowName: string, maxErrors: number) => {
+      const query = {
+        setMaxErrors: {
+          __args: {
+            flowName: flowName,
+            maxErrors: maxErrors
+          },
+        },
+      };
+      return sendGraphQLQuery(query, "setMaxErrors", "mutation");
+    };
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
@@ -662,7 +677,9 @@ export default function useFlowQueryBuilder() {
     disableTestIngressFlowByName,
     enableTestEgressFlowByName,
     disableTestEgressFlowByName,
+    setMaxErrors,
     loaded,
     loading,
+    errors
   };
 }

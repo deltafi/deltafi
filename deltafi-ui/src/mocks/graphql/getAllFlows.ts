@@ -110,6 +110,7 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
+        maxErrors: 3,
         transformActions: [
           {
             name: "smoke.SmokeTransformAction",
@@ -141,6 +142,7 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
+        maxErrors: 2,
         transformActions: [
           {
             name: "decompress-passthrough.DecompressPassthroughTransformAction",
@@ -172,6 +174,7 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
+        maxErrors: 2,
         transformActions: [
           {
             name: "passthrough.PassthroughTransformAction",
@@ -203,6 +206,7 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
+        maxErrors: 1,
         transformActions: [
           {
             name: "stix1_x.Stix1_xTo2_1TransformAction",
@@ -230,6 +234,7 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
+        maxErrors: 1,
         transformActions: [],
         loadAction: {
           name: "stix2_1.Stix2_1LoadAction",

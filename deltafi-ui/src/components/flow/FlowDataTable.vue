@@ -18,7 +18,7 @@
 
 <template>
   <CollapsiblePanel :header="FlowTypeTitle" class="table-panel pb-3">
-    <DataTable v-model:filters="filters" :value="flowDataByType" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField', 'mvnCoordinates']" sort-field="name" :sort-order="1" :row-hover="true">
+    <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="flowDataByType" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField', 'mvnCoordinates']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-complete="onCellEditComplete">
       <template #empty>No {{ FlowTypeTitle }} flows found.</template>
       <template #loading>Loading {{ FlowTypeTitle }} flows. Please wait.</template>
       <Column header="Name" field="name" class="name-column" :sortable="true">
@@ -42,6 +42,14 @@
         </template>
       </Column>
       <Column header="Description" field="description" />
+      <Column v-if="FlowTypeTitle == 'Ingress'" header="Max Errors" field="maxErrors" class="max-error-column">
+        <template #body="{ data, field }">
+          <span>{{ data[field] }}</span>
+        </template>
+        <template #editor="{ data, field }">
+          <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
+        </template>
+      </Column>
       <Column v-if="FlowTypeTitle !== 'Enrich'" header="Test Mode" class="test-mode-column">
         <template #body="{ data }">
           <FlowTestModeInputSwitch :row-data-prop="data" @update-flows="emit('updateFlows')" />
@@ -69,19 +77,25 @@ import FlowStateValidationButton from "@/components/flow/FlowStateValidationButt
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
+import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
 
 import { filesize } from "filesize";
 import { FilterMatchMode } from "primevue/api";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
+import InputNumber from "primevue/inputnumber";
+import useNotifications from "@/composables/useNotifications";
 import _ from "lodash";
+
+const { setMaxErrors, errors } = useFlowQueryBuilder();
+const notify = useNotifications();
 
 const refreshInterval = 5000; // 5 seconds
 let autoRefresh = null;
 const isIdle = inject("isIdle");
 const { data: metricsData, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate } = useGraphiteQueryBuilder();
-const emit = defineEmits(['updateFlows'])
+const emit = defineEmits(["updateFlows"]);
 
 const props = defineProps({
   flowTypeProp: {
@@ -188,6 +202,24 @@ const bitRate = (bitsPerFlow) => {
     }
   }
   return filesize(totalBitRate, { roundingMethod: "round", bits: true, symbols: "jedec" }) + "/s";
+};
+
+const onCellEditComplete = async (event) => {
+  let { data, newValue, field } = event;
+  if (_.isEqual(newValue, null)) {
+    newValue = 0;
+  }
+
+  if (!_.isEqual(data.maxErrors, newValue)) {
+    let resetValue = data.maxErrors;
+    data[field] = newValue;
+    await setMaxErrors(data.name, newValue);
+    if (errors.value.length == 0) {
+      notify.success("Max Errors Set Successfully", `Max errors for ${data.name} set to ${newValue}`);
+    } else {
+      data[field] = resetValue;
+    }
+  }
 };
 </script>
 
