@@ -7,7 +7,7 @@ core-actions:docker:
     - .core-actions
     - .docker
   needs:
-    - job: "build"
+    - job: "gradle:build"
 
 core-actions:docker-multiarch:
   extends:

@@ -23,7 +23,7 @@ variables:
     GRADLE: "gradle -s --parallel --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
 # Main build job (builds all the gradle things)
-build:
+gradle:build:
   extends:
     - .gradle
   stage: build
@@ -102,7 +102,7 @@ build:
     - .gradle
   stage: publish
   needs:
-    - job: "build"
+    - job: "gradle:build"
 
 publish-nexus:
   extends:

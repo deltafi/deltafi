@@ -17,37 +17,20 @@ license-ui:
   script:
     - ./deltafi-ui/licenseCheck.sh
 
-
-docker-ui:
-  stage: docker
-  image: docker:latest
-  needs: []
+.core:
   variables:
-    DOCKER_TAG: ${CI_REGISTRY_IMAGE}/deltafi-ui:${CI_COMMIT_SHORT_SHA}
-    DOCKER_HOST: "tcp://docker:2375"
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
-  services:
-    - name: docker:18.09.7-dind
-      entrypoint: ["dockerd-entrypoint.sh"]
-      command: ["--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"]
-      alias: docker
-  script:
-    - cd deltafi-ui
-    - export DOCKER_NAMED_TAG=${CI_REGISTRY_IMAGE}/deltafi-ui:${CI_COMMIT_REF_NAME//\//_}
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
-    - echo "Building the following image ${DOCKER_NAMED_TAG}"
-    - echo "Building the following image ${DOCKER_TAG}"
-    # pull latest image if available (performance optimization)
-    - docker pull ${DOCKER_NAMED_TAG} || true
-    - >
-      docker build
-      --build-arg VCS_REF=$CI_COMMIT_SHA
-      --build-arg VCS_URL=$CI_PROJECT_URL
-      --cache-from ${DOCKER_NAMED_TAG}
-      --tag ${DOCKER_TAG}
-      .
-    - docker push ${DOCKER_TAG}
-    - docker tag ${DOCKER_TAG} ${DOCKER_NAMED_TAG}
-    - docker push ${DOCKER_NAMED_TAG}
-    - docker images
+    PROJECT_NAME: deltafi-ui
+
+ui:docker:
+  stage: docker
+  needs: []
+  extends:
+    - .core
+    - .docker
+
+ui:docker-multiarch:
+  stage: docker
+  needs: []
+  extends:
+    - .core
+    - .docker-multiarch
