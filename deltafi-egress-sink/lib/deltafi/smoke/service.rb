@@ -31,10 +31,12 @@ module Deltafi
       SMOKE_INTERVAL_MS = 1000
       SMOKE_TIMEOUT_MS = 5000
 
-      GRAPHQL_URL = 'http://deltafi-core-service/graphql'
+      BASE_CORE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
+      BASE_INGRESS_URL = ENV['INGRESS_URL'] || 'http://deltafi-ingress-service'
+      GRAPHQL_URL = File.join(BASE_CORE_URL, 'graphql')
       GET_FLOWS = '{"query":"{ getRunningFlows { ingress { name flowStatus { state } } enrich { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
-      INGRESS_URL = 'http://deltafi-ingress-service/deltafile/ingress'
-      SURVEY_URL = 'http://deltafi-ingress-service/survey'
+      INGRESS_URL = File.join(BASE_INGRESS_URL, 'deltafile/ingress')
+      SURVEY_URL = File.join(BASE_INGRESS_URL, 'survey')
 
       def initialize
         @smoke = {}
