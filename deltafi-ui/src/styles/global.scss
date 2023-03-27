@@ -46,6 +46,10 @@ a {
   padding: 1.25rem 0;
 }
 
+.p-tooltip {
+  pointer-events: none;
+}
+
 .table-panel {
   .p-panel-content {
     padding: 0;
