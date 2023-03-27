@@ -41,7 +41,12 @@
           <span class="text-muted">{{ bitRate(data.name) }}</span>
         </template>
       </Column>
-      <Column header="Description" field="description" />
+      <Column header="Description" field="description" class="truncateDescription">
+        <template #body="{ data, field }">
+          <div v-if="_.size(data[field]) > 95" v-tooltip.bottom="data[field]">{{ displayDiscription(data[field]) }}</div>
+          <span v-else>{{ data[field] }}</span>
+        </template>
+      </Column>
       <Column v-if="FlowTypeTitle == 'Ingress'" header="Max Errors" field="maxErrors" class="max-error-column">
         <template #body="{ data, field }">
           <span>{{ data[field] }}</span>
@@ -147,6 +152,13 @@ watch(
     filters.value["global"].value = props.filterFlowsTextProp;
   }
 );
+
+const displayDiscription = (data) => {
+  return _.truncate(data, {
+    length: 95,
+    separator: " ",
+  });
+};
 
 const errorTooltip = (data) => {
   return _.isEmpty(data.flowStatus.errors) ? "" : " and errors";

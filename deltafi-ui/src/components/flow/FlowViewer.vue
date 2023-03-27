@@ -16,26 +16,71 @@
    limitations under the License.
 -->
 <template>
-  <TabView ref="tabview1" class="flow-viewer">
-    <TabPanel header="Flow Actions">
-      <div v-if="!_.isEmpty(_.get(flowData, 'flowStatus.errors'))" class="pt-2">
-        <Message severity="error" :closable="false" class="mb-2 mt-0">
-          <ul>
-            <div v-for="(error, errorKey) in flowData.flowStatus.errors" :key="errorKey">
-              <li class="text-wrap text-break">{{ error.message }}</li>
-            </div>
-          </ul>
-        </Message>
-      </div>
-      <div class="flow-viewer">
-        <template v-for="(flowAction, key, index) of flowActions" :key="key">
-          <template v-if="!_.isEmpty(flowAction)">
-            <CollapsiblePanel :header="panelHeader(key)" class="flow-viewer-panel">
-              <div>
-                <template v-if="_.isArray(flowAction)">
-                  <template v-for="(flowActionListValue, flowActionListKey) in flowAction" :key="flowActionListKey">
+  <div class="flow-viewer">
+    <dl>
+      <dt class="pb-1">Description</dt>
+      <dd>
+        {{ flowData.description }}
+      </dd>
+    </dl>
+    <TabView ref="tabview1" class="pt-2">
+      <TabPanel header="Flow Actions">
+        <div v-if="!_.isEmpty(_.get(flowData, 'flowStatus.errors'))" class="pt-2">
+          <Message severity="error" :closable="false" class="mb-2 mt-0">
+            <ul>
+              <div v-for="(error, errorKey) in flowData.flowStatus.errors" :key="errorKey">
+                <li class="text-wrap text-break">{{ error.message }}</li>
+              </div>
+            </ul>
+          </Message>
+        </div>
+        <div class="flow-viewer">
+          <template v-for="(flowAction, key, index) of flowActions" :key="key">
+            <template v-if="!_.isEmpty(flowAction)">
+              <CollapsiblePanel :header="panelHeader(key)" class="flow-viewer-panel">
+                <div>
+                  <template v-if="_.isArray(flowAction)">
+                    <template v-for="(flowActionListValue, flowActionListKey) in flowAction" :key="flowActionListKey">
+                      <div class="row mx-0 pt-2">
+                        <template v-for="(value, actionInfoKey) in flowActionListValue" :key="actionInfoKey">
+                          <div v-if="!_.isEmpty(value)" class="col-6 pb-0">
+                            <dl>
+                              <dt>{{ _.startCase(actionInfoKey) }}</dt>
+                              <dd v-if="_.isEqual(actionInfoKey, 'parameters')" class="d-flex">
+                                <ul>
+                                  <li v-for="(pVal, pKey) in value" :key="pKey">{{ pKey }}: {{ pVal }}</li>
+                                </ul>
+                              </dd>
+                              <dd v-else class="d-flex">
+                                <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
+                                <template v-if="_.isEqual(actionInfoKey, 'name')">
+                                  <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
+                                    <i class="ml-1 text-muted fa-regular fa-chart-bar" />
+                                  </a>
+                                </template>
+                              </dd>
+                            </dl>
+                          </div>
+                        </template>
+                      </div>
+                      <div class="row mx-0 pt-2">
+                        <div class="col-12">
+                          <dl>
+                            <dt>Metrics</dt>
+                            <dd>
+                              <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="px-0 pt-1" :filter-type="null" :filter-by="flowActionListValue.name" :hidden-column="true" />
+                            </dd>
+                          </dl>
+                        </div>
+                      </div>
+                      <template v-if="_.findIndex(flowAction, flowActionListValue) + 1 < Object.keys(flowAction).length">
+                        <Divider />
+                      </template>
+                    </template>
+                  </template>
+                  <template v-else>
                     <div class="row mx-0 pt-2">
-                      <template v-for="(value, actionInfoKey) in flowActionListValue" :key="actionInfoKey">
+                      <template v-for="(value, actionInfoKey) in flowAction" :key="actionInfoKey">
                         <div v-if="!_.isEmpty(value)" class="col-6 pb-0">
                           <dl>
                             <dt>{{ _.startCase(actionInfoKey) }}</dt>
@@ -61,67 +106,30 @@
                         <dl>
                           <dt>Metrics</dt>
                           <dd>
-                            <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="px-0 pt-1" :filter-type="null" :filter-by="flowActionListValue.name" :hidden-column="true" />
+                            <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="px-0 pt-1" :filter-type="null" :filter-by="flowAction.name" :hidden-column="true" />
                           </dd>
                         </dl>
                       </div>
                     </div>
-                    <template v-if="_.findIndex(flowAction, flowActionListValue) + 1 < Object.keys(flowAction).length">
-                      <Divider />
-                    </template>
                   </template>
-                </template>
-                <template v-else>
-                  <div class="row mx-0 pt-2">
-                    <template v-for="(value, actionInfoKey) in flowAction" :key="actionInfoKey">
-                      <div v-if="!_.isEmpty(value)" class="col-6 pb-0">
-                        <dl>
-                          <dt>{{ _.startCase(actionInfoKey) }}</dt>
-                          <dd v-if="_.isEqual(actionInfoKey, 'parameters')" class="d-flex">
-                            <ul>
-                              <li v-for="(pVal, pKey) in value" :key="pKey">{{ pKey }}: {{ pVal }}</li>
-                            </ul>
-                          </dd>
-                          <dd v-else class="d-flex">
-                            <div>{{ _.isArray(value) ? Array.from(value).join(", ") : value }}</div>
-                            <template v-if="_.isEqual(actionInfoKey, 'name')">
-                              <a v-tooltip.top="`View logs`" :class="grafanaLogLink" style="color: black" :href="actionLogLink(value)" target="_blank" rel="noopener noreferrer">
-                                <i class="ml-1 text-muted fa-regular fa-chart-bar" />
-                              </a>
-                            </template>
-                          </dd>
-                        </dl>
-                      </div>
-                    </template>
-                  </div>
-                  <div class="row mx-0 pt-2">
-                    <div class="col-12">
-                      <dl>
-                        <dt>Metrics</dt>
-                        <dd>
-                          <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="px-0 pt-1" :filter-type="null" :filter-by="flowAction.name" :hidden-column="true" />
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </template>
-              </div>
-            </CollapsiblePanel>
-            <template v-if="index + 1 < Object.keys(flowActions).length && !_.isEmpty(Object.values(flowActions)[index + 1])">
-              <div class="text-center pb-2">
-                <i class="fas fa-arrow-down fa-4x" />
-              </div>
+                </div>
+              </CollapsiblePanel>
+              <template v-if="index + 1 < Object.keys(flowActions).length && !_.isEmpty(Object.values(flowActions)[index + 1])">
+                <div class="text-center pb-2">
+                  <i class="fas fa-arrow-down fa-4x" />
+                </div>
+              </template>
             </template>
           </template>
-        </template>
-      </div>
-    </TabPanel>
-    <template v-if="!_.isEmpty(variables)">
-      <TabPanel header="Flow Variables">
-        <FlowVariableViewer :header="header" :variables="variables"></FlowVariableViewer>
+        </div>
       </TabPanel>
-    </template>
-  </TabView>
+      <template v-if="!_.isEmpty(variables)">
+        <TabPanel header="Flow Variables">
+          <FlowVariableViewer :header="header" :variables="variables"></FlowVariableViewer>
+        </TabPanel>
+      </template>
+    </TabView>
+  </div>
 </template>
 
 <script setup>
