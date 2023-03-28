@@ -34,7 +34,7 @@ class Permission
   end
 
   def self.load
-    debug "Loading permissions.csv"
+    debug 'Loading permissions.csv'
     @@permissions = CSV.table('permissions.csv').map do |row|
       unless row.size == 3 && row[1].match?(/^[a-zA-Z]*$/)
         warn "Ignoring malformed permission: #{row}"

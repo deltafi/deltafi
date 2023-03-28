@@ -23,9 +23,12 @@ module Deltafi
     def metrics_role
       # These role names map to Grafana default roles
       user_permissions = permissions
-      return 'Admin' if !(['MetricsAdmin', 'Admin'] & user_permissions).empty?
+      return 'Admin' unless (%w[MetricsAdmin Admin] & user_permissions).empty?
       return 'Editor' if user_permissions.include?('MetricsEdit')
       return 'Viewer' if user_permissions.include?('MetricsView')
+
+      # If no metrics permissions present, return empty string
+      return ''
     end
   end
 end
