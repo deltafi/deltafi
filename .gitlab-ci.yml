@@ -9,32 +9,22 @@ stages:
 default:
   timeout: 45m
 
-variables:
-  DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
-  DOCKER_HOST: "tcp://docker:2375"
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_DRIVER: overlay2
+image: deltafi/deltafi-build:jdk17
 
 .gradle:
   image: deltafi/deltafi-build:jdk17
   variables:
-    GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
+    GRADLE_USER_HOME: /cache/.gradle
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-    GRADLE: "gradle -s --parallel --no-daemon --build-cache -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
+    GRADLE: "gradle -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
 # Main build job (builds all the gradle things)
 gradle:build:
+  tags:
+    - heavy
   extends:
     - .gradle
   stage: build
-  services:
-    - name: docker:19.03.15-dind-alpine3.13 # Docker 19.x image starts 30s faster than 20.x...
-      alias: dind
-      entrypoint: ["dockerd-entrypoint.sh"]
-      command: ["--tls=false", "--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
-  before_script:
-    - apt update
-    - apt-get install -y python3-pip
   script:
     - ${GRADLE} --rerun-tasks license assemble test
   artifacts:
@@ -50,19 +40,17 @@ gradle:build:
 .docker-multiarch:
   stage: docker
   image: docker:latest
+  tags:
+    - heavy
+  when: manual
   only:
     refs:
       - tags
-  services:
-    - name: docker:20.10.22-dind-alpine3.17
-      alias: dind
-      entrypoint: ["dockerd-entrypoint.sh"]
-      command: ["--tls=false", "--max-concurrent-downloads", "10", "--registry-mirror=http://172.17.0.2:5000"] # I hate this
   variables:
     CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
     DOCKERFILE: ${CONTEXT}/Dockerfile
     SHA_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
-    NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_TAG}
+    NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME}
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker buildx create --name multiarch-builder --platform "linux/arm64,linux/amd64"
@@ -80,21 +68,23 @@ gradle:build:
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
+  tags:
+    - light
   variables:
     CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
     DOCKERFILE: ${CONTEXT}/Dockerfile
     SHA_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
     NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME//\//_}
-  except:
-    refs:
-      - tags
+  # except:
+  #   refs:
+  #     - tags
   script:
     - time /kaniko/executor
       --context "$CONTEXT"
       --dockerfile "$DOCKERFILE"
       --destination "$SHA_TAG"
       --destination "$NAMED_TAG"
-      --registry-mirror=172.17.0.2:5000
+      --registry-mirror=172.17.0.1:6000
       --cache
 
 .publish:
@@ -105,6 +95,8 @@ gradle:build:
     - job: "gradle:build"
 
 publish-nexus:
+  tags:
+    - light
   extends:
     - .publish
   only:
@@ -115,6 +107,8 @@ publish-nexus:
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -PsonatypeNexusUsername="${SONATYPE_NEXUS_USERNAME}" -PsonatypeNexusPassword="${SONATYPE_NEXUS_PASSWORD}" publishPublicPublicationToSonatype closeSonatypeStagingRepository releaseSonatypeStagingRepository
 
 publish-gradle:
+  tags:
+    - light
   extends:
     - .publish
   stage: publish
@@ -126,6 +120,8 @@ publish-gradle:
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -Pgradle.publish.key="${GRADLE_PUBLISH_KEY}" -Pgradle.publish.secret="${GRADLE_PUBLISH_SECRET}" -PpublishToGradleOrg publishPlugin
 
 publish-gitlab:
+  tags:
+    - light
   extends:
     - .publish
   only:
@@ -137,6 +133,8 @@ publish-gitlab:
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
 
 .publish-python:
+  tags:
+    - light
   extends:
     - .publish
   only:
@@ -155,6 +153,8 @@ publish-gitlab:
     - python3 -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi $PROJECT_NAME/src/dist/*
 
 .publish-python-pypi:
+  tags:
+    - light
   extends:
     - .publish
   only:
@@ -173,7 +173,9 @@ publish-gitlab:
 
 hub_docker_quota_check:
   stage: build
-  image: alpine:latest
+  image: alpine:3.16
+  tags:
+    - light
   before_script:
     - apk add curl jq
   when: manual
@@ -219,6 +221,8 @@ trigger_EDI:
     project: systolic/deltafi/deltafi-edi
 
 .container_scanning:
+  tags:
+    - light
   variables:
     CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning:5"
     GIT_STRATEGY: fetch

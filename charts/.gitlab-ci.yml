@@ -1,19 +1,6 @@
-.helm-lint:
-  stage: build
-  image: alpine:3.14
-  script:
-    - wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz --directory-prefix /opt
-    - tar xvf /opt/helm-v3.6.0-linux-amd64.tar.gz -C /opt
-    - cd charts
-    - for CHART in $(find . -maxdepth 1 -mindepth 1 -type d -not -path '*/\.*'); do
-    -   echo $CHART
-    -   cd $CHART
-    -   /opt/linux-amd64/helm dependency build
-    -   /opt/linux-amd64/helm lint
-    -   cd ..
-    - done
-
 update-helmchart:
+  tags:
+    - light
   stage: ci
   only:
     refs:

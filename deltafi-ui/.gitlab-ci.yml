@@ -1,4 +1,6 @@
-eslint-ui:
+ui:eslint:
+  tags:
+    - light
   image: node
   stage: build
   needs: []
@@ -10,7 +12,9 @@ eslint-ui:
     # Run eslint
     - npm run lint
 
-license-ui:
+ui:license:
+  tags:
+    - light
   image: node
   stage: build
   needs: []

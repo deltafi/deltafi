@@ -1,4 +1,5 @@
 .auth:
+  needs: []
   variables:
     PROJECT_NAME: deltafi-auth
 

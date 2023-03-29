@@ -17,6 +17,7 @@
 #
 
 .docs:
+  needs: []
   variables:
     PROJECT_NAME: deltafi-docs
 

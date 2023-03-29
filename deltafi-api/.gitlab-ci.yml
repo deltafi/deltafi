@@ -1,4 +1,5 @@
 .api:
+  needs: []
   variables:
     PROJECT_NAME: deltafi-api
 
