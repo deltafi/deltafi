@@ -128,9 +128,12 @@ public class StateMachine {
             return enrichActions;
         }
 
-        deltaFile.setStage(DeltaFileStage.EGRESS);
+        if (!deltaFile.hasPendingActions() && !deltaFile.hasErroredAction()) {
+            deltaFile.setStage(DeltaFileStage.EGRESS);
+            return advanceEgressStage(deltaFile, newDeltaFile);
+        }
 
-        return advanceEgressStage(deltaFile, newDeltaFile);
+        return List.of();
     }
 
     List<ActionInput> nextEnrichFlowActions(EnrichFlow enrichFlow, DeltaFile deltaFile, boolean newDeltaFile) {

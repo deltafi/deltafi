@@ -60,6 +60,7 @@ class StateMachineTest {
     
     private static final String INGRESS_FLOW = "TheIngressFlow";
     private static final String EGRESS_FLOW = "TheEgressFlow";
+    private static final String ENRICH_FLOW = "TheEnrichFlow";
 
     @InjectMocks
     StateMachine stateMachine;
@@ -96,7 +97,7 @@ class StateMachineTest {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
         EnrichFlow enrichFlow = EnrichFlowMaker.builder()
-                .enrichRequiresDomain(DOMAIN)
+                .requiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .build().makeEnrichFlow();
 
@@ -109,7 +110,7 @@ class StateMachineTest {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
         EnrichFlow enrichFlow = EnrichFlowMaker.builder()
-                .enrichRequiresDomain("otherDomain")
+                .requiresDomain("otherDomain")
                 .enrichRequiresEnrichment(ENRICH)
                 .build().makeEnrichFlow();
 
@@ -121,7 +122,7 @@ class StateMachineTest {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
         EnrichFlow enrichFlow = EnrichFlowMaker.builder()
-                .enrichRequiresDomain(DOMAIN)
+                .requiresDomain(DOMAIN)
                 .enrichRequiresEnrichment("otherEnrich")
                 .build().makeEnrichFlow();
 
@@ -133,7 +134,7 @@ class StateMachineTest {
         DeltaFile deltaFile = makeDeltaFile();
 
         EnrichFlow enrichFlow = EnrichFlowMaker.builder()
-                .enrichRequiresDomain(DOMAIN)
+                .requiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue("wrongKey", "value"))
                 .build().makeEnrichFlow();
@@ -146,7 +147,7 @@ class StateMachineTest {
         DeltaFile deltaFile = makeDomainAndEnrichFile();
 
         EnrichFlow enrichFlow = EnrichFlowMaker.builder()
-                .enrichRequiresDomain(DOMAIN)
+                .requiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
                 .build().makeEnrichFlow();
@@ -159,7 +160,7 @@ class StateMachineTest {
         DeltaFile deltaFile = makeDeltaFile();
 
         EnrichFlow enrichFlow = EnrichFlowMaker.builder()
-                .enrichRequiresDomain(DOMAIN)
+                .requiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
                 .build().makeEnrichFlow();
@@ -173,7 +174,7 @@ class StateMachineTest {
         DeltaFile deltaFile = makeDeltaFile();
 
         EnrichFlow enrichFlow = EnrichFlowMaker.builder()
-                .enrichRequiresDomain(DOMAIN)
+                .requiresDomain(DOMAIN)
                 .enrichRequiresEnrichment(ENRICH)
                 .enrichRequiresMetadata(new KeyValue(PROTOCOL_LAYER_KEY, "value"))
                 .build().makeEnrichFlow();
@@ -613,6 +614,37 @@ class StateMachineTest {
         }
     }
 
+    @Test
+    void testAdvanceEnrichFlows_onePending() throws MissingEgressFlowException {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
+        deltaFile.setStage(DeltaFileStage.ENRICH);
+        deltaFile.addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
+        deltaFile.queueNewAction("EnrichAction1");
+        addCompletedActions(deltaFile, "DomainAction1");
+
+        EnrichFlow enrich1 = EnrichFlowMaker.builder()
+                .name(ENRICH_FLOW)
+                .domainActionName("DomainAction1")
+                .enrichActionName(null)
+                .requiresDomain(DOMAIN)
+                .build().makeEnrichFlow();
+
+        EnrichFlow enrich2 = EnrichFlowMaker.builder()
+                .name(ENRICH_FLOW + "2")
+                .domainActionName(null)
+                .enrichActionName("EnrichAction1")
+                .requiresDomain(DOMAIN)
+                .build().makeEnrichFlow();
+
+        Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(List.of(enrich1, enrich2));
+
+        // mock advancing a DeltaFile after a domain completes from one flow and enrich action is pending in another flow
+        assertThat(stateMachine.advance(deltaFile)).isEmpty();
+
+        assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.ENRICH);
+        assertThat(deltaFile.actionNamed("EnrichAction1")).isPresent().get().matches(action -> ActionState.QUEUED.equals(action.getState()));
+    }
+
     private DeltaFile makeDomainAndEnrichFile() {
         return makeCustomFile(false, false);
     }
@@ -700,22 +732,34 @@ class StateMachineTest {
 
     @Builder
     private static class EnrichFlowMaker {
+
+        @Builder.Default
+        final String name = ENRICH_FLOW;
         @Singular
-        List<String> enrichRequiresDomains;
+        List<String> requiresDomains;
         @Singular("enrichRequiresEnrichment")
         List<String> enrichRequiresEnrichment;
         @Singular("enrichRequiresMetadata")
         List<KeyValue> enrichRequiresMetadata;
         @Builder.Default
         final String enrichActionName = ENRICH_ACTION;
+        final String domainActionName;
 
         private EnrichFlow makeEnrichFlow() {
             EnrichFlow enrichFlow = new EnrichFlow();
+            enrichFlow.setName(name);
 
-            EnrichActionConfiguration enrich = new EnrichActionConfiguration(enrichActionName, null, enrichRequiresDomains);
-            enrich.setRequiresEnrichments(enrichRequiresEnrichment);
-            enrich.setRequiresMetadataKeyValues(enrichRequiresMetadata);
-            enrichFlow.setEnrichActions(List.of(enrich));
+            if (domainActionName != null) {
+                DomainActionConfiguration domain = new DomainActionConfiguration(domainActionName, null, requiresDomains);
+                enrichFlow.setDomainActions(List.of(domain));
+            }
+
+            if (enrichActionName != null) {
+                EnrichActionConfiguration enrich = new EnrichActionConfiguration(enrichActionName, null, requiresDomains);
+                enrich.setRequiresEnrichments(enrichRequiresEnrichment);
+                enrich.setRequiresMetadataKeyValues(enrichRequiresMetadata);
+                enrichFlow.setEnrichActions(List.of(enrich));
+            }
 
             return enrichFlow;
         }
