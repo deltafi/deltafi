@@ -5,6 +5,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [0.104.1] - 2023-03-30
+
+### Added
+- Added an editable Max Errors column to Flows page 
+- Added task timing to Gradle scripts
+
+### Changed
+- Flow descriptions are now trunctated on flows page to make cell sizes all the same. A tooltip popup shows the full description on flows with truncated descriptions when hovered over. Added the full description to flow viewer. 
+- Refactored CI pipelines to remove Docker in Docker
+- In deltafi-monitor read the api URL from an environment variable
+- In deltafi-egress-sink read the ingress and core URLs from an environment variable
+
+### Fixed
+- Bug requiring all users to have at least one metrics related permission.
+- Tooltip on multiple pages causing mouse flicker
+- Do not move to the `Egress` stage until all pending `Enrich` stage actions are complete
+- `changelog` does not generate a bad error message when there are no unreleased changelog files
+- Do not run the UI property migration if the UI properties already exist in the system properties
+
+### Tech-Debt/Refactor
+- Using Kaniko for UI docker build
+
+### Documentation
+- Added code of conduct at `CODE_OF_CONDUCT.md` 
+
 ## [0.104.0] - 2023-03-23
 
 ### Added
@@ -1344,7 +1369,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.0...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.1...main
+[0.104.1]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.0...0.104.1
 [0.104.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.103.0...0.104.0
 [0.103.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.102.0...0.103.0
 [0.102.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.5...0.102.0
