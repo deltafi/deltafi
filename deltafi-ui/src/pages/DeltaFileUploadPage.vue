@@ -392,9 +392,11 @@ const uploadMetadataFile = async (file) => {
   let flowSelected = {};
   if (!_.isEmpty(_.get(parseMetadataUpload, "flow"))) {
     flowSelected = _.get(parseMetadataUpload, "flow");
-    selectedFlow.value = flowSelected;
-  } else {
-    selectedFlow.value = null;
+    if (activeIngressFlows.value.includes(flowSelected)) {
+      selectedFlow.value = flowSelected;
+    } else {
+      notify.warn("Ignoring Invalid Ingress Flow", `The uploaded metadata included an invalid ingress flow name: ${flowSelected}`);
+    }
   }
   let reformatMetadata = [];
   for (const [key, value] of Object.entries(parseMetadataUpload.metadata)) {
