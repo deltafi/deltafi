@@ -49,13 +49,13 @@ gradle:build:
   variables:
     CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
     DOCKERFILE: ${CONTEXT}/Dockerfile
-    SHA_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
-    NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME}
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker buildx create --name multiarch-builder --platform "linux/arm64,linux/amd64"
     - docker run --privileged --rm tonistiigi/binfmt --install all
   script:
+    - export SHA_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_ID}
+    - export NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME/\//_}
     - cd "$PROJECT_NAME"
     - echo $SHA_TAG
     - echo $NAMED_TAG
@@ -73,12 +73,12 @@ gradle:build:
   variables:
     CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
     DOCKERFILE: ${CONTEXT}/Dockerfile
-    SHA_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
-    NAMED_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME//\//_}
   # except:
   #   refs:
   #     - tags
   script:
+    - SHA_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
+    - NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME/\//_}
     - time /kaniko/executor
       --context "$CONTEXT"
       --dockerfile "$DOCKERFILE"
