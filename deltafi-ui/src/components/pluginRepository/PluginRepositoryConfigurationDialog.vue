@@ -38,7 +38,10 @@
           <dd>
             <Chips v-model="model.pluginGroupIds" separator="," add-on-blur :allow-duplicate="false" :placeholder="!model.pluginGroupIds ? pluginImageRepoConfigurationMap.get('pluginGroupIds').placeholder : null" :disabled="pluginImageRepoConfigurationMap.get('pluginGroupIds').disabled" class="chipInputWidth" @add="addPluginGroupID" />
           </dd>
-          <dt>{{ pluginImageRepoConfigurationMap.get("imagePullSecret").header }}</dt>
+          <dt>
+            {{ pluginImageRepoConfigurationMap.get("imagePullSecret").header }}
+            <small class="text-muted">- Optional</small>
+          </dt>
           <dd>
             <InputText v-model="model.imagePullSecret" :placeholder="pluginImageRepoConfigurationMap.get('imagePullSecret').placeholder" :disabled="pluginImageRepoConfigurationMap.get('imagePullSecret').disabled" class="inputWidth" />
           </dd>
@@ -147,7 +150,9 @@ const clearErrors = () => {
 };
 
 const disableSubmit = computed(() => {
-  return _.isEqual(model.value, originalModel) || !Object.values(model.value).every((x) => !_.isEmpty(x));
+  return _.isEqual(model.value, originalModel) ||
+    _.isEmpty(model.value.imageRepositoryBase) ||
+    _.isEmpty(model.value.pluginGroupIds)
 });
 </script>
 
