@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
-## [0.104.2] - 2023-03-30
+## [0.104.3] - 2023-03-30
 
 ### Added
 - Added an editable Max Errors column to Flows page 
@@ -1369,8 +1369,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.2...main
-[0.104.2]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.0...0.104.2
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.3...main
+[0.104.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.0...0.104.3
 [0.104.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.103.0...0.104.0
 [0.103.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.102.0...0.103.0
 [0.102.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.101.5...0.102.0
