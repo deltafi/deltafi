@@ -98,7 +98,9 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
@@ -203,6 +205,9 @@ class DeltaFiCoreApplicationTests {
 	PluginVariableRepo pluginVariableRepo;
 
 	@Autowired
+	PluginVariableService pluginVariableService;
+
+	@Autowired
 	ResumePolicyRepo resumePolicyRepo;
 
 	@Autowired
@@ -247,7 +252,7 @@ class DeltaFiCoreApplicationTests {
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	// mongo eats microseconds, jump through hoops
-	private final OffsetDateTime MONGO_NOW =  OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
+	private final OffsetDateTime MONGO_NOW = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
 
 	private final OffsetDateTime START_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 183, ZoneOffset.UTC);
 	private final OffsetDateTime STOP_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 184, ZoneOffset.UTC);
@@ -2931,8 +2936,79 @@ class DeltaFiCoreApplicationTests {
 		pluginVariableRepo.save(variables);
 
 		assertThat(pluginVariableRepo.findById(newVersion)).isEmpty();
-		assertThat(pluginVariableRepo.findIgnoringVersion(newVersion.getGroupId(), newVersion.getArtifactId())).isPresent().contains(variables);
+		assertThat(pluginVariableRepo.findIgnoringVersion(newVersion.getGroupId(), newVersion.getArtifactId())).hasSize(1).contains(variables);
 	}
+
+	@Test
+	void testConcurrentPluginVariableRegistration() {
+		IntStream.range(0, 100).forEach(this::testConcurrentPluginVariableRegistration);
+	}
+
+	void testConcurrentPluginVariableRegistration(int ignoreI) {
+		PluginCoordinates oldVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("1").build();
+		PluginCoordinates newVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
+
+		// Save the original set of variables with values set
+		PluginVariables originalPluginVariables = new PluginVariables();
+		List<Variable> variableList = Stream.of("var1", "var2", "var3", "var4").map(this::buildOriginalVariable).toList();
+		originalPluginVariables.setVariables(variableList);
+		originalPluginVariables.setSourcePlugin(oldVersion);
+		pluginVariableRepo.save(originalPluginVariables);
+
+		// new set of variables that need to get the set value added in
+		List<Variable> newVariables = Stream.of("var2", "var3", "var4", "var5").map(this::buildNewVariable).toList();
+
+		final int numMockPlugins = 15;
+		Executor mockRegistryExecutor = Executors.newFixedThreadPool(3);
+		List<CompletableFuture<Void>> futures = IntStream.range(0, numMockPlugins)
+				.mapToObj(i -> submitNewVariables(i, mockRegistryExecutor, newVersion, newVariables))
+				.toList();
+
+		CompletableFuture.allOf(futures.toArray(new CompletableFuture[numMockPlugins])).join();
+
+		PluginVariables afterRegistrations = pluginVariableRepo.findById(newVersion).orElse(null);
+		assertThat(afterRegistrations).isNotNull();
+		List<Variable> varsAfter = afterRegistrations.getVariables();
+		assertThat(varsAfter).hasSize(4);
+
+		for (Variable variable : varsAfter) {
+			assertThat(variable.getDefaultValue()).isEqualTo("new default value");
+			assertThat(variable.getDescription()).isEqualTo("describe new default value");
+
+			if (variable.getName().equals("var1")) {
+				Assertions.fail("Var 1 should no longer exist");
+			} else if (variable.getName().equals("var5"))
+				assertThat(variable.getValue()).isNull();
+			else {
+				assertThat(variable.getValue()).isEqualTo("set value");
+			}
+		}
+
+	}
+
+	private Variable buildOriginalVariable(String name) {
+		return buildVariable(name, "set value", "original default value");
+	}
+
+	private Variable buildNewVariable(String name) {
+		return buildVariable(name, null, "new default value");
+	}
+
+	private Variable buildVariable(String name, String value, String defaultValue) {
+		return Variable.newBuilder()
+				.name(name)
+				.dataType(VariableDataType.STRING)
+				.description("describe " + defaultValue)
+				.defaultValue(defaultValue)
+				.value(value)
+				.required(false)
+				.build();
+	}
+
+	private CompletableFuture<Void> submitNewVariables(int i, Executor executor, PluginCoordinates pluginCoordinates, List<Variable> variables) {
+		return CompletableFuture.runAsync(() -> pluginVariableService.saveVariables(pluginCoordinates, variables), executor);
+	}
+
 
 	@Test
 	void testGetErrorSummaryByFlowDatafetcher() {

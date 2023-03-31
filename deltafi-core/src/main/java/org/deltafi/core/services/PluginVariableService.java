@@ -84,7 +84,8 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     private Optional<PluginVariables> findExisting(PluginCoordinates pluginId) {
-        return pluginVariableRepo.findIgnoringVersion(pluginId.getGroupId(), pluginId.getArtifactId());
+        return pluginVariableRepo.findIgnoringVersion(pluginId.getGroupId(), pluginId.getArtifactId())
+                .stream().findFirst();
     }
 
     /**
@@ -96,10 +97,15 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
      * @param existing plugin variables that were previously stored
      */
     private void replaceVariables(PluginCoordinates pluginCoordinates, List<Variable> variables, PluginVariables existing) {
-        pluginVariableRepo.deleteById(existing.getSourcePlugin());
+        // save the new variables before deleting the old variables to guarantee other instances of the plugin get the existing values (either from the new set or old, doesn't matter which)
         insertVariables(pluginCoordinates, variables.stream()
                 .map(variable -> preserveValue(variable, existing.getVariables()))
                 .toList());
+
+        // remove the old variables if they weren't replaced by the save above
+        if (!existing.getSourcePlugin().equals(pluginCoordinates)) {
+            pluginVariableRepo.deleteById(existing.getSourcePlugin());
+        }
     }
 
     private Variable preserveValue(Variable incoming, List<Variable> existingValues) {
