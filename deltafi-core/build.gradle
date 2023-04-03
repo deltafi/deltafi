@@ -16,7 +16,7 @@ license {
 dependencies {
 	implementation project(':deltafi-common')
 
-	implementation "org.apache.commons:commons-collections4:4.2"
+	implementation "org.apache.commons:commons-collections4:4.4"
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -35,7 +35,7 @@ dependencies {
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter'
 	implementation 'org.apache.commons:commons-text:1.10.0'
-	implementation 'io.dropwizard.metrics:metrics-core:4.2.13'
+	implementation 'io.dropwizard.metrics:metrics-core:4.2.18'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation project(':deltafi-action-kit')
