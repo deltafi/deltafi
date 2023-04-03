@@ -859,10 +859,7 @@ _local_build() {
     ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal
 
     _attention "Building deltafi-ui"
-    if [[ ! -d "$ROOT/deltafi-ui" ]]; then
-      git clone git@gitlab.com:systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui" || git clone https://gitlab.com/systolic/deltafi/deltafi-ui "$ROOT/deltafi-ui"
-    fi
-    cd "$ROOT/deltafi-ui"
+    cd "$ROOT/deltafi/deltafi-ui"
     time docker build -t localhost:5000/deltafi-ui:latest .
     docker push localhost:5000/deltafi-ui:latest
   fi

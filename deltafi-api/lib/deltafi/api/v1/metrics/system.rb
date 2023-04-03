@@ -28,8 +28,14 @@ module Deltafi
             # this matches half the refresh rate of the nodemonitor.  We will be at most 9 seconds stale.
             REFRESH_GRAPHITE_CACHE_SECONDS = 4.5
 
-            USAGE_QUERY = 'keepLastValue(seriesByTag(\'name=gauge.node.disk.usage\'), inf)'.freeze
-            LIMIT_QUERY = 'keepLastValue(seriesByTag(\'name=gauge.node.disk.limit\'), inf)'.freeze
+            METRICS_QUERIES = [
+              'keepLastValue(seriesByTag(\'name=gauge.node.cpu.usage\'), inf)',
+              'keepLastValue(seriesByTag(\'name=gauge.node.cpu.limit\'), inf)',
+              'keepLastValue(seriesByTag(\'name=gauge.node.disk.usage\'), inf)',
+              'keepLastValue(seriesByTag(\'name=gauge.node.disk.limit\'), inf)',
+              'keepLastValue(seriesByTag(\'name=gauge.node.memory.usage\'), inf)',
+              'keepLastValue(seriesByTag(\'name=gauge.node.memory.limit\'), inf)'
+            ].freeze
 
             @@cached_k8s_info = nil
             @@cached_graphite_metrics = nil
@@ -39,22 +45,19 @@ module Deltafi
               if @@cached_k8s_info.nil? || Time.now - @@last_k8s_cache_time > REFRESH_K8S_CACHE_SECONDS
                 @@last_k8s_cache_time = Time.now
                 @@cached_k8s_info = {
-                  nodes: DF.k8s_client.api('v1').resource('nodes').list,
-                  node_usage: DF.k8s_client.api('metrics.k8s.io/v1beta1').resource('nodes').list,
-                  pods_by_node: DF.k8s_client.api('v1').resource('pods').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName },
-                  pod_usage: DF.k8s_client.api('metrics.k8s.io/v1beta1').resource('pods').list
+                  pods_by_node: DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName }
                 }
               end
 
               @@cached_k8s_info
             end
 
-            def disk_metrics
+            def metrics
               if @@cached_graphite_metrics.nil? || Time.now - @@last_graphite_cache_time > REFRESH_GRAPHITE_CACHE_SECONDS
                 @@last_graphite_cache_time = Time.now
 
                 @@cached_graphite_metrics = DF::Metrics.graphite({
-                                                                   target: [USAGE_QUERY, LIMIT_QUERY],
+                                                                   target: METRICS_QUERIES,
                                                                    from: '-1min',
                                                                    until: 'now',
                                                                    format: 'json'
@@ -65,109 +68,58 @@ module Deltafi
             end
 
             def nodes
-              nodes = k8s_info[:nodes]
-              node_usage = k8s_info[:node_usage]
-              pods = pods_by_node
-              disks = disks_by_node
+              apps = apps_by_node
+              metrics = metrics_by_node
+              nodes = (metrics.keys + apps.keys).uniq
 
               nodes.map do |node|
                 {
-                  name: node.metadata.name,
+                  name: node,
                   resources: {
                     cpu: {
-                      limit: normalize_cpu(node.status.capacity.cpu),
-                      usage: normalize_cpu(node_usage.find { |n| n.metadata.name == node.metadata.name }&.usage&.cpu || 0)
+                      limit: metrics&.dig(node, :cpu, :limit) || 0,
+                      usage: metrics&.dig(node, :cpu, :usage) || 0
                     },
                     memory: {
-                      limit: normalize_bytes(node.status.capacity.memory),
-                      usage: normalize_bytes(node_usage.find { |n| n.metadata.name == node.metadata.name }&.usage&.memory || 0)
+                      limit: metrics&.dig(node, :memory, :limit) || 0,
+                      usage: metrics&.dig(node, :memory, :usage) || 0
                     },
                     disk: {
-                      limit: disks[node.metadata.name]&.dig('limit') || 0,
-                      usage: disks[node.metadata.name]&.dig('usage') || 0
+                      limit: metrics&.dig(node, :disk, :limit) || 0,
+                      usage: metrics&.dig(node, :disk, :usage) || 0
                     }
                   },
-                  pods: pods[node.metadata.name] || []
+                  apps: apps[node] || []
                 }
               end
             end
 
-            def disks_by_node
-              disks = {}
+            def metrics_by_node
+              nodes = {}
 
-              disk_metrics.each do |metric|
+              metrics.each do |metric|
                 hostname = metric[:tags][:hostname]
-                measurement = metric[:tags][:name].sub('gauge.node.disk.', '')
-                disks[hostname] ||= {}
-                disks[hostname][measurement] = metric[:datapoints].last.first
+                _, _, resouce, measurement = metric[:tags][:name].split('.').map(&:to_sym)
+                nodes[hostname] ||= {}
+                nodes[hostname][resouce] ||= {}
+                nodes[hostname][resouce][measurement] = metric[:datapoints].last.first.to_i
               end
 
-              disks
+              nodes
             end
 
-            def pods_by_node
+            def apps_by_node
+              # In Kubernetes mode
               pods_by_node = k8s_info[:pods_by_node]
-              pod_usage = k8s_info[:pod_usage]
               pods_by_node.transform_values do |pods|
                 pods.map do |pod|
-                  {
-                    name: pod.metadata.name,
-                    namespace: pod.metadata.namespace,
-                    resources: {
-                      cpu: {
-                        limit: pod.spec.containers.reduce(0) { |ptotal, c| ptotal + normalize_cpu(c.resources.limits&.cpu || 0) },
-                        request: pod.spec.containers.reduce(0) { |ptotal, c| ptotal + normalize_cpu(c.resources.requests&.cpu || 0) },
-                        usage: (pod_usage.find { |p| p.metadata.name == pod.metadata.name }&.containers || []).reduce(0) { |ptotal, c| ptotal + normalize_cpu(c.usage.cpu) }
-                      },
-                      memory: {
-                        limit: pod.spec.containers.reduce(0) { |ptotal, c| ptotal + normalize_bytes(c.resources.limits&.memory || 0) },
-                        request: pod.spec.containers.reduce(0) { |ptotal, c| ptotal + normalize_bytes(c.resources.requests&.memory || 0) },
-                        usage: (pod_usage.find { |p| p.metadata.name == pod.metadata.name }&.containers || []).reduce(0) { |ptotal, c| ptotal + normalize_bytes(c.usage.memory) }
-                      }
-                    }
-                  }
+                  { name: pod.metadata.name }
                 end
               end
             end
 
             def content
-              nodes.find { |node| node[:pods].any? { |p| p[:name].include? 'minio' } }&.dig(:resources, :disk)
-            end
-
-            private
-
-            # Normalize CPU resources
-            def normalize_cpu(cpu_string)
-              case cpu_string.to_s
-              when /m$/
-                cpu_string.to_i
-              when /n$/
-                cpu_string.to_i / 1_000_000
-              when /^\d+$/
-                cpu_string.to_i * 1000
-              else
-                0
-              end
-            end
-
-            # Normalize byte string
-            def normalize_bytes(bytes_string)
-              case bytes_string.to_s
-              when /Ki$/
-                bytes_string.to_i * 1024
-              when /K$/
-                bytes_string.to_i * 1000
-              when /Mi$/
-                bytes_string.to_i * 1024 * 1024
-              when /M$/
-                bytes_string.to_i * 1000 * 1000
-              when /Gi$/
-                bytes_string.to_i * 1024 * 1024 * 1024
-              when /G$/
-                bytes_string.to_i * 1000 * 1000 * 1000
-              else
-                bytes_string.to_i
-              end
+              nodes.find { |node| node[:apps].any? { |a| a[:name].include? 'minio' } }&.dig(:resources, :disk)
             end
           end
         end

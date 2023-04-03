@@ -20,13 +20,13 @@
   <div class="system-metrics-page">
     <PageHeader heading="System Metrics" />
     <Panel header="Nodes" class="table-panel">
-      <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading" loading-icon="p-datatable-loading-icon pi-spin">
+      <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading" loading-icon="p-datatable-loading-icon pi-spin" sort-field="name" :sort-order="1">
         <template #empty>No System Metrics available</template>
         <template #loading>Loading System Metrics Data. Please wait.</template>
         <Column class="expander-column" :expander="true" />
         <Column header="Node Name" field="name" :sortable="true" />
-        <Column header="Pods" class="pods-column">
-          <template #body="node">{{ node.data.pods.length }}</template>
+        <Column header="App Count" class="apps-column">
+          <template #body="node">{{ node.data.apps.length }}</template>
         </Column>
         <Column header="CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
           <template #body="node">
@@ -44,21 +44,9 @@
           </template>
         </Column>
         <template #expansion="node">
-          <div class="pods-subtable">
-            <DataTable :value="node.data.pods" responsive-layout="scroll" class="pod-table">
-              <Column header="Pod Name" field="name" :sortable="true" />
-              <Column header="Namespace" field="namespace" :sortable="true" />
-              <Column header="Pod CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
-                <template #body="pod">
-                  <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'cpu', formattedCPU)" :value="calculatePercent(pod.data.resources.cpu.usage, pod.data.resources.cpu.limit || node.data.resources.cpu.limit)" />
-                </template>
-              </Column>
-              <Column header="Pod Memory" field="resources.memory.usage" :sortable="true" class="resource-column">
-                <template #body="pod">
-                  <ProgressBar v-tooltip.top="buildPodResourceTooltip(pod, node, 'memory', formattedBytes)" :value="calculatePercent(pod.data.resources.memory.usage, pod.data.resources.memory.limit || node.data.resources.memory.limit)">{{ formattedBytes(pod.data.resources.memory.usage) }} ({{ calculatePercent(pod.data.resources.memory.usage, pod.data.resources.memory.limit || node.data.resources.memory.limit) }}%)</ProgressBar>
-                </template>
-              </Column>
-              <Column class="resource-column disabled-column" />
+          <div class="apps-subtable">
+            <DataTable :value="node.data.apps" responsive-layout="scroll" class="app-table" sort-field="name" :sort-order="1">
+              <Column header="App Name" field="name" :sortable="true" />
             </DataTable>
           </div>
         </template>
@@ -103,15 +91,6 @@ const calculatePercent = (numerator, denominator) => {
   return Math.round((numerator / denominator) * 100);
 };
 
-const formattedCPU = (cpu) => {
-  return `${cpu}m`;
-};
-
-const buildPodResourceTooltip = (pod, node, resource, formatFuntion) => {
-  let limitType = pod.data.resources[resource].limit !== 0 ? "Pod" : "Node";
-  let limit = pod.data.resources[resource].limit || node.data.resources[resource].limit;
-  return [formatFuntion(pod.data.resources[resource].usage), "/", formatFuntion(limit), "\n", `(${limitType} Limit)`].join(" ");
-};
 </script>
 
 <style lang="scss">

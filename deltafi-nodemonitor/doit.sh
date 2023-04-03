@@ -51,14 +51,66 @@ exterminate() {
 
 trap exterminate SIGTERM
 
-# Post usage and limit of /data to graphite roughly every $PERIOD seconds
-while true; do
+# CPU metrics
+
+PREV_CPU_TOTAL=0
+PREV_CPU_IDLE=0
+
+report_cpu_metrics() {
+    TOTAL_CPU_UNITS=$(($(nproc)*1000))
+
+    # Get the total CPU statistics, discarding the 'cpu ' prefix.
+    CPU=($(sed -n 's/^cpu\s//p' /proc/stat))
+    IDLE=${CPU[3]} # Just the idle CPU time.
+
+    # Calculate the total CPU time.
+    TOTAL=0
+    for VALUE in "${CPU[@]:0:8}"; do
+      TOTAL=$((TOTAL+VALUE))
+    done
+
+    # Calculate the CPU usage since we last checked.
+    DIFF_IDLE=$((IDLE-PREV_CPU_IDLE))
+    DIFF_TOTAL=$((TOTAL-PREV_CPU_TOTAL))
+    DIFF_USAGE_PERCENT=$((100000*(DIFF_TOTAL-DIFF_IDLE)/DIFF_TOTAL))
+    DIFF_USAGE_UNITS=$((DIFF_USAGE_PERCENT*TOTAL_CPU_UNITS/100000))
+
+    # Remember the total and idle CPU times for the next check.
+    PREV_CPU_TOTAL="$TOTAL"
+    PREV_CPU_IDLE="$IDLE"
+
+    TIMESTAMP=$(date +%s)
+    echo "gauge.node.cpu.usage;hostname=$NODE_NAME $DIFF_USAGE_UNITS $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    echo "gauge.node.cpu.limit;hostname=$NODE_NAME $TOTAL_CPU_UNITS $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+
+    _debug "$NODE_NAME: Using ${DIFF_USAGE_UNITS} of ${TOTAL_CPU_UNITS} CPU units"
+}
+
+report_disk_metrics() {
     LIMIT=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f2)
     USAGE=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f3)
     TIMESTAMP=$(date +%s)
     echo "gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
     echo "gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
 
-    _debug "$NODE_NAME: Using $USAGE of $LIMIT"
+    _debug "$NODE_NAME: Using $USAGE of $LIMIT bytes on disk (/data)"
+}
+
+report_memory_metrics() {
+    LIMIT=$(free -b | grep Mem | awk '{print $2}')
+    USAGE=$(free -b | grep Mem | awk '{print $3}')
+    TIMESTAMP=$(date +%s)
+    echo "gauge.node.memory.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    echo "gauge.node.memory.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+
+    _debug "$NODE_NAME: Using $USAGE of $LIMIT bytes of Memory"
+}
+
+# Report system metrics to graphite roughly every $PERIOD seconds
+while true; do
+    report_cpu_metrics
+    report_disk_metrics
+    report_memory_metrics
+
     sleep "$PERIOD"
 done

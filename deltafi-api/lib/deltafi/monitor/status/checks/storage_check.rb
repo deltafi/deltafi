@@ -64,9 +64,9 @@ module Deltafi
 
           def check_usage
             nodes_over_threshold = []
-            DF::API::V1::Metrics::System.disks_by_node.each do |node, metrics|
-              percent = (metrics&.dig(:usage, :pct).to_f * 100).floor
-              nodes_over_threshold << "__#{node}:/data__ at __#{percent}%__" if percent >= USAGE_THRESHOLD
+            DF::API::V1::Metrics::System.metrics_by_node.each do |node, metrics|
+              percent = (metrics&.dig(:disk, :usage).to_f / metrics&.dig(:disk, :limit) * 100).floor
+              nodes_over_threshold << "__#{node}:/data__ is at __#{percent}%__" if percent >= USAGE_THRESHOLD
             end
             return if nodes_over_threshold.empty?
 
