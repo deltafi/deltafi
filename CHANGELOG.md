@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [0.104.4] - 2023-04-03
+
+### Fixed
+- Issue where replicated plugins could lead to lost variable values on registration
+- Uploading metadata without an ingress flow on the Upload Page no longer clears the dropdown.
+- Uploading metadata with an invalid ingress flow will result in a warning and the flow being ignored.
+- Bug requiring an image pull secret on the plugin repository form.
+
 ## [0.104.3] - 2023-03-30
 
 ### Added
@@ -1369,7 +1377,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.3...main
+[Unreleased]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.4...main
+[0.104.4]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.3...0.104.4
 [0.104.3]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.104.0...0.104.3
 [0.104.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.103.0...0.104.0
 [0.103.0]: https://gitlab.com/systolic/deltafi/deltafi/-/compare/0.102.0...0.103.0
