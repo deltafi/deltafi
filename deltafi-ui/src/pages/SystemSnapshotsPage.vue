@@ -174,7 +174,7 @@ const onRevertClick = (snapshotData) => {
     accept: () => {
       onRevert(snapshotData.id);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -188,7 +188,7 @@ const onDeleteClick = (snapshotData) => {
     accept: () => {
       onDelete(snapshotData.id);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -223,7 +223,6 @@ const cleanUpSnapshot = (snapShotData) => {
       snap.pluginVariables[x].variables[y].dataType = new EnumType(snap.pluginVariables[x].variables[y].dataType);
     }
   }
-  snap.deltaFiProperties.setProperties = snap.deltaFiProperties.setProperties.map((p) => new EnumType(p))
   return snap;
 };
 
