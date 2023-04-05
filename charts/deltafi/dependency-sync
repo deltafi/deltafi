@@ -1,0 +1,23 @@
+#!/bin/bash
+
+function sync() {
+  local name="$1"
+  local gitRepo="$2"
+  local gitRepoTag="$3"
+
+  echo "Sync $name $gitRepoTag from $gitRepo"
+  rm -rf "charts/$name"
+  git clone -c advice.detachedHead=false -q --depth 1 --branch "$gitRepoTag" "$gitRepo" "charts/$name"
+  rm -rf "charts/$name/.git"
+  yq e ".dependencies[] |= select(.name == \"$name\").version=\"$gitRepoTag\"" -i Chart.yaml
+
+}
+
+sync grafana https://gitlab.com/deltafi/helmcharts/grafana.git 6.52.5
+sync graphite https://gitlab.com/deltafi/helmcharts/graphite.git 1.1.0-deltafi1
+sync kubernetes-dashboard https://gitlab.com/deltafi/helmcharts/kubernetes-dashboard.git 5.7.0
+sync loki https://gitlab.com/deltafi/helmcharts/loki.git 2.12.2
+sync minio https://gitlab.com/deltafi/helmcharts/minio.git 5.0.7
+sync mongodb https://gitlab.com/deltafi/helmcharts/mongodb.git 10.28.7
+sync promtail https://gitlab.com/deltafi/helmcharts/promtail.git 6.10.0
+sync redis https://gitlab.com/deltafi/helmcharts/redis.git 17.1.2

@@ -94,7 +94,7 @@ mongodb:
 redis:
   image:
     repository: bitnami/redis
-    tag: 7.0.7
+    tag: 7.0.8
   architecture: standalone
   auth:
     existingSecret: redis-password
@@ -111,9 +111,13 @@ redis:
       node-role.deltafi.org/compute: "true"
 # Kubernetes Dashboard config
 kubernetes-dashboard:
+  image:
+    tag: v2.7.0
   securityContext: null
   metricsScraper:
     enabled: true
+    image:
+      tag: v1.0.9
   protocolHttp: true
   service:
     externalPort: 80
@@ -130,7 +134,7 @@ kubernetes-dashboard:
 
 grafana:
   image:
-    tag: 9.3.2
+    tag: 9.4.7
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -190,7 +194,7 @@ grafana:
         uid: deltafi-loki
 promtail:
   image:
-    tag: 2.7.1
+    tag: 2.8.0
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
@@ -234,7 +238,7 @@ promtail:
 
 loki:
   image:
-    tag: 2.7.1
+    tag: 2.8.0
   persistence:
     enabled: true
     existingClaim: deltafi-loki
