@@ -234,7 +234,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  DeltaFileStats deltaFileStats(Boolean inFlightOnly, Boolean includeDeletedContent) {
+  public DeltaFileStats deltaFileStats(Boolean inFlightOnly, Boolean includeDeletedContent) {
     return deltaFilesService.deltaFileStats((inFlightOnly != null) && inFlightOnly,
             (includeDeletedContent != null) && includeDeletedContent);
   }
