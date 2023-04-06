@@ -11,4 +11,4 @@ plugins:
   # - name: deltafi-passthrough
   #   plugin_coordinates: "org.deltafi.passthrough:deltafi-passthrough:latest"
   #   image_repository_base: localhost:5000
-  #   url: 'https://gitlab.com/systolic/deltafi/deltafi-passthrough'
+  #   url: 'https://gitlab.com/deltafi/deltafi-passthrough'

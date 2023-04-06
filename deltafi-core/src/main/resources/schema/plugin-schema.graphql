@@ -115,7 +115,7 @@ type PluginCustomizationConfig {
     groupId: String!
     "The artifactId of the plugin that uses this customization"
     artifactId: String!
-    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/systolic/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
+    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
     urlTemplate: String!
     "An optional secret used if authentication is needed to read the resource"
     secretName: String
@@ -126,7 +126,7 @@ input PluginCustomizationConfigInput {
     groupId: String!
     "The artifactId of the plugin that uses this customization"
     artifactId: String!
-    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/systolic/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
+    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
     urlTemplate: String!
     "An optional secret used if authentication is needed to read the resource"
     secretName: String

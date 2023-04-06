@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BASE_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-REGISTRY_PATH="registry.gitlab.com/systolic/deltafi/"
+REGISTRY_PATH="registry.gitlab.com/deltafi/"
 VALUES_YAML="$BASE_PATH/deltafi/values.yaml"
 
 function _sed_inplace() {
@@ -21,7 +21,7 @@ function set_local_version() {
   _sed_inplace -e "s|image: .*deltafi/\(.*\):.*|image: \1:$version|" "$VALUES_YAML"
 }
 
-describe set_registry_version "Set version of each docker image to <version> in registry.gitlab.com/systolic/deltafi/"
+describe set_registry_version "Set version of each docker image to <version> in registry.gitlab.com/deltafi/"
 function set_registry_version() {
   local version=$1
   [[ -z "$version" ]] && _exit_1 echo "Version must be specified"

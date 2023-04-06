@@ -19,7 +19,7 @@ Clone or extract the DeltaFi Core git repository into your home directory.
 
 ```
 cd ~
-git clone git@gitlab.com:systolic/deltafi/deltafi.git
+git clone git@gitlab.com:deltafi/deltafi.git
 ```
 
 Next, we’ll install the DeltaFi command-line interface ([CLI](/operating/CLI)). This provides the `deltafi` command - the primary way of interacting with the DeltaFi system. Use the following command to install the DeltaFi CLI.

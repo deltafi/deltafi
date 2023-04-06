@@ -9,13 +9,13 @@
 1. Confirm you have been granted **Developer** access to the required projects in the **DeltaFi** group.  From GitLab, navigate to the DeltaFi group, then select **Menu > Projects > Your projects**
 
      At a minimum, the following projects should be listed:
-    - ansible (SYSTOLIC/DeltaFi/ansible)
-    - deltafi (SYSTOLIC/DeltaFi/deltafi)
-    - devbox (SYSTOLIC/DeltaFi/devbox)
-    - dotfiles (SYSTOLIC/DeltaFi/dotfiles)
-    - deltafi-inator (SYSTOLIC/DeltaFi/deltafi-inator)
+    - ansible (deltafi/ansible)
+    - deltafi (deltafi/deltafi)
+    - devbox (deltafi/devbox)
+    - dotfiles (deltafi/dotfiles)
+    - deltafi-inator (deltafi/deltafi-inator)
 
-    From the list of projects, you can select any project and view its members. You should see your username listed as a project Developer for all of your required projects.  Note that the DeltaFi projects are maintained under https://gitlab.com/systolic/deltafi.
+    From the list of projects, you can select any project and view its members. You should see your username listed as a project Developer for all of your required projects.  Note that the DeltaFi projects are maintained under https://gitlab.com/deltafi.
 
 
 ### Setting up a VM based DeltaFi installation
@@ -50,7 +50,7 @@
 1. Run the devbox install script:
     1. Create ~/.vault-password file containing password (ask developer).
     1. sudo yum install epel-release
-    1. git archive --remote=git@gitlab.com:systolic/deltafi/devbox HEAD install.sh | tar -x --to-stdout | sh
+    1. git archive --remote=git@gitlab.com:deltafi/devbox HEAD install.sh | tar -x --to-stdout | sh
     1. Add the following to ~/.gitconfig.local:
     ```
     [user]
@@ -69,7 +69,7 @@
     metrics.local.deltafi.org nifi.local.deltafi.org
 
 1. Install DeltaFi:
-    1. git clone git@gitlab.com:systolic/deltafi/deltafi.git
+    1. git clone git@gitlab.com:deltafi/deltafi.git
     1. cd deltafi/deltafi-cli
     1. ./install.sh
     1. deltafi install --timeout 10m

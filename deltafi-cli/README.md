@@ -3,7 +3,7 @@
 ## Install & Configure
 
 ````
-git clone git@gitlab.com:systolic/deltafi/deltafi.git
+git clone git@gitlab.com:deltafi/deltafi.git
 cd deltafi/deltafi-cli
 sudo ./install.sh
 ````

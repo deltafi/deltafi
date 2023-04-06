@@ -8,13 +8,13 @@ In this guide we will be installing the Passthrough plugin as an example. Other 
 ## Configure Plugin Image Repositories
 DeltaFi will use `docker.io/deltafi/${artifactId}` as the default plugin image repository with a tag of `${version}`, where `artifactId` and `version` come from the plugin coordinates when installing a plugin. The default repository and pull secret can be changed in the `System Properties` page (`deltafi.plugins.imageRepositoryBase` and `deltafi.plugins.imagePullSecret` properties respectively).
 
-Additional image repositories can be configured for groups of plugins. The following example uses `registry.gitlab.com/systolic/deltafi/deltafi-stix:${artifactId}` as the image repository for plugins in the `org.deltafi.stix` group and `docker-secret` will be used as the imagePullSecret.
+Additional image repositories can be configured for groups of plugins. The following example uses `registry.gitlab.com/deltafi/deltafi-stix:${artifactId}` as the image repository for plugins in the `org.deltafi.stix` group and `docker-secret` will be used as the imagePullSecret.
 
 ```bash
 # Create the image repository config file to load into DeltaFi
 cat <<EOF > image-repo-config.json
 {
-  "imageRepositoryBase": "registry.gitlab.com/systolic/deltafi/deltafi-stix",
+  "imageRepositoryBase": "registry.gitlab.com/deltafi/deltafi-stix",
   "pluginGroupIds": ["org.deltafi.stix"],
   "imagePullSecret": "docker-secret"
 }

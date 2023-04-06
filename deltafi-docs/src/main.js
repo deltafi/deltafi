@@ -31,7 +31,7 @@ new Docute({
     },
     {
       title: 'GitLab',
-      link: 'https://gitlab.com/systolic/deltafi/deltafi'
+      link: 'https://gitlab.com/deltafi/deltafi'
     }
   ],
   sidebar: [

@@ -169,22 +169,22 @@ public class SystemSnapshotDatafetcherTestHelper {
 
     private static void setPluginImageRepositories(SystemSnapshot systemSnapshot) {
         PluginImageRepository passthrough = new PluginImageRepository();
-        passthrough.setImageRepositoryBase("registry.gitlab.com/systolic/deltafi/deltafi-passthrough/");
+        passthrough.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-passthrough/");
         passthrough.setPluginGroupIds(List.of("org.deltafi.passthrough"));
         passthrough.setImagePullSecret("docker-secret");
 
         PluginImageRepository json = new PluginImageRepository();
-        json.setImageRepositoryBase("registry.gitlab.com/systolic/deltafi/deltafi-json-validation/");
+        json.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-json-validation/");
         json.setPluginGroupIds(List.of("org.deltafi.jsonvalidations"));
         json.setImagePullSecret("docker-secret");
 
         PluginImageRepository stix = new PluginImageRepository();
-        stix.setImageRepositoryBase("registry.gitlab.com/systolic/deltafi/deltafi-stix/");
+        stix.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-stix/");
         stix.setPluginGroupIds(List.of("org.deltafi.stix"));
         stix.setImagePullSecret("docker-secret");
 
         PluginImageRepository pythonPoc = new PluginImageRepository();
-        pythonPoc.setImageRepositoryBase("registry.gitlab.com/systolic/deltafi/deltafi-python-poc/");
+        pythonPoc.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-python-poc/");
         pythonPoc.setPluginGroupIds(List.of("org.deltafi.python-poc"));
         pythonPoc.setImagePullSecret("docker-secret");
 
@@ -341,22 +341,22 @@ public class SystemSnapshotDatafetcherTestHelper {
                         }
                         pluginImageRepositories: [
                             {
-                                imageRepositoryBase: "registry.gitlab.com/systolic/deltafi/deltafi-passthrough/"
+                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-passthrough/"
                                 pluginGroupIds: ["org.deltafi.passthrough"]
                                 imagePullSecret: "docker-secret"
                             }
                             {
-                                imageRepositoryBase: "registry.gitlab.com/systolic/deltafi/deltafi-json-validation/"
+                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-json-validation/"
                                 pluginGroupIds: ["org.deltafi.jsonvalidations"]
                                 imagePullSecret: "docker-secret"
                             }
                             {
-                                imageRepositoryBase: "registry.gitlab.com/systolic/deltafi/deltafi-stix/"
+                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-stix/"
                                 pluginGroupIds: ["org.deltafi.stix"]
                                 imagePullSecret: "docker-secret"
                             }
                             {
-                                imageRepositoryBase: "registry.gitlab.com/systolic/deltafi/deltafi-python-poc/"
+                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-python-poc/"
                                 pluginGroupIds: ["org.deltafi.python-poc"]
                                 imagePullSecret: "docker-secret"
                             }

@@ -37,7 +37,7 @@ pytest-mock = "3.10.0"
 mockito = "1.4.0"
 
 [tool.poetry.urls]
-'Source Code' = "https://gitlab.com/systolic/deltafi/deltafi"
+'Source Code' = "https://gitlab.com/deltafi/deltafi"
 Documentation = "https://docs.deltafi.org/#/"
 'Bug Reports' = "https://chat.deltafi.org/deltafi/channels/bug-reports"
 

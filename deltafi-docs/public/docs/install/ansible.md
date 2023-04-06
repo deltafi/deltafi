@@ -4,7 +4,7 @@ The installation process for DeltaFi is handled by Ansible playbooks. Clone or e
 
 ```bash
 cd ~
-git clone git@gitlab.com:systolic/deltafi/ansible.git
+git clone git@gitlab.com:deltafi/ansible.git
 cd ~/ansible
 ansible-galaxy install -r requirements.yml
 ansible-galaxy collection install -r requirements.yml
