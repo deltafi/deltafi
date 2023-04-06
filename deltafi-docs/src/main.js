@@ -44,6 +44,19 @@ new Docute({
       link: '/concepts'
     },
     {
+      title: 'Getting Started',
+      children: [
+        {
+          title: 'Getting Started with a Demo Cluster',
+          link: '/getting-started/cluster'
+        },
+        {
+          title: 'Getting Started with a Simple Plugin',
+          link: '/getting-started/simple-plugin'
+        }
+      ]
+    },
+    {
       title: 'Installation',
       children: [
         {

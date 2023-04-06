@@ -1,0 +1,150 @@
+<svg
+        version="1.0"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        width="750"
+        height="186"
+>
+    <svg
+            version="1.0"
+            xmlns="http://www.w3.org/2000/svg"
+            width="0"
+            height="0"
+            viewBox="0 0 340.000000 250.000000"
+            preserveAspectRatio="xMidYMid meet"
+            color-interpolation-filters="sRGB"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+    >
+        <defs>
+            <pattern
+                    id="watermark"
+                    patternUnits="userSpaceOnUse"
+                    width="100%"
+                    height="100%"
+            >
+                <image
+                        xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAGQCAYAAAAUdV17AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTM4IDc5LjE1OTgyNCwgMjAxNi8wOS8xNC0wMTowOTowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTcgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6RTVGN0VCRjlGMjcwMTFFOUIyNjM4MDRGRkI5QkJENjEiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6RTVGN0VCRkFGMjcwMTFFOUIyNjM4MDRGRkI5QkJENjEiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpFNUY3RUJGN0YyNzAxMUU5QjI2MzgwNEZGQjlCQkQ2MSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpFNUY3RUJGOEYyNzAxMUU5QjI2MzgwNEZGQjlCQkQ2MSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pgp++w8AAAPuSURBVHja7NSxDQAACMMw+v/R5QoGJPuEDEnbAfgghgUYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYgGEZFmBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBhmVYgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgUYlgqAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQGGZViAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBRiWYQGGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWYFiGBRgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFiAYakAGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQFcWgEGAJzsrR2jCcEwAAAAAElFTkSuQmCC"
+                        x="0"
+                        y="0"
+                        width="100%"
+                        height="100%"
+                ></image>
+            </pattern>
+        </defs>
+    </svg>
+    <rect
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+            fill="#ffffff"
+            fill-opacity="1"
+    ></rect>
+    <svg
+            version="1.0"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            x="0"
+            y="0"
+            width="800"
+            height="600"
+            viewBox="0 0 340.000000 250.000000"
+            preserveAspectRatio="xMidYMid meet"
+            color-interpolation-filters="sRGB"
+    >
+        <defs>
+            <linearGradient id="92" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#fa71cd"/>
+                <stop offset="100%" stop-color="#9b59b6"/>
+            </linearGradient>
+            <linearGradient id="93" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f9d423"/>
+                <stop offset="100%" stop-color="#f83600"/>
+            </linearGradient>
+            <linearGradient id="94" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#0064d2"/>
+                <stop offset="100%" stop-color="#1cb0f6"/>
+            </linearGradient>
+            <linearGradient id="95" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f00978"/>
+                <stop offset="100%" stop-color="#3f51b1"/>
+            </linearGradient>
+            <linearGradient id="96" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7873f5"/>
+                <stop offset="100%" stop-color="#ec77ab"/>
+            </linearGradient>
+            <linearGradient id="97" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f9d423"/>
+                <stop offset="100%" stop-color="#e14fad"/>
+            </linearGradient>
+            <linearGradient id="98" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#009efd"/>
+                <stop offset="100%" stop-color="#2af598"/>
+            </linearGradient>
+            <linearGradient id="99" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ffcc00"/>
+                <stop offset="100%" stop-color="#00b140"/>
+            </linearGradient>
+            <linearGradient id="100" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#d51007"/>
+                <stop offset="100%" stop-color="#ff8177"/>
+            </linearGradient>
+            <linearGradient id="102" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#a2b6df"/>
+                <stop offset="100%" stop-color="#0c3483"/>
+            </linearGradient>
+            <linearGradient id="103" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7ac5d8"/>
+                <stop offset="100%" stop-color="#eea2a2"/>
+            </linearGradient>
+            <linearGradient id="104" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00ecbc"/>
+                <stop offset="100%" stop-color="#007adf"/>
+            </linearGradient>
+            <linearGradient id="105" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#b88746"/>
+                <stop offset="100%" stop-color="#fdf5a6"/>
+            </linearGradient>
+        </defs>
+        <g fill="#333" class="icon-text-wrapper icon-svg-group iconsvg"
+           transform="translate(10,10)">
+            <g class="iconsvg-imagesvg" transform="translate(0,0)">
+                <g>
+                    <rect fill="#333" fill-opacity="0" stroke-width="2" x="0" y="0" width="60"
+                          height="53.62745010412663" class="image-rect"/>
+                    <svg x="0" y="0" width="60" height="53.62745010412663" filtersec="colorsb2049362578"
+                         class="image-svg-svg primary" style="overflow: visible;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 188.1199951171875 168.13999938964844">
+                            <path d="M60.82 168.14H172l16.09-28.82h-111zM168.49 104.49h-32.35l-16.09 28.64h32.18z"
+                                  fill="#205CAE"/>
+                            <path d="M168.49 98.3L113 0H80.62l55.69 98.3z" fill="#205CAE"/>
+                            <path d="M0 136.31l16.09 28.47 55.69-98.3L55.52 38zM55.52 164.78l16.26-28.47-16.26-28.64-16.09 28.64z"
+                                  fill="#205CAE"/>
+                            <path d="M61 34.83l16.09 28.64h32.35L93.18 34.83z" fill="#205CAE"/>
+                            <path d="M188.12 133.13l-14.32-25.28-14.33 25.28zM114.74 130l16.09-28.47-16.09-28.69-16.26 28.64zM60.82 104.49l16.27 28.64h32.35l-16.27-28.64zM77.09 69.66L60.82 98.3h32.35l16.09-28.64zM21.39 168.14h28.82l-14.32-25.46zM75.32 3.18l-14.5 25.46h28.82z"
+                                  fill="#A0A5A6"/>
+                        </svg>
+                    </svg>
+                </g>
+            </g>
+            <g transform="translate(70,7)">
+                <g fill-rule="" stroke="#333" class="tp-name iconsvg-namesvg" transform="translate(0,0)">
+                    <g transform="scale(1)">
+                        <g>
+                            <path d="M32.44-29.22L32.44-9 12.22-9 12.22-29.22 32.44-29.22ZM41.44-6.74L41.44-31.47Q41.44-34.27 39.48-36.25L39.48-36.25Q37.49-38.22 34.7-38.22L34.7-38.22 3.22-38.22 3.22 0 34.7 0Q37.49 0 39.48-1.99L39.48-1.99Q41.44-3.95 41.44-6.74L41.44-6.74ZM81.1-38.22L42.88-38.22 42.88 0 81.1 0 81.1-9 51.88-9 51.88-14.61 81.1-14.61 81.1-23.61 51.88-23.61 51.88-29.22 81.1-29.22 81.1-38.22ZM91.54-38.22L82.54-38.22 82.54 0 117.4 0 117.4-9 91.54-9 91.54-38.22ZM143.64-38.22L105.42-38.22 105.42-29.22 120.03-29.22 120.03 0 129.03 0 129.03-29.22 143.64-29.22 143.64-38.22ZM159.9-38.22L149.51-38.22 131.65 0 141.48 0 154.72-27.66 168.44 0 178.27 0 159.9-38.22ZM217.93-38.22L179.72-38.22 179.72 0 188.72 0 188.72-14.61 217.93-14.61 217.93-23.61 188.72-23.61 188.72-29.22 217.93-29.22 217.93-38.22ZM219.38-38.22L219.38 0 228.38 0 228.38-38.22 219.38-38.22Z"
+                                  transform="translate(-3.2200000286102295, 38.220001220703125)" stroke-width="2.7"
+                                  stroke-linejoin="round" mask="url(#bXV9l6hhKWMCNoeuWYnQd)"/>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <mask id="bXV9l6hhKWMCNoeuWYnQd">
+            <path d="M32.44-29.22L32.44-9 12.22-9 12.22-29.22 32.44-29.22ZM41.44-6.74L41.44-31.47Q41.44-34.27 39.48-36.25L39.48-36.25Q37.49-38.22 34.7-38.22L34.7-38.22 3.22-38.22 3.22 0 34.7 0Q37.49 0 39.48-1.99L39.48-1.99Q41.44-3.95 41.44-6.74L41.44-6.74ZM81.1-38.22L42.88-38.22 42.88 0 81.1 0 81.1-9 51.88-9 51.88-14.61 81.1-14.61 81.1-23.61 51.88-23.61 51.88-29.22 81.1-29.22 81.1-38.22ZM91.54-38.22L82.54-38.22 82.54 0 117.4 0 117.4-9 91.54-9 91.54-38.22ZM143.64-38.22L105.42-38.22 105.42-29.22 120.03-29.22 120.03 0 129.03 0 129.03-29.22 143.64-29.22 143.64-38.22ZM159.9-38.22L149.51-38.22 131.65 0 141.48 0 154.72-27.66 168.44 0 178.27 0 159.9-38.22ZM217.93-38.22L179.72-38.22 179.72 0 188.72 0 188.72-14.61 217.93-14.61 217.93-23.61 188.72-23.61 188.72-29.22 217.93-29.22 217.93-38.22ZM219.38-38.22L219.38 0 228.38 0 228.38-38.22 219.38-38.22Z"
+                  stroke-width="2.7" stroke-linejoin="round" stroke="#000" fill="#fff"/>
+        </mask>
+        <defs v-gra="od"/>
+    </svg>
+</svg>
+
+
