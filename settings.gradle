@@ -1,34 +1,12 @@
 pluginManagement {
-    def carboniteRepoPath = "file:///${rootProject.projectDir}/${repoCarbonite}"
     repositories {
-        if(file(carboniteRepoPath).exists()) {
-            maven {
-                url carboniteRepoPath
-                metadataSources {
-                    artifact()
-                    gradleMetadata()
-                }
-            }
-        }
-
         mavenCentral()
         gradlePluginPortal()
     }
 }
 
 dependencyResolutionManagement {
-    def carboniteRepoPath = "file:///${rootProject.projectDir}/${repoCarbonite}"
     repositories {
-        if(file(carboniteRepoPath).exists()) {
-            maven {
-                url carboniteRepoPath
-                metadataSources {
-                    artifact()
-                    gradleMetadata()
-                }
-            }
-        }
-
         mavenLocal()
         mavenCentral()
         gradlePluginPortal() // needed by gradle-plugin project
