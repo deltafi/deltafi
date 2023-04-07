@@ -26,7 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 2035,
+  "id": 8,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -754,7 +754,7 @@
             "uid": "${datasource}"
           },
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'average', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'average', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
         }
       ],
       "title": "Files In",
@@ -826,7 +826,7 @@
         "y": 17
       },
       "id": 9,
-      "interval": "10s",
+      "interval": "60s",
       "maxDataPoints": 99999,
       "options": {
         "legend": {
@@ -849,7 +849,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
         }
       ],
       "title": "Files Out",
@@ -915,7 +915,7 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 26
       },
@@ -945,7 +945,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
         }
       ],
       "title": "Files Filtered",
@@ -1011,8 +1011,8 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 26
       },
       "id": 40,
@@ -1041,7 +1041,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
         }
       ],
       "title": "Files Dropped",
@@ -1107,8 +1107,8 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 12,
         "y": 26
       },
       "id": 39,
@@ -1137,10 +1137,106 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
         }
       ],
       "title": "Files Errored",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 6,
+        "x": 18,
+        "y": 26
+      },
+      "id": 76,
+      "interval": "10s",
+      "maxDataPoints": 99999,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "B",
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_auto_resumed', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
+        }
+      ],
+      "title": "Files Retried",
       "type": "timeseries"
     },
     {
@@ -2502,6 +2598,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 7,
+  "version": 2,
   "weekStart": ""
 }

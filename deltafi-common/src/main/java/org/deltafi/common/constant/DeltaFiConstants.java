@@ -35,6 +35,7 @@ public class DeltaFiConstants {
     // Metric names
     public static final String BYTES_IN = "bytes_in";
     public static final String BYTES_OUT = "bytes_out";
+    public static final String FILES_AUTO_RESUMED = "files_auto_resumed";
     public static final String FILES_DROPPED = "files_dropped";
     public static final String FILES_ERRORED = "files_errored";
     public static final String FILES_FILTERED = "files_filtered";

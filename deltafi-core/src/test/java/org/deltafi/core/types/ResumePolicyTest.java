@@ -123,7 +123,7 @@ class ResumePolicyTest {
         ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
         policy.setFlow("name");
-        policy.setMaxAttempts(1);
+        policy.setMaxAttempts(2);
 
         BackOff backoff = new BackOff();
         backoff.setDelay(100);
@@ -136,7 +136,7 @@ class ResumePolicyTest {
     private ResumePolicy policy(String error, String flow, String action, String actionType) {
         ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
-        policy.setMaxAttempts(1);
+        policy.setMaxAttempts(2);
 
         if (null != error) policy.setErrorSubstring(error);
         if (null != flow) policy.setFlow(flow);

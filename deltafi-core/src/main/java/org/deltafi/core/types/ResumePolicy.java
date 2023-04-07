@@ -24,7 +24,7 @@ import java.util.List;
 
 public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy {
     public static final String INVALID_DELAY = "delay must not be negative";
-    public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be positive";
+    public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be greater than 1";
     public static final String INVALID_MAX_DELAY = "maxDelay must not be negative";
     public static final String INVALID_MULTIPLIER = "multiplier must be positive";
     public static final String MAX_DELAY_ERROR = "maxDelay must not be lower than delay";
@@ -52,7 +52,7 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
             errors.add(MISSING_CRITERIA);
         }
 
-        if (getMaxAttempts() < 1) {
+        if (getMaxAttempts() < 2) {
             errors.add(INVALID_MAX_ATTEMPTS);
         }
 

@@ -2297,7 +2297,6 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(didsRead.containsAll(dids));
 	}
 
-
 	@Test
 	void testFindReadyForAutoResume() {
 		Action ingress = Action.newBuilder().name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
@@ -2331,12 +2330,23 @@ class DeltaFiCoreApplicationTests {
 		contentDeleted.setContentDeleted(MONGO_NOW);
 		deltaFileRepo.save(contentDeleted);
 
+		DeltaFile shouldAlsoResume = buildDeltaFile("did6", INGRESS_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		shouldAlsoResume.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
+		shouldAlsoResume.setActions(Arrays.asList(ingress, hit, other));
+		deltaFileRepo.save(shouldAlsoResume);
+
 		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(MONGO_NOW);
-		assertEquals(2, hits.size());
+		assertEquals(3, hits.size());
 		assertEquals(shouldResume.getDid(), hits.get(0).getDid());
 		assertEquals(contentDeleted.getDid(), hits.get(1).getDid());
+		assertEquals(shouldAlsoResume.getDid(), hits.get(2).getDid());
 
-		assertEquals(1, deltaFilesService.autoResume(MONGO_NOW));
+		assertEquals(2, deltaFilesService.autoResume(MONGO_NOW));
+
+		Mockito.verify(metricRepository).increment
+				(new Metric(DeltaFiConstants.FILES_AUTO_RESUMED, 2)
+						.addTag(DeltaFiConstants.INGRESS_FLOW, INGRESS_FLOW_NAME));
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	@Test

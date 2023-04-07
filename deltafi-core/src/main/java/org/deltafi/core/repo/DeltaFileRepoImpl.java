@@ -239,7 +239,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Criteria ready = Criteria.where(NEXT_AUTO_RESUME).lt(maxReadyTime);
 
         Query requeueQuery = new Query(new Criteria().andOperator(inError, ready));
-        requeueQuery.fields().include(ID);
+        requeueQuery.fields().include(ID, SOURCE_INFO_FLOW);
 
         return requeueQuery;
     }

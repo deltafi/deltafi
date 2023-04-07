@@ -1158,19 +1158,44 @@ public class DeltaFilesService {
     }
 
     public int autoResume(OffsetDateTime timestamp) {
-        List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp);
-        List<String> dids = autoResumeDeltaFiles.stream().map(DeltaFile::getDid).toList();
-        List<RetryResult> results = resume(dids, Collections.emptyList(), Collections.emptyList());
         int queued = 0;
-        for (RetryResult result : results) {
-            if (result.getSuccess()) {
-                ++queued;
-            } else {
-                log.error("Auto-resume: " + result.getError());
+        List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp);
+        if (!autoResumeDeltaFiles.isEmpty()) {
+            Map<String, String> flowByDid = autoResumeDeltaFiles.stream()
+                    .collect(Collectors.toMap(DeltaFile::getDid, d -> d.getSourceInfo().getFlow()));
+            List<RetryResult> results = resume(flowByDid.keySet().stream().toList(),
+                    Collections.emptyList(), Collections.emptyList());
+            Map<String, Integer> countByFlow = new HashMap<>();
+            for (RetryResult result : results) {
+                if (result.getSuccess()) {
+                    ++queued;
+                    String flow = flowByDid.get(result.getDid());
+                    Integer count = 1;
+                    if (countByFlow.containsKey(flow)) {
+                        count += countByFlow.get(flow);
+                    }
+                    countByFlow.put(flow, count);
+                } else {
+                    log.error("Auto-resume: " + result.getError());
+                }
+            }
+            if (queued > 0) {
+                log.info("Queued {} DeltaFiles for auto-resume", queued);
+                generateMetrics(FILES_AUTO_RESUMED, countByFlow);
             }
         }
-        if (queued > 0) log.info("Queued {} DeltaFiles for auto-resume", queued);
         return queued;
+    }
+
+    private void generateMetrics(String name, Map<String, Integer> countByFlow) {
+        Set<String> flows = countByFlow.keySet();
+        for (String flow : flows) {
+            Integer count = countByFlow.get(flow);
+            Map<String, String> tags = new HashMap<>();
+            tags.put(DeltaFiConstants.INGRESS_FLOW, flow);
+            Metric metric = new Metric(name, count, tags);
+            metricRepository.increment(metric);
+        }
     }
 
     private ActionConfiguration actionConfiguration(String actionName, DeltaFile deltaFile) {
