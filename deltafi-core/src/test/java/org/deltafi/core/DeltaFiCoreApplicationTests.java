@@ -2790,6 +2790,24 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("reason").build(), deltaFile5);
 	}
 
+	@Test
+	void testQueryByCanReplay() {
+		DeltaFile noContent =  buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+		noContent.setContentDeleted(MONGO_NOW);
+		noContent.setEgressed(true);
+		DeltaFile hasReplayDate = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+		hasReplayDate.setReplayed(MONGO_NOW);
+		DeltaFile replayable = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+
+		deltaFileRepo.saveAll(List.of(noContent, hasReplayDate, replayable));
+
+		testFilter(DeltaFilesFilter.newBuilder().replayable(true).build(), replayable);
+		testFilter(DeltaFilesFilter.newBuilder().replayable(false).build(), hasReplayDate, noContent);
+
+		// make sure the content or replay criteria is properly nested within the outer and criteria
+		testFilter(DeltaFilesFilter.newBuilder().replayable(false).egressed(true).build(), noContent);
+	}
+
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());

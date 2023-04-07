@@ -78,6 +78,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String REFERENCED_BYTES = "referencedBytes";
     public static final String TOTAL_BYTES = "totalBytes";
     public static final String INGRESS_BYTES = "ingressBytes";
+    public static final String REPLAYED = "replayed";
     public static final String REQUEUE_COUNT = "requeueCount";
     public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
@@ -575,6 +576,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 andCriteria.add(Criteria.where(TEST_MODE).is(true));
             } else {
                 andCriteria.add(Criteria.where(TEST_MODE).ne(true));
+            }
+        }
+
+        if (nonNull(filter.getReplayable())) {
+            if (filter.getReplayable()) {
+                andCriteria.add(Criteria.where(REPLAYED).isNull());
+                andCriteria.add(Criteria.where(CONTENT_DELETED).isNull());
+            } else {
+                andCriteria.add(new Criteria().orOperator(Criteria.where(REPLAYED).ne(null), Criteria.where(CONTENT_DELETED).ne(null)));
             }
         }
 

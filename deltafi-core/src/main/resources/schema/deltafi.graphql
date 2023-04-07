@@ -290,6 +290,7 @@ input DeltaFilesFilter {
   egressed: Boolean
   filtered: Boolean
   testMode: Boolean
+  replayable: Boolean
 }
 
 type RetryResult {
