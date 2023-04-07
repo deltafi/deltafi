@@ -78,7 +78,7 @@ for FILE in "${@:3}"; do
   BASENAME=$(basename $FILE)
   cli_log "Ingressing file ${cyan}${BASENAME}${normal} to flow ${cyan}${FLOW}${normal}"
 
-  truncate --size 0 ${TMPFILE}
+  truncate -s 0 ${TMPFILE}
   RESPONSE_CODE=$(cat ${FILE} | curl -s -X POST -o ${TMPFILE} -w "%{http_code}" --data-binary @- \
     -H "Content-Type: $CONTENT_TYPE" -H "$PERMISSION" -H "$CLI_USER" -H "Filename: ${BASENAME}" -H "Flow: ${FLOW}" ${INGRESS_URL})
 

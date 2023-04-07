@@ -77,7 +77,7 @@ read_file() {
 }
 
 execute_graphql() {
-  truncate --size 0 ${TMPFILE}
+  truncate -s 0 ${TMPFILE}
 
   local POST_QUERY="$@"
 

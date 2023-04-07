@@ -42,16 +42,16 @@ QUERY="fragment ActionFields on ActionConfiguration {
               ... ActionFields
               requiresDomains
               requiresEnrichments
-              requiresMetadata
-              key
-              value
-              parent
+              requiresMetadataKeyValues {
+                key
+                value
+              }
             }
           }
         }
         "
 
-RESULT=$(deltafi query $QUERY)
+RESULT=$(deltafi query "$QUERY")
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
 if [[ "$DGS_ERRORS" != "" ]]; then
   cli_log "${red}${BASENAME}: Failed to export enrich flow plan: $PLANNAME${normal}"
