@@ -291,6 +291,7 @@ input DeltaFilesFilter {
   filtered: Boolean
   testMode: Boolean
   replayable: Boolean
+  replayed: Boolean
 }
 
 type RetryResult {

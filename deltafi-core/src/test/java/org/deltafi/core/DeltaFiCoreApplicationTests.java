@@ -2818,6 +2818,18 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().replayable(false).egressed(true).build(), noContent);
 	}
 
+	@Test
+	void testQueryByIsReplayed() {
+		DeltaFile hasReplayDate = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+		hasReplayDate.setReplayed(MONGO_NOW);
+		DeltaFile noReplayDate = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+
+		deltaFileRepo.saveAll(List.of(hasReplayDate, noReplayDate));
+
+		testFilter(DeltaFilesFilter.newBuilder().replayed(true).build(), hasReplayDate);
+		testFilter(DeltaFilesFilter.newBuilder().replayed(false).build(), noReplayDate);
+	}
+
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
