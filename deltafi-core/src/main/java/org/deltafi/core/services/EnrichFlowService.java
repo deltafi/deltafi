@@ -39,6 +39,7 @@ public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow> {
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        refreshCache();
         systemSnapshot.setRunningEnrichFlows(getRunningFlowNames());
     }
 

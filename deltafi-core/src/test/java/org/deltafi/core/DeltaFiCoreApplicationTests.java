@@ -303,6 +303,12 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
 	}
 
+	void refreshFlowCaches() {
+		ingressFlowService.refreshCache();
+		enrichFlowService.refreshCache();
+		egressFlowService.refreshCache();
+	}
+
 	void loadConfig() {
 		loadIngressConfig();
 		loadEnrichConfig();
@@ -321,7 +327,7 @@ class DeltaFiCoreApplicationTests {
 		IngressFlow childFlow = buildRunningFlow("childFlow", lc, List.of(tc2), false);
 
 		ingressFlowRepo.saveAll(List.of(sampleIngressFlow, retryFlow, childFlow));
-		ingressFlowService.refreshCache();
+		refreshFlowCaches();
 	}
 
 	void configureTestIngress() {
@@ -331,7 +337,7 @@ class DeltaFiCoreApplicationTests {
 
 		IngressFlow sampleIngressFlow = buildRunningFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), true);
 		ingressFlowRepo.save(sampleIngressFlow);
-		ingressFlowService.refreshCache();
+		refreshFlowCaches();
 	}
 
 	void configureTestEgress() {
@@ -1603,6 +1609,7 @@ class DeltaFiCoreApplicationTests {
 		pluginVariableRepo.save(variables);
 		ingressFlowRepo.save(ingressFlow);
 		egressFlowRepo.save(egressFlow);
+		refreshFlowCaches();
 
 		List<Flows> flows = FlowPlanDatafetcherTestHelper.getFlows(dgsQueryExecutor);
 		assertThat(flows).hasSize(1);
@@ -1625,7 +1632,7 @@ class DeltaFiCoreApplicationTests {
 		runningFlow.setName("running");
 
 		ingressFlowRepo.saveAll(List.of(stoppedFlow, invalidFlow, runningFlow));
-
+		refreshFlowCaches();
 
 		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(3).contains("stopped", "invalid", "running");
 		assertThat(ingressFlowService.getFlowNamesByState(FlowState.STOPPED)).hasSize(1).contains("stopped");
@@ -1639,6 +1646,7 @@ class DeltaFiCoreApplicationTests {
 
 		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 
 		FlowNames flows = FlowPlanDatafetcherTestHelper.getFlowNames(dgsQueryExecutor);
 		assertThat(flows.getIngress()).hasSize(1).contains(INGRESS_FLOW_NAME);
@@ -1680,6 +1688,7 @@ class DeltaFiCoreApplicationTests {
 
 		ingressFlowRepo.save(ingressFlow);
 		egressFlowRepo.save(egressFlow);
+		refreshFlowCaches();
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getAllFlows(dgsQueryExecutor);
 		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> INGRESS_FLOW_NAME.equals(ingressFlows.get(0).getName()));
@@ -1733,6 +1742,7 @@ class DeltaFiCoreApplicationTests {
 		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
 		enrichFlowRepo.save(buildEnrichFlow(FlowState.STOPPED));
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 
 		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
 		assertThat(actionFamilies.size()).isEqualTo(8);
@@ -2913,6 +2923,7 @@ class DeltaFiCoreApplicationTests {
 		IngressFlowPlan ingressFlowPlanC = new IngressFlowPlan("c", null, null);
 		ingressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build());
 		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC));
+		refreshFlowCaches();
 
 		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(3).contains("a", "b", "c");
 		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).toList()).hasSize(3).contains("a", "b", "c");
@@ -2989,7 +3000,7 @@ class DeltaFiCoreApplicationTests {
 		final int numMockPlugins = 15;
 		Executor mockRegistryExecutor = Executors.newFixedThreadPool(3);
 		List<CompletableFuture<Void>> futures = IntStream.range(0, numMockPlugins)
-				.mapToObj(i -> submitNewVariables(i, mockRegistryExecutor, newVersion, newVariables))
+				.mapToObj(i -> submitNewVariables(mockRegistryExecutor, newVersion, newVariables))
 				.toList();
 
 		CompletableFuture.allOf(futures.toArray(new CompletableFuture[numMockPlugins])).join();
@@ -3033,7 +3044,7 @@ class DeltaFiCoreApplicationTests {
 				.build();
 	}
 
-	private CompletableFuture<Void> submitNewVariables(int i, Executor executor, PluginCoordinates pluginCoordinates, List<Variable> variables) {
+	private CompletableFuture<Void> submitNewVariables(Executor executor, PluginCoordinates pluginCoordinates, List<Variable> variables) {
 		return CompletableFuture.runAsync(() -> pluginVariableService.saveVariables(pluginCoordinates, variables), executor);
 	}
 

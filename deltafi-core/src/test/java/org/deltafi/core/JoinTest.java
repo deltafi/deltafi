@@ -70,7 +70,6 @@ import org.testcontainers.utility.DockerImageName;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
@@ -245,6 +244,7 @@ public class JoinTest {
         ingressFlow.getFlowStatus().setState(FlowState.RUNNING);
         ingressFlow.setJoinAction(joinActionConfiguration);
         ingressFlowRepo.insert(ingressFlow);
+        ingressFlowService.refreshCache();
 
         String did1 = UUID.randomUUID().toString();
         ingressFile("join-1.json", did1, FLOW);
@@ -293,6 +293,7 @@ public class JoinTest {
         ingressFlow.getFlowStatus().setState(FlowState.RUNNING);
         ingressFlow.setJoinAction(joinActionConfiguration);
         ingressFlowRepo.insert(ingressFlow);
+        ingressFlowService.refreshCache();
 
         String did1 = UUID.randomUUID().toString();
         ingressFile("join-1.json", did1, FLOW);
@@ -330,6 +331,7 @@ public class JoinTest {
         ingressFlow.getFlowStatus().setState(FlowState.RUNNING);
         ingressFlow.setJoinAction(joinActionConfiguration);
         ingressFlowRepo.insert(ingressFlow);
+        ingressFlowService.refreshCache();
 
         String did1 = UUID.randomUUID().toString();
         ingressFile("join-1.json", did1, FLOW);
@@ -362,6 +364,7 @@ public class JoinTest {
         ingressFlow.getFlowStatus().setState(FlowState.RUNNING);
         ingressFlow.setJoinAction(joinActionConfiguration);
         ingressFlowRepo.insert(ingressFlow);
+        ingressFlowService.refreshCache();
 
         String did1 = UUID.randomUUID().toString();
         ingressFile("join-1.json", did1, FLOW);
@@ -396,6 +399,8 @@ public class JoinTest {
         reinjectFlow.setName(REINJECT_FLOW);
         reinjectFlow.getFlowStatus().setState(FlowState.RUNNING);
         ingressFlowRepo.insert(reinjectFlow);
+
+        ingressFlowService.refreshCache();
 
         String did1 = UUID.randomUUID().toString();
         ingressFile("join-1.json", did1, FLOW);
