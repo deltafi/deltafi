@@ -38,18 +38,11 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
     }
 
     public List<EgressFlow> getMatchingFlows(String ingressFlow) {
-        List<EgressFlow> flows = findMatchingFlows(ingressFlow);
-
-        if (flows.isEmpty()) {
-            refreshCache();
-            flows = findMatchingFlows(ingressFlow);
-        }
-
-        return flows;
+        return findMatchingFlows(ingressFlow);
     }
 
     List<EgressFlow> findMatchingFlows(String ingressFlow) {
-        return flowCache.values().stream()
+        return getRunningFlows().stream()
                 .filter(egressFlow -> egressFlow.flowMatches(ingressFlow))
                 .toList();
     }
@@ -66,6 +59,7 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        refreshCache();
         systemSnapshot.setRunningEgressFlows(getRunningFlowNames());
         systemSnapshot.setTestEgressFlows(getTestFlowNames());
     }

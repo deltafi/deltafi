@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.converters.IngressFlowPlanConverter;
 import org.deltafi.core.repo.IngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.IngressFlow;
 import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.core.validation.IngressFlowValidator;
@@ -42,6 +43,7 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        refreshCache();
         systemSnapshot.setRunningIngressFlows(getRunningFlowNames());
         systemSnapshot.setTestIngressFlows(getTestFlowNames());
     }
@@ -92,8 +94,8 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
      * and the corresponding value is the maximum number of errors allowed for that flow.
      */
     public Map<String, Integer> maxErrorsPerFlow() {
-        return flowCache.entrySet().stream()
-                .filter(e -> e.getValue().getMaxErrors() > 0)
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getMaxErrors()));
+        return getRunningFlows().stream()
+                .filter(e -> e.isRunning() && e.getMaxErrors() > 0)
+                .collect(Collectors.toMap(Flow::getName, IngressFlow::getMaxErrors));
     }
 }

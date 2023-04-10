@@ -588,6 +588,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
+        if (nonNull(filter.getReplayed())) {
+            if (filter.getReplayed()) {
+                andCriteria.add(Criteria.where(REPLAYED).ne(null));
+            } else {
+                andCriteria.add(Criteria.where(REPLAYED).isNull());
+            }
+        }
+
         if (!andCriteria.isEmpty()) {
             if (andCriteria.size() == 1) {
                 criteria = andCriteria.get(0);

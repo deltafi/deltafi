@@ -53,7 +53,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     private final FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter;
     private final FlowValidator<FlowT> validator;
 
-    protected Map<String, FlowT> flowCache;
+    protected Map<String, FlowT> flowCache = new HashMap<>();
 
     protected FlowService(String flowType, FlowRepo<FlowT> flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator) {
         this.flowType = flowType;
@@ -65,7 +65,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     @PostConstruct
     public void refreshCache() {
-        flowCache = flowRepo.findRunning().stream()
+        flowCache = flowRepo.findAll().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
     }
 
@@ -190,15 +190,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @return the flow with the given name
      */
     public FlowT getRunningFlowByName(String flowName) {
-        if (!flowCache.containsKey(flowName)) {
-            refreshCache();
-        }
-
-        if (!flowCache.containsKey(flowName)) {
+        FlowT flow = flowCache.get(flowName);
+        if (flow == null || !flow.isRunning()) {
             throw new DgsEntityNotFoundException("Flow of type " + flowType + " named " + flowName + " is not running");
         }
 
-        return flowCache.get(flowName);
+        return flow;
     }
 
     /**
@@ -219,7 +216,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @return all flows
      */
     public List<FlowT> getAll() {
-        return flowRepo.findAll();
+        if (flowCache == null) {
+            refreshCache();
+        }
+
+        return new ArrayList<>(flowCache.values());
     }
 
     /**
@@ -227,11 +228,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @return all running flows
      */
     public List<FlowT> getRunningFlows() {
-        if (flowCache.isEmpty()) {
-            refreshCache();
-        }
-
-        return new ArrayList<>(flowCache.values());
+        return getAll().stream().filter(Flow::isRunning).toList();
     }
 
     public List<String> getFlowNamesByState(FlowState state) {
@@ -257,6 +254,8 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        refreshCache();
+
         Result result = new Result();
         List<String> runningFlowsInSnapshot = getRunningFromSnapshot(systemSnapshot);
         List<String> testModeFlowsInSnapshot = getTestModeFromSnapshot(systemSnapshot);
@@ -274,6 +273,8 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
             flowRepo.findById(flow).ifPresentOrElse(existingFlow -> resetFlowState(existingFlow, result),
                     () -> result.getErrors().add("Flow: " + flow + " is no longer installed and cannot be started"));
         }
+
+        refreshCache();
 
         result.setSuccess(result.getErrors().isEmpty());
         return result;
@@ -298,25 +299,25 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     /**
      * Remove the flow with the given name if it exists
+     *
      * @param flowName name of the flow to remove
-     * @return true if the flow was removed
      */
-    public boolean removeByName(String flowName) {
+    public void removeByName(String flowName) {
         if (flowRepo.existsById(flowName)) {
             flowRepo.deleteById(flowName);
-            return true;
+            refreshCache();
         }
 
-        return false;
     }
 
     /**
      * Remove all the IngressFlowPlans with the given sourcePlugin
+     *
      * @param pluginCoordinates sourcePlugin whose IngressFlowPlans should be removed
-     * @return number of plan that were removed
      */
-    public int removeBySourcePlugin(PluginCoordinates pluginCoordinates) {
-        return flowRepo.deleteBySourcePlugin(pluginCoordinates);
+    public void removeBySourcePlugin(PluginCoordinates pluginCoordinates) {
+        flowRepo.deleteBySourcePlugin(pluginCoordinates);
+        refreshCache();
     }
 
     /**
@@ -326,6 +327,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     public void pruneFlows(PluginCoordinates pluginCoordinates) {
         flowRepo.deleteOtherVersions(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion());
+        refreshCache();
     }
 
     /**
@@ -341,14 +343,13 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     public ActionConfiguration findActionConfig(String flowName, String actionName) {
-        ActionConfiguration maybeFound = doFindActionConfig(flowName, actionName);
+        FlowT flow = flowCache.get(flowName);
 
-        if (Objects.isNull(maybeFound)) {
-            refreshCache();
-            maybeFound = doFindActionConfig(flowName, actionName);
+        if (flow == null || !flow.isRunning()) {
+            return null;
         }
 
-        return maybeFound;
+        return flow.findActionConfigByName(actionName);
     }
 
     public ActionConfiguration findActionConfig(String actionName) {
@@ -371,16 +372,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     public List<DeltaFiConfiguration> getConfigs(ConfigQueryInput actionQueryInput) {
         return Objects.nonNull(actionQueryInput) ? findConfigsWithFilter(actionQueryInput) : findAllConfigs();
-    }
-
-    ActionConfiguration doFindActionConfig(String flowName, String actionName) {
-        FlowT flow = flowCache.get(flowName);
-
-        if (Objects.isNull(flow)) {
-            return null;
-        }
-
-        return flow.findActionConfigByName(actionName);
     }
 
     FlowT buildFlow(FlowPlanT flowPlan, List<Variable> variables) {
