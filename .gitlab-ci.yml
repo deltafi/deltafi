@@ -125,7 +125,7 @@ publish-gitlab:
   only:
     refs:
       - tags
-      - main
+      - dev
   script:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -PprojectMavenRepo="https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/maven" -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
@@ -136,6 +136,7 @@ publish-gitlab:
   only:
     refs:
       - tags
+      - dev
       - main
   image: deltafi/deltafi-build:jdk17
   before_script:
@@ -177,42 +178,23 @@ hub_docker_quota_check:
     - |
       TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq --raw-output .token) && curl --head --header "Authorization: Bearer $TOKEN" "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>&1
 
-.trigger:
+# Trigger project for triggering downstream plugins
+trigger:plugins:
   stage: trigger
+  variables:
+    TRIGGER_BRANCH: $CI_COMMIT_REF_NAME
   only:
     refs:
+      - dev
       - main
       - release/*
       - tags
   trigger:
-    branch: $CI_COMMIT_REF_NAME
+    project: $CI_PROJECT_NAMESPACE/ci-plugin-triggers
+    branch: main
     forward:
-      yaml_variables: false
+      yaml_variables: true
       pipeline_variables: false
-
-trigger_deltafi_json_validation:
-  extends:
-    - .trigger
-  trigger:
-    project: systolic/deltafi/deltafi-json-validation
-
-trigger_deltafi_stix:
-  extends:
-    - .trigger
-  trigger:
-    project: systolic/deltafi/deltafi-stix
-
-trigger_passthrough:
-  extends:
-    - .trigger
-  trigger:
-    project: systolic/deltafi/deltafi-passthrough
-
-trigger_EDI:
-  extends:
-    - .trigger
-  trigger:
-    project: systolic/deltafi/deltafi-edi
 
 .container_scanning:
   tags:
