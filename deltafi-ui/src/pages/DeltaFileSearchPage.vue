@@ -92,11 +92,16 @@
         </CollapsiblePanel>
       </div>
     </div>
-    <Panel header="Results" class="table-panel results">
+    <Panel header="Results" class="table-panel results"  @contextmenu="onPanelRightClick">
+      <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
+        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+          <span class="fas fa-bars" />
+        </Button>
+        <Menu ref="menu" :model="menuItems" :popup="true" />
         <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
-      <DataTable responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" loading-icon="pi pi-spinner" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @sort="onSort($event)">
+      <DataTable v-model:selection="selectedDids" selection-mode="multiple" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" loading-icon="pi pi-spinner" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>
         <template #loading>Loading results. Please wait.</template>
         <Column field="did" header="DID" class="did-column">
@@ -128,6 +133,7 @@
       </DataTable>
     </Panel>
   </div>
+  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData" />
 </template>
 
 <script setup>
@@ -160,9 +166,12 @@ import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import Chip from "primevue/chip";
 import OverlayPanel from "primevue/overlaypanel";
+import ContextMenu from "primevue/contextmenu";
+import MetadataDialog from "@/components/MetadataDialog.vue";
+
 
 dayjs.extend(utc);
-
+const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
@@ -172,6 +181,9 @@ const route = useRoute();
 const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
 const optionMenu = ref();
+const selectedDids = ref([]);
+const menu = ref();
+const metadataDialog = ref();
 
 const maxTotalRecords = 50000;
 const pageReportTemplate = computed(() => {
@@ -648,6 +660,57 @@ const getMetadataArray = (stringData) => {
     };
   });
 };
+
+const toggleMenu = (event) => {
+  menu.value.toggle(event);
+};
+
+const onPanelRightClick = (event) => {
+  menu.value.show(event);
+};
+
+const onRowContextMenu = (event) => {
+  if (selectedDids.value.length <= 0) {
+    selectedDids.value = [event.data];
+  }
+};
+
+const menuItems = ref([
+  {
+    label: "Clear Selected",
+    icon: "fas fa-times fa-fw",
+    command: () => {
+      selectedDids.value = [];
+    },
+  },
+  {
+    label: "Select All Visible",
+    icon: "fas fa-check-double fa-fw",
+    command: () => {
+      selectedDids.value = results.value;
+    },
+  },
+  {
+    separator: true,
+    visible: computed(() => hasPermission("DeltaFileReplay")),
+  },
+  {
+    label: "Replay Selected",
+    icon: "fas fa-sync fa-fw",
+    command: () => {
+      metadataDialog.value.showConfirmDialog("Replay");
+    },
+    visible: computed(() => hasPermission("DeltaFileReplay")),
+    disabled: computed(() => selectedDids.value.length == 0),
+  },
+]);
+
+const filterSelectedDids = computed(() => {
+  let dids = selectedDids.value.map((selectedDID) => {
+    return selectedDID.did;
+  });
+  return dids;
+});
 </script>
 
 <style lang="scss">

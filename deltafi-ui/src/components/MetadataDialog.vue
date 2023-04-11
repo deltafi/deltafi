@@ -66,6 +66,12 @@
       <ProgressBar :value="batchCompleteValue" />
     </div>
   </Dialog>
+  <Dialog v-model:visible="displayBatchingDialogReplay" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Replaying">
+    <div>
+      <p>Replay in progress. Please do not refresh the page!</p>
+      <ProgressBar :value="batchCompleteValue" />
+    </div>
+  </Dialog>
   <Dialog v-model:visible="displayMetadataBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Loading Metadata">
     <div>
       <p>Metadata loading in progress. Please do not refresh the page!</p>
@@ -94,6 +100,7 @@ const { pluralize } = useUtilFunctions();
 const invalidKey = ref(false);
 const maxSuccessDisplay = 10;
 const displayBatchingDialog = ref(false);
+const displayBatchingDialogReplay = ref(false);
 const displayMetadataBatchingDialog = ref(false);
 const notify = useNotifications();
 const batchCompleteValue = ref(0);
@@ -240,12 +247,12 @@ const resumeReplayClean = () => {
 
 const requestResumeReplay = async () => {
   let response;
+  let batchedDids = getBatchDids(props.did);
+  let successBatch = false;
+  let completedBatches = 0; 
   try {
     if (resumeReplay.value === "Resume") {
-      let batchedDids = getBatchDids(props.did);
-      let successBatch;
       displayBatchingDialog.value = true;
-      let completedBatches = 0;
       batchCompleteValue.value = 0;
       for (const dids of batchedDids) {
         response = await resume(dids, removedMetadata.value, getModifiedMetadata());
@@ -275,33 +282,39 @@ const requestResumeReplay = async () => {
         emit("update");
       }
     } else {
-      response = await replay(props.did, removedMetadata.value, getModifiedMetadata());
-      if (response.value.data !== undefined && response.value.data !== null) {
-        let successReplay = new Array();
-        for (const replayStatus of response.value.data.replay) {
-          if (replayStatus.success) {
-            successReplay.push(replayStatus);
-          } else {
-            notify.error(`Replay request failed for ${replayStatus.did}`, replayStatus.error);
+      displayBatchingDialogReplay.value = true;
+      batchCompleteValue.value = 0;
+      for (const dids of batchedDids) {
+        response = await replay(dids, removedMetadata.value, getModifiedMetadata());
+        if (response.value.data !== undefined && response.value.data !== null) {
+          let successReplay = new Array();
+          for (const replayStatus of response.value.data.replay) {
+            if (replayStatus.success) {
+              successReplay.push(replayStatus);
+            } else {
+              notify.error(`Replay request failed for ${replayStatus.did}`, replayStatus.error);
+            }
+          }
+          if (successReplay.length > 0) {
+            successBatch = true;
+            console.log('goofy')
           }
         }
-        if (successReplay.length > 0) {
-          let successfulDids = successReplay.map((replayStatus) => {
-            return replayStatus.did;
-          });
-          if (successfulDids.length > maxSuccessDisplay) {
-            successfulDids = successfulDids.slice(0, maxSuccessDisplay);
-            successfulDids.push("...");
-          }
-          let pluralized = pluralize(props.did.length, "DeltaFile");
-          const links = successfulDids.map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
-          notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
-          emit("update");
-        }
+        completedBatches += dids.length;
+        batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
+      }
+      displayBatchingDialogReplay.value = false;
+      batchCompleteValue.value = 0;
+      if (successBatch) {
+        let pluralized = pluralize(props.did.length, "DeltaFile");
+        const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+        notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
+        emit("update");
       }
     }
   } catch (error) {
     displayBatchingDialog.value = false;
+    displayBatchingDialogReplay.value = false;
   }
 };
 
