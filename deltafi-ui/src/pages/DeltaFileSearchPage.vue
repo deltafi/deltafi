@@ -59,6 +59,8 @@
               <div class="flex-column flex-column-small">
                 <label for="testModeState">Test Mode:</label>
                 <Dropdown id="testModeState" v-model="testModeOptionSelected" placeholder="Select if in Test Mode" :options="testModeOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
+                <label for="isReplayable" class="mt-2">Replayable:</label>
+                <Dropdown id="isReplayable" v-model="isReplayableSelected" placeholder="Select if Replayable" :options="isReplayableOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
                 <label for="egressedState" class="mt-2">Egressed:</label>
                 <Dropdown id="egressState" v-model="egressedOptionSelected" placeholder="Select if Egressed" :options="egressedOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
                 <label for="filteredState" class="mt-2">Filtered:</label>
@@ -235,7 +237,12 @@ const egressedOptions = ref([
   { name: "True", value: true },
   { name: "False", value: false },
 ]);
+const isReplayableOptions = ref([
+  { name: "True", value: true },
+  { name: "False", value: false },
+]);
 const egressedOptionSelected = ref(null);
+const isReplayableSelected = ref(null);
 const testModeOptions = ref([
   { name: "True", value: true },
   { name: "False", value: false },
@@ -284,6 +291,7 @@ const testMode = computed(() => (testModeOptionSelected.value ? testModeOptionSe
 const stageName = computed(() => (stageOptionSelected.value ? stageOptionSelected.value.name : null));
 const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value : null));
 const egressFlowName = computed(() => (egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null));
+const replayable = computed(() => (isReplayableSelected.value ? isReplayableSelected.value.value : null));
 
 const metadata = computed(() => {
   return metadataArray.value.map((i) => {
@@ -344,6 +352,7 @@ const items = ref([
           egressedOptionSelected.value = null;
           filteredOptionSelected.value = null;
           testModeOptionSelected.value = null;
+          isReplayableSelected.value = null;
           sizeMax.value = null;
           sizeMin.value = null;
           domainOptionSelected.value = null;
@@ -377,7 +386,7 @@ watch(
   { deep: true }
 );
 
-watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin], () => {
+watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin, isReplayableSelected], () => {
   if (watchEnabled.value) fetchDeltaFilesData();
 });
 
@@ -489,7 +498,7 @@ const fetchDeltaFilesDataNoDebounce = async () => {
   setPersistedParams();
 
   loading.value = true;
-  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value);
+  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value, replayable.value);
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
@@ -551,6 +560,7 @@ const getPersistedParams = async () => {
     egressedOptionSelected.value = params.egressed ? egressedOptions.value.find((i) => i.name == params.egressed) : null;
     filteredOptionSelected.value = params.filtered ? filteredOptions.value.find((i) => i.name == params.filtered) : null;
     testModeOptionSelected.value = params.testMode ? testModeOptions.value.find((i) => i.name == params.testMode) : null;
+    isReplayableSelected.value = params.replayable ? isReplayableOptions.value.find((i) => i.name == params.replayable) : null;
     domainOptionSelected.value = params.domain ? { name: params.domain } : null;
     sizeMin.value = params.sizeMin != null ? Number(params.sizeMin) : null;
     sizeMax.value = params.sizeMax != null ? Number(params.sizeMax) : null;
@@ -580,6 +590,7 @@ const getPersistedParams = async () => {
     egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
     filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
     testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
+    isReplayableSelected.value = panelState.value.replayableOptionState ? isReplayableOptions.value.find((i) => i.name == panelState.value.replayableOptionState) : null;
     domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
     sizeMin.value = panelState.value.sizeMinState;
     sizeMax.value = panelState.value.sizeMaxState;
@@ -606,6 +617,7 @@ const setPersistedParams = () => {
     egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
     filteredOptionState: filteredOptionSelected.value ? filteredOptionSelected.value.name : null,
     testModeOptionState: testModeOptionSelected.value ? testModeOptionSelected.value.name : null,
+    replayableOptionState: isReplayableSelected.value ? isReplayableSelected.value.name : null,
     domainOptionState: domainOptionSelected.value ? domainOptionSelected.value.name : null,
     sizeMinState: sizeMin.value,
     sizeMaxState: sizeMax.value,
@@ -634,6 +646,7 @@ const setPersistedParams = () => {
   params.egressed = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
   params.filtered = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
   params.testMode = testModeOptionSelected.value ? testModeOptionSelected.value.name : null;
+  params.replayable = isReplayableSelected.value ? isReplayableSelected.value.name : null;
   params.domain = domainOptionSelected.value ? domainOptionSelected.value.name : null;
   params.sizeMin = sizeMin.value != null ? sizeMin.value : null;
   params.sizeMax = sizeMax.value != null ? sizeMax.value : null;
