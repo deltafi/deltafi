@@ -13,7 +13,8 @@ function _sed_inplace() {
 }
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-UNRELEASED_DIR=$GIT_ROOT/CHANGELOG/unreleased
+CHANGELOG_DIR=$GIT_ROOT/CHANGELOG
+UNRELEASED_DIR=$CHANGELOG_DIR/unreleased
 CHANGELOG_MD=$GIT_ROOT/CHANGELOG.md
 EDITOR=${EDITOR:-vim}
 
@@ -64,11 +65,13 @@ _coalesce_markdown() {
   local path="$2"
   declare -A content=()
 
+  echo "## [${version}] - $(date "+%Y-%m-%d")"
+  echo
+
   if ! compgen -G "${path}/*.md" > /dev/null; then
+    echo "- No changes for this release"
     echo
-    echo "Error: There are no changelogs in ${path}"
-    echo
-    exit 1
+    return
   fi
 
   for file in "${path}"/*.md; do
@@ -84,9 +87,6 @@ _coalesce_markdown() {
       fi
     done < "$file"
   done
-
-  echo "## [${version}] - $(date "+%Y-%m-%d")"
-  echo
 
   for value in Highlights Added Changed Fixed Removed Deprecated Security Tech-Debt/Refactor "Upgrade and Migration"; do
     local header="### $value"
@@ -125,6 +125,9 @@ _revise_changelog() {
   done < "$CHANGELOG_MD"
   cp "$CHANGELOG_MD".tmp "$CHANGELOG_MD"
   rm "$CHANGELOG_MD".tmp
+
+  _coalesce_markdown "$version" "$UNRELEASED_DIR" > "${CHANGELOG_DIR}/${version}.md"
+  rm -rf "$UNRELEASED_DIR/"*.md
 }
 
 _usage() {
