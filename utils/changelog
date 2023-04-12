@@ -132,7 +132,7 @@ _usage() {
   echo
   echo "<no options>          Create a changelog if missing, return full path to changelog"
   echo "-e                    Create a changelog if missing, open in editor (Set EDITOR env var, vim default)"
-  echo "-d                    Dry run of changelog update"
+  echo "-d [<version>]        Dry run of changelog update"
   echo "-r <version>          Update main CHANGELOG with coalesced changelogs under specified version header"
   echo
 
@@ -161,7 +161,7 @@ else
       rm -rf "${UNRELEASED_DIR}/*.md"
       ;;
     -d)
-      _revise_changelog "dry-run" -d
+      _revise_changelog "${2:-dry-run}" -d
       ;;
     *)
       _usage
