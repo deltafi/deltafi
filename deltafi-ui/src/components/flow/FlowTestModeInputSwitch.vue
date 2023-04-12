@@ -29,7 +29,7 @@
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="checkedTooltip" :model-value="checked" class="p-button-sm" @click="confirmationPopup($event, rowData.name, checked, rowData.flowType)" />
+    <InputSwitch v-tooltip.top="tooltip" :model-value="rowData.flowStatus.testMode" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.testMode, rowData.flowType)" />
   </span>
   <span v-else class="pr-2 float-left">
     <Button :label="testModeToolTip" :class="testModeButtonClass" style="width: 5.5rem" disabled />
@@ -39,7 +39,7 @@
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineProps, toRefs, ref, watch, defineEmits } from "vue";
+import { computed, defineProps, toRefs, ref } from "vue";
 
 import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";
@@ -50,7 +50,6 @@ import _ from "lodash";
 const confirm = useConfirm();
 const { enableTestIngressFlowByName, disableTestIngressFlowByName, enableTestEgressFlowByName, disableTestEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
-const emit = defineEmits(["updateFlows"]);
 
 const props = defineProps({
   rowDataProp: {
@@ -60,24 +59,15 @@ const props = defineProps({
 });
 
 const { rowDataProp: rowData } = toRefs(props);
-const checked = ref(rowData.value.flowStatus.testMode);
-const checkedTooltip = ref();
-checkedTooltip.value = props.rowDataProp.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";
-
-watch(
-  props,
-  () => {
-    checked.value = rowData.value.flowStatus.testMode;
-  },
-  { deep: true }
-);
+const tooltip = ref();
+tooltip.value = rowData.value.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";
 
 const testModeToolTip = computed(() => {
-  return _.isEqual(checked.value, true) ? "Enabled" : "Disabled";
+  return _.isEqual(rowData.value.flowStatus.testMode, true) ? "Enabled" : "Disabled";
 });
 
 const testModeButtonClass = computed(() => {
-  return _.isEqual(checked.value, true) ? "p-button-primary" : "p-button-secondary";
+  return _.isEqual(rowData.value.flowStatus.testMode, true) ? "p-button-primary" : "p-button-secondary";
 });
 
 const confirmationPopup = (event, name, testMode, flowType) => {
@@ -92,9 +82,8 @@ const confirmationPopup = (event, name, testMode, flowType) => {
       accept: async () => {
         notify.info("Disabling Test Mode", `Disabling Test Mode for ${flowType} flow ${name}.`, 3000);
         await toggleFlowState(name, testMode, flowType);
-        emit("updateFlows");
       },
-      reject: () => {},
+      reject: () => { },
     });
   } else {
     confirm.require({
@@ -107,9 +96,8 @@ const confirmationPopup = (event, name, testMode, flowType) => {
       accept: async () => {
         notify.info("Enable Test Mode", `Enable Test Mode for ${flowType} flow ${name}.`, 3000);
         await toggleFlowState(name, testMode, flowType);
-        emit("updateFlows");
       },
-      reject: () => {},
+      reject: () => { },
     });
   }
 };
@@ -128,7 +116,7 @@ const toggleFlowState = async (flowName, newflowTestMode, flowType) => {
       await disableTestEgressFlowByName(flowName);
     }
   }
-  checked.value = checked.value === true ? false : true;
-  checkedTooltip.value = checked.value ? "Test Mode Enabled" : "Test Mode Disabled";
+  rowData.value.flowStatus.testMode = !rowData.value.flowStatus.testMode;
+  tooltip.value = rowData.value.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";
 };
 </script>

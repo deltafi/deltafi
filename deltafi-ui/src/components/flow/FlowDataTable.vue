@@ -57,7 +57,7 @@
       </Column>
       <Column v-if="FlowTypeTitle !== 'Enrich'" header="Test Mode" class="test-mode-column">
         <template #body="{ data }">
-          <FlowTestModeInputSwitch :row-data-prop="data" @update-flows="emit('updateFlows')" />
+          <FlowTestModeInputSwitch :row-data-prop="data" />
         </template>
       </Column>
       <Column header="Active" class="flow-state-column">
@@ -66,7 +66,7 @@
             <FlowStateValidationButton :row-data-prop="data" @update-flows="emit('updateFlows')" />
           </template>
           <template v-else>
-            <FlowStateInputSwitch :row-data-prop="data" @update-flows="emit('updateFlows')" />
+            <FlowStateInputSwitch :row-data-prop="data" />
           </template>
         </template>
       </Column>

@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span v-if="(_.isEqual(checked, 'RUNNING') && $hasPermission('FlowStop')) || (_.isEqual(checked, 'STOPPED') && $hasPermission('FlowStart'))">
+  <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowStop')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowStart'))">
     <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
@@ -29,17 +29,17 @@
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="checked" :model-value="checked" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, checked, rowData.flowType)" />
+    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state, rowData.flowType)" />
   </span>
   <span v-else>
-    <Button :label="checked" :class="buttonClass" style="width: 5.5rem" disabled />
+    <Button :label="rowData.flowStatus.state" :class="buttonClass" style="width: 5.5rem" disabled />
   </span>
 </template>
 
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineProps, toRefs, ref, watch, defineEmits } from "vue";
+import { computed, defineProps, toRefs } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
 import Button from "primevue/button";
@@ -50,7 +50,6 @@ import _ from "lodash";
 const confirm = useConfirm();
 const { startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
-const emit = defineEmits(["updateFlows"]);
 
 const props = defineProps({
   rowDataProp: {
@@ -61,18 +60,8 @@ const props = defineProps({
 
 const { rowDataProp: rowData } = toRefs(props);
 
-const checked = ref(rowData.value.flowStatus.state);
-
-watch(
-  props,
-  () => {
-    checked.value = rowData.value.flowStatus.state;
-  },
-  { deep: true }
-);
-
 const buttonClass = computed(() => {
-  return _.isEqual(checked.value, "RUNNING") ? "p-button-primary" : "p-button-secondary";
+  return _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "p-button-primary" : "p-button-secondary";
 });
 
 const confirmationPopup = async (event, name, state, flowType) => {
@@ -87,13 +76,11 @@ const confirmationPopup = async (event, name, state, flowType) => {
       accept: async () => {
         notify.info("Stopping Flow", `Stopping ${flowType} flow ${name}.`, 3000);
         await toggleFlowState(name, state, flowType);
-        emit("updateFlows");
       },
-      reject: () => {},
+      reject: () => { },
     });
   } else {
     await toggleFlowState(name, state, flowType);
-    emit("updateFlows");
   }
 };
 
@@ -117,6 +104,6 @@ const toggleFlowState = async (flowName, newflowState, flowType) => {
       await stopEgressFlowByName(flowName);
     }
   }
-  checked.value = _.isEqual(checked.value, "RUNNING") ? "STOPPED" : "RUNNING";
+  rowData.value.flowStatus.state = _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "STOPPED" : "RUNNING";
 };
 </script>
