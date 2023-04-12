@@ -26,6 +26,7 @@ gradle:build:
     - .gradle
   stage: build
   script:
+    - git describe --tags
     - ${GRADLE} --rerun-tasks license assemble test
   artifacts:
     when: always
