@@ -23,12 +23,14 @@ import lombok.SneakyThrows;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
+import org.deltafi.core.types.IngressResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,10 +39,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -53,6 +56,7 @@ class IngressServiceTest {
     public static final String FLOW = "flow";
     public static final String FLOW_PLAN = "namespace";
     public static final String FULL_FLOW_NAME = FLOW_PLAN + "." + FLOW;
+    private static final String EMPTY_METADATA = "{}";
 
     @InjectMocks
     IngressService ingressService;
@@ -81,18 +85,35 @@ class IngressServiceTest {
     ObjectMapper objectMapper = new ObjectMapper();
 
     @Test @SneakyThrows
-    void ingressData() {
+    void ingressBinaryData() {
         ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("fileName", "did"));
         Mockito.when(contentStorageService.save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON))).thenReturn(contentReference);
 
         DeltaFile deltaFile = DeltaFile.newBuilder().sourceInfo(SourceInfo.builder().flow("namespace.flow").build()).build();
         Mockito.when(deltaFilesService.ingress(any())).thenReturn(deltaFile);
 
-        IngressService.IngressResult created = ingressService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON);
+        IngressResult created = ingressService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, EMPTY_METADATA, MediaType.APPLICATION_JSON);
 
         Mockito.verify(contentStorageService).save(any(), (InputStream) isNull(), eq(MediaType.APPLICATION_JSON));
         Mockito.verify(deltaFilesService).ingress(any());
-        Assertions.assertNotNull(created.getContentReference().getSegments().get(0).getDid());
+        Assertions.assertNotNull(created.contentReference().getSegments().get(0).getDid());
+    }
+
+    @Test
+    void ingressFlowFile() throws ObjectStorageException, IngressMetadataException, IngressException, IOException {
+        InputStream dataStream = new ClassPathResource("rest-test/flowfile").getInputStream();
+        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("fileName", "did"));
+        Mockito.when(contentStorageService.save(any(), (InputStream) any(), eq(MediaType.APPLICATION_OCTET_STREAM))).thenReturn(contentReference);
+
+        // get the filename from the flowfile metadata
+        IngressResult created = ingressService.ingressData(dataStream, null, FULL_FLOW_NAME, EMPTY_METADATA, IngressService.FLOWFILE_V1_MEDIA_TYPE);
+
+        Mockito.verify(contentStorageService).save(any(), (InputStream) any(), eq(MediaType.APPLICATION_OCTET_STREAM));
+
+        org.assertj.core.api.Assertions.assertThat(created.did()).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(created.flow()).isEqualTo(FULL_FLOW_NAME);
+        org.assertj.core.api.Assertions.assertThat(created.filename()).isEqualTo("1c86ee54-066c-4020-9a9f-83e1b8971098");
+        org.assertj.core.api.Assertions.assertThat(created.contentReference()).isEqualTo(contentReference);
     }
 
     @Test @SneakyThrows
@@ -112,7 +133,7 @@ class IngressServiceTest {
 
         assertThrows(
                 IngressException.class,
-                () -> ingressService.ingressData(null, OBJECT_NAME, "blarg", Collections.emptyMap(), MediaType.APPLICATION_JSON)
+                () -> ingressService.ingressData(null, OBJECT_NAME, "blarg", EMPTY_METADATA, MediaType.APPLICATION_JSON)
         );
 
         Mockito.verifyNoInteractions(contentStorageService);
@@ -121,8 +142,8 @@ class IngressServiceTest {
     @Test @SneakyThrows
     void ingressDataThrowsOnMissingFilename() {
         assertThrows(
-                IngressException.class,
-                () -> ingressService.ingressData(null, null, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON)
+                IngressMetadataException.class,
+                () -> ingressService.ingressData(null, null, FULL_FLOW_NAME, EMPTY_METADATA, MediaType.APPLICATION_JSON)
         );
 
         Mockito.verifyNoInteractions(contentStorageService);
@@ -135,7 +156,7 @@ class IngressServiceTest {
 
         assertThrows(
                 IngressException.class,
-                () -> ingressService.ingressData(null, OBJECT_NAME, null, Collections.emptyMap(), MediaType.APPLICATION_JSON)
+                () -> ingressService.ingressData(null, OBJECT_NAME, null, EMPTY_METADATA, MediaType.APPLICATION_JSON)
         );
 
         Mockito.verifyNoInteractions(contentStorageService);
@@ -148,9 +169,9 @@ class IngressServiceTest {
 
         Mockito.when(deltaFilesService.ingress(any())).thenThrow(new RuntimeException("failed to send to dgs"));
 
-        Assertions.assertThrows(RuntimeException.class, () -> ingressService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, Collections.emptyMap(), MediaType.APPLICATION_JSON));
+        Assertions.assertThrows(RuntimeException.class, () -> ingressService.ingressData(null, OBJECT_NAME, FULL_FLOW_NAME, EMPTY_METADATA, MediaType.APPLICATION_JSON));
 
-        Mockito.verify(contentStorageService).delete(any());
+        Mockito.verify(deltaFilesService).deleteContentAndMetadata(Mockito.any(), Mockito.eq(contentReference));
     }
 
     @Test @SneakyThrows

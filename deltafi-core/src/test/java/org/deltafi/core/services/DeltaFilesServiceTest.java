@@ -401,6 +401,25 @@ class DeltaFilesServiceTest {
         Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(2).containsEntry("key", "changed").containsEntry("newKey", "value");
     }
 
+    @Test
+    void testDeleteContentAndMetadata() {
+        ContentReference cr = new ContentReference();
+        deltaFilesService.deleteContentAndMetadata("a", cr);
+
+        Mockito.verify(deltaFileRepo).deleteById("a");
+        Mockito.verify(contentStorageService).delete(cr);
+    }
+
+    @Test
+    void testDeleteContentAndMetadata_mongoFail() {
+        ContentReference cr = new ContentReference();
+        Mockito.doThrow(new RuntimeException("mongo fail")).when(deltaFileRepo).deleteById("a");
+        deltaFilesService.deleteContentAndMetadata("a", cr);
+
+        // make sure content cleanup happens after a mongo failure
+        Mockito.verify(contentStorageService).delete(cr);
+    }
+
     private ContentReference createContentReference(String did) {
         return new ContentReference(APPLICATION_XML, new Segment(UUID.randomUUID().toString(), 0L, 32L, did));
     }

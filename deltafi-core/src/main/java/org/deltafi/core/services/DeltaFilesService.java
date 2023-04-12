@@ -27,9 +27,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
+import org.deltafi.core.exceptions.EnqueueActionException;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.audit.CoreAuditLogger;
@@ -1088,6 +1090,20 @@ public class DeltaFilesService {
         deltaFile.setStage(DeltaFileStage.ERROR);
     }
 
+    public void deleteContentAndMetadata(String did, ContentReference contentReference) {
+        try {
+            deltaFileRepo.deleteById(did);
+        } catch (Exception e) {
+            log.error("Failed to remove the metadata for did {}", did, e);
+        }
+
+        try {
+            contentStorageService.delete(contentReference);
+        } catch (Exception e) {
+            log.error("Failed to remove the content for did {}", did, e);
+        }
+    }
+
     public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
         int found;
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
@@ -1288,8 +1304,13 @@ public class DeltaFilesService {
         });
     }
 
-    private void enqueueActions(List<ActionInput> enqueueActions) {
-        actionEventQueue.putActions(enqueueActions);
+    private void enqueueActions(List<ActionInput> enqueueActions) throws EnqueueActionException {
+        try {
+            actionEventQueue.putActions(enqueueActions);
+        } catch (Exception e) {
+            log.error("Failed to queue action(s)", e);
+            throw new EnqueueActionException("Failed to queue action(s)", e);
+        }
     }
 
     private void deleteContent(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {

@@ -50,9 +50,13 @@ class DiskSpaceServiceTest {
     @Test
     @SneakyThrows
     void isContentStorageDepleted() {
-        Mockito.when(deltaFiApiClient.contentMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
         diskSpaceRequirement(1);
-        assertThrows(DeltafiApiException.class, () -> sut.isContentStorageDepleted());
+
+        // When the API is unreachable storage is not considered depleted (contentMetrics is null at this point mimicking an unreachable API)
+        assertFalse(sut.isContentStorageDepleted());
+
+        // fill in the metrics using the mock
+        Mockito.when(deltaFiApiClient.contentMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
         sut.getContentStorageDiskMetrics();
 
         diskSpaceRequirement(1);

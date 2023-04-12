@@ -38,6 +38,7 @@ import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.PropertiesDatafetcherTestHelper;
 import org.deltafi.core.delete.DeletePolicyWorker;
 import org.deltafi.core.delete.DeleteRunner;
+import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
@@ -116,10 +117,11 @@ import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
-import static org.deltafi.core.rest.IngressRest.FLOWFILE_V1_MEDIA_TYPE;
+import static org.deltafi.core.services.IngressService.FLOWFILE_V1_MEDIA_TYPE;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -599,7 +601,7 @@ class DeltaFiCoreApplicationTests {
 		replaceAllDeletePolicies(dgsQueryExecutor);
 		assertThat(deletePolicyRepo.count()).isEqualTo(3);
 		List<DeletePolicyWorker> policiesScheduled = deleteRunner.refreshPolicies();
-		assertThat(policiesScheduled.size()).isEqualTo(2); // only 2 of 3 are enabled
+		assertThat(policiesScheduled).hasSize(2); // only 2 of 3 are enabled
 		List<String> names = List.of(policiesScheduled.get(0).getName(),
 				policiesScheduled.get(1).getName());
 		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_POLICY)));
@@ -1668,13 +1670,13 @@ class DeltaFiCoreApplicationTests {
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
 		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> INGRESS_FLOW_NAME.equals(ingressFlows.get(0).getName()));
 		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
-		assertThat(flows.getEnrich()).hasSize(0);
+		assertThat(flows.getEnrich()).isEmpty();
 
 		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
 		SystemFlows updatedFlows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
 		assertThat(updatedFlows.getIngress()).hasSize(1);
-		assertThat(updatedFlows.getEgress()).hasSize(0);
-		assertThat(updatedFlows.getEnrich()).hasSize(0);
+		assertThat(updatedFlows.getEgress()).isEmpty();
+		assertThat(updatedFlows.getEnrich()).isEmpty();
 	}
 
 	@Test
@@ -1745,7 +1747,7 @@ class DeltaFiCoreApplicationTests {
 		refreshFlowCaches();
 
 		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
-		assertThat(actionFamilies.size()).isEqualTo(8);
+		assertThat(actionFamilies).hasSize(8);
 
 		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains("IngressAction");
 		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("sampleIngress.Utf8TransformAction", "sampleIngress.SampleTransformAction");
@@ -3785,7 +3787,7 @@ class DeltaFiCoreApplicationTests {
 	static final String USERNAME = "myname";
 	static final String DID = "did";
 	static final ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), DID));
-	static final IngressService.IngressResult INGRESS_RESULT = new IngressService.IngressResult(CONTENT_REFERENCE, FLOW, FILENAME, DID);
+	static final IngressResult INGRESS_RESULT = new IngressResult(CONTENT_REFERENCE, FLOW, FILENAME, DID);
 
 	private ResponseEntity<String> ingress(String filename, String flow, String metadata, byte[] body, String contentType) {
 		HttpHeaders headers = new HttpHeaders();
@@ -3813,7 +3815,7 @@ class DeltaFiCoreApplicationTests {
 
 		ResponseEntity<String> response = ingress(FILENAME, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 		assertEquals(200, response.getStatusCode().value());
-		assertEquals(INGRESS_RESULT.getDid(), response.getBody());
+		assertEquals(INGRESS_RESULT.did(), response.getBody());
 
 		Mockito.verify(ingressService).ingressData(any(), eq(FILENAME), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE));
 
@@ -3830,7 +3832,7 @@ class DeltaFiCoreApplicationTests {
 		ResponseEntity<String> response = ingress(FILENAME, null, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 
 		assertEquals(200, response.getStatusCode().value());
-		assertEquals(INGRESS_RESULT.getContentReference().getSegments().get(0).getDid(), response.getBody());
+		assertEquals(INGRESS_RESULT.contentReference().getSegments().get(0).getDid(), response.getBody());
 
 		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
 		Mockito.verify(ingressService).ingressData(is.capture(), eq(FILENAME), isNull(), eq(METADATA), eq(MEDIA_TYPE));
@@ -3843,7 +3845,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	@SneakyThrows
 	void testIngress_missingFilename() {
+		Mockito.when(ingressService.ingressData(any(), isNull(), eq(FLOW), eq(METADATA), eq(MEDIA_TYPE))).thenThrow(new IngressMetadataException(""));
 		ResponseEntity<String> response = ingress(null, FLOW, METADATA, CONTENT.getBytes(), MediaType.APPLICATION_OCTET_STREAM);
 		assertEquals(400, response.getStatusCode().value());
 	}
@@ -3866,7 +3870,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_flowfile() {
-		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(RESOLVED_FLOWFILE_METADATA), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
+		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(INCOMING_FLOWFILE_METADATA), eq(FLOWFILE_V1_MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
 		ResponseEntity<String> response = ingress(FILENAME, FLOW, INCOMING_FLOWFILE_METADATA, flowfile(Map.of("overwrite", "vim is awesome", "fromFlowfile", "youbetcha")), FLOWFILE_V1_MEDIA_TYPE);
 
 		assertEquals(200, response.getStatusCode().value());
@@ -3876,8 +3880,8 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(ingressService).ingressData(is.capture(),
 				eq(FILENAME),
 				eq(FLOW),
-				eq(RESOLVED_FLOWFILE_METADATA),
-				eq(MEDIA_TYPE));
+				eq(INCOMING_FLOWFILE_METADATA),
+				eq(FLOWFILE_V1_MEDIA_TYPE));
 
 		// TODO: EOF inputStream?
 		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
@@ -3885,70 +3889,6 @@ class DeltaFiCoreApplicationTests {
 		Map<String, String> tags = tagsFor("ingress", INGRESS_ACTION, FLOW, null);
 		Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_IN, tags, 1);
 		Mockito.verify(metricRepository).increment(DeltaFiConstants.BYTES_IN, tags, CONTENT.length());
-	}
-
-	@Test
-	@SneakyThrows
-	void testIngress_flowfile_noParamsOrHeaders() {
-		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), eq(FLOW), eq(FLOWFILE_METADATA_NO_HEADERS), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
-		ResponseEntity<String> response = ingress(null, null, null,
-				flowfile(Map.of(
-						"flow", FLOW,
-						"filename", FILENAME,
-						"overwrite", "vim is awesome",
-						"fromFlowfile", "youbetcha")),
-				FLOWFILE_V1_MEDIA_TYPE);
-
-		assertEquals(200, response.getStatusCode().value());
-
-		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
-
-		Mockito.verify(ingressService).ingressData(is.capture(),
-				eq(FILENAME),
-				eq(FLOW),
-				eq(FLOWFILE_METADATA_NO_HEADERS),
-				eq(MEDIA_TYPE));
-
-		// TODO: EOF inputStream?
-		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
-	}
-
-	@Test @SneakyThrows
-	void testIngress_flowfile_missingFilename() {
-		ResponseEntity<String> response = ingress(null, null, null,
-				flowfile(Map.of(
-						"flow", FLOW,
-						"overwrite", "vim is awesome",
-						"fromFlowfile", "you-betcha")),
-				FLOWFILE_V1_MEDIA_TYPE);
-
-		assertEquals(400, response.getStatusCode().value());
-		assertEquals("Filename must be passed in as a header or flowfile attribute", response.getBody());
-	}
-
-	@Test
-	@SneakyThrows
-	void testIngress_flowfile_missingFlow() {
-		Mockito.when(ingressService.ingressData(any(), eq(FILENAME), isNull(), eq(FLOWFILE_METADATA_NO_HEADERS_NO_FLOW), eq(MEDIA_TYPE))).thenReturn(INGRESS_RESULT);
-		ResponseEntity<String> response = ingress(null, null, null,
-				flowfile(Map.of(
-						"filename", FILENAME,
-						"overwrite", "vim is awesome",
-						"fromFlowfile", "youbetcha")),
-				FLOWFILE_V1_MEDIA_TYPE);
-
-		assertEquals(200, response.getStatusCode().value());
-
-		ArgumentCaptor<InputStream> is = ArgumentCaptor.forClass(InputStream.class);
-
-		Mockito.verify(ingressService).ingressData(is.capture(),
-				eq(FILENAME),
-				isNull(),
-				eq(FLOWFILE_METADATA_NO_HEADERS_NO_FLOW),
-				eq(MEDIA_TYPE));
-
-		// TODO: EOF inputStream?
-		// assertThat(new String(is.getValue().readAllBytes()), equalTo(CONTENT));
 	}
 
 	@Test

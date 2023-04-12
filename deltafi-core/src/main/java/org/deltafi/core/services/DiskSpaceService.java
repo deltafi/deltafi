@@ -23,20 +23,18 @@ import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.services.api.DeltafiApiClient;
 import org.deltafi.core.services.api.model.DiskMetrics;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class DiskSpaceService {
-    @Autowired
-    DeltafiApiClient deltafiApiClient;
 
-    @Autowired
-    DeltaFiPropertiesService deltaFiPropertiesService;
+    private final DeltafiApiClient deltafiApiClient;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     private DiskMetrics contentStorageMetrics = null;
+    private boolean diskSpaceAPIReachable = true;
 
     /**
      * Check to see if the content storage is depleted (bytes remaining is less than the configured requirement)
@@ -45,9 +43,24 @@ public class DiskSpaceService {
      *
      * @return true if content storage free bytes is lower than the configured threshold
      */
-    public boolean isContentStorageDepleted() throws DeltafiApiException {
-        DiskMetrics metrics = contentMetrics();
-        return metrics.bytesRemaining() <= deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;
+     public boolean isContentStorageDepleted() {
+        try {
+            boolean storageDepleted = contentMetrics().bytesRemaining() <= requiredBytes();
+
+            if (!diskSpaceAPIReachable) {
+                log.info("Disk Space API is reachable again");
+                diskSpaceAPIReachable = true;
+            }
+
+            return storageDepleted;
+        } catch (DeltafiApiException e) {
+            if (diskSpaceAPIReachable) {
+                log.warn("Disk Space API unreachable.  Unable to calculate storage depletion");
+                diskSpaceAPIReachable = false;
+            }
+
+            return false;
+        }
     }
 
     /**
@@ -85,5 +98,9 @@ public class DiskSpaceService {
         DiskMetrics retval = contentStorageMetrics;
         if (retval == null) throw new DeltafiApiException("Content Storage disk metrics unavailable from API");
         return retval;
+    }
+
+    private long requiredBytes() {
+        return deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;
     }
 }
