@@ -131,15 +131,22 @@ class Plugin(object):
             self.logger.error(f"Failed to register plugin ({response.status_code}):\n{response.content}")
             exit(1)
 
+        self.logger.info(f"Plugin registered")
+
     def run(self):
+        self.logger.info(f"Plugin starting")
         self._register()
         for action in self.actions:
             threading.Thread(target=self._do_action, args=(action,)).start()
 
         threading.Thread(target=self._heartbeat).start()
 
+        self.logger.info(f"All threads running")
+
         f = open("/tmp/running", "w")
         f.close()
+
+        self.logger.info(f"Application initialization complete")
 
     def _heartbeat(self):
         while True:
