@@ -36,6 +36,7 @@ class ResumePolicyTest {
     void testMissingAll() {
         assertTrue(new ResumePolicy().validate().containsAll(List.of(
                 ResumePolicy.MISSING_ID,
+                ResumePolicy.MISSING_NAME,
                 ResumePolicy.MISSING_CRITERIA,
                 ResumePolicy.INVALID_MAX_ATTEMPTS,
                 ResumePolicy.MISSING_BACKOFF)));
@@ -122,7 +123,8 @@ class ResumePolicyTest {
     private ResumePolicy getValid() {
         ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
-        policy.setFlow("name");
+        policy.setName("name");
+        policy.setFlow("flow");
         policy.setMaxAttempts(2);
 
         BackOff backoff = new BackOff();
@@ -136,6 +138,7 @@ class ResumePolicyTest {
     private ResumePolicy policy(String error, String flow, String action, String actionType) {
         ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
+        policy.setName("name");
         policy.setMaxAttempts(2);
 
         if (null != error) policy.setErrorSubstring(error);

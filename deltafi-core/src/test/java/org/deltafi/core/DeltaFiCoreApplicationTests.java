@@ -1072,10 +1072,10 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	DeltaFile postErrorDeltaFile(String did) {
-		return postErrorDeltaFile(did, null);
+		return postErrorDeltaFile(did, null, null);
 	}
 
-	DeltaFile postErrorDeltaFile(String did, Integer autoRetryDelay) {
+	DeltaFile postErrorDeltaFile(String did, String policyName, Integer autoRetryDelay) {
 		OffsetDateTime nextAutoResume = autoRetryDelay == null ? null : STOP_TIME.plusSeconds(autoRetryDelay);
 		DeltaFile deltaFile = postValidateDeltaFile(did);
 		deltaFile.setStage(DeltaFileStage.ERROR);
@@ -1086,20 +1086,26 @@ class DeltaFiCoreApplicationTests {
 				"Authority XYZ not recognized",
 				"Dead beef feed face cafe",
 				nextAutoResume);
+		if (policyName != null) {
+			deltaFile.setNextAutoResumeReason(policyName);
+		}
 		return deltaFile;
 	}
 
-	void runErrorWithRetry(Integer autoRetryDelay) throws IOException {
+	void runErrorWithAutoResume(Integer autoResumeDelay) throws IOException {
 		String did = UUID.randomUUID().toString();
+		String policyName = null;
 		DeltaFile original = postValidateDeltaFile(did);
 		deltaFileRepo.save(original);
 
-		if (autoRetryDelay != null) {
+		if (autoResumeDelay != null) {
 			BackOff backOff = BackOff.newBuilder()
-					.delay(autoRetryDelay)
+					.delay(autoResumeDelay)
 					.build();
 
+			policyName = "policyName";
 			ResumePolicy resumePolicy = new ResumePolicy();
+			resumePolicy.setName(policyName);
 			resumePolicy.setFlow(original.getSourceInfo().getFlow());
 			resumePolicy.setMaxAttempts(2);
 			resumePolicy.setBackOff(backOff);
@@ -1110,7 +1116,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFilesService.handleActionEvent(actionEvent("error", did));
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
-		DeltaFile expected = postErrorDeltaFile(did, autoRetryDelay);
+		DeltaFile expected = postErrorDeltaFile(did, policyName, autoResumeDelay);
 		assertEqualsIgnoringDates(expected, actual);
 
 		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
@@ -1121,12 +1127,12 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testError() throws IOException {
-		runErrorWithRetry(null);
+		runErrorWithAutoResume(null);
 	}
 
 	@Test
-	void testAutoRetry() throws IOException {
-		runErrorWithRetry(100);
+	void testAutoResume() throws IOException {
+		runErrorWithAutoResume(100);
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -2012,8 +2018,9 @@ class DeltaFiCoreApplicationTests {
 		List<Result> results = ResumePolicyDatafetcherTestHelper.loadResumePolicyWithDuplicate(dgsQueryExecutor);
 		assertTrue(results.get(0).isSuccess());
 		assertFalse(results.get(1).isSuccess());
-		assertTrue(results.get(1).getErrors().contains("duplicate match criteria"));
-		assertTrue(results.get(2).isSuccess());
+		assertTrue(results.get(1).getErrors().contains("duplicate name or criteria"));
+		assertTrue(results.get(2).getErrors().contains("duplicate name or criteria"));
+		assertTrue(results.get(3).isSuccess());
 		assertEquals(2, resumePolicyRepo.count());
 
 		List<ResumePolicy> policies = ResumePolicyDatafetcherTestHelper.getAllResumePolicies(dgsQueryExecutor);

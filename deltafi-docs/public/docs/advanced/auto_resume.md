@@ -9,7 +9,8 @@ can be created. This allows the DeltaFile to be scheduled for an automatic resum
 
 A Resume Policy consist of the following:
 
-* id
+* id (auto-generated UUID)
+* name
 * errorSubstring
 * flow
 * action
@@ -75,6 +76,7 @@ to a maximum of 5 minutes (300 seconds).
 ```json
 {
   "id": "88bc7429-7adf-4bb1-b23f-3922993e0a1a",
+  "name": "auto-resume-passthrough",
   "flow": "passthrough",
   "maxAttempts": 10,
   "backOff": {
@@ -91,6 +93,7 @@ string `JsonException`. The action will be attempted up to 4 times, with a rando
 ```json
 {
   "id": "a2b08968-866a-4080-bc28-1d7e7c81ada8",
+  "name": "resume-json-errors",
   "errorSubstring": "JsonException",
   "actionType": "ENRICH",
   "maxAttempts": 4,

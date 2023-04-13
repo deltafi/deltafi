@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -34,6 +34,9 @@ public class ResumePolicyDatafetcherTestHelper {
     public static final String FLOW_NAME1 = "flowName1";
     public static final String FLOW_NAME2 = "flowName2";
     public static final String FLOW_NAME3 = "flowName3";
+    public static final String POLICY_NAME1 = "policyName1";
+    public static final String POLICY_NAME2 = "policyName2";
+    public static final String POLICY_NAME3 = "policyName3";
     public static final String ACTION = "action";
     public static final String ACTION_TYPE = "actionType";
     public static final int MAX_ATTEMPTS = 10;
@@ -45,6 +48,7 @@ public class ResumePolicyDatafetcherTestHelper {
     static public List<ResumePolicy> getAllResumePolicies(DgsQueryExecutor dgsQueryExecutor) {
         GetAllResumePoliciesProjectionRoot projection = new GetAllResumePoliciesProjectionRoot()
                 .id()
+                .name()
                 .errorSubstring()
                 .flow()
                 .action()
@@ -74,6 +78,7 @@ public class ResumePolicyDatafetcherTestHelper {
     static public ResumePolicy getResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
         GetResumePolicyProjectionRoot projection = new GetResumePolicyProjectionRoot()
                 .id()
+                .name()
                 .errorSubstring()
                 .flow()
                 .action()
@@ -98,10 +103,11 @@ public class ResumePolicyDatafetcherTestHelper {
     }
 
     static public List<Result> loadResumePolicyWithDuplicate(DgsQueryExecutor dgsQueryExecutor) {
-        ResumePolicyInput input = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
-        ResumePolicyInput duplicate = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, 2 * MAX_ATTEMPTS, DELAY);
-        ResumePolicyInput third = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME2, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
-        return executeLoadPolicies(dgsQueryExecutor, true, List.of(input, duplicate, third));
+        ResumePolicyInput input = makeResumePolicy(POLICY_NAME1, ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
+        ResumePolicyInput duplicateCriteria = makeResumePolicy("different", ERROR_SUBSTRING, FLOW_NAME1, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
+        ResumePolicyInput duplicateName = makeResumePolicy(POLICY_NAME1, "different", FLOW_NAME1, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
+        ResumePolicyInput third = makeResumePolicy(POLICY_NAME2, ERROR_SUBSTRING, FLOW_NAME2, ACTION, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
+        return executeLoadPolicies(dgsQueryExecutor, true, List.of(input, duplicateCriteria, duplicateName, third));
     }
 
     static public BackOffInput makeBackOff(int delay) {
@@ -114,6 +120,7 @@ public class ResumePolicyDatafetcherTestHelper {
     }
 
     static public ResumePolicyInput makeResumePolicy(
+            String name,
             String errorSubstring,
             String flow,
             String action,
@@ -121,6 +128,7 @@ public class ResumePolicyDatafetcherTestHelper {
             int maxAttempts,
             int delay) {
         return ResumePolicyInput.newBuilder()
+                .name(name)
                 .errorSubstring(errorSubstring)
                 .flow(flow)
                 .action(action)
@@ -139,6 +147,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 policy.getFlow().equals(FLOW_NAME1) &&
                 policy.getAction().equals(ACTION) &&
                 policy.getActionType().equals(ACTION_TYPE) &&
+                policy.getName().equals(POLICY_NAME1) &&
                 policy.getMaxAttempts() == MAX_ATTEMPTS &&
                 policy.getBackOff().getDelay() == DELAY &&
                 policy.getBackOff().getMaxDelay() == MAX_DELAY &&
@@ -151,6 +160,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 policy.getFlow().equals(FLOW_NAME3) &&
                 policy.getAction().equals(ACTION) &&
                 policy.getActionType().equals(ACTION_TYPE) &&
+                policy.getName().equals(POLICY_NAME3) &&
                 policy.getMaxAttempts() == MAX_ATTEMPTS &&
                 policy.getBackOff().getDelay() == (2 * DELAY) &&
                 policy.getBackOff().getMaxDelay() == MAX_DELAY &&
@@ -186,7 +196,7 @@ public class ResumePolicyDatafetcherTestHelper {
     }
 
     static public Result updateResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
-        ResumePolicyInput input = makeResumePolicy(ERROR_SUBSTRING, FLOW_NAME3, ACTION, ACTION_TYPE, MAX_ATTEMPTS, 2 * DELAY);
+        ResumePolicyInput input = makeResumePolicy(POLICY_NAME3, ERROR_SUBSTRING, FLOW_NAME3, ACTION, ACTION_TYPE, MAX_ATTEMPTS, 2 * DELAY);
         input.setId(id);
 
         UpdateResumePolicyProjectionRoot projection = new UpdateResumePolicyProjectionRoot()

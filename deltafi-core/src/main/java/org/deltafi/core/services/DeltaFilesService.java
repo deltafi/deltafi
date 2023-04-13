@@ -504,12 +504,14 @@ public class DeltaFilesService {
             throw new UnexpectedActionException(event.getAction(), deltaFile.getDid(), deltaFile.queuedActions());
         }
 
-        Optional<Integer> delay = Optional.empty();
+        Optional<ResumePolicyService.ResumeDetails> resumeDetails = Optional.empty();
         ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
         if (actionConfiguration != null) {
-            delay = resumePolicyService.getAutoResumeDelay(deltaFile, event, actionConfiguration.getActionType().name());
+            resumeDetails = resumePolicyService.getAutoResumeDelay(deltaFile, event, actionConfiguration.getActionType().name());
         }
-        deltaFile.errorAction(event, delay);
+        resumeDetails.ifPresentOrElse(
+                details -> deltaFile.errorAction(event, details.name(), details.delay()),
+                () -> deltaFile.errorAction(event));
         generateMetrics(List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile);
 
         return deltaFile;

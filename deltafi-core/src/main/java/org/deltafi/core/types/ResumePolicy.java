@@ -31,6 +31,7 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
     public static final String MISSING_CRITERIA =
             "Must specify errorSubstring, flow, action, and/or actionType";
     public static final String MISSING_ID = "missing id";
+    public static final String MISSING_NAME = "missing name";
     public static final String MISSING_BACKOFF = "missing backOff";
     public static final String MISSING_MAX_DELAY = "Must set maxDelay when random is true";
 
@@ -43,6 +44,10 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         List<String> errors = new ArrayList<>();
         if (StringUtils.isBlank(getId())) {
             errors.add(MISSING_ID);
+        }
+
+        if (StringUtils.isBlank(getName())) {
+            errors.add(MISSING_NAME);
         }
 
         if (StringUtils.isBlank(getErrorSubstring()) &&

@@ -71,6 +71,7 @@ public class DeltaFile {
   private OffsetDateTime replayed;
   private String replayDid;
   private OffsetDateTime nextAutoResume;
+  private String nextAutoResumeReason;
   private boolean joined;
 
   @Version
@@ -145,12 +146,14 @@ public class DeltaFile {
   }
 
   public void errorAction(ActionEventInput event) {
-    errorAction(event, Optional.empty());
+    errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
+            event.getError().getContext());
   }
 
-  public void errorAction(ActionEventInput event, Optional<Integer> delay) {
+  public void errorAction(ActionEventInput event, String policyName, Integer delay) {
+    setNextAutoResumeReason(policyName);
     errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
-            event.getError().getContext(), delay.map(d -> event.getStop().plusSeconds(d)).orElse(null));
+            event.getError().getContext(), event.getStop().plusSeconds(delay));
   }
 
   public void errorAction(ActionEventInput event, String errorCause, String errorContext) {
@@ -177,6 +180,7 @@ public class DeltaFile {
       action.setState(ActionState.RETRIED);
     });
     setNextAutoResume(null);
+    setNextAutoResumeReason(null);
 
     return actionsToRetry.stream().map(Action::getName).toList();
   }

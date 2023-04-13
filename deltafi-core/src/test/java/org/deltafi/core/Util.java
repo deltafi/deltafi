@@ -144,6 +144,7 @@ public class Util {
         Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());
         Assertions.assertThat(actual.getTestMode()).isEqualTo(expected.getTestMode());
         Assertions.assertThat(actual.getNextAutoResume() == null).isEqualTo(expected.getNextAutoResume() == null);
+        Assertions.assertThat(actual.getNextAutoResumeReason()).isEqualTo(expected.getNextAutoResumeReason());
     }
 
     public static void assertActionsEqualIgnoringDates(List<Action> expected, List<Action> actual) {

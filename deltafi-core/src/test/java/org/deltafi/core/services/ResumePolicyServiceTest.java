@@ -39,6 +39,7 @@ import static org.mockito.Mockito.*;
 class ResumePolicyServiceTest {
 
     private static final String DEFAULT_ID = "1";
+    private static final String NAME = "name";
     private static final String ERROR = "error";
     private static final String FLOW = "flow";
     private static final String ACTION = "action";
@@ -70,7 +71,7 @@ class ResumePolicyServiceTest {
     void testInvalidSave() {
         Result result = resumePolicyService.save(new ResumePolicy());
         assertFalse(result.isSuccess());
-        assertEquals(3, result.getErrors().size());
+        assertEquals(4, result.getErrors().size());
         verify(resumePolicyRepo, times(0)).save(Mockito.any());
     }
 
@@ -110,7 +111,7 @@ class ResumePolicyServiceTest {
         when(resumePolicyRepo.findAll()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
 
-        Optional<Integer> delay = resumePolicyService.getAutoResumeDelay(
+        Optional<ResumePolicyService.ResumeDetails> resumeDetails = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS - 1),
                 ActionEventInput.newBuilder()
                         .action("1" + ACTION)
@@ -118,10 +119,10 @@ class ResumePolicyServiceTest {
                                 .cause(ERROR).build())
                         .build(),
                 ACTION_TYPE);
-        assertFalse(delay.isEmpty());
-        assertEquals(100, delay.get());
+        assertFalse(resumeDetails.isEmpty());
+        assertEquals(100, resumeDetails.get().delay());
 
-        Optional<Integer> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
+        Optional<ResumePolicyService.ResumeDetails> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS),
                 ActionEventInput.newBuilder()
                         .action("1" + ACTION)
@@ -131,7 +132,7 @@ class ResumePolicyServiceTest {
                 ACTION_TYPE);
         assertTrue(tooManyAttempts.isEmpty());
 
-        Optional<Integer> wrongError = resumePolicyService.getAutoResumeDelay(
+        Optional<ResumePolicyService.ResumeDetails> wrongError = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(1),
                 ActionEventInput.newBuilder()
                         .action("1" + ACTION)
@@ -212,6 +213,7 @@ class ResumePolicyServiceTest {
     private ResumePolicy buildPolicy(String error, String flow, String action, String actionType) {
         ResumePolicy policy = new ResumePolicy();
         policy.setId(DEFAULT_ID);
+        policy.setName(NAME);
         policy.setMaxAttempts(MAX_ATTEMPTS);
 
         if (null != error) policy.setErrorSubstring(error);

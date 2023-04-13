@@ -80,12 +80,14 @@ public class SystemSnapshotDatafetcherTestHelper {
     private static void setResumePolicies(SystemSnapshot systemSnapshot) {
         ResumePolicy first = new ResumePolicy();
         first.setId("88bc7429-7adf-4bb1-b23f-3922993e0a1a");
+        first.setName("auto-resume-passthrough");
         first.setFlow("passthrough");
         first.setMaxAttempts(10);
         first.setBackOff(BackOff.newBuilder().delay(100).maxDelay(200).multiplier(1).build());
 
         ResumePolicy second = new ResumePolicy();
         second.setId("a2b08968-866a-4080-bc28-1d7e7c81ada8");
+        second.setName("resume-json-errors");
         second.setErrorSubstring("JsonException");
         second.setActionType("ENRICH");
         second.setMaxAttempts(4);
@@ -251,6 +253,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                         resumePolicies: [
                             {
                                 id: "88bc7429-7adf-4bb1-b23f-3922993e0a1a"
+                                name: "auto-resume-passthrough"
                                 flow: "passthrough"
                                 maxAttempts: 10
                                 backOff:
@@ -262,6 +265,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                             }
                             {
                                 id: "a2b08968-866a-4080-bc28-1d7e7c81ada8"
+                                name: "resume-json-errors"
                                 errorSubstring: "JsonException"
                                 actionType: "ENRICH"
                                 maxAttempts: 4
@@ -539,6 +543,7 @@ public class SystemSnapshotDatafetcherTestHelper {
             }
             resumePolicies {
               id
+              name
               flow
               errorSubstring
               action

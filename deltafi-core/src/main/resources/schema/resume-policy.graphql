@@ -32,6 +32,7 @@ input BackOffInput {
 
 type ResumePolicy {
     id: String!
+    name: String!
     errorSubstring: String
     flow: String
     action: String
@@ -42,6 +43,7 @@ type ResumePolicy {
 
 input ResumePolicyInput {
     id: String
+    name: String!
     errorSubstring: String
     flow: String
     action: String

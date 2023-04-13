@@ -38,8 +38,12 @@ public class ResumePolicyRepoImpl implements ResumePolicyRepoCustom {
     private static final String FLOW = "flow";
     private static final String ACTION = "action";
     private static final String ACTION_TYPE = "actionType";
+    private static final String NAME = "name";
 
     private static final Map<String, Index> INDICES = Map.of(
+            "unique_name", new Index().named("unique_name")
+                    .on(NAME, Sort.Direction.ASC)
+                    .unique(),
             "unique_criteria", new Index().named("unique_criteria")
                     .on(ERROR_SUBSTRING, Sort.Direction.ASC)
                     .on(FLOW, Sort.Direction.ASC)

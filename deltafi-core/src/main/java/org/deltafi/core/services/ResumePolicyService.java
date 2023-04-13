@@ -42,7 +42,6 @@ import java.util.*;
 public class ResumePolicyService implements Snapshotter {
 
     private final ResumePolicyRepo resumePolicyRepo;
-
     private List<ResumePolicy> policiesCache;
 
     @PostConstruct
@@ -79,9 +78,9 @@ public class ResumePolicyService implements Snapshotter {
      * @param deltaFile  - The DeltaFile being acted upon
      * @param event      - The error event
      * @param actionType - The action's type
-     * @return An Optional of the delay for the next execution
+     * @return An Optional of the delay details for the next execution
      */
-    public Optional<Integer> getAutoResumeDelay(DeltaFile deltaFile, ActionEventInput event, String actionType) {
+    public Optional<ResumeDetails> getAutoResumeDelay(DeltaFile deltaFile, ActionEventInput event, String actionType) {
         Optional<ResumePolicy> policy = find(
                 event.getError().getCause(),
                 deltaFile.getSourceInfo().getFlow(),
@@ -90,7 +89,8 @@ public class ResumePolicyService implements Snapshotter {
         if (policy.isPresent()) {
             Optional<Action> action = deltaFile.actionNamed(event.getAction());
             if (action.isPresent() && action.get().getAttempt() < policy.get().getMaxAttempts()) {
-                return Optional.of(computeDelay(policy.get().getBackOff(), action.get().getAttempt()));
+                return Optional.of(new ResumeDetails(policy.get().getName(),
+                        computeDelay(policy.get().getBackOff(), action.get().getAttempt())));
             }
         }
 
@@ -147,7 +147,7 @@ public class ResumePolicyService implements Snapshotter {
                 refreshCache();
                 return new Result();
             } catch (DuplicateKeyException e) {
-                errors.add("duplicate match criteria");
+                errors.add("duplicate name or criteria");
             }
         }
         return Result.newBuilder().success(false).errors(errors).build();
@@ -212,7 +212,7 @@ public class ResumePolicyService implements Snapshotter {
                 resumePolicyRepo.saveAll(valid);
                 refreshCache();
             } catch (DuplicateKeyException e) {
-                result.getErrors().add("duplicate match criteria");
+                result.getErrors().add("duplicate name or criteria");
             }
         }
         return result;
@@ -235,5 +235,8 @@ public class ResumePolicyService implements Snapshotter {
     @Override
     public int getOrder() {
         return SnapshotRestoreOrder.RESUME_POLICY_ORDER;
+    }
+
+    public record ResumeDetails(String name, Integer delay) {
     }
 }

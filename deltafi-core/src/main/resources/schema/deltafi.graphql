@@ -206,6 +206,7 @@ type DeltaFile {
   replayed: DateTime
   replayDid: String
   nextAutoResume: DateTime
+  nextAutoResumeReason: String
 }
 
 type DeltaFiles {
