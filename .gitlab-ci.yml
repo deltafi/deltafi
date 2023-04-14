@@ -5,7 +5,6 @@ stages:
   - ci
   - trigger
   - scan
-  - release
 
 default:
   timeout: 45m
@@ -45,9 +44,8 @@ gradle:build:
   tags:
     - heavy
   when: manual
-  only:
-    refs:
-      - tags
+  rules:
+    - if: $CI_COMMIT_TAG
   variables:
     CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
     DOCKERFILE: ${CONTEXT}/Dockerfile
@@ -100,28 +98,32 @@ gradle:build:
 
 publish-nexus:
   tags:
-    - light
+    - heavy
   extends:
     - .publish
-  only:
-    refs:
-      - tags
+  rules:
+    # - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
   script:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -PsonatypeNexusUsername="${SONATYPE_NEXUS_USERNAME}" -PsonatypeNexusPassword="${SONATYPE_NEXUS_PASSWORD}" publishPublicPublicationToSonatype closeSonatypeStagingRepository releaseSonatypeStagingRepository
 
 publish-gradle:
+  tags:
+    - heavy
   extends:
     - .publish
   stage: publish
-  only:
-    refs:
-      - tags
+  rules:
+    # - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
   script:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -Pgradle.publish.key="${GRADLE_PUBLISH_KEY}" -Pgradle.publish.secret="${GRADLE_PUBLISH_SECRET}" -PpublishToGradleOrg publishPlugin
 
 publish-gitlab:
+  tags:
+    - heavy
   extends:
     - .publish
   only:
@@ -155,9 +157,9 @@ publish-gitlab:
 .publish-python-pypi:
   extends:
     - .publish
-  only:
-    refs:
-      - tags
+  rules:
+    # - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
   image: deltafi/deltafi-build:jdk17
   before_script:
     - apt update
@@ -251,7 +253,7 @@ trivy_scan:
     CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning/trivy:5"
 
 release:
-  stage: release
+  stage: publish
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   rules:
     - if: $CI_COMMIT_TAG
