@@ -36,7 +36,10 @@ class Content(NamedTuple):
 
     @classmethod
     def from_dict(cls, content: dict):
-        name = content['name']
+        if 'name' in content:
+            name = content['name']
+        else:
+            name = None
         metadata = content.get('metadata', {})
         content_reference = ContentReference.from_dict(content['contentReference'])
         return Content(name=name,
@@ -82,7 +85,10 @@ class Domain(NamedTuple):
     @classmethod
     def from_dict(cls, domain: dict):
         name = domain['name']
-        value = domain['value']
+        if 'value' in domain:
+            value = domain['value']
+        else:
+            value = None
         media_type = domain['mediaType']
         return Domain(name=name,
                       value=value,
@@ -194,7 +200,8 @@ class Event(NamedTuple):
             queue_name = event['queueName']
         joined_delta_files = []
         if 'joinedDeltaFiles' in event:
-            joined_delta_files = [DeltaFile.from_dict(joined_delta_file) for joined_delta_file in event['joinedDeltaFiles']]
+            joined_delta_files = [DeltaFile.from_dict(joined_delta_file) for joined_delta_file in
+                                  event['joinedDeltaFiles']]
         return_address = None
         if 'returnAddress' in event:
             return_address = event['returnAddress']
