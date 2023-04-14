@@ -33,7 +33,7 @@ import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.exceptions.EnqueueActionException;
-import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -109,7 +109,7 @@ public class DeltaFilesService {
     private final ActionEventQueue actionEventQueue;
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
-    private final MetricRepository metricRepository;
+    private final MetricService metricService;
     private final CoreAuditLogger coreAuditLogger;
     private final JoinRepo joinRepo;
     private final IdentityService identityService;
@@ -324,7 +324,7 @@ public class DeltaFilesService {
         Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), event.getAction(), deltaFile.getSourceInfo().getFlow(), egressFlow);
         for(Metric metric : metrics) {
             metric.addTags(defaultTags);
-            metricRepository.increment(metric);
+            metricService.increment(metric);
         }
     }
 
@@ -1216,8 +1216,8 @@ public class DeltaFilesService {
         long totalBytes = deltaFiles.stream().mapToLong(DeltaFile::getTotalBytes).sum();
 
         deleteContent(deltaFiles, policy, deleteMetadata);
-        metricRepository.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
-        metricRepository.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
+        metricService.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
+        metricService.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
         log.info("Finished deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
 
         return deltaFiles;
@@ -1285,7 +1285,7 @@ public class DeltaFilesService {
             Map<String, String> tags = new HashMap<>();
             tags.put(DeltaFiConstants.INGRESS_FLOW, flow);
             Metric metric = new Metric(name, count, tags);
-            metricRepository.increment(metric);
+            metricService.increment(metric);
         }
     }
 

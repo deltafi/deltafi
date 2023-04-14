@@ -32,7 +32,7 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.join.JoinRepo;
-import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.DeltaFiles;
@@ -62,7 +62,7 @@ class DeltaFilesServiceTest {
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
     private final ContentStorageService contentStorageService;
-    private final MetricRepository metricRepository;
+    private final MetricService metricService;
     private final DeltaFileCacheService deltaFileCacheService;
 
     private final DeltaFilesService deltaFilesService;
@@ -76,7 +76,7 @@ class DeltaFilesServiceTest {
     DeltaFilesServiceTest(@Mock IngressFlowService ingressFlowService, @Mock EnrichFlowService enrichFlowService,
             @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
-            @Mock ContentStorageService contentStorageService, @Mock MetricRepository metricRepository,
+            @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
             @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo, @Mock IdentityService identityService,
             @Mock DeltaFileCacheService deltaFileCacheService) {
         this.ingressFlowService = ingressFlowService;
@@ -84,13 +84,13 @@ class DeltaFilesServiceTest {
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
         this.contentStorageService = contentStorageService;
-        this.metricRepository = metricRepository;
+        this.metricService = metricService;
         this.deltaFileCacheService = deltaFileCacheService;
 
         Clock clock = new TestClock();
         deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService,
                 new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, resumePolicyService, metricRepository, coreAuditLogger, joinRepo,
+                actionEventQueue, contentStorageService, resumePolicyService, metricService, coreAuditLogger, joinRepo,
                 identityService, new DidMutexService(), deltaFileCacheService);
     }
 
@@ -282,7 +282,7 @@ class DeltaFilesServiceTest {
         Action action = maybeAction.get();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
         Assertions.assertThat(action.getErrorCause()).isEqualTo("Action named action is no longer running");
-        Mockito.verify(metricRepository).increment(new Metric(FILES_ERRORED, 1).addTags(MetricsUtil.tagsFor("unknown", "action", deltaFile.getSourceInfo().getFlow(), null)));
+        Mockito.verify(metricService).increment(new Metric(FILES_ERRORED, 1).addTags(MetricsUtil.tagsFor("unknown", "action", deltaFile.getSourceInfo().getFlow(), null)));
     }
 
     @Test

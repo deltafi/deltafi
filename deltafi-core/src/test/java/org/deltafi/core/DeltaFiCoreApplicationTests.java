@@ -43,7 +43,7 @@ import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.plugin.PluginRepository;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
@@ -253,7 +253,7 @@ class DeltaFiCoreApplicationTests {
 	IngressService ingressService;
 
 	@MockBean
-    MetricRepository metricRepository;
+    MetricService metricService;
 
 	@MockBean
 	ActionEventQueue actionEventQueue;
@@ -639,8 +639,8 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postTransformUtf8DeltaFile(did), "sampleIngress.SampleTransformAction");
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleIngress.Utf8TransformAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -653,8 +653,8 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postTransformDeltaFile(did), "sampleIngress.SampleLoadAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleIngress.SampleTransformAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -674,7 +674,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile expected = postResumeTransformDeltaFile(did, "sampleIngress.SampleTransformAction");
 		verifyActionEventResults(expected, "sampleIngress.SampleTransformAction");
 
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 	}
 
 	@Test
@@ -694,7 +694,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertFalse(retryResults.get(0).getSuccess());
 
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 
 	}
 
@@ -709,8 +709,8 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postLoadDeltaFile(did), "sampleEnrich.SampleDomainAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.LOAD, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -730,10 +730,10 @@ class DeltaFiCoreApplicationTests {
 
 		assertEqualsIgnoringDates(postMissingEnrichDeltaFile(did), deltaFile);
 		Map<String, String> tags = tagsFor(ActionEventType.DOMAIN, "sampleEnrich.SampleDomainAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Map<String, String> tags2 = tagsFor("unknown", "NoEgressFlowConfiguredAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags2));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags2));
+		Mockito.verifyNoMoreInteractions(metricService);
 
 	}
 
@@ -775,8 +775,8 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFile());
 
 		Map<String, String> tags = tagsFor(ActionEventType.SPLIT, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -847,8 +847,8 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(child2.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(1).getDeltaFile());
 
 		Map<String, String> tags = tagsFor(ActionEventType.LOAD_MANY, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -861,8 +861,8 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postDomainDeltaFile(did), "sampleEnrich.SampleEnrichAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.DOMAIN, "sampleEnrich.SampleDomainAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 
 	}
 
@@ -875,8 +875,8 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postEnrichDeltaFile(did), "sampleEgress.SampleFormatAction");
 		Map<String, String> tags = tagsFor(ActionEventType.ENRICH, "sampleEnrich.SampleEnrichAction", INGRESS_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -888,8 +888,8 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postFormatDeltaFile(did), "sampleEgress.AuthorityValidateAction", "sampleEgress.SampleValidateAction");
 		Map<String, String> tags = tagsFor(ActionEventType.FORMAT, "sampleEgress.SampleFormatAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 
 	}
 
@@ -931,8 +931,8 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(3).getActionContext().getDid());
 
 		Map<String, String> tags = tagsFor(ActionEventType.FORMAT_MANY, "sampleEgress.SampleFormatAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -949,8 +949,8 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.SampleValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	void runErrorWithAutoResume(Integer autoResumeDelay) throws IOException {
@@ -981,9 +981,9 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(expected, actual);
 
 		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -1013,7 +1013,7 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postResumeDeltaFile(did, "sampleEgress.AuthorityValidateAction"), "sampleEgress.AuthorityValidateAction");
 
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 	}
 
 	@Test
@@ -1032,7 +1032,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertNull(deltaFile.getErrorAcknowledged());
 		assertNull(deltaFile.getErrorAcknowledgedReason());
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 	}
 
 	@Test
@@ -1053,7 +1053,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertNotNull(deltaFile.getErrorAcknowledged());
 		assertEquals("apathy", deltaFile.getErrorAcknowledgedReason());
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 	}
 
 	@Test
@@ -1089,7 +1089,7 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(alreadyCancelledResult.get(0).getError().contains("no longer active"));
 		assertFalse(alreadyCancelledResult.get(1).getSuccess());
 		assertTrue(alreadyCancelledResult.get(1).getError().contains("not found"));
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 	}
 
 	@Test
@@ -1102,8 +1102,8 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postValidateAuthorityDeltaFile(did), "sampleEgress.SampleEgressAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 
 	}
 
@@ -1124,7 +1124,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "sampleEgress.SampleEgressAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
 
-		Mockito.verify(metricRepository, Mockito.atLeast(4)).increment(metricCaptor.capture());
+		Mockito.verify(metricService, Mockito.atLeast(4)).increment(metricCaptor.capture());
 		List<Metric> metrics = metricCaptor.getAllValues();
 		MatcherAssert.assertThat(
 				metrics.stream().map(Metric::getName).collect(Collectors.toList()),
@@ -1184,8 +1184,8 @@ class DeltaFiCoreApplicationTests {
 		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(EGRESS_FLOW_NAME));
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -1223,7 +1223,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, secondResults.size());
 		assertFalse(secondResults.get(0).getSuccess());
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 	}
 
 	@Test
@@ -1245,7 +1245,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile parent = deltaFilesService.getDeltaFile(did);
 		assertTrue(parent.getChildDids().isEmpty());
 
-		Mockito.verifyNoInteractions(metricRepository);
+		Mockito.verifyNoInteractions(metricService);
 	}
 
 	@Test
@@ -2253,10 +2253,10 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(2, deltaFilesService.autoResume(MONGO_NOW));
 
-		Mockito.verify(metricRepository).increment
+		Mockito.verify(metricService).increment
 				(new Metric(DeltaFiConstants.FILES_AUTO_RESUMED, 2)
 						.addTag(DeltaFiConstants.INGRESS_FLOW, INGRESS_FLOW_NAME));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2304,7 +2304,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, deltaFileRepo.count());
 		assertEquals("b", deltaFileRepo.findAll().get(0).getDid());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2321,7 +2321,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2338,7 +2338,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", false, 1);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2349,7 +2349,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, "policy", true, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2366,7 +2366,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2378,7 +2378,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2391,7 +2391,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now(), null, 0, null, "policy", false, 10);
 		assertTrue(deltaFiles.isEmpty());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2408,7 +2408,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(250L, null, "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2435,7 +2435,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2452,7 +2452,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 2);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2469,7 +2469,7 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, "a", "policy", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2481,7 +2481,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile2, deltaFile1));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -3736,7 +3736,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setContentDeleted(MONGO_NOW);
 		deltaFile3.setContentDeletedReason("MyPolicy");
 		assertEquals(List.of(deltaFile3, deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -3752,11 +3752,11 @@ class DeltaFiCoreApplicationTests {
 		}
 		assertEquals(1500, deltaFileRepo.count());
 		deltaFilesService.delete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_FILES, 500).addTag("policy", "policyName"));
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 10000).addTag("policy", "policyName"));
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 5000).addTag("policy", "policyName"));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 500).addTag("policy", "policyName"));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 10000).addTag("policy", "policyName"));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 5000).addTag("policy", "policyName"));
+		Mockito.verifyNoMoreInteractions(metricService);
 
 		// ensure that it looped over each batch and deleted everything
 		assertEquals(0, deltaFileRepo.count());
@@ -3812,8 +3812,8 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(transformFlowPostTransformUtf8DeltaFile(did), "sampleTransform.SampleTransformAction");
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleTransform.Utf8TransformAction", TRANSFORM_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -3826,8 +3826,8 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(transformFlowPostTransformDeltaFile(did), "sampleTransform.SampleEgressAction");
 
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleTransform.SampleTransformAction", TRANSFORM_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -3843,7 +3843,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(actionEventQueue, never()).putActions(any());
 		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "sampleTransform.SampleEgressAction", TRANSFORM_FLOW_NAME, TRANSFORM_FLOW_NAME);
 
-		Mockito.verify(metricRepository, Mockito.atLeast(4)).increment(metricCaptor.capture());
+		Mockito.verify(metricService, Mockito.atLeast(4)).increment(metricCaptor.capture());
 		List<Metric> metrics = metricCaptor.getAllValues();
 		MatcherAssert.assertThat(
 				metrics.stream().map(Metric::getName).collect(Collectors.toList()),
@@ -3901,8 +3901,8 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
 
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleTransform.SampleTransformAction", TRANSFORM_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	private void addJoinFlow(Integer maxNum, String metadataKey, String metadataIndexKey) {
@@ -4083,8 +4083,8 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postJoinDeltaFile(parentDids, did), "sampleEnrich.SampleDomainAction");
 		Map<String, String> tags = tagsFor(ActionEventType.JOIN, TEST_JOIN_ACTION, JOIN_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -4098,7 +4098,7 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postJoinReinjectDeltaFile(parentDids, did), "sampleIngress.Utf8TransformAction");
 		Map<String, String> tags = tagsFor(ActionEventType.JOIN, TEST_JOIN_ACTION, JOIN_FLOW_NAME, null);
-		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricRepository);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 }

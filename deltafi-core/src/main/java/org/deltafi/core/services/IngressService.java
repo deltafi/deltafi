@@ -37,7 +37,7 @@ import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.*;
-import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.types.IngressResult;
 import org.springframework.stereotype.Service;
@@ -61,7 +61,7 @@ import static org.deltafi.common.nifi.ContentType.*;
 @RequiredArgsConstructor
 @Slf4j
 public class IngressService {
-    private final MetricRepository metricRepository;
+    private final MetricService metricService;
     private final CoreAuditLogger coreAuditLogger;
     private final DiskSpaceService diskSpaceService;
     private final ContentStorageService contentStorageService;
@@ -103,15 +103,15 @@ public class IngressService {
         } catch (IngressMetadataException | ObjectStorageException | IngressException e) {
             log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
                     contentType, username, e.getMessage());
-            metricRepository.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(flow), 1);
+            metricService.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(flow), 1);
             throw e;
         }
 
         coreAuditLogger.logIngress(username, ingressResult.filename());
 
         Map<String, String> tags = tagsFor(ingressResult.flow());
-        metricRepository.increment(DeltaFiConstants.FILES_IN, tags, 1);
-        metricRepository.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.contentReference().getSize());
+        metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
+        metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.contentReference().getSize());
 
         return ingressResult;
     }

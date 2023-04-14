@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.security.NeedsPermission;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +39,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RestController
 public class SurveyRest {
-    private final MetricRepository metricRepository;
+    private final MetricService metricService;
     private final CoreAuditLogger coreAuditLogger;
 
     @NeedsPermission.DeltaFileIngress
@@ -74,14 +74,14 @@ public class SurveyRest {
             Map<String, String> tags = new HashMap<>();
             tags.put("surveyFlow", flow);
             tags.put("surveyDirection", direction);
-            metricRepository.increment(DeltaFiConstants.SURVEY_FILES, tags, files);
-            metricRepository.increment(DeltaFiConstants.SURVEY_BYTES, tags, bytes);
+            metricService.increment(DeltaFiConstants.SURVEY_FILES, tags, files);
+            metricService.increment(DeltaFiConstants.SURVEY_BYTES, tags, bytes);
 
             if (subflow != null && !subflow.isBlank()) {
                 Map<String, String> subflowTags = new HashMap<>(tags);
                 subflowTags.put("surveySubflow", subflow);
-                metricRepository.increment(DeltaFiConstants.SURVEY_SUBFLOW_FILES, subflowTags, files);
-                metricRepository.increment(DeltaFiConstants.SURVEY_SUBFLOW_BYTES, subflowTags, bytes);
+                metricService.increment(DeltaFiConstants.SURVEY_SUBFLOW_FILES, subflowTags, files);
+                metricService.increment(DeltaFiConstants.SURVEY_SUBFLOW_BYTES, subflowTags, bytes);
             }
 
             return ResponseEntity.ok(null);

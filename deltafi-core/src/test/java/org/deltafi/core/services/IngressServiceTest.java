@@ -36,7 +36,7 @@ import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
-import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.IngressResult;
 import org.junit.jupiter.api.Assertions;
@@ -70,7 +70,7 @@ class IngressServiceTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final MetricRepository metricRepository;
+    private final MetricService metricService;
     private final CoreAuditLogger coreAuditLogger;
     private final DiskSpaceService diskSpaceService;
     private final DeltaFilesService deltaFilesService;
@@ -85,12 +85,12 @@ class IngressServiceTest {
     @Captor
     ArgumentCaptor<IngressEvent> ingressEventCaptor;
 
-    IngressServiceTest(@Mock MetricRepository metricRepository, @Mock CoreAuditLogger coreAuditLogger,
+    IngressServiceTest(@Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
                        @Mock DiskSpaceService diskSpaceService, @Mock DeltaFilesService deltaFilesService,
                        @Mock DeltaFiPropertiesService deltaFiPropertiesService, @Mock FlowAssignmentService flowAssignmentService,
                        @Mock IngressFlowService ingressFlowService, @Mock TransformFlowService transformFlowService,
                        @Mock ErrorCountService errorCountService) {
-        this.metricRepository = metricRepository;
+        this.metricService = metricService;
         this.coreAuditLogger = coreAuditLogger;
         this.diskSpaceService = diskSpaceService;
         this.deltaFilesService = deltaFilesService;
@@ -100,7 +100,7 @@ class IngressServiceTest {
         this.transformFlowService = transformFlowService;
         this.errorCountService = errorCountService;
 
-        ingressService = new IngressService(metricRepository, coreAuditLogger, diskSpaceService, CONTENT_STORAGE_SERVICE,
+        ingressService = new IngressService(metricService, coreAuditLogger, diskSpaceService, CONTENT_STORAGE_SERVICE,
                 deltaFilesService, deltaFiPropertiesService, flowAssignmentService, ingressFlowService,
                 transformFlowService, errorCountService, UUID_GENERATOR, CLOCK);
     }
@@ -147,8 +147,8 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress",
                 DeltaFiConstants.SOURCE, DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_IN, metricTags, 1);
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.BYTES_IN, metricTags, "content".length());
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_IN, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.BYTES_IN, metricTags, "content".length());
 
         String content;
         try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResult.contentReference())) {
@@ -265,7 +265,7 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
     @Test
@@ -281,7 +281,7 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
     @Test
@@ -395,7 +395,7 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
     @Test
@@ -430,7 +430,7 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME);
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
     @Test
@@ -448,7 +448,7 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
     @Test
@@ -468,7 +468,7 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
     @Test
@@ -488,7 +488,7 @@ class IngressServiceTest {
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
-        Mockito.verify(metricRepository).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
     @Test

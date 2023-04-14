@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -32,13 +32,13 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-public class MetricRepository {
+public class MetricService {
 
     private final MetricRegistry metrics;
     @SuppressWarnings("FieldCanBeLocal")
     private final StatsdDeltaReporter reporter;
 
-    public MetricRepository(@Value("${STATSD_HOSTNAME:deltafi-graphite}") String statsdHostname,
+    public MetricService(@Value("${STATSD_HOSTNAME:deltafi-graphite}") String statsdHostname,
                             @Value("${STATSD_PORT:8125}") int statsdPort,
                             @Value("${METRICS_PERIOD_SECONDS:10}") int periodSeconds,
                             DeltaFiPropertiesService deltaFiPropertiesService) {

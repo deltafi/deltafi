@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -19,7 +19,7 @@ package org.deltafi.core.rest;
 
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.metrics.MetricRepository;
+import org.deltafi.core.metrics.MetricService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +39,7 @@ public class SurveyRestTest {
     CoreAuditLogger auditLogger;
 
     @Mock
-    MetricRepository metricRepository;
+    MetricService metricService;
 
     @InjectMocks
     SurveyRest testObj;
@@ -56,9 +56,9 @@ public class SurveyRestTest {
 
         Map<String, String> tags = Map.of("surveyFlow", "myFlow", "surveyDirection", "none");
         Mockito.verify(auditLogger).logSurvey("system", flow, null, "none", bytes, count);
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_FILES), eq(tags), eq(count));
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_BYTES), eq(tags), eq(bytes));
-        Mockito.verifyNoMoreInteractions(metricRepository);
+        Mockito.verify(metricService).increment(eq(DeltaFiConstants.SURVEY_FILES), eq(tags), eq(count));
+        Mockito.verify(metricService).increment(eq(DeltaFiConstants.SURVEY_BYTES), eq(tags), eq(bytes));
+        Mockito.verifyNoMoreInteractions(metricService);
     }
 
     @Test
@@ -75,12 +75,12 @@ public class SurveyRestTest {
 
         Map<String, String> tags = Map.of("surveyFlow", flow, "surveyDirection", direction);
         Mockito.verify(auditLogger).logSurvey("Narf", flow, subflow, direction, bytes, count);
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_FILES), eq(tags), eq(count));
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_BYTES), eq(tags), eq(bytes));
+        Mockito.verify(metricService).increment(eq(DeltaFiConstants.SURVEY_FILES), eq(tags), eq(count));
+        Mockito.verify(metricService).increment(eq(DeltaFiConstants.SURVEY_BYTES), eq(tags), eq(bytes));
         Map<String, String> subflowTags = Map.of("surveyFlow", flow, "surveyDirection", direction, "surveySubflow", subflow);
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_SUBFLOW_FILES), eq(subflowTags), eq(count));
-        Mockito.verify(metricRepository).increment(eq(DeltaFiConstants.SURVEY_SUBFLOW_BYTES), eq(subflowTags), eq(bytes));
-        Mockito.verifyNoMoreInteractions(metricRepository);
+        Mockito.verify(metricService).increment(eq(DeltaFiConstants.SURVEY_SUBFLOW_FILES), eq(subflowTags), eq(count));
+        Mockito.verify(metricService).increment(eq(DeltaFiConstants.SURVEY_SUBFLOW_BYTES), eq(subflowTags), eq(bytes));
+        Mockito.verifyNoMoreInteractions(metricService);
     }
 
     @Test
@@ -93,6 +93,6 @@ public class SurveyRestTest {
         Assertions.assertEquals(400, response.getStatusCode().value());
 
         Mockito.verifyNoInteractions(auditLogger);
-        Mockito.verifyNoInteractions(metricRepository);
+        Mockito.verifyNoInteractions(metricService);
     }
 }
