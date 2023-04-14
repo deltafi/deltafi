@@ -113,7 +113,7 @@ const actions = computed(() => {
 
 const protocolLayersByAction = computed(() => {
   return deltaFile.protocolStack.reduce((content, layer) => {
-    content[layer.action] = layer;
+    if (layer.content.length > 0) content[layer.action] = layer;
     return content;
   }, {});
 });
@@ -136,7 +136,7 @@ const metadataReferences = computed(() => {
     for (const action of actions) {
       let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
       if (Object.keys(metadata).length > 0) {
-        content[action] = Object.entries(metadata).map(([key, value]) => ({key,value}));
+        content[action] = Object.entries(metadata).map(([key, value]) => ({ key, value }));
       }
     }
     return content;
