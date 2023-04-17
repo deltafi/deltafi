@@ -1340,10 +1340,6 @@ public class DeltaFilesService {
 
     }
 
-    public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
-        return deltaFileRepo.errorCountsByFlow(flows);
-    }
-
     public ErrorsByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
         return deltaFileRepo.getErrorSummaryByFlow(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,

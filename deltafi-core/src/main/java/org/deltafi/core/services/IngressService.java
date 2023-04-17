@@ -142,9 +142,12 @@ public class IngressService {
                         .build()
         );
 
-        String error = errorCountService.flowErrorsExceeded(sourceInfo.getFlow());
-        if (error != null) {
-            throw new IngressException(error);
+        Integer maxErrors = ingressFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
+        if (maxErrors != null && maxErrors >= 0) {
+            String error = errorCountService.generateErrorMessage(sourceInfo.getFlow(), maxErrors);
+            if (error != null) {
+                throw new IngressException(error);
+            }
         }
 
         String did = UUID.randomUUID().toString();
@@ -173,11 +176,11 @@ public class IngressService {
         }
     }
 
-    private boolean flowIsNullOrAutoResolve(String flow) {
+    private static boolean flowIsNullOrAutoResolve(String flow) {
         return flow == null || DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME.equals(flow);
     }
 
-    private String nodeValue(JsonNode node) {
+    private static String nodeValue(JsonNode node) {
         return node.isTextual() ? node.asText() : node.toString();
     }
 

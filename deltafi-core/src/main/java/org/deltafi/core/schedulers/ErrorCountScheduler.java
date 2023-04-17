@@ -21,6 +21,7 @@ package org.deltafi.core.schedulers;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.ErrorCountService;
+import org.deltafi.core.services.IngressFlowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -36,10 +37,18 @@ import java.time.Instant;
 public class ErrorCountScheduler {
 
     private final ErrorCountService errorCountService;
+    private final IngressFlowService ingressFlowService;
     private final TaskScheduler taskScheduler;
+
+    private static final long INITIAL_DELAY = 5L;
+    private static final long PERIOD = 5L;
 
     @PostConstruct
     public void schedule() {
-        taskScheduler.scheduleAtFixedRate(errorCountService::populateErrorCounts, Instant.now().plusSeconds(5), Duration.ofSeconds(5));
+        taskScheduler.scheduleAtFixedRate(this::populateErrorCounts, Instant.now().plusSeconds(INITIAL_DELAY), Duration.ofSeconds(PERIOD));
+    }
+
+    public void populateErrorCounts() {
+        errorCountService.populateErrorCounts(ingressFlowService.maxErrorsPerFlow().keySet());
     }
 }

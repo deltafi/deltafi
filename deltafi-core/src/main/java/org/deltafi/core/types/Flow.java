@@ -42,6 +42,15 @@ public abstract class Flow {
     protected Set<Variable> variables = new HashSet<>();
 
     /**
+     * Run migrations needed to upgrade to latest version
+     * This method should be overridden by child classes that support migrations
+     * @return boolean indicating whether a migration occurred
+     */
+    public boolean migrate() {
+        return false;
+    }
+
+    /**
      * Get all the configurations in this flow, including itself
      * @return all configurations in the flow
      */
@@ -129,7 +138,7 @@ public abstract class Flow {
     }
 
     public <T extends ActionConfiguration> List<String> actionNames(List<T> actions) {
-        return Objects.nonNull(actions) ? actions.stream().map(ActionConfiguration::getName).toList() : List.of();
+        return Objects.isNull(actions) ? List.of() : actions.stream().map(ActionConfiguration::getName).toList();
     }
 
     public <T extends ActionConfiguration> ActionConfiguration actionNamed(List<T> actions, String actionName) {

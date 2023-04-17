@@ -251,6 +251,9 @@ class DeltaFiCoreApplicationTests {
 	@MockBean
 	CredentialProvider credentialProvider;
 
+	@Autowired
+	ErrorCountService errorCountService;
+
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	// mongo eats microseconds, jump through hoops
@@ -3223,7 +3226,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile5);
 
 		Set<String> flowSet = new HashSet<>(Arrays.asList("flow1", "flow2", "flow3"));
-		Map<String, Integer> errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+		Map<String, Integer> errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
 
 		assertEquals(3, errorCountsByFlow.size());
 		assertEquals(2, errorCountsByFlow.get("flow1").intValue());
@@ -3232,14 +3235,14 @@ class DeltaFiCoreApplicationTests {
 
 		// Test with a non-existing flow in the set
 		flowSet.add("flowNotFound");
-		errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+		errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
 
 		assertEquals(3, errorCountsByFlow.size());
 		assertNull(errorCountsByFlow.get("flowNotFound"));
 
 		// Test with an empty set
 		flowSet.clear();
-		errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+		errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
 
 		assertEquals(0, errorCountsByFlow.size());
 	}

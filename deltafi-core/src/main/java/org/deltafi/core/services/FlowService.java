@@ -52,8 +52,8 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     private final String flowType;
     private final FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter;
     private final FlowValidator<FlowT> validator;
-
-    protected Map<String, FlowT> flowCache = new HashMap<>();
+    
+    protected volatile Map<String, FlowT> flowCache = Collections.emptyMap();
 
     protected FlowService(String flowType, FlowRepo<FlowT> flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator) {
         this.flowType = flowType;
@@ -64,8 +64,13 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     @PostConstruct
-    public void refreshCache() {
+    public synchronized void refreshCache() {
         flowCache = flowRepo.findAll().stream()
+                .peek(f -> {
+                    if (f.migrate()) {
+                        flowRepo.save(f);
+                    }
+                })
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
     }
 
@@ -123,7 +128,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         FlowT flow = getFlowOrThrow(flowName);
 
         if (!flow.isTestMode()) {
-            log.warn("Tried to disable test mode on {} flow {} when already in test mode", flowType, flowName);
+            log.warn("Tried to disable test mode on {} flow {} when not already in test mode", flowType, flowName);
             return false;
         }
 
@@ -367,11 +372,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     /**
      * Search the flows for a configuration configurations
-     * @param actionQueryInput search parameters
+     * @param configQueryInput search parameters
      * @return an immutable list of matching configurations
      */
-    public List<DeltaFiConfiguration> getConfigs(ConfigQueryInput actionQueryInput) {
-        return Objects.nonNull(actionQueryInput) ? findConfigsWithFilter(actionQueryInput) : findAllConfigs();
+    public List<DeltaFiConfiguration> getConfigs(ConfigQueryInput configQueryInput) {
+        return Objects.nonNull(configQueryInput) ? findConfigsWithFilter(configQueryInput) : findAllConfigs();
     }
 
     FlowT buildFlow(FlowPlanT flowPlan, List<Variable> variables) {
@@ -407,13 +412,13 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return actionName.substring(0, delimiterIdx);
     }
 
-    private List<DeltaFiConfiguration> findConfigsWithFilter(ConfigQueryInput actionQueryInput) {
-        ConfigType configType = ConfigType.valueOf(actionQueryInput.getConfigType().name());
-        String nameFilter = actionQueryInput.getName();
+    private List<DeltaFiConfiguration> findConfigsWithFilter(ConfigQueryInput configQueryInput) {
+        ConfigType configType = ConfigType.valueOf(configQueryInput.getConfigType().name());
+        String nameFilter = configQueryInput.getName();
         List<DeltaFiConfiguration> allByType = allOfConfigType(configType);
         return Objects.isNull(nameFilter) ? allByType :
                 allByType.stream()
-                        .filter(actionConfig -> actionQueryInput.getName().equals(actionConfig.getName()))
+                        .filter(actionConfig -> configQueryInput.getName().equals(actionConfig.getName()))
                         .toList();
     }
 
@@ -458,5 +463,4 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     String runningFlowError(List<String> runningFlows) {
         return "The plugin has created the following " + flowType + " flows which are still running: " + String.join(", ", runningFlows);
     }
-
 }

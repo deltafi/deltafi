@@ -35,9 +35,8 @@ import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.IngressFlow;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.util.*;
 
@@ -48,7 +47,7 @@ public class FlowPlanDatafetcher {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final ActionFamily INGRESS_FAMILY = ActionFamily.newBuilder().family("INGRESS").actionNames(List.of(DeltaFiConstants.INGRESS_ACTION)).build();
-    private static final Yaml YAML_EXPORTER = new Yaml(new Constructor(new LoaderOptions()), new YamlRepresenter());
+    private static final Yaml YAML_EXPORTER = new Yaml(new SafeConstructor(), new YamlRepresenter());
 
     private final IngressFlowPlanService ingressFlowPlanService;
     private final IngressFlowService ingressFlowService;
@@ -296,5 +295,11 @@ public class FlowPlanDatafetcher {
         enrichFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         egressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         return actionFamilyMap.values();
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public List<IngressFlowErrorState> ingressFlowErrorsExceeded() {
+        return ingressFlowService.ingressFlowErrorsExceeded();
     }
 }
