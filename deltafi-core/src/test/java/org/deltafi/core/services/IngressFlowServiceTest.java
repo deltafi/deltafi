@@ -21,6 +21,7 @@ import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.common.types.LoadActionConfiguration;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
+import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.IngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.IngressFlow;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class IngressFlowServiceTest {
@@ -51,6 +53,9 @@ class IngressFlowServiceTest {
 
     @Mock
     IngressFlowValidator flowValidator;
+
+    @Mock
+    ErrorCountService errorCountService;
 
     @InjectMocks
     IngressFlowService ingressFlowService;
@@ -132,6 +137,29 @@ class IngressFlowServiceTest {
         systemSnapshot.setTestIngressFlows(List.of("c", "d"));
         assertThat(ingressFlowService.getRunningFromSnapshot(systemSnapshot)).isEqualTo(RUNNING_FLOWS);
         assertThat(ingressFlowService.getTestModeFromSnapshot(systemSnapshot)).isEqualTo(List.of("c", "d"));
+    }
+
+    @Test
+    void testIngressFlowErrorsExceeded() {
+        IngressFlow flow1 = ingressFlow("flow1", FlowState.RUNNING, false);
+        flow1.setMaxErrors(0);
+        IngressFlow flow2 = ingressFlow("flow2", FlowState.RUNNING, false);
+        flow2.setMaxErrors(5);
+        IngressFlow flow3 = ingressFlow("flow3", FlowState.RUNNING, false);
+        flow3.setMaxErrors(5);
+        IngressFlow flow4 = ingressFlow("flow4", FlowState.STOPPED, false);
+        flow3.setMaxErrors(5);
+
+        Mockito.when(ingressFlowRepo.findAll()).thenReturn(List.of(flow1, flow2, flow3, flow4));
+        Mockito.when(errorCountService.errorsForFlow("flow1")).thenReturn(5);
+        Mockito.when(errorCountService.errorsForFlow("flow2")).thenReturn(5);
+        Mockito.when(errorCountService.errorsForFlow("flow3")).thenReturn(6);
+
+        ingressFlowService.refreshCache();
+
+        List<IngressFlowErrorState> errorStates = ingressFlowService.ingressFlowErrorsExceeded();
+        assertEquals(1, errorStates.size());
+        assertEquals(new IngressFlowErrorState("flow3", 6, 5), errorStates.get(0));
     }
 
     IngressFlow runningFlow(String name) {

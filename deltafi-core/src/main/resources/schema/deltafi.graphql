@@ -341,6 +341,7 @@ type Query {
   getAllFlows: SystemFlows!
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
+  ingressFlowErrorsExceeded: [IngressFlowErrorState]!
 
   getAllFlowAssignmentRules: [FlowAssignmentRule]!
   getFlowAssignmentRule(id: String!): FlowAssignmentRule

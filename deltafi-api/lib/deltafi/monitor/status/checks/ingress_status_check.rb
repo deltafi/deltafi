@@ -29,8 +29,10 @@ module Deltafi
           DEFAULT_REQUIRED_MEGABYTES = 1
           REQUIRED_MEGABYTES_PROPERTY = %w[ingress diskSpaceRequirementInMb].freeze
           INGRESS_ENABLED_PROPERTY = %w[ingress enabled].freeze
+          FLOW_ERRORS_QUERY = 'query { ingressFlowErrorsExceeded { name maxErrors currErrors } }'
 
           @@ingress_disabled_by_storage = false
+          @@disabled_flows = []
 
           def initialize
             super('Ingress Status Check')
@@ -41,6 +43,7 @@ module Deltafi
 
             check_for_disabled_ingress
             check_for_storage_disabled_ingress
+            check_for_disabled_flows
 
             self
           end
@@ -108,6 +111,55 @@ module Deltafi
 
           def ingress_enabled?
             DF::SystemProperties.dig(INGRESS_ENABLED_PROPERTY, 'true').to_s.casecmp('true').zero?
+          end
+
+          def check_for_disabled_flows
+            disabled = current_disabled_flows
+
+            (disabled.keys - @@disabled_flows).each do |error_flow|
+              notify_flow_disabled(error_flow, disabled[error_flow][:currErrors], disabled[error_flow][:maxErrors])
+            end
+
+            (@@disabled_flows - disabled.keys).each do |fixed_flow|
+              notify_flow_reenabled(fixed_flow)
+            end
+
+            @@disabled_flows = disabled.keys
+
+            unless @@disabled_flows.empty?
+              self.code = 1
+              message_lines << "##### Ingress is disabled for flows with too many errors\n"
+              message_lines << 'Acknowledge or resolve errors on these flows to continue:'
+              disabled.each do |k, v|
+                message_lines << "\n- #{k}: #{v[:currErrors]} errors, #{v[:maxErrors]} allowed"
+              end
+            end
+          end
+
+          def notify_flow_disabled(flow, curr_errors, max_errors)
+            Deltafi::Events.generate "Alert: Disabling ingress to flow #{flow} due to too many errors",
+                                     content: "- Current errors for flow: #{curr_errors}\n- Maximum errors allowed: #{max_errors}\n",
+                                     severity: 'warn',
+                                     notification: true,
+                                     source: 'ingress'
+          end
+
+          def notify_flow_reenabled(flow)
+            Deltafi::Events.generate "Ingress is re-enabled for flow #{flow}",
+                                     severity: 'info',
+                                     notification: true,
+                                     source: 'ingress'
+          end
+
+          def current_disabled_flows
+            response = DF.graphql(FLOW_ERRORS_QUERY)
+            parsed_response = JSON.parse(response.body, symbolize_names: true)
+            raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
+
+            flow_errors = parsed_response.dig(:data, :ingressFlowErrorsExceeded) || []
+            flow_errors.map do |r|
+              [ r[:name], { maxErrors: r[:maxErrors], currErrors: r[:currErrors] } ]
+            end.to_h
           end
         end
       end

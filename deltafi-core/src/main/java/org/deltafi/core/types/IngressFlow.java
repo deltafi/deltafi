@@ -19,6 +19,7 @@ package org.deltafi.core.types;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -31,11 +32,34 @@ import java.util.List;
 @Document
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Slf4j
 public class IngressFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
     private JoinActionConfiguration joinAction;
-    private int maxErrors = 0;
+    private int maxErrors = -1;
+    private int schemaVersion;
+
+    /**
+     * Schema versions:
+     * 0 - original
+     * 1 - change default/unlimited number of maxErrors from 0 to -1
+     */
+    private static final int CURRENT_SCHEMA_VERSION = 1;
+
+    @Override
+    public boolean migrate() {
+        if (schemaVersion < 1 && maxErrors == 0) {
+            maxErrors = -1;
+        }
+
+        if (schemaVersion < CURRENT_SCHEMA_VERSION) {
+            schemaVersion = CURRENT_SCHEMA_VERSION;
+            return true;
+        }
+
+        return false;
+    }
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionNamed) {
@@ -44,11 +68,11 @@ public class IngressFlow extends Flow {
             return transformActionConfiguration;
         }
 
-        if ((loadAction != null) && nameMatches(loadAction, actionNamed)) {
+        if (loadAction != null && nameMatches(loadAction, actionNamed)) {
             return loadAction;
         }
 
-        return ((joinAction != null) && nameMatches(joinAction, actionNamed)) ? joinAction : null;
+        return (joinAction != null && nameMatches(joinAction, actionNamed)) ? joinAction : null;
     }
 
     @Override

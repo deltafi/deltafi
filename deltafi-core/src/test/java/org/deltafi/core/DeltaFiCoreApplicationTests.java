@@ -110,8 +110,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
-import static org.deltafi.core.Util.assertEqualsIgnoringDates;
-import static org.deltafi.core.Util.buildDeltaFile;
+import static org.deltafi.core.Util.*;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
@@ -250,6 +249,9 @@ class DeltaFiCoreApplicationTests {
 
 	@MockBean
 	CredentialProvider credentialProvider;
+
+	@Autowired
+	ErrorCountService errorCountService;
 
 	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -2081,17 +2083,24 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void deltaFiles() {
+		DeltaFile deltaFile = buildErrorDeltaFile("did", "flow", "errorCause", "context", MONGO_NOW);
+		deltaFile.setContentDeleted(MONGO_NOW);
+		deltaFile.setContentDeletedReason("contentDeletedReason");
+		deltaFile.setNextAutoResume(MONGO_NOW);
+		deltaFile.setNextAutoResumeReason("nextAutoResumeReason");
+		deltaFileRepo.save(deltaFile);
+
 		DeltaFiles expected = DeltaFiles.newBuilder()
 				.offset(0)
 				.count(1)
 				.totalCount(1)
-				.deltaFiles(List.of(deltaFilesService.ingress(INGRESS_INPUT)))
+				.deltaFiles(List.of(deltaFile))
 				.build();
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new DeltaFilesGraphQLQuery.Builder()
 						.limit(5)
-						.filter(DeltaFilesFilter.newBuilder().createdBefore(OffsetDateTime.now()).build())
+						.filter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.ERROR).build())
 						.orderBy(DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.DESC).build())
 						.build(),
 				DELTA_FILES_PROJECTION_ROOT
@@ -3223,7 +3232,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile5);
 
 		Set<String> flowSet = new HashSet<>(Arrays.asList("flow1", "flow2", "flow3"));
-		Map<String, Integer> errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+		Map<String, Integer> errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
 
 		assertEquals(3, errorCountsByFlow.size());
 		assertEquals(2, errorCountsByFlow.get("flow1").intValue());
@@ -3232,14 +3241,14 @@ class DeltaFiCoreApplicationTests {
 
 		// Test with a non-existing flow in the set
 		flowSet.add("flowNotFound");
-		errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+		errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
 
 		assertEquals(3, errorCountsByFlow.size());
 		assertNull(errorCountsByFlow.get("flowNotFound"));
 
 		// Test with an empty set
 		flowSet.clear();
-		errorCountsByFlow = deltaFilesService.errorCountsByFlow(flowSet);
+		errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
 
 		assertEquals(0, errorCountsByFlow.size());
 	}

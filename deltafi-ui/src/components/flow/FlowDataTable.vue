@@ -49,7 +49,8 @@
       </Column>
       <Column v-if="FlowTypeTitle == 'Ingress'" header="Max Errors" field="maxErrors" class="max-error-column">
         <template #body="{ data, field }">
-          <span>{{ data[field] }}</span>
+          <span v-if="data[field] === null">-</span>
+          <span v-else>{{ data[field] }}</span>
         </template>
         <template #editor="{ data, field }">
           <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
@@ -177,7 +178,10 @@ const FlowTypeTitle = computed(() => {
 });
 
 const flowDataByType = computed(() => {
-  return props.flowDataProp[props.flowTypeProp];
+  return (props.flowDataProp[props.flowTypeProp] || []).map((flow) => {
+    if (flow.maxErrors === -1) flow.maxErrors = null;
+    return flow;
+  });
 });
 
 const formatBitRate = async () => {
@@ -218,16 +222,18 @@ const bitRate = (bitsPerFlow) => {
 
 const onCellEditComplete = async (event) => {
   let { data, newValue, field } = event;
-  if (_.isEqual(newValue, null)) {
-    newValue = 0;
-  }
 
   if (!_.isEqual(data.maxErrors, newValue)) {
-    let resetValue = data.maxErrors;
+    if (_.isEqual(newValue, null)) newValue = -1;
+    const resetValue = data.maxErrors;
     data[field] = newValue;
     await setMaxErrors(data.name, newValue);
     if (errors.value.length == 0) {
-      notify.success("Max Errors Set Successfully", `Max errors for ${data.name} set to ${newValue}`);
+      if (newValue == -1) {
+        notify.success("Max Errors Disabled", `Max errors for ${data.name} has been disabled`);
+      } else {
+        notify.success("Max Errors Set Successfully", `Max errors for ${data.name} set to ${newValue}`);
+      }
     } else {
       data[field] = resetValue;
     }

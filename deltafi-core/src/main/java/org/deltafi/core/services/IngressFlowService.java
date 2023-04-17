@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.converters.IngressFlowPlanConverter;
+import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.IngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Flow;
@@ -37,8 +38,12 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
 
     private static final IngressFlowPlanConverter INGRESS_FLOW_PLAN_CONVERTER = new IngressFlowPlanConverter();
 
-    public IngressFlowService(IngressFlowRepo ingressFlowRepo, PluginVariableService pluginVariableService, IngressFlowValidator ingressFlowValidator) {
+    private final ErrorCountService errorCountService;
+
+    public IngressFlowService(IngressFlowRepo ingressFlowRepo, PluginVariableService pluginVariableService, IngressFlowValidator ingressFlowValidator, ErrorCountService errorCountService) {
         super("ingress", ingressFlowRepo, pluginVariableService, INGRESS_FLOW_PLAN_CONVERTER, ingressFlowValidator);
+
+        this.errorCountService = errorCountService;
     }
 
     @Override
@@ -95,7 +100,14 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
      */
     public Map<String, Integer> maxErrorsPerFlow() {
         return getRunningFlows().stream()
-                .filter(e -> e.isRunning() && e.getMaxErrors() > 0)
+                .filter(e -> e.isRunning() && e.getMaxErrors() >= 0)
                 .collect(Collectors.toMap(Flow::getName, IngressFlow::getMaxErrors));
+    }
+
+    public List<IngressFlowErrorState> ingressFlowErrorsExceeded() {
+        return getRunningFlows().stream()
+                .map(f -> new IngressFlowErrorState(f.getName(), errorCountService.errorsForFlow(f.getName()), f.getMaxErrors()))
+                .filter(s -> s.getMaxErrors() >= 0 && s.getCurrErrors() > s.getMaxErrors())
+                .toList();
     }
 }

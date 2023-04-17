@@ -110,7 +110,7 @@ public class Util {
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
                 .ingressBytes(0L)
-                .sourceInfo(new SourceInfo(null, flow, metadata))
+                .sourceInfo(new SourceInfo("filename", flow, metadata))
                 .stage(stage)
                 .created(created)
                 .modified(modified)
@@ -143,6 +143,10 @@ public class Util {
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
         Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());
         Assertions.assertThat(actual.getTestMode()).isEqualTo(expected.getTestMode());
+        Assertions.assertThat(actual.getContentDeleted() == null).isEqualTo(expected.getContentDeleted() == null);
+        Assertions.assertThat(actual.getContentDeletedReason()).isEqualTo(expected.getContentDeletedReason());
+        Assertions.assertThat(actual.getErrorAcknowledged() == null).isEqualTo(expected.getErrorAcknowledged() == null);
+        Assertions.assertThat(actual.getErrorAcknowledgedReason()).isEqualTo(expected.getErrorAcknowledgedReason());
         Assertions.assertThat(actual.getNextAutoResume() == null).isEqualTo(expected.getNextAutoResume() == null);
         Assertions.assertThat(actual.getNextAutoResumeReason()).isEqualTo(expected.getNextAutoResumeReason());
     }

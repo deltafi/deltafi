@@ -16,6 +16,7 @@
  *    limitations under the License.
  */
 plugins {
+    id 'org.deltafi.version-reckoning'
     id 'org.deltafi.plugin'
     id 'java'
     id 'jacoco'
