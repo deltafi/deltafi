@@ -262,7 +262,7 @@ release:
   release:
     name: '$CI_COMMIT_TAG'
     tag_name: '$CI_COMMIT_TAG'
-    description: "./CHANGELOG/${COMMIT_TAG}.md"
+    description: "./CHANGELOG/latest.md"
 
 include:
   - local: '*/.gitlab-ci.yml'
