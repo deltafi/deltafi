@@ -152,7 +152,7 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         cluster "$@"
         ;;
       # Commands that do not need recursive call into cluster
-      version|versions|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|mongol-cli|mongo-migrate|mongo-eval|redis-watch|redis-cli|redis-stats|redis-latency|serviceip)
+      version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|mongol-cli|mongo-migrate|mongo-eval|redis-watch|redis-cli|redis-stats|redis-latency|serviceip)
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
         ;;
       ingress)

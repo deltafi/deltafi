@@ -11,6 +11,15 @@ Usage:
   exit 1
 }
 
+TMPFILE="/tmp/.deltafi-versions.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
 # Compatability with GNU sed and BSD sed (MacOS)
 _sed_prepend() {
   if sed --help >/dev/null 2>&1
@@ -26,8 +35,16 @@ ${@}
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
-KUBECTL_CMD="${KUBECTL_BIN} get pods"
+API_HOST=$(deltafi serviceip deltafi-api-service)
+API_URL="http://${API_HOST}/api/v1/versions"
 
-${KUBECTL_CMD} -o json \
-  | jq -r '.items[] | [(.metadata.labels."app.kubernetes.io/name", .metadata.labels.app | select(. != null) )][0] as $app | .spec.containers[] | [$app, .name, .image | gsub(":"; "#") | gsub("localhost#"; "localhost:") | split("#")] | flatten | @csv' \
+truncate -s 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s --connect-timeout 3 -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" "${API_URL}" 2>/dev/null)
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  echo -e "\nUnable to communicate with API: ${API_URL}\n"
+  exit 1
+fi
+
+jq '.versions[] | [(.app, .container, .image.name, .image.tag)] | @csv' "${TMPFILE}" \
   | sort -u | sed 's/\\"//g' | sed 's/"//g' | _sed_prepend '===,=========,=====,===' | _sed_prepend 'App,Container,Image,Tag' | column -t -s ','
