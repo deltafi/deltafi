@@ -41,7 +41,7 @@ public class TransformResult extends DataAmendedResult implements TransformResul
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.TRANSFORM;
     }
 

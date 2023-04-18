@@ -89,7 +89,7 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.ERROR;
     }
 

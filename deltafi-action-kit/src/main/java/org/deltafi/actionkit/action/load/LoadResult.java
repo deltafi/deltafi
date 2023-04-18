@@ -55,7 +55,7 @@ public class LoadResult extends DataAmendedResult implements LoadResultType {
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.LOAD;
     }
 

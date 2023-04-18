@@ -48,7 +48,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
     /**
      * @return the action event type for the specific type of action being executed
      */
-    public abstract ActionEventType actionEventType();
+    protected abstract ActionEventType actionEventType();
 
     /**
      * @return action event summary object based on the action context

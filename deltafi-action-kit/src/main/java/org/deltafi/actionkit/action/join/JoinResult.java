@@ -57,7 +57,7 @@ public class JoinResult extends DataAmendedResult implements JoinResultType {
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.JOIN;
     }
 

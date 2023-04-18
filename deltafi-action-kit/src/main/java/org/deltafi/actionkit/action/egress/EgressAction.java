@@ -33,7 +33,16 @@ public abstract class EgressAction<P extends ActionParameters> extends Action<P>
 
     @Override
     protected final EgressResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return egress(context, params, EgressInput.fromDeltaFile(deltaFile));
+        return egress(context, params, egressInput(deltaFile));
+    }
+
+    private static EgressInput egressInput(DeltaFile deltaFile) {
+        return EgressInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
+                .formattedData(deltaFile.getFormattedData().get(0))
+                .build();
     }
 
     /**

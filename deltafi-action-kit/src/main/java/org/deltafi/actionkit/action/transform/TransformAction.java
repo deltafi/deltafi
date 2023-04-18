@@ -35,7 +35,17 @@ public abstract class TransformAction<P extends ActionParameters> extends Action
     protected final TransformResultType execute(@NotNull DeltaFile deltaFile,
                                                 @NotNull ActionContext context,
                                                 @NotNull P params) {
-        return transform(context, params, TransformInput.fromDeltaFile(deltaFile));
+        return transform(context, params, transformInput(deltaFile));
+    }
+
+    private static TransformInput transformInput(DeltaFile deltaFile) {
+        return TransformInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
+                .contentList(deltaFile.getLastProtocolLayerContent())
+                .metadata(deltaFile.getLastProtocolLayerMetadata())
+                .build();
     }
 
     /**

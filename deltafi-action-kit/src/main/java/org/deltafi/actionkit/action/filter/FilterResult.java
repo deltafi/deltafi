@@ -53,7 +53,7 @@ public class FilterResult extends Result<FilterResult> implements EgressResultTy
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.FILTER;
     }
 

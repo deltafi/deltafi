@@ -49,7 +49,7 @@ public class EgressResult extends Result<EgressResult> implements EgressResultTy
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.EGRESS;
     }
 }

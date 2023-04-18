@@ -35,7 +35,17 @@ public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
     protected final LoadResultType execute(@NotNull DeltaFile deltaFile,
                                            @NotNull ActionContext context,
                                            @NotNull P params) {
-        return load(context, params, LoadInput.fromDeltaFile(deltaFile));
+        return load(context, params, loadInput(deltaFile));
+    }
+
+    private static LoadInput loadInput(DeltaFile deltaFile) {
+        return LoadInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
+                .contentList(deltaFile.getLastProtocolLayerContent())
+                .metadata(deltaFile.getLastProtocolLayerMetadata())
+                .build();
     }
 
     /**

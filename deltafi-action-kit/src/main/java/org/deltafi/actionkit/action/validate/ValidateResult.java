@@ -39,7 +39,7 @@ public class ValidateResult extends Result<ValidateResult> implements ValidateRe
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.VALIDATE;
     }
 }

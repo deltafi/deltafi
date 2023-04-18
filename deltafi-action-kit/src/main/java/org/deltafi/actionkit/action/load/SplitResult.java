@@ -57,7 +57,7 @@ public class SplitResult extends Result implements LoadResultType {
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.SPLIT;
     }
 

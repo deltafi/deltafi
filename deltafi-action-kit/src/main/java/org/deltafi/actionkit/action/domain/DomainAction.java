@@ -49,7 +49,17 @@ public abstract class DomainAction<P extends ActionParameters> extends Action<P>
 
     @Override
     protected final ResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return extractAndValidate(context, params, DomainInput.fromDeltaFile(deltaFile));
+        return extractAndValidate(context, params, domainInput(deltaFile));
+    }
+
+    private static DomainInput domainInput(DeltaFile deltaFile) {
+        return DomainInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
+                .metadata(deltaFile.getLastProtocolLayerMetadata())
+                .domains(deltaFile.domainMap())
+                .build();
     }
 
     /**

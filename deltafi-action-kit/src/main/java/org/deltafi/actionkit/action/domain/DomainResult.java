@@ -46,7 +46,7 @@ public class DomainResult extends Result<DomainResult> implements HasIndexedMeta
     }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.DOMAIN;
     }
 

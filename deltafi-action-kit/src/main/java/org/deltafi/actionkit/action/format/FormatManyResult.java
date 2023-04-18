@@ -59,7 +59,7 @@ public class FormatManyResult extends Result implements FormatResultType {
     public List<FormatResult> getFormatResults() { return formatResults; }
 
     @Override
-    public final ActionEventType actionEventType() {
+    protected final ActionEventType actionEventType() {
         return ActionEventType.FORMAT_MANY;
     }
 

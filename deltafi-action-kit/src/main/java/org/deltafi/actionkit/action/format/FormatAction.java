@@ -60,7 +60,19 @@ public abstract class FormatAction<P extends ActionParameters> extends Action<P>
     protected final FormatResultType execute(@NotNull DeltaFile deltaFile,
                                              @NotNull ActionContext context,
                                              @NotNull P params) {
-        return format(context, params, FormatInput.fromDeltaFile(deltaFile));
+        return format(context, params, formatInput(deltaFile));
+    }
+
+    private static FormatInput formatInput(DeltaFile deltaFile) {
+        return FormatInput.builder()
+                .sourceFilename(deltaFile.getSourceInfo().getFilename())
+                .ingressFlow(deltaFile.getSourceInfo().getFlow())
+                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
+                .contentList(deltaFile.getLastProtocolLayerContent())
+                .metadata(deltaFile.getLastProtocolLayerMetadata())
+                .domains(deltaFile.domainMap())
+                .enrichment(deltaFile.enrichmentMap())
+                .build();
     }
 
     /**
