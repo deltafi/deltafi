@@ -84,43 +84,66 @@ _random_password() {
   printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 | head -c "$size"
 }
 
-cli_log "Initializing k8s prerequisites"
-_k8s_add_namespace deltafi
-_k8s_add_secret mongodb-passwords mongodb-password "$(_random_password 20)" mongodb-root-password "$(_random_password 20)"
-_k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
-_k8s_add_secret redis-password redis-password "$(_random_password 16)"
-_k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
+_k8s_prerequisites() {
+  cli_log "Initializing k8s prerequisites"
+  _k8s_add_namespace deltafi
+  _k8s_add_secret mongodb-passwords mongodb-password "$(_random_password 20)" mongodb-root-password "$(_random_password 20)"
+  _k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
+  _k8s_add_secret redis-password redis-password "$(_random_password 16)"
+  _k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
+}
 
-if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
-  cli_log "Executing helm dependencies"
-  cd $DELTAFICLI_CHART_PATH
-  helm dependencies build
-  cd - > /dev/null
-fi
+_k8s_install() {
+  _k8s_prerequisites
 
-ORIG_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
+  if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
+    cli_log "Executing helm dependencies"
+    cd $DELTAFICLI_CHART_PATH
+    helm dependencies build
+    cd - > /dev/null
+  fi
 
-cli_log "Installing DeltaFi"
+  ORIG_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
 
-helm upgrade --install --wait \
-  --values $DELTAFICLI_CHART_PATH/values.yaml \
-  --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
-  --create-namespace --timeout 10m ${ARGS[@]:1}
+  if [[ -n "${ORIG_CORE_POD}" ]]; then
+    _pre_upgrade_tasks
+  fi
 
-HELM_RETURN_CODE=$?
-[[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
+  helm upgrade --install --wait \
+    --values $DELTAFICLI_CHART_PATH/values.yaml \
+    --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
+    --create-namespace --timeout 10m ${ARGS[@]:1}
 
-NEW_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
+  HELM_RETURN_CODE=$?
+  [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
 
-if ! [ "${ORIG_CORE_POD}" = "${NEW_CORE_POD}" ]; then
+  NEW_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
 
+  if ! [ "${ORIG_CORE_POD}" = "${NEW_CORE_POD}" ]; then
+    _run_migrations
+  fi
+}
+
+_pre_upgrade_tasks() {
+  cli_log "Creating a snapshot"
+  version=$( cat "${DELTAFICLI_WORKDIR}/VERSION")
+  message="Starting upgrade from DeltaFi $(deltafi version) to version ${version}"
+  deltafi event create -q -s "cli" --success --notification "$message"
+  snapshot_file="pre-upgrade-to-${version}-$(date +%s).json"
+  deltafi system-snapshot create "$message" > "${snapshot_file}"
+}
+
+_run_migrations() {
   cli_log "Running migrations"
   deltafi event create -q -s "cli" "Running Mongo migrations"
   MONGO_RESULTS=$(deltafi mongo-migrate | sed -e 's|>>|\\n* |g')
   deltafi event create -q -s "cli" --success "Completed Mongo migrations" --content "${MONGO_RESULTS}"
 
   deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
+}
 
-fi
+cli_log "Installing DeltaFi"
+
+_k8s_install
 
 cli_log "DeltaFi install complete"
