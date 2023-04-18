@@ -16,6 +16,7 @@ A Resume Policy consist of the following:
 * action
 * actionType
 * maxAttempts
+* priority
 * backOff
 
 The backOff properties are:
@@ -27,12 +28,20 @@ The backOff properties are:
 
 ## Behavior
 
-When an action error occurs, the error is matched to resume policies against error cause, flow,
-action, and/or action type. For the error cause search, it looks for a substring match of the policy `errorSubstring`;
+When an action error occurs, the details of the error are compared to all resume policies in decreasing priority order. In order for there to be a match, the error cause, flow, action, and/or action type from the action error must match
+the set of those fields included in the resume policy.
+For the error cause search, the comparison uses a substring match of the policy `errorSubstring`;
 the other fields require an exact match.
+In addition, the number of attempt for that action must be below the `maxAttempts` value of the resume policy.
 
-When a resume policy match is found, the number of attempts for that action is compared against the `maxAttempts`, and
-if `maxAttempts` has not been reached, an automatic resume of the DeltaFile is scheduled.
+It is possible for more than one resume policy to match an action error. Only the first policy that matches will be applied to the DeltaFile. Because of this, careful consideration should be used when setting the `priority` of your resume policy. An initial  `priority` will be calculated for each resume rule upon creation based on the complexity of the match criteria.
+The more specific the policy, the higher the priority.
+Calculated priority ranges from 5o to 250.
+An `errorSubstring` with at least 11 characters is worth 100; shorter values are worth 50.
+If the `action` is specified, that is worth 150.
+However, if `action` is not included, `flow` and `actionType` are worth 50 each when set.
+
+When a resume policy match is found, an automatic resume of the DeltaFile is scheduled. The `name` of the resume policy which was applied is recorded in the DeltaFile `nextAutoResumeReason` field.
 
 Scheduling is determined using the `backOff` properties. The only required property is `delay`. When this is the only
 field present, the DeltaFile is scheduled for automatic resume by adding the `delay` (in seconds) to the stop time of
@@ -79,6 +88,7 @@ to a maximum of 5 minutes (300 seconds).
   "name": "auto-resume-passthrough",
   "flow": "passthrough",
   "maxAttempts": 10,
+  "priority": 50,
   "backOff": {
     "delay": 60,
     "maxDelay": 300,
@@ -97,6 +107,7 @@ string `JsonException`. The action will be attempted up to 4 times, with a rando
   "errorSubstring": "JsonException",
   "actionType": "ENRICH",
   "maxAttempts": 4,
+  "priority": 150,
   "backOff": {
     "delay": 60,
     "maxDelay": 120,

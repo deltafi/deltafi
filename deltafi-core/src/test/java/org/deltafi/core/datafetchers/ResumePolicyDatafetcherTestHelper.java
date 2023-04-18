@@ -40,6 +40,7 @@ public class ResumePolicyDatafetcherTestHelper {
     public static final String ACTION = "action";
     public static final String ACTION_TYPE = "actionType";
     public static final int MAX_ATTEMPTS = 10;
+    public static final int DEFAULT_PRIORITY = 150;
     public static final int DELAY = 100;
     public static final int MAX_DELAY = 500;
     public static final int MULTIPLIER = 1;
@@ -54,6 +55,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 .action()
                 .actionType()
                 .maxAttempts()
+                .priority()
                 .backOff()
                 .delay()
                 .maxDelay()
@@ -84,6 +86,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 .action()
                 .actionType()
                 .maxAttempts()
+                .priority()
                 .backOff()
                 .delay()
                 .maxDelay()
@@ -134,6 +137,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 .action(action)
                 .actionType(actionType)
                 .maxAttempts(maxAttempts)
+                .priority(DEFAULT_PRIORITY)
                 .backOff(makeBackOff(delay))
                 .build();
     }
@@ -149,6 +153,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 policy.getActionType().equals(ACTION_TYPE) &&
                 policy.getName().equals(POLICY_NAME1) &&
                 policy.getMaxAttempts() == MAX_ATTEMPTS &&
+                policy.getPriority() == DEFAULT_PRIORITY &&
                 policy.getBackOff().getDelay() == DELAY &&
                 policy.getBackOff().getMaxDelay() == MAX_DELAY &&
                 policy.getBackOff().getMultiplier() == MULTIPLIER &&
@@ -162,6 +167,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 policy.getActionType().equals(ACTION_TYPE) &&
                 policy.getName().equals(POLICY_NAME3) &&
                 policy.getMaxAttempts() == MAX_ATTEMPTS &&
+                policy.getPriority() == DEFAULT_PRIORITY &&
                 policy.getBackOff().getDelay() == (2 * DELAY) &&
                 policy.getBackOff().getMaxDelay() == MAX_DELAY &&
                 policy.getBackOff().getMultiplier() == MULTIPLIER &&

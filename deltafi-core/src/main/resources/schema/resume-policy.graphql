@@ -38,6 +38,7 @@ type ResumePolicy {
     action: String
     actionType: String
     maxAttempts: Int!
+    priority: Int
     backOff: BackOff!
 }
 
@@ -49,6 +50,7 @@ input ResumePolicyInput {
     action: String
     actionType: String
     maxAttempts: Int!
+    priority: Int
     backOff: BackOffInput!
 }
 

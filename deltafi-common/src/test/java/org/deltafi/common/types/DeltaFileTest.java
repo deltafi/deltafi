@@ -65,10 +65,12 @@ class DeltaFileTest {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .actions(new ArrayList<>(List.of(action1, action2, action3)))
                 .nextAutoResume(now)
+                .nextAutoResumeReason("policy-name")
                 .build();
 
         List<String> retried = deltaFile.retryErrors();
         assertNull(deltaFile.getNextAutoResume());
+        assertEquals("policy-name", deltaFile.getNextAutoResumeReason());
         assertEquals(List.of("action1", "action3"), retried);
 
         assertEquals(3, deltaFile.getActions().size());

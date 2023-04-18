@@ -57,15 +57,16 @@ public class ResumePolicyService implements Snapshotter {
     /**
      * Find a resume policy for the specified criteria.
      *
+     * @param attempt    number of times action attempted
      * @param errorCause error cause text.
      * @param flow       flow where error occurred.
      * @param action     name of action with error.
      * @param actionType type of action with error.
      * @return Optional ResumePolicy if found, else empty.
      */
-    Optional<ResumePolicy> find(String errorCause, String flow, String action, String actionType) {
+    Optional<ResumePolicy> find(int attempt, String errorCause, String flow, String action, String actionType) {
         for (ResumePolicy policy : policiesCache) {
-            if (policy.isMatch(errorCause, flow, action, actionType)) {
+            if (policy.isMatch(attempt, errorCause, flow, action, actionType)) {
                 return Optional.of(policy);
             }
         }
@@ -81,14 +82,16 @@ public class ResumePolicyService implements Snapshotter {
      * @return An Optional of the delay details for the next execution
      */
     public Optional<ResumeDetails> getAutoResumeDelay(DeltaFile deltaFile, ActionEventInput event, String actionType) {
-        Optional<ResumePolicy> policy = find(
-                event.getError().getCause(),
-                deltaFile.getSourceInfo().getFlow(),
-                event.getAction(),
-                actionType);
-        if (policy.isPresent()) {
-            Optional<Action> action = deltaFile.actionNamed(event.getAction());
-            if (action.isPresent() && action.get().getAttempt() < policy.get().getMaxAttempts()) {
+        Optional<Action> action = deltaFile.actionNamed(event.getAction());
+        if (action.isPresent()) {
+            Optional<ResumePolicy> policy = find(
+                    action.get().getAttempt(),
+                    event.getError().getCause(),
+                    deltaFile.getSourceInfo().getFlow(),
+                    event.getAction(),
+                    actionType);
+
+            if (policy.isPresent()) {
                 return Optional.of(new ResumeDetails(policy.get().getName(),
                         computeDelay(policy.get().getBackOff(), action.get().getAttempt())));
             }
@@ -127,7 +130,7 @@ public class ResumePolicyService implements Snapshotter {
      * @return List of ResumePolicy
      */
     public List<ResumePolicy> getAll() {
-        return resumePolicyRepo.findAll();
+        return resumePolicyRepo.findByOrderByPriorityDesc();
     }
 
     /**

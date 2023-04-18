@@ -39,7 +39,6 @@ import static org.mockito.Mockito.*;
 class ResumePolicyServiceTest {
 
     private static final String DEFAULT_ID = "1";
-    private static final String NAME = "name";
     private static final String ERROR = "error";
     private static final String FLOW = "flow";
     private static final String ACTION = "action";
@@ -100,15 +99,16 @@ class ResumePolicyServiceTest {
 
     @Test
     void testFind() {
-        when(resumePolicyRepo.findAll()).thenReturn(getTestList());
+        when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
-        Optional<ResumePolicy> policy = resumePolicyService.find(ERROR, "2" + FLOW, "2" + ACTION, ACTION_TYPE);
+        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + FLOW, "2" + ACTION, ACTION_TYPE);
         assertFalse(policy.isEmpty());
+        assertEquals("name2", policy.get().getName());
     }
 
     @Test
     void testGetAutoResumeDelay() {
-        when(resumePolicyRepo.findAll()).thenReturn(getTestList());
+        when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
 
         Optional<ResumePolicyService.ResumeDetails> resumeDetails = resumePolicyService.getAutoResumeDelay(
@@ -121,9 +121,22 @@ class ResumePolicyServiceTest {
                 ACTION_TYPE);
         assertFalse(resumeDetails.isEmpty());
         assertEquals(100, resumeDetails.get().delay());
+        assertEquals("name1", resumeDetails.get().name());
+
+        Optional<ResumePolicyService.ResumeDetails> rollToNextPolicy = resumePolicyService.getAutoResumeDelay(
+                getDeltaFile(MAX_ATTEMPTS + 1),
+                ActionEventInput.newBuilder()
+                        .action("1" + ACTION)
+                        .error(ErrorEvent.newBuilder()
+                                .cause(ERROR).build())
+                        .build(),
+                ACTION_TYPE);
+        assertFalse(rollToNextPolicy.isEmpty());
+        assertEquals(100, rollToNextPolicy.get().delay());
+        assertEquals("name4", rollToNextPolicy.get().name());
 
         Optional<ResumePolicyService.ResumeDetails> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
-                getDeltaFile(MAX_ATTEMPTS),
+                getDeltaFile(MAX_ATTEMPTS * 2),
                 ActionEventInput.newBuilder()
                         .action("1" + ACTION)
                         .error(ErrorEvent.newBuilder()
@@ -194,27 +207,33 @@ class ResumePolicyServiceTest {
     }
 
     private ResumePolicy getDefault() {
-        return getCustom("");
+        return getCustom("name", "");
     }
 
     private List<ResumePolicy> getTestList() {
         return List.of(
-                getCustom("1"),
-                getCustom("2"),
-                getCustom("3"));
+                getCustom("name1", "1"),
+                getCustom("name2", "2"),
+                getCustom("name3", "3"),
+                getCustom("name4", "1", MAX_ATTEMPTS * 2));
     }
 
-    private ResumePolicy getCustom(String prefix) {
-        ResumePolicy policy = buildPolicy(ERROR, prefix + FLOW, prefix + ACTION, ACTION_TYPE);
+    private ResumePolicy getCustom(String name, String prefix) {
+        return getCustom(name, prefix, MAX_ATTEMPTS);
+    }
+
+    private ResumePolicy getCustom(String name, String prefix, int maxAttempts) {
+        ResumePolicy policy = buildPolicy(name, ERROR, prefix + FLOW, prefix + ACTION, ACTION_TYPE, maxAttempts);
         policy.setBackOff(BackOff.newBuilder().delay(100).build());
         return policy;
     }
 
-    private ResumePolicy buildPolicy(String error, String flow, String action, String actionType) {
+    private ResumePolicy buildPolicy(String name, String error, String flow, String action, String actionType, int maxAttempts) {
         ResumePolicy policy = new ResumePolicy();
         policy.setId(DEFAULT_ID);
-        policy.setName(NAME);
-        policy.setMaxAttempts(MAX_ATTEMPTS);
+        policy.setName(name);
+        policy.setMaxAttempts(maxAttempts);
+        policy.setMaxAttempts(maxAttempts);
 
         if (null != error) policy.setErrorSubstring(error);
         if (null != flow) policy.setFlow(flow);

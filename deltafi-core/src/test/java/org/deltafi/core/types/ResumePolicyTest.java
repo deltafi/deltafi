@@ -83,41 +83,70 @@ class ResumePolicyTest {
     @Test
     void testMatch() {
         assertTrue(policy("error", "flow", "action", "type")
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
         assertTrue(policy("error", "flow", null, "type")
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
         assertTrue(policy("error", "flow", null, null)
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
         assertTrue(policy("error", null, null, null)
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
 
         assertTrue(policy(null, "flow", "action", null)
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
         assertTrue(policy(null, "flow", null, "type")
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
         assertTrue(policy(null, "flow", "action", "type")
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
         assertTrue(policy(null, null, "action", "type")
-                .isMatch("the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "action", "type"));
     }
 
     @Test
     void testNoMatch() {
         assertFalse(policy("error", "flow", "action", "type")
-                .isMatch("the Error message", "flow", "action", "type"));
+                .isMatch(2, "the error message", "flow", "action", "type"));
+        assertFalse(policy("error", "flow", "action", "type")
+                .isMatch(3, "the error message", "flow", "action", "type"));
+
+        assertFalse(policy("error", "flow", "action", "type")
+                .isMatch(1, "the Error message", "flow", "action", "type"));
         assertFalse(policy("error", "flow", null, "type")
-                .isMatch("the err message", "flow", "action", "type"));
+                .isMatch(1, "the err message", "flow", "action", "type"));
         assertFalse(policy("error", "flow", null, null)
-                .isMatch("", "flow", "action", "type"));
+                .isMatch(1, "", "flow", "action", "type"));
 
         assertFalse(policy(null, "flow", "action", null)
-                .isMatch("the error message", "one", "two", "type"));
+                .isMatch(1, "the error message", "one", "two", "type"));
         assertFalse(policy(null, "flow", null, "type")
-                .isMatch("the error message", "flow", "action", "other"));
+                .isMatch(1, "the error message", "flow", "action", "other"));
         assertFalse(policy(null, "flow", "action", "type")
-                .isMatch("the error message", "other", "action", "type"));
+                .isMatch(1, "the error message", "other", "action", "type"));
         assertFalse(policy(null, null, "action", "type")
-                .isMatch("the error message", "flow", "other", "type"));
+                .isMatch(1, "the error message", "flow", "other", "type"));
+    }
+
+    @Test
+    void testPriority() {
+        ResumePolicy shortErrorAndFlow = policy("error", "flow", null, null);
+        shortErrorAndFlow.validate();
+        assertEquals(100, shortErrorAndFlow.getPriority());
+
+        ResumePolicy actionTypeOnly = policy(null, null, null, "EGRESS");
+        actionTypeOnly.validate();
+        assertEquals(50, actionTypeOnly.getPriority());
+
+        ResumePolicy allCriteria = policy("aLongErrorMessage", "flow", "flow.action", "EGRESS");
+        allCriteria.validate();
+        assertEquals(250, allCriteria.getPriority());
+
+        ResumePolicy withoutAction = policy("aLongErrorMessage", "flow", null, "EGRESS");
+        withoutAction.validate();
+        assertEquals(200, withoutAction.getPriority());
+
+        ResumePolicy presetPriority = policy("aLongErrorMessage", "flow", null, "EGRESS");
+        presetPriority.setPriority(123);
+        presetPriority.validate();
+        assertEquals(123, presetPriority.getPriority());
     }
 
     private ResumePolicy getValid() {
@@ -150,7 +179,10 @@ class ResumePolicyTest {
         backoff.setDelay(100);
 
         policy.setBackOff(backoff);
+        assertNull(policy.getPriority());
         assertTrue(policy.validate().isEmpty());
+        assertTrue(policy.getPriority() > 0);
+
         return policy;
     }
 

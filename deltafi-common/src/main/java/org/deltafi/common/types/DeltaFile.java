@@ -180,7 +180,6 @@ public class DeltaFile {
       action.setState(ActionState.RETRIED);
     });
     setNextAutoResume(null);
-    setNextAutoResumeReason(null);
 
     return actionsToRetry.stream().map(Action::getName).toList();
   }

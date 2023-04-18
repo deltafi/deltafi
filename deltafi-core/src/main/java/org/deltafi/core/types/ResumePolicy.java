@@ -50,6 +50,10 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
             errors.add(MISSING_NAME);
         }
 
+        if (getPriority() == null) {
+            setPriority(computePriority());
+        }
+
         if (StringUtils.isBlank(getErrorSubstring()) &&
                 StringUtils.isBlank(getFlow()) &&
                 StringUtils.isBlank(getAction()) &&
@@ -68,6 +72,29 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         }
 
         return errors;
+    }
+
+    private int computePriority() {
+        int tempPriority = 0;
+        if (StringUtils.isNotBlank(getErrorSubstring())) {
+            if (getErrorSubstring().length() > 10) {
+                tempPriority += 100;
+            } else {
+                tempPriority += 50;
+            }
+        }
+        if (StringUtils.isNotBlank(getAction())) {
+            // The action name already starts with the flow name
+            tempPriority += 150;
+        } else {
+            if (StringUtils.isNotBlank(getFlow())) {
+                tempPriority += 50;
+            }
+            if (StringUtils.isNotBlank(getActionType())) {
+                tempPriority += 50;
+            }
+        }
+        return tempPriority;
     }
 
     private void validateBackoff(List<String> errors) {
@@ -97,8 +124,9 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         }
     }
 
-    public boolean isMatch(String error, String flow, String action, String actionType) {
-        return errorMatch(error) &&
+    public boolean isMatch(int attempt, String error, String flow, String action, String actionType) {
+        return attempt < getMaxAttempts() &&
+                errorMatch(error) &&
                 canMatch(getFlow(), flow) &&
                 canMatch(getAction(), action) &&
                 canMatch(getActionType(), actionType);
