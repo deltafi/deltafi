@@ -1441,7 +1441,7 @@ public class DeltaFilesService {
                 getProperties().getSystemName(), null);
     }
 
-    private static final String JOINED_SOURCE_FILE_NAME = "multiple";
+    public static final String JOINED_SOURCE_FILE_NAME = "multiple";
 
     private DeltaFile buildJoinedDeltaFile(String flow, List<DeltaFile> deltaFiles) {
         log.debug("Joining {}", deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.joining(",")));
@@ -1486,7 +1486,7 @@ public class DeltaFilesService {
     private static final String DEFAULT_JOIN_VALUE = "DEFAULT";
 
     private void processJoin(DeltaFile deltaFile, JoinActionConfiguration joinActionConfiguration) {
-        log.debug("Processing join for deltafile with id {}", deltaFile.getDid());
+        log.debug("Processing join for deltaFile with id {}", deltaFile.getDid());
 
         String joinGroup = deltaFile.getSourceInfo().getMetadata(joinActionConfiguration.getMetadataKey());
         if (joinGroup == null) {
