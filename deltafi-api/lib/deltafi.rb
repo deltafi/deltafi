@@ -29,6 +29,7 @@ module Deltafi
   REDIS_RECONNECT_ATTEMPTS = 1_000_000_000
   REDIS_RETRY_COUNT = 30
   BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
+  DELTAFI_MODE = ENV['DELTAFI_MODE'] || 'CLUSTER'
 
   def self.k8s_client
     debug "#{__method__} called from #{caller[0]}"
@@ -66,6 +67,22 @@ module Deltafi
     response
   end
 
+  def self.core_rest_get(endpoint)
+    debug "#{__method__} called from #{caller[0]}"
+    core_url = File.join(BASE_URL, endpoint)
+
+    response = HTTParty.get(core_url,
+                           headers: {
+                             'Content-Type' => 'application/json',
+                             'X-User-Permissions' => 'Admin',
+                             'X-User-Name' => 'Admin'
+                           })
+
+    raise "#{response.code} error from core: #{response.message}" unless response.success?
+
+    JSON.parse(response.body, symbolize_names: true)
+  end
+
   def self.redis_client
     debug "#{__method__} called from #{caller[0]}"
     redis_password = ENV.fetch('REDIS_PASSWORD', nil)
@@ -93,6 +110,10 @@ module Deltafi
 
   def self.running_in_cluster?
     ENV['RUNNING_IN_CLUSTER'] == 'true'
+  end
+
+  def self.cluster_mode?
+    DELTAFI_MODE == 'CLUSTER'
   end
 end
 

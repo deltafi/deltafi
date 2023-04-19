@@ -24,7 +24,7 @@ module Deltafi
       module Metrics
         module System
           class << self
-            REFRESH_K8S_CACHE_SECONDS = 60
+            REFRESH_APPS_BY_NODE_CACHE_SECONDS = 60
             # this matches half the refresh rate of the nodemonitor.  We will be at most 9 seconds stale.
             REFRESH_GRAPHITE_CACHE_SECONDS = 4.5
 
@@ -37,19 +37,14 @@ module Deltafi
               'keepLastValue(seriesByTag(\'name=gauge.node.memory.limit\'), inf)'
             ].freeze
 
-            @@cached_k8s_info = nil
+            @@cached_apps_by_node = nil
             @@cached_graphite_metrics = nil
             @@last_graphite_cache_time = Time.now
 
             def k8s_info
-              if @@cached_k8s_info.nil? || Time.now - @@last_k8s_cache_time > REFRESH_K8S_CACHE_SECONDS
-                @@last_k8s_cache_time = Time.now
-                @@cached_k8s_info = {
-                  pods_by_node: DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName }
-                }
-              end
-
-              @@cached_k8s_info
+              {
+                pods_by_node: DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName.intern }
+              }
             end
 
             def metrics
@@ -98,7 +93,7 @@ module Deltafi
               nodes = {}
 
               metrics.each do |metric|
-                hostname = metric[:tags][:hostname]
+                hostname = metric[:tags][:hostname].intern
                 _, _, resouce, measurement = metric[:tags][:name].split('.').map(&:to_sym)
                 nodes[hostname] ||= {}
                 nodes[hostname][resouce] ||= {}
@@ -108,7 +103,7 @@ module Deltafi
               nodes
             end
 
-            def apps_by_node
+            def apps_by_node_k8s
               # In Kubernetes mode
               pods_by_node = k8s_info[:pods_by_node]
               pods_by_node.transform_values do |pods|
@@ -116,6 +111,19 @@ module Deltafi
                   { name: pod.metadata.name }
                 end
               end
+            end
+
+            def apps_by_node_core
+              DF.core_rest_get("appsByNode")
+            end
+
+            def apps_by_node
+              if @@cached_apps_by_node.nil? || Time.now - @@last_apps_by_node_cache_time > REFRESH_APPS_BY_NODE_CACHE_SECONDS
+                @@last_apps_by_node_cache_time = Time.now
+                @@cached_apps_by_node = DF.cluster_mode? ? apps_by_node_k8s : apps_by_node_core
+              end
+
+              @@cached_apps_by_node
             end
 
             def content

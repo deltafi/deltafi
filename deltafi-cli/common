@@ -46,3 +46,11 @@ _down() {
 _fail() {
   printf "   [ %s%-4s%s ]  %s\n" "${red}" "FAIL" "${normal}" "$@"
 }
+
+_is_standalone() {
+  if [ "${DELTAFI_MODE}" == "STANDALONE" ]; then
+    return 0
+  else
+    return 1
+  fi
+}

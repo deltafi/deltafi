@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+
+set -e
+
+cli_help_command() {
+  echo "
+Command: system-snapshot
+
+Subcommands:
+  start               start all of the services
+  stop                stop all of the services
+  restart <services>  restart the list of services (space delimited)
+
+Usage:
+  compose start [OPTIONS]
+
+Options:
+  -h, --help        Show help"
+  exit 1
+}
+
+_random_password() {
+  local size=${1:-20}
+  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 | head -c "$size"
+}
+
+_setup_secrets() {
+  SECRETS_PATH="./settings/secrets"
+  GRAFANA_SECRET_PATH="${SECRETS_PATH}/grafana.env"
+  MINIO_SECRET_PATH="${SECRETS_PATH}/minio.env"
+  MONGODB_SECRET_PATH="${SECRETS_PATH}/mongodb.env"
+  REDIS_SECRET_PATH="${SECRETS_PATH}/redis.env"
+  SSL_SECRET_PATH="${SECRETS_PATH}/ssl.env"
+
+  if [[ ! -f "${GRAFANA_SECRET_PATH}" ]]; then
+      grafana_password=$(_random_password 16)
+      cat <<EOF > "${GRAFANA_SECRET_PATH}"
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD="$grafana_password"
+EOF
+  fi
+
+  if [[ ! -f "${MINIO_SECRET_PATH}" ]]; then
+      minio_password=$(_random_password 40)
+      cat <<EOF > "${MINIO_SECRET_PATH}"
+MINIO_ROOT_USER=deltafi
+MINIO_ROOT_PASSWORD="$minio_password"
+MINIO_ACCESSKEY=deltafi
+MINIO_SECRETKEY="$minio_password"
+EOF
+  fi
+
+  if [[ ! -f "${MONGODB_SECRET_PATH}" ]]; then
+    mongo_password=$(_random_password 20)
+    mongo_root_password=$(_random_password 20)
+    cat <<EOF > "${MONGODB_SECRET_PATH}"
+MONGODB_USERNAME=mongouser
+MONGODB_DATABASE=deltafi
+MONGO_PASSWORD="$mongo_password"
+MONGODB_PASSWORD="$mongo_password"
+MONGODB_ROOT_PASSWORD="$mongo_root_password"
+EOF
+  fi
+
+  if [[ ! -f "${REDIS_SECRET_PATH}" ]]; then
+    redis_password=$(_random_password 16)
+    cat <<EOF > "${REDIS_SECRET_PATH}"
+REDIS_PASSWORD="$redis_password"
+EOF
+  fi
+
+  # TODO -- SSL settings need to be passed in/read
+  if [[ ! -f "${SSL_SECRET_PATH}" ]]; then
+    cat <<EOF > "${SSL_SECRET_PATH}"
+SSL_KEYSTORE=/etc/pki/keyStore.p12
+SSL_KEYSTORETYPE=PKCS12
+SSL_KEYSTORE_PASSWORD=not-set
+SSL_TRUSTSTORE=/etc/pki/trustStore.jks
+SSL_TRUSTSTORETYPE=JKS
+SSL_TRUSTSTORE_PASSWORD=not-set
+SSL_PROTOCOL=TLSv1.2
+EOF
+  fi
+}
+
+_create_network() {
+  if ! docker network ls | grep -q "deltafi"; then
+    echo "Creating deltafi network ..."
+    docker network create deltafi
+  fi
+}
+
+start_compose() {
+  _setup_secrets
+  _create_network
+
+  docker compose --env-file "${1}" up -d
+}
+
+stop_compose() {
+  docker compose --env-file "${1}" down
+}
+
+restart_service() {
+  echo "${1}: ${2}"
+  docker-compose --env-file "${1}" up -d --force-recreate --no-deps ${2}
+}
+
+ARGS=("$@")
+[[ ${#ARGS[@]} -lt 1 ]] && cli_help_command
+SUBCOMMAND=${ARGS[0]}
+shift
+
+# TODO pick the env based on input/OS
+images_file="./settings/images/local-images.env"
+
+case "$SUBCOMMAND" in
+  restart)
+    SERVICES=""
+    for i
+      do SERVICES="${SERVICES} ${i}"
+    done
+    restart_service "$images_file" "${SERVICES}"
+    ;;
+  start)
+    start_compose "$images_file"
+    ;;
+  stop)
+    stop_compose "$images_file"
+    ;;
+  *)
+    cli_help_command
+    ;;
+esac

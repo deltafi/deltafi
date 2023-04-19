@@ -1,0 +1,18 @@
+apiVersion: 1
+datasources:
+  - access: proxy
+    editable: false
+    isDefault: true
+    name: Graphite
+    type: graphite
+    uid: deltafi-graphite
+    url: http://deltafi-graphite:8080
+    version: 2
+  - access: proxy
+    editable: false
+    isDefault: false
+    name: Loki
+    type: loki
+    uid: deltafi-loki
+    url: http://deltafi-loki:3100
+    version: 2

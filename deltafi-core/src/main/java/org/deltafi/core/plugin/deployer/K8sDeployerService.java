@@ -70,30 +70,7 @@ public class K8sDeployerService extends BaseDeployerService {
     }
 
     @Override
-    public DeployResult deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
-        PluginImageRepository pluginImageRepository = pluginImageRepositoryService.findByGroupId(pluginCoordinates);
-
-        ArrayList<String> info = new ArrayList<>();
-
-        if (imageRepoOverride != null) {
-            pluginImageRepository.setImageRepositoryBase(imageRepoOverride);
-            info.add("Image repo override: " + imageRepoOverride);
-        }
-
-        if (imagePullSecretOverride != null) {
-            pluginImageRepository.setImagePullSecret(imagePullSecretOverride);
-            info.add("Image pull secret override: " + imagePullSecretOverride);
-        }
-
-        PluginCustomization pluginCustomization;
-        try {
-            pluginCustomization = customDeploymentOverride != null ?
-                    PluginCustomizationService.unmarshalPluginCustomization(customDeploymentOverride) :
-                    pluginCustomizationService.getPluginCustomizations(pluginCoordinates);
-        } catch (Exception e) {
-            return DeployResult.builder().success(false).info(info).errors(List.of("Could not retrieve plugin customizations: " + e.getMessage())).build();
-        }
-
+    public DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, ArrayList<String> info) {
         try {
             List<Integer> ports = pluginCustomization != null && pluginCustomization.getPorts() != null ? pluginCustomization.getPorts() : List.of();
             Deployment deployment = buildDeployment(pluginCoordinates, pluginImageRepository, pluginCustomization, ports);

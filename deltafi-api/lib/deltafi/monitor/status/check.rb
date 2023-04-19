@@ -62,9 +62,7 @@ module Deltafi
 
         def config
           class_name = self.class.name.split('::').last
-          configmap_data = DF.k8s_client.api('v1')
-                             .resource('configmaps', namespace: 'deltafi')
-                             .get(CONFIGMAP).data
+          configmap_data = DF.cluster_mode? ? get_configmap : {}
 
           if configmap_data.respond_to?(class_name)
             configmap_data.send(class_name)
@@ -72,6 +70,12 @@ module Deltafi
             puts "No configuration found for #{class_name}"
             {}
           end
+        end
+
+        def get_configmap
+          DF.k8s_client.api('v1')
+            .resource('configmaps', namespace: 'deltafi')
+            .get(CONFIGMAP).data
         end
 
         def run

@@ -15,4 +15,9 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 REDIS_PASSWORD_ENV='$REDIS_PASSWORD'
 GREP_CMD='grep -v "^OK$\|AUTH\|ping"'
-${KUBECTL_BIN} exec -it deltafi-redis-master-0 -- sh -c "redis-cli --no-auth-warning -a $REDIS_PASSWORD_ENV monitor 2>&1 | $GREP_CMD"
+
+if _is_standalone; then
+  docker exec -it deltafi-redis sh -c "redis-cli --no-auth-warning -a $REDIS_PASSWORD_ENV monitor 2>&1 | $GREP_CMD"
+else
+  ${KUBECTL_BIN} exec -it deltafi-redis-master-0 -- sh -c "redis-cli --no-auth-warning -a $REDIS_PASSWORD_ENV monitor 2>&1 | $GREP_CMD"
+fi

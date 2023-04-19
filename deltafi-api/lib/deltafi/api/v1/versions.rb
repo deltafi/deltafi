@@ -24,6 +24,10 @@ module Deltafi
       module Versions
         class << self
           def apps
+            DF.cluster_mode? ? k8s_apps : standalone_apps
+          end
+
+          def k8s_apps
             pods = DF.k8s_client.api('v1')
                      .resource('pods', namespace: DF::Common::K8S_NAMESPACE)
                      .list(fieldSelector: { 'status.phase' => 'Running' })
@@ -44,6 +48,10 @@ module Deltafi
                 }
               end
             end.flatten.uniq.sort_by { |p| p[:app] }
+          end
+
+          def standalone_apps
+            DF.core_rest_get("app/versions")
           end
         end
       end

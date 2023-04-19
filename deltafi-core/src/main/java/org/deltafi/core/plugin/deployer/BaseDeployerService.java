@@ -21,8 +21,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
+import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.api.model.Event;
@@ -32,6 +34,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -47,7 +50,31 @@ public abstract class BaseDeployerService implements DeployerService {
     @Override
     public Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
         systemSnapshotService.createSnapshot(preUpgradeMessage(pluginCoordinates));
-        DeployResult deployResult = deploy(pluginCoordinates, imageRepoOverride, imagePullSecretOverride, customDeploymentOverride);
+
+        PluginImageRepository pluginImageRepository = pluginImageRepositoryService.findByGroupId(pluginCoordinates);
+
+        ArrayList<String> info = new ArrayList<>();
+
+        if (imageRepoOverride != null) {
+            pluginImageRepository.setImageRepositoryBase(imageRepoOverride);
+            info.add("Image repo override: " + imageRepoOverride);
+        }
+
+        if (imagePullSecretOverride != null) {
+            pluginImageRepository.setImagePullSecret(imagePullSecretOverride);
+            info.add("Image pull secret override: " + imagePullSecretOverride);
+        }
+
+        PluginCustomization pluginCustomization;
+        try {
+            pluginCustomization = customDeploymentOverride != null ?
+                    PluginCustomizationService.unmarshalPluginCustomization(customDeploymentOverride) :
+                    pluginCustomizationService.getPluginCustomizations(pluginCoordinates);
+        } catch (Exception e) {
+            return DeployResult.builder().success(false).info(info).errors(List.of("Could not retrieve plugin customizations: " + e.getMessage())).build();
+        }
+
+        DeployResult deployResult = deploy(pluginCoordinates, pluginImageRepository, pluginCustomization, info);
         publishEvent(pluginCoordinates, deployResult);
         return deployResult.detailedResult();
     }
@@ -94,7 +121,7 @@ public abstract class BaseDeployerService implements DeployerService {
         return retval;
     }
 
-    abstract DeployResult deploy(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride);
+    abstract DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, ArrayList<String> info);
 
     abstract Result removePluginResources(PluginCoordinates pluginCoordinates);
 

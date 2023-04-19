@@ -13,8 +13,6 @@ The COMMAND should be quoted and not contain any single quotes"
   exit 1
 }
 
-POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")
-
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
@@ -22,4 +20,10 @@ ARGS=($@)
 EVAL=${ARGS[1]}
 MONGODB_USERNAME_ENV='$MONGODB_USERNAME'
 MONGODB_PASSWORD_ENV='$MONGODB_PASSWORD'
-${KUBECTL_BIN} exec -it ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
+
+if _is_standalone; then
+  docker exec -it deltafi-mongodb sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
+else
+  POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")
+  ${KUBECTL_BIN} exec -it ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
+fi

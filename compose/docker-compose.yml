@@ -1,0 +1,382 @@
+version: '3'
+
+x-health-probe: &health-probe
+  healthcheck:
+    test: /probe.sh
+    interval: 15s
+    timeout: 15s
+    start_period: 5s
+    retries: 2
+
+x-logging-label: &logging-label
+  logging: "promtail"
+  logging_jobname: "containerlogs"
+
+networks:
+  deltafi:
+    external: true
+
+services:
+  deltafi-core:
+    image: ${DELTAFI_CORE}:${DELTAFI_VERSION}
+    container_name: deltafi-core
+    depends_on:
+      deltafi-redis:
+        condition: service_healthy
+      deltafi-mongodb:
+        condition: service_healthy
+      deltafi-minio:
+        condition: service_started
+    expose:
+      - "8080"
+    environment:
+      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
+      UNIQUE_ID: deltafi-core
+    env_file:
+      - settings/common.env
+      - settings/secrets/redis.env
+      - settings/secrets/mongodb.env
+      - settings/secrets/minio.env
+      - settings/secrets/ssl.env
+    <<: *health-probe
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  deltafi-ingress:
+    image: ${DELTAFI_INGRESS}:${DELTAFI_VERSION}
+    container_name: deltafi-ingress
+    depends_on:
+      deltafi-redis:
+        condition: service_healthy
+      deltafi-mongodb:
+        condition: service_healthy
+      deltafi-minio:
+        condition: service_started
+    environment:
+      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
+    env_file:
+      - settings/common.env
+      - settings/secrets/redis.env
+      - settings/secrets/mongodb.env
+      - settings/secrets/minio.env
+      - settings/secrets/ssl.env
+    expose:
+      - "8080"
+    <<: *health-probe
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+  deltafi-api:
+    image: ${DELTAFI_API}:${DELTAFI_VERSION}
+    container_name: deltafi-api
+    depends_on:
+      deltafi-core:
+        condition: service_healthy
+    environment:
+      WORKERS: 8
+    env_file:
+      - settings/common.env
+      - settings/secrets/redis.env
+      - settings/secrets/mongodb.env
+      - settings/secrets/minio.env
+    expose:
+      - "9292"
+    <<: *health-probe
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+  deltafi-auth:
+    image: ${DELTAFI_AUTH}:${DELTAFI_VERSION}
+    container_name: deltafi-auth
+    environment:
+      DATA_DIR: /data
+      WORKERS: 8
+    env_file:
+      - settings/common.env
+    expose:
+      - "9292"
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    volumes:
+      - ./data/auth:/data
+  deltafi-monitor:
+    image: ${DELTAFI_API}:${DELTAFI_VERSION}
+    container_name: deltafi-monitor
+    command: [ 'bundle', 'exec', 'bin/monitor.rb' ]
+    depends_on:
+      deltafi-core:
+        condition: service_healthy
+    env_file:
+      - settings/common.env
+      - settings/secrets/redis.env
+      - settings/secrets/mongodb.env
+      - settings/secrets/minio.env
+    healthcheck:
+      test: /monitor_probe.sh
+      interval: 30s
+      timeout: 30s
+      retries: 2
+    expose:
+      - "9292"
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+  deltafi-ui:
+    image: ${DELTAFI_UI}:${DELTAFI_VERSION}
+    container_name: deltafi-ui
+    depends_on:
+      deltafi-api:
+        condition: service_healthy
+    expose:
+      - "80"
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+  deltafi-core-actions:
+    image: ${DELTAFI_CORE_ACTIONS}:${DELTAFI_VERSION}
+    container_name: deltafi-core-actions
+    depends_on:
+      deltafi-core:
+        condition: service_healthy
+    env_file:
+      - settings/common.env
+      - settings/secrets/redis.env
+      - settings/secrets/minio.env
+    healthcheck:
+      test: cat /running
+      interval: 30s
+      timeout: 30s
+      retries: 2
+      start_period: 10s
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+  deltafi-docs:
+    image: ${DELTAFI_DOCS}:${DELTAFI_VERSION}
+    container_name: deltafi-docs
+    expose:
+      - "80"
+    labels:
+      deltafi-group: deltafi-core
+    networks:
+      - deltafi
+  deltafi-nodemonitor:
+    image: ${DELTAFI_NODEMONITOR}:${DELTAFI_VERSION}
+    container_name: deltafi-nodemonitor
+    depends_on:
+      deltafi-graphite:
+        condition: service_started
+    env_file:
+      - settings/common.env
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    volumes:
+      - ./data:/data
+  deltafi-egress-sink:
+    image: ${DELTAFI_EGRESS_SINK}:${DELTAFI_VERSION}
+    container_name: deltafi-egress-sink
+    depends_on:
+      deltafi-core:
+        condition: service_started
+    env_file:
+      - settings/common.env
+    expose:
+      - "9292"
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    volumes:
+      - ./data:/data/deltafi/egress-sink
+  deltafi-minio:
+    image: ${MINIO}
+    command: server /export -S /etc/minio/certs/ --address :9000 --console-address :9001
+    container_name: deltafi-minio
+    expose:
+      - "9000"
+    ports:
+      - "9001:9001"
+    environment:
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+      MINIO_API_DELETE_CLEANUP_INTERVAL: 1s
+    env_file:
+      - settings/secrets/minio.env
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    volumes:
+      - ./data/minio:/export
+  deltafi-mongodb:
+    image: ghcr.io/zcube/bitnami-compat/mongodb:5.0.14
+    container_name: deltafi-mongodb
+    environment:
+      BITNAMI_DEBUG: false
+      ALLOW_EMPTY_PASSWORD: no
+      MONGODB_SYSTEM_LOG_VERBOSITY: 0
+      MONGODB_DISABLE_SYSTEM_LOG: no
+      MONGODB_DISABLE_JAVASCRIPT: no
+      MONGODB_ENABLE_IPV6: no
+      MONGODB_ENABLE_DIRECTORY_PER_DB: no
+    env_file:
+      - settings/secrets/mongodb.env
+    healthcheck:
+      test: mongo --disableImplicitSessions --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+      start_period: 5s
+      timeout: 5s
+      interval: 10s
+      retries: 6
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    expose:
+      - "27017"
+    volumes:
+      - ./data/mongo:/bitnami/mongodb
+  deltafi-redis:
+    image: ghcr.io/zcube/bitnami-compat/redis:7.0.7
+    container_name: deltafi-redis
+    environment:
+      BITNAMI_DEBUG: false
+      REDIS_REPLICATION_MODE: master
+    env_file:
+      - settings/secrets/redis.env
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 5s
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    expose:
+      - "6379"
+  deltafi-grafana:
+    image: ${GRAFANA}
+    container_name: deltafi-grafana
+    environment:
+      GF_PATHS_DATA: /var/lib/grafana/
+      GF_PATHS_LOGS: /var/log/grafana
+      GF_PATHS_PLUGINS: /var/lib/grafana/plugins
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    env_file:
+      - settings/secrets/grafana.env
+    expose:
+      - "3000"
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
+      - ./grafana/dashboards:/tmp/dashboards
+  deltafi-graphite:
+    image: ${GRAPHITE}
+    container_name: deltafi-graphite
+    environment:
+      STATSD_INTERFACE: tcp
+      GRAPHITE_TIME_ZONE: Etc/UTC
+    expose:
+      - "8080"
+      - "2003/tcp"
+      - "2003/udp"
+      - "2004"
+      - "2023"
+      - "2024"
+      - "8125/udp"
+      - "8126"
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    volumes:
+      - ./graphite/conf:/opt/graphite/conf/
+      - ./graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
+      - ./graphite/statsd/udp.js:/opt/statsd/config/udp.js
+      - ./data/graphite:/opt/graphite/storage/
+  deltafi-loki:
+    image: ${LOKI}
+    container_name: deltafi-loki
+    command: -config.file=/etc/loki/loki.yaml
+    expose:
+      - "3100"
+      - "9095"
+      - "7946"
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    volumes:
+      - ./loki/loki.yaml:/etc/loki/loki.yaml
+      - ./data/loki:/data
+  deltafi-promtail:
+    image: ${PROMTAIL}
+    container_name: deltafi-promtail
+    command: -config.file=/etc/promtail/promtail.yaml
+    depends_on:
+      deltafi-loki:
+        condition: service_started
+    expose:
+      - "3101"
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail/promtail.yaml:/etc/promtail/promtail.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+  deltafi-nginx:
+    image: ${NGINX}
+    container_name: deltafi-nginx
+    depends_on:
+      deltafi-auth:
+        condition: service_started
+      deltafi-ui:
+        condition: service_started
+      deltafi-grafana:
+        condition: service_started
+      deltafi-graphite:
+        condition: service_started
+      deltafi-docs:
+        condition: service_started
+    environment:
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/
+    env_file:
+      - settings/nginx.env
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    volumes:
+      - ./nginx:/etc/nginx/templates
+    ports:
+      - "80:80"
+      - "8888:8888"

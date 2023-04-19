@@ -140,7 +140,7 @@ class ApiServer < Sinatra::Base
       authorize! :UIAccess
 
       content_type 'text/event-stream'
-      headers 'Access-Control-Allow-Origin' => '*'
+      headers 'Access-Control-Allow-Origin' => '*', 'X-Accel-Buffering' => 'no'
       stream(:keep_open) do |conn|
         $sse_service.subscribers << conn
         conn.callback { $sse_service.subscribers.delete(conn) }

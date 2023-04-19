@@ -18,7 +18,6 @@
 package org.deltafi.core.configuration;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.K8sDeployerService;
@@ -42,7 +41,6 @@ import java.net.http.HttpClient;
 /**
  * If the application is hosted in a K8S instance create the K8SDeployerService
  */
-@Slf4j
 @Configuration
 @ConditionalOnCloudPlatform(CloudPlatform.KUBERNETES)
 public class K8sConfiguration {

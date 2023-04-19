@@ -1,0 +1,142 @@
+events {
+  worker_connections  1024;
+}
+
+http {
+    map $host $upstream_mapping {
+        "~^metrics.*" "deltafi-grafana";
+        "~^ingress.*" "deltafi-ingress";
+        "~^graphite.*" "deltafi-graphite";
+        "~^minio.*" "deltafi-minio";
+    }
+
+    map $host $internal_upstream_mapping {
+      "deltafi-api-service" "deltafi-api";
+      "deltafi-auth-service" "deltafi-auth";
+      "deltafi-core-service" "deltafi-core";
+      "deltafi-ingress-service" "deltafi-ingress";
+    }
+
+    upstream deltafi-auth {
+        server deltafi-auth:9292;
+    }
+
+    upstream deltafi-api {
+        server deltafi-api:9292;
+    }
+
+    upstream deltafi-core {
+        server deltafi-core:8080;
+    }
+
+    upstream deltafi-ingress {
+        server deltafi-ingress:8080;
+    }
+
+    upstream deltafi-docs {
+        server deltafi-docs:80;
+    }
+
+    upstream deltafi-grafana {
+        server deltafi-grafana:3000;
+    }
+
+    upstream deltafi-graphite {
+        server deltafi-graphite:8080;
+    }
+
+    upstream deltafi-minio {
+        server deltafi-minio:9000;
+    }
+
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Host $server_name;
+
+    auth_request ${AUTH_REQUEST};
+    auth_request_set $auth_status $upstream_status;
+    auth_request_set $user_id $upstream_http_x_user_id;
+    auth_request_set $user_name $upstream_http_x_user_name;
+    auth_request_set $user_permissions $upstream_http_x_user_permissions;
+    auth_request_set $user_metrics_role $upstream_http_x_metrics_role;
+    proxy_set_header X-User-ID $user_id;
+    proxy_set_header X-User-Name $user_name;
+    proxy_set_header X-User-Permissions $user_permissions;
+    proxy_set_header X-Metrics-Role $user_metrics_role;
+
+    server {
+        listen 80;
+
+        server_name ${DOMAIN};
+
+        location ~ ^/(no-auth|basic-auth|cert-auth)  {
+            internal;
+            proxy_pass              http://deltafi-auth;
+            proxy_pass_request_body off;
+            proxy_set_header        Content-Length "";
+            proxy_set_header        X-Original-URL http://$http_host;
+        }
+
+        location / {
+          proxy_pass http://deltafi-ui;
+        }
+
+        location /api/ {
+          proxy_pass http://deltafi-api;
+        }
+
+        location /graphql-core {
+          proxy_pass http://deltafi-core/graphql;
+        }
+
+        location /deltafile/ingress {
+          proxy_pass http://deltafi-ingress;
+        }
+
+        location /survey {
+          proxy_pass http://deltafi-ingress;
+        }
+
+        location ~ /deltafile/annotate/.* {
+          proxy_pass http://deltafi-core;
+        }
+
+        location /docs/ {
+          proxy_pass http://deltafi-docs;
+        }
+    }
+
+    server {
+        listen 80;
+
+        server_name *.${DOMAIN};
+
+        location / {
+          proxy_pass http://$upstream_mapping;
+        }
+
+        location ~ ^/(no-auth|basic-auth|cert-auth)  {
+            internal;
+            proxy_pass              http://deltafi-auth;
+            proxy_pass_request_body off;
+            proxy_set_header        Content-Length "";
+            proxy_set_header        X-Original-URL http://$http_host;
+        }
+    }
+
+    server {
+        listen 8888;
+
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Host $server_name;
+
+        auth_request "off";
+
+        location / {
+          proxy_pass http://$internal_upstream_mapping;
+        }
+    }
+}
