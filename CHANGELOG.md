@@ -5,6 +5,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [0.107.0] - 2023-04-19
+
+### Added
+- New `priority` field in `ResumePolicy`, which is automatically computed if not set
+- Generate an event and snapshot prior to running an upgrade
+- Docker compose mode introduced as a beta proof of concept
+  - From the `compose` directory execute `./compose start`
+  - To use the CLI you must unlink the cluster command (execute `deltafi-cli/install.sh`) and add 
+    `export DELTAFI_MODE=STANDALONE` to `deltafi-cli/config`
+- `appsByNode` endpoint added to core to get docker-based apps-by-node manifest
+- `app/version` endpoint added to core to get docker-base version list
+- `DockerDeployerService` added to manage plugin installs in compose
+- `DockerAppInfoService` added to support `appsByNode` and `app/version` endpoints
+
+### Changed
+- Resume policy search is now in `priority` order (the highest value first)
+- The resume policy name stored in the DeltaFile `nextAutoResumeReason` is no longer cleared when the DeltaFile is resumed
+- Monitored status checks for k8s will only run in CLUSTER mode
+- CLI updated to accommodate standalone compose mode
+
+### Fixed
+- Resume policy search will consider the number of action attempts and the policy `maxAttempts` during the policy search iteration loop, not after finding the first match
+- sse endpoint X-Accel-Buffering turned off to fix stand alone sse streaming
+
+### Tech-Debt/Refactor
+- Clean up public methods in Java Action Kit Input and Result interfaces
+
+### Upgrade and Migration
+- Added `priority` to `resumePolicy` collection
+
 ## [0.106.0] - 2023-04-17
 
 ### Added
@@ -1448,7 +1478,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/0.106.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/0.107.0...main
+[0.107.0]: https://gitlab.com/deltafi/deltafi/-/compare/0.106.0...0.107.0
 [0.106.0]: https://gitlab.com/deltafi/deltafi/-/compare/0.104.4...0.106.0
 [0.104.4]: https://gitlab.com/deltafi/deltafi/-/compare/0.104.3...0.104.4
 [0.104.3]: https://gitlab.com/deltafi/deltafi/-/compare/0.104.0...0.104.3
