@@ -74,10 +74,12 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 }
             }
 
+            Map<String, String> containerLabels = Map.of(DELTAFI_GROUP, "deltafi-plugins", "logging", "promtail", "logging_jobname", "containerlogs");
+
             CreateContainerCmd containerCmd = dockerClient.createContainerCmd(image)
                     .withName(pluginCoordinates.getArtifactId())
                     .withEnv(environmentVariables)
-                    .withLabels(Map.of(DELTAFI_GROUP, "deltafi-plugins"))
+                    .withLabels(containerLabels)
                     .withHostConfig(HostConfig.newHostConfig().withNetworkMode("deltafi"));
 
             CreateContainerResponse containerResponse = containerCmd.exec();
