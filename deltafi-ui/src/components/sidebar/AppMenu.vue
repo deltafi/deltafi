@@ -144,7 +144,7 @@ const staticMenuItems = ref([
   {
     name: "Configuration",
     expand: true,
-    visible: computed(() => hasSomePermissions("SystemPropertiesRead", "FlowView", "PluginsView", "PluginImageRepoView", "DeletePolicyRead", "IngressRoutingRuleRead", "SnapshotRead")),
+    visible: computed(() => hasSomePermissions("SystemPropertiesRead", "FlowView", "PluginsView", "PluginImageRepoView", "DeletePolicyRead", "IngressRoutingRuleRead", "ResumePolicyRead", "SnapshotRead")),
     children: [
       {
         name: "System Properties",
@@ -187,6 +187,12 @@ const staticMenuItems = ref([
         icon: "fas fa-route fa-fw",
         path: "/config/ingress-routing",
         visible: computed(() => hasPermission("IngressRoutingRuleRead")),
+      },
+      {
+        name: "Auto Resume",
+        icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+        path: "/config/auto-resume",
+        visible: computed(() => hasPermission("ResumePolicyRead")),
       },
       {
         name: "System Snapshots",

@@ -35,6 +35,9 @@
   </Panel>
   <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
+  <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
+    <span id="summaryFlowAutoResumeDialog" />
+  </DialogTemplate>
 </template>
 
 <script setup>
@@ -51,8 +54,10 @@ import MetadataDialog from "@/components/MetadataDialog.vue";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
+import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -124,6 +129,15 @@ const menuItems = ref([
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),
   },
+  {
+    label: "Create Auto Resume Rule",
+    icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+    command: () => {
+      document.getElementById("summaryFlowAutoResumeDialog").click();
+    },
+    visible: computed(() => hasPermission("ResumePolicyCreate")),
+    disabled: computed(() => selectedErrors.value.length == 0 || selectedErrors.value.length > 1),
+  },
 ]);
 
 onMounted(() => {
@@ -172,6 +186,17 @@ const onAcknowledged = (dids, reason) => {
   fetchErrorCount();
   emit("refreshErrors");
 };
+
+const autoResumeSelected = computed(() => {
+  let newResumeRule = {};
+  if (!_.isEmpty(selectedErrors.value)) {
+    let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
+    newResumeRule["flow"] = rowInfo.flow;
+    return newResumeRule;
+  } else {
+    return selectedErrors.value;
+  }
+});
 
 const toggleMenu = (event) => {
   menu.value.toggle(event);

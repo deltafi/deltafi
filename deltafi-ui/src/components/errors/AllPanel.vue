@@ -86,6 +86,9 @@
     <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
     <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
+    <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
+      <span id="allPanelAutoResumeDialog" />
+    </DialogTemplate>
   </div>
 </template>
 
@@ -100,6 +103,7 @@ import ContextMenu from "primevue/contextmenu";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import Paginator from "primevue/paginator";
 import DidLink from "@/components/DidLink.vue";
 import Timestamp from "@/components/Timestamp.vue";
@@ -112,6 +116,7 @@ import useUtilFunctions from "@/composables/useUtilFunctions";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
+import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -173,7 +178,7 @@ const menuItems = ref([
   },
   {
     separator: true,
-    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume")),
+    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate")),
   },
   {
     label: "Acknowledge Selected",
@@ -192,6 +197,15 @@ const menuItems = ref([
     },
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),
+  },
+  {
+    label: "Create Auto Resume Rule",
+    icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+    command: () => {
+      document.getElementById("allPanelAutoResumeDialog").click();
+    },
+    visible: computed(() => hasPermission("ResumePolicyCreate")),
+    disabled: computed(() => selectedErrors.value.length == 0 || selectedErrors.value.length > 1),
   },
 ]);
 
@@ -247,6 +261,20 @@ const onAcknowledged = (dids, reason) => {
   fetchErrorCount();
   emit("refreshErrors");
 };
+
+const autoResumeSelected = computed(() => {
+  let newResumeRule = {};
+  if (!_.isEmpty(selectedErrors.value)) {
+    let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
+    let errorInfo = _.find(selectedErrors.value[0]["actions"], ["state", "ERROR"]);
+    newResumeRule["flow"] = rowInfo.sourceInfo.flow;
+    newResumeRule["action"] = errorInfo.name;
+    newResumeRule["errorSubstring"] = errorInfo.errorCause;
+    return newResumeRule;
+  } else {
+    return selectedErrors.value;
+  }
+});
 
 const filterSelectedDids = computed(() => {
   let dids = selectedErrors.value.map((selectedError) => {

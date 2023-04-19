@@ -36,6 +36,14 @@ const generateDeltaFiles = (count: number) => {
           errorCause: "Failed Ingress",
           errorContext: "Details...",
         },
+        {
+          name: "IngressAction",
+          state: "ERROR",
+          created: date,
+          modified: date,
+          errorCause: "Failed Ingress Two",
+          errorContext: "Details...",
+        },
       ],
       sourceInfo: {
         filename: `mock_smoke-${uuid}`,

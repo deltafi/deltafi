@@ -48,8 +48,8 @@
       <div class="row mb-3">
         <div class="col-6">
           <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="parentDids" />
-          </div>
-          <div class="col-6">
+        </div>
+        <div class="col-6">
           <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="childDids" />
         </div>
       </div>
@@ -84,6 +84,9 @@
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataViewer ref="metadataViewer" :metadata-references="allMetadata" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
+    <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
+      <span id="autoResumeDialog" />
+    </DialogTemplate>
   </div>
 </template>
 
@@ -96,6 +99,7 @@ import DeltaFileIndexedMetadataPanel from "@/components/DeltaFileIndexedMetadata
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";
 import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import HighlightedCode from "@/components/HighlightedCode.vue";
@@ -106,6 +110,7 @@ import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
 import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import _ from "lodash";
 
 import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
@@ -175,7 +180,7 @@ const staticMenuItems = reactive([
   },
   {
     separator: true,
-    visible: computed(() => isError.value && hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume")),
+    visible: computed(() => isError.value && hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate")),
   },
   {
     label: "Acknowledge Error",
@@ -192,6 +197,14 @@ const staticMenuItems = reactive([
     command: () => {
       metadataDialog.value.showConfirmDialog("Resume");
     },
+  },
+  {
+    label: "Create Auto Resume Rule",
+    icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+    command: () => {
+      document.getElementById("autoResumeDialog").click();
+    },
+    visible: computed(() => isError.value && hasPermission("ResumePolicyCreate")),
   },
 ]);
 
@@ -375,7 +388,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -388,6 +401,20 @@ const onCancel = async () => {
     notify.error("Failed to Cancel DeltaFile", cancelResponse[0].error);
   }
 };
+
+const autoResumeSelected = computed(() => {
+  let newResumeRule = {};
+  if (!_.isEmpty(deltaFile) && isError.value) {
+    let rowInfo = JSON.parse(JSON.stringify(deltaFile));
+    let errorInfo = _.find(deltaFile["actions"], ["state", "ERROR"]);
+    newResumeRule["flow"] = rowInfo.sourceInfo.flow;
+    newResumeRule["action"] = errorInfo.name;
+    newResumeRule["errorSubstring"] = errorInfo.errorCause;
+    return newResumeRule;
+  } else {
+    return {};
+  }
+});
 </script>
 
 <style lang="scss">

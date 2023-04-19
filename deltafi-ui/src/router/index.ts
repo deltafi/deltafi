@@ -117,6 +117,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: "/config/auto-resume",
+    name: "Auto Resume",
+    component: () => import("@/pages/AutoResumePage.vue"),
+    meta: {
+      permission: "ResumePolicyRead",
+    },
+  },
+  {
     path: "/config/flows",
     name: "Flows",
     component: () => import("@/pages/FlowPlansPage.vue"),
