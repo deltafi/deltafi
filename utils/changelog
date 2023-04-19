@@ -129,7 +129,7 @@ _revise_changelog() {
   _coalesce_markdown "$version" "$UNRELEASED_DIR" > "${CHANGELOG_DIR}/${version}.md"
   rm -f "${CHANGELOG_DIR}/latest.md"
   ln -s "${CHANGELOG_DIR}/${version}.md" "${CHANGELOG_DIR}/latest.md"
-  rm -rf "${UNRELEASED_DIR}/*.md"
+  rm -rf "${UNRELEASED_DIR}"/*.md
 }
 
 _usage() {
