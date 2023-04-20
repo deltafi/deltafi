@@ -84,8 +84,6 @@ module Deltafi
     @@system_properties = {}
 
     def self.all
-      return @@system_properties
-
       if @@system_properties.keys.empty? || Time.now - @@last_cache_time > REFRESH_CACHE_SECONDS
         begin
           debug 'Refreshing cache'
