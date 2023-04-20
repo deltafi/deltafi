@@ -43,6 +43,21 @@ class ResumePolicyTest {
     }
 
     @Test
+    void testActionFormat() {
+        ResumePolicy good = getValid();
+        good.setAction("smoke.SmokeFormatAction");
+        assertTrue(good.validate().isEmpty());
+
+        ResumePolicy notPermitted = getValid();
+        notPermitted.setAction("smoke.NoEgressFlowConfiguredAction");
+        assertEquals(notPermitted.validate(), List.of(ResumePolicy.ACTION_NOT_PERMITTED));
+
+        ResumePolicy invalid = getValid();
+        invalid.setAction("ActionNameWithoutFlowPrefix");
+        assertEquals(invalid.validate(), List.of(ResumePolicy.INVALID_ACTION));
+    }
+
+    @Test
     void testValidateBackOff() {
         ResumePolicy invalidDelay = getValid();
         invalidDelay.getBackOff().setDelay(-1);
@@ -82,47 +97,47 @@ class ResumePolicyTest {
 
     @Test
     void testMatch() {
-        assertTrue(policy("error", "flow", "action", "type")
-                .isMatch(1, "the error message", "flow", "action", "type"));
+        assertTrue(policy("error", "flow", "flow.action", "type")
+                .isMatch(1, "the error message", "flow", "flow.action", "type"));
         assertTrue(policy("error", "flow", null, "type")
-                .isMatch(1, "the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "fow.action", "type"));
         assertTrue(policy("error", "flow", null, null)
-                .isMatch(1, "the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "flow.action", "type"));
         assertTrue(policy("error", null, null, null)
-                .isMatch(1, "the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "flow.action", "type"));
 
-        assertTrue(policy(null, "flow", "action", null)
-                .isMatch(1, "the error message", "flow", "action", "type"));
+        assertTrue(policy(null, "flow", "flow.action", null)
+                .isMatch(1, "the error message", "flow", "flow.action", "type"));
         assertTrue(policy(null, "flow", null, "type")
-                .isMatch(1, "the error message", "flow", "action", "type"));
-        assertTrue(policy(null, "flow", "action", "type")
-                .isMatch(1, "the error message", "flow", "action", "type"));
-        assertTrue(policy(null, null, "action", "type")
-                .isMatch(1, "the error message", "flow", "action", "type"));
+                .isMatch(1, "the error message", "flow", "flow.action", "type"));
+        assertTrue(policy(null, "flow", "flow.action", "type")
+                .isMatch(1, "the error message", "flow", "flow.action", "type"));
+        assertTrue(policy(null, null, "flow.action", "type")
+                .isMatch(1, "the error message", "flow", "flow.action", "type"));
     }
 
     @Test
     void testNoMatch() {
-        assertFalse(policy("error", "flow", "action", "type")
-                .isMatch(2, "the error message", "flow", "action", "type"));
-        assertFalse(policy("error", "flow", "action", "type")
-                .isMatch(3, "the error message", "flow", "action", "type"));
+        assertFalse(policy("error", "flow", "flow.action", "type")
+                .isMatch(2, "the error message", "flow", "flow.action", "type"));
+        assertFalse(policy("error", "flow", "flow.action", "type")
+                .isMatch(3, "the error message", "flow", "flow.action", "type"));
 
-        assertFalse(policy("error", "flow", "action", "type")
-                .isMatch(1, "the Error message", "flow", "action", "type"));
+        assertFalse(policy("error", "flow", "flow.action", "type")
+                .isMatch(1, "the Error message", "flow", "flow.action", "type"));
         assertFalse(policy("error", "flow", null, "type")
-                .isMatch(1, "the err message", "flow", "action", "type"));
+                .isMatch(1, "the err message", "flow", "flow.action", "type"));
         assertFalse(policy("error", "flow", null, null)
-                .isMatch(1, "", "flow", "action", "type"));
+                .isMatch(1, "", "flow", "flow.action", "type"));
 
-        assertFalse(policy(null, "flow", "action", null)
+        assertFalse(policy(null, "flow", "flow.action", null)
                 .isMatch(1, "the error message", "one", "two", "type"));
         assertFalse(policy(null, "flow", null, "type")
-                .isMatch(1, "the error message", "flow", "action", "other"));
-        assertFalse(policy(null, "flow", "action", "type")
-                .isMatch(1, "the error message", "other", "action", "type"));
-        assertFalse(policy(null, null, "action", "type")
-                .isMatch(1, "the error message", "flow", "other", "type"));
+                .isMatch(1, "the error message", "flow", "flow.action", "other"));
+        assertFalse(policy(null, "flow", "flow.action", "type")
+                .isMatch(1, "the error message", "other", "flow.action", "type"));
+        assertFalse(policy(null, null, "flow.action", "type")
+                .isMatch(1, "the error message", "flow", "flow.other", "type"));
     }
 
     @Test

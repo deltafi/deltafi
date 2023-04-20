@@ -41,7 +41,7 @@ class ResumePolicyServiceTest {
     private static final String DEFAULT_ID = "1";
     private static final String ERROR = "error";
     private static final String FLOW = "flow";
-    private static final String ACTION = "action";
+    private static final String ACTION = FLOW + ".action";
     private static final String ACTION_TYPE = "actionType";
     private static final String NOT_FOUND = "notFound";
     private static final int MAX_ATTEMPTS = 3;
