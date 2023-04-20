@@ -23,7 +23,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.Util;
+import org.deltafi.core.util.Util;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;

@@ -40,7 +40,7 @@ dependencies {
 	implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.3.0'
 
 	testImplementation project(':deltafi-common-test')
-	testImplementation "org.springframework.boot:spring-boot-starter-test"
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.19.1'
 	testImplementation 'org.awaitility:awaitility:4.2.0'

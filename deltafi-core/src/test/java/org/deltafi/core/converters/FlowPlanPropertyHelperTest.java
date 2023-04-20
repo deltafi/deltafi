@@ -20,7 +20,7 @@ package org.deltafi.core.converters;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
-import org.deltafi.core.Util;
+import org.deltafi.core.util.Util;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;

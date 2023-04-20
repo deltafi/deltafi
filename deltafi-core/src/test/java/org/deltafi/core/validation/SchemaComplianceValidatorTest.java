@@ -19,7 +19,7 @@ package org.deltafi.core.validation;
 
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
-import org.deltafi.core.Util;
+import org.deltafi.core.util.Util;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.services.ActionDescriptorService;

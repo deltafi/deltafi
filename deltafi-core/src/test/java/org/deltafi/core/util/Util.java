@@ -15,23 +15,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core;
+package org.deltafi.core.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
+import org.deltafi.core.generated.types.ActionFamily;
+import org.deltafi.core.generated.types.ErrorsByMessage;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.core.util.Constants.OBJECT_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Util {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -217,5 +219,54 @@ public class Util {
             org.junit.jupiter.api.Assertions.fail(e);
         }
         return null;
+    }
+
+    public static ActionEventInput actionEvent(String filename, String did) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()), did);
+        return OBJECT_MAPPER.readValue(json, ActionEventInput.class);
+    }
+
+    public static ActionEventInput filterActionEvent(String did, String filteredAction) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, filteredAction);
+        return OBJECT_MAPPER.readValue(json, ActionEventInput.class);
+    }
+
+    public static String graphQL(String filename) throws IOException {
+        return new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".graphql")).readAllBytes());
+    }
+
+    public static List<String> getActionNames(List<ActionFamily> actionFamilies, String family) {
+        return actionFamilies.stream()
+                .filter(actionFamily -> family.equals(actionFamily.getFamily()))
+                .map(ActionFamily::getActionNames)
+                .flatMap(Collection::stream)
+                .toList();
+    }
+
+    public static Variable buildOriginalVariable(String name) {
+        return buildVariable(name, "set value", "original default value");
+    }
+
+    public static Variable buildNewVariable(String name) {
+        return buildVariable(name, null, "new default value");
+    }
+
+    public static Variable buildVariable(String name, String value, String defaultValue) {
+        return Variable.newBuilder()
+                .name(name)
+                .dataType(VariableDataType.STRING)
+                .description("describe " + defaultValue)
+                .defaultValue(defaultValue)
+                .value(value)
+                .required(false)
+                .build();
+    }
+
+    public static void matchesCounterPerMessage(ErrorsByMessage result, int index, String cause, String flow, List<String> dids) {
+        assertEquals(cause, result.getCountPerMessage().get(index).getMessage());
+        assertEquals(flow, result.getCountPerMessage().get(index).getFlow());
+        assertEquals(dids.size(), result.getCountPerMessage().get(index).getCount());
+        assertEquals(dids.size(), result.getCountPerMessage().get(index).getDids().size());
+        assertTrue(result.getCountPerMessage().get(index).getDids().containsAll(dids));
     }
 }
