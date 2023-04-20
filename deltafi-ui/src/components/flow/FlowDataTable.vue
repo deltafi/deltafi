@@ -84,6 +84,7 @@ import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.v
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
+import useNotifications from "@/composables/useNotifications";
 import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
 
 import { filesize } from "filesize";
@@ -91,7 +92,6 @@ import { FilterMatchMode } from "primevue/api";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import InputNumber from "primevue/inputnumber";
-import useNotifications from "@/composables/useNotifications";
 import _ from "lodash";
 
 const { setMaxErrors, errors } = useFlowQueryBuilder();

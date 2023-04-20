@@ -53,6 +53,9 @@ export default function useAutoResumeConfiguration() {
         type: ["number", "null"],
         minimum: 2,
       },
+      priority: {
+        type: ["number", "null"],
+      },
       backOff: {
         type: "object",
         properties: {

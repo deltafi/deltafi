@@ -57,6 +57,13 @@
           <dd>
             <small id="maxAttemptsId-help">Set the number of attempts for that action.</small>
           </dd>
+          <dt>{{ autoResumeConfigurationMap.get("priority").header }}</dt>
+          <dd class="mb-0">
+            <InputNumber id="priorityId" v-model="selectedPriority" show-buttons decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('priority').disabled" />
+          </dd>
+          <dd>
+            <small id="priorityId-help">Set the priorty for the rule.</small>
+          </dd>
           <Divider align="left">
             <div class="inline-flex align-items-center">
               <i class="fas fa-hdd text-muted ml-1"></i>
@@ -155,6 +162,7 @@ const autoResumeConfigurationMap = new Map([
   ["action", { header: "Action", placeholder: "e.g. smoke.SmokeEgressAction", type: "string", disabled: viewAutoResumeRule }],
   ["actionType", { header: "Action Type", placeholder: "e.g. TRANSFORM or EGRESS", type: "string", disabled: viewAutoResumeRule }],
   ["maxAttempts", { header: "Max Attempts", placeholder: "A number 2 or greater", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
+  ["priority", { header: "Priority", placeholder: "A number 0 or greater", type: "number", disabled: viewAutoResumeRule }],
   ["errorSubstring", { header: "Error Substring", placeholder: "e.g. ^abc.*, [Dd]eltafi", type: "string", disabled: viewAutoResumeRule }],
   ["delay", { header: "Delay", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["maxDelay", { header: "Max Delay", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
@@ -169,6 +177,7 @@ const selectedRuleAction = ref(_.get(rowdata, "action", null));
 const selectedRuleActionType = ref(_.get(rowdata, "actionType", null));
 const selectedRuleErrorSubstring = ref(_.get(rowdata, "errorSubstring", null));
 const selectedRuleMaxAttempts = ref(_.get(rowdata, "maxAttempts", 2));
+const selectedPriority = ref(_.get(rowdata, "priority", 0));
 const selectedRuleDelay = ref(_.get(rowdata, "backOff.delay", 0));
 const selectedRuleMaxDelay = ref(_.get(rowdata, "backOff.maxDelay", null));
 const selectedRuleMultiplier = ref(_.get(rowdata, "backOff.multiplier", null));
@@ -212,6 +221,10 @@ const createNewRule = () => {
   }
 
   autoResumeRule["maxAttempts"] = selectedRuleMaxAttempts.value;
+
+  if (selectedPriority.value) {
+    autoResumeRule["priority"] = selectedPriority.value;
+  }
 
   var backOffObject = {};
   if (selectedRuleDelay.value) {
@@ -257,17 +270,25 @@ const submit = async () => {
     notify.error(`Auto Resume Rule Validation Errors`, `Unable to upload Auto Resume Rule`, 4000);
   } else {
     let response = null;
+    let uploadErrorsList = null;
     if (ruleid.value) {
       response = await updateResumePolicy(autoResumeRuleUpload.value);
+      uploadErrorsList = response.data.updateResumePolicy;
     } else {
       response = await loadResumePolicies(autoResumeRuleUpload.value);
+      uploadErrorsList = response.data.loadResumePolicies;
     }
 
-    if (!_.isEmpty(_.get(response, "errors", null))) {
-      notify.error(`Upload failed`, `Unable to update Auto Resume Rule.`, 4000);
+    if (!_.isEmpty(_.get(uploadErrorsList[0], "errors", null))) {
+      for (let errorMessages of uploadErrorsList[0].errors) {
+        console.log(errorMessages);
+        errorsList.value.push(errorMessages);
+      }
+      notify.error(`Auto Resume Upload failed`, "Unable to update Auto Resume Rules", 4000);
+    } else {
+      emit("reloadResumeRules");
+      closeDialogCommand.command();
     }
-    emit("reloadResumeRules");
-    closeDialogCommand.command();
   }
 };
 </script>

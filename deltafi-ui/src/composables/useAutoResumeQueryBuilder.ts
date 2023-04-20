@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 
 export default function useAutoResumeQueryBuilder() {
-  const { response, queryGraphQL, loaded, loading } = useGraphQL();
+  const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
 
   // Get all Auto Resume Rules
   const getAllResumePolicies = () => {
@@ -32,6 +32,7 @@ export default function useAutoResumeQueryBuilder() {
         action: true,
         actionType: true,
         maxAttempts: true,
+        priority: true,
         backOff: {
           delay: true,
           maxDelay: true,
@@ -57,6 +58,7 @@ export default function useAutoResumeQueryBuilder() {
         action: true,
         actionType: true,
         maxAttempts: true,
+        priority: true,
         backOff: {
           delay: true,
           maxDelay: true,
@@ -127,5 +129,6 @@ export default function useAutoResumeQueryBuilder() {
     updateResumePolicy,
     loaded,
     loading,
+    errors,
   };
 }
