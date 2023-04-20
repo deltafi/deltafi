@@ -20,13 +20,11 @@ package org.deltafi.common.action;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.Optional;
-
 @ConfigurationProperties("redis")
 @Data
 public class ActionEventQueueProperties {
     private String url;
-    private Optional<String> password = Optional.empty();
+    private String password = null;
     private int maxIdle = 16;
     private int maxTotal = 16;
 }

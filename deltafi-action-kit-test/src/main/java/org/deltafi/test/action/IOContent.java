@@ -30,7 +30,7 @@ public class IOContent {
 
     String name;
     String contentType;
-    long offset = 0;
+    long offset;
 
     @Builder.Default
     Map<String, String> metadata = new HashMap<>();

@@ -19,6 +19,7 @@ package org.deltafi.core.plugin.deployer;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.types.Result;
 
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class DeployResult extends Result {
     private List<List<String>> events;
     private String logs;

@@ -128,7 +128,7 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public EgressFlow saveEgressFlowPlan(EgressFlowPlanInput egressFlowPlan) {
+    public EgressFlow saveEgressFlowPlan(@InputArgument EgressFlowPlanInput egressFlowPlan) {
         return egressFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(egressFlowPlan, EgressFlowPlan.class));
     }
 
@@ -225,7 +225,7 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public List<DeltaFiConfiguration> deltaFiConfigs(ConfigQueryInput configQuery) {
+    public List<DeltaFiConfiguration> deltaFiConfigs(@InputArgument ConfigQueryInput configQuery) {
         List<DeltaFiConfiguration> matchingConfigs = new ArrayList<>(ingressFlowService.getConfigs(configQuery));
         matchingConfigs.addAll(enrichFlowService.getConfigs(configQuery));
         matchingConfigs.addAll(egressFlowService.getConfigs(configQuery));

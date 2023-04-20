@@ -499,7 +499,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile processErrorEvent(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+    public DeltaFile processErrorEvent(DeltaFile deltaFile, ActionEventInput event) {
         if (deltaFile.noPendingAction(event.getAction())) {
             throw new UnexpectedActionException(event.getAction(), deltaFile.getDid(), deltaFile.queuedActions());
         }
@@ -1084,11 +1084,7 @@ public class DeltaFilesService {
 
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
         deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
-        try {
-            processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
-        } catch (JsonProcessingException e) {
-            log.error("Unable to create error file: " + e.getMessage());
-        }
+        processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
         deltaFile.setStage(DeltaFileStage.ERROR);
     }
 
@@ -1171,8 +1167,8 @@ public class DeltaFilesService {
                 .toList();
     }
 
-    public int autoResume() {
-        return autoResume(OffsetDateTime.now(clock));
+    public void autoResume() {
+        autoResume(OffsetDateTime.now(clock));
     }
 
     public int autoResume(OffsetDateTime timestamp) {
@@ -1412,12 +1408,12 @@ public class DeltaFilesService {
         List<String> missingDeltaFileIds = new ArrayList<>();
 
         for (IndexedDeltaFileEntry deltaFileEntry : joinEntry.getSortedDeltaFileEntries()) {
-            Optional<DeltaFile> deltaFileToJoin = deltaFileRepo.findById(deltaFileEntry.getDid());
+            Optional<DeltaFile> deltaFileToJoin = deltaFileRepo.findById(deltaFileEntry.did());
 
             if (deltaFileToJoin.isPresent()) {
                 joinedDeltaFiles.add(deltaFileToJoin.get());
             } else {
-                missingDeltaFileIds.add(deltaFileEntry.getDid());
+                missingDeltaFileIds.add(deltaFileEntry.did());
             }
         }
 

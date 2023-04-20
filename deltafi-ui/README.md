@@ -12,7 +12,8 @@ Web front-end for DeltaFi. Written in Vue.js.
   - [ESLint](#eslint)
 - [Production](#production)
   - [Prerequisites](#prerequisites-1)
-  - [Build Docker Image](#build-docker-image)
+  - [Build Base Image](#build-base-image)
+  - [Build UI Image](#build-ui-image)
 
 ## Development
 

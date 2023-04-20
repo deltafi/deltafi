@@ -102,8 +102,6 @@ public class ContentSplitterTransformAction extends TransformAction<ContentSplit
             return String.valueOf(idx);
         }
 
-        String template = NAME_TEMPLATE;
-
         String filenameReplacement = originalName;
         String extReplacement = "";
 
@@ -113,7 +111,7 @@ public class ContentSplitterTransformAction extends TransformAction<ContentSplit
             extReplacement = originalName.substring(extIdx);
         }
 
-        String childName = template.replace(CONTENT_NAME, filenameReplacement);
+        String childName = NAME_TEMPLATE.replace(CONTENT_NAME, filenameReplacement);
         childName = childName.replace(FRAGMENT_ID, String.valueOf(idx));
         childName = childName.replace(EXT, extReplacement);
 

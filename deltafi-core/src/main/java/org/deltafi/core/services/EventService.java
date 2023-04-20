@@ -22,7 +22,6 @@ import lombok.AllArgsConstructor;
 import org.deltafi.core.services.api.DeltafiApiClient;
 import org.deltafi.core.services.api.model.Event;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -31,8 +30,7 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 public class EventService {
-    @Autowired
-    DeltafiApiClient deltafiApiClient;
+    private DeltafiApiClient deltafiApiClient;
 
     /**
      * Publish an event to the DeltaFi event API:

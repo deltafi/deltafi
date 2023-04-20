@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.converters;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.convert.DurationStyle;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
@@ -39,7 +40,7 @@ import java.time.Duration;
 public class DurationReadConverter implements Converter<String, Duration> {
 
     @Override
-    public Duration convert(String source) {
+    public Duration convert(@NotNull String source) {
         return DurationReadConverter.doConvert(source);
     }
 

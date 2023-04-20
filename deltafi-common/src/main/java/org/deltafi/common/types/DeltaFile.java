@@ -176,9 +176,7 @@ public class DeltaFile {
             .toList();
 
     // this must be separate from the above stream since it mutates the original list
-    actionsToRetry.forEach(action -> {
-      action.setState(ActionState.RETRIED);
-    });
+    actionsToRetry.forEach(action -> action.setState(ActionState.RETRIED));
     setNextAutoResume(null);
 
     return actionsToRetry.stream().map(Action::getName).toList();

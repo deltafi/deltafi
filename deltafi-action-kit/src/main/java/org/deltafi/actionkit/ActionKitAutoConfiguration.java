@@ -17,6 +17,7 @@
  */
 package org.deltafi.actionkit;
 
+import lombok.AllArgsConstructor;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.service.HeartbeatService;
@@ -25,7 +26,6 @@ import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.action.ActionEventQueueProperties;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -34,11 +34,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.net.URISyntaxException;
 import java.util.List;
 
+@AllArgsConstructor
 @AutoConfiguration
 @EnableConfigurationProperties({ActionEventQueueProperties.class, ActionsProperties.class})
 @EnableScheduling
 public class ActionKitAutoConfiguration {
-    @Autowired
     private ActionsProperties actionsProperties;
 
     @Bean

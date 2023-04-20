@@ -20,7 +20,6 @@ package org.deltafi.core.schedulers;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.IdentityService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;

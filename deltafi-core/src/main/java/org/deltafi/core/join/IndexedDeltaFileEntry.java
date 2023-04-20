@@ -17,10 +17,5 @@
  */
 package org.deltafi.core.join;
 
-import lombok.Data;
-
-@Data
-public class IndexedDeltaFileEntry {
-    private final String did;
-    private final String index;
+public record IndexedDeltaFileEntry(String did, String index) {
 }

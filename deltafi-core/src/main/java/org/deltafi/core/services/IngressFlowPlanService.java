@@ -26,6 +26,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class IngressFlowPlanService extends FlowPlanService<IngressFlowPlan, IngressFlow> {
     public IngressFlowPlanService(IngressFlowPlanValidator ingressFlowPlanValidator, IngressFlowPlanRepo flowPlanRepo, IngressFlowService flowService) {
-        super(ingressFlowPlanValidator, flowPlanRepo, flowService, IngressFlowPlan.class);
+        super(ingressFlowPlanValidator, flowPlanRepo, flowService);
     }
 }

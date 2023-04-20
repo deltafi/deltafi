@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.datafetchers;
 
+import graphql.schema.DataFetchingEnvironmentImpl;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.security.SecurityConfig;
@@ -59,13 +60,13 @@ class DeltaFilesDatafetcherSecurityTest {
         allMethods().forEach(this::runHasAccessTest);
     }
 
-    void runDeniedTest(Callable method) {
+    void runDeniedTest(Callable<?> method) {
         Assertions.assertThatThrownBy(method::call)
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Access Denied");
     }
 
-    void runHasAccessTest(Callable method) {
+    void runHasAccessTest(Callable<?> method) {
         try {
             method.call();
         } catch (AccessDeniedException e) {
@@ -75,10 +76,10 @@ class DeltaFilesDatafetcherSecurityTest {
         }
     }
 
-    List<Callable> allMethods() {
-        List<Callable> callables = new ArrayList<>();
+    List<Callable<?>> allMethods() {
+        List<Callable<?>> callables = new ArrayList<>();
         callables.add(() -> deltaFilesDatafetcher.deltaFile("did"));
-        callables.add(() -> deltaFilesDatafetcher.deltaFiles(null));
+        callables.add(() -> deltaFilesDatafetcher.deltaFiles(DataFetchingEnvironmentImpl.newDataFetchingEnvironment().build(), null, null));
         callables.add(() -> deltaFilesDatafetcher.domains());
         callables.add(() -> deltaFilesDatafetcher.rawDeltaFile("did", true));
         callables.add(() -> deltaFilesDatafetcher.acknowledge(List.of("did"), "reason"));

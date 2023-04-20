@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 @SuperBuilder
 public class TestCaseBase<A extends Action<? extends ActionParameters>> {
 
-    private Class<? extends Result> expectedResultType;
+    private Class<? extends Result<?>> expectedResultType;
 
     public A action;
 

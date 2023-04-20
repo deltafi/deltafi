@@ -27,7 +27,7 @@ import java.util.List;
 
 @Service
 public class EnvironmentVariableHelper {
-    private List<String> envVars;
+    private final List<String> envVars;
 
     public EnvironmentVariableHelper(MinioProperties minioProperties, ActionEventQueueProperties redisProperties, SslProperties sslProperties,  @Value("${CORE_URL:http://deltafi-core-service}") String coreUrl) {
         this.envVars = buildEnvVarList(minioProperties, redisProperties, sslProperties, coreUrl);
@@ -44,7 +44,7 @@ public class EnvironmentVariableHelper {
                 "MINIO_SECRETKEY=" + minioProperties.getSecretKey(),
                 "MINIO_URL=" + minioProperties.getUrl(),
                 "REDIS_URL=" + redisProperties.getUrl(),
-                "REDIS_PASSWORD=" + redisProperties.getPassword().orElse(""),
+                "REDIS_PASSWORD=" + (redisProperties.getPassword() == null ? "" : redisProperties.getPassword()),
                 "SSL_KEYSTORE=" + sslProperties.getKeyStore(),
                 "SSL_KEYSTORETYPE=" + sslProperties.getKeyStoreType(),
                 "SSL_KEYSTORETPASSWORD=" + sslProperties.getKeyStorePassword(),

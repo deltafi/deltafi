@@ -22,7 +22,7 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 
 @Service
 public class DidMutexService {
-    private ConcurrentReferenceHashMap<String, Object> map;
+    private final ConcurrentReferenceHashMap<String, Object> map;
 
     public DidMutexService() {
         this.map = new ConcurrentReferenceHashMap<>();

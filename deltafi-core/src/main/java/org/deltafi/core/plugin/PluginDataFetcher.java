@@ -81,7 +81,7 @@ public class PluginDataFetcher {
 
     @DgsMutation
     @NeedsPermission.PluginInstall
-    public Result installPlugin(PluginCoordinates pluginCoordinates) {
+    public Result installPlugin(@InputArgument PluginCoordinates pluginCoordinates) {
         return deployerService.installOrUpgradePlugin(pluginCoordinates, null, null, null);
     }
 
@@ -93,7 +93,7 @@ public class PluginDataFetcher {
 
     @DgsMutation
     @NeedsPermission.PluginUninstall
-    public Result uninstallPlugin(PluginCoordinates pluginCoordinates) {
+    public Result uninstallPlugin(@InputArgument PluginCoordinates pluginCoordinates) {
         return deployerService.uninstallPlugin(pluginCoordinates);
     }
 

@@ -19,13 +19,14 @@ package org.deltafi.core.parameters;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.splitter.SplitterParams;
 import org.springframework.util.unit.DataSize;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class ContentSplitterParameters extends ActionParameters {
-
     @JsonPropertyDescription("Characters that indicate the line is a comment when searching for headers")
     private String commentChars;
 

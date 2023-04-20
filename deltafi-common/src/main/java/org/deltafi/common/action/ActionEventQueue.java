@@ -42,7 +42,7 @@ public class ActionEventQueue {
         int maxIdle = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxIdle();
         int maxTotal = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxTotal();
         jedisKeyedBlockingQueue = new JedisKeyedBlockingQueue(actionEventQueueProperties.getUrl(),
-                actionEventQueueProperties.getPassword().orElse(null), maxIdle, maxTotal);
+                actionEventQueueProperties.getPassword(), maxIdle, maxTotal);
         log.info("Jedis pool size: " + maxTotal);
     }
 

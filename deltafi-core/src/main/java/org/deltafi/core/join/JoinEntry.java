@@ -44,7 +44,7 @@ public class JoinEntry {
 
     public List<IndexedDeltaFileEntry> getSortedDeltaFileEntries() {
         return deltaFileEntries.stream()
-                .sorted(Comparator.comparing(IndexedDeltaFileEntry::getIndex))
+                .sorted(Comparator.comparing(IndexedDeltaFileEntry::index))
                 .collect(Collectors.toList());
     }
 }

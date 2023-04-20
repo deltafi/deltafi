@@ -18,16 +18,6 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.repo.DeltaFileRepo;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
-
-import java.time.OffsetDateTime;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public abstract class DeltaFileCacheService {
 
     public abstract void clearCache();

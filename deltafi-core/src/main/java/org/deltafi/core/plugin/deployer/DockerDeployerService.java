@@ -36,10 +36,7 @@ import org.deltafi.core.services.EventService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.deltafi.core.services.DockerAppInfoService.DELTAFI_GROUP;
@@ -64,7 +61,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
             String image = pluginImageRepository.getImageRepositoryBase() + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion();
 
             ListImagesCmd listImagesCmd = dockerClient.listImagesCmd();
-            listImagesCmd.getFilters().put("reference", List.of(image));
+            Objects.requireNonNull(listImagesCmd.getFilters()).put("reference", List.of(image));
             List<Image> images = listImagesCmd.exec();
 
             if (images.isEmpty()) {

@@ -48,7 +48,6 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
     private final FlowPlanRepo<FlowPlanT> flowPlanRepo;
     private final FlowService<FlowPlanT, FlowT> flowService;
-    private final Class<FlowPlanT> type;
 
     /**
      * Persist the FlowPlan and create a flow from the plan.
@@ -110,11 +109,10 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     /**
      * Remove all the flows and flow plans with the given sourcePlugin
      * @param pluginCoordinates sourcePlugin whose flows and flow plans should be removed
-     * @return number of plans that were removed
      */
-    int removeFlowsAndPlansBySourcePlugin(PluginCoordinates pluginCoordinates) {
+    void removeFlowsAndPlansBySourcePlugin(PluginCoordinates pluginCoordinates) {
         flowService.removeBySourcePlugin(pluginCoordinates);
-        return flowPlanRepo.deleteBySourcePlugin(pluginCoordinates);
+        flowPlanRepo.deleteBySourcePlugin(pluginCoordinates);
     }
 
     /**

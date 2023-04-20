@@ -68,7 +68,7 @@ public class JedisKeyedBlockingQueue {
 
         URI uri = new URI(url);
 
-        jedisPool = password == null ? new JedisPool(poolConfig, uri) :
+        jedisPool = (password == null || password.isEmpty()) ? new JedisPool(poolConfig, uri) :
                 new JedisPool(poolConfig, uri.getHost(), uri.getPort(), Protocol.DEFAULT_TIMEOUT, password);
     }
 
