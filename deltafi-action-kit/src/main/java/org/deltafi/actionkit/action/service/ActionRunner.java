@@ -72,8 +72,7 @@ public class ActionRunner {
     @PostConstruct
     public void startActions() {
         if (actions.isEmpty()) {
-            log.error("No actions found!");
-            return;
+            log.warn("No actions found! This may be a flow-only plugin.");
         }
 
         pluginRegistrar.register();
