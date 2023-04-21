@@ -208,7 +208,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
             joinResult.saveContent(pipedInputStream, fileName, mediaType);
 
             return joinResult;
-        } catch (IOException | ObjectStorageException e) {
+        } catch (IOException e) {
             return new ErrorResult(context, "Unable to write joined content", e);
         }
     }

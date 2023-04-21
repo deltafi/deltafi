@@ -405,18 +405,6 @@ public class DecompressionTransformActionTest extends TransformActionTest {
     }
 
     @Test
-    void loadFailure() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("loadFailure")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.gz").contentType(CONTENT_TYPE).build()))
-                .throwStorageReadException(new ObjectStorageException("Boom", new Exception()))
-                .expectError("Failed to load compressed binary from storage")
-                .build());
-    }
-
-    @Test
     void storeFailure() {
         execute(TransformActionTestCase.builder()
                 .action(action)

@@ -94,7 +94,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                     return new ErrorResult(context, e.getMessage(), e.getCause()).logErrorTo(log);
                 }
             }
-        } catch (ObjectStorageException | IOException e) {
+        } catch (IOException e) {
             return new ErrorResult(context, "Failed to load compressed binary from storage", e).logErrorTo(log);
         }
         result.addMetadata("decompressionType", decompressionType);
@@ -177,8 +177,6 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressGzip(@NotNull InputStream stream, @NotNull TransformResult result, String name) throws DecompressionTransformException {
         try (GzipCompressorInputStream decompressed = new GzipCompressorInputStream(stream)) {
             result.saveContent(decompressed, name, MediaType.APPLICATION_OCTET_STREAM);
-        } catch (ObjectStorageException e) {
-            throw new DecompressionTransformException("Unable to store content", e);
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to decompress gzip", e);
         }
@@ -187,8 +185,6 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressXZ(@NotNull InputStream stream, @NotNull TransformResult result, String name) throws DecompressionTransformException {
         try (XZCompressorInputStream decompressed = new XZCompressorInputStream(stream)) {
             result.saveContent(decompressed, name, MediaType.APPLICATION_OCTET_STREAM);
-        } catch (ObjectStorageException e) {
-            throw new DecompressionTransformException("Unable to store content", e);
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to decompress xz", e);
         }
@@ -197,8 +193,6 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressZ(@NotNull InputStream stream, @NotNull TransformResult result, String name) throws DecompressionTransformException {
         try (ZCompressorInputStream decompressed = new ZCompressorInputStream(stream)) {
             result.saveContent(decompressed, name, MediaType.APPLICATION_OCTET_STREAM);
-        } catch (ObjectStorageException e) {
-            throw new DecompressionTransformException("Unable to store content", e);
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to decompress Z", e);
         }

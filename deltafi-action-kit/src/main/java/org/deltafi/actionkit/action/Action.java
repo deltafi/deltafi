@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -142,10 +141,9 @@ public abstract class Action<P extends ActionParameters> {
      * Load a content reference from the content storage service as a byte array
      * @param contentReference Reference to content to be loaded
      * @return a byte array for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
     @SuppressWarnings("unused")
-    protected byte[] loadContent(ContentReference contentReference) throws ObjectStorageException {
+    protected byte[] loadContent(ContentReference contentReference) {
         byte[] content = null;
         try (InputStream contentInputStream = loadContentAsInputStream(contentReference)) {
             content = contentInputStream.readAllBytes();
@@ -159,10 +157,13 @@ public abstract class Action<P extends ActionParameters> {
      * Load a content reference from the content storage service as an InputStream
      * @param contentReference Reference to content to be loaded
      * @return an InputStream for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    protected InputStream loadContentAsInputStream(ContentReference contentReference) throws ObjectStorageException {
-        return contentStorageService.load(contentReference);
+    protected InputStream loadContentAsInputStream(ContentReference contentReference) {
+        try {
+            return contentStorageService.load(contentReference);
+        } catch (ObjectStorageException e) {
+            throw new ActionKitException("Failed to load content from storage", e);
+        }
     }
 
     /**

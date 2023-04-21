@@ -174,20 +174,6 @@ class FlowfileEgressActionTest {
         return result;
     }
 
-    @Test
-    public void executeMissingData() throws ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
-
-        ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
-
-        verify(httpService, never()).post(any(), any(), any(), any());
-
-        assertThat(result, instanceOf(ErrorResult.class));
-        assertThat(result.toEvent().getDid(), equalTo(DID));
-        assertThat(result.toEvent().getAction(), equalTo(ACTION));
-    }
-
     private static class TestInputStream extends ByteArrayInputStream {
         public TestInputStream(byte[] buf) {
             super(buf);

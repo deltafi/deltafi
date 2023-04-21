@@ -43,10 +43,9 @@ public abstract class FormattedDataInput {
      * Load a content reference from the content storage service as a byte array
      * @param contentReference Reference to content to be loaded
      * @return a byte array for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
     @SuppressWarnings("unused")
-    private byte[] loadContent(ContentReference contentReference) throws ObjectStorageException {
+    private byte[] loadContent(ContentReference contentReference) {
         byte[] content = null;
         try (InputStream contentInputStream = loadContentAsInputStream(contentReference)) {
             content = contentInputStream.readAllBytes();
@@ -60,19 +59,21 @@ public abstract class FormattedDataInput {
      * Load a content reference from the content storage service as an InputStream
      * @param contentReference Reference to content to be loaded
      * @return an InputStream for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    private InputStream loadContentAsInputStream(ContentReference contentReference) throws ObjectStorageException {
-        return actionContext.getContentStorageService().load(contentReference);
+    private InputStream loadContentAsInputStream(ContentReference contentReference) {
+        try {
+            return actionContext.getContentStorageService().load(contentReference);
+        } catch (ObjectStorageException e) {
+            throw new ActionKitException("Failed to load content from storage", e);
+        }
     }
 
     /**
      * Load the content associated with the formatted data as an InputStream.
      *
      * @return an InputStream for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    public InputStream loadFormattedDataStream() throws ObjectStorageException {
+    public InputStream loadFormattedDataStream() {
         return loadContentAsInputStream(formattedData.getContentReference());
     }
 
@@ -80,10 +81,9 @@ public abstract class FormattedDataInput {
      * Load the content associated with the formatted data as a byte array.
      *
      * @return a byte array for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
     @SuppressWarnings("unused")
-    public byte[] loadFormattedDataBytes() throws ObjectStorageException {
+    public byte[] loadFormattedDataBytes() {
         return loadContent(formattedData.getContentReference());
     }
 

@@ -43,10 +43,9 @@ public abstract class ContentListInput {
      * Load a content reference from the content storage service as a byte array
      * @param contentReference Reference to content to be loaded
      * @return a byte array for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
     @SuppressWarnings("unused")
-    private byte[] loadContent(ContentReference contentReference) throws ObjectStorageException {
+    private byte[] loadContent(ContentReference contentReference) {
         byte[] content = null;
         try (InputStream contentInputStream = loadContentAsInputStream(contentReference)) {
             content = contentInputStream.readAllBytes();
@@ -60,16 +59,20 @@ public abstract class ContentListInput {
      * Load a content reference from the content storage service as an InputStream
      * @param contentReference Reference to content to be loaded
      * @return an InputStream for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    private InputStream loadContentAsInputStream(ContentReference contentReference) throws ObjectStorageException {
-        return actionContext.getContentStorageService().load(contentReference);
+    private InputStream loadContentAsInputStream(ContentReference contentReference) {
+        try {
+            return actionContext.getContentStorageService().load(contentReference);
+        } catch (ObjectStorageException e) {
+            throw new ActionKitException("Failed to load content from storage", e);
+        }
     }
 
     /** Return the number of files in the contentList
      *
      * @return the number of files
      */
+    @SuppressWarnings("unused")
     public int contentListSize() {
         return contentList.size();
     }
@@ -93,9 +96,9 @@ public abstract class ContentListInput {
      * Load the first content as a ContentStream.
      *
      * @return a ContentStream for the loaded content at index 0
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    public ContentStream loadContentStream() throws ObjectStorageException {
+    @SuppressWarnings("unused")
+    public ContentStream loadContentStream() {
         return loadContentStream(0);
     }
 
@@ -104,9 +107,8 @@ public abstract class ContentListInput {
      *
      * @param index the index of the content to be loaded
      * @return a ContentStream for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    public ContentStream loadContentStream(int index) throws ObjectStorageException {
+    public ContentStream loadContentStream(int index) {
         Content content = contentAtIndex(index);
         return new ContentStream(loadContentAsInputStream(content.getContentReference()), content.getName(), content.getContentReference().getMediaType());
     }
@@ -115,9 +117,9 @@ public abstract class ContentListInput {
      * Load the first content as a ContentBytes.
      *
      * @return a ContentBytes for the loaded content at index 0
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    public ContentBytes loadContentBytes() throws ObjectStorageException {
+    @SuppressWarnings("unused")
+    public ContentBytes loadContentBytes() {
         return loadContentBytes(0);
     }
 
@@ -126,9 +128,8 @@ public abstract class ContentListInput {
      *
      * @param index the index of the content to be loaded
      * @return a ContentBytes for the loaded content
-     * @throws ObjectStorageException when the load from the content storage service fails
      */
-    public ContentBytes loadContentBytes(int index) throws ObjectStorageException {
+    public ContentBytes loadContentBytes(int index) {
         Content content = contentAtIndex(index);
         return new ContentBytes(loadContent(content.getContentReference()), content.getName(), content.getContentReference().getMediaType());
     }

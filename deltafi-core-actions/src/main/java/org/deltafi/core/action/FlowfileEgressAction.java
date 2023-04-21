@@ -24,7 +24,6 @@ import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.nifi.FlowFileUtil;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.jetbrains.annotations.NotNull;
@@ -69,8 +68,6 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
                             new String(body.readAllBytes())).logErrorTo(log);
                 }
             }
-        } catch (ObjectStorageException e) {
-            return new ErrorResult(context, "Unable to get object from content storage", e);
         } catch (IOException e) {
             log.warn("Unable to close input stream from content storage", e);
         } catch (HttpPostException e) {

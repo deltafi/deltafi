@@ -179,20 +179,6 @@ class RestPostEgressActionTest {
     }
 
     @Test
-    public void executeMissingData() throws ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenThrow(ObjectStorageException.class);
-
-        ActionContext context = ActionContext.builder().did(DID).name(ACTION).build();
-        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
-
-        verify(httpService, never()).post(any(), any(), any(), any());
-
-        assertTrue(result instanceof ErrorResult);
-        assertEquals(DID, result.toEvent().getDid());
-        assertEquals(ACTION, result.toEvent().getAction());
-    }
-
-    @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new TestInputStream(DATA));
         EgressResultType result = runTest(200, "good job", 1);

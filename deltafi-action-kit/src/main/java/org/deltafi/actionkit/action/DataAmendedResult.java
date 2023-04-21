@@ -85,11 +85,15 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
      * @param content Byte array of content to store.  The entire byte array will be stored in content storage
      * @param name the content name
      * @param mediaType Media type for the content being stored
-     * @throws ObjectStorageException when the content storage service fails to store content
      */
-    public void saveContent(byte[] content, String name, String mediaType) throws ObjectStorageException {
-        ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-        addContent(new Content(name, contentReference));
+    @SuppressWarnings("unused")
+    public void saveContent(byte[] content, String name, String mediaType) {
+        try {
+            ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
+            addContent(new Content(name, contentReference));
+        } catch(ObjectStorageException e) {
+            throw new ActionKitException("Failed to store content " + name, e);
+        }
     }
 
     /**
@@ -98,11 +102,14 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
      *                stream may be closed by underlying processors after execution
      * @param name the content name
      * @param mediaType Media type for the content being stored
-     * @throws ObjectStorageException when the content storage service fails to store content
      */
-    public void saveContent(InputStream content, String name, @SuppressWarnings("SameParameterValue") String mediaType) throws ObjectStorageException {
-        ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-        addContent(new Content(name, contentReference));
+    public void saveContent(InputStream content, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
+        try {
+            ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
+            addContent(new Content(name, contentReference));
+        } catch(ObjectStorageException e) {
+            throw new ActionKitException("Failed to store content " + name, e);
+        }
     }
 
     /**

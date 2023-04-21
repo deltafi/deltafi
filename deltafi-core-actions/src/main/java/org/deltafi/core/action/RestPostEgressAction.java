@@ -62,8 +62,6 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
 
         } catch (JsonProcessingException e) {
             return new ErrorResult(context, "Unable to build post headers", e);
-        } catch (ObjectStorageException e) {
-            return new ErrorResult(context, "Unable to get object from content storage", e);
         } catch (IOException e) {
             log.warn("Unable to close input stream from content storage", e);
         } catch (HttpPostException e) {
