@@ -34,7 +34,7 @@ import java.util.List;
 public class TransformFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private EgressActionConfiguration egressAction;
-    private int maxErrors = 0;
+    private int maxErrors = -1;
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionNamed) {
