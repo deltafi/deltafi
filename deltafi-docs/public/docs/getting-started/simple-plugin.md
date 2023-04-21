@@ -258,7 +258,7 @@ public class YamlFormatAction extends FormatAction<ActionParameters> {
 
         try {
             Map<String, String> domainData = JSON_MAPPER.readValue(data, Map.class);
-            formatResult.setContentReference(saveContent(context.getDid(), YAML_MAPPER.writeValueAsString(domainData).getBytes(), "application/yaml"));
+            formatResult.saveContent(YAML_MAPPER.writeValueAsString(domainData).getBytes(), "application/yaml");
         } catch (ObjectStorageException | JsonProcessingException e) {
             return new ErrorResult(context, "Failed to convert or store data", e);
         }

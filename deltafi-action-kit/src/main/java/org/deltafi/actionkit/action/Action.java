@@ -166,43 +166,6 @@ public abstract class Action<P extends ActionParameters> {
     }
 
     /**
-     * Save content associated with a DeltaFile to content storage
-     * @param did The DID for the DeltaFile associated with the saved content
-     * @param content Byte array of content to store.  The entire byte array will be stored in content storage
-     * @param mediaType Media type for the content being stored
-     * @return a content reference for the new stored content
-     * @throws ObjectStorageException when the content storage service fails to store content
-     */
-    @SuppressWarnings("unused")
-    protected ContentReference saveContent(String did, byte[] content, String mediaType) throws ObjectStorageException {
-        return contentStorageService.save(did, content, mediaType);
-    }
-
-    /**
-     * Save content associated with a DeltaFile to content storage
-     * @param did The DID for the DeltaFile associated with the saved content
-     * @param content InputStream of content to store.  The entire stream will be read into content storage, and the
-     *                stream may be closed by underlying processors after execution
-     * @param mediaType Media type for the content being stored
-     * @return a content reference for the new stored content
-     * @throws ObjectStorageException when the content storage service fails to store content
-     */
-    protected ContentReference saveContent(String did, InputStream content, @SuppressWarnings("SameParameterValue") String mediaType) throws ObjectStorageException {
-        return contentStorageService.save(did, content, mediaType);
-    }
-
-    /**
-     * Save content associated with a DeltaFile to content storage
-     * @param did The DID for the DeltaFile associated with the saved content
-     * @param contentToBytes map of content objects to the bytes that need to be stored for the content
-     * @return an updated list of content that includes the new content references
-     * @throws ObjectStorageException when the content storage service fails to store content
-     */
-    protected List<Content> saveContent(String did, Map<Content, byte[]> contentToBytes) throws ObjectStorageException {
-        return contentStorageService.saveMany(did, contentToBytes);
-    }
-
-    /**
      * Convert a map of key/values to a parameter object for the Action
      * @param params Key-value map representing the values in the paraameter object
      * @return a parameter object initialized by the params map

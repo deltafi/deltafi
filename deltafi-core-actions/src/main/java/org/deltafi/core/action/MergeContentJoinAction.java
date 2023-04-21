@@ -35,7 +35,6 @@ import org.deltafi.actionkit.action.join.JoinResultType;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.parameters.MergeContentJoinParameters;
@@ -44,7 +43,6 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.core.MediaType;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -206,9 +204,10 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
             new Thread(writerThread).start();
             writerThread.waitForPipeConnection();
 
-            ContentReference contentReference = saveContent(context.getDid(), pipedInputStream, mediaType);
+            JoinResult joinResult = new JoinResult(context, sourceInfo);
+            joinResult.saveContent(pipedInputStream, fileName, mediaType);
 
-            return new JoinResult(context, sourceInfo, new Content(fileName, contentReference));
+            return joinResult;
         } catch (IOException | ObjectStorageException e) {
             return new ErrorResult(context, "Unable to write joined content", e);
         }

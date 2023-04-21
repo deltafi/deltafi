@@ -84,7 +84,7 @@ public class MergeContentJoinActionTest {
                 .build();
 
         actionInput = ActionInput.builder()
-                .actionContext(ActionContext.builder().did(JOINED_DID).build())
+                .actionContext(ActionContext.builder().did(JOINED_DID).contentStorageService(CONTENT_STORAGE_SERVICE).build())
                 .deltaFile(DeltaFile.newBuilder()
                         .sourceInfo(SourceInfo.builder().build())
                         .build())

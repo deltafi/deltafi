@@ -30,6 +30,7 @@ import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
 import org.slf4j.MDC;
@@ -63,6 +64,9 @@ public class ActionRunner {
 
     @Autowired
     PluginRegistrar pluginRegistrar;
+
+    @Autowired
+    ContentStorageService contentStorageService;
 
     private final Map<String, ExecutorService> executors = new HashMap<>();
 
@@ -101,6 +105,7 @@ public class ActionRunner {
                 actionInput.getActionContext().setActionVersion(buildProperties.getVersion());
                 actionInput.getActionContext().setHostname(hostnameService.getHostname());
                 actionInput.getActionContext().setStartTime(OffsetDateTime.now());
+                actionInput.getActionContext().setContentStorageService(contentStorageService);
                 executeAction(action, actionInput, actionInput.getReturnAddress());
             }
         } catch (Throwable e) {

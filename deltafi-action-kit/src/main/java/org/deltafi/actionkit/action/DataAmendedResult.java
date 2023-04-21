@@ -21,10 +21,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,11 +81,36 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
     }
 
     /**
-     * Add a content reference to the list of content in the result
-     * @param contentReference A content reference to be added to the result
+     * Save content to content storage and attach to the result
+     * @param content Byte array of content to store.  The entire byte array will be stored in content storage
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @throws ObjectStorageException when the content storage service fails to store content
      */
-    @SuppressWarnings("unused")
-    public void addContentReference(@NotNull ContentReference contentReference) {
-        addContent(Content.newBuilder().contentReference(contentReference).build());
+    public void saveContent(byte[] content, String name, String mediaType) throws ObjectStorageException {
+        ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
+        addContent(new Content(name, contentReference));
+    }
+
+    /**
+     * Save content to content storage and attach to the result
+     * @param content InputStream of content to store.  The entire stream will be read into content storage, and the
+     *                stream may be closed by underlying processors after execution
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @throws ObjectStorageException when the content storage service fails to store content
+     */
+    public void saveContent(InputStream content, String name, @SuppressWarnings("SameParameterValue") String mediaType) throws ObjectStorageException {
+        ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
+        addContent(new Content(name, contentReference));
+    }
+
+    /**
+     * Save multiple pieces of content to content storage and attach to the result
+     * @param contentToBytes map of content objects to the bytes that need to be stored for the content
+     * @throws ObjectStorageException when the content storage service fails to store content
+     */
+    public void saveContent(Map<Content, byte[]> contentToBytes) throws ObjectStorageException {
+        context.getContentStorageService().saveMany(context.getDid(), contentToBytes);
     }
 }

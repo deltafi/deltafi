@@ -92,8 +92,10 @@ To store content from a byte array or a stream:
 
 ```java
 try {
-    ContentReference contentRefFromBytes = saveContent(context.getDid(), byteArray, MediaType.APPLICATION_JSON);
-    ContentReference contentRefFromStream = saveContent(context.getDid(), inputStream, MediaType.APPLICATION_JSON);
+    // create a result of the type appropriate for your Action
+    TransformResult transformResult = new TransformResult();
+    transformResult.saveContent(byteArray, fileName, MediaType.APPLICATION_JSON);
+    transformResult.saveContent(inputStream, fileName, MediaType.APPLICATION_JSON);
 } catch (ObjectStorageException e) {
     // something went wrong
 }

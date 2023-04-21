@@ -52,6 +52,11 @@ public class JoinResult extends DataAmendedResult implements JoinResultType {
         this(context, sourceInfo, List.of(content));
     }
 
+    public JoinResult(ActionContext context, SourceInfo sourceInfo) {
+        super(context);
+        this.sourceInfo = sourceInfo;
+    }
+
     public void addDomain(String domainName, String value, String mediaType) {
         domains.add(new Domain(domainName, value, mediaType));
     }

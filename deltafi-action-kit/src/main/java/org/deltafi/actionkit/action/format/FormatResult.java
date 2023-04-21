@@ -22,12 +22,11 @@ import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.content.ContentReference;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
-import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.FormatEvent;
+import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,6 +82,29 @@ public class FormatResult extends Result<FormatResult> implements FormatResultTy
             final String usePrefix = prefix != null ? prefix : "";
             map.forEach((key, value) -> metadata.put(usePrefix + key, value));
         }
+    }
+
+    /**
+     * Save content to content storage and attach to the result
+     * @param content Byte array of content to store.  The entire byte array will be stored in content storage
+     * @param mediaType Media type for the content being stored
+     * @throws ObjectStorageException when the content storage service fails to store content
+     */
+    @SuppressWarnings("unused")
+    public void saveContent(byte[] content, String mediaType) throws ObjectStorageException {
+        contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
+    }
+
+    /**
+     * Save content to content storage and attach to the result
+     * @param content InputStream of content to store.  The entire stream will be read into content storage, and the
+     *                stream may be closed by underlying processors after execution
+     * @param mediaType Media type for the content being stored
+     * @throws ObjectStorageException when the content storage service fails to store content
+     */
+    @SuppressWarnings("unused")
+    public void saveContent(InputStream content, @SuppressWarnings("SameParameterValue") String mediaType) throws ObjectStorageException {
+        contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
     }
 
     @Override

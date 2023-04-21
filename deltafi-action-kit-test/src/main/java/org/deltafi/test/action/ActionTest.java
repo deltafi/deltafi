@@ -186,6 +186,7 @@ public abstract class ActionTest {
                 .systemName("systemName")
                 .actionVersion("1.0")
                 .startTime(OffsetDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC))
+                .contentStorageService(contentStorageService)
                 .build();
     }
 
