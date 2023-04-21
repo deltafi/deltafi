@@ -71,12 +71,6 @@ public class MinioObjectStorageService implements ObjectStorageService {
                 ServerException | XmlParserException e) {
             log.error("Failed to save incoming object", e);
             throw new ObjectStorageException("Failed to send incoming data to minio", e);
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                log.error("Failed to close input stream: {}", e.getMessage());
-            }
         }
     }
 
