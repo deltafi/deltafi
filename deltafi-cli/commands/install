@@ -124,6 +124,25 @@ _k8s_install() {
   fi
 }
 
+_compose_install() {
+  core_finder="docker ps --filter name=deltafi-core$ -q"
+  ORIG_CORE_CONTAINER=$(${core_finder})
+
+  if [[ -n "${ORIG_CORE_CONTAINER}" ]]; then
+    _pre_upgrade_tasks
+  fi
+
+  cd "${DELTAFICLI_COMPOSE_PATH}"
+  ./compose start
+  cd - > /dev/null
+
+  NEW_CORE_CONTAINER=$(${core_finder})
+
+  if ! [ "${ORIG_CORE_CONTAINER}" = "${NEW_CORE_CONTAINER}" ]; then
+    _run_migrations
+  fi
+}
+
 _pre_upgrade_tasks() {
   cli_log "Creating a snapshot"
   version=$( cat "${DELTAFICLI_WORKDIR}/VERSION")
@@ -144,6 +163,10 @@ _run_migrations() {
 
 cli_log "Installing DeltaFi"
 
-_k8s_install
+if _is_standalone; then
+  _compose_install
+else
+  _k8s_install
+fi
 
 cli_log "DeltaFi install complete"

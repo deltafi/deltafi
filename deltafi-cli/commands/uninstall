@@ -14,31 +14,54 @@ Usage:
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
+_k8s_uninstall() {
+  # remove the core first so that mongo collections are not recreated
+  $KUBECTL_BIN delete deployments,pods -l group=deltafi-core --grace-period=0 --force 2>/dev/null || :
+
+  _drop_mongo_collections
+
+  # perform a helm uninstall
+  helm uninstall $DELTAFICLI_PROJECT_NAME
+
+  # sweep up whatever helm missed, but keep secrets
+  $KUBECTL_BIN delete pods,daemonsets,services,statefulsets,replicasets,deployments -n deltafi --grace-period=0 --force --all 2>&1 | grep -v Warning
+}
+
+_compose_uninstall() {
+  cd "${DELTAFICLI_COMPOSE_PATH}"
+  ./compose stop-service deltafi-core deltafi-ingress
+  _drop_mongo_collections
+  ./compose stop
+  cd - > /dev/null
+
+  # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
+  docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
+}
+
+_drop_mongo_collections() {
+  # drop all collections in the deltafi database
+  CMDS=$(deltafi mongo-eval "db.getCollectionNames()" 2>/dev/null | tail -n +5 | jq '.[]' | sed 's/"/db./' | sed 's/"/.drop();/')
+
+  if [ -n "$CMDS" ]; then
+    for CMD in $CMDS
+    do
+      echo "  $CMD"
+      deltafi mongo-eval "$CMD" >/dev/null 2>&1
+    done
+  fi
+}
+
 read -r -p "☢️  Uninstalling DeltafFi is a destructive operation that will remove configuration and anything in the database.
 ☠️  This could make your day go badly.
 Are you really, really sure? [y/N] " response
 case "$response" in
   [yY][eE][sS]|[yY])
     cli_log "Uninstalling DeltaFi"
-    # remove the core first so that mongo collections are not recreated
-    $KUBECTL_BIN delete deployments,pods -l group=deltafi-core --grace-period=0 --force 2>/dev/null || :
-
-    # drop all collections in the deltafi database
-    CMDS=$(deltafi mongo-eval "db.getCollectionNames()" 2>/dev/null | tail -n +5 | jq '.[]' | sed 's/"/db./' | sed 's/"/.drop();/')
-
-    if [ -z "$CMDS" ]; then
-      for CMD in $CMDS
-      do
-        echo "  $CMD"
-        deltafi mongo-eval "$CMD" >/dev/null 2>&1
-      done
+    if _is_standalone; then
+      _compose_uninstall
+    else
+      _k8s_uninstall
     fi
-
-    # perform a helm uninstall
-    helm uninstall $DELTAFICLI_PROJECT_NAME
-
-    # sweep up whatever helm missed, but keep secrets
-    $KUBECTL_BIN delete pods,daemonsets,services,statefulsets,replicasets,deployments -n deltafi --grace-period=0 --force --all 2>&1 | grep -v Warning
     ;;
   *)
     cli_log "Aborting uninstall"

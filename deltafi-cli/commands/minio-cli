@@ -57,4 +57,20 @@ minio_mc_spec='{
                  }
                }'
 
-kubectl run deltafi-minio-mc --namespace deltafi -i --tty --rm -q --overrides="$minio_mc_spec" --image=minio-mc
+if _is_standalone; then
+  secret_file="${DELTAFICLI_COMPOSE_PATH}/settings/secrets/minio.env"
+
+  ID=$(docker ps -a --filter name=deltafi-minio-mc -q)
+  if [[ -n "${ID}" ]]; then
+    docker stop "$ID" > /dev/null
+    docker rm "$ID" > /dev/null
+  fi
+
+  init_file="${DELTAFICLI_WORKDIR}/commands/minio-mc-init.sh"
+  docker run -it --label deltafi-group=minio-cli --name deltafi-minio-mc \
+  -v "${init_file}":/minio-mc-init.sh \
+  --network=deltafi --env-file "${secret_file}" \
+  --entrypoint "/minio-mc-init.sh"  minio/mc:RELEASE.2023-01-28T20-29-38Z
+else
+  kubectl run deltafi-minio-mc --namespace deltafi -i --tty --rm -q --overrides="$minio_mc_spec" --image=minio-mc
+fi

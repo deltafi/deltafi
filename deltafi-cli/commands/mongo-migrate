@@ -20,26 +20,46 @@ cleanup() {
 
 trap cleanup INT
 
-POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")
 MIGRATION_DIR="/tmp/migrations"
 
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
 MONGODB_USERNAME_ENV='$MONGODB_USERNAME'
 MONGODB_PASSWORD_ENV='$MONGODB_PASSWORD'
-${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "rm -rf ${MIGRATION_DIR} && mkdir ${MIGRATION_DIR}"
 
-# This should be removed with the configmap-ui.yaml template once all systems are migrated
-if ${KUBECTL_BIN} get configmaps | grep -q "deltafi-ui-config"; then
-  # read the current UI config yaml from the config map and convert it to json, ignoring title, authMode and domain
-  ${KUBECTL_BIN} get configmaps deltafi-ui-config -o jsonpath={@.data.config} | ruby -ryaml -rjson -e 'puts YAML.safe_load(ARGF.read).to_json' | jq 'del(.title, .authMode, .domain)' > $TMPFILE
-  ${KUBECTL_BIN} cp --container mongodb ${TMPFILE} ${POD}:${MIGRATION_DIR}/ui-config.json
+_k8s_mongo_migrate() {
+  POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")
+  ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "rm -rf ${MIGRATION_DIR} && mkdir ${MIGRATION_DIR}"
+
+  # This should be removed with the configmap-ui.yaml template once all systems are migrated
+  if ${KUBECTL_BIN} get configmaps | grep -q "deltafi-ui-config"; then
+    # read the current UI config yaml from the config map and convert it to json, ignoring title, authMode and domain
+    ${KUBECTL_BIN} get configmaps deltafi-ui-config -o jsonpath={@.data.config} | ruby -ryaml -rjson -e 'puts YAML.safe_load(ARGF.read).to_json' | jq 'del(.title, .authMode, .domain)' > $TMPFILE
+    ${KUBECTL_BIN} cp --container mongodb ${TMPFILE} ${POD}:${MIGRATION_DIR}/ui-config.json
+  fi
+
+  for i in ${DELTAFI_DIR}/migrations/*.js; do
+    cli_log "Running database migration $(basename ${i})"
+    ${KUBECTL_BIN} cp --container mongodb ${i} ${POD}:${MIGRATION_DIR}
+    ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi ${MIGRATION_DIR}/$(basename ${i})"
+  done
+}
+
+_compose_mongo_migrate() {
+  docker exec -i deltafi-mongodb sh -c "rm -rf ${MIGRATION_DIR} && mkdir ${MIGRATION_DIR}"
+
+  for i in ${DELTAFI_DIR}/migrations/*.js; do
+    cli_log "Running database migration $(basename ${i})"
+    docker cp -q ${i} deltafi-mongodb:${MIGRATION_DIR}
+    docker exec -it deltafi-mongodb sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi ${MIGRATION_DIR}/$(basename ${i})"
+  done
+}
+
+if _is_standalone; then
+  _compose_mongo_migrate
+else
+  _k8s_mongo_migrate
 fi
-
-for i in ${DELTAFI_DIR}/migrations/*.js; do
-  cli_log "Running database migration $(basename ${i})"
-  ${KUBECTL_BIN} cp --container mongodb ${i} ${POD}:${MIGRATION_DIR}
-  ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi ${MIGRATION_DIR}/$(basename ${i})"
-done
 
 cleanup

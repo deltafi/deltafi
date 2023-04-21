@@ -36,7 +36,7 @@ _setup_secrets() {
       grafana_password=$(_random_password 16)
       cat <<EOF > "${GRAFANA_SECRET_PATH}"
 GF_SECURITY_ADMIN_USER=admin
-GF_SECURITY_ADMIN_PASSWORD="$grafana_password"
+GF_SECURITY_ADMIN_PASSWORD=$grafana_password
 EOF
   fi
 
@@ -44,9 +44,9 @@ EOF
       minio_password=$(_random_password 40)
       cat <<EOF > "${MINIO_SECRET_PATH}"
 MINIO_ROOT_USER=deltafi
-MINIO_ROOT_PASSWORD="$minio_password"
+MINIO_ROOT_PASSWORD=$minio_password
 MINIO_ACCESSKEY=deltafi
-MINIO_SECRETKEY="$minio_password"
+MINIO_SECRETKEY=$minio_password
 EOF
   fi
 
@@ -56,16 +56,16 @@ EOF
     cat <<EOF > "${MONGODB_SECRET_PATH}"
 MONGODB_USERNAME=mongouser
 MONGODB_DATABASE=deltafi
-MONGO_PASSWORD="$mongo_password"
-MONGODB_PASSWORD="$mongo_password"
-MONGODB_ROOT_PASSWORD="$mongo_root_password"
+MONGO_PASSWORD=$mongo_password
+MONGODB_PASSWORD=$mongo_password
+MONGODB_ROOT_PASSWORD=$mongo_root_password
 EOF
   fi
 
   if [[ ! -f "${REDIS_SECRET_PATH}" ]]; then
     redis_password=$(_random_password 16)
     cat <<EOF > "${REDIS_SECRET_PATH}"
-REDIS_PASSWORD="$redis_password"
+REDIS_PASSWORD=$redis_password
 EOF
   fi
 
@@ -101,8 +101,11 @@ stop_compose() {
   docker compose --env-file "${1}" down
 }
 
+stop_service() {
+  docker compose --env-file "${1}" stop ${2}
+}
+
 restart_service() {
-  echo "${1}: ${2}"
   docker-compose --env-file "${1}" up -d --force-recreate --no-deps ${2}
 }
 
@@ -127,6 +130,13 @@ case "$SUBCOMMAND" in
     ;;
   stop)
     stop_compose "$images_file"
+    ;;
+  stop-service)
+    SERVICES=""
+    for i
+      do SERVICES="${SERVICES} ${i}"
+    done
+    stop_service $images_file "${SERVICES}"
     ;;
   *)
     cli_help_command
