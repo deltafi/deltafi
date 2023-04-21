@@ -271,4 +271,44 @@ public class FullFlowExemplars {
 
         return deltaFile;
     }
+
+    public static DeltaFile transformFlowPostIngressDeltaFile(String did) {
+        DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
+        deltaFile.setIngressBytes(500L);
+        deltaFile.queueAction("sampleTransform.Utf8TransformAction");
+        deltaFile.setSourceInfo(new SourceInfo("input.txt", TRANSFORM_FLOW_NAME, new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever")), ProcessingType.TRANSFORMATION));
+        Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, did))).build();
+        deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION, List.of(content), null));
+        return deltaFile;
+    }
+
+    public static DeltaFile transformFlowPostTransformUtf8DeltaFile(String did) {
+        DeltaFile deltaFile = transformFlowPostIngressDeltaFile(did);
+        deltaFile.setStage(DeltaFileStage.INGRESS);
+        deltaFile.completeAction("sampleTransform.Utf8TransformAction", START_TIME, STOP_TIME);
+        deltaFile.queueAction("sampleTransform.SampleTransformAction");
+        Content content = Content.newBuilder().name("file.json").contentReference(new ContentReference("application/octet-stream", new Segment("utf8ObjectName", 0, 500, did))).build();
+        deltaFile.getProtocolStack().add(new ProtocolLayer("sampleTransform.Utf8TransformAction", List.of(content), null));
+        return deltaFile;
+    }
+
+    public static DeltaFile transformFlowPostTransformDeltaFile(String did) {
+        DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.completeAction("sampleTransform.SampleTransformAction", START_TIME, STOP_TIME);
+        deltaFile.queueAction("sampleTransform.SampleEgressAction");
+        Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, did))).build();
+        deltaFile.getProtocolStack().add(new ProtocolLayer("sampleTransform.SampleTransformAction", List.of(content), TRANSFORM_METADATA));
+        deltaFile.convertLastProtocolToFormatResult("sampleTransform.SampleEgressAction");
+        deltaFile.addEgressFlow(TRANSFORM_FLOW_NAME);
+        return deltaFile;
+    }
+
+    public static DeltaFile transformFlowPostEgressDeltaFile(String did) {
+        DeltaFile deltaFile = transformFlowPostTransformDeltaFile(did);
+        deltaFile.setStage(DeltaFileStage.COMPLETE);
+        deltaFile.setEgressed(true);
+        deltaFile.completeAction("sampleTransform.SampleEgressAction", START_TIME, STOP_TIME);
+        return deltaFile;
+    }
 }

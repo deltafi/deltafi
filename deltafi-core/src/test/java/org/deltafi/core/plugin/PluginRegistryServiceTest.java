@@ -74,6 +74,12 @@ class PluginRegistryServiceTest {
     EgressFlowService egressFlowService;
 
     @Mock
+    TransformFlowPlanService transformFlowPlanService;
+
+    @Mock
+    TransformFlowService transformFlowService;
+
+    @Mock
     PluginValidator pluginValidator;
 
     @Mock
@@ -84,11 +90,11 @@ class PluginRegistryServiceTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
-        List<PluginUninstallCheck> checkers = List.of(ingressFlowService, enrichFlowService, egressFlowService);
+        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
+        List<PluginUninstallCheck> checkers = List.of(ingressFlowService, enrichFlowService, egressFlowService, transformFlowService);
         pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService,
-                pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
-                ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, checkers, cleaners);
+                transformFlowService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
+                ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, checkers, cleaners);
     }
 
     @Test

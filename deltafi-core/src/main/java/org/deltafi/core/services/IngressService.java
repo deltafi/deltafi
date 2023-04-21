@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
@@ -33,6 +32,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressEvent;
+import org.deltafi.common.types.ProcessingType;
 import org.deltafi.common.types.SourceInfo;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
@@ -69,6 +69,7 @@ public class IngressService {
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final FlowAssignmentService flowAssignmentService;
     private final IngressFlowService ingressFlowService;
+    private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
     private final Clock clock;
@@ -175,10 +176,14 @@ public class IngressService {
             }
             sourceInfo.setFlow(lookup);
         }
-        try {
-            ingressFlowService.getRunningFlowByName(sourceInfo.getFlow());
-        } catch (DgsEntityNotFoundException e) {
-            throw new IngressException("Flow " + sourceInfo.getFlow() + " is not running", e);
+
+        // ensure flow is running before accepting ingress
+        if (ingressFlowService.hasRunningFlow(sourceInfo.getFlow())) {
+            sourceInfo.setProcessingType(ProcessingType.NORMALIZATION);
+        } else if (transformFlowService.hasRunningFlow(sourceInfo.getFlow())) {
+            sourceInfo.setProcessingType(ProcessingType.TRANSFORMATION);
+        } else {
+            throw new IngressException("Flow " + sourceInfo.getFlow() + " is not running");
         }
 
         Integer maxErrors = ingressFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
@@ -202,10 +207,10 @@ public class IngressService {
 
         try {
             deltaFilesService.ingress(ingressEvent);
-            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference);
+            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference, sourceInfo.getProcessingType());
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference);
+            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference, sourceInfo.getProcessingType());
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
             deltaFilesService.deleteContentAndMetadata(did, contentReference);

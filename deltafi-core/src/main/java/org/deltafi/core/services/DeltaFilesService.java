@@ -31,6 +31,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
+import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.exceptions.EnqueueActionException;
 import org.deltafi.core.metrics.MetricRepository;
 import org.deltafi.core.metrics.MetricsUtil;
@@ -335,7 +336,11 @@ public class DeltaFilesService {
         }
         deltaFile.completeAction(event);
 
-        advanceAndSave(deltaFile);
+        if (deltaFile.getSourceInfo().getProcessingType() == ProcessingType.TRANSFORMATION) {
+            advanceAndSaveTransformationProcessing(deltaFile);
+        } else {
+            advanceAndSave(deltaFile);
+        }
     }
 
     public void join(DeltaFile deltaFile, ActionEventInput event) {
@@ -759,13 +764,55 @@ public class DeltaFilesService {
         enqueueActions(enqueueActions);
     }
 
+    public void splitForTransformationProcessingEgress(DeltaFile deltaFile) throws MissingEgressFlowException {
+        List<ActionInput> enqueueActions = new ArrayList<>();
+
+        if (Objects.isNull(deltaFile.getChildDids())) {
+            deltaFile.setChildDids(new ArrayList<>());
+        }
+
+        String egressActionName = deltaFile.lastAction().getName();
+        // remove the egress action, since we want the last transform to show SPLIT
+        deltaFile.removeLastAction();
+
+        List<Content> contentList = deltaFile.getLastProtocolLayer().getContent();
+
+        List<DeltaFile> childDeltaFiles = contentList.stream().map(content -> {
+            DeltaFile child = createChildDeltaFile(deltaFile, UUID.randomUUID().toString());
+            child.getLastProtocolLayer().setContent(Collections.singletonList(content));
+            child.convertLastProtocolToFormatResult(egressActionName);
+            deltaFile.getChildDids().add(child.getDid());
+
+            enqueueActions.addAll(advanceOnly(child, true));
+
+            child.recalculateBytes();
+
+            return child;
+        }).toList();
+
+        deltaFile.splitLastAction();
+
+        advanceOnly(deltaFile, false);
+
+        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
+        deltaFileCacheService.save(deltaFile);
+        deltaFileRepo.saveAll(childDeltaFiles);
+
+        enqueueActions(enqueueActions);
+    }
+
     private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, ActionEventInput event, String childDid) {
+        DeltaFile child = createChildDeltaFile(deltaFile, childDid);
+        child.completeAction(event);
+        return child;
+    }
+
+    private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, String childDid) {
         DeltaFile child = OBJECT_MAPPER.convertValue(deltaFile, DeltaFile.class);
         child.setVersion(0);
         child.setDid(childDid);
         child.setChildDids(Collections.emptyList());
         child.setParentDids(List.of(deltaFile.getDid()));
-        child.completeAction(event);
         return child;
     }
 
@@ -1035,6 +1082,36 @@ public class DeltaFilesService {
         }
 
         return enqueueActions;
+    }
+
+    /** A version of advanceAndSave specialized for Transformation Processing
+     * converts the last protocol layer to formatted data for egress
+     * splits similarly to a formatMany if there are multiple pieces of content
+     * @param deltaFile the transformation deltaFile to advance
+     */
+    private void advanceAndSaveTransformationProcessing(DeltaFile deltaFile) {
+        List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
+
+        if (deltaFile.getStage() == DeltaFileStage.EGRESS && deltaFile.getFormattedData().isEmpty()) {
+            // this is our first time having egress assigned
+            // determine if the deltaFile needs to be split
+
+            ProtocolLayer lastProtocolLayer = deltaFile.getLastProtocolLayer();
+            if (lastProtocolLayer.getContent().size() > 1) {
+                splitForTransformationProcessingEgress(deltaFile);
+                return;
+            } else {
+                String egressActionName = deltaFile.lastAction().getName();
+                deltaFile.convertLastProtocolToFormatResult(egressActionName);
+                // only a single enqueueAction will be queued for the egress action
+                enqueueActions.get(0).getDeltaFile().setFormattedData(deltaFile.getFormattedData());
+            }
+        }
+
+        deltaFileCacheService.save(deltaFile);
+        if (!enqueueActions.isEmpty()) {
+            enqueueActions(enqueueActions);
+        }
     }
 
     public void advanceAndSave(DeltaFile deltaFile) {

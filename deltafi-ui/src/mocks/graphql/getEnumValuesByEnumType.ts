@@ -41,6 +41,9 @@ const generateData = () => {
         name: "TRANSFORM_ACTION",
       },
       {
+        name: "TRANSFORM_FLOW",
+      },
+      {
         name: "VALIDATE_ACTION",
       },
     ],

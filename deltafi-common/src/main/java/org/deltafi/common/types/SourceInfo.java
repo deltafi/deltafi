@@ -34,6 +34,26 @@ public class SourceInfo {
     private String flow;
     @Builder.Default
     private Map<String, String> metadata = new HashMap<>();
+    private ProcessingType processingType;
+
+    public SourceInfo(String filename, String flow, Map<String, String> metadata) {
+        this.filename = filename;
+        this.flow = flow;
+        this.metadata = metadata;
+        this.processingType = ProcessingType.NORMALIZATION;
+    }
+
+    public ProcessingType getProcessingType() {
+        if (processingType == null) {
+            processingType = ProcessingType.NORMALIZATION;
+        }
+
+        return processingType;
+    }
+
+    public void setProcessingType(ProcessingType processingType) {
+        this.processingType = Objects.requireNonNullElse(processingType, ProcessingType.NORMALIZATION);
+    }
 
     @JsonIgnore
     public boolean containsKey(String key) {

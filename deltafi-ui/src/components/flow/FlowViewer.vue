@@ -154,7 +154,7 @@ const { buildURL } = useUtilFunctions();
 
 const { fetch: getActionMetrics, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
 
-const { getEgressFlowByName, getEnrichFlowByName, getIngressFlowByName } = useFlowQueryBuilder();
+const { getEgressFlowByName, getEnrichFlowByName, getIngressFlowByName, getTransformFlowByName } = useFlowQueryBuilder();
 
 const props = defineProps({
   header: {
@@ -216,7 +216,10 @@ const fetchActionMetrics = async () => {
 
 const fetchFlows = async (paramFlowName, paramFlowType) => {
   let response = "";
-  if (_.isEqual(paramFlowType, "ingress")) {
+  if (_.isEqual(paramFlowType, "transform")) {
+    response = await getTransformFlowByName(paramFlowName);
+    flowData.value = response.data.getTransformFlow;
+  } else if (_.isEqual(paramFlowType, "ingress")) {
     response = await getIngressFlowByName(paramFlowName);
     flowData.value = response.data.getIngressFlow;
   } else if (_.isEqual(paramFlowType, "enrich")) {

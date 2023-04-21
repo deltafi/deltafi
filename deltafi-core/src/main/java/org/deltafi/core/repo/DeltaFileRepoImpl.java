@@ -84,6 +84,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
+    public static final String SOURCE_INFO_PROCESSING_TYPE = "sourceInfo.processingType";
     public static final String FORMATTED_DATA_FILENAME = "formattedData.filename";
     public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
     public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
@@ -472,7 +473,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getSourceInfo().getFlow()));
             }
 
-            if(nonNull(filter.getSourceInfo().getIngressFlows())) {
+            if (nonNull(filter.getSourceInfo().getIngressFlows())) {
                 andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).in(filter.getSourceInfo().getIngressFlows()));
             }
 
@@ -484,6 +485,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     }
                     andCriteria.add(Criteria.where(SOURCE_INFO_METADATA + "." + searchKey).is(keyValue.getValue()));
                 });
+            }
+
+            if (nonNull(filter.getSourceInfo().getProcessingType())) {
+                andCriteria.add(Criteria.where(SOURCE_INFO_PROCESSING_TYPE).is(filter.getSourceInfo().getProcessingType()));
             }
         }
 

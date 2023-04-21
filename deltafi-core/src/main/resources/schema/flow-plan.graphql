@@ -114,6 +114,24 @@ input EgressFlowPlanInput {
   egressAction: EgressActionConfigurationInput!
 }
 
+type TransformFlowPlan {
+  name: String!
+  type: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  transformActions: [TransformActionConfiguration!]
+  egressAction: EgressActionConfiguration!
+}
+
+input TransformFlowPlanInput {
+  name: String!
+  type: String!
+  description: String!
+  sourcePlugin: PluginCoordinatesInput!
+  transformActions: [TransformActionConfigurationInput!]
+  egressAction: EgressActionConfigurationInput!
+}
+
 enum FlowState {
   STOPPED
   RUNNING
@@ -146,18 +164,21 @@ type Flows {
   ingressFlows: [IngressFlow]
   enrichFlows: [EnrichFlow]
   egressFlows: [EgressFlow]
+  transformFlows: [TransformFlow]
 }
 
 type SystemFlows {
   ingress: [IngressFlow]!
   enrich: [EnrichFlow]!
   egress: [EgressFlow]!
+  transform: [TransformFlow]!
 }
 
 type SystemFlowPlans {
   ingressPlans: [IngressFlowPlan]!
   enrichPlans: [EnrichFlowPlan]!
   egressPlans: [EgressFlowPlan]!
+  transformPlans: [TransformFlowPlan]!
 }
 
 type IngressFlow {
@@ -196,6 +217,17 @@ type EgressFlow {
   variables: [Variable]!
 }
 
+type TransformFlow {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  flowStatus: FlowStatus!
+  maxErrors: Int!
+  transformActions: [TransformActionConfiguration!]
+  egressAction: EgressActionConfiguration!
+  variables: [Variable]!
+}
+
 type ActionFamily {
   family: String!
   actionNames: [String]!
@@ -205,6 +237,7 @@ type FlowNames {
   ingress: [String]!
   enrich: [String]!
   egress: [String]!
+  transform: [String]!
 }
 
 type IngressFlowErrorState {

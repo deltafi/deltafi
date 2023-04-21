@@ -131,6 +131,7 @@ Commands:
   export-egress-plan     export a single egress flow plan by name as JSON
   export-enrich-plan     export a single enrich flow plan by name as JSON
   export-ingress-plan    export a single ingress flow plan by name as JSON
+  export-transform-plan  export a single transform flow plan by name as JSON
   export-rules           export all ingress-flow assignment rules as JSON
   ingress                ingress one or more files to a flow
   ingress-flow           start, stop or validate an ingress flow
@@ -165,6 +166,7 @@ Commands:
   system-snapshot        manage system state snapshots
   system-property        manage system properties
   trace                  show trace data for a DID
+  transform-flow         start, stop or validate a transform flow
   update                 (alias for install)
   upgrade                (alias for install)
   uninstall              uninstall the DeltaFi core
@@ -216,6 +218,9 @@ case "$1" in
     ;;
   export-ingress-plan)
     "$DELTAFICLI_WORKDIR/commands/export-ingress-plan" "$@"
+    ;;
+  export-transform-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-transform-plan" "$@"
     ;;
   export-rules)
     "$DELTAFICLI_WORKDIR/commands/export-rules" "$@"
@@ -321,6 +326,9 @@ case "$1" in
     ;;
   trace)
     "$DELTAFICLI_WORKDIR/commands/trace" "$@"
+    ;;
+  transform-flow)
+    "$DELTAFICLI_WORKDIR/commands/transform-flow" "$@"
     ;;
   versions)
     "$DELTAFICLI_WORKDIR/commands/versions" "$@"

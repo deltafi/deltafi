@@ -145,6 +145,32 @@ public class DeltaFile {
             .forEach(action -> setActionState(action, ActionState.SPLIT, event.getStart(), event.getStop()));
   }
 
+  public Action lastAction() {
+    return getActions().get(getActions().size() - 1);
+  }
+
+  public void splitLastAction() {
+    lastAction().setState(ActionState.SPLIT);
+  }
+
+  public void removeLastAction() {
+    getActions().remove(lastAction());
+  }
+
+  public void convertLastProtocolToFormatResult(String egressActionName) {
+    ProtocolLayer lastProtocolLayer = getLastProtocolLayer();
+    Content content = lastProtocolLayer.getContent().isEmpty() ? null : lastProtocolLayer.getContent().get(0);
+    FormattedData formattedData = FormattedData.newBuilder()
+            .contentReference(content == null ? null : content.getContentReference())
+            .egressActions(Collections.singletonList(egressActionName))
+            .filename(content == null ? null : content.getName())
+            .metadata(lastProtocolLayer.getMetadata())
+            .validateActions(Collections.emptyList())
+            .formatAction(lastProtocolLayer.getAction())
+            .build();
+    setFormattedData(Collections.singletonList(formattedData));
+  }
+
   public void errorAction(ActionEventInput event) {
     errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
             event.getError().getContext());

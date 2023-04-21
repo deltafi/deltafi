@@ -1,11 +1,15 @@
 # Flows
 
-Flows define the path of actions that data takes through the system.
+Flows define the sequence of Actions that operate on data travelling through the system.
 
 Actions defined in flows have a `type` which is the fully-qualified package and class name and a `name` which is the
 logical name used in the flow. Each `type` of Action can have many named instantiations.
 
-## Ingress Flows
+## Normalization Flows
+
+Normalization Flows include Ingress Flows, Enrich Flows, and Egress Flows. They process data using a multi-stage approach.
+
+### Ingress Flows
 
 Ingress flows steer data through an optional series of Transform Actions and into a Load or Join Action.
 
@@ -50,7 +54,7 @@ Ingress flows steer data through an optional series of Transform Actions and int
 }
 ```
 
-## Enrich Flows
+### Enrich Flows
 
 Enrich flows steer data through an optional series of Domain Actions followed by an optional series of Enrich Actions.
 
@@ -105,7 +109,7 @@ optional.
 }
 ```
 
-## Egress Flows
+### Egress Flows
 
 Egress Flows steer data through a required Format Action, an optional series of Validate Actions, and a required Egress
 Action.
@@ -144,7 +148,39 @@ Format Actions are triggered when the DeltaFile contains all the Domains and Enr
 }
 ```
 
-## Flow Files
+## Transform Flows
+
+Transform Flows are a simpler way to process data. They consist of a series of Transform Actions and an Egress Action. The data takes a straight path through the system.
+
+```json
+{
+  "name": "simple-transform",
+  "type": "TRANSFORM",
+  "description": "A simple transform flow that processes data and sends it out using REST",
+  "transformActions": [
+    {
+      "name": "FirstTransformAction",
+      "type": "org.deltafi.example.action.FirstTransformAction"
+    },
+    {
+      "name": "SecondTransformAction",
+      "type": "org.deltafi.example.action.SecondTransformAction"
+    }
+  ],
+  "egressAction": {
+    "name": "SimpleEgressAction",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
+      "egressFlow": "simpleTransformEgressFlow",
+      "metadataKey": "deltafiMetadata",
+      "url": "${egressUrl}"
+    }
+  }
+}
+```
+
+
+## Flow Configuration
 
 JSON files containing Flows should be placed in the `src/main/resources/flows` directory. They will be loaded when the
 plugin is installed.

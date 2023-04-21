@@ -25,9 +25,11 @@ type SystemSnapshot {
     deltaFiProperties: DeltaFiProperties!
     installedPlugins: [PluginCoordinates]!
     pluginVariables: [PluginVariables]!
+    runningTransformFlows: [String]!
     runningIngressFlows: [String]!
     runningEnrichFlows: [String]!
     runningEgressFlows: [String]!
+    testTransformFlows: [String]!
     testIngressFlows: [String]!
     testEgressFlows: [String]!
     pluginImageRepositories: [PluginImageRepository]!
@@ -44,9 +46,11 @@ input SystemSnapshotInput {
     deltaFiProperties: DeltaFiPropertiesInput!
     installedPlugins: [PluginCoordinatesInput]!
     pluginVariables: [PluginVariablesInput]!
+    runningTransformFlows: [String]!
     runningIngressFlows: [String]!
     runningEnrichFlows: [String]!
     runningEgressFlows: [String]!
+    testTransformFlows: [String]!
     testIngressFlows: [String]!
     testEgressFlows: [String]!
     pluginImageRepositories: [PluginImageRepositoryInput]!

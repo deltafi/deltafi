@@ -21,6 +21,7 @@ public enum ConfigType {
     INGRESS_FLOW,
     ENRICH_FLOW,
     EGRESS_FLOW,
+    TRANSFORM_FLOW,
     TRANSFORM_ACTION,
     LOAD_ACTION,
     JOIN_ACTION,

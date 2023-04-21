@@ -188,6 +188,25 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
+     * Check for flow with the given name.
+     * @param flowName name of the flow to find
+     * @return whether it is a flow
+     */
+    public boolean hasFlow(String flowName) {
+        return flowCache.get(flowName) != null;
+    }
+
+    /**
+     * Check for running flow with the given name.
+     * @param flowName name of the flow to find
+     * @return whether it is a running flow
+     */
+    public boolean hasRunningFlow(String flowName) {
+        FlowT flow = flowCache.get(flowName);
+        return flow != null && flow.isRunning();
+    }
+
+    /**
      * Find the running flow with the given name.
      * <p>
      * Throws an exception if the given flow is not running
@@ -316,9 +335,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Remove all the IngressFlowPlans with the given sourcePlugin
+     * Remove all the FlowPlans with the given sourcePlugin
      *
-     * @param pluginCoordinates sourcePlugin whose IngressFlowPlans should be removed
+     * @param pluginCoordinates sourcePlugin whose FlowPlans should be removed
      */
     public void removeBySourcePlugin(PluginCoordinates pluginCoordinates) {
         flowRepo.deleteBySourcePlugin(pluginCoordinates);

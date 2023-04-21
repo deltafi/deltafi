@@ -108,6 +108,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
 
     /**
      * Remove all the flows and flow plans with the given sourcePlugin
+     *
      * @param pluginCoordinates sourcePlugin whose flows and flow plans should be removed
      */
     void removeFlowsAndPlansBySourcePlugin(PluginCoordinates pluginCoordinates) {

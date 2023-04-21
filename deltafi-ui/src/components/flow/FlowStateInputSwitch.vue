@@ -48,7 +48,7 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
+const { startTransformFlowByName, stopTransformFlowByName, startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
 
 const props = defineProps({
@@ -85,7 +85,13 @@ const confirmationPopup = async (event, name, state, flowType) => {
 };
 
 const toggleFlowState = async (flowName, newflowState, flowType) => {
-  if (_.isEqual(flowType, "ingress")) {
+  if (_.isEqual(flowType, "transform")) {
+    if (_.isEqual(newflowState, "STOPPED")) {
+      await startTransformFlowByName(flowName);
+    } else {
+      await stopTransformFlowByName(flowName);
+    }
+  } else if (_.isEqual(flowType, "ingress")) {
     if (_.isEqual(newflowState, "STOPPED")) {
       await startIngressFlowByName(flowName);
     } else {

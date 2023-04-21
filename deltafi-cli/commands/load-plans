@@ -128,18 +128,22 @@ load_plan() {
 
   local VARIABLES="{\"flowPlan\": ${JSON} }"
 
-  if [[ "${JSON}" == *"loadAction"* || "${JSON}" == *"joinAction"* ]]; then
+  if [[ "${JSON}" == *"\"type\": \"INGRESS\""* ]]; then
     local LOAD_TYPE="ingress flow plan"
     local OPERATION_NAME="saveIngressFlowPlan"
     local QUERY="mutation(\$flowPlan: IngressFlowPlanInput!) {saveIngressFlowPlan(ingressFlowPlan: \$flowPlan) { name }}"
-  elif [[ "${JSON}" == *"egressAction"* ]]; then
+  elif [[ "${JSON}" == *"\"type\": \"EGRESS\""* ]]; then
     local LOAD_TYPE="egress flow plan"
     local OPERATION_NAME="saveEgressFlowPlan"
     local QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
-  elif [[ "${JSON}" == *"enrichActions"* || "${JSON}" == *"domainActions"* ]]; then
+  elif [[ "${JSON}" == *"\"type\": \"ENRICH\""* ]]; then
     local LOAD_TYPE="enrich flow plan"
     local OPERATION_NAME="saveEnrichFlowPlan"
     local QUERY="mutation(\$flowPlan: EnrichFlowPlanInput!) {saveEnrichFlowPlan(enrichFlowPlan: \$flowPlan) { name }}"
+  elif [[ "${JSON}" == *"\"type\": \"TRANSFORM\""* ]]; then
+      local LOAD_TYPE="transform flow plan"
+      local OPERATION_NAME="saveTransformFlowPlan"
+      local QUERY="mutation(\$flowPlan: TransformFlowPlanInput!) {saveTransformFlowPlan(transformFlowPlan: \$flowPlan) { name }}"
   else
     cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must contain a load or join action, enrich actions, or an egress action${normal}"
     echo -e "${red}Loading flow plan failed, plan must contain a load or join action, enrich actions, or an egress action${normal}"

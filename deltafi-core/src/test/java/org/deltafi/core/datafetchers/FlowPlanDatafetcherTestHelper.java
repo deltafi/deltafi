@@ -27,6 +27,7 @@ import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.TransformFlow;
 
 import java.util.List;
 
@@ -34,6 +35,10 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static final PluginCoordinates PLUGIN_COORDINATES = PluginCoordinates.builder().artifactId("test-plugin").groupId("org.deltafi").version("1.0.0").build();
 
+    public static TransformFlowPlan getTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), TransformFlowPlan.class);
+    }
+    
     public static IngressFlowPlan getIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetIngressFlowPlanGraphQLQuery.newRequest().planName("ingressPlan").build(), new GetIngressFlowPlanProjectionRoot().name().type().description().loadAction().name().actionType().type(), IngressFlowPlan.class);
     }
@@ -42,13 +47,17 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name().type().description().formatAction().name().actionType().type().requiresDomains().parent().egressAction().name().actionType().type(), EgressFlowPlan.class);
     }
 
+    public static TransformFlow validateTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, ValidateTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(), new ValidateTransformFlowProjectionRoot().name(), TransformFlow.class);
+    }
+
     public static IngressFlow validateIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, ValidateIngressFlowGraphQLQuery.newRequest().flowName("sampleIngress").build(), new ValidateIngressFlowProjectionRoot().name(), IngressFlow.class);
     }
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
-                new GetFlowNamesProjectionRoot().ingress().enrich().egress(), FlowNames.class);
+                new GetFlowNamesProjectionRoot().transform().ingress().enrich().egress(), FlowNames.class);
     }
 
     public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -57,17 +66,22 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<Flows>> typeRef = new TypeRef<>() {};
-        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().ingressFlows().name().parent().egressFlows().name().root(), typeRef);
+        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().ingressFlows().name().parent().egressFlows().name().root(), typeRef);
     }
 
     public static SystemFlows getRunningFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetRunningFlowsGraphQLQuery.newRequest().build(),
-                new GetRunningFlowsProjectionRoot().ingress().name().parent().enrich().name().parent().egress().name().root(), SystemFlows.class);
+                new GetRunningFlowsProjectionRoot().transform().name().parent().ingress().name().parent().enrich().name().parent().egress().name().root(), SystemFlows.class);
     }
 
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
-                new GetAllFlowsProjectionRoot().ingress().name().parent().egress().name().root(), SystemFlows.class);
+                new GetAllFlowsProjectionRoot().transform().name().parent().ingress().name().parent().egress().name().root(), SystemFlows.class);
+    }
+
+    public static TransformFlow getTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(),
+                new GetTransformFlowProjectionRoot().name(), TransformFlow.class);
     }
 
     public static IngressFlow getIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -83,6 +97,19 @@ public class FlowPlanDatafetcherTestHelper {
     public static List<ActionFamily> getActionFamilies(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<ActionFamily>> typeRef = new TypeRef<>() {};
         return executeQuery(dgsQueryExecutor, GetActionNamesByFamilyGraphQLQuery.newRequest().build(), new GetActionNamesByFamilyProjectionRoot().family().actionNames(), typeRef);
+    }
+
+    public static TransformFlow saveTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        EgressActionConfigurationInput egressActionConfigurationInput = EgressActionConfigurationInput.newBuilder().name("egress").actionType("EGRESS").type("org.deltafi.action.Egress").build();
+        TransformFlowPlanInput input = TransformFlowPlanInput.newBuilder()
+                .name("flowPlan")
+                .type("TRANSFORM")
+                .description("description")
+                .sourcePlugin(PLUGIN_COORDINATES)
+                .egressAction(egressActionConfigurationInput)
+                .build();
+
+        return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), TransformFlow.class);
     }
 
     public static IngressFlow saveIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -112,12 +139,24 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, SaveEgressFlowPlanGraphQLQuery.newRequest().egressFlowPlan(input).build(), new SaveEgressFlowPlanProjectionRoot().name(), EgressFlow.class);
     }
 
+    public static boolean removeTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, RemoveTransformFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
+    }
+
     public static boolean removeIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, RemoveIngressFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
 
     public static boolean removeEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, RemoveEgressFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
+    }
+
+    public static boolean startTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StartTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build());
+    }
+
+    public static boolean stopTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StopTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build());
     }
 
     public static boolean startIngressFlow(DgsQueryExecutor dgsQueryExecutor) {

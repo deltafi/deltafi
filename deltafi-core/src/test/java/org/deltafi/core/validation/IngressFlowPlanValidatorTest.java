@@ -22,15 +22,21 @@ import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.common.types.LoadActionConfiguration;
 import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
+import org.deltafi.core.repo.TransformFlowPlanRepo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class IngressFlowPlanValidatorTest {
+
+    @Mock
+    @SuppressWarnings("unused")
+    TransformFlowPlanRepo transformFlowPlanRepo;
 
     @InjectMocks
     IngressFlowPlanValidator ingressFlowPlanValidator;

@@ -58,10 +58,16 @@ type Enrichment {
   mediaType: String!
 }
 
+enum ProcessingType {
+  NORMALIZATION
+  TRANSFORMATION
+}
+
 type SourceInfo {
   filename: String!
   flow: String!
   metadata: Metadata
+  processingType: ProcessingType
 }
 
 input SourceInfoFilter {
@@ -70,6 +76,7 @@ input SourceInfoFilter {
   flow: String
   ingressFlows: [String!]
   metadata: [KeyValueInput!]
+  processingType: ProcessingType
 }
 
 type FlowAssignmentRule {
@@ -329,12 +336,15 @@ type Query {
   getIngressFlowPlan(planName: String!): IngressFlowPlan!
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
   getEnrichFlowPlan(planName: String!): EnrichFlowPlan!
+  getTransformFlowPlan(planName: String!): TransformFlowPlan!
   getIngressFlow(flowName: String!): IngressFlow!
   getEgressFlow(flowName: String!): EgressFlow!
   getEnrichFlow(flowName: String!): EnrichFlow!
+  getTransformFlow(flowName: String!): TransformFlow!
   validateIngressFlow(flowName: String!): IngressFlow!
   validateEgressFlow(flowName: String!): EgressFlow!
   validateEnrichFlow(flowName: String!): EnrichFlow!
+  validateTransformFlow(flowName: String!): TransformFlow!
   getFlowNames(state: FlowState): FlowNames!
   getFlows: [Flows]!
   getRunningFlows: SystemFlows!
@@ -383,22 +393,29 @@ type Mutation {
   saveIngressFlowPlan(ingressFlowPlan: IngressFlowPlanInput!) : IngressFlow!
   saveEnrichFlowPlan(enrichFlowPlan: EnrichFlowPlanInput!) : EnrichFlow!
   saveEgressFlowPlan(egressFlowPlan: EgressFlowPlanInput!) : EgressFlow!
+  saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
   removeIngressFlowPlan(name: String!) : Boolean!
   removeEnrichFlowPlan(name: String!) : Boolean!
   removeEgressFlowPlan(name: String!) : Boolean!
+  removeTransformFlowPlan(name: String!) : Boolean!
 
   startIngressFlow(flowName: String!) : Boolean!
   stopIngressFlow(flowName: String!) : Boolean!
   startEgressFlow(flowName: String!) : Boolean!
+  startTransformFlow(flowName: String!) : Boolean!
   stopEgressFlow(flowName: String!) : Boolean!
   startEnrichFlow(flowName: String!) : Boolean!
   stopEnrichFlow(flowName: String!) : Boolean!
+  stopTransformFlow(flowName: String!) : Boolean!
 
   setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
   enableIngressTestMode(flowName: String!) : Boolean!
   disableIngressTestMode(flowName: String!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
+  setTransformMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
+  enableTransformTestMode(flowName: String!) : Boolean!
+  disableTransformTestMode(flowName: String!) : Boolean!
 
   resume(dids: [String!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!

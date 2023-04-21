@@ -149,9 +149,11 @@ export default function useSystemSnapshots() {
             value: true
           }
         },
+        runningTransformFlows: true,
         runningIngressFlows: true,
         runningEnrichFlows: true,
         runningEgressFlows: true,
+        testTransformFlows: true,
         testIngressFlows: true,
         testEgressFlows: true,
         pluginCustomizationConfigs: {

@@ -52,6 +52,8 @@ public class SystemSnapshot {
     private List<String> runningEnrichFlows;
     private List<String> runningEgressFlows;
     private List<String> testEgressFlows;
+    private List<String> runningTransformFlows;
+    private List<String> testTransformFlows;
     private Set<PluginCoordinates> installedPlugins;
     private List<PluginCustomizationConfig> pluginCustomizationConfigs = new ArrayList<>();
     private List<PluginImageRepository> pluginImageRepositories = new ArrayList<>();

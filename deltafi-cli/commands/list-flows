@@ -18,7 +18,7 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 FIELDS="{ name flowStatus {state}}"
-QUERY="query { getAllFlows { ingress $FIELDS enrich $FIELDS egress $FIELDS}}"
+QUERY="query { getAllFlows { transform $FIELDS ingress $FIELDS enrich $FIELDS egress $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_flows() {
@@ -31,6 +31,8 @@ if [[ "$DGS_ERRORS" != "" ]]; then
   cli_log "${red}${BASENAME}: Failed to get the list of flow plans${normal}"
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
+  print_flows "transform"
+  echo
   print_flows "ingress"
   echo
   print_flows "enrich"

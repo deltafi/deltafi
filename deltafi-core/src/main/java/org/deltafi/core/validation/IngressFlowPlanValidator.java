@@ -17,9 +17,38 @@
  */
 package org.deltafi.core.validation;
 
+import lombok.AllArgsConstructor;
 import org.deltafi.common.types.IngressFlowPlan;
+import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.generated.types.FlowErrorType;
+import org.deltafi.core.repo.TransformFlowPlanRepo;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@AllArgsConstructor
 @Service
 public class IngressFlowPlanValidator extends FlowPlanValidator<IngressFlowPlan> {
+    private final TransformFlowPlanRepo transformFlowPlanRepo;
+
+    /**
+     * Flow plan type specific validation checks
+     * Cross-check the ingress flow plan names against the transform flow plan names
+     * @return list of errors
+     */
+    @Override
+    public List<FlowConfigError> flowPlanSpecificValidation(IngressFlowPlan flowPlan) {
+        List<FlowConfigError> errors = new ArrayList<>();
+
+        TransformFlowPlan existingTransformFlow = transformFlowPlanRepo.findById(flowPlan.getName()).orElse(null);
+        if (existingTransformFlow != null) {
+            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                    .configName(flowPlan.getName())
+                    .message("Cannot add ingress flow plan, a transform flow plan with the name: " + flowPlan.getName() + " already exists in plugin: " + existingTransformFlow.getSourcePlugin()).build());
+        }
+
+        return errors;
+    }
 }

@@ -22,11 +22,11 @@ import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.TransformFlow;
 
 import java.util.List;
 
-import static org.deltafi.core.util.Constants.EGRESS_FLOW_NAME;
-import static org.deltafi.core.util.Constants.INGRESS_FLOW_NAME;
+import static org.deltafi.core.util.Constants.*;
 
 public class FlowBuilders {
     public static IngressFlow buildIngressFlow(FlowState flowState) {
@@ -88,5 +88,27 @@ public class FlowBuilders {
         egressFlow.getFlowStatus().setState(flowState);
         egressFlow.setTestMode(testMode);
         return egressFlow;
+    }
+
+    public static TransformFlow buildTransformFlow(FlowState flowState) {
+        EgressActionConfiguration lc = new EgressActionConfiguration("sampleTransform.SampleEgressAction", "type");
+        TransformActionConfiguration tc = new TransformActionConfiguration("sampleTransform.Utf8TransformAction", "type");
+        TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleTransform.SampleTransformAction", "type");
+
+        return buildFlow(TRANSFORM_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
+    }
+
+    public static TransformFlow buildFlow(String name, EgressActionConfiguration egressActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
+        TransformFlow transformFlow = new TransformFlow();
+        transformFlow.setName(name);
+        transformFlow.getFlowStatus().setState(flowState);
+        transformFlow.setEgressAction(egressActionConfiguration);
+        transformFlow.setTransformActions(transforms);
+        transformFlow.setTestMode(testMode);
+        return transformFlow;
+    }
+
+    public static TransformFlow buildRunningFlow(String name, EgressActionConfiguration egressActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
+        return buildFlow(name, egressActionConfiguration, transforms, FlowState.RUNNING, testMode);
     }
 }

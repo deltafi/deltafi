@@ -1,7 +1,7 @@
 {
   "name": "sample-ingress",
   "type": "INGRESS",
-  "description": "Ingress flows require a load action and can optional contain one or more transform actions",
+  "description": "Ingress flows require a load action and can optionally contain one or more transform actions",
   "transformActions": [
     {
       "name": "SampleTransformAction",

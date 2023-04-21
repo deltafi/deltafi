@@ -18,5 +18,6 @@
 package org.deltafi.core.types;
 
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.types.ProcessingType;
 
-public record IngressResult(String flow, String filename, String did, ContentReference contentReference) {}
+public record IngressResult(String flow, String filename, String did, ContentReference contentReference, ProcessingType processingType) {}

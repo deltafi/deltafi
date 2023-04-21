@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.types.IngressResult;
 
 import javax.ws.rs.core.MediaType;
@@ -37,6 +38,7 @@ public class Constants {
     public static final String INGRESS_FLOW_NAME = "sampleIngress";
     public static final String EGRESS_FLOW_NAME = "sampleEgress";
     public static final String JOIN_FLOW_NAME = "joinFlow";
+    public static final String TRANSFORM_FLOW_NAME = "sampleTransform";
 
     public static final String TEST_JOIN_ACTION = "TestJoinAction";
 
@@ -48,7 +50,7 @@ public class Constants {
     public static final String USERNAME = "myname";
     public static final String DID = "did";
     public static final ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), DID));
-    public static final IngressResult INGRESS_RESULT = new IngressResult(FLOW, FILENAME, DID, CONTENT_REFERENCE);
+    public static final IngressResult INGRESS_RESULT = new IngressResult(FLOW, FILENAME, DID, CONTENT_REFERENCE, ProcessingType.NORMALIZATION);
 
     public final static Map<String, String> TRANSFORM_METADATA = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
     public final static Map<String, String> LOAD_METADATA = Map.of("loadSampleType", "load-sample-type", "loadSampleVersion", "2.2");

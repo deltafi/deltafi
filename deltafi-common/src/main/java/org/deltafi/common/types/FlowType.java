@@ -18,5 +18,5 @@
 package org.deltafi.common.types;
 
 public enum FlowType {
-    INGRESS, ENRICH, EGRESS
+    INGRESS, ENRICH, EGRESS, TRANSFORM
 }

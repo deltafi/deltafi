@@ -30,6 +30,7 @@ import java.util.List;
         @JsonSubTypes.Type(value = IngressFlowPlan.class, name = "INGRESS"),
         @JsonSubTypes.Type(value = EnrichFlowPlan.class, name = "ENRICH"),
         @JsonSubTypes.Type(value = EgressFlowPlan.class, name = "EGRESS"),
+        @JsonSubTypes.Type(value = TransformFlowPlan.class, name = "TRANSFORM")
 })
 public abstract class FlowPlan {
     @Id

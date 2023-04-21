@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
+import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
@@ -31,10 +32,8 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.Flow;
-import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.*;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -47,7 +46,13 @@ public class FlowPlanDatafetcher {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final ActionFamily INGRESS_FAMILY = ActionFamily.newBuilder().family("INGRESS").actionNames(List.of(DeltaFiConstants.INGRESS_ACTION)).build();
-    private static final Yaml YAML_EXPORTER = new Yaml(new SafeConstructor(), new YamlRepresenter());
+    private static final LoaderOptions LOADER_OPTIONS;
+    static {
+        LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setAllowRecursiveKeys(false);
+        LOADER_OPTIONS = loaderOptions;
+    }
+    private static final Yaml YAML_EXPORTER = new Yaml(new SafeConstructor(LOADER_OPTIONS), new YamlRepresenter());
 
     private final IngressFlowPlanService ingressFlowPlanService;
     private final IngressFlowService ingressFlowService;
@@ -55,6 +60,8 @@ public class FlowPlanDatafetcher {
     private final EgressFlowService egressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EnrichFlowPlanService enrichFlowPlanService;
+    private final TransformFlowPlanService transformFlowPlanService;
+    private final TransformFlowService transformFlowService;
     private final PluginVariableService pluginVariableService;
     private final PluginRegistryService pluginRegistryService;
 
@@ -84,7 +91,15 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setMaxErrors(@InputArgument String flowName, @InputArgument Integer maxErrors) { return ingressFlowService.setMaxErrors(flowName, maxErrors); }
+    public boolean setMaxErrors(@InputArgument String flowName, @InputArgument Integer maxErrors) {
+        if (ingressFlowService.hasFlow(flowName)) {
+            return ingressFlowService.setMaxErrors(flowName, maxErrors);
+        } else if (transformFlowService.hasFlow(flowName)) {
+            return transformFlowService.setMaxErrors(flowName, maxErrors);
+        } else {
+            throw new DgsEntityNotFoundException("No ingress or transform flow exists with the name: " + flowName);
+        }
+    }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
@@ -151,6 +166,38 @@ public class FlowPlanDatafetcher {
     }
 
     @DgsMutation
+    @NeedsPermission.FlowPlanCreate
+    public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
+        return transformFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(transformFlowPlan, TransformFlowPlan.class));
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowPlanDelete
+    public boolean removeTransformFlowPlan(@InputArgument String name) {
+        return transformFlowPlanService.removePlan(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowStart
+    public boolean startTransformFlow(@InputArgument String flowName) {
+        return transformFlowService.startFlow(flowName);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowStop
+    public boolean stopTransformFlow(@InputArgument String flowName) {
+        return transformFlowService.stopFlow(flowName);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean enableTransformTestMode(@InputArgument String flowName) { return transformFlowService.enableTestMode(flowName); }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean disableTransformTestMode(@InputArgument String flowName) { return transformFlowService.disableTestMode(flowName); }
+
+    @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean savePluginVariables(@InputArgument PluginVariablesInput pluginVariablesInput) {
         pluginVariableService.saveVariables(pluginVariablesInput.getSourcePlugin(), pluginVariablesInput.getVariables());
@@ -165,6 +212,7 @@ public class FlowPlanDatafetcher {
             ingressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
             enrichFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
             egressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
+            transformFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
         }
         return updated;
     }
@@ -188,6 +236,12 @@ public class FlowPlanDatafetcher {
     }
 
     @DgsQuery
+    @NeedsPermission.FlowView
+    public TransformFlow getTransformFlow(@InputArgument String flowName) {
+        return transformFlowService.getFlowOrThrow(flowName);
+    }
+
+    @DgsQuery
     @NeedsPermission.FlowValidate
     public IngressFlow validateIngressFlow(@InputArgument String flowName) {
         return ingressFlowService.validateAndSaveFlow(flowName);
@@ -203,6 +257,12 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowValidate
     public EgressFlow validateEgressFlow(@InputArgument String flowName) {
         return egressFlowService.validateAndSaveFlow(flowName);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowValidate
+    public TransformFlow validateTransformFlow(@InputArgument String flowName) {
+        return transformFlowService.validateAndSaveFlow(flowName);
     }
 
     @DgsQuery
@@ -225,6 +285,12 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
+    public TransformFlowPlan getTransformFlowPlan(@InputArgument String planName) {
+        return transformFlowPlanService.getPlanByName(planName);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
     public List<DeltaFiConfiguration> deltaFiConfigs(@InputArgument ConfigQueryInput configQuery) {
         List<DeltaFiConfiguration> matchingConfigs = new ArrayList<>(ingressFlowService.getConfigs(configQuery));
         matchingConfigs.addAll(enrichFlowService.getConfigs(configQuery));
@@ -240,6 +306,7 @@ public class FlowPlanDatafetcher {
         flowMap.put("ingressFlows", ingressFlowService.getAll());
         flowMap.put("enrichFlows", enrichFlowService.getAll());
         flowMap.put("egressFlows", egressFlowService.getAll());
+        flowMap.put("transformFlows", transformFlowService.getAll());
 
         return YAML_EXPORTER.dumpAsMap(flowMap);
     }
@@ -250,7 +317,8 @@ public class FlowPlanDatafetcher {
         return SystemFlows.newBuilder()
                 .ingress(ingressFlowService.getRunningFlows())
                 .enrich(enrichFlowService.getRunningFlows())
-                .egress(egressFlowService.getRunningFlows()).build();
+                .egress(egressFlowService.getRunningFlows())
+                .transform(transformFlowService.getRunningFlows()).build();
     }
 
     @DgsQuery
@@ -259,7 +327,8 @@ public class FlowPlanDatafetcher {
         return FlowNames.newBuilder()
                 .ingress(ingressFlowService.getFlowNamesByState(state))
                 .enrich(enrichFlowService.getFlowNamesByState(state))
-                .egress(egressFlowService.getFlowNamesByState(state)).build();
+                .egress(egressFlowService.getFlowNamesByState(state))
+                .transform(transformFlowService.getFlowNamesByState(state)).build();
     }
 
     @DgsQuery
@@ -268,7 +337,8 @@ public class FlowPlanDatafetcher {
         return SystemFlows.newBuilder()
                 .ingress(ingressFlowService.getAll())
                 .enrich(enrichFlowService.getAll())
-                .egress(egressFlowService.getAll()).build();
+                .egress(egressFlowService.getAll())
+                .transform(transformFlowService.getAll()).build();
     }
 
     @DgsQuery
@@ -277,7 +347,8 @@ public class FlowPlanDatafetcher {
         return SystemFlowPlans.newBuilder()
                 .ingressPlans(ingressFlowPlanService.getAll())
                 .enrichPlans(enrichFlowPlanService.getAll())
-                .egressPlans(egressFlowPlanService.getAll()).build();
+                .egressPlans(egressFlowPlanService.getAll())
+                .transformPlans(transformFlowPlanService.getAll()).build();
     }
 
     @DgsQuery
@@ -294,6 +365,7 @@ public class FlowPlanDatafetcher {
         ingressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         enrichFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         egressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
+        transformFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         return actionFamilyMap.values();
     }
 

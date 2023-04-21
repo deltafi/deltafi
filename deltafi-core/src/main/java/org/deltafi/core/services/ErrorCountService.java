@@ -32,9 +32,12 @@ public class ErrorCountService {
 
     private volatile Map<String, Integer> errorCounts = Collections.emptyMap();
 
-    public synchronized Map<String, Integer> populateErrorCounts(Set<String> flows) {
-        errorCounts = deltaFileRepo.errorCountsByFlow(flows);
-        return Collections.unmodifiableMap(errorCounts);
+    public synchronized void populateErrorCounts(Set<String> flowNames) {
+        if (flowNames.isEmpty()) {
+            errorCounts = Collections.emptyMap();
+        } else {
+            errorCounts = deltaFileRepo.errorCountsByFlow(flowNames);
+        }
     }
 
     /**

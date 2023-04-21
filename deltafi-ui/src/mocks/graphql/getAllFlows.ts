@@ -96,6 +96,41 @@ const enrichData = [[], getEnrichedData()];
 
 const generateFlows = () => {
   return {
+    transform: [
+      {
+        name: "keyword-extraction",
+        description: "Extract keywords from text",
+        type: "text/plain",
+        flowStatus: {
+          state: "STOPPED",
+          errors: [],
+        },
+        sourcePlugin: {
+          artifactId: "keyword-actions",
+          groupId: "org.deltafi",
+          version: "1.0.0",
+        },
+        maxErrors: -1,
+        transformActions: [
+          {
+            name: "keyword.KeywordExtractionTransformAction",
+            type: "org.deltafi.keyword.action.KeywordExtractionTransformAction",
+            parameters: {
+              resultType: "text/plain",
+            },
+          },
+        ],
+        egressAction: {
+          name: "keyword.KeywordEgressAction",
+          type: "org.deltafi.core.action.RestPostEgressAction",
+          parameters: {
+            metadataKey: "deltafiMetadata",
+            url: "http://deltafi-egress-sink-service",
+          },
+        },
+        variables: [],
+      }
+    ],
     ingress: [
       {
         name: "smoke",

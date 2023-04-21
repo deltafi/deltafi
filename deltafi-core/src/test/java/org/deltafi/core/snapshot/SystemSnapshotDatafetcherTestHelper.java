@@ -28,6 +28,7 @@ import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.*;
+import org.intellij.lang.annotations.Language;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -43,7 +44,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         TypeRef<SystemSnapshot> systemSnapshotTypeRef = new TypeRef<>() {
         };
 
-        String mutation = IMPORT_SNAPSHOT.replace("$projection", PROJECTION);
+        @Language("GraphQL") String mutation = IMPORT_SNAPSHOT.replace("$projection", PROJECTION);
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 mutation,
                 "data.importSnapshot",
@@ -54,7 +55,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         TypeRef<Result> systemSnapshotTypeRef = new TypeRef<>() {
         };
 
-        String mutation = "mutation { resetFromSnapshotWithId(snapshotId: \"63fe71a7d021eb040c97bda2\", hardReset: false) { success info errors } }";
+        @Language("GraphQL") String mutation = "mutation { resetFromSnapshotWithId(snapshotId: \"63fe71a7d021eb040c97bda2\", hardReset: false) { success info errors } }";
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 mutation,
                 "data.resetFromSnapshotWithId",
@@ -203,9 +204,11 @@ public class SystemSnapshotDatafetcherTestHelper {
     }
 
     private static void setFlowInfo(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setRunningTransformFlows(List.of("transform-flow1", "transform-flow2"));
         systemSnapshot.setRunningIngressFlows(List.of("passthrough", "smoke", "decompress-and-merge", "decompress-passthrough", "stix_attack", "stix1_x", "stix2_1", "hello-python"));
         systemSnapshot.setRunningEnrichFlows(List.of("artificial-enrichment", "stix2_1", "hello-python"));
         systemSnapshot.setRunningEgressFlows(List.of("smoke", "passthrough", "stix2_1", "stix1_x", "hello-python"));
+        systemSnapshot.setTestTransformFlows(List.of("transform-flow1"));
         systemSnapshot.setTestIngressFlows(List.of());
         systemSnapshot.setTestEgressFlows(List.of("passthrough"));
     }
@@ -414,6 +417,10 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 ]
                             }
                         ]
+                        runningTransformFlows: [
+                            "transform-flow1"
+                            "transform-flow2"
+                        ]
                         runningIngressFlows: [
                             "passthrough"
                             "smoke"
@@ -432,6 +439,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                             "stix1_x"
                             "hello-python"
                         ]
+                        testTransformFlows: ["transform-flow1"]
                         testIngressFlows: []
                         testEgressFlows: ["passthrough"]
                         pluginCustomizationConfigs: []
@@ -567,8 +575,10 @@ public class SystemSnapshotDatafetcherTestHelper {
                 value
               }
             }
+            testTransformFlows
             testIngressFlows
             testEgressFlows
+            runningTransformFlows
             runningIngressFlows
             runningEnrichFlows
             runningEgressFlows

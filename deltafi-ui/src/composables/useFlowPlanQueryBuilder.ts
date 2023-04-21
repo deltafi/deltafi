@@ -21,6 +21,30 @@ import useGraphQL from './useGraphQL'
 export default function useFlowQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
+  // Save a TransformFlowPlan
+  const saveTransformFlowPlan = (flowPlan: Object) => {
+    const query = {
+      saveTransformFlowPlan: {
+        __args: {
+          transformFlowPlan: flowPlan
+        }
+      }
+    };
+    return sendGraphQLQuery(query, "saveTransformFlowPlan", "mutation");
+  };
+
+  // Remove an TransformFlowPlan
+  const removeTransformFlowPlanByName = (flowPlanName: string) => {
+    const query = {
+      removeTransformFlowPlan: {
+        __args: {
+          name: flowPlanName
+        }
+      }
+    };
+    return sendGraphQLQuery(query, "removeTransformFlowPlanByName", "mutation");
+  };
+
   // Save an IngressFlowPlan
   const saveIngressFlowPlan = (flowPlan: Object) => {
     const query = {
@@ -79,6 +103,8 @@ export default function useFlowQueryBuilder() {
   }
 
   return {
+    saveTransformFlowPlan,
+    removeTransformFlowPlanByName,
     saveIngressFlowPlan,
     removeIngressFlowPlanByName,
     saveEgressFlowPlan,

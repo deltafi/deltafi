@@ -188,8 +188,10 @@ ALL_SNAPSHOT_FIELDS="id
                 random
               }
             }
+            testTransformFlows
             testIngressFlows
             testEgressFlows
+            runningTransformFlows
             runningIngressFlows
             runningEnrichFlows
             runningEgressFlows

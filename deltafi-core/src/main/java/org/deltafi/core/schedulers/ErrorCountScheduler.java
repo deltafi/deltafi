@@ -22,6 +22,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.ErrorCountService;
 import org.deltafi.core.services.IngressFlowService;
+import org.deltafi.core.services.TransformFlowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 
 @ConditionalOnProperty(value = "schedule.errorCount", havingValue = "true", matchIfMissing = true)
 @Service
@@ -38,6 +40,7 @@ public class ErrorCountScheduler {
 
     private final ErrorCountService errorCountService;
     private final IngressFlowService ingressFlowService;
+    private final TransformFlowService transformFlowService;
     private final TaskScheduler taskScheduler;
 
     private static final long INITIAL_DELAY = 5L;
@@ -49,6 +52,8 @@ public class ErrorCountScheduler {
     }
 
     public void populateErrorCounts() {
-        errorCountService.populateErrorCounts(ingressFlowService.maxErrorsPerFlow().keySet());
+        Set<String> flowNames = ingressFlowService.maxErrorsPerFlow().keySet();
+        flowNames.addAll(transformFlowService.maxErrorsPerFlow().keySet());
+        errorCountService.populateErrorCounts(flowNames);
     }
 }

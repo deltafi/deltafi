@@ -1,0 +1,19 @@
+{
+  "name": "sample-transform",
+  "type": "TRANSFORM",
+  "description": "Transform flows require an egress action and can optionally contain one or more transform actions",
+  "transformActions": [
+    {
+      "name": "SampleTransformAction",
+      "type": "org.deltafi.passthrough.action.RoteTransformAction"
+    }
+  ],
+  "egressAction": {
+    "name": "SampleEgressAction",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
+      "metadataKey": "deltafiMetadata",
+      "url": "${egressUrl}"
+    }
+  }
+}

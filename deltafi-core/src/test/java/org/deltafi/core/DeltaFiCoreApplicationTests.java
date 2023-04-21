@@ -29,6 +29,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
+import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.PropertiesDatafetcherTestHelper;
@@ -107,6 +108,7 @@ import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.common.types.ActionState.QUEUED;
@@ -176,6 +178,9 @@ class DeltaFiCoreApplicationTests {
 	PluginRepository pluginRepository;
 
 	@Autowired
+	TransformFlowService transformFlowService;
+
+	@Autowired
 	IngressFlowService ingressFlowService;
 
 	@Autowired
@@ -185,10 +190,16 @@ class DeltaFiCoreApplicationTests {
 	EgressFlowService egressFlowService;
 
 	@Autowired
+	TransformFlowRepo transformFlowRepo;
+
+	@Autowired
 	IngressFlowRepo ingressFlowRepo;
 
 	@Autowired
 	EgressFlowRepo egressFlowRepo;
+
+	@Autowired
+	TransformFlowPlanRepo transformFlowPlanRepo;
 
 	@Autowired
 	IngressFlowPlanRepo ingressFlowPlanRepo;
@@ -259,7 +270,6 @@ class DeltaFiCoreApplicationTests {
 	// mongo eats microseconds, jump through hoops
 	private final OffsetDateTime MONGO_NOW = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
 
-
 	@TestConfiguration
 	public static class Config {
 		@Bean
@@ -298,15 +308,32 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void refreshFlowCaches() {
+		transformFlowService.refreshCache();
 		ingressFlowService.refreshCache();
 		enrichFlowService.refreshCache();
 		egressFlowService.refreshCache();
 	}
 
 	void loadConfig() {
+		loadTransformConfig();
 		loadIngressConfig();
 		loadEnrichConfig();
 		loadEgressConfig();
+	}
+
+	void loadTransformConfig() {
+		transformFlowRepo.deleteAll();
+
+		EgressActionConfiguration ec = new EgressActionConfiguration("sampleTransform.SampleEgressAction", "type");
+		TransformActionConfiguration tc = new TransformActionConfiguration("sampleTransform.Utf8TransformAction", "type");
+		TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleTransform.SampleTransformAction", "type");
+
+		TransformFlow sampleTransformFlow = buildRunningFlow(TRANSFORM_FLOW_NAME, ec, List.of(tc, tc2), false);
+		TransformFlow retryFlow = buildRunningFlow("theTransformFlow", ec, null, false);
+		TransformFlow childFlow = buildRunningFlow("transformChildFlow", ec, List.of(tc2), false);
+
+		transformFlowRepo.saveAll(List.of(sampleTransformFlow, retryFlow, childFlow));
+		refreshFlowCaches();
 	}
 
 	void loadIngressConfig() {
@@ -628,7 +655,6 @@ class DeltaFiCoreApplicationTests {
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleIngress.SampleTransformAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricRepository);
-
 	}
 
 	@Test
@@ -1342,6 +1368,18 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testGetTransformFlowPlan() {
+		clearForFlowTests();
+		TransformFlowPlan transformFlowPlanA = new TransformFlowPlan("transformPlan", "description");
+		transformFlowPlanA.setEgressAction(new EgressActionConfiguration("egress", "type"));
+		TransformFlowPlan transformFlowPlanB = new TransformFlowPlan("b", "description");
+		transformFlowPlanB.setEgressAction(new EgressActionConfiguration("egress", "type"));
+		transformFlowPlanRepo.saveAll(List.of(transformFlowPlanA, transformFlowPlanB));
+		TransformFlowPlan plan = FlowPlanDatafetcherTestHelper.getTransformFlowPlan(dgsQueryExecutor);
+		assertThat(plan.getName()).isEqualTo("transformPlan");
+	}
+
+	@Test
 	void testGetIngressFlowPlan() {
 		clearForFlowTests();
 		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("ingressPlan", "description");
@@ -1361,6 +1399,14 @@ class DeltaFiCoreApplicationTests {
 		egressFlowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB));
 		EgressFlowPlan plan = FlowPlanDatafetcherTestHelper.getEgressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("egressPlan");
+	}
+
+	@Test
+	void testValidateTransformFlow() {
+		clearForFlowTests();
+		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
+		TransformFlow transformFlow = FlowPlanDatafetcherTestHelper.validateTransformFlow(dgsQueryExecutor);
+		assertThat(transformFlow.getFlowStatus()).isNotNull();
 	}
 
 	@Test
@@ -1390,6 +1436,10 @@ class DeltaFiCoreApplicationTests {
 		variables.setSourcePlugin(pluginCoordinates);
 		variables.setVariables(List.of(var));
 
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName("transform");
+		transformFlow.setSourcePlugin(pluginCoordinates);
+
 		IngressFlow ingressFlow = new IngressFlow();
 		ingressFlow.setName("ingress");
 		ingressFlow.setSourcePlugin(pluginCoordinates);
@@ -1402,6 +1452,7 @@ class DeltaFiCoreApplicationTests {
 		plugin.setPluginCoordinates(pluginCoordinates);
 		pluginRepository.save(plugin);
 		pluginVariableRepo.save(variables);
+		transformFlowRepo.save(transformFlow);
 		ingressFlowRepo.save(ingressFlow);
 		egressFlowRepo.save(egressFlow);
 		refreshFlowCaches();
@@ -1410,6 +1461,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(flows).hasSize(1);
 		Flows pluginFlows = flows.get(0);
 		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
+		assertThat(pluginFlows.getTransformFlows().get(0).getName()).isEqualTo("transform");
 		assertThat(pluginFlows.getIngressFlows().get(0).getName()).isEqualTo("ingress");
 		assertThat(pluginFlows.getEgressFlows().get(0).getName()).isEqualTo("egress");
 	}
@@ -1439,20 +1491,24 @@ class DeltaFiCoreApplicationTests {
 	void testGetFlowsQuery() {
 		clearForFlowTests();
 
+		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
 		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
 		refreshFlowCaches();
 
 		FlowNames flows = FlowPlanDatafetcherTestHelper.getFlowNames(dgsQueryExecutor);
+		assertThat(flows.getTransform()).hasSize(1).contains(TRANSFORM_FLOW_NAME);
 		assertThat(flows.getIngress()).hasSize(1).contains(INGRESS_FLOW_NAME);
 		assertThat(flows.getEgress()).hasSize(1).contains(EGRESS_FLOW_NAME);
 		assertThat(flows.getEnrich()).isEmpty();
-
 	}
 
 	@Test
 	void getRunningFlows() {
 		clearForFlowTests();
+
+		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
+		assertTrue(FlowPlanDatafetcherTestHelper.startTransformFlow(dgsQueryExecutor));
 
 		ingressFlowRepo.save(buildIngressFlow(FlowState.STOPPED));
 		assertTrue(FlowPlanDatafetcherTestHelper.startIngressFlow(dgsQueryExecutor));
@@ -1461,12 +1517,14 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
+		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.get(0).getName()));
 		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> INGRESS_FLOW_NAME.equals(ingressFlows.get(0).getName()));
 		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
 		assertThat(flows.getEnrich()).isEmpty();
 
 		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
 		SystemFlows updatedFlows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
+		assertThat(updatedFlows.getTransform()).hasSize(1);
 		assertThat(updatedFlows.getIngress()).hasSize(1);
 		assertThat(updatedFlows.getEgress()).isEmpty();
 		assertThat(updatedFlows.getEnrich()).isEmpty();
@@ -1475,19 +1533,37 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void getAllFlows() {
 		clearForFlowTests();
+
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName(TRANSFORM_FLOW_NAME);
+
 		IngressFlow ingressFlow = new IngressFlow();
 		ingressFlow.setName(INGRESS_FLOW_NAME);
 
 		EgressFlow egressFlow = new EgressFlow();
 		egressFlow.setName(EGRESS_FLOW_NAME);
 
+		transformFlowRepo.save(transformFlow);
 		ingressFlowRepo.save(ingressFlow);
 		egressFlowRepo.save(egressFlow);
 		refreshFlowCaches();
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getAllFlows(dgsQueryExecutor);
+		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.get(0).getName()));
 		assertThat(flows.getIngress()).hasSize(1).matches(ingressFlows -> INGRESS_FLOW_NAME.equals(ingressFlows.get(0).getName()));
 		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
+	}
+
+	@Test
+	void getTransformFlow() {
+		clearForFlowTests();
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName(TRANSFORM_FLOW_NAME);
+		transformFlowRepo.save(transformFlow);
+
+		TransformFlow foundFlow = FlowPlanDatafetcherTestHelper.getTransformFlow(dgsQueryExecutor);
+		assertThat(foundFlow).isNotNull();
+		assertThat(foundFlow.getName()).isEqualTo(TRANSFORM_FLOW_NAME);
 	}
 
 	@Test
@@ -1542,7 +1618,7 @@ class DeltaFiCoreApplicationTests {
 		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
 		assertThat(actionFamilies).hasSize(8);
 
-		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains(DeltaFiConstants.INGRESS_ACTION);
+		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains(INGRESS_ACTION);
 		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("sampleIngress.Utf8TransformAction", "sampleIngress.SampleTransformAction");
 		assertThat(getActionNames(actionFamilies, "LOAD")).hasSize(1).contains("sampleIngress.SampleLoadAction");
 		assertThat(getActionNames(actionFamilies, "DOMAIN")).hasSize(1).contains("sampleEnrich.SampleDomainAction");
@@ -1585,6 +1661,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testSaveTransformFlowPlan() {
+		clearForFlowTests();
+		TransformFlow transformFlow = FlowPlanDatafetcherTestHelper.saveTransformFlowPlan(dgsQueryExecutor);
+		assertThat(transformFlow).isNotNull();
+	}
+
+	@Test
 	void testSaveIngressFlowPlan() {
 		clearForFlowTests();
 		IngressFlow ingressFlow = FlowPlanDatafetcherTestHelper.saveIngressFlowPlan(dgsQueryExecutor);
@@ -1596,6 +1679,14 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		EgressFlow egressFlow = FlowPlanDatafetcherTestHelper.saveEgressFlowPlan(dgsQueryExecutor);
 		assertThat(egressFlow).isNotNull();
+	}
+
+	@Test
+	void testRemoveTransformFlowPlan() {
+		clearForFlowTests();
+		TransformFlowPlan transformFlowPlan = new TransformFlowPlan("flowPlan", null, null);
+		transformFlowPlanRepo.save(transformFlowPlan);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeTransformFlowPlan(dgsQueryExecutor));
 	}
 
 	@Test
@@ -1612,6 +1703,20 @@ class DeltaFiCoreApplicationTests {
 		EgressFlowPlan egressFlowPlan = new EgressFlowPlan("flowPlan", null, null, null);
 		egressFlowPlanRepo.save(egressFlowPlan);
 		assertTrue(FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStartTransformFlow() {
+		clearForFlowTests();
+		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
+		assertTrue(FlowPlanDatafetcherTestHelper.startTransformFlow(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStopTransformFlow() {
+		clearForFlowTests();
+		transformFlowRepo.save(buildTransformFlow(FlowState.RUNNING));
+		assertTrue(FlowPlanDatafetcherTestHelper.stopTransformFlow(dgsQueryExecutor));
 	}
 
 	@Test
@@ -2486,7 +2591,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setDomains(List.of(new Domain("domain3", null, null)));
 		deltaFile3.addIndexedMetadata(Map.of("b.2", "first", "common", "value"));
 		deltaFile3.setEnrichment(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
-		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of()));
+		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
 		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").build()));
 		deltaFile3.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename3").formatAction("formatAction3").egressActions(List.of("EgressAction2")).build()));
 		deltaFile3.setEgressed(true);
@@ -2527,6 +2632,7 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(new KeyValue("key1", "value1"))).build()).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value2"))).build()).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value1"))).build()).build());
+		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().processingType(ProcessingType.TRANSFORMATION).build()).build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().actions(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1")).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1", "action2")).build(), deltaFile2);
@@ -2628,6 +2734,43 @@ class DeltaFiCoreApplicationTests {
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
+	}
+
+	@Test
+	void deleteTransformFlowPlanByPlugin() {
+		clearForFlowTests();
+		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
+
+		TransformFlowPlan transformFlowPlanA = new TransformFlowPlan("a", null, null);
+		transformFlowPlanA.setSourcePlugin(pluginToDelete);
+		TransformFlowPlan transformFlowPlanB = new TransformFlowPlan("b", null, null);
+		transformFlowPlanB.setSourcePlugin(pluginToDelete);
+		TransformFlowPlan transformFlowPlanC = new TransformFlowPlan("c", null, null);
+		transformFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		transformFlowPlanRepo.saveAll(List.of(transformFlowPlanA, transformFlowPlanB, transformFlowPlanC));
+		assertThat(transformFlowPlanRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(transformFlowPlanRepo.count()).isEqualTo(1);
+	}
+
+	@Test
+	void deleteTransformFlowByPlugin() {
+		clearForFlowTests();
+		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
+
+		TransformFlow transformFlowA = new TransformFlow();
+		transformFlowA.setName("a");
+		transformFlowA.setSourcePlugin(pluginToDelete);
+
+		TransformFlow transformFlowB = new TransformFlow();
+		transformFlowB.setName("b");
+		transformFlowB.setSourcePlugin(pluginToDelete);
+
+		TransformFlow transformFlowC = new TransformFlow();
+		transformFlowC.setName("c");
+		transformFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		transformFlowRepo.saveAll(List.of(transformFlowA, transformFlowB, transformFlowC));
+		assertThat(transformFlowRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(transformFlowRepo.count()).isEqualTo(1);
 	}
 
 	@Test
@@ -2989,7 +3132,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile5);
 
 		Set<String> flowSet = new HashSet<>(Arrays.asList("flow1", "flow2", "flow3"));
-		Map<String, Integer> errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
+		Map<String, Integer> errorCountsByFlow = deltaFileRepo.errorCountsByFlow(flowSet);
 
 		assertEquals(3, errorCountsByFlow.size());
 		assertEquals(2, errorCountsByFlow.get("flow1").intValue());
@@ -2998,14 +3141,14 @@ class DeltaFiCoreApplicationTests {
 
 		// Test with a non-existing flow in the set
 		flowSet.add("flowNotFound");
-		errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
+		errorCountsByFlow = deltaFileRepo.errorCountsByFlow(flowSet);
 
 		assertEquals(3, errorCountsByFlow.size());
 		assertNull(errorCountsByFlow.get("flowNotFound"));
 
 		// Test with an empty set
 		flowSet.clear();
-		errorCountsByFlow = errorCountService.populateErrorCounts(flowSet);
+		errorCountsByFlow = deltaFileRepo.errorCountsByFlow(flowSet);
 
 		assertEquals(0, errorCountsByFlow.size());
 	}
@@ -3364,6 +3507,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void clearForFlowTests() {
+		transformFlowRepo.deleteAll();
+		transformFlowPlanRepo.deleteAll();
+		transformFlowService.refreshCache();
 		ingressFlowRepo.deleteAll();
 		ingressFlowPlanRepo.deleteAll();
 		ingressFlowService.refreshCache();
@@ -3655,6 +3801,108 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, inFlight.getCount());
 		assertEquals(3L, inFlight.getTotalBytes());
 		assertEquals(6L, inFlight.getReferencedBytes());
+	}
+
+	@Test
+	void testTransformFlowTransformUtf8() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(transformFlowPostIngressDeltaFile(did));
+
+		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransformUtf8", did));
+
+		verifyActionEventResults(transformFlowPostTransformUtf8DeltaFile(did), "sampleTransform.SampleTransformAction");
+		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleTransform.Utf8TransformAction", TRANSFORM_FLOW_NAME, null);
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricRepository);
+	}
+
+	@Test
+	void testTransformFlowTransform() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(transformFlowPostTransformUtf8DeltaFile(did));
+
+		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransform", did));
+
+		verifyActionEventResults(transformFlowPostTransformDeltaFile(did), "sampleTransform.SampleEgressAction");
+
+		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleTransform.SampleTransformAction", TRANSFORM_FLOW_NAME, null);
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricRepository);
+	}
+
+	@Test
+	void testTransformFlowEgress() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(transformFlowPostTransformDeltaFile(did));
+
+		deltaFilesService.handleActionEvent(actionEvent("transformFlowEgress", did));
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertEqualsIgnoringDates(transformFlowPostEgressDeltaFile(did), deltaFile);
+
+		Mockito.verify(actionEventQueue, never()).putActions(any());
+		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "sampleTransform.SampleEgressAction", TRANSFORM_FLOW_NAME, TRANSFORM_FLOW_NAME);
+
+		Mockito.verify(metricRepository, Mockito.atLeast(4)).increment(metricCaptor.capture());
+		List<Metric> metrics = metricCaptor.getAllValues();
+		MatcherAssert.assertThat(
+				metrics.stream().map(Metric::getName).collect(Collectors.toList()),
+				Matchers.containsInAnyOrder(
+						DeltaFiConstants.FILES_IN,
+						DeltaFiConstants.FILES_OUT,
+						DeltaFiConstants.BYTES_OUT,
+						DeltaFiConstants.EXECUTION_TIME_MS
+				));
+		for (Metric metric : metrics) {
+			switch (metric.getName()) {
+				case DeltaFiConstants.FILES_IN -> assertEquals(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags), metric);
+				case DeltaFiConstants.FILES_OUT -> assertEquals(new Metric(DeltaFiConstants.FILES_OUT, 1).addTag("destination", "final").addTags(tags), metric);
+				case DeltaFiConstants.BYTES_OUT -> assertEquals(new Metric(DeltaFiConstants.BYTES_OUT, 42).addTag("destination", "final").addTags(tags), metric);
+				case DeltaFiConstants.EXECUTION_TIME_MS ->
+					// Dont care about value...
+						assertEquals(new Metric(DeltaFiConstants.EXECUTION_TIME_MS, metric.getValue()).addTags(tags), metric);
+			}
+		}
+	}
+
+	@Test
+	void testTransformFlowMultipleEgress() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile postUtf8Transform = transformFlowPostTransformUtf8DeltaFile(did);
+		deltaFileRepo.save(postUtf8Transform);
+
+		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransformMultiple", did));
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
+		assertEquals(2, deltaFile.getChildDids().size());
+		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+
+		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
+		assertEquals(2, children.size());
+
+		DeltaFile child1 = children.get(0);
+		assertEquals(DeltaFileStage.EGRESS, child1.getStage());
+		assertFalse(child1.getTestMode());
+		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
+		assertEquals("input.txt", child1.getSourceInfo().getFilename());
+		assertEquals(0, child1.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
+
+		DeltaFile child2 = children.get(1);
+		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
+		assertFalse(child2.getTestMode());
+		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
+		assertEquals("input.txt", child2.getSourceInfo().getFilename());
+		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
+
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
+		assertEquals(2, actionInputListCaptor.getValue().size());
+		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(0).getActionContext().getDid());
+		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
+
+		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleTransform.SampleTransformAction", TRANSFORM_FLOW_NAME, null);
+		Mockito.verify(metricRepository).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricRepository);
 	}
 
 	private void addJoinFlow(Integer maxNum, String metadataKey, String metadataIndexKey) {

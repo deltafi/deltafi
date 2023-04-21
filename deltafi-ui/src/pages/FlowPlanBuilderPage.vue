@@ -235,12 +235,14 @@ const egressActionTemplate = {
 const flowPlan = ref(JSON.parse(JSON.stringify(flowTemplate)));
 
 const flowTypesDisplay = [
+  { header: "Transform", field: "TRANSFORM" },
   { header: "Ingress", field: "INGRESS" },
   { header: "Enrich", field: "ENRICH" },
   { header: "Egress", field: "EGRESS" },
 ];
 
 const flowTypesMap = new Map([
+  ["TRANSFORM", { actions: ["TRANSFORM", "EGRESS"] }],
   ["INGRESS", { actions: ["TRANSFORM", "JOIN", "LOAD"] }],
   ["ENRICH", { actions: ["DOMAIN", "ENRICH"] }],
   ["EGRESS", { actions: ["FORMAT", "VALIDATE", "EGRESS"] }],

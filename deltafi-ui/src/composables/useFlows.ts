@@ -25,7 +25,7 @@ export default function useFlows() {
   const ingressFlows: Ref<Array<Record<string, string>>> = ref([]);
   const egressFlows: Ref<Array<Record<string, string>>> = ref([]);
 
-  const buildQuery = (enrich: Boolean, egress: Boolean, ingress: Boolean, state?: string) => {
+  const buildQuery = (enrich: Boolean, egress: Boolean, ingress: Boolean, transform: Boolean, state?: string) => {
     return {
       getFlowNames: {
         __args: {
@@ -33,18 +33,19 @@ export default function useFlows() {
         },
         enrich: enrich,
         egress: egress,
-        ingress: ingress
+        ingress: ingress,
+        transform: ingress
       }
     };
   };
 
   const fetchIngressFlowNames = async (state?: string) => {
-    await queryGraphQL(buildQuery(false, false, true, state), "getIngressFlowNames");
-    ingressFlows.value = response.value.data.getFlowNames.ingress.sort();
+    await queryGraphQL(buildQuery(false, false, true, false, state), "getIngressFlowNames");
+    ingressFlows.value = response.value.data.getFlowNames.ingress.concat(response.value.data.getFlowNames.transform).sort();
   }
 
   const fetchEgressFlowNames = async (state?: string) => {
-    await queryGraphQL(buildQuery(false, true, false, state), "getEgressFlowNames");
+    await queryGraphQL(buildQuery(false, true, false, false, state), "getEgressFlowNames");
     egressFlows.value = response.value.data.getFlowNames.egress.sort();
   }
 

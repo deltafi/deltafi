@@ -24,6 +24,7 @@ import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.TransformFlow;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -39,6 +40,7 @@ public class StateMachine {
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
+    private final TransformFlowService transformFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final IdentityService identityService;
 
@@ -56,11 +58,9 @@ public class StateMachine {
      * flow configured.
      */
     public List<ActionInput> advance(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
-        List<ActionInput> enqueueActions = switch (deltaFile.getStage()) {
-            case INGRESS -> advanceIngressStage(deltaFile, newDeltaFile);
-            case ENRICH -> advanceEnrichStage(deltaFile, newDeltaFile);
-            case EGRESS -> advanceEgressStage(deltaFile, newDeltaFile);
-            default -> new ArrayList<>();
+        List<ActionInput> enqueueActions = switch (deltaFile.getSourceInfo().getProcessingType()) {
+            case NORMALIZATION -> advanceNormalization(deltaFile, newDeltaFile);
+            case TRANSFORMATION -> advanceTransformation(deltaFile, newDeltaFile);
         };
 
         if (!deltaFile.hasPendingActions() && (deltaFile.getStage() != DeltaFileStage.JOINING)) {
@@ -70,6 +70,49 @@ public class StateMachine {
         deltaFile.recalculateBytes();
 
         return enqueueActions;
+    }
+
+    private List<ActionInput> advanceNormalization(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
+        return switch (deltaFile.getStage()) {
+            case INGRESS -> advanceIngressStage(deltaFile, newDeltaFile);
+            case ENRICH -> advanceEnrichStage(deltaFile, newDeltaFile);
+            case EGRESS -> advanceEgressStage(deltaFile, newDeltaFile);
+            default -> new ArrayList<>();
+        };
+    }
+
+    private List<ActionInput> advanceTransformation(DeltaFile deltaFile, boolean newDeltaFile) {
+        if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasSplitAction()) {
+            return Collections.emptyList();
+        }
+
+        TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+        TransformActionConfiguration nextTransformAction = transformFlow.getTransformActions().stream()
+                .filter(transformAction -> !deltaFile.hasTerminalAction(transformAction.getName()))
+                .findFirst().orElse(null);
+        if (nextTransformAction != null) {
+            deltaFile.queueAction(nextTransformAction.getName());
+            return List.of(buildActionInput(nextTransformAction, deltaFile, null, newDeltaFile));
+        }
+
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+
+        if (transformFlow.isTestMode()) {
+            String action = transformFlow.getName() + "." + SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS;
+            deltaFile.queueAction(action);
+            deltaFile.completeAction(action, OffsetDateTime.now(), OffsetDateTime.now());
+            deltaFile.addEgressFlow(transformFlow.getName());
+            deltaFile.setTestModeReason("Transform flow '" + transformFlow.getName() + "' in test mode");
+        } else {
+            EgressActionConfiguration egressAction = transformFlow.getEgressAction();
+            if (!deltaFile.hasTerminalAction(egressAction.getName())) {
+                deltaFile.queueAction(egressAction.getName());
+                deltaFile.addEgressFlow(transformFlow.getName());
+                return List.of(buildActionInput(egressAction, deltaFile, transformFlow.getName(), newDeltaFile));
+            }
+        }
+
+        return List.of();
     }
 
     private List<ActionInput> advanceIngressStage(DeltaFile deltaFile, boolean newDeltaFile) {
