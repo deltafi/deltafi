@@ -209,14 +209,14 @@ public abstract class ActionTest {
 
     protected List<Content> createContentReferencesForSaveMany(InvocationOnMock invocation) throws ObjectStorageException, IOException {
         String did = invocation.getArgument(0);
-        Map<Content, byte[]> contentToBytes = invocation.getArgument(1);
+        Map<String, byte[]> namesToBytes = invocation.getArgument(1);
         List<Content> contentList = new ArrayList<>();
 
-        for(Map.Entry<Content, byte[]> contentToByte : contentToBytes.entrySet()) {
-            final Content content = contentToByte.getKey();
-            final byte[] bytes = contentToByte.getValue();
+        for(Map.Entry<String, byte[]> nameToBytes : namesToBytes.entrySet()) {
+            final String name = nameToBytes.getKey();
+            final byte[] bytes = nameToBytes.getValue();
 
-            content.setContentReference(createContentReference(did, MediaType.APPLICATION_OCTET_STREAM, bytes));
+            Content content = new Content(name, createContentReference(did, MediaType.APPLICATION_OCTET_STREAM, bytes));
             contentList.add(content);
         }
 
@@ -294,12 +294,12 @@ public abstract class ActionTest {
         if(testCase.getExceptionLocation() == TestCaseBase.ExceptionLocation.STORAGE_WRITE) {
             Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(byte[].class), Mockito.anyString())).thenThrow(testCase.getException());
             Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(InputStream.class), Mockito.anyString())).thenThrow(testCase.getException());
-            Mockito.lenient().when(contentStorageService.saveMany(Mockito.anyString(), Mockito.anyMap())).thenThrow(testCase.getException());
+            Mockito.lenient().when(contentStorageService.saveMany(Mockito.anyString(), Mockito.any())).thenThrow(testCase.getException());
         }
         else {
             Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(byte[].class), Mockito.anyString())).thenAnswer(this::createContentReference);
             Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(InputStream.class), Mockito.anyString())).thenAnswer(this::createContentReference);
-            Mockito.lenient().when(contentStorageService.saveMany(Mockito.anyString(), Mockito.anyMap())).thenAnswer(this::createContentReferencesForSaveMany);
+            Mockito.lenient().when(contentStorageService.saveMany(Mockito.anyString(), Mockito.any())).thenAnswer(this::createContentReferencesForSaveMany);
         }
 
         ResultType result = callAction(testCase);

@@ -200,16 +200,13 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
 
     void unarchive(ArchiveInputStream archive, @NotNull TransformResult result) throws IOException, ObjectStorageException {
         ArchiveEntry entry;
-        Map<Content, byte[]> contentToBytes = new LinkedHashMap<>();
+        LinkedHashMap<String, byte[]> namesToBytes = new LinkedHashMap<>();
         while ((entry = archive.getNextEntry()) != null) {
             if (entry.isDirectory()) continue;
-            Content content = Content.newBuilder()
-                    .name(entry.getName())
-                    .build();
 
-            contentToBytes.put(content, archive.readAllBytes());
+            namesToBytes.put(entry.getName(), archive.readAllBytes());
         }
-        result.saveContent(contentToBytes);
+        result.saveContent(namesToBytes);
     }
 
     void unarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result) throws DecompressionTransformException {

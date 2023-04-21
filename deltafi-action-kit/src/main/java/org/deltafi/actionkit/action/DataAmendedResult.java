@@ -27,10 +27,7 @@ import org.deltafi.common.types.Content;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Specialization of the Result base class that allows metadata and content to be collected in the result.
@@ -114,10 +111,10 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
 
     /**
      * Save multiple pieces of content to content storage and attach to the result
-     * @param contentToBytes map of content objects to the bytes that need to be stored for the content
+     * @param namesToBytes map of content names to the bytes that need to be stored for the content
      * @throws ObjectStorageException when the content storage service fails to store content
      */
-    public void saveContent(Map<Content, byte[]> contentToBytes) throws ObjectStorageException {
-        context.getContentStorageService().saveMany(context.getDid(), contentToBytes);
+    public void saveContent(LinkedHashMap<String, byte[]> namesToBytes) throws ObjectStorageException {
+        context.getContentStorageService().saveMany(context.getDid(), namesToBytes);
     }
 }

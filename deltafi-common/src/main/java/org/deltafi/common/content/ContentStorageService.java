@@ -66,13 +66,14 @@ public class ContentStorageService {
         return save(did, new ByteArrayInputStream(content), mediaType);
     }
 
-    public List<Content> saveMany(String did, Map<Content, byte[]> contentToBytes) throws ObjectStorageException {
+    public List<Content> saveMany(String did, LinkedHashMap<String, byte[]> contentToBytes) throws ObjectStorageException {
         List<Content> updatedContent = new ArrayList<>();
 
         Map<ObjectReference, InputStream> objectsToSave = new LinkedHashMap<>();
-        for (Map.Entry<Content, byte[]> inputStreamEntry : contentToBytes.entrySet()) {
-            Content content = inputStreamEntry.getKey();
+        for (Map.Entry<String, byte[]> inputStreamEntry : contentToBytes.entrySet()) {
+            String name = inputStreamEntry.getKey();
             byte[] entryBytes = inputStreamEntry.getValue();
+            Content content = new Content(name, null);
 
             if (entryBytes.length == 0) {
                 content.setContentReference(new ContentReference(MediaType.APPLICATION_OCTET_STREAM));

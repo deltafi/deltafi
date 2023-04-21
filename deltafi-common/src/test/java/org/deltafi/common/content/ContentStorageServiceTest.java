@@ -30,6 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -119,13 +120,18 @@ public class ContentStorageServiceTest {
         byte[] secondContentBytes = "second".getBytes();
         byte[] emptyContentBytes = "".getBytes();
 
-        Content first = Content.newBuilder().name("first").build();
-        Content second = Content.newBuilder().name("second").build();
-        Content empty = Content.newBuilder().name("empty").build();
-
-        List<Content> content = contentStorageService.saveMany("abc", Map.of(first, firstContentBytes, second, secondContentBytes, empty, emptyContentBytes));
+        LinkedHashMap<String, byte[]> namesToBytes = new LinkedHashMap<>();
+        namesToBytes.put("first", firstContentBytes);
+        namesToBytes.put("second", secondContentBytes);
+        namesToBytes.put("empty", emptyContentBytes);
+        
+        List<Content> content = contentStorageService.saveMany("abc", namesToBytes);
 
         Assertions.assertThat(content).hasSize(3);
+        Content first = content.get(0);
+        Content second = content.get(1);
+        Content empty = content.get(2);
+
         Assertions.assertThat(first.getContentReference()).isNotNull();
         Assertions.assertThat(first.getContentReference().getSegments()).hasSize(1);
 
@@ -133,7 +139,6 @@ public class ContentStorageServiceTest {
         Assertions.assertThat(first.getContentReference().getSegments()).hasSize(1);
         Assertions.assertThat(empty.getContentReference()).isNotNull();
         Assertions.assertThat(empty.getContentReference().getSegments()).isEmpty();
-
 
         Mockito.verify(objectStorageService).putObjects(Mockito.eq("storage"), contentMapCaptor.capture());
         Map<ObjectReference, InputStream> contentMap = contentMapCaptor.getValue();
