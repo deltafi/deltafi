@@ -32,9 +32,7 @@ import org.deltafi.core.parameters.ContentSplitterParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -79,17 +77,6 @@ public class ContentSplitterTransformAction extends TransformAction<ContentSplit
         content.setName(buildContentName(originalContentName, idx));
         content.setContentReference(contentReference);
 
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("fragmentId", String.valueOf(idx));
-        if (idx == 0) {
-            metadata.put("firstFragment", "true");
-        }
-
-        if (isLast)  {
-            metadata.put("lastFragment", "true");
-        }
-
-        content.setMetadata(metadata);
         return content;
     }
 

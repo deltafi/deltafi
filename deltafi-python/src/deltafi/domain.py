@@ -24,14 +24,12 @@ from deltafi.storage import ContentService, ContentReference
 
 class Content(NamedTuple):
     name: str
-    metadata: Dict[str, str]
     content_reference: ContentReference
 
     def json(self):
         return {
             'name': self.name,
             'contentReference': self.content_reference.json(),
-            'metadata': self.metadata
         }
 
     @classmethod
@@ -40,10 +38,8 @@ class Content(NamedTuple):
             name = content['name']
         else:
             name = None
-        metadata = content.get('metadata', {})
         content_reference = ContentReference.from_dict(content['contentReference'])
         return Content(name=name,
-                       metadata=metadata,
                        content_reference=content_reference)
 
 

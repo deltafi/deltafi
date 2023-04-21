@@ -23,8 +23,7 @@
                             }
                         ],
                         "mediaType": "application/octet-stream"
-                    },
-                    "metadata": { "thing":  "y" }
+                    }
                 }
             ],
             "metadata": { "x": "y" }

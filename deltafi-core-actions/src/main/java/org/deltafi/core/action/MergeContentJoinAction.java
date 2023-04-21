@@ -208,7 +208,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
 
             ContentReference contentReference = saveContent(context.getDid(), pipedInputStream, mediaType);
 
-            return new JoinResult(context, sourceInfo, new Content(fileName, Collections.emptyMap(), contentReference));
+            return new JoinResult(context, sourceInfo, new Content(fileName, contentReference));
         } catch (IOException | ObjectStorageException e) {
             return new ErrorResult(context, "Unable to write joined content", e);
         }

@@ -41,8 +41,6 @@ def test_content_json():
     content = make_content("CONTENT_NAME")
     content_json = content.json()
     assert content_json["name"] == "CONTENT_NAME"
-    assert content_json["metadata"]["key1"] == "value1"
-    assert content_json["metadata"]["key2"] == "value2"
 
 
 def test_context_json():

@@ -99,7 +99,6 @@ input FlowAssignmentRuleInput {
 
 type Content {
   name: String
-  metadata: Metadata
   contentReference: ContentReference!
 }
 

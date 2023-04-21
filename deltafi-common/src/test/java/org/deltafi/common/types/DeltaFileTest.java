@@ -90,10 +90,10 @@ class DeltaFileTest {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .protocolStack(List.of(
                         new ProtocolLayer("action", List.of(
-                                new Content("name", Collections.emptyMap(), contentReference1),
-                                new Content("name2", Collections.emptyMap(), contentReference2)), Collections.emptyMap()),
+                                new Content("name", contentReference1),
+                                new Content("name2", contentReference2)), Collections.emptyMap()),
                         new ProtocolLayer("action2", List.of(
-                                new Content("name3", Collections.emptyMap(), contentReference3)), Collections.emptyMap())
+                                new Content("name3", contentReference3)), Collections.emptyMap())
                 ))
                 .formattedData(List.of(
                         FormattedData.newBuilder().contentReference(contentReference4).build(),

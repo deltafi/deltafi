@@ -165,14 +165,14 @@ def test_format_many_result():
 
 
 def make_content(name, seg_id):
-    content = Content(name=name, metadata={}, content_reference=make_content_reference(seg_id))
+    content = Content(name=name, content_reference=make_content_reference(seg_id))
     return [content]
 
 
 def test_join_result():
     result = JoinResult(SourceInfo(filename="filename", flow="flow", metadata={"a": "1", "b": "2"}))
-    result.add_content([Content(name="content1", metadata={}, content_reference=make_content_reference("id1")),
-                        Content(name="content2", metadata={}, content_reference=make_content_reference("id2"))])
+    result.add_content([Content(name="content1", content_reference=make_content_reference("id1")),
+                        Content(name="content2", content_reference=make_content_reference("id2"))])
     add_canned_metadata(result)
     result.add_domain("domain1", "data1", "xml", )
     result.add_domain("domain2", "data2", "json", )

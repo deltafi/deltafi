@@ -102,7 +102,6 @@ public abstract class ActionTest {
                 return Content.newBuilder()
                         .name(ioContent.getName().startsWith(stripIfStartsWith) ? ioContent.getName().substring(stripIfStartsWith.length()) : ioContent.getName())
                         .contentReference(reference)
-                        .metadata(ioContent.getMetadata())
                         .build();
             }
             catch(Throwable t) {
@@ -126,7 +125,6 @@ public abstract class ActionTest {
                 setMocksForLoad(testCase, reference, content);
                 return Content.newBuilder()
                         .name(output.getName().startsWith("output.") ? output.getName().substring(7) : output.getName())
-                        .metadata(output.getMetadata())
                         .contentReference(reference)
                         .build();
             }

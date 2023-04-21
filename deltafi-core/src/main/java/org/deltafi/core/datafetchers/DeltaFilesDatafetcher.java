@@ -175,7 +175,7 @@ public class DeltaFilesDatafetcher {
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
     Random random = new Random();
     SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new HashMap<>() : metadata);
-    Content c = new Content("stressTestContent", Collections.emptyMap(), null);
+    Content c = new Content("stressTestContent", null);
 
     // batches let us test quick bursts of ingress traffic, deferring ingress until after content is stored for the batch
     if (batchSize == null || batchSize < 1) {

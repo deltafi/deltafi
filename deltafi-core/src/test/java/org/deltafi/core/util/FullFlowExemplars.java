@@ -242,7 +242,7 @@ public class FullFlowExemplars {
         deltaFile.queueAction("sampleEnrich.SampleDomainAction");
         deltaFile.setSourceInfo(SourceInfo.builder().filename("joined-content").flow(JOIN_FLOW_NAME).metadata(Map.of("a", "b")).build());
         ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("uuid", 0, 500, did));
-        Content content = new Content("theName", Map.of("thing", "y"), contentReference);
+        Content content = new Content("theName", contentReference);
         ProtocolLayer protocolLayer = ProtocolLayer.builder()
                 .action(TEST_JOIN_ACTION)
                 .content(List.of(content))
@@ -261,7 +261,7 @@ public class FullFlowExemplars {
         deltaFile.queueAction("sampleIngress.Utf8TransformAction");
         deltaFile.setSourceInfo(SourceInfo.builder().filename("joined-content").flow(INGRESS_FLOW_NAME).metadata(Map.of("a", "b")).build());
         ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("uuid", 0, 500, did));
-        Content content = new Content("theName", Map.of("thing", "y"), contentReference);
+        Content content = new Content("theName", contentReference);
         ProtocolLayer protocolLayer = ProtocolLayer.builder()
                 .action(TEST_JOIN_ACTION)
                 .content(List.of(content))

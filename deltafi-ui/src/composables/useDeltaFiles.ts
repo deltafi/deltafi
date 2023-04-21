@@ -91,7 +91,6 @@ export default function useDeltaFiles() {
           metadata: true,
           content: {
             name: true,
-            metadata: true,
             contentReference: {
               segments: {
                 did: true,
@@ -100,7 +99,6 @@ export default function useDeltaFiles() {
                 size: true,
               },
               size: true,
-              mediaType: true,
             }
           },
         },

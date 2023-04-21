@@ -193,7 +193,7 @@ class LoadResult(Result):
         self.domains = []
 
     def add_content(self, name: str, content_reference: ContentReference):
-        content = Content(name=name, metadata={}, content_reference=content_reference)
+        content = Content(name=name, content_reference=content_reference)
         self.content.append(content)
         return self
 
@@ -280,7 +280,7 @@ class TransformResult(Result):
         self.metadata = {}
 
     def add_content(self, name: str, content_reference: ContentReference):
-        content = Content(name=name, metadata={}, content_reference=content_reference)
+        content = Content(name=name, content_reference=content_reference)
         self.content.append(content)
         return self
 

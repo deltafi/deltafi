@@ -55,7 +55,7 @@ class ContentSplitterTransformActionTest {
         ContentReference cr = new ContentReference();
         Mockito.when(contentSplitter.splitContent(Mockito.eq(content), Mockito.any())).thenReturn(List.of(cr, cr, cr));
 
-        TransformResultType result = splitterTransformAction.transform(null, new ContentSplitterParameters(), transformInput);
+        TransformResultType result = splitterTransformAction.transform(new ActionContext(), new ContentSplitterParameters(), transformInput);
 
         if (result instanceof TransformResult tr) {
             Assertions.assertEquals(3, tr.getContent().size());
@@ -63,22 +63,14 @@ class ContentSplitterTransformActionTest {
             Content first = tr.getContent().get(0);
             Assertions.assertNotNull(first.getContentReference());
             Assertions.assertEquals("input.0.csv", first.getName());
-            Assertions.assertEquals(2, first.getMetadata().size());
-            Assertions.assertEquals("0", first.getMetadata().get("fragmentId"));
-            Assertions.assertEquals("true", first.getMetadata().get("firstFragment"));
 
             Content second = tr.getContent().get(1);
             Assertions.assertNotNull(second.getContentReference());
             Assertions.assertEquals("input.1.csv", second.getName());
-            Assertions.assertEquals(1, second.getMetadata().size());
-            Assertions.assertEquals("1", second.getMetadata().get("fragmentId"));
 
             Content third = tr.getContent().get(2);
             Assertions.assertNotNull(third.getContentReference());
             Assertions.assertEquals("input.2.csv", third.getName());
-            Assertions.assertEquals(2, third.getMetadata().size());
-            Assertions.assertEquals("2", third.getMetadata().get("fragmentId"));
-            Assertions.assertEquals("true", third.getMetadata().get("lastFragment"));
         } else {
             Assertions.fail("Result was not a TransformResult");
         }
@@ -93,7 +85,6 @@ class ContentSplitterTransformActionTest {
         content.setName("input.csv");
 
         TransformInput transformInput = TransformInput.builder().contentList(List.of(content)).build();
-        ContentReference cr = new ContentReference();
         Mockito.when(contentSplitter.splitContent(Mockito.eq(content), Mockito.any())).thenThrow(new SplitException("failed to split content"));
 
         TransformResultType result = splitterTransformAction.transform(actionContext, new ContentSplitterParameters(), transformInput);

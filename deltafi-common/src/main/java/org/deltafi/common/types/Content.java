@@ -23,10 +23,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentReference;
 
-import java.util.Map;
-
 /**
- * A data object that defines a named content reference with associated metadata
+ * A data object that defines a named content reference
  */
 @Data
 @NoArgsConstructor
@@ -34,6 +32,5 @@ import java.util.Map;
 @Builder(builderMethodName = "newBuilder")
 public class Content {
   private String name;
-  private Map<String, String> metadata;
   private ContentReference contentReference;
 }

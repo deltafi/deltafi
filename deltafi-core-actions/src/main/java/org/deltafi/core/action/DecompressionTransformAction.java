@@ -118,7 +118,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                         decompressionType = String.join(".", archiveType, compressionType);
                     } catch (ArchiveException e) {
                         ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-                        Content content = new Content(contentName, Collections.emptyMap(), reference);
+                        Content content = new Content(contentName, reference);
                         result.addContent(content);
                         decompressionType = compressionType;
                     }
@@ -179,7 +179,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressGzip(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
         try (GzipCompressorInputStream decompressed = new GzipCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-            Content content = new Content(name, Collections.emptyMap(), reference);
+            Content content = new Content(name, reference);
             result.addContent(content);
         } catch (ObjectStorageException e) {
             throw new DecompressionTransformException("Unable to store content", e);
@@ -191,7 +191,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressXZ(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
         try (XZCompressorInputStream decompressed = new XZCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-            Content content = new Content(name, Collections.emptyMap(), reference);
+            Content content = new Content(name, reference);
             result.addContent(content);
         } catch (ObjectStorageException e) {
             throw new DecompressionTransformException("Unable to store content", e);
@@ -203,7 +203,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void decompressZ(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull String did, String name) throws DecompressionTransformException {
         try (ZCompressorInputStream decompressed = new ZCompressorInputStream(stream)) {
             ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
-            Content content = new Content(name, Collections.emptyMap(), reference);
+            Content content = new Content(name, reference);
             result.addContent(content);
         } catch (ObjectStorageException e) {
             throw new DecompressionTransformException("Unable to store content", e);
@@ -219,7 +219,6 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
             if (entry.isDirectory()) continue;
             Content content = Content.newBuilder()
                     .name(entry.getName())
-                    .metadata(Map.of("lastModified", entry.getLastModifiedDate().toString()))
                     .build();
 
             contentToBytes.put(content, archive.readAllBytes());
@@ -266,7 +265,6 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
             subreference.setMediaType(MediaType.APPLICATION_OCTET_STREAM);
             contents.add(Content.newBuilder()
                     .name(entry.getName())
-                    .metadata(Map.of("lastModified", entry.getLastModifiedDate().toString()))
                     .contentReference(subreference)
                     .build());
         }

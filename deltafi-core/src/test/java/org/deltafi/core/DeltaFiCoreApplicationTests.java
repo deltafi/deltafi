@@ -3927,9 +3927,6 @@ class DeltaFiCoreApplicationTests {
 
 	private DeltaFile ingestJoiningDeltaFile(String filename, Map<String, String> sourceMetadata) {
 		Content content1 = Content.newBuilder()
-				.metadata(new HashMap<>(Map.of(
-						filename + "-content1-metadata1", filename,
-						"common-content-metadata", "jkl")))
 				.contentReference(new ContentReference(filename + "-content1-media-type",
 						new Segment(filename + "-content1-segment1", 0, 500, "did"),
 						new Segment(filename + "-content1-segment2", 100, 200, "did")))
