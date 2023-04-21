@@ -12,16 +12,13 @@ A ValidateAction must implement the `validate` method which receives:
 ### Validate Input
 
 ```java
-public class ValidateInput {
+public class ValidateInput extends FormattedDataInput {
     // Original filename
     String sourceFilename;
     // Ingress flow assigned to the DeltaFile
     String ingressFlow;
     // Metadata passed in with the DeltaFile on ingress
     Map<String, String> sourceMetadata;
-    // structure containing the content references that
-    // were created by the FormatAction
-    FormattedData formattedData;
 }
 ```
 

@@ -28,7 +28,6 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.FormattedData;
 import org.deltafi.core.parameters.RestPostEgressParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -50,10 +49,10 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
     }
 
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull EgressInput input) {
-        try (InputStream inputStream = loadContentAsInputStream(input.getFormattedData().getContentReference())) {
+        try (InputStream inputStream = input.loadFormattedDataStream()) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
-                    buildHeadersMapString(context.getDid(), input.getSourceFilename(), input.getIngressFlow(), input.getFormattedData(),
-                            context.getEgressFlow())), inputStream, input.getFormattedData().getContentReference().getMediaType());
+                    buildHeadersMapString(context.getDid(), input.getSourceFilename(), input.getFilename(), input.getIngressFlow(),
+                            context.getEgressFlow(), input.getMetadata())), inputStream, input.getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
                 try (InputStream body = response.body()) {
@@ -71,11 +70,11 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
             return new ErrorResult(context, "Service post failure", e);
         }
 
-        return new EgressResult(context, params.getUrl(), input.getFormattedData().getContentReference().getSize());
+        return new EgressResult(context, params.getUrl(), input.getFormattedDataSize());
     }
 
-    private String buildHeadersMapString(String did, String sourceFilename, String ingressFlow, FormattedData formattedData, String egressFlow)
+    private String buildHeadersMapString(String did, String sourceFilename, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata)
             throws JsonProcessingException {
-        return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, sourceFilename, ingressFlow, formattedData, egressFlow));
+        return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, sourceFilename, filename, ingressFlow, egressFlow, metadata));
     }
 }

@@ -12,15 +12,13 @@ An EgressAction must implement the `egress` method which receives:
 ### Egress Input
 
 ```java
-public class EgressInput {
+public class EgressInput extends FormattedDataInput {
     // Original filename
     String sourceFilename;
     // Ingress flow assigned to the DeltaFile
     String ingressFlow;
     // Metadata passed in with the DeltaFile on ingress
     Map<String, String> sourceMetadata;
-    // structure containing the content references that were created by the FormatAction
-    FormattedData formattedData;
 }
 ```
 

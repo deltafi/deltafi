@@ -49,11 +49,11 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
 
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params,
             @NotNull EgressInput input) {
-        try (InputStream inputStream = loadContentAsInputStream(input.getFormattedData().getContentReference())) {
+        try (InputStream inputStream = input.loadFormattedDataStream()) {
             Map<String, String> attributes = buildHeadersMap(context.getDid(), input.getSourceFilename(),
-                    input.getIngressFlow(), input.getFormattedData(), context.getEgressFlow());
+                    input.getFilename(), input.getIngressFlow(), context.getEgressFlow(), input.getMetadata());
             byte[] flowFile = FlowFileUtil.packageFlowFileV1(attributes, inputStream,
-                    input.getFormattedData().getContentReference().getSize());
+                    input.getFormattedDataSize());
 
             HttpResponse<InputStream> response;
             try (ByteArrayInputStream flowFileInputStream = new ByteArrayInputStream(flowFile)) {
@@ -77,6 +77,6 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
             return new ErrorResult(context, "Service post failure", e);
         }
 
-        return new EgressResult(context, params.getUrl(), input.getFormattedData().getContentReference().getSize());
+        return new EgressResult(context, params.getUrl(), input.getFormattedDataSize());
     }
 }

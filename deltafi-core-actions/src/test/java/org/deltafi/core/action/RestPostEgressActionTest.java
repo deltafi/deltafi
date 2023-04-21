@@ -33,6 +33,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
 import org.deltafi.core.parameters.RestPostEgressParameters;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -77,7 +78,8 @@ class RestPostEgressActionTest {
             .filename(POST_FILENAME)
             .contentReference(CONTENT_REFERENCE)
             .build();
-    private static final EgressInput EGRESS_INPUT = new EgressInput(ORIG_FILENAME, FLOW, Collections.emptyMap(), FORMATTED_DATA);
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
+    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).formattedData(FORMATTED_DATA).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).sourceMetadata(Collections.emptyMap()).build();
     static final Integer NUM_TRIES = 3;
     static final Integer RETRY_WAIT = 10;
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
@@ -91,6 +93,11 @@ class RestPostEgressActionTest {
     @InjectMocks
     private RestPostEgressAction action;
 
+    @BeforeEach
+    public void init() {
+        CONTEXT.setContentStorageService(contentStorageService);
+    }
+
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
@@ -103,7 +110,6 @@ class RestPostEgressActionTest {
 
     @SuppressWarnings("unchecked")
     private EgressResultType runTest(int statusCode, String responseBody, int numTries) throws IOException {
-        ActionContext context = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
         HttpResponse<InputStream> httpResponse = new HttpResponse<>() {
             @Override
             public int statusCode() {
@@ -150,7 +156,7 @@ class RestPostEgressActionTest {
         } else {
             when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
         }
-        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
+        EgressResultType result = action.egress(CONTEXT, PARAMS, EGRESS_INPUT);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);

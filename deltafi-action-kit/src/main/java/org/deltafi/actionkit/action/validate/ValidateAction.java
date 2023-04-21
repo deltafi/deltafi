@@ -33,15 +33,16 @@ public abstract class ValidateAction<P extends ActionParameters> extends Action<
 
     @Override
     public final ValidateResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return validate(context,params, validateInput(deltaFile));
+        return validate(context,params, validateInput(deltaFile, context));
     }
 
-    private static ValidateInput validateInput(DeltaFile deltaFile) {
+    private static ValidateInput validateInput(DeltaFile deltaFile, ActionContext context) {
         return ValidateInput.builder()
                 .sourceFilename(deltaFile.getSourceInfo().getFilename())
                 .ingressFlow(deltaFile.getSourceInfo().getFlow())
                 .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
                 .formattedData(deltaFile.getFormattedData().get(0))
+                .actionContext(context)
                 .build();
     }
 

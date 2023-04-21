@@ -17,22 +17,21 @@
  */
 package org.deltafi.actionkit.action.egress;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+import org.deltafi.actionkit.action.FormattedDataInput;
 import org.deltafi.actionkit.exception.MissingSourceMetadataException;
-import org.deltafi.common.types.FormattedData;
 
 import java.util.Map;
 
-@AllArgsConstructor
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @Data
-public class EgressInput {
+public class EgressInput extends FormattedDataInput {
     String sourceFilename;
     String ingressFlow;
     Map<String, String> sourceMetadata;
-    FormattedData formattedData;
 
     /**
      * Returns the value of the source metadata for the given key.

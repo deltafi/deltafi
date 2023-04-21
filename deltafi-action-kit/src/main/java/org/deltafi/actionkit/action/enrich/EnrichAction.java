@@ -58,10 +58,10 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
 
     @Override
     protected final EnrichResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return enrich(context, params, enrichInput(deltaFile));
+        return enrich(context, params, enrichInput(deltaFile, context));
     }
 
-    private static EnrichInput enrichInput(DeltaFile deltaFile) {
+    private static EnrichInput enrichInput(DeltaFile deltaFile, ActionContext context) {
         return EnrichInput.builder()
                 .sourceFilename(deltaFile.getSourceInfo().getFilename())
                 .ingressFlow(deltaFile.getSourceInfo().getFlow())
@@ -70,6 +70,7 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
                 .metadata(deltaFile.getLastProtocolLayerMetadata())
                 .domains(deltaFile.domainMap())
                 .enrichment(deltaFile.enrichmentMap())
+                .actionContext(context)
                 .build();
     }
 

@@ -67,16 +67,16 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
 
     abstract protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input);
 
-    public Map<String, String> buildHeadersMap(String did, String sourceFilename, String ingressFlow, FormattedData formattedData, String egressFlow) {
+    public Map<String, String> buildHeadersMap(String did, String sourceFilename, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata) {
         Map<String, String> headersMap = new HashMap<>();
-        if (formattedData.getMetadata() != null) {
-            headersMap.putAll(formattedData.getMetadata());
+        if (metadata != null) {
+            headersMap.putAll(metadata);
         }
         headersMap.put("did", did);
         headersMap.put("ingressFlow", ingressFlow);
         headersMap.put("flow", egressFlow);
         headersMap.put("originalFilename", sourceFilename);
-        headersMap.put("filename", formattedData.getFilename());
+        headersMap.put("filename", filename);
 
         return headersMap;
     }

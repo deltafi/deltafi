@@ -31,6 +31,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.FormattedData;
 import org.deltafi.core.parameters.HttpEgressParameters;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -91,7 +92,8 @@ class FlowfileEgressActionTest {
             .contentReference(CONTENT_REFERENCE)
             .metadata(METADATA)
             .build();
-    private static final EgressInput EGRESS_INPUT = new EgressInput(ORIG_FILENAME, FLOW, Map.of(), FORMATTED_DATA);
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
+    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).formattedData(FORMATTED_DATA).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).sourceMetadata(Collections.emptyMap()).build();
 
     final static Integer NUM_TRIES = 3;
     final static Integer RETRY_WAIT = 10;
@@ -106,6 +108,11 @@ class FlowfileEgressActionTest {
     @InjectMocks
     private FlowfileEgressAction action;
 
+    @BeforeEach
+    public void init() {
+        CONTEXT.setContentStorageService(contentStorageService);
+    }
+
     @Test
     public void execute() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
@@ -118,8 +125,6 @@ class FlowfileEgressActionTest {
 
     @SuppressWarnings("unchecked")
     private EgressResultType runTest(int statusCode, int numTries) throws IOException {
-        ActionContext context = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
-
         final List<byte[]> posts = new ArrayList<>();
         when(httpService.post(any(), any(), any(), any())).thenAnswer(
                 (Answer<HttpResponse<InputStream>>) invocation -> {
@@ -150,7 +155,7 @@ class FlowfileEgressActionTest {
                     };
                 }
         );
-        EgressResultType result = action.egress(context, PARAMS, EGRESS_INPUT);
+        EgressResultType result = action.egress(CONTEXT, PARAMS, EGRESS_INPUT);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);

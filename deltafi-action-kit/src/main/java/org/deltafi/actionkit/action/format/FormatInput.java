@@ -17,27 +17,24 @@
  */
 package org.deltafi.actionkit.action.format;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import org.deltafi.actionkit.exception.ExpectedContentException;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+import org.deltafi.actionkit.action.ContentListInput;
 import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.actionkit.exception.MissingSourceMetadataException;
-import org.deltafi.common.types.Content;
 import org.deltafi.common.types.Domain;
 import org.deltafi.common.types.Enrichment;
 
-import java.util.List;
 import java.util.Map;
 
-@AllArgsConstructor
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @Data
-public class FormatInput {
+public class FormatInput extends ContentListInput {
     String sourceFilename;
     String ingressFlow;
     Map<String, String> sourceMetadata;
-    List<Content> contentList;
     Map<String, String> metadata;
     Map<String, Domain> domains;
     Map<String, Enrichment> enrichment;
@@ -103,35 +100,5 @@ public class FormatInput {
      */
     public String metadata(String key, String defaultValue) {
         return metadata.getOrDefault(key, defaultValue);
-    }
-
-    /**
-     * Returns true if the ContentList has any content, false otherwise.
-     * @return true if the ContentList has any content, false otherwise.
-     */
-    public boolean hasContent() {
-        return !contentList.isEmpty();
-    }
-
-    /**
-     * Returns the Content object at the given index.
-     * @param index the index of the Content object to retrieve.
-     * @return the Content object at the given index.
-     */
-    public Content contentAt(int index) {
-        return contentList.get(index);
-    }
-
-    /**
-     * Returns the first Content object in the ContentList.
-     * @return the first Content object in the ContentList.
-     * @throws ExpectedContentException if the ContentList is empty.
-     */
-    @SuppressWarnings("unused")
-    public Content firstContent() {
-        if (!hasContent()) {
-            throw new ExpectedContentException();
-        }
-        return contentAt(0);
     }
 }
