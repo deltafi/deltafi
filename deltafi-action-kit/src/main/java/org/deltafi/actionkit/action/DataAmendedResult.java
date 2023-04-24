@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -31,7 +31,7 @@ import java.util.*;
 
 /**
  * Specialization of the Result base class that allows metadata and content to be collected in the result.
- *
+ * <p>
  * This class is extended for Load and Transform results
  */
 @Getter
@@ -115,6 +115,6 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
      * @throws ObjectStorageException when the content storage service fails to store content
      */
     public void saveContent(LinkedHashMap<String, byte[]> namesToBytes) throws ObjectStorageException {
-        context.getContentStorageService().saveMany(context.getDid(), namesToBytes);
+        content.addAll(context.getContentStorageService().saveMany(context.getDid(), namesToBytes));
     }
 }
