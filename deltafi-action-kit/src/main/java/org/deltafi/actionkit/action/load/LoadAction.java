@@ -32,19 +32,18 @@ public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
     }
 
     @Override
-    protected final LoadResultType execute(@NotNull DeltaFile deltaFile,
+    protected final LoadResultType execute(@NotNull DeltaFileMessage deltaFileMessage,
                                            @NotNull ActionContext context,
                                            @NotNull P params) {
-        return load(context, params, loadInput(deltaFile, context));
+        return load(context, params, loadInput(deltaFileMessage, context));
     }
 
-    private static LoadInput loadInput(DeltaFile deltaFile, ActionContext context) {
+    private static LoadInput loadInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return LoadInput.builder()
-                .sourceFilename(deltaFile.getSourceInfo().getFilename())
-                .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
-                .contentList(deltaFile.getLastProtocolLayerContent())
-                .metadata(deltaFile.getLastProtocolLayerMetadata())
+                .sourceFilename(deltaFileMessage.getSourceFilename())
+                .ingressFlow(deltaFileMessage.getIngressFlow())
+                .contentList(deltaFileMessage.getContentList())
+                .metadata(deltaFileMessage.getMetadata())
                 .actionContext(context)
                 .build();
     }

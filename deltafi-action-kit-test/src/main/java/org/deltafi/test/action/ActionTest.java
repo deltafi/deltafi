@@ -201,7 +201,7 @@ public abstract class ActionTest {
 
         beforeExecuteAction(deltaFile, testCase);
         return testCase.getAction().executeAction(ActionInput.builder()
-                .deltaFile(deltaFile)
+                .deltaFileMessage(deltaFile.forQueue(context().getName()))
                 .actionContext(context())
                 .actionParams(testCase.getParameters())
                 .build());

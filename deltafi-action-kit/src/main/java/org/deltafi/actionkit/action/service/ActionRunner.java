@@ -24,7 +24,6 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.exception.ExpectedContentException;
 import org.deltafi.actionkit.exception.MissingMetadataException;
-import org.deltafi.actionkit.exception.MissingSourceMetadataException;
 import org.deltafi.actionkit.exception.StartupException;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
@@ -126,8 +125,6 @@ public class ActionRunner {
             }
         } catch (ExpectedContentException e) {
             result = new ErrorResult(context, "Action received no content", e).logErrorTo(log);
-        } catch (MissingSourceMetadataException e) {
-            result = new ErrorResult(context, "Missing ingress metadata with key " + e.getKey(), e).logErrorTo(log);
         } catch (MissingMetadataException e) {
             result = new ErrorResult(context, "Missing metadata with key " + e.getKey(), e).logErrorTo(log);
         } catch (Throwable e) {

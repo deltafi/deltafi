@@ -771,8 +771,8 @@ class DeltaFiCoreApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEqualsIgnoringDates(child1.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(0).getDeltaFile());
-		assertEqualsIgnoringDates(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFile());
+		assertEquals(child1.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(0).getDeltaFileMessage());
+		assertEquals(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFileMessage());
 
 		Map<String, String> tags = tagsFor(ActionEventType.SPLIT, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
@@ -843,8 +843,8 @@ class DeltaFiCoreApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEqualsIgnoringDates(child1.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(0).getDeltaFile());
-		assertEqualsIgnoringDates(child2.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(1).getDeltaFile());
+		assertEquals(child1.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(0).getDeltaFileMessage());
+		assertEquals(child2.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(1).getDeltaFileMessage());
 
 		Map<String, String> tags = tagsFor(ActionEventType.LOAD_MANY, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
@@ -3502,7 +3502,7 @@ class DeltaFiCoreApplicationTests {
 		for (int i = 0; i < forActions.length; i++) {
 			ActionInput actionInput = actionInputs.get(i);
 			assertThat(actionInput.getActionContext().getName()).isEqualTo(forActions[i]);
-			assertEqualsIgnoringDates(expected.forQueue(forActions[i]), actionInput.getDeltaFile());
+			assertEquals(expected.forQueue(forActions[i]), actionInput.getDeltaFileMessage());
 		}
 	}
 
@@ -3886,14 +3886,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
+		assertEquals(0, child1.getLastProtocolLayer().getContentReference().getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
+		assertEquals(250, child2.getLastProtocolLayer().getContentReference().getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		assertEquals(2, actionInputListCaptor.getValue().size());
@@ -3989,10 +3989,10 @@ class DeltaFiCoreApplicationTests {
 		assertThat(actionInputs).hasSize(1);
 		ActionInput actionInput = actionInputs.get(0);
 
-		assertEqualsIgnoringDates(child.forQueue(TEST_JOIN_ACTION), actionInput.getDeltaFile());
+		assertEquals(child.forQueue(TEST_JOIN_ACTION), actionInput.getDeltaFileMessage());
 		assertEquals(2, actionInput.getJoinedDeltaFiles().size());
-		assertEqualsIgnoringDates(parent1.forQueue(TEST_JOIN_ACTION), actionInput.getJoinedDeltaFiles().get(0));
-		assertEqualsIgnoringDates(parent2.forQueue(TEST_JOIN_ACTION), actionInput.getJoinedDeltaFiles().get(1));
+		assertEquals(parent1.forQueue(TEST_JOIN_ACTION), actionInput.getJoinedDeltaFiles().get(0));
+		assertEquals(parent2.forQueue(TEST_JOIN_ACTION), actionInput.getJoinedDeltaFiles().get(1));
 
 		assertEqualsIgnoringDates(preJoinDeltaFile(List.of(parent1.getDid(), parent2.getDid()), child.getDid()), child);
 	}

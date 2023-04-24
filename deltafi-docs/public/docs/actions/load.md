@@ -17,8 +17,6 @@ public class LoadInput {
     String sourceFilename;
     // Ingress flow assigned to the DeltaFile
     String ingressFlow;
-    // Metadata passed in with the DeltaFile on ingress
-    Map<String, String> sourceMetadata;
     // Content emitted by previous Transform Action, or as
     // received at Ingress if there was no previous Transform Action
     List<Content> contentList;
@@ -93,7 +91,6 @@ A description of each Input field can be found in the Java section above.
 class LoadInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     content: List[Content]
     metadata: dict
 ```

@@ -21,8 +21,6 @@ public class DomainInput {
     String sourceFilename;
     // Ingress flow assigned to the DeltaFile
     String ingressFlow;
-    // Metadata passed in with the DeltaFile on ingress
-    Map<String, String> sourceMetadata;
     // Metadata emitted by the Load Action
     Map<String, String> metadata;
     // Named domains and their values
@@ -103,7 +101,6 @@ A list of required domains must be passed to the DomainAction constructor.
 class DomainInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     metadata: Dict[str, str]
     domains: Dict[str, Domain]
 ```

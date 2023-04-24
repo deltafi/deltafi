@@ -17,28 +17,15 @@
 #
 
 from deltafi.domain import *
-from deltafi.exception import MissingMetadataException, MissingSourceMetadataException, ExpectedContentException, \
-    MissingDomainException, MissingEnrichmentException
+from deltafi.exception import MissingMetadataException, ExpectedContentException, MissingDomainException, \
+    MissingEnrichmentException
 
 
 class DomainInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     metadata: Dict[str, str]
     domains: Dict[str, Domain]
-
-    def get_source_metadata(self, key: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            raise MissingSourceMetadataException(key)
-
-    def get_source_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            return default
 
     def get_metadata(self, key: str):
         if key in self.metadata:
@@ -64,42 +51,16 @@ class DomainInput(NamedTuple):
 class EgressInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     formatted_data: FormattedData
-
-    def get_source_metadata(self, key: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            raise MissingSourceMetadataException(key)
-
-    def get_source_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            return default
 
 
 class EnrichInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]
     enrichment: Dict[str, Domain]
-
-    def get_source_metadata(self, key: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            raise MissingSourceMetadataException(key)
-
-    def get_source_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            return default
 
     def has_content(self) -> bool:
         return len(self.content) > 0
@@ -144,23 +105,10 @@ class EnrichInput(NamedTuple):
 class FormatInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]
     enrichment: Dict[str, Domain]
-
-    def get_source_metadata(self, key: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            raise MissingSourceMetadataException(key)
-
-    def get_source_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            return default
 
     def has_content(self) -> bool:
         return len(self.content) > 0
@@ -205,21 +153,8 @@ class FormatInput(NamedTuple):
 class LoadInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     content: List[Content]
     metadata: dict
-
-    def get_source_metadata(self, key: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            raise MissingSourceMetadataException(key)
-
-    def get_source_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            return default
 
     def has_content(self) -> bool:
         return len(self.content) > 0
@@ -248,21 +183,8 @@ class LoadInput(NamedTuple):
 class TransformInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     content: List[Content]
     metadata: dict
-
-    def get_source_metadata(self, key: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            raise MissingSourceMetadataException(key)
-
-    def get_source_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            return default
 
     def has_content(self) -> bool:
         return len(self.content) > 0
@@ -291,17 +213,4 @@ class TransformInput(NamedTuple):
 class ValidateInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     formatted_data: FormattedData
-
-    def get_source_metadata(self, key: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            raise MissingSourceMetadataException(key)
-
-    def get_source_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.source_metadata:
-            return self.source_metadata[key]
-        else:
-            return default

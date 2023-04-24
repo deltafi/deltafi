@@ -22,12 +22,12 @@ import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
@@ -43,20 +43,27 @@ public class DeltaFile {
   private List<String> parentDids;
   private List<String> childDids;
   private int requeueCount;
-  private long ingressBytes = 0;
-  private long referencedBytes = 0;
-  private long totalBytes = 0;
+  private long ingressBytes;
+  private long referencedBytes;
+  private long totalBytes;
   private DeltaFileStage stage;
   private List<Action> actions;
   private SourceInfo sourceInfo;
-  private List<ProtocolLayer> protocolStack;
+  @Builder.Default
+  private List<ProtocolLayer> protocolStack = new ArrayList<>();
   private List<Domain> domains;
+  @Transient
+  @Builder.Default
+  private Map<String, String> metadata = new HashMap<>();
+  // Do not set @Builder.Default, see special handling in the builder
   private Map<String, String> indexedMetadata = new HashMap<>();
+  // Do not set @Builder.Default, see special handling in the builder
   private Set<String> indexedMetadataKeys = new HashSet<>();
   private List<Enrichment> enrichment;
   @Builder.Default
   private List<Egress> egress = new ArrayList<>();
-  private List<FormattedData> formattedData;
+  @Builder.Default
+  private List<FormattedData> formattedData = new ArrayList<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
@@ -79,6 +86,15 @@ public class DeltaFile {
   @Setter
   @JsonIgnore
   private long version;
+
+  public Map<String, String> getMetadata() {
+    Map<String, String> metadata = new HashMap<>(sourceInfo.getMetadata());
+    for (ProtocolLayer protocolLayer : protocolStack) {
+      metadata.putAll(protocolLayer.getMetadata());
+    }
+
+    return metadata;
+  }
 
   public void queueAction(String name) {
     Optional<Action> maybeAction = actionNamed(name);
@@ -157,20 +173,6 @@ public class DeltaFile {
     getActions().remove(lastAction());
   }
 
-  public void convertLastProtocolToFormatResult(String egressActionName) {
-    ProtocolLayer lastProtocolLayer = getLastProtocolLayer();
-    Content content = lastProtocolLayer.getContent().isEmpty() ? null : lastProtocolLayer.getContent().get(0);
-    FormattedData formattedData = FormattedData.newBuilder()
-            .contentReference(content == null ? null : content.getContentReference())
-            .egressActions(Collections.singletonList(egressActionName))
-            .filename(content == null ? null : content.getName())
-            .metadata(lastProtocolLayer.getMetadata())
-            .validateActions(Collections.emptyList())
-            .formatAction(lastProtocolLayer.getAction())
-            .build();
-    setFormattedData(Collections.singletonList(formattedData));
-  }
-
   public void errorAction(ActionEventInput event) {
     errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
             event.getError().getContext());
@@ -239,14 +241,6 @@ public class DeltaFile {
 
   public List<String> queuedActions() {
     return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).toList();
-  }
-
-  public Map<String, Domain> domainMap() {
-    return getDomains().stream().collect(Collectors.toMap(Domain::getName, Function.identity()));
-  }
-
-  public Map<String, Enrichment> enrichmentMap() {
-    return getEnrichment().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
   }
 
   public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {
@@ -397,19 +391,28 @@ public class DeltaFile {
     return egress;
   }
 
-  public DeltaFile forQueue(String actionName) {
-    DeltaFileBuilder builder = DeltaFile.newBuilder()
-            .did(getDid())
-            .sourceInfo(getSourceInfo())
-            .domains(getDomains())
-            .enrichment(getEnrichment())
-            .formattedData(getFormattedData().stream()
-                    .filter(f -> f.getEgressActions().contains(actionName) ||
-                            (Objects.nonNull(f.getValidateActions()) && f.getValidateActions().contains(actionName)))
-                    .toList());
+  private FormattedData formattedDataFor(String actionName) {
+    return formattedData.stream().filter(f -> f.getEgressActions().contains(actionName) ||
+            (Objects.nonNull(f.getValidateActions()) && f.getValidateActions().contains(actionName))).findFirst().orElse(null);
+  }
 
-    if (!getProtocolStack().isEmpty()) {
-      builder.protocolStack(Collections.singletonList(getLastProtocolLayer()));
+  public DeltaFileMessage forQueue(String actionName) {
+    DeltaFileMessage.DeltaFileMessageBuilder builder =
+        DeltaFileMessage.builder()
+                .sourceFilename(sourceInfo.getFilename())
+                .ingressFlow(sourceInfo.getFlow());
+
+    FormattedData formattedData = formattedDataFor(actionName);
+
+    if (formattedData == null) {
+      builder.contentList(getLastProtocolLayerContent())
+              .metadata(getMetadata())
+              .domains(getDomains())
+              .enrichment(getEnrichment());
+    } else {
+      Content content = new Content(formattedData.getFilename(), formattedData.getContentReference());
+      builder.contentList(List.of(content))
+              .metadata(formattedData.getMetadata());
     }
 
     return builder.build();

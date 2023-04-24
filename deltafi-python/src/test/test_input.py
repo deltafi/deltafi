@@ -18,7 +18,7 @@
 
 import pytest
 from deltafi.domain import Event
-from deltafi.exception import MissingMetadataException, MissingSourceMetadataException
+from deltafi.exception import MissingMetadataException
 from deltafi.input import DomainInput
 from deltafi.storage import ContentService
 from mockito import mock, unstub
@@ -44,14 +44,8 @@ def test_domain_input():
 
     input = DomainInput(source_filename=event.delta_file.source_info.filename,
                         ingress_flow=event.delta_file.source_info.flow,
-                        source_metadata=event.delta_file.source_info.metadata,
                         metadata=event.delta_file.protocol_stack[-1].metadata,
                         domains={domain.name: domain for domain in event.delta_file.domains})
-
-    assert input.get_source_metadata("key1") == "value1"
-    assert input.get_source_metadata_or_else("keyX", "not-found") == "not-found"
-    with pytest.raises(MissingSourceMetadataException):
-        input.get_source_metadata("keyX")
 
     assert input.get_metadata("plKey1") == "valueA"
     assert input.get_metadata_or_else("plkeyX", "not-found") == "not-found"

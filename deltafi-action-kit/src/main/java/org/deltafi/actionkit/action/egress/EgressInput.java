@@ -21,9 +21,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.FormattedDataInput;
-import org.deltafi.actionkit.exception.MissingSourceMetadataException;
-
-import java.util.Map;
 
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
@@ -31,29 +28,4 @@ import java.util.Map;
 public class EgressInput extends FormattedDataInput {
     String sourceFilename;
     String ingressFlow;
-    Map<String, String> sourceMetadata;
-
-    /**
-     * Returns the value of the source metadata for the given key.
-     * @param key the key for the metadata.
-     * @return the value of the metadata for the given key.
-     * @throws MissingSourceMetadataException if the key is not found in the source metadata map.
-     */
-    public String sourceMetadata(String key) {
-        if (sourceMetadata.containsKey(key)) {
-            return sourceMetadata.get(key);
-        } else {
-            throw new MissingSourceMetadataException(key);
-        }
-    }
-
-    /**
-     * Returns the value of the source metadata for the given key or a default value if the key is not found.
-     * @param key the key for the metadata.
-     * @param defaultValue the default value to return if the key is not found.
-     * @return the value of the metadata for the given key or the default value if the key is not found.
-     */
-    public String sourceMetadata(String key, String defaultValue) {
-        return sourceMetadata.getOrDefault(key, defaultValue);
-    }
 }

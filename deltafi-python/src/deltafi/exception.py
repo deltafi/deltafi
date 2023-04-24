@@ -36,8 +36,3 @@ class MissingEnrichmentException(RuntimeError):
 class MissingMetadataException(RuntimeError):
     def __init__(self, key):
         self.key = key
-
-
-class MissingSourceMetadataException(MissingMetadataException):
-    def __init__(self, key):
-        super().__init__(key)

@@ -32,19 +32,18 @@ public abstract class TransformAction<P extends ActionParameters> extends Action
     }
 
     @Override
-    protected final TransformResultType execute(@NotNull DeltaFile deltaFile,
+    protected final TransformResultType execute(@NotNull DeltaFileMessage deltaFileMessage,
                                                 @NotNull ActionContext context,
                                                 @NotNull P params) {
-        return transform(context, params, transformInput(deltaFile, context));
+        return transform(context, params, transformInput(deltaFileMessage, context));
     }
 
-    private static TransformInput transformInput(DeltaFile deltaFile, ActionContext context) {
+    private static TransformInput transformInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return TransformInput.builder()
-                .sourceFilename(deltaFile.getSourceInfo().getFilename())
-                .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
-                .contentList(deltaFile.getLastProtocolLayerContent())
-                .metadata(deltaFile.getLastProtocolLayerMetadata())
+                .sourceFilename(deltaFileMessage.getSourceFilename())
+                .ingressFlow(deltaFileMessage.getIngressFlow())
+                .contentList(deltaFileMessage.getContentList())
+                .metadata(deltaFileMessage.getMetadata())
                 .actionContext(context)
                 .build();
     }

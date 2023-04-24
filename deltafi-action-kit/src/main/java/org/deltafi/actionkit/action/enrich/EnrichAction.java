@@ -57,19 +57,18 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final EnrichResultType execute(@NotNull DeltaFile deltaFile, @NotNull ActionContext context, @NotNull P params) {
-        return enrich(context, params, enrichInput(deltaFile, context));
+    protected final EnrichResultType execute(@NotNull DeltaFileMessage deltaFileMessage, @NotNull ActionContext context, @NotNull P params) {
+        return enrich(context, params, enrichInput(deltaFileMessage, context));
     }
 
-    private static EnrichInput enrichInput(DeltaFile deltaFile, ActionContext context) {
+    private static EnrichInput enrichInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return EnrichInput.builder()
-                .sourceFilename(deltaFile.getSourceInfo().getFilename())
-                .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
-                .contentList(deltaFile.getLastProtocolLayerContent())
-                .metadata(deltaFile.getLastProtocolLayerMetadata())
-                .domains(deltaFile.domainMap())
-                .enrichment(deltaFile.enrichmentMap())
+                .sourceFilename(deltaFileMessage.getSourceFilename())
+                .ingressFlow(deltaFileMessage.getIngressFlow())
+                .contentList(deltaFileMessage.getContentList())
+                .metadata(deltaFileMessage.getMetadata())
+                .domains(deltaFileMessage.domainMap())
+                .enrichment(deltaFileMessage.enrichmentMap())
                 .actionContext(context)
                 .build();
     }

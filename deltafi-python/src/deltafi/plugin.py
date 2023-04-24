@@ -31,7 +31,7 @@ import requests
 from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event
 from deltafi.exception import ExpectedContentException, MissingDomainException, MissingEnrichmentException, \
-    MissingSourceMetadataException, MissingMetadataException
+    MissingMetadataException
 from deltafi.logger import get_logger
 from deltafi.result import ErrorResult
 from deltafi.storage import ContentService
@@ -180,9 +180,6 @@ class Plugin(object):
                                          f"{str(e)}\n{traceback.format_exc()}")
                 except MissingEnrichmentException as e:
                     result = ErrorResult(f"Action attempted to access enrichment {e.name}, which does not exist",
-                                         f"{str(e)}\n{traceback.format_exc()}")
-                except MissingSourceMetadataException as e:
-                    result = ErrorResult(f"Missing ingress metadata with key {e.key}",
                                          f"{str(e)}\n{traceback.format_exc()}")
                 except MissingMetadataException as e:
                     result = ErrorResult(f"Missing metadata with key {e.key}",

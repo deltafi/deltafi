@@ -54,7 +54,6 @@ class DomainAction(Action):
     def execute(self, event):
         domain_input = DomainInput(source_filename=event.delta_file.source_info.filename,
                                    ingress_flow=event.delta_file.source_info.flow,
-                                   source_metadata=event.delta_file.source_info.metadata,
                                    metadata=event.delta_file.protocol_stack[-1].metadata,
                                    domains={domain.name: domain for domain in event.delta_file.domains})
         result = self.domain(event.context, self.param_class().parse_obj(event.params), domain_input)
@@ -73,7 +72,6 @@ class EgressAction(Action):
     def execute(self, event):
         egress_input = EgressInput(source_filename=event.delta_file.source_info.filename,
                                    ingress_flow=event.delta_file.source_info.flow,
-                                   source_metadata=event.delta_file.source_info.metadata,
                                    formatted_data=event.delta_file.formatted_data)
         result = self.egress(event.context, self.param_class().parse_obj(event.params), egress_input)
         self.validate_type(result, (EgressResult, ErrorResult, FilterResult))
@@ -91,7 +89,6 @@ class EnrichAction(Action):
     def execute(self, event):
         enrich_input = EnrichInput(source_filename=event.delta_file.source_info.filename,
                                    ingress_flow=event.delta_file.source_info.flow,
-                                   source_metadata=event.delta_file.source_info.metadata,
                                    content=event.delta_file.protocol_stack[-1].content,
                                    metadata=event.delta_file.protocol_stack[-1].metadata,
                                    domains={domain.name: domain for domain in event.delta_file.domains},
@@ -112,7 +109,6 @@ class FormatAction(Action):
     def execute(self, event):
         format_input = FormatInput(source_filename=event.delta_file.source_info.filename,
                                    ingress_flow=event.delta_file.source_info.flow,
-                                   source_metadata=event.delta_file.source_info.metadata,
                                    content=event.delta_file.protocol_stack[-1].content,
                                    metadata=event.delta_file.protocol_stack[-1].metadata,
                                    domains={domain.name: domain for domain in event.delta_file.domains},
@@ -148,7 +144,6 @@ class LoadAction(Action):
     def execute(self, event):
         load_input = LoadInput(source_filename=event.delta_file.source_info.filename,
                                ingress_flow=event.delta_file.source_info.flow,
-                               source_metadata=event.delta_file.source_info.metadata,
                                content=event.delta_file.protocol_stack[-1].content,
                                metadata=event.delta_file.protocol_stack[-1].metadata)
         result = self.load(event.context, self.param_class().parse_obj(event.params), load_input)
@@ -167,7 +162,6 @@ class TransformAction(Action):
     def execute(self, event):
         transform_input = TransformInput(source_filename=event.delta_file.source_info.filename,
                                          ingress_flow=event.delta_file.source_info.flow,
-                                         source_metadata=event.delta_file.source_info.metadata,
                                          content=event.delta_file.protocol_stack[-1].content,
                                          metadata=event.delta_file.protocol_stack[-1].metadata)
         result = self.transform(event.context, self.param_class().parse_obj(event.params), transform_input)
@@ -186,7 +180,6 @@ class ValidateAction(Action):
     def execute(self, event):
         validate_input = ValidateInput(source_filename=event.delta_file.source_info.filename,
                                        ingress_flow=event.delta_file.source_info.flow,
-                                       source_metadata=event.delta_file.source_info.metadata,
                                        formatted_data=event.delta_file.formatted_data)
         result = self.validate(event.context, self.param_class().parse_obj(event.params), validate_input)
         self.validate_type(result, (ValidateResult, ErrorResult, FilterResult))

@@ -156,8 +156,6 @@ type, with some combination of the fields below.
 String sourceFilename;
 // Ingress flow assigned to the DeltaFile
 String ingressFlow;
-// Metadata passed in with the DeltaFile on ingress
-Map<String, String> sourceMetadata;
 
 /* These remaining fields vary by Action type: */
 Map<String, Domain> domains;

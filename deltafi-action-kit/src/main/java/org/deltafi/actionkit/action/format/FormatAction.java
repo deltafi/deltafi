@@ -57,21 +57,20 @@ public abstract class FormatAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final FormatResultType execute(@NotNull DeltaFile deltaFile,
+    protected final FormatResultType execute(@NotNull DeltaFileMessage deltaFileMessage,
                                              @NotNull ActionContext context,
                                              @NotNull P params) {
-        return format(context, params, formatInput(deltaFile, context));
+        return format(context, params, formatInput(deltaFileMessage, context));
     }
 
-    private static FormatInput formatInput(DeltaFile deltaFile, ActionContext context) {
+    private static FormatInput formatInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return FormatInput.builder()
-                .sourceFilename(deltaFile.getSourceInfo().getFilename())
-                .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                .sourceMetadata(deltaFile.getSourceInfo().getMetadata())
-                .contentList(deltaFile.getLastProtocolLayerContent())
-                .metadata(deltaFile.getLastProtocolLayerMetadata())
-                .domains(deltaFile.domainMap())
-                .enrichment(deltaFile.enrichmentMap())
+                .sourceFilename(deltaFileMessage.getSourceFilename())
+                .ingressFlow(deltaFileMessage.getIngressFlow())
+                .contentList(deltaFileMessage.getContentList())
+                .metadata(deltaFileMessage.getMetadata())
+                .domains(deltaFileMessage.domainMap())
+                .enrichment(deltaFileMessage.enrichmentMap())
                 .actionContext(context)
                 .build();
     }

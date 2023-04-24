@@ -195,6 +195,7 @@ type DeltaFile {
   sourceInfo: SourceInfo!
   protocolStack: [ProtocolLayer!]!
   domains: [Domain!]!
+  metadata: Metadata!
   indexedMetadata: Metadata
   enrichment: [Enrichment!]!
   formattedData: [FormattedData!]!

@@ -29,7 +29,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.ContentType;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.FormattedData;
+import org.deltafi.common.types.Content;
 import org.deltafi.core.parameters.HttpEgressParameters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 class FlowfileEgressActionTest {
-    private static final byte[] CONTENT = "This is the content.".getBytes();
+    private static final byte[] DATA = "This is the content.".getBytes();
     private static final Map<String, String> METADATA = Map.of(
             "thing1", "foo",
             "thing2", "bar");
@@ -85,15 +85,11 @@ class FlowfileEgressActionTest {
             "filename", POST_FILENAME
     );
 
-    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, CONTENT.length, DID));
+    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID));
 
-    private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()
-            .filename(POST_FILENAME)
-            .contentReference(CONTENT_REFERENCE)
-            .metadata(METADATA)
-            .build();
+    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_REFERENCE);
     private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
-    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).formattedData(FORMATTED_DATA).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).sourceMetadata(Collections.emptyMap()).build();
+    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(METADATA).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).build();
 
     final static Integer NUM_TRIES = 3;
     final static Integer RETRY_WAIT = 10;
@@ -115,7 +111,7 @@ class FlowfileEgressActionTest {
 
     @Test
     public void execute() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(200, 1);
 
         assertThat(result, instanceOf(EgressResult.class));
@@ -169,7 +165,7 @@ class FlowfileEgressActionTest {
         assertThat(metadata, equalTo(Stream.of(FlowfileEgressActionTest.METADATA, ADDITIONAL_METADATA).flatMap(m -> m.entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
         byte[] content = out.toByteArray();
-        assertThat(content, equalTo(CONTENT));
+        assertThat(content, equalTo(DATA));
 
         return result;
     }
@@ -187,14 +183,14 @@ class FlowfileEgressActionTest {
 
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new TestInputStream(CONTENT));
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new TestInputStream(DATA));
         EgressResultType result = runTest(200, 1);
         assertThat(result, instanceOf(EgressResult.class));
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(CONTENT));
+        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenAnswer(invocation -> new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(505, 4);
 
         assertThat(result, instanceOf(ErrorResult.class));

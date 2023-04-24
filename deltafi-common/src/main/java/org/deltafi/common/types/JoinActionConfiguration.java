@@ -69,7 +69,7 @@ public class JoinActionConfiguration extends ActionConfiguration {
                         .systemName(systemName)
                         .build())
                 .actionParams(parameters)
-                .deltaFile(deltaFile.forQueue(name))
+                .deltaFileMessage(deltaFile.forQueue(name))
                 .joinedDeltaFiles(joinedDeltaFiles.stream()
                         .map(joinedDeltaFile -> joinedDeltaFile.forQueue(name)).collect(Collectors.toList()))
                 .build();

@@ -22,8 +22,6 @@ public class FormatInput {
     String sourceFilename;
     // Ingress flow assigned to the DeltaFile
     String ingressFlow;
-    // Metadata passed in with the DeltaFile on ingress
-    Map<String, String> sourceMetadata;
     // Content emitted by the last ingress flow action, or as
     // received at Ingress if there was no action-generated content.
     List<Content> contentList;
@@ -79,7 +77,6 @@ public class RoteFormatAction extends FormatAction<ActionParameters> {
             result.setContentReference(content.getContentReference());
             result.addMetadata(content.getMetadata());
         }
-        result.addMetadata(input.getSourceMetadata(), "sourceInfo.");
 
         return result;
     }
@@ -116,7 +113,6 @@ A description of each Input field can be found in the Java section above.
 class FormatInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]

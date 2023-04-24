@@ -221,7 +221,7 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
-                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, ingressEvent.getContent(), null)))
+                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, ingressEvent.getContent(), Map.of())))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())
@@ -771,7 +771,6 @@ public class DeltaFilesService {
             deltaFile.setChildDids(new ArrayList<>());
         }
 
-        String egressActionName = deltaFile.lastAction().getName();
         // remove the egress action, since we want the last transform to show SPLIT
         deltaFile.removeLastAction();
 
@@ -780,7 +779,6 @@ public class DeltaFilesService {
         List<DeltaFile> childDeltaFiles = contentList.stream().map(content -> {
             DeltaFile child = createChildDeltaFile(deltaFile, UUID.randomUUID().toString());
             child.getLastProtocolLayer().setContent(Collections.singletonList(content));
-            child.convertLastProtocolToFormatResult(egressActionName);
             deltaFile.getChildDids().add(child.getDid());
 
             enqueueActions.addAll(advanceOnly(child, true));
@@ -935,7 +933,7 @@ public class DeltaFilesService {
                                     .stage(DeltaFileStage.INGRESS)
                                     .actions(new ArrayList<>(List.of(action)))
                                     .sourceInfo(deltaFile.getSourceInfo())
-                                    .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), null)))
+                                    .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), Map.of())))
                                     .domains(Collections.emptyList())
                                     .enrichment(Collections.emptyList())
                                     .formattedData(Collections.emptyList())
@@ -1095,16 +1093,9 @@ public class DeltaFilesService {
         if (deltaFile.getStage() == DeltaFileStage.EGRESS && deltaFile.getFormattedData().isEmpty()) {
             // this is our first time having egress assigned
             // determine if the deltaFile needs to be split
-
-            ProtocolLayer lastProtocolLayer = deltaFile.getLastProtocolLayer();
-            if (lastProtocolLayer.getContent().size() > 1) {
+            if (deltaFile.getLastProtocolLayer().getContent().size() > 1) {
                 splitForTransformationProcessingEgress(deltaFile);
                 return;
-            } else {
-                String egressActionName = deltaFile.lastAction().getName();
-                deltaFile.convertLastProtocolToFormatResult(egressActionName);
-                // only a single enqueueAction will be queued for the egress action
-                enqueueActions.get(0).getDeltaFile().setFormattedData(deltaFile.getFormattedData());
             }
         }
 
@@ -1563,7 +1554,8 @@ public class DeltaFilesService {
 
         String joinGroup = deltaFile.getSourceInfo().getMetadata(joinActionConfiguration.getMetadataKey());
         if (joinGroup == null) {
-            joinGroup = deltaFile.getLastProtocolLayerMetadata()
+            joinGroup = joinActionConfiguration.getMetadataKey() == null ? DEFAULT_JOIN_VALUE :
+                    deltaFile.getLastProtocolLayerMetadata()
                     .getOrDefault(joinActionConfiguration.getMetadataKey(), DEFAULT_JOIN_VALUE);
         }
 

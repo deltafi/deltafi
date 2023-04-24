@@ -17,8 +17,6 @@ public class ValidateInput extends FormattedDataInput {
     String sourceFilename;
     // Ingress flow assigned to the DeltaFile
     String ingressFlow;
-    // Metadata passed in with the DeltaFile on ingress
-    Map<String, String> sourceMetadata;
 }
 ```
 
@@ -75,7 +73,6 @@ A description of each Input field can be found in the Java section above.
 class ValidateInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    source_metadata: Dict[str, str]
     formatted_data: FormattedData
 ```
 

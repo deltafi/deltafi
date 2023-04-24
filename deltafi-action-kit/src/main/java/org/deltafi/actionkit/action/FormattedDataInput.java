@@ -19,13 +19,16 @@ package org.deltafi.actionkit.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.FormattedData;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +40,10 @@ import java.util.Map;
 @Slf4j
 public abstract class FormattedDataInput {
     private ActionContext actionContext;
-    private FormattedData formattedData;
+    private Content content;
+    @Getter
+    @Setter
+    private Map<String, String> metadata;
 
     /**
      * Load a content reference from the content storage service as a byte array
@@ -74,7 +80,7 @@ public abstract class FormattedDataInput {
      * @return an InputStream for the loaded content
      */
     public InputStream loadFormattedDataStream() {
-        return loadContentAsInputStream(formattedData.getContentReference());
+        return loadContentAsInputStream(content.getContentReference());
     }
 
     /**
@@ -84,7 +90,7 @@ public abstract class FormattedDataInput {
      */
     @SuppressWarnings("unused")
     public byte[] loadFormattedDataBytes() {
-        return loadContent(formattedData.getContentReference());
+        return loadContent(content.getContentReference());
     }
 
     /**
@@ -94,7 +100,7 @@ public abstract class FormattedDataInput {
      */
     @JsonIgnore
     public String getMediaType() {
-        return formattedData.getContentReference().getMediaType();
+        return content.getContentReference().getMediaType();
     }
 
     /**
@@ -104,7 +110,7 @@ public abstract class FormattedDataInput {
      */
     @JsonIgnore
     public long getFormattedDataSize() {
-        return formattedData.getContentReference().getSize();
+        return content.getContentReference().getSize();
     }
 
     /**
@@ -114,16 +120,31 @@ public abstract class FormattedDataInput {
      */
     @JsonIgnore
     public String getFilename() {
-        return formattedData.getFilename();
+        return content.getName();
+    }
+
+
+    /**
+     * Returns the value of the formatted metadata for the given key.
+     * @param key the key for the metadata.
+     * @return the value of the metadata for the given key.
+     * @throws MissingMetadataException if the key is not found in the source metadata map.
+     */
+    public String metadata(String key) {
+        if (metadata.containsKey(key)) {
+            return metadata.get(key);
+        } else {
+            throw new MissingMetadataException(key);
+        }
     }
 
     /**
-     * Get the metadata associated with the formatted data.
-     *
-     * @return a map containing key-value pairs representing the metadata
+     * Returns the value of the formatted metadata for the given key or a default value if the key is not found.
+     * @param key the key for the metadata.
+     * @param defaultValue the default value to return if the key is not found.
+     * @return the value of the metadata for the given key or the default value if the key is not found.
      */
-    @JsonIgnore
-    public Map<String, String> getMetadata() {
-        return formattedData.getMetadata();
+    public String metadata(String key, String defaultValue) {
+        return metadata.getOrDefault(key, defaultValue);
     }
 }

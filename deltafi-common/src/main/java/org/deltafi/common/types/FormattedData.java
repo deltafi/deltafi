@@ -23,6 +23,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentReference;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +36,10 @@ public class FormattedData {
   private String filename;
   private String formatAction;
   private ContentReference contentReference;
-  private Map<String, String> metadata;
-  private List<String> egressActions;
-  private List<String> validateActions;
+  @Builder.Default
+  private Map<String, String> metadata = new HashMap<>();
+  @Builder.Default
+  private List<String> egressActions = new ArrayList<>();
+  @Builder.Default
+  private List<String> validateActions = new ArrayList<>();
 }

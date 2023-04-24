@@ -24,6 +24,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentReference;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,8 +35,10 @@ import java.util.Map;
 @Builder
 public class ProtocolLayer {
     private String action;
-    private List<Content> content;
-    private Map<String, String> metadata;
+    @Builder.Default
+    private List<Content> content = new ArrayList<>();
+    @Builder.Default
+    private Map<String, String> metadata = new HashMap<>();
 
     @JsonIgnore
     public ContentReference getContentReference() {

@@ -31,7 +31,7 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.FormattedData;
+import org.deltafi.common.types.Content;
 import org.deltafi.core.parameters.RestPostEgressParameters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,12 +74,9 @@ class RestPostEgressActionTest {
 
     private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
     private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, SEGMENT);
-    private static final FormattedData FORMATTED_DATA = FormattedData.newBuilder()
-            .filename(POST_FILENAME)
-            .contentReference(CONTENT_REFERENCE)
-            .build();
+    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_REFERENCE);
     private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
-    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).formattedData(FORMATTED_DATA).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).sourceMetadata(Collections.emptyMap()).build();
+    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(Map.of()).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).build();
     static final Integer NUM_TRIES = 3;
     static final Integer RETRY_WAIT = 10;
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);

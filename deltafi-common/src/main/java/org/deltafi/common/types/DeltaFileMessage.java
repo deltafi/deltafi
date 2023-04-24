@@ -24,13 +24,30 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+@Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class SplitEvent {
-  private SourceInfo sourceInfo;
-  private List<Content> content;
-  private Map<String, String> metadata;
+public class DeltaFileMessage {
+    String sourceFilename;
+    String ingressFlow;
+    Map<String, String> metadata;
+    List<Content> contentList;
+    List<Domain> domains;
+    List<Enrichment> enrichment;
+
+    public Map<String, Domain> domainMap() {
+        return getDomains().stream().collect(Collectors.toMap(Domain::getName, Function.identity()));
+    }
+
+    public Map<String, Enrichment> enrichmentMap() {
+        return getEnrichment().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
+    }
+
+    public SourceInfo buildSourceInfo() {
+        return SourceInfo.builder().filename(sourceFilename).flow(ingressFlow).metadata(metadata).build();
+    }
 }

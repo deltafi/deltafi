@@ -86,17 +86,17 @@ public abstract class Action<P extends ActionParameters> {
     /**
      * This is the action entry point where all specific action functionality is implemented.  This abstract method
      * must be implemented by each Action subclass.
-     * @param deltaFile An instance of DeltaFile against which the action is executed
+     * @param deltaFileMessage Attributes of the DeltaFile against which the action is executed
      * @param context The context for the specific instance of the action being executed.  This includes the name of the
      *                action, the flow to which it is attached, the version of the action, and the hostname
      * @param params Any configuration parameters that belong to the specific instance of the action.
      * @return An action result object.  If there is an error, an ErrorResult object should be returned.
      * @see ErrorResult
      */
-    protected abstract ResultType execute(@Nonnull DeltaFile deltaFile, @Nonnull ActionContext context, @Nonnull P params);
+    protected abstract ResultType execute(@Nonnull DeltaFileMessage deltaFileMessage, @Nonnull ActionContext context, @Nonnull P params);
 
     public ResultType executeAction(ActionInput actionInput) {
-        return execute(actionInput.getDeltaFile(), actionInput.getActionContext(),
+        return execute(actionInput.getDeltaFileMessage(), actionInput.getActionContext(),
                 convertToParams(actionInput.getActionParams()));
     }
 

@@ -126,6 +126,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .did("hi")
                 .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+                .sourceInfo(SourceInfo.builder().metadata(Map.of()).build())
                 .build();
         when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile("hi", false);
@@ -136,7 +137,10 @@ class DeltaFilesServiceTest {
 
     @Test
     void getRawDeltaFilePretty() throws JsonProcessingException {
-        DeltaFile deltaFile = DeltaFile.newBuilder().did("hi").build();
+        DeltaFile deltaFile = DeltaFile.newBuilder()
+                .did("hi")
+                .sourceInfo(SourceInfo.builder().metadata(Map.of()).build())
+                .build();
         when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile("hi", true);
         assertTrue(json.contains("  \"did\" : \"hi\",\n"));
