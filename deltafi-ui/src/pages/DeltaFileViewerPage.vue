@@ -388,7 +388,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 

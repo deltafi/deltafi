@@ -33,6 +33,7 @@
               <span v-else>{{ value }}</span>
               <span v-if="key === 'Stage'">
                 <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" class="ml-2" />
+                <AutoResumeBadge v-if="deltaFile.stage === 'ERROR' && deltaFile.nextAutoResume !== null" :timestamp="deltaFile.nextAutoResume" :reason="deltaFile.nextAutoResumeReason" class="ml-2" />
               </span>
             </dd>
           </dl>
@@ -47,6 +48,7 @@ import { computed, reactive, defineProps } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
+import AutoResumeBadge from "./errors/AutoResumeBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
 
 const props = defineProps({

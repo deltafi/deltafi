@@ -38,14 +38,20 @@
         </Column>
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
         <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
-        <Column field="created" header="Created" :sortable="true">
+        <Column field="created" header="Created" :sortable="true" class="timestamp-column">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
           </template>
         </Column>
-        <Column field="modified" header="Modified" :sortable="true">
+        <Column field="modified" header="Modified" :sortable="true" class="timestamp-column">
           <template #body="row">
             <Timestamp :timestamp="row.data.modified" />
+          </template>
+        </Column>
+        <Column field="nextAutoResume" header="Next Auto Resume" :sortable="true" class="timestamp-column">
+          <template #body="row">
+            <Timestamp v-if="row.data.nextAutoResume !== null" :timestamp="row.data.nextAutoResume" />
+            <a v-else>-</a>
           </template>
         </Column>
         <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false">
@@ -75,7 +81,7 @@
               <Column field="errorCause" header="Error Cause">
                 <template #body="action">
                   <span v-if="['ERROR', 'RETRIED'].includes(action.data.state) && action.data.errorCause !== null">{{ action.data.errorCause }}</span>
-                  <span v-else>N/A</span>
+                  <span v-else>-</span>
                 </template>
               </Column>
             </DataTable>
@@ -377,6 +383,10 @@ const setPersistedParams = () => {
 
 <style lang="scss">
 .all-panel {
+  .timestamp-column {
+    min-width: 14rem;
+  }
+
   .p-column-filter-overlay {
     margin-left: -18px;
     max-width: 300px;

@@ -65,7 +65,9 @@ export default function useErrors() {
             flow: true,
           },
           errorAcknowledged: true,
-          errorAcknowledgedReason: true
+          errorAcknowledgedReason: true,
+          nextAutoResume: true,
+          nextAutoResumeReason: true,
         }
       }
     };

@@ -55,14 +55,14 @@
             <InputNumber id="maxAttemptsId" v-model="selectedRuleMaxAttempts" show-buttons :min="autoResumeConfigurationMap.get('maxAttempts').min" :max="autoResumeConfigurationMap.get('maxAttempts').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxAttempts').disabled" />
           </dd>
           <dd>
-            <small id="maxAttemptsId-help">Set the number of attempts for that action.</small>
+            <small id="maxAttemptsId-help">Set the max number of attempts for this rule.</small>
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("priority").header }}</dt>
           <dd class="mb-0">
             <InputNumber id="priorityId" v-model="selectedPriority" show-buttons decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('priority').disabled" />
           </dd>
           <dd>
-            <small id="priorityId-help">Set the priorty for the rule.</small>
+            <small id="priorityId-help">Set the priority for the rule.</small>
           </dd>
           <Divider align="left">
             <div class="inline-flex align-items-center">
@@ -75,21 +75,21 @@
             <InputNumber id="delayId" v-model="selectedRuleDelay" show-buttons :min="autoResumeConfigurationMap.get('delay').min" :max="autoResumeConfigurationMap.get('delay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('delay').disabled" />
           </dd>
           <dd>
-            <small id="delayId-help">Delay is a required property admin must be set to a non-negative number.</small>
+            <small id="delayId-help">Delay (in seconds) is a required property and must be set to a non-negative number.</small>
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("maxDelay").header }}</dt>
           <dd class="mb-0">
             <InputNumber id="maxDelayId" v-model="selectedRuleMaxDelay" show-buttons :min="autoResumeConfigurationMap.get('maxDelay').min" :max="autoResumeConfigurationMap.get('maxDelay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxDelay').disabled" />
           </dd>
           <dd>
-            <small id="maxDelayId-help">Sets a cap for the total number attempts an action can have.</small>
+            <small id="maxDelayId-help">Sets the Max Delay (in second) when using Multiplier or Random.</small>
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("multiplier").header }}</dt>
           <dd class="mb-0">
             <InputNumber id="multiplierId" v-model="selectedRuleMultiplier" show-buttons :min="autoResumeConfigurationMap.get('multiplier').min" :max="autoResumeConfigurationMap.get('multiplier').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('multiplier').disabled" />
           </dd>
           <dd>
-            <small id="multiplierId-help">Setting Multipler calculates the delay by multiplying delay, multiplier, and the number of attempts for that action.</small>
+            <small id="multiplierId-help">Setting Multiplier calculates the delay by multiplying Delay, Multiplier, and the number of attempts for that action.</small>
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("random").header }}</dt>
           <dd class="mb-0">
