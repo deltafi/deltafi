@@ -99,6 +99,7 @@ export default function useDeltaFiles() {
                 size: true,
               },
               size: true,
+              mediaType: true,
             }
           },
         },
