@@ -84,6 +84,7 @@
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataViewer ref="metadataViewer" :metadata-references="allMetadata" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
+    <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
     </DialogTemplate>
@@ -120,9 +121,10 @@ import Menu from "primevue/menu";
 import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
 import { useConfirm } from "primevue/useconfirm";
+import AnnotateDialog from "@/components/AnnotateDialog.vue";
 
 const confirm = useConfirm();
-
+const annotateDialog = ref();
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
 
@@ -196,6 +198,14 @@ const staticMenuItems = reactive([
     visible: computed(() => isError.value && hasPermission("DeltaFileResume")),
     command: () => {
       metadataDialog.value.showConfirmDialog("Resume");
+    },
+  },
+  {
+    label: "Annotate",
+    icon: "fa-solid fa-asterisk fa-fw",
+    visible: computed(() =>  hasPermission("DeltaFileAnnotate")),
+    command: () => {
+      annotateDialog.value.showDialog();
     },
   },
   {

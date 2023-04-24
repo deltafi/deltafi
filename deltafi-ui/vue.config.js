@@ -14,6 +14,9 @@ module.exports = {
       "^/deltafile/ingress": {
         target: `https://ingress.${DELTAFI_DOMAIN}`,
       },
+      "^/deltafile/annotate": {
+        target: `https://${DELTAFI_DOMAIN}`,
+      },
     },
   },
   pwa: {

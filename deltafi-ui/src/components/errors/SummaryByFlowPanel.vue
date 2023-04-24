@@ -35,6 +35,7 @@
   </Panel>
   <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
+  <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
     <span id="summaryFlowAutoResumeDialog" />
   </DialogTemplate>
@@ -58,6 +59,7 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
+import AnnotateDialog from "@/components/AnnotateDialog.vue";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -76,6 +78,7 @@ const notify = useNotifications();
 const emit = defineEmits(["refreshErrors"]);
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
+const annotateDialog = ref();
 const ackErrorsDialog = ref({
   dids: [],
   visible: false,
@@ -119,6 +122,14 @@ const menuItems = ref([
     },
     visible: computed(() => hasPermission("DeltaFileAcknowledge")),
     disabled: computed(() => selectedErrors.value.length == 0),
+  },
+  {
+    label: "Annotate Selected",
+    icon: "fa-solid fa-asterisk fa-fw",
+    visible: computed(() => hasPermission("DeltaFileAnnotate")),
+    command: () => {
+      annotateDialog.value.showDialog();
+    },
   },
   {
     label: "Resume Selected",

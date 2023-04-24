@@ -136,6 +136,8 @@
     </Panel>
   </div>
   <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData" />
+  <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()"/>
+
 </template>
 
 <script setup>
@@ -170,6 +172,7 @@ import Chip from "primevue/chip";
 import OverlayPanel from "primevue/overlaypanel";
 import ContextMenu from "primevue/contextmenu";
 import MetadataDialog from "@/components/MetadataDialog.vue";
+import AnnotateDialog from "@/components/AnnotateDialog.vue";
 
 
 dayjs.extend(utc);
@@ -186,6 +189,7 @@ const optionMenu = ref();
 const selectedDids = ref([]);
 const menu = ref();
 const metadataDialog = ref();
+const annotateDialog = ref();
 
 const maxTotalRecords = 50000;
 const pageReportTemplate = computed(() => {
@@ -715,6 +719,14 @@ const menuItems = ref([
     },
     visible: computed(() => hasPermission("DeltaFileReplay")),
     disabled: computed(() => selectedDids.value.length == 0),
+  },
+  {
+    label: "Annotate",
+    icon: "fa-solid fa-asterisk fa-fw",
+    visible: computed(() =>  hasPermission("DeltaFileAnnotate")),
+    command: () => {
+      annotateDialog.value.showDialog();
+    },
   },
 ]);
 
