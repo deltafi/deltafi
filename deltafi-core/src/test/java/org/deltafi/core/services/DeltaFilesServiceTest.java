@@ -59,6 +59,7 @@ class DeltaFilesServiceTest {
 
     private final IngressFlowService ingressFlowService;
     private final EgressFlowService egressFlowService;
+    private final TransformFlowService transformFlowService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
     private final ContentStorageService contentStorageService;
@@ -74,13 +75,14 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<List<String>> stringListCaptor;
 
     DeltaFilesServiceTest(@Mock IngressFlowService ingressFlowService, @Mock EnrichFlowService enrichFlowService,
-            @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
+            @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
             @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
             @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo, @Mock IdentityService identityService,
             @Mock DeltaFileCacheService deltaFileCacheService) {
         this.ingressFlowService = ingressFlowService;
         this.egressFlowService = egressFlowService;
+        this.transformFlowService = transformFlowService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
         this.contentStorageService = contentStorageService;
@@ -88,7 +90,7 @@ class DeltaFilesServiceTest {
         this.deltaFileCacheService = deltaFileCacheService;
 
         Clock clock = new TestClock();
-        deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService,
+        deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService, transformFlowService,
                 new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
                 actionEventQueue, contentStorageService, resumePolicyService, metricService, coreAuditLogger, joinRepo,
                 identityService, new DidMutexService(), deltaFileCacheService);
@@ -287,6 +289,22 @@ class DeltaFilesServiceTest {
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
         Assertions.assertThat(action.getErrorCause()).isEqualTo("Action named action is no longer running");
         Mockito.verify(metricService).increment(new Metric(FILES_ERRORED, 1).addTags(MetricsUtil.tagsFor("unknown", "action", deltaFile.getSourceInfo().getFlow(), null)));
+    }
+
+    @Test
+    void testRequeue_transformFlow() {
+        OffsetDateTime modified = OffsetDateTime.now();
+        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.getActions().add(Action.newBuilder().name("action").state(ActionState.QUEUED).modified(modified).build());
+
+        ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null, null);
+        Mockito.when(transformFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
+
+        List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
+        Assertions.assertThat(toQueue).hasSize(1);
+        Mockito.verifyNoInteractions(stateMachine);
     }
 
     @Test

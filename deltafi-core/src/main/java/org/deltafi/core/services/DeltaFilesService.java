@@ -103,6 +103,8 @@ public class DeltaFilesService {
     private final IngressFlowService ingressFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
+
+    private final TransformFlowService transformFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
@@ -1282,7 +1284,9 @@ public class DeltaFilesService {
 
     private ActionConfiguration actionConfiguration(String actionName, DeltaFile deltaFile) {
         try {
-            if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
+            if (ProcessingType.TRANSFORMATION.equals(deltaFile.getSourceInfo().getProcessingType())) {
+                return transformFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), actionName);
+            } else if (DeltaFileStage.INGRESS.equals(deltaFile.getStage())) {
                 return ingressFlowService.findActionConfig(deltaFile.getSourceInfo().getFlow(), actionName);
             } else if (DeltaFileStage.ENRICH.equals(deltaFile.getStage())) {
                 return enrichFlowService.findActionConfig(actionName);
