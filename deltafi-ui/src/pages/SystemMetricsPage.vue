@@ -30,17 +30,26 @@
         </Column>
         <Column header="CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <ProgressBar v-tooltip.top="node.data.resources.cpu.usage + 'm / ' + node.data.resources.cpu.limit + 'm'" :value="calculatePercent(node.data.resources.cpu.usage, node.data.resources.cpu.limit)" />
+            <span v-if="node.data.resources.cpu.usage == 0 || node.data.resources.cpu.limit == 0">
+              Metrics unavailable
+            </span>
+            <ProgressBar v-else v-tooltip.top="node.data.resources.cpu.usage + 'm / ' + node.data.resources.cpu.limit + 'm'" :value="calculatePercent(node.data.resources.cpu.usage, node.data.resources.cpu.limit)" />
           </template>
         </Column>
         <Column header="Memory" field="resources.memory.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)">{{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%)</ProgressBar>
+            <span v-if="node.data.resources.memory.usage == 0 || node.data.resources.memory.limit == 0">
+              Metrics unavailable
+            </span>
+            <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)">{{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%)</ProgressBar>
           </template>
         </Column>
         <Column header="Disk" field="resources.disk.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <ProgressBar v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">{{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)</ProgressBar>
+            <span v-if="node.data.resources.disk.usage == 0 || node.data.resources.disk.limit == 0">
+              Metrics unavailable
+            </span>
+            <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">{{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)</ProgressBar>
           </template>
         </Column>
         <template #expansion="node">

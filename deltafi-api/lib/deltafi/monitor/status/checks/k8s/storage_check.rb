@@ -67,6 +67,11 @@ module Deltafi
             DF::API::V1::Metrics::System.metrics_by_node.each do |node, metrics|
               percent = (metrics&.dig(:disk, :usage).to_f / metrics&.dig(:disk, :limit) * 100).floor
               nodes_over_threshold << "__#{node}:/data__ is at __#{percent}%__" if percent >= USAGE_THRESHOLD
+            rescue StandardError => e
+              self.code = 1
+              message_lines << "##### Unable to calculate storage usage percentage for node __#{node}__.\n"
+              message_lines << "Error: #{e.message}\n"
+              message_lines << "Metrics:\n```\n#{JSON.pretty_generate(metrics)}\n```"
             end
             return if nodes_over_threshold.empty?
 

@@ -29,12 +29,7 @@ module Deltafi
             REFRESH_GRAPHITE_CACHE_SECONDS = 4.5
 
             METRICS_QUERIES = [
-              'keepLastValue(seriesByTag(\'name=gauge.node.cpu.usage\'), inf)',
-              'keepLastValue(seriesByTag(\'name=gauge.node.cpu.limit\'), inf)',
-              'keepLastValue(seriesByTag(\'name=gauge.node.disk.usage\'), inf)',
-              'keepLastValue(seriesByTag(\'name=gauge.node.disk.limit\'), inf)',
-              'keepLastValue(seriesByTag(\'name=gauge.node.memory.usage\'), inf)',
-              'keepLastValue(seriesByTag(\'name=gauge.node.memory.limit\'), inf)'
+              'keepLastValue(removeEmptySeries(seriesByTag(\'name=~gauge.node.*.*\')))'
             ].freeze
 
             @@cached_apps_by_node = nil
