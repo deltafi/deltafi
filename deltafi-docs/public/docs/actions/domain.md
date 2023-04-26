@@ -101,6 +101,7 @@ A list of required domains must be passed to the DomainAction constructor.
 class DomainInput(NamedTuple):
     source_filename: str
     ingress_flow: str
+    content: List[Content]
     metadata: Dict[str, str]
     domains: Dict[str, Domain]
 ```

@@ -19,7 +19,7 @@
 from abc import ABC, abstractmethod
 
 from deltafi.actiontype import ActionType
-from deltafi.domain import Context, DeltaFile
+from deltafi.domain import Context, DeltaFileMessage
 from deltafi.input import DomainInput, EgressInput, EnrichInput, FormatInput, LoadInput, TransformInput, ValidateInput
 from deltafi.result import *
 from pydantic import BaseModel
@@ -52,10 +52,11 @@ class DomainAction(Action):
         super().__init__(ActionType.DOMAIN, description, requires_domains, [])
 
     def execute(self, event):
-        domain_input = DomainInput(source_filename=event.delta_file.source_info.filename,
-                                   ingress_flow=event.delta_file.source_info.flow,
-                                   metadata=event.delta_file.protocol_stack[-1].metadata,
-                                   domains={domain.name: domain for domain in event.delta_file.domains})
+        domain_input = DomainInput(source_filename=event.delta_file_message.source_filename,
+                                   ingress_flow=event.delta_file_message.ingress_flow,
+                                   content=event.delta_file_message.content_list,
+                                   metadata=event.delta_file_message.metadata,
+                                   domains={domain.name: domain for domain in event.delta_file_message.domains})
         result = self.domain(event.context, self.param_class().parse_obj(event.params), domain_input)
         self.validate_type(result, (DomainResult, ErrorResult))
         return result
@@ -70,9 +71,10 @@ class EgressAction(Action):
         super().__init__(ActionType.EGRESS, description, [], [])
 
     def execute(self, event):
-        egress_input = EgressInput(source_filename=event.delta_file.source_info.filename,
-                                   ingress_flow=event.delta_file.source_info.flow,
-                                   formatted_data=event.delta_file.formatted_data)
+        egress_input = EgressInput(source_filename=event.delta_file_message.source_filename,
+                                   ingress_flow=event.delta_file_message.ingress_flow,
+                                   content=event.delta_file_message.content_list[0],
+                                   metadata=event.delta_file_message.metadata)
         result = self.egress(event.context, self.param_class().parse_obj(event.params), egress_input)
         self.validate_type(result, (EgressResult, ErrorResult, FilterResult))
         return result
@@ -87,12 +89,12 @@ class EnrichAction(Action):
         super().__init__(ActionType.ENRICH, description, requires_domains, requires_enrichments)
 
     def execute(self, event):
-        enrich_input = EnrichInput(source_filename=event.delta_file.source_info.filename,
-                                   ingress_flow=event.delta_file.source_info.flow,
-                                   content=event.delta_file.protocol_stack[-1].content,
-                                   metadata=event.delta_file.protocol_stack[-1].metadata,
-                                   domains={domain.name: domain for domain in event.delta_file.domains},
-                                   enrichment={domain.name: domain for domain in event.delta_file.enrichment})
+        enrich_input = EnrichInput(source_filename=event.delta_file_message.source_filename,
+                                   ingress_flow=event.delta_file_message.ingress_flow,
+                                   content=event.delta_file_message.content_list,
+                                   metadata=event.delta_file_message.metadata,
+                                   domains={domain.name: domain for domain in event.delta_file_message.domains},
+                                   enrichment={domain.name: domain for domain in event.delta_file_message.enrichment})
         result = self.enrich(event.context, self.param_class().parse_obj(event.params), enrich_input)
         self.validate_type(result, (EnrichResult, ErrorResult))
         return result
@@ -107,12 +109,12 @@ class FormatAction(Action):
         super().__init__(ActionType.FORMAT, description, requires_domains, requires_enrichments)
 
     def execute(self, event):
-        format_input = FormatInput(source_filename=event.delta_file.source_info.filename,
-                                   ingress_flow=event.delta_file.source_info.flow,
-                                   content=event.delta_file.protocol_stack[-1].content,
-                                   metadata=event.delta_file.protocol_stack[-1].metadata,
-                                   domains={domain.name: domain for domain in event.delta_file.domains},
-                                   enrichment={domain.name: domain for domain in event.delta_file.enrichment})
+        format_input = FormatInput(source_filename=event.delta_file_message.source_filename,
+                                   ingress_flow=event.delta_file_message.ingress_flow,
+                                   content=event.delta_file_message.content_list,
+                                   metadata=event.delta_file_message.metadata,
+                                   domains={domain.name: domain for domain in event.delta_file_message.domains},
+                                   enrichment={domain.name: domain for domain in event.delta_file_message.enrichment})
         result = self.format(event.context, self.param_class().parse_obj(event.params), format_input)
         self.validate_type(result, (FormatResult, FormatManyResult, ErrorResult, FilterResult))
         return result
@@ -127,13 +129,13 @@ class JoinAction(Action):
         super().__init__(ActionType.JOIN, description, [], [])
 
     def execute(self, event):
-        result = self.join(event.delta_file, event.joined_delta_files, event.context,
+        result = self.join(event.delta_file_message, event.joined_delta_files, event.context,
                            self.param_class().parse_obj(event.params))
         self.validate_type(result, (JoinResult, ErrorResult, FilterResult))
         return result
 
     @abstractmethod
-    def join(self, delta_file: DeltaFile, joined_delta_files: List[DeltaFile], context: Context, params: BaseModel):
+    def join(self, delta_file_message: DeltaFileMessage, joined_delta_files: List[DeltaFileMessage], context: Context, params: BaseModel):
         pass
 
 
@@ -142,10 +144,10 @@ class LoadAction(Action):
         super().__init__(ActionType.LOAD, description, [], [])
 
     def execute(self, event):
-        load_input = LoadInput(source_filename=event.delta_file.source_info.filename,
-                               ingress_flow=event.delta_file.source_info.flow,
-                               content=event.delta_file.protocol_stack[-1].content,
-                               metadata=event.delta_file.protocol_stack[-1].metadata)
+        load_input = LoadInput(source_filename=event.delta_file_message.source_filename,
+                               ingress_flow=event.delta_file_message.ingress_flow,
+                               content=event.delta_file_message.content_list,
+                               metadata=event.delta_file_message.metadata)
         result = self.load(event.context, self.param_class().parse_obj(event.params), load_input)
         self.validate_type(result, (LoadResult, LoadManyResult, ErrorResult, FilterResult, SplitResult))
         return result
@@ -160,10 +162,10 @@ class TransformAction(Action):
         super().__init__(ActionType.TRANSFORM, description, [], [])
 
     def execute(self, event):
-        transform_input = TransformInput(source_filename=event.delta_file.source_info.filename,
-                                         ingress_flow=event.delta_file.source_info.flow,
-                                         content=event.delta_file.protocol_stack[-1].content,
-                                         metadata=event.delta_file.protocol_stack[-1].metadata)
+        transform_input = TransformInput(source_filename=event.delta_file_message.source_filename,
+                                         ingress_flow=event.delta_file_message.ingress_flow,
+                                         content=event.delta_file_message.content_list,
+                                         metadata=event.delta_file_message.metadata)
         result = self.transform(event.context, self.param_class().parse_obj(event.params), transform_input)
         self.validate_type(result, (TransformResult, ErrorResult, FilterResult))
         return result
@@ -178,9 +180,10 @@ class ValidateAction(Action):
         super().__init__(ActionType.VALIDATE, description, [], [])
 
     def execute(self, event):
-        validate_input = ValidateInput(source_filename=event.delta_file.source_info.filename,
-                                       ingress_flow=event.delta_file.source_info.flow,
-                                       formatted_data=event.delta_file.formatted_data)
+        validate_input = ValidateInput(source_filename=event.delta_file_message.source_filename,
+                                       ingress_flow=event.delta_file_message.ingress_flow,
+                                       content=event.delta_file_message.content_list[0],
+                                       metadata=event.delta_file_message.metadata)
         result = self.validate(event.context, self.param_class().parse_obj(event.params), validate_input)
         self.validate_type(result, (ValidateResult, ErrorResult, FilterResult))
         return result

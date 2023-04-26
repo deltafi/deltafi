@@ -43,54 +43,25 @@ def make_context_dict():
     }
 
 
-def make_source_info_dict():
-    return {
-        'filename': "FILENAME",
-        'flow': "FLOW",
-        'metadata': {'key1': 'value1', 'key2': 'value2'}}
-
-
 def make_content_dict(name):
     return {
         'name': name,
-        'metadata': {'key1': 'value1', 'key2': 'value2'},
         'contentReference': make_content_reference(SEG_ID).json()}
 
 
-def make_protocol_layer_dict():
+def make_delta_file_message_dict():
     return {
-        'action': "ACTION",
-        'content': [make_content_dict("CONTENT_NAME")],
-        'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'}}
-
-
-def make_delta_file_dict():
-    return {
-        'did': TEST_DID,
-        'sourceInfo': make_source_info_dict(),
-        'protocolStack': [make_protocol_layer_dict()],
+        'sourceFilename': "FILENAME",
+        'ingressFlow': "FLOW",
+        'contentList': [make_content_dict("CONTENT_NAME")],
+        'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'},
         'domains': [
             {'name': "DOMAIN1", 'value': "VALUE1", 'mediaType': "MEDIA_TYPE1"},
             {'name': "DOMAIN2", 'value': "VALUE2", 'mediaType': "MEDIA_TYPE2"}
         ],
-        'indexedMetadata': {},
         'enrichment': [
             {'name': "ENRICH1", 'value': "VALUE1", 'mediaType': "MEDIA_TYPE1"},
             {'name': "ENRICH2", 'value': "VALUE2", 'mediaType': "MEDIA_TYPE2"},
             {'name': "ENRICH3", 'value': "VALUE3", 'mediaType': "MEDIA_TYPE3"}
-        ],
-        'formattedData': [
-            {
-                'filename': "FN1",
-                'formatAction': "FORMAT_ACTION",
-                'metadata': [],
-                'contentReference': make_content_reference(SEG_ID).json()
-            },
-            {
-                'filename': "FN2",
-                'formatAction': "FORMAT_ACTION2",
-                'metadata': [],
-                'contentReference': make_content_reference("2").json()
-            }
         ]
     }

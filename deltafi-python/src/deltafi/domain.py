@@ -91,52 +91,10 @@ class Domain(NamedTuple):
                       media_type=media_type)
 
 
-class FormattedData(NamedTuple):
-    filename: str
-    format_action: str
-    content_reference: ContentReference
-    metadata: Dict[str, str]
-
-    @classmethod
-    def from_dict(cls, formatted_data: dict):
-        filename = formatted_data['filename']
-        format_action = formatted_data['formatAction']
-        content_reference = ContentReference.from_dict(formatted_data['contentReference'])
-        metadata = formatted_data.get('metadata', {})
-        return FormattedData(filename=filename,
-                             format_action=format_action,
-                             content_reference=content_reference,
-                             metadata=metadata)
-
-
-class ProtocolLayer(NamedTuple):
-    action: str
-    content: List[Content]
-    metadata: Dict[str, str]
-
-    @classmethod
-    def from_dict(cls, layer: dict):
-        action = layer['action']
-        content = [Content.from_dict(item) for item in layer['content']]
-        metadata = layer.get('metadata', {})
-        return ProtocolLayer(action=action,
-                             content=content,
-                             metadata=metadata)
-
-
 class SourceInfo(NamedTuple):
     filename: str
     flow: str
     metadata: Dict[str, str]
-
-    @classmethod
-    def from_dict(cls, source_info: dict):
-        filename = source_info['filename']
-        flow = source_info['flow']
-        metadata = source_info.get('metadata', {})
-        return SourceInfo(filename=filename,
-                          flow=flow,
-                          metadata=metadata)
 
     def json(self):
         return {
@@ -146,49 +104,43 @@ class SourceInfo(NamedTuple):
         }
 
 
-class DeltaFile(NamedTuple):
-    did: str
-    source_info: SourceInfo
-    protocol_stack: List[ProtocolLayer]
+class DeltaFileMessage(NamedTuple):
+
+    source_filename: str
+    ingress_flow: str
+    metadata: Dict[str, str]
+    content_list: List[Content]
     domains: List[Domain]
-    indexed_metadata: Dict[str, str]
     enrichment: List[Domain]
-    formatted_data: FormattedData
 
     @classmethod
-    def from_dict(cls, delta_file: dict):
-        did = delta_file['did']
-        source_info = SourceInfo.from_dict(delta_file['sourceInfo'])
-        protocol_stack = []
-        if 'protocolStack' in delta_file:
-            protocol_stack = [ProtocolLayer.from_dict(layer) for layer in delta_file['protocolStack']]
-        domains = [Domain.from_dict(domain) for domain in delta_file['domains']]
-        indexed_metadata = delta_file['indexedMetadata']
-        enrichment = [Domain.from_dict(domain) for domain in delta_file['enrichment']]
-        if len(delta_file['formattedData']) > 0:
-            formatted_data = FormattedData.from_dict(delta_file['formattedData'][0])
-        else:
-            formatted_data = None
-        return DeltaFile(did=did,
-                         source_info=source_info,
-                         protocol_stack=protocol_stack,
-                         domains=domains,
-                         indexed_metadata=indexed_metadata,
-                         enrichment=enrichment,
-                         formatted_data=formatted_data)
+    def from_dict(cls, delta_file_message: dict):
+        source_filename = delta_file_message['sourceFilename']
+        ingress_flow = delta_file_message['ingressFlow']
+        metadata = delta_file_message['metadata']
+        content_list = [Content.from_dict(content) for content in delta_file_message['contentList']]
+        domains = [Domain.from_dict(domain) for domain in delta_file_message['domains']] if 'domains' in delta_file_message else []
+        enrichment = [Domain.from_dict(domain) for domain in delta_file_message['enrichment']] if 'enrichment' in delta_file_message else []
+
+        return DeltaFileMessage(source_filename=source_filename,
+                                ingress_flow=ingress_flow,
+                                metadata=metadata,
+                                content_list=content_list,
+                                domains=domains,
+                                enrichment=enrichment)
 
 
 class Event(NamedTuple):
-    delta_file: DeltaFile
+    delta_file_message: DeltaFileMessage
     context: Context
     params: dict
     queue_name: str
-    joined_delta_files: List[DeltaFile]
+    joined_delta_files: List[DeltaFileMessage]
     return_address: str
 
     @classmethod
     def create(cls, event: dict, hostname: str, content_service: ContentService, logger: Logger):
-        delta_file = DeltaFile.from_dict(event['deltaFile'])
+        delta_file_message = DeltaFileMessage.from_dict(event['deltaFileMessage'])
         context = Context.create(event['actionContext'], hostname, content_service, logger)
         params = event['actionParams']
         queue_name = None
@@ -196,9 +148,9 @@ class Event(NamedTuple):
             queue_name = event['queueName']
         joined_delta_files = []
         if 'joinedDeltaFiles' in event:
-            joined_delta_files = [DeltaFile.from_dict(joined_delta_file) for joined_delta_file in
+            joined_delta_files = [DeltaFileMessage.from_dict(joined_delta_file) for joined_delta_file in
                                   event['joinedDeltaFiles']]
         return_address = None
         if 'returnAddress' in event:
             return_address = event['returnAddress']
-        return Event(delta_file, context, params, queue_name, joined_delta_files, return_address)
+        return Event(delta_file_message, context, params, queue_name, joined_delta_files, return_address)

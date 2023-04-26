@@ -16,7 +16,7 @@
 #    limitations under the License.
 #
 
-from deltafi.domain import Content, Context, DeltaFile, Domain, Event, FormattedData, ProtocolLayer, SourceInfo
+from deltafi.domain import Content, Context, Domain, Event
 from deltafi.storage import ContentService
 from mockito import mock, unstub
 
@@ -71,53 +71,17 @@ def test_domain():
     assert domain.media_type == "MEDIA_TYPE"
 
 
-def test_formatted_data():
-    formatted_data = FormattedData.from_dict({
-        'filename': "FILENAME",
-        'formatAction': "FORMAT_ACTION",
-        'metadata': {'key1': 'value1', 'key2': 'value2'},
-        'contentReference': make_content_reference(SEG_ID).json()})
-
-    assert formatted_data.filename == "FILENAME"
-    assert formatted_data.format_action == "FORMAT_ACTION"
-    check_meta(formatted_data.metadata)
-
-
-def test_protocol_layer():
-    protocol_layer = ProtocolLayer.from_dict(make_protocol_layer_dict())
-    assert protocol_layer.action == "ACTION"
-    assert protocol_layer.content[0].name == "CONTENT_NAME"
-    check_pl_meta(protocol_layer.metadata)
-
-
-def test_source_info():
-    source_info = SourceInfo.from_dict(make_source_info_dict())
-    assert source_info.filename == "FILENAME"
-    assert source_info.flow == "FLOW"
-    check_meta(source_info.metadata)
-
-
-def test_delta_file():
-    delta_file = DeltaFile.from_dict(make_delta_file_dict())
-    assert delta_file.did == TEST_DID
-    assert delta_file.formatted_data.filename == "FN1"
-    assert len(delta_file.domains) == 2
-    assert len(delta_file.enrichment) == 3
-    assert delta_file.formatted_data.content_reference.segments[0].uuid == SEG_ID
-
-
 def test_event():
     unstub()
     mock_content_service = mock(ContentService)
     logger = None
     event = Event.create({
-        'deltaFile': make_delta_file_dict(),
+        'deltaFileMessage': make_delta_file_message_dict(),
         'actionContext': make_context_dict(),
         'actionParams': {}
     },
         "HOSTNAME", mock_content_service, logger)
 
-    assert event.delta_file.did == TEST_DID
     assert event.context.did == TEST_DID
     assert event.context.ingress_flow == "IN"
     assert event.context.content_service == mock_content_service

@@ -24,8 +24,20 @@ from deltafi.exception import MissingMetadataException, ExpectedContentException
 class DomainInput(NamedTuple):
     source_filename: str
     ingress_flow: str
+    content: List[Content]
     metadata: Dict[str, str]
     domains: Dict[str, Domain]
+
+    def has_content(self) -> bool:
+        return len(self.content) > 0
+
+    def content_at(self, index: int) -> Content:
+        if len(self.content) < index + 1:
+            raise ExpectedContentException(index, len(self.content))
+        return self.content[index]
+
+    def first_content(self):
+        return self.content_at(0)
 
     def get_metadata(self, key: str):
         if key in self.metadata:
@@ -51,7 +63,8 @@ class DomainInput(NamedTuple):
 class EgressInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    formatted_data: FormattedData
+    content: Content
+    metadata: dict
 
 
 class EnrichInput(NamedTuple):
@@ -213,4 +226,5 @@ class TransformInput(NamedTuple):
 class ValidateInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    formatted_data: FormattedData
+    content: Content
+    metadata: dict

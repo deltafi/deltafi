@@ -75,7 +75,8 @@ A description of each Input field can be found in the Java section above.
 class EgressInput(NamedTuple):
     source_filename: str
     ingress_flow: str
-    formatted_data: FormattedData
+    content: Content
+    metadata: dict
 ```
 
 ### Return Types

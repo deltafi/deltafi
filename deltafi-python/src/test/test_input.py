@@ -29,7 +29,7 @@ from .helperutils import *
 def make_event(content_service):
     logger = None
     event = Event.create({
-        'deltaFile': make_delta_file_dict(),
+        'deltaFileMessage': make_delta_file_message_dict(),
         'actionContext': make_context_dict(),
         'actionParams': {}
     },
@@ -42,10 +42,11 @@ def test_domain_input():
     mock_content_service = mock(ContentService)
     event = make_event(mock_content_service)
 
-    input = DomainInput(source_filename=event.delta_file.source_info.filename,
-                        ingress_flow=event.delta_file.source_info.flow,
-                        metadata=event.delta_file.protocol_stack[-1].metadata,
-                        domains={domain.name: domain for domain in event.delta_file.domains})
+    input = DomainInput(source_filename=event.delta_file_message.source_filename,
+                        ingress_flow=event.delta_file_message.ingress_flow,
+                        content=event.delta_file_message.content_list,
+                        metadata=event.delta_file_message.metadata,
+                        domains=event.delta_file_message.domains)
 
     assert input.get_metadata("plKey1") == "valueA"
     assert input.get_metadata_or_else("plkeyX", "not-found") == "not-found"
