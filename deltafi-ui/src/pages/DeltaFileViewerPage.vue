@@ -203,7 +203,7 @@ const staticMenuItems = reactive([
   {
     label: "Annotate",
     icon: "fa-solid fa-asterisk fa-fw",
-    visible: computed(() =>  hasPermission("DeltaFileAnnotate")),
+    visible: computed(() => hasPermission("DeltaFileAnnotate")),
     command: () => {
       annotateDialog.value.showDialog();
     },
@@ -327,6 +327,11 @@ const showProgressBar = computed(() => {
 });
 
 const loadDeltaFileData = async () => {
+  if (did.value !== did.value.toLowerCase()) {
+    router.push({ path: `/deltafile/viewer/${did.value.toLowerCase()}` });
+    return;
+  }
+
   try {
     showForm.value = false;
     await getDeltaFile(did.value);
