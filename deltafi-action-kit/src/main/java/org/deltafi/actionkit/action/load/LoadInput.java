@@ -30,7 +30,6 @@ import java.util.Map;
 @Data
 public class LoadInput extends ContentListInput {
     String sourceFilename;
-    String ingressFlow;
     Map<String, String> metadata;
 
     /**

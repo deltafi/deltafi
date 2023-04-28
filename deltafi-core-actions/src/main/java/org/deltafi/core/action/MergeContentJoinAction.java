@@ -193,7 +193,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
         String mediaType = params.getArchiveType() == null ?
                 MediaType.APPLICATION_OCTET_STREAM : params.getArchiveType().getMediaType();
 
-        SourceInfo sourceInfo = deltaFileMessage.buildSourceInfo();
+        SourceInfo sourceInfo = deltaFileMessage.buildSourceInfo(context);
         sourceInfo.setFilename(fileName);
         if (params.getReinjectFlow() != null) {
             sourceInfo.setFlow(params.getReinjectFlow());

@@ -88,8 +88,8 @@ class FlowfileEgressActionTest {
     private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID));
 
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_REFERENCE);
-    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).egressFlow(EGRESS_FLOW).build();
-    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(METADATA).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).build();
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
+    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(METADATA).sourceFilename(ORIG_FILENAME).build();
 
     final static Integer NUM_TRIES = 3;
     final static Integer RETRY_WAIT = 10;

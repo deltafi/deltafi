@@ -31,7 +31,6 @@ import java.util.Map;
 @Data
 public class DomainInput extends ContentListInput {
     String sourceFilename;
-    String ingressFlow;
     Map<String, String> metadata;
     Map<String, Domain> domains;
 

@@ -39,7 +39,6 @@ public abstract class ValidateAction<P extends ActionParameters> extends Action<
     private static ValidateInput validateInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return ValidateInput.builder()
                 .sourceFilename(deltaFileMessage.getSourceFilename())
-                .ingressFlow(deltaFileMessage.getIngressFlow())
                 .content(deltaFileMessage.getContentList().get(0))
                 .metadata(deltaFileMessage.getMetadata())
                 .actionContext(context)

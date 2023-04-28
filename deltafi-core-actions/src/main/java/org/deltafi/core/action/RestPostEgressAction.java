@@ -51,7 +51,7 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull EgressInput input) {
         try (InputStream inputStream = input.loadFormattedDataStream()) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
-                    buildHeadersMapString(context.getDid(), input.getSourceFilename(), input.getFilename(), input.getIngressFlow(),
+                    buildHeadersMapString(context.getDid(), input.getSourceFilename(), input.getFilename(), context.getIngressFlow(),
                             context.getEgressFlow(), input.getMetadata())), inputStream, input.getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {

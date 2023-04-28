@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class DeltaFileMessage {
     String sourceFilename;
-    String ingressFlow;
     Map<String, String> metadata;
     List<Content> contentList;
     List<Domain> domains;
@@ -47,7 +46,7 @@ public class DeltaFileMessage {
         return getEnrichment().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
     }
 
-    public SourceInfo buildSourceInfo() {
-        return SourceInfo.builder().filename(sourceFilename).flow(ingressFlow).metadata(metadata).build();
+    public SourceInfo buildSourceInfo(ActionContext context) {
+        return SourceInfo.builder().filename(sourceFilename).flow(context.getIngressFlow()).metadata(metadata).build();
     }
 }

@@ -53,7 +53,6 @@ class DomainAction(Action):
 
     def execute(self, event):
         domain_input = DomainInput(source_filename=event.delta_file_message.source_filename,
-                                   ingress_flow=event.delta_file_message.ingress_flow,
                                    content=event.delta_file_message.content_list,
                                    metadata=event.delta_file_message.metadata,
                                    domains={domain.name: domain for domain in event.delta_file_message.domains})
@@ -72,7 +71,6 @@ class EgressAction(Action):
 
     def execute(self, event):
         egress_input = EgressInput(source_filename=event.delta_file_message.source_filename,
-                                   ingress_flow=event.delta_file_message.ingress_flow,
                                    content=event.delta_file_message.content_list[0],
                                    metadata=event.delta_file_message.metadata)
         result = self.egress(event.context, self.param_class().parse_obj(event.params), egress_input)
@@ -90,7 +88,6 @@ class EnrichAction(Action):
 
     def execute(self, event):
         enrich_input = EnrichInput(source_filename=event.delta_file_message.source_filename,
-                                   ingress_flow=event.delta_file_message.ingress_flow,
                                    content=event.delta_file_message.content_list,
                                    metadata=event.delta_file_message.metadata,
                                    domains={domain.name: domain for domain in event.delta_file_message.domains},
@@ -110,7 +107,6 @@ class FormatAction(Action):
 
     def execute(self, event):
         format_input = FormatInput(source_filename=event.delta_file_message.source_filename,
-                                   ingress_flow=event.delta_file_message.ingress_flow,
                                    content=event.delta_file_message.content_list,
                                    metadata=event.delta_file_message.metadata,
                                    domains={domain.name: domain for domain in event.delta_file_message.domains},
@@ -145,7 +141,6 @@ class LoadAction(Action):
 
     def execute(self, event):
         load_input = LoadInput(source_filename=event.delta_file_message.source_filename,
-                               ingress_flow=event.delta_file_message.ingress_flow,
                                content=event.delta_file_message.content_list,
                                metadata=event.delta_file_message.metadata)
         result = self.load(event.context, self.param_class().parse_obj(event.params), load_input)
@@ -163,7 +158,6 @@ class TransformAction(Action):
 
     def execute(self, event):
         transform_input = TransformInput(source_filename=event.delta_file_message.source_filename,
-                                         ingress_flow=event.delta_file_message.ingress_flow,
                                          content=event.delta_file_message.content_list,
                                          metadata=event.delta_file_message.metadata)
         result = self.transform(event.context, self.param_class().parse_obj(event.params), transform_input)
@@ -181,7 +175,6 @@ class ValidateAction(Action):
 
     def execute(self, event):
         validate_input = ValidateInput(source_filename=event.delta_file_message.source_filename,
-                                       ingress_flow=event.delta_file_message.ingress_flow,
                                        content=event.delta_file_message.content_list[0],
                                        metadata=event.delta_file_message.metadata)
         result = self.validate(event.context, self.param_class().parse_obj(event.params), validate_input)

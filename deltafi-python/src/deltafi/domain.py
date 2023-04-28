@@ -105,9 +105,7 @@ class SourceInfo(NamedTuple):
 
 
 class DeltaFileMessage(NamedTuple):
-
     source_filename: str
-    ingress_flow: str
     metadata: Dict[str, str]
     content_list: List[Content]
     domains: List[Domain]
@@ -116,14 +114,12 @@ class DeltaFileMessage(NamedTuple):
     @classmethod
     def from_dict(cls, delta_file_message: dict):
         source_filename = delta_file_message['sourceFilename']
-        ingress_flow = delta_file_message['ingressFlow']
         metadata = delta_file_message['metadata']
         content_list = [Content.from_dict(content) for content in delta_file_message['contentList']]
         domains = [Domain.from_dict(domain) for domain in delta_file_message['domains']] if 'domains' in delta_file_message else []
         enrichment = [Domain.from_dict(domain) for domain in delta_file_message['enrichment']] if 'enrichment' in delta_file_message else []
 
         return DeltaFileMessage(source_filename=source_filename,
-                                ingress_flow=ingress_flow,
                                 metadata=metadata,
                                 content_list=content_list,
                                 domains=domains,

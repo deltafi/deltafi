@@ -41,7 +41,6 @@ public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
     private static LoadInput loadInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return LoadInput.builder()
                 .sourceFilename(deltaFileMessage.getSourceFilename())
-                .ingressFlow(deltaFileMessage.getIngressFlow())
                 .contentList(deltaFileMessage.getContentList())
                 .metadata(deltaFileMessage.getMetadata())
                 .actionContext(context)

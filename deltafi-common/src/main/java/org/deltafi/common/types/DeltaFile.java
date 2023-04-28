@@ -399,8 +399,7 @@ public class DeltaFile {
   public DeltaFileMessage forQueue(String actionName) {
     DeltaFileMessage.DeltaFileMessageBuilder builder =
         DeltaFileMessage.builder()
-                .sourceFilename(sourceInfo.getFilename())
-                .ingressFlow(sourceInfo.getFlow());
+                .sourceFilename(sourceInfo.getFilename());
 
     FormattedData formattedData = formattedDataFor(actionName);
 

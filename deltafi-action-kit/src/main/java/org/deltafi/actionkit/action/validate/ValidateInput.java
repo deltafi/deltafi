@@ -27,5 +27,4 @@ import org.deltafi.actionkit.action.FormattedDataInput;
 @Data
 public class ValidateInput extends FormattedDataInput {
     String sourceFilename;
-    String ingressFlow;
 }

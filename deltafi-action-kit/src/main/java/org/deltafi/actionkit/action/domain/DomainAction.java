@@ -55,7 +55,6 @@ public abstract class DomainAction<P extends ActionParameters> extends Action<P>
     private static DomainInput domainInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return DomainInput.builder()
                 .sourceFilename(deltaFileMessage.getSourceFilename())
-                .ingressFlow(deltaFileMessage.getIngressFlow())
                 .contentList(deltaFileMessage.getContentList())
                 .metadata(deltaFileMessage.getMetadata())
                 .domains(deltaFileMessage.domainMap())

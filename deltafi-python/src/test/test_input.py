@@ -43,7 +43,6 @@ def test_domain_input():
     event = make_event(mock_content_service)
 
     input = DomainInput(source_filename=event.delta_file_message.source_filename,
-                        ingress_flow=event.delta_file_message.ingress_flow,
                         content=event.delta_file_message.content_list,
                         metadata=event.delta_file_message.metadata,
                         domains=event.delta_file_message.domains)
