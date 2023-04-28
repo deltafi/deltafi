@@ -8,7 +8,7 @@ fqdns:
 persistent_volume:
   storage: '1G'
 plugins:
-  # - name: deltafi-passthrough
-  #   plugin_coordinates: "org.deltafi.passthrough:deltafi-passthrough:latest"
+  # - name: deltafi-something
+  #   plugin_coordinates: "org.deltafi.something:deltafi-something:latest"
   #   image_repository_base: localhost:5000
-  #   url: 'https://gitlab.com/deltafi/plugins/deltafi-passthrough'
+  #   url: 'https://gitlab.com/deltafi/plugins/deltafi-something'
