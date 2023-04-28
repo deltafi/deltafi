@@ -1,0 +1,15 @@
+.passthrough:
+  variables:
+    PROJECT_NAME: deltafi-passthrough
+
+passthrough:docker:
+  extends:
+    - .passthrough
+    - .docker
+  needs:
+    - job: "gradle:build"
+
+passthrough:docker-multiarch:
+  extends:
+    - .passthrough
+    - .docker-multiarch

@@ -1,0 +1,52 @@
+plugins {
+    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id "com.palantir.docker" version "${palantirDockerVersion}"
+}
+
+license {
+    header(rootProject.file('HEADER'))
+    excludes(excludeFromLicense)
+}
+
+dependencies {
+    implementation project(':deltafi-action-kit')
+
+    implementation 'org.apache.commons:commons-compress:1.21'
+    implementation 'org.tukaani:xz:1.9'
+    implementation 'org.apache.nifi:nifi-flowfile-packager:1.18.0'
+
+    testImplementation project(':deltafi-common-test')
+    testImplementation project(':deltafi-action-kit-test')
+
+    testImplementation 'io.rest-assured:rest-assured:5.2.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.9.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
+}
+
+jar {
+    // do not create the -plain.jar
+    enabled = false
+}
+
+springBoot {
+    buildInfo {
+        properties {
+            additional = [
+                    description: "DeltaFi Passthrough actions",
+                    actionKitVersion: "${project.version}"
+           ]
+        }
+    }
+}
+
+dockerPrepare {
+    dependsOn assemble
+}
+
+docker {
+    name "${project.name}:${project.version}"
+    tag "local", "${localDockerRegistry}/${project.name}:latest"
+    copySpec.from(bootJar.archiveFile).into("build/libs/")
+}

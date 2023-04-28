@@ -1,0 +1,21 @@
+{
+  "name": "join-grouped-ordered-max-ingress",
+  "type": "INGRESS",
+  "description": "Collects up to 3 ingress files with the same value for metadata 'group' at a time, waiting up to 1 hour, for processing as a single DeltaFile with component ingress files ordered by metadata 'fragment'",
+  "joinAction": {
+    "name": "RoteJoinAction",
+    "actionType": "JOIN",
+    "type": "org.deltafi.passthrough.action.RoteJoinAction",
+    "maxAge": "PT1H",
+    "maxNum": 3,
+    "metadataKey": "group",
+    "metadataIndexKey": "fragment",
+    "parameters": {
+      "domains": [
+        "binary"
+      ],
+      "minRoteDelayMS": "${minRoteDelayMS}",
+      "maxRoteDelayMS": "${maxRoteDelayMS}"
+    }
+  }
+}

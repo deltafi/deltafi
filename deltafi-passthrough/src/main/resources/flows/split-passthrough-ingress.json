@@ -1,0 +1,26 @@
+{
+  "name": "split-passthrough",
+  "type": "INGRESS",
+  "description": "Flow that splits content into children DeltaFiles",
+  "transformActions": [{
+    "name": "SplitContentTransformAction",
+    "type": "org.deltafi.core.action.ContentSplitterTransformAction",
+    "parameters": {
+      "commentChars": "${commentChars}",
+      "includeHeaders": "${includeHeaders}",
+      "maxRows": "${maxRows}",
+      "maxSize": "${maxSize}"
+    }
+  }],
+  "loadAction": {
+    "name": "PassthroughLoadManyAction",
+    "type": "org.deltafi.passthrough.action.RoteLoadManyAction",
+    "parameters": {
+      "domains": [
+        "binary"
+      ],
+      "minRoteDelayMS": "${minRoteDelayMS}",
+      "maxRoteDelayMS": "${maxRoteDelayMS}"
+    }
+  }
+}

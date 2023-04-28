@@ -1,0 +1,31 @@
+{
+  "name": "decompress-and-merge",
+  "type": "INGRESS",
+  "description": "Decompress an input archive then merge all the contents into a single file",
+  "transformActions": [
+    {
+      "name": "DecompressTransformAction",
+      "type": "org.deltafi.core.action.DecompressionTransformAction",
+      "parameters": {
+        "decompressionType": "auto"
+      }
+    },
+    {
+      "name": "MergeTransformAction",
+      "type": "org.deltafi.passthrough.action.MergeTransformAction",
+      "parameters": {
+        "mediaType": "application/octet-stream",
+        "mergedFilename": "{{filename}}.merged"
+      }
+    }
+  ],
+  "loadAction": {
+    "name": "RoteLoadAction",
+    "type": "org.deltafi.passthrough.action.RoteLoadAction",
+    "parameters": {
+      "domains": [ "binary" ],
+      "minRoteDelayMS": "${minRoteDelayMS}",
+      "maxRoteDelayMS": "${maxRoteDelayMS}"
+    }
+  }
+}

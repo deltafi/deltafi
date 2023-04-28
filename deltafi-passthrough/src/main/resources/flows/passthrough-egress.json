@@ -1,0 +1,45 @@
+{
+  "name": "passthrough",
+  "type": "EGRESS",
+  "description": "Egress flow that passes data through unchanged",
+  "includeIngressFlows": [
+    "decompress-and-merge",
+    "passthrough",
+    "split-passthrough",
+    "join-max-ingress",
+    "join-timeout-ingress",
+    "join-grouped-ordered-max-ingress"
+  ],
+  "formatAction": {
+    "name": "PassthroughFormatAction",
+    "actionType": "FORMAT",
+    "type": "org.deltafi.passthrough.action.RoteFormatAction",
+    "requiresDomains": [
+      "binary"
+    ],
+    "parameters": {
+      "minRoteDelayMS": "${minRoteDelayMS}",
+      "maxRoteDelayMS": "${maxRoteDelayMS}"
+    }
+  },
+  "validateActions": [
+    {
+      "name": "PassthroughValidateAction",
+      "actionType": "VALIDATE",
+      "type": "org.deltafi.passthrough.action.RubberStampValidateAction",
+      "parameters": {
+        "minRoteDelayMS": "${minRoteDelayMS}",
+        "maxRoteDelayMS": "${maxRoteDelayMS}"
+      }
+    }
+  ],
+  "egressAction": {
+    "name": "PassthroughEgressAction",
+    "actionType": "EGRESS",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
+      "metadataKey": "deltafiMetadata",
+      "url": "${passthroughEgressUrl}"
+    }
+  }
+}

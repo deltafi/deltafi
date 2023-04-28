@@ -5,6 +5,8 @@ deltafi:
     image: localhost:5000/deltafi-ui:latest
   core_actions:
     image: localhost:5000/deltafi-core-actions:latest
+  passthrough:
+    image: localhost:5000/deltafi-passthrough:latest
   core:
     image: localhost:5000/deltafi-core:latest
     propertyOverrides:

@@ -1,0 +1,32 @@
+{{- if .Values.deltafi.passthrough.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-passthrough
+  labels:
+    app: deltafi-passthrough
+    group: deltafi-plugins
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-passthrough
+      group: deltafi-plugins
+  template:
+    metadata:
+      labels:
+        app: deltafi-passthrough
+        group: deltafi-plugins
+    spec:
+      {{- include "initContainersWaitForCore" . | nindent 6 }}
+      containers:
+      - name: deltafi-passthrough
+        image: "{{ .Values.deltafi.passthrough.image }}"
+        {{- include "actionContainerSpec" . | nindent 8 }}
+      volumes:
+      {{- include "keyVolumes" . | nindent 6 }}
+      imagePullSecrets:
+      - name: docker-secret
+      nodeSelector:
+        node-role.deltafi.org/compute: "true"
+{{- end -}}

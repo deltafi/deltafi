@@ -1,0 +1,19 @@
+{
+  "name": "join-timeout-ingress",
+  "type": "INGRESS",
+  "description": "Collects up to 10 ingress files at a time, waiting up to 30 seconds, for processing as a single DeltaFile",
+  "joinAction": {
+    "name": "RoteJoinAction",
+    "actionType": "JOIN",
+    "type": "org.deltafi.passthrough.action.RoteJoinAction",
+    "maxAge": "PT30S",
+    "maxNum": 10,
+    "parameters": {
+      "domains": [
+        "binary"
+      ],
+      "minRoteDelayMS": "${minRoteDelayMS}",
+      "maxRoteDelayMS": "${maxRoteDelayMS}"
+    }
+  }
+}

@@ -1,0 +1,81 @@
+[
+  {
+    "name": "passthroughEgressUrl",
+    "description": "The URL to post the DeltaFile to",
+    "dataType": "STRING",
+    "required": true,
+    "defaultValue": "http://deltafi-egress-sink-service"
+  },
+  {
+    "name": "smokeEgressUrl",
+    "description": "The URL to post the DeltaFile to",
+    "dataType": "STRING",
+    "required": true,
+    "defaultValue": "http://deltafi-egress-sink-service"
+  },
+  {
+    "name": "indexedMetadata",
+    "description": "Metadata that will be indexed in the DeltaFile",
+    "dataType": "MAP",
+    "required": false
+  },
+  {
+    "name": "commentChars",
+    "description": "Characters that indicate the line is a comment when searching for headers",
+    "dataType": "STRING",
+    "required": false
+  },
+  {
+    "name": "includeHeaders",
+    "description": "When splitting content include the header line in all children",
+    "dataType": "BOOLEAN",
+    "defaultValue": false,
+    "required": false
+  },
+  {
+    "name": "maxRows",
+    "description": "Max number of rows that should be included in each child file",
+    "dataType": "NUMBER",
+    "required": false
+  },
+  {
+    "name": "maxSize",
+    "description": "Max size in bytes of each child file (including the header line if includeHeaders is true)",
+    "dataType": "NUMBER",
+    "required": false,
+    "defaultValue": "524288000"
+  },
+  {
+    "name": "sampleList",
+    "description": "Noop sample list variable",
+    "dataType": "LIST",
+    "required": false
+  },
+  {
+    "name": "sampleBoolean",
+    "description": "Noop sample boolean variable",
+    "dataType": "BOOLEAN",
+    "required": false
+  },
+  {
+    "name": "sampleNumber",
+    "description": "Noop sample number variable",
+    "dataType": "NUMBER",
+    "required": false
+  },
+  {
+    "name": "minRoteDelayMS",
+    "description": "Minimum amount of time in milliseconds for each rote action to sleep to simulate processing",
+    "dataType": "NUMBER",
+    "required": true,
+    "defaultValue": 0
+  },
+
+  {
+    "name": "maxRoteDelayMS",
+    "description": "Maximum amount of time in milliseconds for each rote action to sleep to simulate processing",
+    "dataType": "NUMBER",
+    "required": true,
+    "defaultValue": 0
+  }
+]

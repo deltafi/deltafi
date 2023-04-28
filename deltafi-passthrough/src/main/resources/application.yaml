@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: deltafi-passthrough
+  main:
+    web-application-type: none
+  mustache:
+    check-template-location: false
+
+logging:
+  level:
+    org.springframework.data.convert.CustomConversions: ERROR
+
+management:
+  metrics:
+    export:
+      graphite:
+        host: deltafi-graphite
+        port: 2003
+
+micrometer:
+  binder-enabled-default: false
+  binder:
+    jvm: false
+    system: false
+    process: false
+    http: false

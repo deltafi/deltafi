@@ -216,6 +216,7 @@ trigger:plugins:
     paths:
       - deltafi-core.container-report.json
       - deltafi-core-actions.container-report.json
+      - deltafi-passthrough.container-report.json
       - deltafi-api.container-report.json
       - deltafi-auth.container-report.json
       - deltafi-docs.container-report.json
@@ -229,7 +230,9 @@ trigger:plugins:
     - cp gl-container-scanning-report.json deltafi-core.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-core-actions CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core-actions:${CI_COMMIT_SHORT_SHA} gtcs scan
     - cp gl-container-scanning-report.json deltafi-core-actions.container-report.json
+    - CS_DOCKERFILE_PATH=deltafi-passthrough CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-passthrough:${CI_COMMIT_SHORT_SHA} gtcs scan
     - CS_DOCKERFILE_PATH=deltafi-api CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-api:${CI_COMMIT_SHORT_SHA} gtcs scan
+    - cp gl-container-scanning-report.json deltafi-passthrough.container-report.json
     - cp gl-container-scanning-report.json deltafi-api.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-auth CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-auth:${CI_COMMIT_SHORT_SHA} gtcs scan
     - cp gl-container-scanning-report.json deltafi-auth.container-report.json
