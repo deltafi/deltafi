@@ -151,13 +151,7 @@ example, a Load Action receives the `LoadInput` in the `load()` method. Each `In
 type, with some combination of the fields below.
 
 ```java
-/* These first 3 are part of all Input classes: */
-// Original filename
-String sourceFilename;
-// Ingress flow assigned to the DeltaFile
-String ingressFlow;
-
-/* These remaining fields vary by Action type: */
+/* The presence of fields varies by Action type: */
 Map<String, Domain> domains;
 Map<String, Enrichment> enrichment;
 Map<String, String> metadata;

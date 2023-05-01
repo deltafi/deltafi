@@ -30,7 +30,6 @@ import java.util.Map;
 @SuperBuilder
 @Data
 public class EnrichInput extends ContentListInput {
-    String sourceFilename;
     Map<String, String> metadata;
     Map<String, Domain> domains;
     Map<String, Enrichment> enrichment;

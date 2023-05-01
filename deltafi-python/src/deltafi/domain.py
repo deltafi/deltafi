@@ -46,6 +46,7 @@ class Content(NamedTuple):
 class Context(NamedTuple):
     did: str
     action_name: str
+    source_filename: str
     ingress_flow: str
     egress_flow: str
     system: str
@@ -57,6 +58,7 @@ class Context(NamedTuple):
     def create(cls, context: dict, hostname: str, content_service: ContentService, logger: Logger):
         did = context['did']
         action_name = context['name']
+        source_filename = context['sourceFilename']
         ingress_flow = context['ingressFlow']
         if 'egressFlow' in context:
             egress_flow = context['egressFlow']
@@ -65,6 +67,7 @@ class Context(NamedTuple):
         system = context['systemName']
         return Context(did=did,
                        action_name=action_name,
+                       source_filename=source_filename,
                        ingress_flow=ingress_flow,
                        egress_flow=egress_flow,
                        system=system,
@@ -105,7 +108,6 @@ class SourceInfo(NamedTuple):
 
 
 class DeltaFileMessage(NamedTuple):
-    source_filename: str
     metadata: Dict[str, str]
     content_list: List[Content]
     domains: List[Domain]
@@ -113,14 +115,12 @@ class DeltaFileMessage(NamedTuple):
 
     @classmethod
     def from_dict(cls, delta_file_message: dict):
-        source_filename = delta_file_message['sourceFilename']
         metadata = delta_file_message['metadata']
         content_list = [Content.from_dict(content) for content in delta_file_message['contentList']]
         domains = [Domain.from_dict(domain) for domain in delta_file_message['domains']] if 'domains' in delta_file_message else []
         enrichment = [Domain.from_dict(domain) for domain in delta_file_message['enrichment']] if 'enrichment' in delta_file_message else []
 
-        return DeltaFileMessage(source_filename=source_filename,
-                                metadata=metadata,
+        return DeltaFileMessage(metadata=metadata,
                                 content_list=content_list,
                                 domains=domains,
                                 enrichment=enrichment)

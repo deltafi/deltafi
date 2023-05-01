@@ -49,7 +49,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params,
             @NotNull EgressInput input) {
         try (InputStream inputStream = input.loadFormattedDataStream()) {
-            Map<String, String> attributes = buildHeadersMap(context.getDid(), input.getSourceFilename(),
+            Map<String, String> attributes = buildHeadersMap(context.getDid(), context.getSourceFilename(),
                     input.getFilename(), context.getIngressFlow(), context.getEgressFlow(), input.getMetadata());
             byte[] flowFile = FlowFileUtil.packageFlowFileV1(attributes, inputStream,
                     input.getFormattedDataSize());

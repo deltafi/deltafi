@@ -13,10 +13,6 @@ A TransformAction must implement the `transform` method which receives:
 
 ```java
 public class TransformInput {
-    // Original filename
-    String sourceFilename;
-    // Ingress flow assigned to the DeltaFile
-    String ingressFlow;
     // Content emitted by previous Transform Action, or as
     // received at Ingress if there was no previous Transform Action
     List<Content> contentList;

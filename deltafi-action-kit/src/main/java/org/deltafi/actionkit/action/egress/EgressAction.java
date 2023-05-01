@@ -40,7 +40,6 @@ public abstract class EgressAction<P extends ActionParameters> extends Action<P>
 
     private static EgressInput egressInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return EgressInput.builder()
-                .sourceFilename(deltaFileMessage.getSourceFilename())
                 .content(deltaFileMessage.getContentList().get(0))
                 .metadata(deltaFileMessage.getMetadata())
                 .actionContext(context)

@@ -42,7 +42,7 @@ public class RoteFormatAction extends FormatAction<RoteParameters> {
     public FormatResultType format(@NotNull ActionContext context, @NotNull RoteParameters parameters, @NotNull FormatInput input) {
         RandSleeper.sleep(parameters.getMinRoteDelayMS(), parameters.getMaxRoteDelayMS());
 
-        FormatResult result = new FormatResult(context, input.getSourceFilename());
+        FormatResult result = new FormatResult(context, context.getSourceFilename());
         List<Segment> segments = input.getContentList().stream()
                 .flatMap(content -> content.getContentReference().getSegments().stream())
                 .toList();

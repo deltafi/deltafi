@@ -18,10 +18,6 @@ If you require either just domains or just enrichment, you can set the other to 
 
 ```java
 public class FormatInput {
-    // Original filename
-    String sourceFilename;
-    // Ingress flow assigned to the DeltaFile
-    String ingressFlow;
     // Content emitted by the last ingress flow action, or as
     // received at Ingress if there was no action-generated content.
     List<Content> contentList;

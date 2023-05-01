@@ -53,6 +53,7 @@ def test_context_json():
 
     assert context.did == TEST_DID
     assert context.action_name == "ACTION_NAME_IN_FLOW"
+    assert context.source_filename == 'FILENAME'
     assert context.egress_flow == "OUT"
     assert context.system == "SYSTEM"
     assert context.hostname == "HOSTNAME"

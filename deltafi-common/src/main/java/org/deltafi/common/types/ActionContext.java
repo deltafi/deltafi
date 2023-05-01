@@ -32,6 +32,7 @@ import java.time.OffsetDateTime;
 public class ActionContext {
     private String did;
     private String name;
+    private String sourceFilename;
     private String ingressFlow;
     private String egressFlow;
     private String hostname;

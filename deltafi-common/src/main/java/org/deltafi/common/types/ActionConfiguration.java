@@ -83,6 +83,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                 .actionContext(ActionContext.builder()
                         .did(deltaFile.getDid())
                         .name(name)
+                        .sourceFilename(deltaFile.getSourceInfo().getFilename())
                         .ingressFlow(deltaFile.getSourceInfo().getFlow())
                         .egressFlow(egressFlow)
                         .systemName(systemName)

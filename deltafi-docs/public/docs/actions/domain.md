@@ -17,10 +17,6 @@ domains that are required to be present in DeltaFiles that it receives. This can
 
 ```java
 public class DomainInput {
-    // Original filename
-    String sourceFilename;
-    // Ingress flow assigned to the DeltaFile
-    String ingressFlow;
     // Metadata emitted by the Load Action
     Map<String, String> metadata;
     // Named domains and their values

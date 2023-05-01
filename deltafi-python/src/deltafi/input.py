@@ -22,7 +22,6 @@ from deltafi.exception import MissingMetadataException, ExpectedContentException
 
 
 class DomainInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: Dict[str, str]
     domains: Dict[str, Domain]
@@ -60,13 +59,11 @@ class DomainInput(NamedTuple):
 
 
 class EgressInput(NamedTuple):
-    source_filename: str
     content: Content
     metadata: dict
 
 
 class EnrichInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]
@@ -113,7 +110,6 @@ class EnrichInput(NamedTuple):
 
 
 class FormatInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]
@@ -188,7 +184,6 @@ class JoinInput(NamedTuple):
 
 
 class LoadInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: dict
 
@@ -217,7 +212,6 @@ class LoadInput(NamedTuple):
 
 
 class TransformInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: dict
 
@@ -246,6 +240,5 @@ class TransformInput(NamedTuple):
 
 
 class ValidateInput(NamedTuple):
-    source_filename: str
     content: Content
     metadata: dict

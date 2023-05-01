@@ -163,7 +163,6 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
                 Function<OutputStream, ArchiveOutputStream> archiveOutputStreamSupplier,
                 BiFunction<String, Long, ArchiveEntry> archiveEntrySupplier) throws IOException {
             ArchiveOutputStream archiveOutputStream = archiveOutputStreamSupplier.apply(outputStream);
-
             writeContent(joiningDeltaFiles, joiningDeltaFile -> {
                 Content content = joiningDeltaFile.getContentList().get(0);
                 String name = content.getName() == null ? "" : content.getName();

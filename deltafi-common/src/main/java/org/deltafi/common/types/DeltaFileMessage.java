@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DeltaFileMessage {
-    String sourceFilename;
     Map<String, String> metadata;
     List<Content> contentList;
     List<Domain> domains;
@@ -47,6 +46,6 @@ public class DeltaFileMessage {
     }
 
     public SourceInfo buildSourceInfo(ActionContext context) {
-        return SourceInfo.builder().filename(sourceFilename).flow(context.getIngressFlow()).metadata(metadata).build();
+        return SourceInfo.builder().flow(context.getIngressFlow()).metadata(metadata).build();
     }
 }

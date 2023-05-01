@@ -180,6 +180,7 @@ public abstract class ActionTest {
         return ActionContext.builder()
                 .did(DID)
                 .name("name")
+                .sourceFilename("filename")
                 .ingressFlow(null)
                 .egressFlow(null)
                 .hostname(HOSTNAME)

@@ -13,10 +13,6 @@ An EgressAction must implement the `egress` method which receives:
 
 ```java
 public class EgressInput extends FormattedDataInput {
-    // Original filename
-    String sourceFilename;
-    // Ingress flow assigned to the DeltaFile
-    String ingressFlow;
 }
 ```
 

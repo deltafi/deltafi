@@ -13,10 +13,6 @@ A ValidateAction must implement the `validate` method which receives:
 
 ```java
 public class ValidateInput extends FormattedDataInput {
-    // Original filename
-    String sourceFilename;
-    // Ingress flow assigned to the DeltaFile
-    String ingressFlow;
 }
 ```
 

@@ -13,10 +13,6 @@ A LoadAction must implement the `load` method which receives:
 
 ```java
 public class LoadInput {
-    // Original filename
-    String sourceFilename;
-    // Ingress flow assigned to the DeltaFile
-    String ingressFlow;
     // Content emitted by previous Transform Action, or as
     // received at Ingress if there was no previous Transform Action
     List<Content> contentList;

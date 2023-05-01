@@ -36,6 +36,7 @@ def make_content_reference(seg_id):
 def make_context_dict():
     return {
         'did': TEST_DID,
+        'sourceFilename': 'FILENAME',
         'ingressFlow': "IN",
         'name': "ACTION_NAME_IN_FLOW",
         'egressFlow': "OUT",
@@ -51,7 +52,6 @@ def make_content_dict(name):
 
 def make_delta_file_message_dict():
     return {
-        'sourceFilename': "FILENAME",
         'ingressFlow': "FLOW",
         'contentList': [make_content_dict("CONTENT_NAME")],
         'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'},

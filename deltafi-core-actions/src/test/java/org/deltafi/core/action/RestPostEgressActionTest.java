@@ -75,8 +75,8 @@ class RestPostEgressActionTest {
     private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
     private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, SEGMENT);
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_REFERENCE);
-    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
-    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(Map.of()).sourceFilename(ORIG_FILENAME).build();
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
+    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(Map.of()).build();
     static final Integer NUM_TRIES = 3;
     static final Integer RETRY_WAIT = 10;
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);

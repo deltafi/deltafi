@@ -26,5 +26,4 @@ import org.deltafi.actionkit.action.FormattedDataInput;
 @SuperBuilder
 @Data
 public class ValidateInput extends FormattedDataInput {
-    String sourceFilename;
 }

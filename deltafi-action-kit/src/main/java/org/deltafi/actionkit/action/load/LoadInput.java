@@ -29,7 +29,6 @@ import java.util.Map;
 @SuperBuilder
 @Data
 public class LoadInput extends ContentListInput {
-    String sourceFilename;
     Map<String, String> metadata;
 
     /**
