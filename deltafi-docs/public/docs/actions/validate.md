@@ -72,7 +72,6 @@ A description of each Input field can be found in the Java section above.
 ```python
 class ValidateInput(NamedTuple):
     source_filename: str
-    ingress_flow: str
     content: Content
     metadata: dict
 ```

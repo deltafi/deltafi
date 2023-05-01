@@ -17,8 +17,6 @@
  */
 package org.deltafi.actionkit.action.join;
 
-import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.DataAmendedResult;
@@ -32,39 +30,39 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class JoinResult extends DataAmendedResult implements JoinResultType {
-    private final List<Domain> domains = new ArrayList<>();
+public class JoinReinjectResult extends DataAmendedResult implements JoinResultType {
+    private String flow = null;
 
     /**
      * @param context execution context for the current action
+     * @param flow the flow to send the joined content to
      */
-    public JoinResult(ActionContext context) {
+    public JoinReinjectResult(ActionContext context, String flow) {
         super(context);
+        this.flow = flow;
     }
 
     /**
      * @param context execution context for the current action
+     * @param flow the flow to send the joined content to
      * @param content the joined content
      */
-    public JoinResult(ActionContext context, List<Content> content) {
+    public JoinReinjectResult(ActionContext context, String flow, List<Content> content) {
         super(context);
+        this.flow = flow;
         setContent(content);
-    }
-
-    public void addDomain(String domainName, String value, String mediaType) {
-        domains.add(new Domain(domainName, value, mediaType));
     }
 
     @Override
     protected final ActionEventType actionEventType() {
-        return ActionEventType.JOIN;
+        return ActionEventType.JOIN_REINJECT;
     }
 
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setJoin(JoinEvent.builder()
-                .domains(domains)
+        event.setJoinReinject(JoinReinjectEvent.builder()
+                .flow(flow)
                 .content(content)
                 .metadata(metadata)
                 .build());

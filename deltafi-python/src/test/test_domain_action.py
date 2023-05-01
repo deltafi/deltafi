@@ -47,7 +47,7 @@ class InvalidResult(DomainAction):
 def make_event(content_service):
     logger = None
     event = Event.create({
-        'deltaFileMessage': make_delta_file_message_dict(),
+        'deltaFileMessages': [make_delta_file_message_dict()],
         'actionContext': make_context_dict(),
         'actionParams': {}
     },

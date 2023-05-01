@@ -3,31 +3,25 @@
     "action": "TestJoinAction",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
-    "type": "JOIN",
-    "join": {
-        "sourceInfo": { "filename": "joined-content",
-            "flow": "sampleIngress",
-            "metadata": { "a":  "b" }},
-        "protocolLayer": {
-            "action": "TestJoinAction",
-            "content": [
-                {
-                    "name": "theName",
-                    "contentReference": {
-                        "segments": [
-                            {
-                                "uuid": "uuid",
-                                "offset": 0,
-                                "size": 500,
-                                "did": "%1$s"
-                            }
-                        ],
-                        "mediaType": "application/octet-stream"
-                    }
+    "type": "JOIN_REINJECT",
+    "joinReinject": {
+        "flow": "sampleIngress",
+        "content": [
+            {
+                "name": "theName",
+                "contentReference": {
+                    "segments": [
+                        {
+                            "uuid": "uuid",
+                            "offset": 0,
+                            "size": 500,
+                            "did": "%1$s"
+                        }
+                    ],
+                    "mediaType": "application/octet-stream"
                 }
-            ],
-            "metadata": { "x": "y" }
-        },
-        "domains": [ { "name": "sampleDomain", "value": "sampleDomainValue", "mediaType": "application/octet-stream" } ]
+            }
+        ],
+        "metadata": { "x": "y" }
     }
 }

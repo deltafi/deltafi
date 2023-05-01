@@ -57,8 +57,10 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final EnrichResultType execute(@NotNull DeltaFileMessage deltaFileMessage, @NotNull ActionContext context, @NotNull P params) {
-        return enrich(context, params, enrichInput(deltaFileMessage, context));
+    protected final EnrichResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
+                                             @NotNull ActionContext context,
+                                             @NotNull P params) {
+        return enrich(context, params, enrichInput(deltaFileMessages.get(0), context));
     }
 
     private static EnrichInput enrichInput(DeltaFileMessage deltaFileMessage, ActionContext context) {

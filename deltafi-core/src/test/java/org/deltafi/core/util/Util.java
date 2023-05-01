@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
-import static org.deltafi.core.util.Constants.OBJECT_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -175,33 +174,6 @@ public class Util {
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
             Assertions.assertThat(actual.getAttempt()).isEqualTo(expected.getAttempt());
         }
-    }
-
-    public static PropertySet getPropertySet(String name) {
-        PropertySet propertySet = new PropertySet();
-        propertySet.setId(name);
-        propertySet.setDisplayName(name);
-        propertySet.setDescription("some property set");
-        return propertySet;
-    }
-
-    public static PropertySet getPropertySetWithProperty(String name) {
-        PropertySet propertySet = getPropertySet(name);
-        propertySet.getProperties().add(getProperty());
-        return propertySet;
-    }
-
-    public static Property getProperty() {
-        return getProperty("a", "a-value", true);
-    }
-
-    public static Property getProperty(String name, String value, boolean editable) {
-        return Property.builder()
-                .key(name)
-                .editable(editable)
-                .defaultValue("default it")
-                .description("some property")
-                .value(value).build();
     }
 
     public static ActionDescriptor egressActionDescriptor() {

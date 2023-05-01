@@ -28,15 +28,12 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
+import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.join.JoinAction;
-import org.deltafi.actionkit.action.join.JoinResult;
-import org.deltafi.actionkit.action.join.JoinResultType;
-import org.deltafi.common.content.ContentReference;
+import org.deltafi.actionkit.action.join.*;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.DeltaFileMessage;
-import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.Content;
 import org.deltafi.core.parameters.MergeContentJoinParameters;
 import org.springframework.stereotype.Component;
 
@@ -55,7 +52,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
     private static class WriterThread implements Runnable {
         private final MergeContentJoinAction mergeContentJoinAction;
         private final PipedInputStream pipedInputStream;
-        private final List<DeltaFileMessage> joinedDeltaFiles;
+        private final List<JoinInput> joinInputs;
         private final MergeContentJoinParameters params;
 
         private boolean connected;
@@ -66,23 +63,23 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
                 markConnected();
 
                 if (params.getArchiveType() == null) {
-                    binaryConcatenate(pipedOutputStream, joinedDeltaFiles);
+                    binaryConcatenate(pipedOutputStream, joinInputs);
                     return;
                 }
 
                 switch (params.getArchiveType()) {
-                    case TAR -> archiveTar(pipedOutputStream, joinedDeltaFiles);
-                    case ZIP -> archiveZip(pipedOutputStream, joinedDeltaFiles);
-                    case AR -> archiveAr(pipedOutputStream, joinedDeltaFiles);
+                    case TAR -> archiveTar(pipedOutputStream, joinInputs);
+                    case ZIP -> archiveZip(pipedOutputStream, joinInputs);
+                    case AR -> archiveAr(pipedOutputStream, joinInputs);
 
                     case TAR_XZ -> {
                         try (XZCompressorOutputStream xz = new XZCompressorOutputStream(pipedOutputStream)) {
-                            archiveTar(xz, joinedDeltaFiles);
+                            archiveTar(xz, joinInputs);
                         }
                     }
                     case TAR_GZIP -> {
                         try (GzipCompressorOutputStream gzip = new GzipCompressorOutputStream(pipedOutputStream)) {
-                            archiveTar(gzip, joinedDeltaFiles);
+                            archiveTar(gzip, joinInputs);
                         }
                     }
                 }
@@ -105,19 +102,19 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
         }
 
         private interface ContentWriter {
-            void write(DeltaFileMessage joinedDeltaFile) throws ObjectStorageException, IOException;
+            void write(JoinInput joinInput) throws ObjectStorageException, IOException;
         }
 
-        private void binaryConcatenate(OutputStream outputStream, List<DeltaFileMessage> joinedDeltaFiles) throws IOException {
-            writeContent(joinedDeltaFiles, joinedDeltaFile -> writeContent(joinedDeltaFile, outputStream));
+        private void binaryConcatenate(OutputStream outputStream, List<JoinInput> joiningDeltaFiles) throws IOException {
+            writeContent(joiningDeltaFiles, joiningDeltaFile -> writeContent(joiningDeltaFile, outputStream));
         }
 
-        private void writeContent(List<DeltaFileMessage> joinedDeltaFiles, ContentWriter contentWriter) throws IOException {
+        private void writeContent(List<JoinInput> joiningDeltaFiles, ContentWriter contentWriter) throws IOException {
             List<String> errorMessages = new ArrayList<>();
 
-            joinedDeltaFiles.forEach(joinedDeltaFile -> {
+            joiningDeltaFiles.forEach(joiningDeltaFile -> {
                 try {
-                    contentWriter.write(joinedDeltaFile);
+                    contentWriter.write(joiningDeltaFile);
                 } catch (ObjectStorageException | IOException e) {
                     errorMessages.add(e.getMessage());
                 }
@@ -128,10 +125,10 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
             }
         }
 
-        private void writeContent(DeltaFileMessage joinedDeltaFile, OutputStream outputStream)
+        private void writeContent(JoinInput joinInput, OutputStream outputStream)
                 throws IOException {
-            try (InputStream contentStream = mergeContentJoinAction.load(
-                    joinedDeltaFile.getContentList().get(0).getContentReference())) {
+            try (InputStream contentStream = mergeContentJoinAction.loadContentAsInputStream(
+                    joinInput.getContentList().get(0).getContentReference())) {
                 byte[] buffer;
                 do {
                     buffer = contentStream.readNBytes(CONTENT_READ_BUFFER_SIZE);
@@ -140,8 +137,8 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
             }
         }
 
-        private void archiveTar(OutputStream outputStream, List<DeltaFileMessage> joinedDeltaFiles) throws IOException {
-            archive(outputStream, joinedDeltaFiles, TarArchiveOutputStream::new,
+        private void archiveTar(OutputStream outputStream, List<JoinInput> joiningDeltaFiles) throws IOException {
+            archive(outputStream, joiningDeltaFiles, TarArchiveOutputStream::new,
                     (fileName, fileSize) -> {
                         TarArchiveEntry archiveEntry = new TarArchiveEntry(fileName);
                         archiveEntry.setSize(fileSize);
@@ -149,8 +146,8 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
                     });
         }
 
-        private void archiveZip(OutputStream outputStream, List<DeltaFileMessage> joinedDeltaFiles) throws IOException {
-            archive(outputStream, joinedDeltaFiles, ZipArchiveOutputStream::new,
+        private void archiveZip(OutputStream outputStream, List<JoinInput> joiningDeltaFiles) throws IOException {
+            archive(outputStream, joiningDeltaFiles, ZipArchiveOutputStream::new,
                     (fileName, fileSize) -> {
                         ZipArchiveEntry archiveEntry = new ZipArchiveEntry(fileName);
                         archiveEntry.setSize(fileSize);
@@ -158,21 +155,21 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
                     });
         }
 
-        private void archiveAr(OutputStream outputStream, List<DeltaFileMessage> joinedDeltaFiles) throws IOException {
-            archive(outputStream, joinedDeltaFiles, ArArchiveOutputStream::new, ArArchiveEntry::new);
+        private void archiveAr(OutputStream outputStream, List<JoinInput> joiningDeltaFiles) throws IOException {
+            archive(outputStream, joiningDeltaFiles, ArArchiveOutputStream::new, ArArchiveEntry::new);
         }
 
-        private void archive(OutputStream outputStream, List<DeltaFileMessage> joinedDeltaFiles,
+        private void archive(OutputStream outputStream, List<JoinInput> joiningDeltaFiles,
                 Function<OutputStream, ArchiveOutputStream> archiveOutputStreamSupplier,
                 BiFunction<String, Long, ArchiveEntry> archiveEntrySupplier) throws IOException {
             ArchiveOutputStream archiveOutputStream = archiveOutputStreamSupplier.apply(outputStream);
 
-            writeContent(joinedDeltaFiles, joinedDeltaFile -> {
-                ContentReference contentReference = joinedDeltaFile.getContentList().get(0).getContentReference();
-                ArchiveEntry archiveEntry = archiveEntrySupplier.apply(
-                        joinedDeltaFile.getSourceFilename(), contentReference.getSize());
+            writeContent(joiningDeltaFiles, joiningDeltaFile -> {
+                Content content = joiningDeltaFile.getContentList().get(0);
+                String name = content.getName() == null ? "" : content.getName();
+                ArchiveEntry archiveEntry = archiveEntrySupplier.apply(name, content.getContentReference().getSize());
                 archiveOutputStream.putArchiveEntry(archiveEntry);
-                writeContent(joinedDeltaFile, archiveOutputStream);
+                writeContent(joiningDeltaFile, archiveOutputStream);
                 archiveOutputStream.closeArchiveEntry();
             });
 
@@ -186,34 +183,29 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
     }
 
     @Override
-    protected JoinResultType join(DeltaFileMessage deltaFileMessage, List<DeltaFileMessage> joinedDeltaFiles, ActionContext context,
-                                  MergeContentJoinParameters params) {
+    protected JoinResultType join(ActionContext context, MergeContentJoinParameters params, List<JoinInput> joinInputs) {
         String fileName = context.getDid() +
                 (params.getArchiveType() == null ? "" : ("." + params.getArchiveType().getValue()));
         String mediaType = params.getArchiveType() == null ?
                 MediaType.APPLICATION_OCTET_STREAM : params.getArchiveType().getMediaType();
 
-        SourceInfo sourceInfo = deltaFileMessage.buildSourceInfo(context);
-        sourceInfo.setFilename(fileName);
+        JoinResultType joinResult;
         if (params.getReinjectFlow() != null) {
-            sourceInfo.setFlow(params.getReinjectFlow());
+            joinResult = new JoinReinjectResult(context, params.getReinjectFlow());
+        } else {
+            joinResult = new JoinResult(context);
         }
 
         try (PipedInputStream pipedInputStream = new PipedInputStream()) {
-            WriterThread writerThread = new WriterThread(this, pipedInputStream, joinedDeltaFiles, params);
+            WriterThread writerThread = new WriterThread(this, pipedInputStream, joinInputs, params);
             new Thread(writerThread).start();
             writerThread.waitForPipeConnection();
 
-            JoinResult joinResult = new JoinResult(context, sourceInfo);
-            joinResult.saveContent(pipedInputStream, fileName, mediaType);
+            ((DataAmendedResult) joinResult).saveContent(pipedInputStream, fileName, mediaType);
 
             return joinResult;
         } catch (IOException e) {
             return new ErrorResult(context, "Unable to write joined content", e);
         }
-    }
-
-    private InputStream load(ContentReference contentReference) {
-        return loadContentAsInputStream(contentReference);
     }
 }

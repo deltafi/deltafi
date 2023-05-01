@@ -53,8 +53,7 @@ public class JoinActionConfiguration extends ActionConfiguration {
         this(name, type, maxAge);
     }
 
-    public ActionInput buildActionInput(String flow, DeltaFile deltaFile, List<DeltaFile> joinedDeltaFiles,
-            String systemName, String egressFlow) {
+    public ActionInput buildActionInput(String did, String ingressFlow, List<DeltaFile> joinedDeltaFiles, String systemName) {
         if (Objects.isNull(parameters)) {
             setParameters(Collections.emptyMap());
         }
@@ -62,15 +61,14 @@ public class JoinActionConfiguration extends ActionConfiguration {
         return ActionInput.builder()
                 .queueName(type)
                 .actionContext(ActionContext.builder()
-                        .did(deltaFile.getDid())
+                        .did(did)
                         .name(name)
-                        .ingressFlow(flow)
-                        .egressFlow(egressFlow)
+                        .ingressFlow(ingressFlow)
+                        .egressFlow(null)
                         .systemName(systemName)
                         .build())
                 .actionParams(parameters)
-                .deltaFileMessage(deltaFile.forQueue(name))
-                .joinedDeltaFiles(joinedDeltaFiles.stream()
+                .deltaFileMessages(joinedDeltaFiles.stream()
                         .map(joinedDeltaFile -> joinedDeltaFile.forQueue(name)).collect(Collectors.toList()))
                 .build();
     }

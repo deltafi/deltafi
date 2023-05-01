@@ -88,7 +88,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .systemName(systemName)
                         .build())
                 .actionParams(parameters)
-                .deltaFileMessage(deltaFile.forQueue(name))
+                .deltaFileMessages(List.of(deltaFile.forQueue(name)))
                 .returnAddress(returnAddress)
                 .build();
     }

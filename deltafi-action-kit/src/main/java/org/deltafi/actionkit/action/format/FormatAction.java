@@ -57,10 +57,10 @@ public abstract class FormatAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final FormatResultType execute(@NotNull DeltaFileMessage deltaFileMessage,
+    protected final FormatResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
                                              @NotNull ActionContext context,
                                              @NotNull P params) {
-        return format(context, params, formatInput(deltaFileMessage, context));
+        return format(context, params, formatInput(deltaFileMessages.get(0), context));
     }
 
     private static FormatInput formatInput(DeltaFileMessage deltaFileMessage, ActionContext context) {

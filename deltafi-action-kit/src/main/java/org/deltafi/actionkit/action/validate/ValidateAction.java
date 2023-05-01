@@ -22,6 +22,8 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Specialization class for VALIDATE actions.
  * @param <P> Parameter class for configuring the validate action
@@ -32,8 +34,8 @@ public abstract class ValidateAction<P extends ActionParameters> extends Action<
     }
 
     @Override
-    public final ValidateResultType execute(@NotNull DeltaFileMessage deltaFileMessage, @NotNull ActionContext context, @NotNull P params) {
-        return validate(context,params, validateInput(deltaFileMessage, context));
+    public final ValidateResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages, @NotNull ActionContext context, @NotNull P params) {
+        return validate(context,params, validateInput(deltaFileMessages.get(0), context));
     }
 
     private static ValidateInput validateInput(DeltaFileMessage deltaFileMessage, ActionContext context) {

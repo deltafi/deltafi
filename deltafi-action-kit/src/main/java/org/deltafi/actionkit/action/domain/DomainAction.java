@@ -48,8 +48,10 @@ public abstract class DomainAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final ResultType execute(@NotNull DeltaFileMessage deltaFileMessage, @NotNull ActionContext context, @NotNull P params) {
-        return extractAndValidate(context, params, domainInput(deltaFileMessage, context));
+    protected final ResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
+                                       @NotNull ActionContext context,
+                                       @NotNull P params) {
+        return extractAndValidate(context, params, domainInput(deltaFileMessages.get(0), context));
     }
 
     private static DomainInput domainInput(DeltaFileMessage deltaFileMessage, ActionContext context) {

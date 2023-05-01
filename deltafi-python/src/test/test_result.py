@@ -19,7 +19,7 @@
 from deltafi.domain import Content, SourceInfo
 from deltafi.metric import Metric
 from deltafi.result import DomainResult, EgressResult, EnrichResult, ErrorResult, FilterResult, FormatResult, \
-    FormatManyResult, JoinResult, LoadResult, SplitResult, TransformResult, ValidateResult
+    FormatManyResult, JoinResult, JoinReinjectResult, LoadResult, SplitResult, TransformResult, ValidateResult
 
 from .helperutils import make_content_reference
 
@@ -170,26 +170,18 @@ def make_content(name, seg_id):
 
 
 def test_join_result():
-    result = JoinResult(SourceInfo(filename="filename", flow="flow", metadata={"a": "1", "b": "2"}))
+    result = JoinResult()
     result.add_content([Content(name="content1", content_reference=make_content_reference("id1")),
                         Content(name="content2", content_reference=make_content_reference("id2"))])
     add_canned_metadata(result)
-    result.add_domain("domain1", "data1", "xml", )
-    result.add_domain("domain2", "data2", "json", )
+    result.add_domain("domain1", "data1", "xml")
+    result.add_domain("domain2", "data2", "json")
     assert result.result_key == "join"
     assert result.result_type == "JOIN"
     verify_no_metrics(result)
 
     response = result.response()
     assert len(response) == 3
-
-    source_info = response.get("sourceInfo")
-    assert len(source_info) == 3
-    assert source_info["filename"] == "filename"
-    assert source_info["flow"] == "flow"
-    assert len(source_info["metadata"]) == 2
-    assert source_info["metadata"]["a"] == "1"
-    assert source_info["metadata"]["b"] == "2"
 
     domains = response.get("domains")
     assert len(domains) == 2
@@ -202,13 +194,32 @@ def test_join_result():
         'value': "data2",
         'mediaType': "json"}
 
-    protocol_layer = response.get("protocolLayer")
-    assert len(protocol_layer) == 2
-    content = protocol_layer.get("content")
+    content = response.get("content")
     assert len(content) == 2
     assert content[0]['name'] == "content1"
     assert content[1]['name'] == "content2"
-    verify_all_metadata(protocol_layer)
+    verify_all_metadata(response)
+
+
+def test_join_reinject_result():
+    result = JoinReinjectResult("flow")
+    result.add_content([Content(name="content1", content_reference=make_content_reference("id1")),
+                        Content(name="content2", content_reference=make_content_reference("id2"))])
+    add_canned_metadata(result)
+    assert result.result_key == "joinReinject"
+    assert result.result_type == "JOIN_REINJECT"
+    verify_no_metrics(result)
+
+    response = result.response()
+    assert len(response) == 3
+
+    assert response.get("flow") == "flow"
+
+    content = response.get("content")
+    assert len(content) == 2
+    assert content[0]['name'] == "content1"
+    assert content[1]['name'] == "content2"
+    verify_all_metadata(response)
 
 
 def test_load_result():

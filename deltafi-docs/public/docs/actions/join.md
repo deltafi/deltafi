@@ -23,32 +23,29 @@ The joined DeltaFile may be reinjected to another flow, or it may add domains an
 ### Interface
 
 A JoinAction must implement the `join` method which receives:
-* `deltaFile` the joined DeltaFile
-* `joinedDeltaFiles` the DeltaFiles that were joined to make `deltaFile`
 * `context` the `ActionContext` describing the action's environment and current execution
 * `params` the parameters as specified in the action configuration
+* `joinInputs` metadata and content from the DeltaFiles that are being joined
 
 ### Return Types
 
-The `join` method must return a `JoinResult`. The `JoinResult` includes the content and metadata joined by the
+The `join` method must return a `JoinResult` or `JoinReinjectResult`. Both variations include the content and metadata joined by the
 `JoinAction`, with the content referencing the joined content in content storage.
 
-If reinjecting the joined DeltaFile to another flow, the flow in the `sourceInfo` field should be set.
+If reinjecting the joined DeltaFile to another flow, set the flow in the `JoinReinjectResult`.
 
-If not reinjecting to another flow, the Join Action will act as a Load Action, adding domains to the `domains` field.
+If not reinjecting to another flow, the Join Action will act like a Load Action, adding domains to the `domains` field in the `JoinResult`.
 
 ### Example
 
 ```java
 package org.deltafi.passthrough.action;
 
-import org.deltafi.actionkit.action.join.JoinAction;
-import org.deltafi.actionkit.action.join.JoinResult;
+import org.deltafi.actionkit.action.join.*;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.passthrough.param.RoteJoinParameters;
+import org.deltafi.passthrough.util.RandSleeper;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
@@ -62,22 +59,90 @@ public class RoteJoinAction extends JoinAction<RoteJoinParameters> {
     }
 
     @Override
-    protected JoinResult join(DeltaFile deltaFile, List<DeltaFile> joinedFromDeltaFiles, ActionContext context,
-            RoteJoinParameters params) {
-        SourceInfo sourceInfo = deltaFile.getSourceInfo();
-        if (params.getReinjectFlow() != null) {
-            sourceInfo.setFlow(params.getReinjectFlow());
-        }
+    protected JoinResultType join(ActionContext context, RoteJoinParameters params, List<JoinInput> joinInputs) {
+        RandSleeper.sleep(params.getMinRoteDelayMS(), params.getMaxRoteDelayMS());
 
-        List<Content> contentList = joinedFromDeltaFiles.stream()
-                .flatMap(joinedFromDeltaFile -> joinedFromDeltaFile.getLastProtocolLayerContent().stream())
+        List<Content> contentList = joinInputs.stream()
+                .flatMap(joinedFromDeltaFile -> joinedFromDeltaFile.getContentList().stream())
                 .collect(Collectors.toList());
 
-        JoinResult joinResult = new JoinResult(context, sourceInfo, contentList);
-        if (params.getDomains() != null) {
-            params.getDomains().forEach(domain -> joinResult.addDomain(domain, null, MediaType.TEXT_PLAIN));
+        if (params.getReinjectFlow() != null) {
+            return new JoinReinjectResult(context, params.getReinjectFlow(), contentList);
+        } else {
+            JoinResult joinResult = new JoinResult(context, contentList);
+            if (params.getDomains() != null) {
+                params.getDomains().forEach(domain -> joinResult.addDomain(domain, null, MediaType.TEXT_PLAIN));
+            }
+            return joinResult;
         }
-        return joinResult;
     }
 }
 ```
+
+## Python
+
+### Interface
+
+A JoinAction must implement the `join` method which receives:
+* `Context` describing the action's environment and current execution
+* `BaseModel` contains flow parameters for use by the action, matching the type specified by `param_class()` method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
+* `List[JoinInput]` provides metadata and content input for each joining DeltaFile to the action
+
+### Load Input
+
+A description of each Input field can be found in the Java section above.
+
+```python
+class JoinInput(NamedTuple):
+    content: List[Content]
+    metadata: dict
+```
+
+### Return Types
+
+The `join()` method must return one of: `JoinResult`, `JoinReinjectResult`, `ErrorResult`, or `FilterResult`.
+
+The `JoinResult` includes the domains, content, and metadata created by the `JoinAction`.
+The `JoinReinjectResult` includes the reinjected flow, content, and metadata created by the `JoinAction`.
+
+### Example
+
+```python
+from typing import List, Optional
+
+from deltafi.action import JoinAction
+from deltafi.domain import Context
+from deltafi.input import JoinInput
+from deltafi.result import JoinResult, JoinReinjectResult
+from pydantic import BaseModel, Field
+
+
+class HelloWorldJoinParameters(BaseModel):
+    reinject_flow: Optional[str] = Field(alias="reinjectFlow", description="An optional ingress flow to reinject to")
+    domains: List[str] = Field(description="The domains used by the join action")
+
+
+class HelloWorldJoinAction(JoinAction):
+    def __init__(self):
+        super().__init__('Joins content from multiple DeltaFiles')
+
+    def param_class(self):
+        return HelloWorldJoinParameters
+
+    def join(self, context: Context, params: HelloWorldJoinParameters, join_inputs: List[JoinInput]):
+        context.logger.debug(f"Joining {len(join_inputs)} to {context.did} with params: {params}")
+
+        if params.reinject_flow:
+            join_result = JoinReinjectResult(params.reinject_flow)
+        else:
+            join_result = JoinResult()
+            if params.domains:
+                for domain in params.domains:
+                    join_result.add_domain(domain, None, 'text/plan')
+
+        for join_input in join_inputs:
+            join_result.add_content(join_input.content)
+
+        return join_result
+```
+

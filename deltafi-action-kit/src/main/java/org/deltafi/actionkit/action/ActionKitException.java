@@ -18,6 +18,10 @@
 package org.deltafi.actionkit.action;
 
 public class ActionKitException extends RuntimeException {
+    public ActionKitException(String message) {
+        super(message);
+    }
+
     public ActionKitException(String message, Throwable e) {
         super(message, e);
     }

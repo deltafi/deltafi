@@ -34,27 +34,34 @@ public abstract class JoinAction<P extends ActionParameters> extends Action<P> {
     }
 
     @Override
-    public final JoinResultType executeAction(ActionInput actionInput) {
-        return join(actionInput.getDeltaFileMessage(), actionInput.getJoinedDeltaFiles(), actionInput.getActionContext(),
-                convertToParams(actionInput.getActionParams()));
+    protected final JoinResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
+                                           @NotNull ActionContext context,
+                                           @NotNull P params) {
+        return join(context, params, joinInputs(deltaFileMessages, context));
+    }
+
+    private static List<JoinInput> joinInputs(List<DeltaFileMessage> deltaFileMessages, ActionContext context) {
+        return deltaFileMessages.stream()
+                .map(deltaFileMessage -> joinInput(deltaFileMessage, context))
+                .toList();
+    }
+
+    private static JoinInput joinInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
+        return JoinInput.builder()
+                .contentList(deltaFileMessage.getContentList())
+                .metadata(deltaFileMessage.getMetadata())
+                .actionContext(context)
+                .build();
     }
 
     /**
      * Joins content and metadata into the provided DeltaFile from the provided joined DeltaFiles.
-     * @param deltaFileMessage attributes of the DeltaFile to join into
-     * @param joinedDeltaFiles the DeltaFiles to join from
      * @param context the context for this action execution
      * @param params the parameters that configure the behavior of this action execution
+     * @param joinInputs Action inputs from the parent DeltaFiles
      * @return a {@link JoinResult} object containing results for the action execution, an
      * {@link org.deltafi.actionkit.action.error.ErrorResult} if an error occurs, or a
      * {@link org.deltafi.actionkit.action.filter.FilterResult} if the joined DeltaFile should be filtered
      */
-    protected abstract JoinResultType join(DeltaFileMessage deltaFileMessage, List<DeltaFileMessage> joinedDeltaFiles, ActionContext context,
-                                           P params);
-
-    @Override
-    protected JoinResultType execute(@NotNull DeltaFileMessage deltaFileMessage, @NotNull ActionContext context,
-            @NotNull ActionParameters params) {
-        throw new UnsupportedOperationException("Join actions require a list of joined DeltaFiles");
-    }
+    protected abstract JoinResultType join(ActionContext context, P params, List<JoinInput> joinInputs);
 }

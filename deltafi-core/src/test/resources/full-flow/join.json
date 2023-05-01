@@ -5,29 +5,23 @@
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "JOIN",
     "join": {
-        "sourceInfo": { "filename": "joined-content",
-            "flow": "joinFlow",
-            "metadata": { "a":  "b" }},
-        "protocolLayer": {
-            "action": "TestJoinAction",
-            "content": [
-                {
-                    "name": "theName",
-                    "contentReference": {
-                        "segments": [
-                            {
-                                "uuid": "uuid",
-                                "offset": 0,
-                                "size": 500,
-                                "did": "%1$s"
-                            }
-                        ],
-                        "mediaType": "application/octet-stream"
-                    }
+        "content": [
+            {
+                "name": "theName",
+                "contentReference": {
+                    "segments": [
+                        {
+                            "uuid": "uuid",
+                            "offset": 0,
+                            "size": 500,
+                            "did": "%1$s"
+                        }
+                    ],
+                    "mediaType": "application/octet-stream"
                 }
-            ],
-            "metadata": { "x": "y" }
-        },
+            }
+        ],
+        "metadata": { "x": "y" },
         "domains": [ { "name": "sampleDomain", "value": "sampleDomainValue", "mediaType": "application/octet-stream" } ]
     }
 }

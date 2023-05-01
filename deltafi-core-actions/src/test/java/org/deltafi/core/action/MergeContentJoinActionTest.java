@@ -25,6 +25,8 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+import org.deltafi.actionkit.action.join.JoinInput;
+import org.deltafi.actionkit.action.join.JoinReinjectResult;
 import org.deltafi.actionkit.action.join.JoinResult;
 import org.deltafi.actionkit.action.join.JoinResultType;
 import org.deltafi.common.content.ContentReference;
@@ -33,6 +35,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.*;
 import org.deltafi.core.parameters.ArchiveType;
+import org.deltafi.core.parameters.MergeContentJoinParameters;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +43,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +55,8 @@ public class MergeContentJoinActionTest {
 
     private static final String JOINED_DID = "12345";
 
-    private static ActionInput actionInput;
+    private static final ActionContext CONTEXT = ActionContext.builder().name("action").did(JOINED_DID).contentStorageService(CONTENT_STORAGE_SERVICE).build();
+    private static List<JoinInput> joinInputs;
 
     @BeforeAll
     public static void beforeAll() throws ObjectStorageException {
@@ -61,45 +64,30 @@ public class MergeContentJoinActionTest {
 
         ContentReference join1ContentReference = CONTENT_STORAGE_SERVICE.save("join-1-did",
                 "join 1 content".getBytes(StandardCharsets.UTF_8), "join 1 media type");
-        DeltaFile join1 = DeltaFile.newBuilder()
-                .did(join1ContentReference.getSegments().get(0).getDid())
-                .sourceInfo(SourceInfo.builder().filename("join-1-file").build())
-                .protocolStack(List.of(ProtocolLayer.builder()
-                        .content(List.of(Content.newBuilder().
-                                contentReference(join1ContentReference)
-                                .build()))
-                        .build()))
-                .build();
+        JoinInput join1 = JoinInput.builder()
+                .contentList((List.of(Content.newBuilder()
+                        .contentReference(join1ContentReference)
+                        .name("join-1-file")
+                        .build())
+                )).build();
 
         ContentReference join2ContentReference = CONTENT_STORAGE_SERVICE.save("join-2-did",
                 "join 2 content".getBytes(StandardCharsets.UTF_8), "join 2 media type");
-        DeltaFile join2 = DeltaFile.newBuilder()
-                .did(join2ContentReference.getSegments().get(0).getDid())
-                .sourceInfo(SourceInfo.builder().filename("join-2-file").build())
-                .protocolStack(List.of(ProtocolLayer.builder()
-                        .content(List.of(Content.newBuilder().
-                                contentReference(join2ContentReference)
-                                .build()))
-                        .build()))
-                .build();
+        JoinInput join2 = JoinInput.builder()
+                .contentList((List.of(Content.newBuilder()
+                        .contentReference(join2ContentReference)
+                        .name("join-2-file")
+                        .build())
+                )).build();
 
-        actionInput = ActionInput.builder()
-                .actionContext(ActionContext.builder().did(JOINED_DID).contentStorageService(CONTENT_STORAGE_SERVICE).build())
-                .deltaFileMessage(DeltaFile.newBuilder()
-                        .sourceInfo(SourceInfo.builder().build())
-                        .build().forQueue("action"))
-                .joinedDeltaFiles(List.of(join1.forQueue("action"), join2.forQueue("action")))
-                .build();
+        joinInputs = List.of(join1, join2);
     }
 
     @Test
     public void mergesToBinaryConcatenation() throws ObjectStorageException, IOException {
-        actionInput.setActionParams(Map.of());
-
-        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
+        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.join(CONTEXT, new MergeContentJoinParameters(), joinInputs);
 
         assertInstanceOf(JoinResult.class, joinResult);
-        assertEquals(JOINED_DID, ((JoinResult) joinResult).getSourceInfo().getFilename());
         try (InputStream joinedContentInputStream = CONTENT_STORAGE_SERVICE.load(
                 ((JoinResult) joinResult).getContent().get(0).getContentReference())) {
             assertArrayEquals("join 1 contentjoin 2 content".getBytes(StandardCharsets.UTF_8),
@@ -146,24 +134,24 @@ public class MergeContentJoinActionTest {
 
     @Test
     public void mergesAndReinjects() {
-        actionInput.setActionParams(Map.of("reinjectFlow", "new-flow"));
+        MergeContentJoinParameters params = new MergeContentJoinParameters();
+        params.setReinjectFlow("new-flow");
 
-        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
+        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.join(CONTEXT, params, joinInputs);
 
-        assertInstanceOf(JoinResult.class, joinResult);
-        assertEquals("new-flow", ((JoinResult) joinResult).getSourceInfo().getFlow());
+        assertInstanceOf(JoinReinjectResult.class, joinResult);
+        assertEquals("new-flow", ((JoinReinjectResult) joinResult).getFlow());
     }
 
     private void execute(ArchiveType archiveType, Function<InputStream, InputStream> joinedContentInputStreamSupplier,
             Function<InputStream, ArchiveInputStream> archiveInputStreamSupplier)
             throws IOException, ObjectStorageException {
-        actionInput.setActionParams(Map.of("archiveType", archiveType));
+        MergeContentJoinParameters params = new MergeContentJoinParameters();
+        params.setArchiveType(archiveType);
 
-        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.executeAction(actionInput);
+        JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.join(CONTEXT, params, joinInputs);
 
         assertInstanceOf(JoinResult.class, joinResult);
-        assertEquals(JOINED_DID + "." + archiveType.getValue(),
-                ((JoinResult) joinResult).getSourceInfo().getFilename());
         assertEquals(archiveType.getMediaType(),
                 ((JoinResult) joinResult).getContent().get(0).getContentReference().getMediaType());
         try (InputStream joinedContentInputStream = CONTENT_STORAGE_SERVICE.load(

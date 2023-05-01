@@ -274,6 +274,10 @@ public class DeltaFilesService {
                     generateMetrics(metrics, event, deltaFile);
                     join(deltaFile, event);
                 }
+                case JOIN_REINJECT -> {
+                    generateMetrics(metrics, event, deltaFile);
+                    joinReinject(deltaFile, event);
+                }
                 case DOMAIN -> {
                     generateMetrics(metrics, event, deltaFile);
                     domain(deltaFile, event);
@@ -348,49 +352,38 @@ public class DeltaFilesService {
     public void join(DeltaFile deltaFile, ActionEventInput event) {
         log.debug("Received join for {}", event.getDid());
 
-        if (!event.getJoin().getSourceInfo().getFlow().equals(deltaFile.getSourceInfo().getFlow())) {
-            log.debug("Reinjecting to {} flow", event.getJoin().getSourceInfo().getFlow());
-
-            deltaFile.setSourceInfo(event.getJoin().getSourceInfo());
-
-            OffsetDateTime now = OffsetDateTime.now(clock);
-
-            Action action = Action.newBuilder()
-                    .name(event.getAction())
-                    .state(ActionState.COMPLETE)
-                    .created(now)
-                    .modified(now)
-                    .start(event.getStart())
-                    .stop(event.getStop())
-                    .build();
-            deltaFile.setActions(new ArrayList<>(List.of(action)));
-
-            ProtocolLayer protocolLayer = event.getJoin().getProtocolLayer();
-            if (protocolLayer != null) {
-                protocolLayer.setAction(event.getAction());
-                deltaFile.setProtocolStack(List.of(protocolLayer));
-            }
-
-            advanceAndSave(deltaFile);
-            return;
-        }
-
-        deltaFile.setSourceInfo(event.getJoin().getSourceInfo());
-
         deltaFile.completeAction(event);
-
-        if (event.getJoin().getProtocolLayer() != null) {
-            event.getJoin().getProtocolLayer().setAction(event.getAction());
-            deltaFile.setProtocolStack(List.of(event.getJoin().getProtocolLayer()));
-        }
+        ProtocolLayer protocolLayer = ProtocolLayer.builder()
+                .action(event.getAction())
+                .content(event.getJoin().getContent())
+                .metadata(event.getJoin().getMetadata())
+                .build();
+        deltaFile.getProtocolStack().add(protocolLayer);
 
         if (event.getJoin().getDomains() != null) {
-            for (Domain domain : event.getJoin().getDomains()) {
-                deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
-            }
+            deltaFile.getDomains().addAll(event.getJoin().getDomains());
         }
 
         deltaFile.setStage(DeltaFileStage.ENRICH);
+
+        advanceAndSave(deltaFile);
+    }
+
+
+
+    public void joinReinject(DeltaFile deltaFile, ActionEventInput event) {
+        log.debug("Received joinReinject for {}", event.getDid());
+
+        deltaFile.completeAction(event);
+        ProtocolLayer protocolLayer = ProtocolLayer.builder()
+                .action(event.getAction())
+                .content(event.getJoinReinject().getContent())
+                .metadata(event.getJoinReinject().getMetadata())
+                .build();
+        deltaFile.getProtocolStack().add(protocolLayer);
+
+        log.debug("Reinjecting {} to {} flow", event.getDid(), event.getJoinReinject().getFlow());
+        deltaFile.getSourceInfo().setFlow(event.getJoinReinject().getFlow());
 
         advanceAndSave(deltaFile);
     }
@@ -1498,18 +1491,18 @@ public class DeltaFilesService {
         joinedDeltaFile.queueNewAction(joinEntry.getId().getAction());
         deltaFileRepo.save(joinedDeltaFile);
 
-        enqueueActions(List.of(buildJoinActionInput(joinEntry.getId().getFlow(), joinedDeltaFile, joinedDeltaFiles)));
+        enqueueActions(List.of(buildJoinActionInput(joinedDeltaFile, joinedDeltaFiles)));
 
         joinRepo.deleteById(joinEntry.getId());
     }
 
-    private ActionInput buildJoinActionInput(String flow, DeltaFile joinedDeltaFile, List<DeltaFile> joinedDeltaFiles) {
-        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(flow);
-        return ingressFlow.getJoinAction().buildActionInput(ingressFlow.getName(), joinedDeltaFile, joinedDeltaFiles,
-                getProperties().getSystemName(), null);
+    private ActionInput buildJoinActionInput(DeltaFile joinedDeltaFile, List<DeltaFile> joiningDeltaFiles) {
+        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(joinedDeltaFile.getSourceInfo().getFlow());
+        return ingressFlow.getJoinAction().buildActionInput(joinedDeltaFile.getDid(), ingressFlow.getName(),
+                joiningDeltaFiles, getProperties().getSystemName());
     }
 
-    public static final String JOINED_SOURCE_FILE_NAME = "multiple";
+    public static final String JOINED_SOURCE_FILE_NAME = "joined-content";
 
     private DeltaFile buildJoinedDeltaFile(String flow, List<DeltaFile> deltaFiles) {
         log.debug("Joining {}", deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.joining(",")));
@@ -1524,7 +1517,7 @@ public class DeltaFilesService {
             deltaFile.setStage(DeltaFileStage.JOINED);
             deltaFile.setChildDids(List.of(joinedDeltaFileId));
 
-            joinedSourceInfo.addMetadata(deltaFile.getSourceInfo().getMetadata());
+            joinedSourceInfo.addMetadata(deltaFile.getMetadata());
         }
         deltaFileRepo.saveAll(deltaFiles);
 
@@ -1559,18 +1552,12 @@ public class DeltaFilesService {
         String joinGroup = deltaFile.getSourceInfo().getMetadata(joinActionConfiguration.getMetadataKey());
         if (joinGroup == null) {
             joinGroup = joinActionConfiguration.getMetadataKey() == null ? DEFAULT_JOIN_VALUE :
-                    deltaFile.getLastProtocolLayerMetadata()
-                    .getOrDefault(joinActionConfiguration.getMetadataKey(), DEFAULT_JOIN_VALUE);
+                    deltaFile.getMetadata().getOrDefault(joinActionConfiguration.getMetadataKey(), DEFAULT_JOIN_VALUE);
         }
 
         String joinIndex = Long.toString(clock.millis());
         if (joinActionConfiguration.getMetadataIndexKey() != null) {
-            String metadataJoinIndex = deltaFile.getSourceInfo().getMetadata(joinActionConfiguration.getMetadataIndexKey());
-            if (metadataJoinIndex == null) {
-                metadataJoinIndex = deltaFile.getLastProtocolLayerMetadata()
-                        .getOrDefault(joinActionConfiguration.getMetadataIndexKey(), joinIndex);
-            }
-            joinIndex = metadataJoinIndex;
+            joinIndex = deltaFile.getMetadata().getOrDefault(joinActionConfiguration.getMetadataIndexKey(), joinIndex);
         }
 
         JoinEntryId joinEntryId = new JoinEntryId(deltaFile.getSourceInfo().getFlow(),

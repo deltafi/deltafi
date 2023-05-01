@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,17 +87,20 @@ public abstract class Action<P extends ActionParameters> {
     /**
      * This is the action entry point where all specific action functionality is implemented.  This abstract method
      * must be implemented by each Action subclass.
-     * @param deltaFileMessage Attributes of the DeltaFile against which the action is executed
+     * @param deltaFileMessages Attributes of the DeltaFiles against which the action is executed
      * @param context The context for the specific instance of the action being executed.  This includes the name of the
      *                action, the flow to which it is attached, the version of the action, and the hostname
      * @param params Any configuration parameters that belong to the specific instance of the action.
      * @return An action result object.  If there is an error, an ErrorResult object should be returned.
      * @see ErrorResult
      */
-    protected abstract ResultType execute(@Nonnull DeltaFileMessage deltaFileMessage, @Nonnull ActionContext context, @Nonnull P params);
+    protected abstract ResultType execute(@Nonnull List<DeltaFileMessage> deltaFileMessages, @Nonnull ActionContext context, @Nonnull P params);
 
     public ResultType executeAction(ActionInput actionInput) {
-        return execute(actionInput.getDeltaFileMessage(), actionInput.getActionContext(),
+        if (actionInput.getDeltaFileMessages() == null || actionInput.getDeltaFileMessages().isEmpty()) {
+            throw new ActionKitException("Received actionInput with no deltaFileMessages for did " + actionInput.getActionContext().getDid());
+        }
+        return execute(actionInput.getDeltaFileMessages(), actionInput.getActionContext(),
                 convertToParams(actionInput.getActionParams()));
     }
 

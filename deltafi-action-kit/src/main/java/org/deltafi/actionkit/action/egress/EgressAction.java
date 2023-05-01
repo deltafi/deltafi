@@ -22,6 +22,8 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Specialization class for EGRESS actions.
  * @param <P> Parameter class for configuring the egress action
@@ -32,8 +34,8 @@ public abstract class EgressAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final EgressResultType execute(@NotNull DeltaFileMessage deltaFileMessage, @NotNull ActionContext context, @NotNull P params) {
-        return egress(context, params, egressInput(deltaFileMessage, context));
+    protected final EgressResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages, @NotNull ActionContext context, @NotNull P params) {
+        return egress(context, params, egressInput(deltaFileMessages.get(0), context));
     }
 
     private static EgressInput egressInput(DeltaFileMessage deltaFileMessage, ActionContext context) {

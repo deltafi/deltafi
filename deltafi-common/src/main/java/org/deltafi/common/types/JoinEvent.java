@@ -23,13 +23,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class JoinEvent {
-  private SourceInfo sourceInfo;
   private List<Domain> domains;
-  private ProtocolLayer protocolLayer;
+  private List<Content> content;
+  private Map<String, String> metadata;
 }

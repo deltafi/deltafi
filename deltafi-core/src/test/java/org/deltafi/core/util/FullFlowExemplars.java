@@ -29,6 +29,8 @@ import java.util.*;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.types.ActionState.QUEUED;
 import static org.deltafi.common.types.DeltaFileStage.ENRICH;
+import static org.deltafi.common.types.DeltaFileStage.INGRESS;
+import static org.deltafi.core.services.DeltaFilesService.JOINED_SOURCE_FILE_NAME;
 import static org.deltafi.core.util.Constants.*;
 
 public class FullFlowExemplars {
@@ -135,7 +137,7 @@ public class FullFlowExemplars {
         deltaFile.setParentDids(parentDids);
         deltaFile.getActions().clear(); // remove IngressAction
         deltaFile.setSourceInfo(SourceInfo.builder()
-                .filename("multiple")
+                .filename(JOINED_SOURCE_FILE_NAME)
                 .flow(JOIN_FLOW_NAME)
                 .metadata(Map.of("fragment-index", "1",
                         "join1-source-metadata1", "abc",
@@ -240,7 +242,6 @@ public class FullFlowExemplars {
         deltaFile.setStage(ENRICH);
         deltaFile.completeAction(TEST_JOIN_ACTION, START_TIME, STOP_TIME);
         deltaFile.queueAction("sampleEnrich.SampleDomainAction");
-        deltaFile.setSourceInfo(SourceInfo.builder().filename("joined-content").flow(JOIN_FLOW_NAME).metadata(Map.of("a", "b")).build());
         ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("uuid", 0, 500, did));
         Content content = new Content("theName", contentReference);
         ProtocolLayer protocolLayer = ProtocolLayer.builder()
@@ -255,20 +256,11 @@ public class FullFlowExemplars {
     }
 
     public static DeltaFile postJoinReinjectDeltaFile(List<String> parentDids, String did) {
-        DeltaFile deltaFile = preJoinDeltaFile(parentDids, did);
-
-        deltaFile.completeAction(TEST_JOIN_ACTION, START_TIME, STOP_TIME);
-        deltaFile.queueAction("sampleIngress.Utf8TransformAction");
-        deltaFile.setSourceInfo(SourceInfo.builder().filename("joined-content").flow(INGRESS_FLOW_NAME).metadata(Map.of("a", "b")).build());
-        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("uuid", 0, 500, did));
-        Content content = new Content("theName", contentReference);
-        ProtocolLayer protocolLayer = ProtocolLayer.builder()
-                .action(TEST_JOIN_ACTION)
-                .content(List.of(content))
-                .metadata(Map.of("x", "y")).build();
-        deltaFile.setProtocolStack(List.of(protocolLayer));
-        deltaFile.recalculateBytes();
-
+        DeltaFile deltaFile = postJoinDeltaFile(parentDids, did);
+        deltaFile.setStage(INGRESS);
+        deltaFile.setDomains(Collections.emptyList());
+        deltaFile.getSourceInfo().setFlow(INGRESS_FLOW_NAME);
+        deltaFile.getActions().get(1).setName("sampleIngress.Utf8TransformAction");
         return deltaFile;
     }
 

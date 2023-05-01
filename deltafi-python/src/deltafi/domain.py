@@ -127,26 +127,21 @@ class DeltaFileMessage(NamedTuple):
 
 
 class Event(NamedTuple):
-    delta_file_message: DeltaFileMessage
+    delta_file_messages: List[DeltaFileMessage]
     context: Context
     params: dict
     queue_name: str
-    joined_delta_files: List[DeltaFileMessage]
     return_address: str
 
     @classmethod
     def create(cls, event: dict, hostname: str, content_service: ContentService, logger: Logger):
-        delta_file_message = DeltaFileMessage.from_dict(event['deltaFileMessage'])
+        delta_file_messages = [DeltaFileMessage.from_dict(delta_file_message) for delta_file_message in event['deltaFileMessages']]
         context = Context.create(event['actionContext'], hostname, content_service, logger)
         params = event['actionParams']
         queue_name = None
         if 'queueName' in event:
             queue_name = event['queueName']
-        joined_delta_files = []
-        if 'joinedDeltaFiles' in event:
-            joined_delta_files = [DeltaFileMessage.from_dict(joined_delta_file) for joined_delta_file in
-                                  event['joinedDeltaFiles']]
         return_address = None
         if 'returnAddress' in event:
             return_address = event['returnAddress']
-        return Event(delta_file_message, context, params, queue_name, joined_delta_files, return_address)
+        return Event(delta_file_messages, context, params, queue_name, return_address)

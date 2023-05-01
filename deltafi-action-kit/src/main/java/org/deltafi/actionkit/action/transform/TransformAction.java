@@ -22,6 +22,8 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Specialization class for TRANSFORM actions.
  * @param <P> Parameter class for configuring the transform action
@@ -32,10 +34,10 @@ public abstract class TransformAction<P extends ActionParameters> extends Action
     }
 
     @Override
-    protected final TransformResultType execute(@NotNull DeltaFileMessage deltaFileMessage,
+    protected final TransformResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
                                                 @NotNull ActionContext context,
                                                 @NotNull P params) {
-        return transform(context, params, transformInput(deltaFileMessage, context));
+        return transform(context, params, transformInput(deltaFileMessages.get(0), context));
     }
 
     private static TransformInput transformInput(DeltaFileMessage deltaFileMessage, ActionContext context) {

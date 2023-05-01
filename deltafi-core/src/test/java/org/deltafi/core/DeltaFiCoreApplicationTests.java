@@ -771,8 +771,8 @@ class DeltaFiCoreApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEquals(child1.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(0).getDeltaFileMessage());
-		assertEquals(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFileMessage());
+		assertEquals(child1.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(0).getDeltaFileMessages().get(0));
+		assertEquals(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFileMessages().get(0));
 
 		Map<String, String> tags = tagsFor(ActionEventType.SPLIT, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
@@ -843,8 +843,8 @@ class DeltaFiCoreApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEquals(child1.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(0).getDeltaFileMessage());
-		assertEquals(child2.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(1).getDeltaFileMessage());
+		assertEquals(child1.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(0).getDeltaFileMessages().get(0));
+		assertEquals(child2.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(1).getDeltaFileMessages().get(0));
 
 		Map<String, String> tags = tagsFor(ActionEventType.LOAD_MANY, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
@@ -3502,7 +3502,7 @@ class DeltaFiCoreApplicationTests {
 		for (int i = 0; i < forActions.length; i++) {
 			ActionInput actionInput = actionInputs.get(i);
 			assertThat(actionInput.getActionContext().getName()).isEqualTo(forActions[i]);
-			assertEquals(expected.forQueue(forActions[i]), actionInput.getDeltaFileMessage());
+			assertEquals(expected.forQueue(forActions[i]), actionInput.getDeltaFileMessages().get(0));
 		}
 	}
 
@@ -3989,10 +3989,9 @@ class DeltaFiCoreApplicationTests {
 		assertThat(actionInputs).hasSize(1);
 		ActionInput actionInput = actionInputs.get(0);
 
-		assertEquals(child.forQueue(TEST_JOIN_ACTION), actionInput.getDeltaFileMessage());
-		assertEquals(2, actionInput.getJoinedDeltaFiles().size());
-		assertEquals(parent1.forQueue(TEST_JOIN_ACTION), actionInput.getJoinedDeltaFiles().get(0));
-		assertEquals(parent2.forQueue(TEST_JOIN_ACTION), actionInput.getJoinedDeltaFiles().get(1));
+		assertEquals(2, actionInput.getDeltaFileMessages().size());
+		assertEquals(parent1.forQueue(TEST_JOIN_ACTION), actionInput.getDeltaFileMessages().get(0));
+		assertEquals(parent2.forQueue(TEST_JOIN_ACTION), actionInput.getDeltaFileMessages().get(1));
 
 		assertEqualsIgnoringDates(preJoinDeltaFile(List.of(parent1.getDid(), parent2.getDid()), child.getDid()), child);
 	}
@@ -4097,7 +4096,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFilesService.handleActionEvent(actionEvent("join-reinject", did));
 
 		verifyActionEventResults(postJoinReinjectDeltaFile(parentDids, did), "sampleIngress.Utf8TransformAction");
-		Map<String, String> tags = tagsFor(ActionEventType.JOIN, TEST_JOIN_ACTION, JOIN_FLOW_NAME, null);
+		Map<String, String> tags = tagsFor(ActionEventType.JOIN_REINJECT, TEST_JOIN_ACTION, JOIN_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}

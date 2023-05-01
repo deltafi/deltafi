@@ -31,5 +31,6 @@ public enum ActionEventType {
   FILTER,
   SPLIT,
   JOIN,
+  JOIN_REINJECT,
   UNKNOWN
 }

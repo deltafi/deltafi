@@ -30,10 +30,10 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ActionInput {
-    private DeltaFileMessage deltaFileMessage;
+    // usually just a single message, but may contain information about multiple deltaFiles for a join action
+    private List<DeltaFileMessage> deltaFileMessages;
     private ActionContext actionContext;
     private Map<String, Object> actionParams;
     private String queueName;
-    private List<DeltaFileMessage> joinedDeltaFiles;
     private String returnAddress;
 }

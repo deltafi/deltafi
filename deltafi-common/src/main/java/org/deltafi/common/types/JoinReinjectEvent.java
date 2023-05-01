@@ -22,31 +22,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class ActionEventInput {
-  private String did;
-  private String action;
-  private OffsetDateTime start;
-  private OffsetDateTime stop;
-  private OffsetDateTime time;
-  private ActionEventType type;
-  private DomainEvent domain;
-  private TransformEvent transform;
-  private LoadEvent load;
-  private List<LoadEvent> loadMany;
-  private EnrichEvent enrich;
-  private FormatEvent format;
-  private List<FormatEvent> formatMany;
-  private ErrorEvent error;
-  private FilterEvent filter;
-  private List<SplitEvent> split;
-  private JoinEvent join;
-  private JoinReinjectEvent joinReinject;
-  private List<Metric> metrics;
+@Builder
+public class JoinReinjectEvent {
+  private String flow;
+  private List<Content> content;
+  private Map<String, String> metadata;
 }

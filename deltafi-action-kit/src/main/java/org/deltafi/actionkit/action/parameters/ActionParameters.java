@@ -20,7 +20,4 @@ package org.deltafi.actionkit.action.parameters;
 /**
  * Base class is extended to parameterize the configuration of an Action
  */
-public class ActionParameters {
-
-}
-
+public class ActionParameters {}

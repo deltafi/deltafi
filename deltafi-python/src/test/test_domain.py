@@ -76,7 +76,7 @@ def test_event():
     mock_content_service = mock(ContentService)
     logger = None
     event = Event.create({
-        'deltaFileMessage': make_delta_file_message_dict(),
+        'deltaFileMessages': [make_delta_file_message_dict()],
         'actionContext': make_context_dict(),
         'actionParams': {}
     },

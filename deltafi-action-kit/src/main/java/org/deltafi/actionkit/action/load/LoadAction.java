@@ -22,6 +22,8 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Specialization class for LOAD actions.
  * @param <P> Parameter class for configuring the Load action
@@ -32,10 +34,10 @@ public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
     }
 
     @Override
-    protected final LoadResultType execute(@NotNull DeltaFileMessage deltaFileMessage,
+    protected final LoadResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
                                            @NotNull ActionContext context,
                                            @NotNull P params) {
-        return load(context, params, loadInput(deltaFileMessage, context));
+        return load(context, params, loadInput(deltaFileMessages.get(0), context));
     }
 
     private static LoadInput loadInput(DeltaFileMessage deltaFileMessage, ActionContext context) {

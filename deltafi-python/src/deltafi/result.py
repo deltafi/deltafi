@@ -152,15 +152,20 @@ class FormatManyResult(Result):
 
 
 class JoinResult(Result):
-    def __init__(self, source_info: SourceInfo):
+    def __init__(self):
         super().__init__('join', 'JOIN')
         self.content = []
         self.metadata = {}
-        self.source_info = source_info
         self.domains = []
 
-    def add_content(self, content_list: List[Content]):
-        self.content.extend(content_list)
+    # content can be a single Content or a List[Content]
+    def add_content(self, content):
+        if content:
+            if type(content) == list:
+                self.content.extend(content)
+            else:
+                self.content.append(content)
+
         return self
 
     def add_metadata(self, key: str, value: str):
@@ -176,12 +181,38 @@ class JoinResult(Result):
 
     def response(self):
         return {
-            'sourceInfo': self.source_info.json(),
             'domains': self.domains,
-            'protocolLayer': {
-                'content': [content.json() for content in self.content],
-                'metadata': self.metadata
-            }
+            'content': [content.json() for content in self.content],
+            'metadata': self.metadata
+        }
+
+
+class JoinReinjectResult(Result):
+    def __init__(self, flow: str):
+        super().__init__('joinReinject', 'JOIN_REINJECT')
+        self.content = []
+        self.metadata = {}
+        self.flow = flow
+
+    # content can be a single Content or a List[Content]
+    def add_content(self, content):
+        if content:
+            if type(content) == list:
+                self.content.extend(content)
+            else:
+                self.content.append(content)
+
+        return self
+
+    def add_metadata(self, key: str, value: str):
+        self.metadata[key] = value
+        return self
+
+    def response(self):
+        return {
+            'flow': self.flow,
+            'content': [content.json() for content in self.content],
+            'metadata': self.metadata
         }
 
 
