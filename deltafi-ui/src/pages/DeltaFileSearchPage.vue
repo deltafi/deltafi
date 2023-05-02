@@ -71,6 +71,8 @@
               <div class="flex-column">
                 <label for="requeueMinId">Requeue Count:</label>
                 <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" />
+                <label for="processingType" class="mt-2">Processing Type:</label>
+                <Dropdown id="processingType" v-model="processingTypeSelected" placeholder="Select a Processing Type" :options="processingTypeOptions" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="stageId" class="mt-2">Stage:</label>
                 <Dropdown id="stageId" v-model="stageOptionSelected" placeholder="Select a Stage" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="filteredState" class="mt-2">Domain:</label>
@@ -94,7 +96,7 @@
         </CollapsiblePanel>
       </div>
     </div>
-    <Panel header="Results" class="table-panel results"  @contextmenu="onPanelRightClick">
+    <Panel header="Results" class="table-panel results" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
         <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
@@ -136,8 +138,7 @@
     </Panel>
   </div>
   <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData" />
-  <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()"/>
-
+  <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
 </template>
 
 <script setup>
@@ -173,7 +174,6 @@ import OverlayPanel from "primevue/overlaypanel";
 import ContextMenu from "primevue/contextmenu";
 import MetadataDialog from "@/components/MetadataDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
-
 
 dayjs.extend(utc);
 const hasPermission = inject("hasPermission");
@@ -227,6 +227,7 @@ const endDateISOString = computed(() => {
 
 const domainOptions = ref([]);
 const domainOptionSelected = ref(null);
+const processingTypeSelected = ref(null);
 const metadataKeysOptions = ref([]);
 const newMetadataKey = ref(null);
 const newMetadataValue = ref(null);
@@ -237,6 +238,7 @@ const flowOptionSelected = ref([]);
 const egressFlowOptionSelected = ref([]);
 const stageOptions = ref([]);
 const stageOptionSelected = ref(null);
+const processingTypeOptions = ref(["NORMALIZATION", "TRANSFORMATION"]);
 const egressedOptions = ref([
   { name: "True", value: true },
   { name: "False", value: false },
@@ -293,6 +295,7 @@ const egressed = computed(() => (egressedOptionSelected.value ? egressedOptionSe
 const filtered = computed(() => (filteredOptionSelected.value ? filteredOptionSelected.value.value : null));
 const testMode = computed(() => (testModeOptionSelected.value ? testModeOptionSelected.value.value : null));
 const stageName = computed(() => (stageOptionSelected.value ? stageOptionSelected.value.name : null));
+const processingType = computed(() => (processingTypeSelected.value ? processingTypeSelected.value : null));
 const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value : null));
 const egressFlowName = computed(() => (egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null));
 const replayable = computed(() => (isReplayableSelected.value ? isReplayableSelected.value.value : null));
@@ -353,6 +356,7 @@ const items = ref([
           flowOptionSelected.value = [];
           egressFlowOptionSelected.value = [];
           stageOptionSelected.value = null;
+          processingTypeSelected.value = null;
           egressedOptionSelected.value = null;
           filteredOptionSelected.value = null;
           testModeOptionSelected.value = null;
@@ -390,7 +394,7 @@ watch(
   { deep: true }
 );
 
-watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin, isReplayableSelected], () => {
+watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin, isReplayableSelected, processingTypeSelected], () => {
   if (watchEnabled.value) fetchDeltaFilesData();
 });
 
@@ -502,7 +506,7 @@ const fetchDeltaFilesDataNoDebounce = async () => {
   setPersistedParams();
 
   loading.value = true;
-  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value, replayable.value);
+  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value, replayable.value, processingType.value);
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
@@ -559,6 +563,7 @@ const getPersistedParams = async () => {
     filteredCause.value = params.filteredCause != "" ? params.filteredCause : null;
     requeueMin.value = params.requeueMin != null ? Number(params.requeueMin) : null;
     stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
+    processingTypeSelected.value = params.processingType != null ? params.processingType : null;
     flowOptionSelected.value = params.ingressFlow ? params.ingressFlow.split(",") : [];
     egressFlowOptionSelected.value = params.egressFlow ? params.egressFlow.split(",") : [];
     egressedOptionSelected.value = params.egressed ? egressedOptions.value.find((i) => i.name == params.egressed) : null;
@@ -589,6 +594,7 @@ const getPersistedParams = async () => {
     filteredCause.value = panelState.value.filteredCause;
     requeueMin.value = panelState.value.requeueMin;
     stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
+    processingTypeSelected.value = panelState.value.processingTypeState ? panelState.value.processingTypeState : null;
     flowOptionSelected.value = panelState.value.flowOptionState ? panelState.value.flowOptionState : [];
     egressFlowOptionSelected.value = panelState.value.egressFlowOptionState ? panelState.value.egressFlowOptionState : [];
     egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
@@ -616,6 +622,7 @@ const setPersistedParams = () => {
     filteredCause: filteredCause.value,
     requeueMin: requeueMin.value,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
+    processingTypeState: processingTypeSelected.value ? processingTypeSelected.value : null,
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value : null,
     egressFlowOptionState: egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null,
     egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
@@ -645,6 +652,7 @@ const setPersistedParams = () => {
   params.filteredCause = filteredCause.value != "" ? filteredCause.value : null;
   params.requeueMin = requeueMin.value != null ? requeueMin.value : null;
   params.stage = stageOptionSelected.value ? stageOptionSelected.value.name : null;
+  params.processingType = processingTypeSelected.value ? processingTypeSelected.value : null;
   params.ingressFlow = flowOptionSelected.value.length > 0 ? String(flowOptionSelected.value) : null;
   params.egressFlow = egressFlowOptionSelected.value.length > 0 ? String(egressFlowOptionSelected.value) : null;
   params.egressed = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
@@ -723,7 +731,7 @@ const menuItems = ref([
   {
     label: "Annotate",
     icon: "fa-solid fa-asterisk fa-fw",
-    visible: computed(() =>  hasPermission("DeltaFileAnnotate")),
+    visible: computed(() => hasPermission("DeltaFileAnnotate")),
     command: () => {
       annotateDialog.value.showDialog();
     },

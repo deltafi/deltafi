@@ -70,6 +70,7 @@ const infoFields = computed(() => {
   fields["Stage"] = deltaFile.stage;
   fields["Created"] = deltaFile.created;
   fields["Modified"] = deltaFile.modified;
+  fields["Processing Type"] = deltaFile.sourceInfo.processingType;
   return fields;
 });
 </script>

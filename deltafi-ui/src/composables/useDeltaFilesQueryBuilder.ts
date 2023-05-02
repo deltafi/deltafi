@@ -22,7 +22,7 @@ import useGraphQL from './useGraphQL'
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String, replayable?: Boolean) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String, replayable?: Boolean,processingType?: string) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -34,7 +34,8 @@ export default function useDeltaFilesQueryBuilder() {
             testMode: testMode,
             sourceInfo: {
               ingressFlows: flowName ? flowName : [],
-              filename: fileName
+              filename: fileName,
+              processingType: processingType ? new EnumType(processingType) : null,
             },
             egressFlows: egressFlowName ? egressFlowName : [],
             stage: stageName ? new EnumType(stageName) : null,
