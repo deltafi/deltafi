@@ -44,7 +44,7 @@ public class K8sEventUtil {
         String interval;
         if (event.getSeries() != null) {
             interval = java.lang.String.format("%s (x%d over %s)", humanReadableTimeSince(event.getSeries().getLastObservedTime()), event.getSeries().getCount(), firstTimestampSince);
-        } else if (event.getCount() > 1) {
+        } else if (event.getCount() != null && event.getCount() > 1) {
             interval = java.lang.String.format("%s (x%d over %s)", humanReadableTimeSince(event.getLastTimestamp()), event.getCount(), firstTimestampSince);
         } else {
             interval = firstTimestampSince;

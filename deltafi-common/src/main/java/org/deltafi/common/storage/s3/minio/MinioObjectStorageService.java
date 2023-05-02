@@ -64,6 +64,11 @@ public class MinioObjectStorageService implements ObjectStorageService {
                     .object(objectReference.getName())
                     .stream(countingInputStream, objectReference.getSize(), minioProperties.getPartSize())
                     .build());
+
+            if (objectWriteResponse == null) {
+                throw new ObjectStorageException("Failed to send the incoming data to minio");
+            }
+
             return new ObjectReference(objectWriteResponse.bucket(), objectWriteResponse.object(), 0,
                     countingInputStream.getByteCount());
         } catch (ErrorResponseException | InsufficientDataException | InternalException |
