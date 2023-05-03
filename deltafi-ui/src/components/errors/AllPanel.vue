@@ -36,8 +36,13 @@
             <DidLink :did="data.did" />
           </template>
         </Column>
-        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
-        <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
+        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column">
+          <template #body="{ data }">
+            <div v-if="data.sourceInfo.filename.length > 28" v-tooltip.top="data.sourceInfo.filename" class="truncate">{{ data.sourceInfo.filename }}</div>
+            <div v-else>{{ data.sourceInfo.filename }}</div>
+          </template>
+        </Column>
+        <Column field="sourceInfo.flow" header="Flow" :sortable="true" class="flow-column" />
         <Column field="created" header="Created" :sortable="true" class="timestamp-column">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
@@ -48,15 +53,10 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
-        <Column field="nextAutoResume" header="Next Auto Resume" :sortable="true" class="timestamp-column">
-          <template #body="row">
-            <Timestamp v-if="row.data.nextAutoResume !== null" :timestamp="row.data.nextAutoResume" />
-            <a v-else>-</a>
-          </template>
-        </Column>
-        <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false">
+        <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
           <template #body="{ data }">
             <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
+            <AutoResumeBadge v-if="data.nextAutoResume !== null" :timestamp="data.nextAutoResume" :reason="data.nextAutoResumeReason" class="ml-2" />
             {{ latestError(data.actions).errorCause }}
           </template>
           <template #filter="{ filterModel, filterCallback }">
@@ -91,7 +91,7 @@
     </Panel>
     <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
-    <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids"  @refresh-page="onRefresh()" />
+    <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
     <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="allPanelAutoResumeDialog" />
@@ -124,6 +124,7 @@ import useErrorsSummary from "@/composables/useErrorsSummary";
 import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
+import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
@@ -201,7 +202,7 @@ const menuItems = ref([
   {
     label: "Annotate Selected",
     icon: "fa-solid fa-asterisk fa-fw",
-    visible: computed(() =>  hasPermission("DeltaFileAnnotate")),
+    visible: computed(() => hasPermission("DeltaFileAnnotate")),
     command: () => {
       annotateDialog.value.showDialog();
     },
@@ -394,8 +395,32 @@ const setPersistedParams = () => {
 
 <style lang="scss">
 .all-panel {
-  .timestamp-column {
-    min-width: 14rem;
+  td.did-column {
+    width: 8rem;
+  }
+
+  td.filename-column {
+    width: 16rem;
+    max-width: 16rem;
+
+    div.truncate {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+  }
+
+  td.flow-column {
+    width: 1rem;
+    white-space: nowrap;
+  }
+
+  td.timestamp-column {
+    width: 15rem !important;
+  }
+
+  td.last-error-column {
+    width: auto;
   }
 
   .p-column-filter-overlay {

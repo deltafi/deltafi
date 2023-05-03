@@ -41,7 +41,7 @@ const props = defineProps({
 });
 
 const classes = computed(() => {
-  return `ack-icon ${props.icon}`;
+  return `auto-resume-icon ${props.icon}`;
 });
 
 const tooltip = computed(() => {
@@ -50,7 +50,7 @@ const tooltip = computed(() => {
 </script>
 
 <style scoped>
-.ack-icon {
+.auto-resume-icon {
   color: var(--green);
 }
 </style>
