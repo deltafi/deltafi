@@ -216,4 +216,6 @@ extend type Mutation {
     saveDeltaFileLink(link: LinkInput!): Boolean!
     removeExternalLink(linkName: String!): Boolean!
     removeDeltaFileLink(linkName: String!): Boolean!
+    replaceExternalLink(linkName: String!, link: LinkInput!): Boolean!
+    replaceDeltaFileLink(linkName: String!, link: LinkInput!): Boolean!
 }

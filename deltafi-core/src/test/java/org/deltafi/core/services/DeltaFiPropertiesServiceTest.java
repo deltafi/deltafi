@@ -84,6 +84,42 @@ class DeltaFiPropertiesServiceTest {
     }
 
     @Test
+    void testReplaceDeltaFileLink() {
+        DeltaFiProperties deltaFiProperties = deltaFiProperties();
+
+        Link originalLink = link("a", "a.com", "a");
+        deltaFiProperties.getUi().getDeltaFileLinks().add(originalLink);
+        deltaFiProperties.getUi().getDeltaFileLinks().add(link("b", "b.com", "b"));
+
+        Mockito.when(deltaFiPropertiesRepo.findById(DeltaFiProperties.PROPERTY_ID)).thenReturn(Optional.of(deltaFiProperties));
+
+        Link newLink = link("c", "c", "new link");
+        deltaFiPropertiesService.replaceDeltaFileLink("a", newLink);
+
+        Mockito.verify(deltaFiPropertiesRepo).save(propsCaptor.capture());
+        DeltaFiProperties updated = propsCaptor.getValue();
+        assertThat(updated.getUi().getDeltaFileLinks()).hasSize(2).contains(newLink).doesNotContain(originalLink);
+    }
+
+    @Test
+    void testReplaceExternalLink() {
+        DeltaFiProperties deltaFiProperties = deltaFiProperties();
+
+        Link originalLink = link("a", "a.com", "a");
+        deltaFiProperties.getUi().getExternalLinks().add(originalLink);
+        deltaFiProperties.getUi().getExternalLinks().add(link("b", "b.com", "b"));
+
+        Mockito.when(deltaFiPropertiesRepo.findById(DeltaFiProperties.PROPERTY_ID)).thenReturn(Optional.of(deltaFiProperties));
+
+        Link newLink = link("c", "c", "new link");
+        deltaFiPropertiesService.replaceExternalLink("a", newLink);
+
+        Mockito.verify(deltaFiPropertiesRepo).save(propsCaptor.capture());
+        DeltaFiProperties updated = propsCaptor.getValue();
+        assertThat(updated.getUi().getExternalLinks()).hasSize(2).contains(newLink).doesNotContain(originalLink);
+    }
+
+    @Test
     void testMergeProperties() {
         Set<String> setInBoth = Stream.of(PropertyType.REQUEUE_SECONDS, PropertyType.DELETE_AGE_OFF_DAYS).map(Enum::name).collect(Collectors.toSet());
 

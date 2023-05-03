@@ -89,4 +89,15 @@ public class DeltaFiPropertiesDatafetcher {
         return deltaFiPropertiesService.removeDeltaFileLink(linkName);
     }
 
+    @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
+    public boolean replaceExternalLink(@InputArgument String linkName, @InputArgument Link link) {
+        return deltaFiPropertiesService.replaceExternalLink(linkName, link);
+    }
+
+    @DgsMutation
+    @NeedsPermission.SystemPropertiesUpdate
+    public boolean replaceDeltaFileLink(@InputArgument String linkName, @InputArgument Link link) {
+        return deltaFiPropertiesService.replaceDeltaFileLink(linkName, link);
+    }
 }

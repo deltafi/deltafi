@@ -148,6 +148,22 @@ public class DeltaFiPropertiesService implements Snapshotter {
         return refresh(deltaFiPropertiesRepo.removeDeltaFileLink(linkName));
     }
 
+    public boolean replaceExternalLink(String linkName, Link link) {
+        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
+        replaceLink(latest.getUi().getExternalLinks(), linkName, link);
+        deltaFiPropertiesRepo.save(latest);
+
+        return refresh(true);
+    }
+
+    public boolean replaceDeltaFileLink(String linkName, Link link) {
+        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
+        replaceLink(latest.getUi().getDeltaFileLinks(), linkName, link);
+        deltaFiPropertiesRepo.save(latest);
+
+        return refresh(true);
+    }
+
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         systemSnapshot.setDeltaFiProperties(getDeltaFiProperties());
@@ -225,6 +241,11 @@ public class DeltaFiPropertiesService implements Snapshotter {
      */
     private void addOrReplaceLink(List<Link> links, Link linkToAdd) {
         links.removeIf(next -> next.nameMatches(linkToAdd));
+        links.add(linkToAdd);
+    }
+
+    private void replaceLink(List<Link> links, String linkToRemove, Link linkToAdd) {
+        links.removeIf(next -> linkToRemove.equals(next.getName()));
         links.add(linkToAdd);
     }
 
