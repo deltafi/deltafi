@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -63,7 +63,7 @@ public class PluginRegistrar {
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
-        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, null, new Retryer.Default(500, 2000, 3));
+        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, null, null, new Retryer.Default(500, 2000, 3));
         coreClient.postPlugin(pluginRegistration);
     }
 

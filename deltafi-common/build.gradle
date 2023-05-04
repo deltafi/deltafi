@@ -71,4 +71,5 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation "com.github.tomakehurst:wiremock-jre8-standalone:2.35.0"
 }
