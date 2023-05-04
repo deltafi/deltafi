@@ -18,9 +18,10 @@
 package org.deltafi.test.action.format;
 
 import lombok.SneakyThrows;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.format.FormatResult;
-import org.deltafi.common.content.ContentReference;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileMessage;
+import org.deltafi.common.types.Domain;
 import org.deltafi.test.action.IOContent;
 import org.deltafi.test.action.ActionTest;
 import org.deltafi.test.action.TestCaseBase;
@@ -43,11 +44,11 @@ public class FormatActionTest extends ActionTest {
     }
 
     @Override
-    protected void beforeExecuteAction(DeltaFile deltaFile, TestCaseBase<?> testCase) {
-        // Add enrichments to deltaFile
+    protected void beforeExecuteAction(DeltaFileMessage deltaFileMessage, TestCaseBase<?> testCase) {
+        // Add domains and enrichments to deltaFile
         FormatActionTestCase formatActionTestCase = (FormatActionTestCase) testCase;
 
-        deltaFile.setEnrichment(
+        deltaFileMessage.setEnrichment(
             formatActionTestCase.getEnrichments().stream().map(this::readEnrichment).toList()
         );
 
@@ -55,7 +56,7 @@ public class FormatActionTest extends ActionTest {
             byte[] content = getTestResourceBytesOrNull(formatActionTestCase.getTestName(), key);
             String output = content==null ? null : new String(content, StandardCharsets.UTF_8);
             String domainName = key.startsWith("domain.") ? key.substring(7) : key;
-            deltaFile.addDomain(domainName, output, value);
+            deltaFileMessage.getDomains().add(new Domain(domainName, output, value));
         });
     }
 
@@ -71,25 +72,24 @@ public class FormatActionTest extends ActionTest {
         IOContent formatOutput = testCase.getOutputs().get(0);
 
         Assertions.assertEquals(formatOutput.getMetadata(), result.getMetadata());
-        Assertions.assertEquals(formatOutput.getContentType(), result.getContentReference().getMediaType());
-        Assertions.assertEquals(formatOutput.getName(), result.getFilename());
+        Assertions.assertEquals(formatOutput.getContentType(), result.getContent().getMediaType());
+        Assertions.assertEquals(formatOutput.getName(), result.getContent().getName());
 
         byte[] actualContent = null;
-        try (InputStream actualContentInputstream = contentStorageService.load(result.getContentReference())) {
+        try (InputStream actualContentInputstream = result.getContent().loadInputStream()) {
             actualContent = actualContentInputstream.readAllBytes();
         }
         catch(Throwable t) {
             Assertions.fail("Unable to read content for actual comparisons", t);
         }
 
-        ContentReference expectedReference = getContents(testCase.getOutputs(), testCase, "output.").get(0).getContentReference();
-        byte[] expectedContent = null;
-        try (InputStream expectedContentInputstream = contentStorageService.load(expectedReference)) {
-            expectedContent = expectedContentInputstream.readAllBytes();
+        ActionContent expectedContent = getContents(testCase.getOutputs(), testCase, "output.").get(0);
+        try {
+            byte[] expectedContentBytes = expectedContent.loadBytes();
+            Assertions.assertArrayEquals(expectedContentBytes, actualContent);
         }
         catch(Throwable t) {
             Assertions.fail("Unable to read expected content for comparison", t);
         }
-        Assertions.assertArrayEquals(expectedContent, actualContent);
     }
 }

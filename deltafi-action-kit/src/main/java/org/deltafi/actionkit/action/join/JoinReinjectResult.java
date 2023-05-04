@@ -20,9 +20,10 @@ package org.deltafi.actionkit.action.join;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.DataAmendedResult;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.types.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +32,7 @@ import java.util.List;
 @Getter
 @Setter
 public class JoinReinjectResult extends DataAmendedResult implements JoinResultType {
-    private String flow = null;
+    private String flow;
 
     /**
      * @param context execution context for the current action
@@ -47,7 +48,7 @@ public class JoinReinjectResult extends DataAmendedResult implements JoinResultT
      * @param flow the flow to send the joined content to
      * @param content the joined content
      */
-    public JoinReinjectResult(ActionContext context, String flow, List<Content> content) {
+    public JoinReinjectResult(ActionContext context, String flow, List<ActionContent> content) {
         super(context);
         this.flow = flow;
         setContent(content);
@@ -63,7 +64,7 @@ public class JoinReinjectResult extends DataAmendedResult implements JoinResultT
         ActionEventInput event = super.toEvent();
         event.setJoinReinject(JoinReinjectEvent.builder()
                 .flow(flow)
-                .content(content)
+                .content(ContentConverter.convert(content))
                 .metadata(metadata)
                 .build());
         return event;

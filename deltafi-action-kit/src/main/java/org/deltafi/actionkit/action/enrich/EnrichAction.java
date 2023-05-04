@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.enrich;
 
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -65,11 +66,10 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
 
     private static EnrichInput enrichInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return EnrichInput.builder()
-                .contentList(deltaFileMessage.getContentList())
+                .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .domains(deltaFileMessage.domainMap())
                 .enrichment(deltaFileMessage.enrichmentMap())
-                .actionContext(context)
                 .build();
     }
 

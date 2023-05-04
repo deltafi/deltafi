@@ -20,10 +20,12 @@ package org.deltafi.actionkit.action;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
+import org.deltafi.common.types.SaveManyContent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -37,9 +39,8 @@ import java.util.*;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-public abstract class DataAmendedResult extends Result<DataAmendedResult> {
-    protected List<Content> content = new ArrayList<>();
-    protected Map<String, String> metadata = new HashMap<>();
+public abstract class DataAmendedResult extends MetadataAmendedResult {
+    protected List<ActionContent> content = new ArrayList<>();
 
     /**
      * @param context Action context
@@ -49,32 +50,21 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
     }
 
     /**
-     * Add metadata by key and value Strings
-     * @param key Metadata key to add
-     * @param value Metadata value to add
-     */
-    public void addMetadata(String key, String value) {
-        metadata.put(key, value);
-    }
-
-    /**
-     * Add metadata by map
-     * @param map Key-value pairs to add to metadata
-     */
-    @SuppressWarnings("unused")
-    public void addMetadata(Map<String, String> map) {
-        if (map != null) {
-            metadata.putAll(map);
-        }
-    }
-
-    /**
      * Add a Content object to the list of content in the result
      * @param contentItem Content object to add to the result
      */
     @SuppressWarnings("unused")
-    public void addContent(@NotNull Content contentItem) {
+    public void addContent(@NotNull ActionContent contentItem) {
         content.add(contentItem);
+    }
+
+    /**
+     * Add a list of Content objects to the list of content in the result
+     * @param contentList Content object to add to the result
+     */
+    @SuppressWarnings("unused")
+    public void addContent(@NotNull List<ActionContent> contentList) {
+        content.addAll(contentList);
     }
 
     /**
@@ -87,7 +77,7 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
     public void saveContent(byte[] content, String name, String mediaType) {
         try {
             ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-            addContent(new Content(name, contentReference));
+            addContent(new ActionContent(name, contentReference, context.getContentStorageService()));
         } catch(ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
         }
@@ -103,7 +93,7 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
     public void saveContent(InputStream content, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
         try {
             ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-            addContent(new Content(name, contentReference));
+            addContent(new ActionContent(name, contentReference, context.getContentStorageService()));
         } catch(ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
         }
@@ -111,10 +101,19 @@ public abstract class DataAmendedResult extends Result<DataAmendedResult> {
 
     /**
      * Save multiple pieces of content to content storage and attach to the result
-     * @param namesToBytes map of content names to the bytes that need to be stored for the content
-     * @throws ObjectStorageException when the content storage service fails to store content
+     * @param saveManyContentList a list of SaveManyContent objects containing the file name, media type, and bytes that need to be stored for each content
      */
-    public void saveContent(LinkedHashMap<String, byte[]> namesToBytes) throws ObjectStorageException {
-        content.addAll(context.getContentStorageService().saveMany(context.getDid(), namesToBytes));
+    public void saveContent(List<SaveManyContent> saveManyContentList) {
+        try {
+            content.addAll(ContentConverter.convert(
+                    context.getContentStorageService().saveMany(context.getDid(), saveManyContentList),
+                    context.getContentStorageService()));
+        } catch(ObjectStorageException e) {
+            throw new ActionKitException("Failed to store saveManyContentList", e);
+        }
+    }
+
+    protected List<org.deltafi.common.types.Content> contentList() {
+        return content.stream().map(ContentConverter::convert).toList();
     }
 }

@@ -56,25 +56,13 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-@SuppressWarnings("unused")
-public class RoteFormatAction extends FormatAction<ActionParameters> {
+public class RoteFormatAction extends FormatAction<RoteParameters> {
     public RoteFormatAction() {
-        super("Format the result created by the load action with no transformation");
+        super("Format the first result created by the load action with no transformation");
     }
 
-    public FormatResultType format(
-        @NotNull ActionContext context,
-        @NotNull ActionParameters parameters,
-        @NotNull FormatInput input) {
-
-        FormatResult result = new FormatResult(context, input.getSourceFilename());
-        if (input.getContentList().size() > 0) {
-            Content content = input.firstContent();
-            result.setContentReference(content.getContentReference());
-            result.addMetadata(content.getMetadata());
-        }
-
-        return result;
+    public FormatResultType format(@NotNull ActionContext context, @NotNull RoteParameters parameters, @NotNull FormatInput input) {
+        return new FormatResult(context, input.getContentList().get(0));
     }
 
     @Override

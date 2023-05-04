@@ -18,7 +18,8 @@
 package org.deltafi.test.action.enrich;
 
 import org.deltafi.actionkit.action.enrich.EnrichResult;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileMessage;
+import org.deltafi.common.types.Domain;
 import org.deltafi.common.types.Enrichment;
 import org.deltafi.test.action.ActionTest;
 import org.deltafi.test.action.TestCaseBase;
@@ -52,7 +53,7 @@ public class EnrichActionTest extends ActionTest {
 
     // Override and add domains to the DeltaFile
     @Override
-    protected void beforeExecuteAction(DeltaFile deltaFile, TestCaseBase<?> testCase) {
+    protected void beforeExecuteAction(DeltaFileMessage deltaFileMessage, TestCaseBase<?> testCase) {
         assert(testCase instanceof EnrichActionTestCase);
 
         EnrichActionTestCase enrichTestCase = (EnrichActionTestCase) testCase;
@@ -61,7 +62,7 @@ public class EnrichActionTest extends ActionTest {
             byte[] content = getTestResourceBytesOrNull(enrichTestCase.getTestName(), key);
             String output = content==null ? null : new String(content, StandardCharsets.UTF_8);
             String domainName = key.startsWith("domain.") ? key.substring(7) : key;
-            deltaFile.addDomain(domainName, output, value);
+            deltaFileMessage.getDomains().add(new Domain(domainName, output, value));
         });
     }
 }

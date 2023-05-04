@@ -68,7 +68,18 @@ public class ContentReference {
      * @return A trimmed down ContentReference
      */
     public ContentReference subreference(long offset, long size) {
-        return new ContentReference(getMediaType(), subreferenceSegments(offset, size));
+        return subreference(offset, size, mediaType);
+    }
+
+    /**
+     * Returns a new ContentReference that is a copy of a portion of this ContentReference, at the given offset and size
+     * Handles piecing together the underlying segments properly
+     * @param offset Number of bytes at which to offset the new ContentReference
+     * @param size Size in bytes of the new ContentReference
+     * @return A trimmed down ContentReference
+     */
+    public ContentReference subreference(long offset, long size, String mediaType) {
+        return new ContentReference(mediaType, subreferenceSegments(offset, size));
     }
 
     /**
@@ -88,7 +99,7 @@ public class ContentReference {
         }
 
         if (size + offset > getSize()) {
-            throw new IllegalArgumentException("Size + offset ( " + size + " + " + offset + ") exceeds total ContentReference size of " + getSize());
+            throw new IllegalArgumentException("Size + offset (" + size + " + " + offset + ") exceeds total ContentReference size of " + getSize());
         }
 
         if (size == 0) {
@@ -135,5 +146,9 @@ public class ContentReference {
 
     public static long minOffset(List<Segment> segments) {
         return segments != null ? segments.stream().mapToLong(Segment::getOffset).min().orElse(0) : 0;
+    }
+
+    public ContentReference copy() {
+        return new ContentReference(mediaType, new ArrayList<>(segments));
     }
 }

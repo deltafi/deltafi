@@ -44,15 +44,15 @@ public class LoadActionTestCase extends TestCaseBase<LoadAction<? extends Action
     private Map<String, String> outputDomain;
 
     public static abstract class LoadActionTestCaseBuilder<C extends LoadActionTestCase, B extends LoadActionTestCase.LoadActionTestCaseBuilder<C, B>> extends TestCaseBase.TestCaseBaseBuilder<LoadAction<? extends ActionParameters>, C, B> {
-        public B expectLoadAction(List<IOContent> outputs) {
-            return expectLoadAction(outputs, Collections.emptyMap(), Collections.emptyMap());
+        public B expectLoadResult(List<IOContent> outputs) {
+            return expectLoadResult(outputs, Collections.emptyMap(), Collections.emptyMap());
         }
 
-        public B expectLoadAction(List<IOContent> outputs, Map<String, String> metadata) {
-            return expectLoadAction(outputs, metadata, Collections.emptyMap());
+        public B expectLoadResult(List<IOContent> outputs, Map<String, String> metadata) {
+            return expectLoadResult(outputs, metadata, Collections.emptyMap());
         }
 
-        public B expectLoadAction(List<IOContent> outputs, Map<String, String> metadata, Map<String, String> domains) {
+        public B expectLoadResult(List<IOContent> outputs, Map<String, String> metadata, Map<String, String> domains) {
             expectedResultType(LoadResult.class);
             outputs(outputs);
             outputDomain(domains);
@@ -61,7 +61,7 @@ public class LoadActionTestCase extends TestCaseBase<LoadAction<? extends Action
             return self();
         }
 
-        public B expectSplitAction(List<Child> children) {
+        public B expectSplitResult(List<Child> children) {
             expectedResultType(SplitResult.class);
             outputs(children);
 

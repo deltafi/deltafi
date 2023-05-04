@@ -1,13 +1,13 @@
 {
-  "name": "split-passthrough",
+  "name": "split-lines-passthrough",
   "type": "INGRESS",
-  "description": "Flow that splits content into children DeltaFiles",
+  "description": "Flow that splits line-separated content into children DeltaFiles",
   "transformActions": [{
     "name": "SplitContentTransformAction",
-    "type": "org.deltafi.core.action.ContentSplitterTransformAction",
+    "type": "org.deltafi.core.action.LineSplitterTransformAction",
     "parameters": {
       "commentChars": "${commentChars}",
-      "includeHeaders": "${includeHeaders}",
+      "includeHeaderInAllChunks": "${includeHeaderInAllChunks}",
       "maxRows": "${maxRows}",
       "maxSize": "${maxSize}"
     }

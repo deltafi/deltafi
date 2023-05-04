@@ -49,7 +49,7 @@ public class TransformResult extends DataAmendedResult implements TransformResul
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
         event.setTransform(TransformEvent.newBuilder()
-                .protocolLayer(new ProtocolLayer(context.getName(), content, metadata))
+                .protocolLayer(new ProtocolLayer(context.getName(), contentList(), metadata))
                 .build());
         return event;
     }

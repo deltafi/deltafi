@@ -20,7 +20,6 @@ package org.deltafi.passthrough.param;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 import java.util.Map;
 

@@ -15,10 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.splitter;
+package org.deltafi.core.exception;
 
-public class SplitException extends RuntimeException {
+public class SplitException extends Exception {
 
+    public SplitException(Throwable cause) {
+        super(cause);
+    }
     public SplitException(String message) {
         super(message);
     }

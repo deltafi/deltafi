@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.domain;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -56,10 +57,9 @@ public abstract class DomainAction<P extends ActionParameters> extends Action<P>
 
     private static DomainInput domainInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return DomainInput.builder()
-                .contentList(deltaFileMessage.getContentList())
+                .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .domains(deltaFileMessage.domainMap())
-                .actionContext(context)
                 .build();
     }
 

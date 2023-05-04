@@ -25,6 +25,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.join.JoinInput;
 import org.deltafi.actionkit.action.join.JoinReinjectResult;
 import org.deltafi.actionkit.action.join.JoinResult;
@@ -65,20 +66,14 @@ public class MergeContentJoinActionTest {
         ContentReference join1ContentReference = CONTENT_STORAGE_SERVICE.save("join-1-did",
                 "join 1 content".getBytes(StandardCharsets.UTF_8), "join 1 media type");
         JoinInput join1 = JoinInput.builder()
-                .contentList((List.of(Content.newBuilder()
-                        .contentReference(join1ContentReference)
-                        .name("join-1-file")
-                        .build())
-                )).build();
+                .contentList((List.of(new ActionContent("join-1-file", join1ContentReference, CONTENT_STORAGE_SERVICE))))
+                .build();
 
         ContentReference join2ContentReference = CONTENT_STORAGE_SERVICE.save("join-2-did",
                 "join 2 content".getBytes(StandardCharsets.UTF_8), "join 2 media type");
         JoinInput join2 = JoinInput.builder()
-                .contentList((List.of(Content.newBuilder()
-                        .contentReference(join2ContentReference)
-                        .name("join-2-file")
-                        .build())
-                )).build();
+                .contentList((List.of(new ActionContent("join-2-file", join2ContentReference, CONTENT_STORAGE_SERVICE))))
+                .build();
 
         joinInputs = List.of(join1, join2);
     }
@@ -88,8 +83,7 @@ public class MergeContentJoinActionTest {
         JoinResultType joinResult = MERGE_CONTENT_JOIN_ACTION.join(CONTEXT, new MergeContentJoinParameters(), joinInputs);
 
         assertInstanceOf(JoinResult.class, joinResult);
-        try (InputStream joinedContentInputStream = CONTENT_STORAGE_SERVICE.load(
-                ((JoinResult) joinResult).getContent().get(0).getContentReference())) {
+        try (InputStream joinedContentInputStream = ((JoinResult) joinResult).getContent().get(0).loadInputStream()) {
             assertArrayEquals("join 1 contentjoin 2 content".getBytes(StandardCharsets.UTF_8),
                     joinedContentInputStream.readAllBytes());
         }
@@ -153,9 +147,8 @@ public class MergeContentJoinActionTest {
 
         assertInstanceOf(JoinResult.class, joinResult);
         assertEquals(archiveType.getMediaType(),
-                ((JoinResult) joinResult).getContent().get(0).getContentReference().getMediaType());
-        try (InputStream joinedContentInputStream = CONTENT_STORAGE_SERVICE.load(
-                ((JoinResult) joinResult).getContent().get(0).getContentReference())) {
+                ((JoinResult) joinResult).getContent().get(0).getMediaType());
+        try (InputStream joinedContentInputStream = ((JoinResult) joinResult).getContent().get(0).loadInputStream()) {
             validate(joinedContentInputStreamSupplier.apply(joinedContentInputStream), archiveInputStreamSupplier);
         }
     }

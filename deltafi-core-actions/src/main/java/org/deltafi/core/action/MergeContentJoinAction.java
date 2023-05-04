@@ -29,11 +29,10 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.deltafi.actionkit.action.DataAmendedResult;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.join.*;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
 import org.deltafi.core.parameters.MergeContentJoinParameters;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +49,6 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
 
     @RequiredArgsConstructor
     private static class WriterThread implements Runnable {
-        private final MergeContentJoinAction mergeContentJoinAction;
         private final PipedInputStream pipedInputStream;
         private final List<JoinInput> joinInputs;
         private final MergeContentJoinParameters params;
@@ -102,7 +100,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
         }
 
         private interface ContentWriter {
-            void write(JoinInput joinInput) throws ObjectStorageException, IOException;
+            void write(JoinInput joinInput) throws IOException;
         }
 
         private void binaryConcatenate(OutputStream outputStream, List<JoinInput> joiningDeltaFiles) throws IOException {
@@ -115,7 +113,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
             joiningDeltaFiles.forEach(joiningDeltaFile -> {
                 try {
                     contentWriter.write(joiningDeltaFile);
-                } catch (ObjectStorageException | IOException e) {
+                } catch (IOException e) {
                     errorMessages.add(e.getMessage());
                 }
             });
@@ -127,8 +125,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
 
         private void writeContent(JoinInput joinInput, OutputStream outputStream)
                 throws IOException {
-            try (InputStream contentStream = mergeContentJoinAction.loadContentAsInputStream(
-                    joinInput.getContentList().get(0).getContentReference())) {
+            try (InputStream contentStream = joinInput.getContentList().get(0).loadInputStream()) {
                 byte[] buffer;
                 do {
                     buffer = contentStream.readNBytes(CONTENT_READ_BUFFER_SIZE);
@@ -164,7 +161,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
                 BiFunction<String, Long, ArchiveEntry> archiveEntrySupplier) throws IOException {
             ArchiveOutputStream archiveOutputStream = archiveOutputStreamSupplier.apply(outputStream);
             writeContent(joiningDeltaFiles, joiningDeltaFile -> {
-                Content content = joiningDeltaFile.getContentList().get(0);
+                ActionContent content = joiningDeltaFile.getContentList().get(0);
                 String name = content.getName() == null ? "" : content.getName();
                 ArchiveEntry archiveEntry = archiveEntrySupplier.apply(name, content.getContentReference().getSize());
                 archiveOutputStream.putArchiveEntry(archiveEntry);
@@ -196,7 +193,7 @@ public class MergeContentJoinAction extends JoinAction<MergeContentJoinParameter
         }
 
         try (PipedInputStream pipedInputStream = new PipedInputStream()) {
-            WriterThread writerThread = new WriterThread(this, pipedInputStream, joinInputs, params);
+            WriterThread writerThread = new WriterThread(pipedInputStream, joinInputs, params);
             new Thread(writerThread).start();
             writerThread.waitForPipeConnection();
 

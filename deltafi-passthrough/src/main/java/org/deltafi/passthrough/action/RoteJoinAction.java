@@ -17,9 +17,9 @@
  */
 package org.deltafi.passthrough.action;
 
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.join.*;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
 import org.deltafi.passthrough.param.RoteJoinParameters;
 import org.deltafi.passthrough.util.RandSleeper;
 import org.springframework.stereotype.Component;
@@ -38,7 +38,7 @@ public class RoteJoinAction extends JoinAction<RoteJoinParameters> {
     protected JoinResultType join(ActionContext context, RoteJoinParameters params, List<JoinInput> joinInputs) {
         RandSleeper.sleep(params.getMinRoteDelayMS(), params.getMaxRoteDelayMS());
 
-        List<Content> contentList = joinInputs.stream()
+        List<ActionContent> contentList = joinInputs.stream()
                 .flatMap(joinedFromDeltaFile -> joinedFromDeltaFile.getContentList().stream())
                 .collect(Collectors.toList());
 

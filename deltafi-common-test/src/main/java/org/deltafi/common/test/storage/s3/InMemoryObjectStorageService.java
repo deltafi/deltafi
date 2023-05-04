@@ -34,7 +34,18 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
 
     @Override
     public InputStream getObject(ObjectReference objectReference) {
-        return new ByteArrayInputStream(objects.get(objectReference.getBucket()).get(objectReference.getName()));
+        byte[] bytes = objects.get(objectReference.getBucket()).get(objectReference.getName());
+
+        return new ByteArrayInputStream(subBytes(bytes, (int) objectReference.getOffset(), (int) objectReference.getSize()));
+    }
+
+    private static byte[] subBytes(byte[] bytes, int offset, int size) {
+        if (bytes == null || offset < 0 || size < 0 || offset + size > bytes.length) {
+            throw new IllegalArgumentException("Invalid input parameters");
+        }
+        byte[] result = new byte[size];
+        System.arraycopy(bytes, offset, result, 0, size);
+        return result;
     }
 
     @Override

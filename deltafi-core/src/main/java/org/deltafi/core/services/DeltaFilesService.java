@@ -31,7 +31,6 @@ import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
-import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.exceptions.EnqueueActionException;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
@@ -487,7 +486,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public void error(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
+    public void error(DeltaFile deltaFile, ActionEventInput event) {
         // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
         if (deltaFile.getContentDeleted() != null) {
             deltaFile.cancelQueuedActions();
@@ -1316,11 +1315,7 @@ public class DeltaFilesService {
             log.error(errorMessage);
             ErrorEvent error = ErrorEvent.newBuilder().cause(errorMessage).build();
             ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(action.getName()).type(ActionEventType.UNKNOWN).error(error).build();
-            try {
-                error(deltaFile, event);
-            } catch (JsonProcessingException ex) {
-                log.error("Failed to create error for " + deltaFile.getDid() + " with event " + event + ": " + ex.getMessage());
-            }
+            error(deltaFile, event);
 
             return null;
         }

@@ -19,7 +19,6 @@ package org.deltafi.passthrough.param;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 import java.util.List;
 

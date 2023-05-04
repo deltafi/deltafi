@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.load;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +39,7 @@ public class LoadResult extends DataAmendedResult implements LoadResultType {
      * @param context Context of executing action
      * @param contentList List of content objects to be processed with the execution result
      */
-    public LoadResult(@NotNull ActionContext context, @NotNull List<Content> contentList) {
+    public LoadResult(@NotNull ActionContext context, @NotNull List<ActionContent> contentList) {
         super(context);
         setContent(contentList);
     }
@@ -64,7 +65,7 @@ public class LoadResult extends DataAmendedResult implements LoadResultType {
         ActionEventInput event = super.toEvent();
         event.setLoad(LoadEvent.newBuilder()
                 .domains(domains)
-                .protocolLayer(new ProtocolLayer(context.getName(), content, metadata))
+                .protocolLayer(new ProtocolLayer(context.getName(), contentList(), metadata))
                 .build());
 
         return event;

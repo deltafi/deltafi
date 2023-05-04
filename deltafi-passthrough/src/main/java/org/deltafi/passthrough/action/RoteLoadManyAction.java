@@ -17,9 +17,9 @@
  */
 package org.deltafi.passthrough.action;
 
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.load.*;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
 import org.deltafi.passthrough.param.RoteLoadParameters;
 import org.deltafi.passthrough.util.RandSleeper;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +48,7 @@ public class RoteLoadManyAction extends LoadAction<RoteLoadParameters> {
         return loadManyResult;
     }
 
-    LoadResult buildLoadResult(ActionContext context, Content content, List<String> domains) {
+    LoadResult buildLoadResult(ActionContext context, ActionContent content, List<String> domains) {
         LoadResult loadResult = new LoadResult(context, List.of(content));
         domains.forEach(domain -> loadResult.addDomain(domain, null, MediaType.TEXT_PLAIN));
         return loadResult;

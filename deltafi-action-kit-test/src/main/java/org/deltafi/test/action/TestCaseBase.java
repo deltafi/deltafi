@@ -70,20 +70,6 @@ public class TestCaseBase<A extends Action<? extends ActionParameters>> {
 
     public static abstract class TestCaseBaseBuilder<A extends Action<? extends ActionParameters>, C extends TestCaseBase<A>, B extends TestCaseBase.TestCaseBaseBuilder<A, C, B>> {
 
-        public B throwStorageReadException(Throwable exception) {
-            exception(exception);
-            exceptionLocation(ExceptionLocation.STORAGE_READ);
-
-            return self();
-        }
-
-        public B throwStorageWriteException(Throwable exception) {
-            exception(exception);
-            exceptionLocation(ExceptionLocation.STORAGE_WRITE);
-
-            return self();
-        }
-
         public B expectError(String errorRegex) {
             return expectError(Pattern.compile(errorRegex));
         }

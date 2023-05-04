@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.action;
 
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.parameters.DecompressionType;
 import org.deltafi.test.action.IOContent;
 import org.deltafi.test.action.transform.TransformActionTest;
@@ -401,18 +400,6 @@ public class DecompressionTransformActionTest extends TransformActionTest {
                 .parameters(Map.of("decompressionType", DecompressionType.AUTO))
                 .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build()))
                 .expectError("No compression or archive formats detected")
-                .build());
-    }
-
-    @Test
-    void storeFailure() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("storeFailure")
-                .parameters(Map.of("decompressionType", DecompressionType.TAR_GZIP))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.gz").contentType(CONTENT_TYPE).build()))
-                .throwStorageWriteException(new ObjectStorageException("Boom", new Exception()))
-                .expectError("Unable to store content")
                 .build());
     }
 }

@@ -19,7 +19,6 @@ package org.deltafi.actionkit.action.parameters;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @Data
 @ToString(callSuper = true)

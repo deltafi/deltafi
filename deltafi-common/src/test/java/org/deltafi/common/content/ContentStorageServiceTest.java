@@ -22,15 +22,16 @@ import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.types.Content;
+import org.deltafi.common.types.SaveManyContent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,12 +121,12 @@ public class ContentStorageServiceTest {
         byte[] secondContentBytes = "second".getBytes();
         byte[] emptyContentBytes = "".getBytes();
 
-        LinkedHashMap<String, byte[]> namesToBytes = new LinkedHashMap<>();
-        namesToBytes.put("first", firstContentBytes);
-        namesToBytes.put("second", secondContentBytes);
-        namesToBytes.put("empty", emptyContentBytes);
+        List<SaveManyContent> saveManyContentList = List.of(
+            new SaveManyContent("first", MediaType.APPLICATION_OCTET_STREAM, firstContentBytes),
+            new SaveManyContent("second", MediaType.APPLICATION_OCTET_STREAM, secondContentBytes),
+            new SaveManyContent("empty", MediaType.APPLICATION_OCTET_STREAM, emptyContentBytes));
         
-        List<Content> content = contentStorageService.saveMany("abc", namesToBytes);
+        List<Content> content = contentStorageService.saveMany("abc", saveManyContentList);
 
         Assertions.assertThat(content).hasSize(3);
         Content first = content.get(0);

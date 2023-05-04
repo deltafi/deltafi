@@ -15,8 +15,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action;
+package org.deltafi.common.types;
 
-import java.io.InputStream;
-
-public record ContentStream(InputStream content, String filename, String mediaType) {}
+public record SaveManyContent(String name, String mediaType, byte[] content) {}

@@ -34,12 +34,12 @@ task renameJar (type: Copy) {
 assemble.finalizedBy(renameJar)
 
 dependencies {
-    annotationProcessor project(":deltafi-action-kit")
+    annotationProcessor project(':deltafi-action-kit')
 
-    implementation project(":deltafi-action-kit")
+    implementation project(':deltafi-action-kit')
+    implementation project(':deltafi-common-test')
 
     implementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     implementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
     implementation "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
-
 }

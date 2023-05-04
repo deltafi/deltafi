@@ -19,7 +19,9 @@ package org.deltafi.actionkit.action.load;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.types.*;
 
 import java.util.ArrayList;
@@ -49,10 +51,10 @@ public class SplitResult extends Result<SplitResult> implements LoadResultType {
      * @param metadata Source metadata for the new DeltaFile
      * @param content Content of the new DeltaFile
      */
-    public void addChild(String filename, String flow, Map<String, String> metadata, List<Content> content) {
+    public void addChild(String filename, String flow, Map<String, String> metadata, List<ActionContent> content) {
         splitEvents.add(SplitEvent.newBuilder()
                 .sourceInfo(new SourceInfo(filename, flow, metadata))
-                .content(content)
+                .content(content.stream().map(ContentConverter::convert).toList())
                 .build());
     }
 

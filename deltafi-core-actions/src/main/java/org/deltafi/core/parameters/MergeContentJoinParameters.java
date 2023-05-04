@@ -20,7 +20,6 @@ package org.deltafi.core.parameters;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.parameters.ReinjectParameters;
 
 @Data

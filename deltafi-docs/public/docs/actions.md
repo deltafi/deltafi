@@ -27,6 +27,8 @@ about where the action is running and the DeltaFile being processed.
 String did = context.getDid();
 // name of the Action as configured in a flow
 String actionName = context.getName();
+// the original filename
+String sourceFilename = context.getSourceFilename();
 // the ingress flow name
 String ingressFlow = context.getIngressFlow();
 // the egress flow name
@@ -48,6 +50,7 @@ where the action is running, the DeltaFile being processed, and access to suppor
 class Context(NamedTuple):
     did: str
     action_name: str
+    source_filename: str
     ingress_flow: str
     egress_flow: str
     system: str
@@ -59,23 +62,15 @@ class Context(NamedTuple):
 
 ### Content Storage
 
-Actions are passed or can create `contentReferences` that serve as pointers to content data that is stored on disk.
+Actions are passed or can create `Content` that serve as pointers to content data that is stored on disk.
 
-To retrieve content as a byte array or from a stream:
+To retrieve content as a byte array, string, or from a stream:
 
 ```java
-try {
-    byte[] content = loadContent(contentReference);
-    // do something with your content
-} catch (ObjectStorageException e) {
-    // something went wrong
-}
-
-try (InputStream content = loadContentAsInputStream(contentReference)) {
-    // do something with your content
-} catch (ObjectStorageException e) {
-    // something went wrong
-}
+byte[] byteArray = content.loadBytes();
+String string = content.loadString();
+String encodedString = content.loadString(Charset.forName(encoding));
+InputStream inputStream = content.loadInputStream();
 ```
 
 To retrieve content as a string or byte array in a Python action execution, use the `ContextService` methods `get_str()`
@@ -88,17 +83,26 @@ or `get_bytes()`. For example, in a Load action execute:
 
 ```
 
-To store content from a byte array or a stream:
+To store content from a byte array or a stream and add to a Result:
 
 ```java
-try {
-    // create a result of the type appropriate for your Action
-    TransformResult transformResult = new TransformResult();
-    transformResult.saveContent(byteArray, fileName, MediaType.APPLICATION_JSON);
-    transformResult.saveContent(inputStream, fileName, MediaType.APPLICATION_JSON);
-} catch (ObjectStorageException e) {
-    // something went wrong
-}
+// create a result of the type appropriate for your Action
+TransformResult transformResult = new TransformResult();
+transformResult.saveContent(byteArray, fileName, MediaType.APPLICATION_JSON);
+transformResult.saveContent(inputStream, fileName, MediaType.APPLICATION_JSON);
+
+// you can modify existing content and add it to the Result without having to save new Content to disk:
+List<ActionContent> existingContentList = input.getContentList();
+transformResult.addContent(existingContentList);
+
+// you can also manipulate existing content to store new content on disk
+ActionContent copyOfFirstContent = existingContentList.get(0).copy();
+copyOfFirstContent.setName("new-name.txt");
+// get the first 50 bytes
+ActionContent partOfSecondContent = existingContentList.get(1).subcontent(0, 50);
+copyOfFirstContent.append(partOfSecondContent);
+// store the pointers to the stitched-together content without writing to disk
+transformResult.addContent(copyOfFirstContent);
 ```
 
 Or in Python use `put_bytes()` or `put_str()` in your action execution:

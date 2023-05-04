@@ -21,17 +21,16 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.splitter.SplitterParams;
 import org.springframework.util.unit.DataSize;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ContentSplitterParameters extends ActionParameters {
+public class LineSplitterParameters extends ActionParameters {
     @JsonPropertyDescription("Characters that indicate the line is a comment when searching for headers")
     private String commentChars;
 
     @JsonPropertyDescription("True to include the header line (excluding any comments before the header) in all child files")
-    private boolean includeHeaders = false;
+    private boolean includeHeaderInAllChunks = false;
 
     @JsonPropertyDescription("Max number of rows that should be included in each child file")
     private int maxRows = Integer.MAX_VALUE;
@@ -39,12 +38,7 @@ public class ContentSplitterParameters extends ActionParameters {
     @JsonPropertyDescription("Max size in bytes of each child file (including the header line if includeHeaders is true)")
     private long maxSize = DataSize.ofMegabytes(500).toBytes();
 
-    public SplitterParams asSplitterParams() {
-        return SplitterParams.builder()
-                .commentChars(this.commentChars)
-                .includeHeaders(this.includeHeaders)
-                .maxRows(this.maxRows)
-                .maxSize(this.maxSize)
-                .build();
+    public boolean hasCommentChars() {
+        return commentChars != null && !commentChars.isEmpty();
     }
 }

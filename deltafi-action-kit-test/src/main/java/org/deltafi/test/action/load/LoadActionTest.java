@@ -18,6 +18,7 @@
 package org.deltafi.test.action.load;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.load.LoadResult;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.common.types.*;
@@ -42,9 +43,7 @@ public abstract class LoadActionTest extends ActionTest {
     }
 
     public void assertLoadResult(LoadActionTestCase testCase, LoadResult loadResult) {
-        LoadResult expectedResult = new LoadResult(context(), Collections.singletonList(
-                Content.newBuilder().contentReference(testCase.getExpectedContentReference())
-                        .build()));
+        LoadResult expectedResult = new LoadResult(context(), List.of(new ActionContent("", testCase.getExpectedContentReference(), context().getContentStorageService())));
         expectedResult.addMetadata(testCase.getResultMetadata());
         if(testCase.getOutputDomain()!=null) {
             // Load text string as the file to domain... for each entry in the map
@@ -78,7 +77,7 @@ public abstract class LoadActionTest extends ActionTest {
 
         // TODO Check various ways to check contents
         // expectedContent should be a list of byte[], let's get the list of content and grab bytes to recreate
-        List<byte[]> actualContent = loadResult.getContent().stream().map(this::getContent).toList();
+        List<byte[]> actualContent = loadResult.getContent().stream().map(ActionContent::loadBytes).toList();
 
         assertContentIsEqual(expectedContent, actualContent);
     }

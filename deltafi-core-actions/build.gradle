@@ -23,6 +23,8 @@ dependencies {
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${jupiterVersion}"
+    testImplementation 'org.assertj:assertj-core:3.23.1'
 }
 
 jar {

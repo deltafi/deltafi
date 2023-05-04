@@ -17,12 +17,12 @@
  */
 package org.deltafi.core.action;
 
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.load.LoadInput;
 import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.SplitResult;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
 import org.deltafi.actionkit.action.parameters.ReinjectParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -43,7 +43,7 @@ public class SplitterLoadAction extends LoadAction<ReinjectParameters> {
                                @NotNull LoadInput input) {
         SplitResult result = new SplitResult(context);
 
-        for (Content content : input.getContentList()) {
+        for (ActionContent content : input.getContentList()) {
             result.addChild(content.getName(),
                     params.getReinjectFlow(),
                     input.getMetadata(),

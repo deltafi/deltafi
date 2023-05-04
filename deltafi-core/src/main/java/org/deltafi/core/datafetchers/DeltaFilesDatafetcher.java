@@ -46,9 +46,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
-  static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+  final ContentStorageService contentStorageService;
 
-  ContentStorageService contentStorageService;
+  static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
   DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService) {
     this.deltaFilesService = deltaFilesService;

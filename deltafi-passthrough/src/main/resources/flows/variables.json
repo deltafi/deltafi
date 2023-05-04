@@ -26,7 +26,7 @@
     "required": false
   },
   {
-    "name": "includeHeaders",
+    "name": "includeHeaderInAllChunks",
     "description": "When splitting content include the header line in all children",
     "dataType": "BOOLEAN",
     "defaultValue": false,

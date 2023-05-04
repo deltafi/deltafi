@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.transform;
 
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -42,9 +43,8 @@ public abstract class TransformAction<P extends ActionParameters> extends Action
 
     private static TransformInput transformInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return TransformInput.builder()
-                .contentList(deltaFileMessage.getContentList())
+                .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
-                .actionContext(context)
                 .build();
     }
 

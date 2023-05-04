@@ -22,8 +22,8 @@ import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.types.Content;
+import org.deltafi.common.types.SaveManyContent;
 
-import javax.ws.rs.core.MediaType;
 import java.io.*;
 import java.util.*;
 
@@ -66,26 +66,24 @@ public class ContentStorageService {
         return save(did, new ByteArrayInputStream(content), mediaType);
     }
 
-    public List<Content> saveMany(String did, LinkedHashMap<String, byte[]> contentToBytes) throws ObjectStorageException {
+    public List<Content> saveMany(String did, List<SaveManyContent> saveManyContentList) throws ObjectStorageException {
         List<Content> updatedContent = new ArrayList<>();
 
         Map<ObjectReference, InputStream> objectsToSave = new LinkedHashMap<>();
-        for (Map.Entry<String, byte[]> inputStreamEntry : contentToBytes.entrySet()) {
-            String name = inputStreamEntry.getKey();
-            byte[] entryBytes = inputStreamEntry.getValue();
-            Content content = new Content(name, null);
+        for (SaveManyContent entry : saveManyContentList) {
+            Content content = new Content(entry.name(), null);
 
-            if (entryBytes.length == 0) {
-                content.setContentReference(new ContentReference(MediaType.APPLICATION_OCTET_STREAM));
+            if (entry.content().length == 0) {
+                content.setContentReference(new ContentReference(entry.mediaType()));
                 updatedContent.add(content);
                 continue;
             }
 
             Segment segment = new Segment(did);
-            segment.setSize(entryBytes.length);
-            content.setContentReference(new ContentReference(MediaType.APPLICATION_OCTET_STREAM, segment));
+            segment.setSize(entry.content().length);
+            content.setContentReference(new ContentReference(entry.mediaType(), segment));
 
-            objectsToSave.put(buildObjectReference(segment), new ByteArrayInputStream(entryBytes));
+            objectsToSave.put(buildObjectReference(segment), new ByteArrayInputStream(entry.content()));
             updatedContent.add(content);
         }
 

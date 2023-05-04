@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.splitter;
+package org.deltafi.common.reader;
 
 import java.io.*;
 
@@ -24,7 +24,7 @@ import java.io.*;
  * readLine method by the maxLineSize setting to limit the characters
  * read into memory.
  */
-public class CountingReader extends BufferedReader {
+public class BoundedLineReader extends BufferedReader {
 
     static final String LINE_OVERFLOW = "The current line will not fit within the max size limit";
 
@@ -34,14 +34,14 @@ public class CountingReader extends BufferedReader {
     private long bytesRead = 0;
     private int nextChar = UNSET;
 
-    public CountingReader(Reader in, long maxLineSize) {
+    public BoundedLineReader(Reader in, long maxLineSize) {
         super(in);
-        this.maxLineSize = maxLineSize;
+        setMaxLineSize(maxLineSize);
     }
 
-    public CountingReader(Reader in, int sz, long maxLineSize) {
+    public BoundedLineReader(Reader in, int sz, long maxLineSize) {
         super(in, sz);
-        this.maxLineSize = maxLineSize;
+        setMaxLineSize(maxLineSize);
     }
 
     /**
@@ -50,8 +50,7 @@ public class CountingReader extends BufferedReader {
      * followed immediately by a line feed, or by reaching the end-of-file
      * (EOF).
      * @return the number of bytes in the next line of data including the terminating characters
-     * @throws IOException If an I/O error occurs
-     * @throws SplitException If the line is not terminated before reading the maximum number bytes as set by {@link CountingReader#maxLineSize}
+     * @throws IOException If an I/O error occurs or the line is not terminated before reading the maximum number bytes as set by {@link BoundedLineReader#maxLineSize}
      */
     public long countBytesInNextLine() throws IOException {
         return doReadLine(null);
@@ -65,8 +64,7 @@ public class CountingReader extends BufferedReader {
      * @return  A String containing the contents of the line, including
      * any line-termination characters, or null if the end of the
      * stream has been reached without reading any characters
-     * @throws IOException  If an I/O error occurs
-     * @throws SplitException If the line is not terminated before reading the maximum number bytes as set by {@link CountingReader#maxLineSize}
+     * @throws IOException If an I/O error occurs or the line is not terminated before reading the maximum number bytes as set by {@link BoundedLineReader#maxLineSize}
      */
     @Override
     public String readLine() throws IOException {
@@ -88,6 +86,10 @@ public class CountingReader extends BufferedReader {
      * @param maxLineSize new maxLineSize to use
      */
     public void setMaxLineSize(long maxLineSize) {
+        if (maxLineSize < 0) {
+            throw new IllegalArgumentException("maxLineSize cannot be negative");
+        }
+
         this.maxLineSize = maxLineSize;
     }
 
@@ -143,9 +145,9 @@ public class CountingReader extends BufferedReader {
         return currentLineSize;
     }
 
-    private void checkSize(long currentLineSize) {
+    private void checkSize(long currentLineSize) throws IOException {
         if (currentLineSize > maxLineSize) {
-            throw new SplitException(LINE_OVERFLOW);
+            throw new IOException(LINE_OVERFLOW);
         }
     }
 }

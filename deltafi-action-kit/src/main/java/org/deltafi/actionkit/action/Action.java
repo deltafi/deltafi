@@ -27,15 +27,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -139,35 +135,6 @@ public abstract class Action<P extends ActionParameters> {
      */
     public String getClassCanonicalName() {
         return getClass().getCanonicalName();
-    }
-
-    /**
-     * Load a content reference from the content storage service as a byte array
-     * @param contentReference Reference to content to be loaded
-     * @return a byte array for the loaded content
-     */
-    @SuppressWarnings("unused")
-    protected byte[] loadContent(ContentReference contentReference) {
-        byte[] content = null;
-        try (InputStream contentInputStream = loadContentAsInputStream(contentReference)) {
-            content = contentInputStream.readAllBytes();
-        } catch (IOException e) {
-            log.warn("Unable to close content input stream", e);
-        }
-        return content;
-    }
-
-    /**
-     * Load a content reference from the content storage service as an InputStream
-     * @param contentReference Reference to content to be loaded
-     * @return an InputStream for the loaded content
-     */
-    protected InputStream loadContentAsInputStream(ContentReference contentReference) {
-        try {
-            return contentStorageService.load(contentReference);
-        } catch (ObjectStorageException e) {
-            throw new ActionKitException("Failed to load content from storage", e);
-        }
     }
 
     /**

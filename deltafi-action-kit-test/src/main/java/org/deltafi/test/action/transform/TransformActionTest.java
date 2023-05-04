@@ -18,6 +18,7 @@
 package org.deltafi.test.action.transform;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.test.action.ActionTest;
 import org.junit.jupiter.api.Assertions;
@@ -54,7 +55,7 @@ public abstract class TransformActionTest extends ActionTest {
         String outputEvent = normalizeData(result.toEvent().toString());
         Assertions.assertEquals(expectedEvent, outputEvent);
 
-        List<byte[]> actualContent = result.getContent().stream().map(this::getContent).toList();
+        List<byte[]> actualContent = result.getContent().stream().map(ActionContent::loadBytes).toList();
 
         assertContentIsEqual(expectedContent, actualContent);
     }

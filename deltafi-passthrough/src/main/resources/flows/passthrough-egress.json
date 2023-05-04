@@ -5,7 +5,7 @@
   "includeIngressFlows": [
     "decompress-and-merge",
     "passthrough",
-    "split-passthrough",
+    "split-lines-passthrough",
     "join-max-ingress",
     "join-timeout-ingress",
     "join-grouped-ordered-max-ingress"

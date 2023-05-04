@@ -22,33 +22,24 @@ import org.deltafi.actionkit.action.format.FormatInput;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.format.FormatResultType;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ContentReference;
-import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.passthrough.param.RoteParameters;
 import org.deltafi.passthrough.util.RandSleeper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 @Component
 public class RoteFormatAction extends FormatAction<RoteParameters> {
     public RoteFormatAction() {
-        super("Format the result created by the load action with no transformation");
+        super("Format the first result created by the load action with no transformation");
     }
 
     public FormatResultType format(@NotNull ActionContext context, @NotNull RoteParameters parameters, @NotNull FormatInput input) {
         RandSleeper.sleep(parameters.getMinRoteDelayMS(), parameters.getMaxRoteDelayMS());
 
-        FormatResult result = new FormatResult(context, context.getSourceFilename());
-        List<Segment> segments = input.getContentList().stream()
-                .flatMap(content -> content.getContentReference().getSegments().stream())
-                .toList();
-        result.setContentReference(new ContentReference(MediaType.APPLICATION_OCTET_STREAM, segments));
-
-        return result;
+        return new FormatResult(context, input.getContentList().get(0));
     }
 
     @Override

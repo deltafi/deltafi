@@ -42,7 +42,7 @@ public class SplitterLoadActionTest extends LoadActionTest {
                 .testName("oneSplit")
                 .inputs(Collections.singletonList(IOContent.builder().name("input.content").contentType("application/binary").build()))
                 .parameters(Map.of("reinjectFlow", "testFlow"))
-                .expectSplitAction(Collections.singletonList(Child.builder()
+                .expectSplitResult(Collections.singletonList(Child.builder()
                         .name("split.content")
                         .flow("testFlow")
                         .contentType("application/binary")
@@ -70,7 +70,7 @@ public class SplitterLoadActionTest extends LoadActionTest {
                         IOContent.builder().name("input.content10").contentType("application/binary10").build()
                 ))
                 .parameters(Map.of("reinjectFlow", "testFlow"))
-                .expectSplitAction(Arrays.asList(
+                .expectSplitResult(Arrays.asList(
                         Child.builder().name("split.content1").flow("testFlow").contentType("application/binary").build(),
                         Child.builder().name("split.content2").flow("testFlow").contentType("application/binary2").build(),
                         Child.builder().name("split.content3").flow("testFlow").contentType("application/binary3").build(),

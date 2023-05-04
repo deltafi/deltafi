@@ -17,11 +17,11 @@
  */
 package org.deltafi.actionkit.action.join;
 
-import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.DataAmendedResult;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.types.*;
 
 import java.util.ArrayList;
@@ -46,11 +46,12 @@ public class JoinResult extends DataAmendedResult implements JoinResultType {
      * @param context execution context for the current action
      * @param content the joined content
      */
-    public JoinResult(ActionContext context, List<Content> content) {
+    public JoinResult(ActionContext context, List<ActionContent> content) {
         super(context);
         setContent(content);
     }
 
+    @SuppressWarnings("unused")
     public void addDomain(String domainName, String value, String mediaType) {
         domains.add(new Domain(domainName, value, mediaType));
     }
@@ -65,7 +66,7 @@ public class JoinResult extends DataAmendedResult implements JoinResultType {
         ActionEventInput event = super.toEvent();
         event.setJoin(JoinEvent.builder()
                 .domains(domains)
-                .content(content)
+                .content(ContentConverter.convert(content))
                 .metadata(metadata)
                 .build());
         return event;

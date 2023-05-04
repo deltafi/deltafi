@@ -17,19 +17,15 @@
  */
 package org.deltafi.passthrough.action;
 
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
 import org.deltafi.passthrough.param.MergeTransformParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 @Component
 public class MergeTransformAction extends TransformAction<MergeTransformParameters> {
@@ -41,8 +37,8 @@ public class MergeTransformAction extends TransformAction<MergeTransformParamete
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull MergeTransformParameters params, @NotNull TransformInput input) {
-        Content firstContent = input.firstContent();
-        Content mergedContent = new Content();
+        ActionContent firstContent = input.getContentList().get(0);
+        ActionContent mergedContent = firstContent.copy();
 
         String name = params.getMergedFilename();
         if (name == null || name.isEmpty()) {
@@ -51,17 +47,16 @@ public class MergeTransformAction extends TransformAction<MergeTransformParamete
         mergedContent.setName(name.replace(FILENAME_REPLACEMENT, firstContent.getName()));
 
         String mediaType = params.getMediaType();
-        if (mediaType == null || mediaType.isEmpty()) {
-            mediaType = firstContent.getContentReference().getMediaType();
+        if (mediaType != null && !mediaType.isEmpty()) {
+            mergedContent.setMediaType(mediaType);
         }
 
-        ContentReference contentReference = new ContentReference(mediaType,
-                input.getContentList().stream().flatMap(c -> c.getContentReference().getSegments().stream()).collect(Collectors.toList()));
-        mergedContent.setContentReference(contentReference);
+        if (input.getContentList().size() > 1) {
+            input.getContentList().subList(1, input.getContentList().size()).forEach(mergedContent::append);
+        }
 
         TransformResult result = new TransformResult(context);
-        result.setContent(Collections.singletonList(mergedContent));
-        result.addMetadata(input.getMetadata());
+        result.addContent(mergedContent);
         return result;
     }
 }

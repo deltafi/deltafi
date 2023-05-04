@@ -32,8 +32,7 @@ public interface HasIndexedMetadata {
     }
 
     /**
-     * Add all the metadata in the given map to this DeltaFile. These entries will be indexed and
-     * searchable.
+     * Add all the metadata in the given map to this Result. These entries will be indexed and searchable.
      * @param metadata map of entries that will be added to the indexed metadata
      */
     default void addIndexedMetadata(Map<String, String> metadata) {

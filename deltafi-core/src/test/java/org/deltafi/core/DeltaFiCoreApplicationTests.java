@@ -2434,7 +2434,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile6);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 100);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
+		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFile::getDid).sorted().toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
 

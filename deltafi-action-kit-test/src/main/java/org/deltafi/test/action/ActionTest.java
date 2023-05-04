@@ -19,28 +19,25 @@ package org.deltafi.test.action;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.content.Segment;
-import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
 
-import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
@@ -57,7 +54,7 @@ public abstract class ActionTest {
 
     private static final Map<String, Pattern> NORMALIZED_REPLACEMENTS_MAP = Map.of(
             "stop=stopDateTime", Pattern.compile("stop=\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(-\\d{2}:\\d{2})?"),
-            "Segment(uuid=00000000-0000-0000-0000-000000000001", Pattern.compile("Segment\\(uuid=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+            "segments=[]", Pattern.compile("segments=\\[(.*?)\\]")
     );
 
 
@@ -67,8 +64,7 @@ public abstract class ActionTest {
     @Mock
     protected ActionsProperties actionsProperties;
 
-    @Mock
-    protected ContentStorageService contentStorageService;
+    protected final ContentStorageService contentStorageService = new ContentStorageService(new InMemoryObjectStorageService());
 
     protected String convertUTCDateToLocal(String utcDateString) {
         final DateTimeFormatter javaStdDateToStringFormatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy", Locale.ENGLISH);
@@ -76,33 +72,16 @@ public abstract class ActionTest {
         return utcDate.toOffsetDateTime().atZoneSameInstant(ZoneId.systemDefault()).format(javaStdDateToStringFormatter);
     }
 
-    @SneakyThrows
-    private void setMocksForLoad(TestCaseBase<?> testCase, ContentReference reference, byte[] content) {
-        if(testCase.getExceptionLocation() == TestCaseBase.ExceptionLocation.STORAGE_READ) {
-            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenThrow(testCase.getException());
-        }
-        else {
-            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenAnswer((invocation) -> new ByteArrayInputStream(content));
-            Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(content));
-        }
-    }
-
-    protected List<Content> getContents(List<? extends IOContent> contents, TestCaseBase<?> testCase, String stripIfStartsWith) {
+    protected List<ActionContent> getContents(List<? extends IOContent> contents, TestCaseBase<?> testCase, String stripIfStartsWith) {
         return contents.stream().map(ioContent -> {
-            // Grab the content, setup the mocks, then create a Content object that describes it
             try {
                 byte[] content = getTestResourceOrDefault(testCase.getTestName(), ioContent.getName(),
                         () -> new ByteArrayInputStream(ioContent.getName().getBytes(StandardCharsets.UTF_8)))
                         .readAllBytes();
-                final Segment segment = new Segment(UUID.randomUUID().toString(), ioContent.getOffset(), content.length, DID);
-                ContentReference reference = Mockito.spy(new ContentReference(ioContent.getContentType(), segment));
-
-                setMocksForLoad(testCase, reference, content);
-
-                return Content.newBuilder()
-                        .name(ioContent.getName().startsWith(stripIfStartsWith) ? ioContent.getName().substring(stripIfStartsWith.length()) : ioContent.getName())
-                        .contentReference(reference)
-                        .build();
+                ContentReference reference = contentStorageService.save(DID, content, ioContent.getContentType());
+                return (ActionContent) new ActionContent(ioContent.getName().startsWith(stripIfStartsWith) ? ioContent.getName().substring(stripIfStartsWith.length()) : ioContent.getName(),
+                        reference,
+                        contentStorageService);
             }
             catch(Throwable t) {
                 t.printStackTrace();
@@ -111,22 +90,20 @@ public abstract class ActionTest {
         }).toList();
     }
 
-    protected List<Content> createContents(TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
+    protected List<ActionContent> createContents(TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
         return outputs.stream().map(convertOutputToContent(testCase))
                 .toList();
     }
 
-    protected Function<IOContent, Content> convertOutputToContent(TestCaseBase<?> testCase) {
+    protected Function<IOContent, ActionContent> convertOutputToContent(TestCaseBase<?> testCase) {
         return (output) -> {
             try {
                 byte[] content = getTestResourceOrEmpty(testCase.getTestName(), output.getName()).readAllBytes();
-                final Segment segment = new Segment(UUID.randomUUID().toString(), output.getOffset(), content.length, DID);
-                ContentReference reference = Mockito.spy(new ContentReference(output.getContentType(), segment));
-                setMocksForLoad(testCase, reference, content);
-                return Content.newBuilder()
-                        .name(output.getName().startsWith("output.") ? output.getName().substring(7) : output.getName())
-                        .contentReference(reference)
-                        .build();
+
+                ContentReference reference = contentStorageService.save(DID, content, output.getContentType());
+                return (ActionContent) new ActionContent(output.getName().startsWith("output.") ? output.getName().substring(7) : output.getName(),
+                        reference,
+                        contentStorageService);
             }
             catch(Throwable t) {
                 t.printStackTrace();
@@ -154,25 +131,11 @@ public abstract class ActionTest {
         }
     }
 
-    protected DeltaFile deltaFile(Map<String, String> metadata, List<Content> content) {
-        return DeltaFile.newBuilder().sourceInfo(
-                        SourceInfo.builder().metadata(
-                                        metadata == null ? new HashMap<>() : metadata)
-                                .filename("filename")
-                                .flow("flow")
-                                .build())
-                .protocolStack(Collections.singletonList(ProtocolLayer.builder()
-                        .metadata(new HashMap<>())
-                        .action("action")
-                        .content(content)
-                        .build()))
-                // "Input" could also be "FormattedData" from a FormatAction to support Egress actions
-                .formattedData(content.stream()
-                        .map(Content::getContentReference)
-                        .map(cr -> FormattedData.newBuilder().contentReference(cr).build())
-                        .toList())
+    protected DeltaFileMessage deltaFileMessage(Map<String, String> metadata, List<ActionContent> content) {
+        return DeltaFileMessage.builder()
+                .metadata(metadata == null ? new HashMap<>() : metadata)
+                .contentList(content.stream().map(ContentConverter::convert).toList())
                 .domains(new ArrayList<>())
-                .did(DID)
                 .build();
     }
 
@@ -191,74 +154,21 @@ public abstract class ActionTest {
                 .build();
     }
 
-    protected void beforeExecuteAction(DeltaFile deltaFile, TestCaseBase<?> testCase) {
+    protected void beforeExecuteAction(DeltaFileMessage deltaFileMessage, TestCaseBase<?> testCase) {
     }
 
     protected ResultType callAction(TestCaseBase<?> testCase) {
-        List<Content> inputs = getContents(testCase.getInputs(), testCase, "input.");
-        DeltaFile deltaFile = deltaFile(testCase.getSourceMetadata(), inputs);
+        List<ActionContent> inputs = getContents(testCase.getInputs(), testCase, "input.");
+        DeltaFileMessage deltaFileMessage = deltaFileMessage(testCase.getSourceMetadata(), inputs);
 
         Mockito.lenient().when(actionsProperties.getHostname()).thenReturn(HOSTNAME);
 
-        beforeExecuteAction(deltaFile, testCase);
+        beforeExecuteAction(deltaFileMessage, testCase);
         return testCase.getAction().executeAction(ActionInput.builder()
-                .deltaFileMessages(List.of(deltaFile.forQueue(context().getName())))
+                .deltaFileMessages(List.of(deltaFileMessage))
                 .actionContext(context())
                 .actionParams(testCase.getParameters())
                 .build());
-    }
-
-    protected List<Content> createContentReferencesForSaveMany(InvocationOnMock invocation) throws ObjectStorageException, IOException {
-        String did = invocation.getArgument(0);
-        Map<String, byte[]> namesToBytes = invocation.getArgument(1);
-        List<Content> contentList = new ArrayList<>();
-
-        for(Map.Entry<String, byte[]> nameToBytes : namesToBytes.entrySet()) {
-            final String name = nameToBytes.getKey();
-            final byte[] bytes = nameToBytes.getValue();
-
-            Content content = new Content(name, createContentReference(did, MediaType.APPLICATION_OCTET_STREAM, bytes));
-            contentList.add(content);
-        }
-
-        return contentList;
-    }
-
-    protected ContentReference createContentReference(InvocationOnMock invocation) throws IOException, ObjectStorageException {
-        String did = invocation.getArgument(0);
-        String contentType = invocation.getArgument(2);
-        Object bytesOrStream = invocation.getArgument(1);
-
-        return createContentReference(did, contentType, bytesOrStream);
-    }
-
-    protected ContentReference createContentReference(String did, String contentType, Object bytesOrStream) throws IOException, ObjectStorageException {
-        final byte[] bytes;
-
-        if(bytesOrStream instanceof InputStream) {
-            bytes = ((InputStream) bytesOrStream).readAllBytes();
-        }
-        else {
-            bytes = (byte[])bytesOrStream;
-        }
-
-        final Segment segment = new Segment(UUID.randomUUID().toString(), 0, bytes.length, did);
-        ContentReference reference = Mockito.spy(new ContentReference(contentType, segment));
-        Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(bytes));
-        Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenAnswer((invocation) -> new ByteArrayInputStream(bytes));
-
-        return reference;
-    }
-
-    protected Answer<ContentReference> createContentSubreference(byte[] bytes) {
-        return invocation -> {
-            Long offset = invocation.getArgument(0);
-            Long size = invocation.getArgument(1);
-            ContentReference reference = Mockito.spy((ContentReference)invocation.callRealMethod());
-            Mockito.lenient().when(reference.subreference(Mockito.anyLong(), Mockito.anyLong())).thenAnswer(createContentSubreference(bytes));
-            Mockito.lenient().when(contentStorageService.load(Mockito.eq(reference))).thenAnswer((invocation2) -> new ByteArrayInputStream(bytes, offset.intValue(), size.intValue()));
-            return reference;
-        };
     }
 
     public void executeFilter(TestCaseBase<?> testCase) {
@@ -291,18 +201,6 @@ public abstract class ActionTest {
 
     @SneakyThrows
     public <TC extends TestCaseBase<?>, RT extends Result<?>> RT execute(TC testCase, Class<RT> expectedResultType) {
-        // Setup some apis so that we can get data back out
-        if(testCase.getExceptionLocation() == TestCaseBase.ExceptionLocation.STORAGE_WRITE) {
-            Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(byte[].class), Mockito.anyString())).thenThrow(testCase.getException());
-            Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(InputStream.class), Mockito.anyString())).thenThrow(testCase.getException());
-            Mockito.lenient().when(contentStorageService.saveMany(Mockito.anyString(), Mockito.any())).thenThrow(testCase.getException());
-        }
-        else {
-            Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(byte[].class), Mockito.anyString())).thenAnswer(this::createContentReference);
-            Mockito.lenient().when(contentStorageService.save(Mockito.anyString(), Mockito.any(InputStream.class), Mockito.anyString())).thenAnswer(this::createContentReference);
-            Mockito.lenient().when(contentStorageService.saveMany(Mockito.anyString(), Mockito.any())).thenAnswer(this::createContentReferencesForSaveMany);
-        }
-
         ResultType result = callAction(testCase);
 
         if(!expectedResultType.isInstance(result)) {
@@ -335,28 +233,22 @@ public abstract class ActionTest {
     }
 
     protected List<byte[]> getExpectedContentOutputNormalized(DataAmendedResult expectedResult, DataAmendedResult actualResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
-        final List<Content> expectedContent = createContents(testCase, outputs);
+        final List<ActionContent> expectedContent = createContents(testCase, outputs);
 
-        List<Content> normalizedExpectedContent = orderListByAnother(actualResult.getContent(), expectedContent, Content::getName);
+        List<ActionContent> normalizedExpectedContent = orderListByAnother(actualResult.getContent(), expectedContent, ActionContent::getName);
         expectedResult.setContent(normalizedExpectedContent);
 
-        return normalizedExpectedContent.stream().map(this::getContent).toList();
-    }
-
-    protected byte[] getContent(Content content) {
-        ContentReference ref = content.getContentReference();
-        try (InputStream stream = contentStorageService.load(ref)) {
-            assert(stream!=null);
-            return stream.readAllBytes();
-        }
-        catch(Throwable t) {
-            return null;
-        }
+        return normalizedExpectedContent.stream().map(ActionContent::loadBytes).toList();
     }
 
     protected void assertContentIsEqual(List<byte[]> expected, List<byte[]> actual) {
         Assertions.assertEquals(expected.size(), actual.size(), "Expected content list size does not match actual content list size");
-        for(int ii=0; ii<expected.size(); ii++) {
+
+        for (int i=0; i < expected.size(); i++) {
+            Assertions.assertEquals(new String(expected.get(i)), new String(actual.get(i)));
+        }
+
+        for (int ii = 0; ii < expected.size(); ii++) {
             Assertions.assertEquals(0, Arrays.compare(expected.get(ii), actual.get(ii)), "Content at index " + ii + " does not match expected content");
         }
     }
