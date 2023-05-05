@@ -20,7 +20,7 @@
   <div class="deltafile-parent-child-panel">
     <CollapsiblePanel :header="header" class="table-panel">
       <DataTable :paginator="didsList.length < 10 ? false : true" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="didsList" :loading="loading && !loaded" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}">
-        <template #empty>{{ `No ${header} found.` }}</template>
+        <template v-if="!loading" #empty>{{ `No ${header} found.` }}</template>
         <template #loading>Loading {{ header }}. Please wait.</template>
         <Column field="did" header="DID" class="did-col">
           <template #body="{ data }">
@@ -65,7 +65,7 @@ onMounted(() => {
 });
 
 const header = computed(() => {
-  const relationship = props.field === 'parentDids' ? 'Parent' : 'Child';
+  const relationship = props.field === "parentDids" ? "Parent" : "Child";
   return `${relationship} DeltaFiles`;
 });
 
@@ -73,7 +73,7 @@ const fetchDidsArrayData = async () => {
   let didLists = [];
   if (!_.isEmpty(deltaFile[props.field])) {
     let didsArrayData = await getDeltaFilesByDIDs(deltaFile[props.field]);
-    let deltaFilesObjectsArray = didsArrayData.data.deltaFiles.deltaFiles;
+    let deltaFilesObjectsArray = didsArrayData;
     for (let deltaFi of deltaFilesObjectsArray) {
       didLists.push(deltaFi);
     }
@@ -81,7 +81,7 @@ const fetchDidsArrayData = async () => {
   didsList.value = didLists;
   loading.value = false;
   loaded.value = true;
-}
+};
 
 watch(() => deltaFile, fetchDidsArrayData, { deep: true });
 

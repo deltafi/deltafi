@@ -18,11 +18,12 @@
 
 import { EnumType } from 'json-to-graphql-query';
 import useGraphQL from './useGraphQL'
+import _ from "lodash";
 
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String, replayable?: Boolean,processingType?: string) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String, replayable?: Boolean, processingType?: string) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -76,7 +77,17 @@ export default function useDeltaFilesQueryBuilder() {
     return sendGraphQLQuery(query, "getDeltaFileSearchData");
   };
 
-  const getDeltaFilesByDIDs = (didsArray?: string[]) => {
+  const getDeltaFilesByDIDs = async (didsArray: string[], batchSize: number = 1000) => {
+    const chunkedDIDsArray = _.chunk(didsArray, batchSize);
+    const results = await Promise.all(chunkedDIDsArray.map(async (chunk) => {
+      return _getDeltaFilesByDIDs(chunk).then((r) => {
+        return r.data.deltaFiles.deltaFiles;
+      })
+    }));
+    return _.flatten(results)
+  };
+
+  const _getDeltaFilesByDIDs = (didsArray?: string[]) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -102,6 +113,7 @@ export default function useDeltaFilesQueryBuilder() {
         }
       }
     };
+
     return sendGraphQLQuery(query, "getDeltaFilesByDIDs");
   };
 
