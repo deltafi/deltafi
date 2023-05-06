@@ -23,6 +23,7 @@ import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Flow;
+import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.TransformFlowValidator;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,11 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
 
     public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator) {
         super("transform", transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator);
+    }
+
+    @Override
+    void copyFlowSpecificFields(TransformFlow sourceFlow, TransformFlow targetFlow) {
+        targetFlow.setMaxErrors(sourceFlow.getMaxErrors());
     }
 
     @Override

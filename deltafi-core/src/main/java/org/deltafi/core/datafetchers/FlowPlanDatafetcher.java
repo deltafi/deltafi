@@ -200,7 +200,7 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean savePluginVariables(@InputArgument PluginVariablesInput pluginVariablesInput) {
-        pluginVariableService.saveVariables(pluginVariablesInput.getSourcePlugin(), pluginVariablesInput.getVariables());
+        pluginVariableService.validateAndSaveVariables(pluginVariablesInput.getSourcePlugin(), pluginVariablesInput.getVariables());
         return true;
     }
 

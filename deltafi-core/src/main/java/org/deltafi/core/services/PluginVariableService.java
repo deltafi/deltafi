@@ -53,16 +53,22 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         return pluginVariableRepo.findAll();
     }
 
+    public void validateAndSaveVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
+        List<String> errors = validateVariables(variables);
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join(",", errors));
+        }
+        saveVariables(pluginCoordinates, variables);
+    }
+
     /**
      * Check if an older version of the variables exist. If they do upgrade the variables,
      * otherwise save the new variables as is.
      * @param variables variables to insert or update
      */
     public void saveVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
-        String errors = checkNewDefaultValues(variables);
-
-        if (null != errors) {
-            throw new IllegalArgumentException(errors);
+        if (variables == null || variables.isEmpty()) {
+            return;
         }
 
         findExisting(pluginCoordinates).ifPresentOrElse(
@@ -70,7 +76,11 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
                 () -> insertVariables(pluginCoordinates, variables));
     }
 
-    private String checkNewDefaultValues(List<Variable> variables) {
+    public List<String> validateVariables(List<Variable> variables) {
+        return variables != null ? checkNewDefaultValues(variables) : List.of();
+    }
+
+    private List<String> checkNewDefaultValues(List<Variable> variables) {
         List<String> errors = new ArrayList<>();
 
         for (Variable variable : variables) {
@@ -80,7 +90,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
             }
         }
 
-        return errors.isEmpty() ? null : String.join(",", errors);
+        return errors;
     }
 
     private Optional<PluginVariables> findExisting(PluginCoordinates pluginId) {

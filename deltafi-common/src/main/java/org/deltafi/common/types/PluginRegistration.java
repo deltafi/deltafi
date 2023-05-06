@@ -33,4 +33,16 @@ public class PluginRegistration {
     private List<ActionDescriptor> actions;
     private List<Variable> variables;
     private List<FlowPlan> flowPlans;
+
+
+    public Plugin toPlugin() {
+        Plugin plugin = new Plugin();
+        plugin.setPluginCoordinates(pluginCoordinates);
+        plugin.setDisplayName(displayName);
+        plugin.setDescription(description);
+        plugin.setActionKitVersion(actionKitVersion);
+        plugin.setActions(actions);
+        plugin.setDependencies(dependencies);
+        return plugin;
+    }
 }

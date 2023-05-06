@@ -52,51 +52,76 @@ public class PluginRegistryService implements Snapshotter {
     private final List<PluginCleaner> pluginCleaners;
 
     public Result register(PluginRegistration pluginRegistration) {
-        Plugin plugin = new Plugin();
-        plugin.setPluginCoordinates(pluginRegistration.getPluginCoordinates());
-        plugin.setDisplayName(pluginRegistration.getDisplayName());
-        plugin.setDescription(pluginRegistration.getDescription());
-        plugin.setActionKitVersion(pluginRegistration.getActionKitVersion());
-        plugin.setActions(pluginRegistration.getActions());
-        plugin.setDependencies(pluginRegistration.getDependencies());
+        Plugin plugin = pluginRegistration.toPlugin();
+        GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);
 
-        List<String> validationErrors = pluginValidator.validate(plugin);
+        // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
+        List<String> validationErrors = validate(plugin, groupedFlowPlans, pluginRegistration.getVariables());
         if (!validationErrors.isEmpty()) {
             return Result.newBuilder().success(false).errors(validationErrors).build();
         }
 
         pluginRepository.deleteOlderVersions(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
         pluginRepository.save(plugin);
-
         actionDescriptorService.registerActions(plugin.getActions());
+        pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
+        upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
 
-        if (pluginRegistration.getVariables() != null) {
-            pluginVariableService.saveVariables(pluginRegistration.getPluginCoordinates(),
-                    pluginRegistration.getVariables());
-        }
+        return Result.newBuilder().success(true).build();
+    }
+
+    /**
+     * Check the plugin info, flow plans and variables for any errors that should
+     * prevent the plugin from successfully registering
+     * @return the list of errors
+     */
+    private List<String> validate(Plugin plugin, GroupedFlowPlans groupedFlowPlans, List<Variable> variables) {
+        List<String> errors = new ArrayList<>();
+        errors.addAll(pluginValidator.validate(plugin));
+        errors.addAll(ingressFlowPlanService.validateFlowPlans(groupedFlowPlans.ingressFlowPlans));
+        errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans));
+        errors.addAll(enrichFlowPlanService.validateFlowPlans(groupedFlowPlans.enrichFlowPlans));
+        errors.addAll(egressFlowPlanService.validateFlowPlans(groupedFlowPlans.egressFlowPlans));
+        errors.addAll(pluginVariableService.validateVariables(variables));
+        return errors;
+    }
+
+    private void upgradeFlowPlans(PluginCoordinates sourcePlugin, GroupedFlowPlans groupedFlowPlans) {
+        ingressFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.ingressFlowPlans());
+        transformFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.transformFlowPlans());
+        enrichFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.enrichFlowPlans());
+        egressFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.egressFlowPlans());
+    }
+
+    /**
+     * Group the flow plans by the flow plan type. Run validation of each flow plan.
+     * @param pluginRegistration registration object holding the flow plans to save
+     * @return lists of each flow by type
+     */
+    private GroupedFlowPlans groupPlansByFlowType(PluginRegistration pluginRegistration) {
+        List<IngressFlowPlan> ingressFlowPlans = new ArrayList<>();
+        List<TransformFlowPlan> transformFlowPlans = new ArrayList<>();
+        List<EnrichFlowPlan> enrichFlowPlans = new ArrayList<>();
+        List<EgressFlowPlan> egressFlowPlans = new ArrayList<>();
 
         if (pluginRegistration.getFlowPlans() != null) {
             pluginRegistration.getFlowPlans().forEach(flowPlan -> {
                 flowPlan.setSourcePlugin(pluginRegistration.getPluginCoordinates());
-
-                log.info("Registering flow plan: {}", flowPlan.getName());
-                if (flowPlan instanceof IngressFlowPlan) {
-                    ingressFlowPlanService.saveFlowPlan((IngressFlowPlan) flowPlan);
-                } else if (flowPlan instanceof EnrichFlowPlan) {
-                    enrichFlowPlanService.saveFlowPlan((EnrichFlowPlan) flowPlan);
-                } else if (flowPlan instanceof EgressFlowPlan) {
-                    egressFlowPlanService.saveFlowPlan((EgressFlowPlan) flowPlan);
-                } else if (flowPlan instanceof TransformFlowPlan) {
-                    transformFlowPlanService.saveFlowPlan((TransformFlowPlan) flowPlan);
+                if (flowPlan instanceof IngressFlowPlan plan) {
+                    ingressFlowPlans.add(plan);
+                } else if (flowPlan instanceof TransformFlowPlan plan) {
+                    transformFlowPlans.add(plan);
+                } else if (flowPlan instanceof EnrichFlowPlan plan) {
+                    enrichFlowPlans.add(plan);
+                } else if (flowPlan instanceof EgressFlowPlan plan) {
+                    egressFlowPlans.add(plan);
                 } else {
                     log.warn("Unknown flow plan type: {}", flowPlan.getClass());
                 }
             });
         }
 
-        pruneFlowsAndPlans(pluginRegistration.getPluginCoordinates());
-
-        return Result.newBuilder().success(true).build();
+        return new GroupedFlowPlans(ingressFlowPlans, transformFlowPlans, enrichFlowPlans, egressFlowPlans);
     }
 
     public Optional<Plugin> getPlugin(PluginCoordinates pluginCoordinates) {
@@ -231,13 +256,6 @@ public class PluginRegistryService implements Snapshotter {
         return errors;
     }
 
-    void pruneFlowsAndPlans(PluginCoordinates pluginCoordinates) {
-        ingressFlowPlanService.pruneFlowsAndPlans(pluginCoordinates);
-        enrichFlowPlanService.pruneFlowsAndPlans(pluginCoordinates);
-        egressFlowPlanService.pruneFlowsAndPlans(pluginCoordinates);
-        transformFlowPlanService.pruneFlowsAndPlans(pluginCoordinates);
-    }
-
     public void uninstallPlugin(PluginCoordinates pluginCoordinates) {
         // TODO: TBD: remove plugin property sets
         Plugin plugin = getPlugin(pluginCoordinates).orElseThrow();
@@ -245,5 +263,7 @@ public class PluginRegistryService implements Snapshotter {
         // remove the plugin from the registry
         removePlugin(plugin);
     }
+
+    private record GroupedFlowPlans(List<IngressFlowPlan> ingressFlowPlans, List<TransformFlowPlan> transformFlowPlans, List<EnrichFlowPlan> enrichFlowPlans, List<EgressFlowPlan> egressFlowPlans){}
 
 }

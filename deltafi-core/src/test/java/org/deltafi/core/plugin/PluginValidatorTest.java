@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 public class PluginValidatorTest {
@@ -37,6 +38,19 @@ public class PluginValidatorTest {
 
     @InjectMocks
     PluginValidator pluginValidator;
+
+    @Test
+    void testValidate_Coords() {
+        Plugin plugin = new Plugin();
+        List<String> errors = pluginValidator.validate(plugin);
+        assertThat(errors).hasSize(1).contains("The plugin coordinates must be provided");
+
+        plugin.setPluginCoordinates(new PluginCoordinates("", null, "  "));
+        errors = pluginValidator.validate(plugin);
+        assertThat(errors).hasSize(3).contains("The plugin groupId cannot be null or empty",
+                "The plugin artifactId cannot be null or empty",
+                "The plugin version cannot be null or empty");
+    }
 
     @Test
     public void validate() {

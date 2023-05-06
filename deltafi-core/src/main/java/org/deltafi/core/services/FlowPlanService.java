@@ -35,7 +35,10 @@ import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.validation.FlowPlanValidator;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginCleaner, Snapshotter {
@@ -50,11 +53,41 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     private final FlowService<FlowPlanT, FlowT> flowService;
 
     /**
-     * Persist the FlowPlan and create a flow from the plan.
-     * @param flowPlan flow plan used to create a new flow
-     * @return Flow that was created from the plan
+     * Save the given list of flow plans. Find and remove any flow plans for the
+     * source plugin that were not in the list of flow plans to save.
+     * @param sourcePlugin plugin that provided the flow plans
+     * @param flowPlans flow plans to save
      */
-    public FlowT saveFlowPlan(FlowPlanT flowPlan) {
+    public void upgradeFlowPlans(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
+        flowPlanRepo.saveAll(flowPlans);
+
+        Set<String> flowPlanNames = flowPlans.stream().map(FlowPlan::getName).collect(Collectors.toSet());
+        Set<String> flowPlansToRemove = flowPlanRepo.findByGroupIdAndArtifactId(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId()).stream()
+                .map(FlowPlan::getName)
+                .filter(name -> !flowPlanNames.contains(name))
+                .collect(Collectors.toSet());
+
+        if (!flowPlansToRemove.isEmpty()) {
+            flowPlanRepo.deleteAllById(flowPlansToRemove);
+        }
+
+        flowService.upgradeFlows(sourcePlugin, flowPlans, flowPlanNames);
+    }
+
+    public List<String> validateFlowPlans(List<FlowPlanT> flowPlans) {
+        List<String> errors = new ArrayList<>();
+        for (FlowPlanT flowPlan : flowPlans) {
+            try {
+                validateFlowPlan(flowPlan);
+            } catch (DeltafiConfigurationException e) {
+                errors.add(e.getMessage());
+            }
+        }
+
+        return errors;
+    }
+
+    public void validateFlowPlan(FlowPlanT flowPlan) {
         PluginCoordinates existingSourcePlugin = flowPlanRepo
                 .findById(flowPlan.getName())
                 .map(FlowPlan::getSourcePlugin)
@@ -65,7 +98,15 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
         }
 
         flowPlanValidator.validate(flowPlan);
+    }
 
+    /**
+     * Persist the FlowPlan and create a flow from the plan.
+     * @param flowPlan flow plan used to create a new flow
+     * @return Flow that was created from the plan
+     */
+    public FlowT saveFlowPlan(FlowPlanT flowPlan) {
+        validateFlowPlan(flowPlan);
         return flowService.buildAndSaveFlow(flowPlanRepo.save(flowPlan));
     }
 
@@ -94,16 +135,6 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     public FlowPlanT getPlanByName(String flowPlanName) {
         return flowPlanRepo.findById(flowPlanName)
                 .orElseThrow(() -> new DgsEntityNotFoundException("Could not find a flow plan named " + flowPlanName));
-    }
-
-    /**
-     * Remove flows and flows plans that were created for a different version
-     * of this plugin
-     * @param pluginCoordinates current coordinates
-     */
-    public void pruneFlowsAndPlans(PluginCoordinates pluginCoordinates) {
-        flowPlanRepo.deleteOtherVersions(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion());
-        flowService.pruneFlows(pluginCoordinates);
     }
 
     /**

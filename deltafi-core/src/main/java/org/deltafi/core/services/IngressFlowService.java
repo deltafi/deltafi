@@ -46,6 +46,11 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
     }
 
     @Override
+    void copyFlowSpecificFields(IngressFlow sourceFlow, IngressFlow targetFlow) {
+        targetFlow.setMaxErrors(sourceFlow.getMaxErrors());
+    }
+
+    @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         refreshCache();
         systemSnapshot.setRunningIngressFlows(getRunningFlowNames());

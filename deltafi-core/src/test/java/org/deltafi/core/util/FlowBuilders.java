@@ -111,4 +111,30 @@ public class FlowBuilders {
     public static TransformFlow buildRunningFlow(String name, EgressActionConfiguration egressActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
         return buildFlow(name, egressActionConfiguration, transforms, FlowState.RUNNING, testMode);
     }
+
+    public static IngressFlow buildIngressFlow(String name, String groupId, String artifactId, String version) {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId(groupId).artifactId(artifactId).version(version).build();
+        return buildIngressFlow(name, pluginCoordinates);
+    }
+
+    public static IngressFlow buildIngressFlow(String name, PluginCoordinates pluginCoordinates) {
+        IngressFlow ingressFlow = new IngressFlow();
+        ingressFlow.setName(name);
+        ingressFlow.setSourcePlugin(pluginCoordinates);
+        ingressFlow.migrate();
+        return ingressFlow;
+    }
+
+    public static IngressFlowPlan buildIngressFlowPlan(String name, String groupId, String artifactId, String version) {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId(groupId).artifactId(artifactId).version(version).build();
+        return buildIngressFlowPlan(name, pluginCoordinates);
+    }
+
+    public static IngressFlowPlan buildIngressFlowPlan(String name, PluginCoordinates pluginCoordinates) {
+        IngressFlowPlan ingressFlow = new IngressFlowPlan(name, FlowType.INGRESS, "desc");
+        ingressFlow.setSourcePlugin(pluginCoordinates);
+        return ingressFlow;
+    }
 }

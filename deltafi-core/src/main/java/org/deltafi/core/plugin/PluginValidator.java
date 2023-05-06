@@ -18,6 +18,7 @@
 package org.deltafi.core.plugin;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.maven.VersionMatcher;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
@@ -34,15 +35,39 @@ public class PluginValidator {
 
     public List<String> validate(Plugin plugin) {
         List<String> validationErrors = new ArrayList<>();
-
-        if (plugin.getDependencies() != null) {
-            validationErrors.addAll(validateDependencies(plugin.getDependencies()));
-        }
-
+        validationErrors.addAll(validateCoordinates(plugin.getPluginCoordinates()));
+        validationErrors.addAll(validateDependencies(plugin.getDependencies()));
         return validationErrors;
     }
 
+    private List<String> validateCoordinates(PluginCoordinates pluginCoordinates) {
+        List<String> errors = new ArrayList<>();
+
+        if (pluginCoordinates == null) {
+            errors.add("The plugin coordinates must be provided");
+            return errors;
+        }
+
+        if (StringUtils.isBlank(pluginCoordinates.getGroupId())) {
+            errors.add("The plugin groupId cannot be null or empty");
+        }
+
+        if (StringUtils.isBlank(pluginCoordinates.getArtifactId())) {
+            errors.add("The plugin artifactId cannot be null or empty");
+        }
+
+        if (StringUtils.isBlank(pluginCoordinates.getVersion())) {
+            errors.add("The plugin version cannot be null or empty");
+        }
+
+        return errors;
+    }
+
     private List<String> validateDependencies(List<PluginCoordinates> dependencies) {
+        if (dependencies == null) {
+            return List.of();
+        }
+
         List<String> dependencyErrors = new ArrayList<>();
 
         List<PluginCoordinates> registeredPluginCoordinates = pluginRepository.findAll().stream()

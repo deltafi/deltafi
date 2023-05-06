@@ -19,8 +19,8 @@ package org.deltafi.core.repo;
 
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.FlowPlan;
-import org.springframework.data.mongodb.repository.DeleteQuery;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.NoRepositoryBean;
 
 import java.util.List;
@@ -41,13 +41,12 @@ public interface FlowPlanRepo<T extends FlowPlan> extends MongoRepository<T, Str
      */
     List<T> findBySourcePlugin(PluginCoordinates sourcePlugin);
 
-
     /**
-     * Remove flow plans for this groupId:artifactId where the version is different
-     * @param groupId of flow plans to remove
-     * @param artifactId of flow plans to remove
-     * @param version current version that should be preserved
+     * Find the flow plans with the given groupId and artifactId
+     * @param groupId plugin groupId to search by
+     * @param artifactId plugin artifactId to search by
+     * @return the flow plans with the given groupId and artifactId
      */
-    @DeleteQuery("{ 'sourcePlugin.groupId': ?0, 'sourcePlugin.artifactId': ?1 , 'sourcePlugin.version': {$ne: ?2}}")
-    void deleteOtherVersions(String groupId, String artifactId, String version);
+    @Query("{ 'sourcePlugin.groupId': ?0, 'sourcePlugin.artifactId': ?1 }")
+    List<T> findByGroupIdAndArtifactId(String groupId, String artifactId);
 }

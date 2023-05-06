@@ -2848,40 +2848,38 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testDeleteByOtherVersions() {
+	void testFindFlowsByGroupAndArtifact() {
 		clearForFlowTests();
 		PluginCoordinates newCoordinates = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("2.0.0").build();
 
-		IngressFlow ingressFlowA = new IngressFlow();
-		ingressFlowA.setName("a");
-		ingressFlowA.setSourcePlugin(newCoordinates);
-
-		IngressFlow ingressFlowB = new IngressFlow();
-		ingressFlowB.setName("b");
-		ingressFlowB.setSourcePlugin(newCoordinates);
-
-		// flow c has a different version and should be removed
-		IngressFlow ingressFlowC = new IngressFlow();
-		ingressFlowC.setName("c");
-		ingressFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build());
-		ingressFlowRepo.saveAll(List.of(ingressFlowA, ingressFlowB, ingressFlowC));
-
-		IngressFlowPlan ingressFlowPlanA = new IngressFlowPlan("a", null, null);
-		ingressFlowPlanA.setSourcePlugin(newCoordinates);
-		IngressFlowPlan ingressFlowPlanB = new IngressFlowPlan("b", null, null);
-		ingressFlowPlanB.setSourcePlugin(newCoordinates);
-		IngressFlowPlan ingressFlowPlanC = new IngressFlowPlan("c", null, null);
-		ingressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build());
-		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC));
+		IngressFlow ingressFlowA = buildIngressFlow("a", newCoordinates);
+		IngressFlow ingressFlowB = buildIngressFlow("b", newCoordinates);
+		IngressFlow ingressFlowC = buildIngressFlow("c", "group", "deltafi-actions", "1.0.0");
+		IngressFlow diffGroup = buildIngressFlow("d", "group2", "deltafi-actions", "1.0.0");
+		IngressFlow diffArtifactId = buildIngressFlow("e", "group", "deltafi-actions2", "1.0.0");
+		ingressFlowRepo.saveAll(List.of(ingressFlowA, ingressFlowB, ingressFlowC, diffGroup, diffArtifactId));
 		refreshFlowCaches();
 
-		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(3).contains("a", "b", "c");
-		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).toList()).hasSize(3).contains("a", "b", "c");
+		List<IngressFlow> found = ingressFlowRepo.findByGroupIdAndArtifactId("group", "deltafi-actions");
+		assertThat(found).hasSize(3).contains(ingressFlowA, ingressFlowB, ingressFlowC);
+	}
 
-		ingressFlowPlanService.pruneFlowsAndPlans(newCoordinates);
+	@Test
+	void testFindFlowsPlanByGroupAndArtifact() {
+		clearForFlowTests();
+		PluginCoordinates newCoordinates = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("2.0.0").build();
 
-		assertThat(ingressFlowService.getFlowNamesByState(null)).hasSize(2).contains("a", "b");
-		assertThat(ingressFlowPlanRepo.findAll().stream().map(FlowPlan::getName).toList()).hasSize(2).contains("a", "b");
+		IngressFlowPlan ingressFlowPlanA = buildIngressFlowPlan("a", newCoordinates);
+		IngressFlowPlan ingressFlowPlanB = buildIngressFlowPlan("b", newCoordinates);
+		IngressFlowPlan ingressFlowPlanC = buildIngressFlowPlan("c", "group", "deltafi-actions", "1.0.0");
+		IngressFlowPlan diffGroup = buildIngressFlowPlan("d", "group2", "deltafi-actions", "1.0.0");
+		IngressFlowPlan diffArtifactId = buildIngressFlowPlan("e", "group", "deltafi-actions-2", "1.0.0");
+
+		ingressFlowPlanRepo.saveAll(List.of(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC, diffGroup, diffArtifactId));
+		refreshFlowCaches();
+
+		List<IngressFlowPlan> found = ingressFlowPlanRepo.findByGroupIdAndArtifactId("group", "deltafi-actions");
+		assertThat(found).hasSize(3).contains(ingressFlowPlanA, ingressFlowPlanB, ingressFlowPlanC);
 	}
 
 	@Test

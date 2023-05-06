@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.common.types.LoadActionConfiguration;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
@@ -26,6 +27,7 @@ import org.deltafi.core.repo.IngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.validation.IngressFlowValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +39,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,6 +66,7 @@ class IngressFlowServiceTest {
     @Test
     void buildFlow() {
         IngressFlow running = ingressFlow("running", FlowState.RUNNING, true);
+        running.setMaxErrors(3);
         IngressFlow stopped = ingressFlow("stopped", FlowState.STOPPED, false);
         Mockito.when(ingressFlowRepo.findById("running")).thenReturn(Optional.of(running));
         Mockito.when(ingressFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
@@ -78,6 +82,7 @@ class IngressFlowServiceTest {
 
         assertThat(runningIngressFlow.isRunning()).isTrue();
         assertThat(runningIngressFlow.isTestMode()).isTrue();
+        assertThat(runningIngressFlow.getMaxErrors()).isEqualTo(3);
         assertThat(stoppedIngressFlow.isRunning()).isFalse();
         assertThat(stoppedIngressFlow.isTestMode()).isFalse();
     }
@@ -160,6 +165,21 @@ class IngressFlowServiceTest {
         List<IngressFlowErrorState> errorStates = ingressFlowService.ingressFlowErrorsExceeded();
         assertEquals(1, errorStates.size());
         assertEquals(new IngressFlowErrorState("flow3", 6, 5), errorStates.get(0));
+    }
+
+    @Test
+    void testUpgradeFlows() {
+        PluginCoordinates coordinates = PluginCoordinates.builder().groupId("group").artifactId("artId").version("1.0.0").build();
+        IngressFlow a = FlowBuilders.buildIngressFlow("a", coordinates);
+        IngressFlow b = FlowBuilders.buildIngressFlow("b", coordinates);
+        IngressFlow c = FlowBuilders.buildIngressFlow("c", coordinates);
+
+        Mockito.when(ingressFlowRepo.findByGroupIdAndArtifactId("group", "artId"))
+                        .thenReturn(List.of(a, b, c));
+
+        ingressFlowService.upgradeFlows(coordinates, List.of(), Set.of("a", "b"));
+        Mockito.verify(ingressFlowRepo).saveAll(Mockito.eq(List.of()));
+        Mockito.verify(ingressFlowRepo).deleteAllById(Set.of("c"));
     }
 
     IngressFlow runningFlow(String name) {

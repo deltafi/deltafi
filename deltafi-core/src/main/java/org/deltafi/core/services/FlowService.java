@@ -150,6 +150,27 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         refreshCache();
     }
 
+    public void upgradeFlows(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans, Set<String> flowNames) {
+        List<FlowT> flows = flowPlans.stream().map(this::buildFlow).toList();
+        saveAll(flows);
+
+        Set<String> flowsToRemove = flowRepo.findByGroupIdAndArtifactId(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId()).stream()
+                .map(Flow::getName)
+                .filter(name -> !flowNames.contains(name))
+                .collect(Collectors.toSet());
+
+        if (!flowsToRemove.isEmpty()) {
+            flowRepo.deleteAllById(flowsToRemove);
+        }
+
+        refreshCache();
+    }
+
+    private FlowT buildFlow(FlowPlanT flowPlan) {
+        List<Variable> variables = pluginVariableService.getVariablesByPlugin(flowPlan.getSourcePlugin());
+        return buildFlow(flowPlan, variables);
+    }
+
     /**
      * Get the variables associated with this flow plan, and create
      * a flow from the plan and variables.
@@ -345,16 +366,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Remove flow plans and flows that were created for a different version
-     * of this plugin
-     * @param pluginCoordinates current coordinates
-     */
-    public void pruneFlows(PluginCoordinates pluginCoordinates) {
-        flowRepo.deleteOtherVersions(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion());
-        refreshCache();
-    }
-
-    /**
      * Determine if there are any running flows created from this plugin
      * @param plugin that will be removed if there are no blockers
      * @return null if there are no running flows, otherwise an error message with list
@@ -399,17 +410,16 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     FlowT buildFlow(FlowPlanT flowPlan, List<Variable> variables) {
-        boolean flowWasRunning = flowRepo.findById(flowPlan.getName())
-                .map(Flow::isRunning)
-                .orElse(false);
+        Optional<FlowT> existing = flowRepo.findById(flowPlan.getName());
 
-        boolean flowWasInTestMode = flowRepo.findById(flowPlan.getName())
-                .map(Flow::isTestMode)
-                .orElse(false);
+        boolean flowWasRunning = existing.map(Flow::isRunning).orElse(false);
+        boolean flowWasInTestMode = existing.map(Flow::isTestMode).orElse(false);
 
         FlowT flow = flowPlanConverter.convert(flowPlan, variables);
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
+
+        existing.ifPresent(sourceFlow -> copyFlowSpecificFields(sourceFlow, flow));
 
         if (flow.hasErrors()) {
             flow.getFlowStatus().setState(FlowState.INVALID);
@@ -420,6 +430,16 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         flow.getFlowStatus().setTestMode(flowWasInTestMode);
 
         return flow;
+    }
+
+    /**
+     * Hook to copy fields from an existing flow into the new flow
+     * that is getting created from a flow plan
+     * @param sourceFlow existing flow that contains fields that should be copied into the targetFlow
+     * @param targetFlow flow that is being recreated and should have the fields set from the sourceFlow values
+     */
+    void copyFlowSpecificFields(FlowT sourceFlow, FlowT targetFlow) {
+
     }
 
     String getFlowName(String actionName) {
@@ -459,6 +479,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         FlowT persistedFlow = flowRepo.save(flow);
         refreshCache();
         return persistedFlow;
+    }
+
+    private void saveAll(List<FlowT> flows) {
+        flowRepo.saveAll(flows);
     }
 
     private boolean updateAndRefresh(String flowName, FlowState flowState) {
