@@ -16,12 +16,12 @@
 #    limitations under the License.
 #
 
-from deltafi.domain import Content, SourceInfo
+from deltafi.domain import Content, Context, SourceInfo
 from deltafi.metric import Metric
 from deltafi.result import DomainResult, EgressResult, EnrichResult, ErrorResult, FilterResult, FormatResult, \
     FormatManyResult, JoinResult, JoinReinjectResult, LoadResult, SplitResult, TransformResult, ValidateResult
 
-from .helperutils import make_content_reference
+from .helperutils import make_content_reference, make_context
 
 
 def verify_metric(metric, name, value, tags):
@@ -36,7 +36,7 @@ def verify_no_metrics(result):
 
 
 def test_domain_result():
-    result = DomainResult()
+    result = DomainResult(make_context())
     assert result.result_key == "domain"
     assert result.result_type == "DOMAIN"
     response = result.response()
@@ -58,7 +58,7 @@ def test_domain_result():
 
 
 def test_egress_result():
-    result = EgressResult("urlOut", 123)
+    result = EgressResult(make_context(), "urlOut", 123)
     assert result.result_key is None
     assert result.result_type == "EGRESS"
     assert result.response() is None
@@ -69,7 +69,7 @@ def test_egress_result():
 
 
 def test_enrich_result():
-    result = EnrichResult()
+    result = EnrichResult(make_context())
     result.enrich("enrichmentName", "enrichmentValue", "mediaType")
     assert result.result_key == "enrich"
     assert result.result_type == "ENRICH"
@@ -95,7 +95,7 @@ def test_enrich_result():
 
 
 def test_error_result():
-    result = ErrorResult("errorCause", "errorContext")
+    result = ErrorResult(None, "errorCause", "errorContext")
     assert result.result_key == "error"
     assert result.result_type == "ERROR"
     verify_no_metrics(result)
@@ -106,7 +106,7 @@ def test_error_result():
 
 
 def test_filter_result():
-    result = FilterResult("filteredCause")
+    result = FilterResult(None, "filteredCause")
     assert result.result_key == "filter"
     assert result.result_type == "FILTER"
     verify_no_metrics(result)
@@ -129,8 +129,9 @@ def add_canned_metadata(result):
     result.add_metadata("key3", "val3")
 
 
-def make_format_result(file_name, seg_id):
-    result = FormatResult(file_name, make_content_reference(seg_id))
+def make_format_result(context, file_name, seg_id):
+    result = FormatResult(context)
+    result.set_content(make_content(context.content_service, file_name, seg_id))
     add_canned_metadata(result)
     return result
 
@@ -143,7 +144,7 @@ def verify_format_result(response, file_name, seg_id):
 
 
 def test_format_result():
-    result = make_format_result("filename1", "id1")
+    result = make_format_result(make_context(), "filename1", "id1")
     assert result.result_key == "format"
     assert result.result_type == "FORMAT"
     verify_no_metrics(result)
@@ -151,9 +152,9 @@ def test_format_result():
 
 
 def test_format_many_result():
-    result = FormatManyResult()
-    result.add_format_result(make_format_result("fn1", "id1"))
-    result.add_format_result(make_format_result("fn2", "id2"))
+    result = FormatManyResult(make_context())
+    result.add_format_result(make_format_result(make_context(), "fn1", "id1"))
+    result.add_format_result(make_format_result(make_context(), "fn2", "id2"))
     assert result.result_key == "formatMany"
     assert result.result_type == "FORMAT_MANY"
     verify_no_metrics(result)
@@ -164,15 +165,15 @@ def test_format_many_result():
     verify_format_result(responses[1], "fn2", "id2")
 
 
-def make_content(name, seg_id):
-    content = Content(name=name, content_reference=make_content_reference(seg_id))
-    return [content]
+def make_content(content_service, name, seg_id):
+    content = Content(name=name, content_reference=make_content_reference(seg_id), content_service=content_service)
+    return content
 
 
 def test_join_result():
-    result = JoinResult()
-    result.add_content([Content(name="content1", content_reference=make_content_reference("id1")),
-                        Content(name="content2", content_reference=make_content_reference("id2"))])
+    result = JoinResult(make_context())
+    result.add_content([Content(name="content1", content_reference=make_content_reference("id1"), content_service=None),
+                        Content(name="content2", content_reference=make_content_reference("id2"), content_service=None)])
     add_canned_metadata(result)
     result.add_domain("domain1", "data1", "xml")
     result.add_domain("domain2", "data2", "json")
@@ -202,9 +203,9 @@ def test_join_result():
 
 
 def test_join_reinject_result():
-    result = JoinReinjectResult("flow")
-    result.add_content([Content(name="content1", content_reference=make_content_reference("id1")),
-                        Content(name="content2", content_reference=make_content_reference("id2"))])
+    result = JoinReinjectResult(make_context(), "flow")
+    result.add_content([Content(name="content1", content_reference=make_content_reference("id1"), content_service=None),
+                        Content(name="content2", content_reference=make_content_reference("id2"), content_service=None)])
     add_canned_metadata(result)
     assert result.result_key == "joinReinject"
     assert result.result_type == "JOIN_REINJECT"
@@ -223,9 +224,9 @@ def test_join_reinject_result():
 
 
 def test_load_result():
-    result = LoadResult()
-    result.add_content("content1", make_content_reference("id1"))
-    result.add_content("content2", make_content_reference("id2"))
+    result = LoadResult(make_context())
+    result.add_content(make_content(None, "content1", "id1"))
+    result.add_content(make_content(None, "content2", "id2"))
     add_canned_metadata(result)
     result.add_domain("domain1", "data1", "xml", )
     result.add_domain("domain2", "data2", "json", )
@@ -256,9 +257,9 @@ def test_load_result():
 
 
 def test_split_result():
-    result = SplitResult()
-    result.add_child("fn1", "flow", {}, make_content("content1", "id1"))
-    result.add_child("fn2", "flow", {}, make_content("content2", "id2"))
+    result = SplitResult(make_context())
+    result.add_child("fn1", "flow", {}, [make_content(None, "content1", "id1")])
+    result.add_child("fn2", "flow", {}, [make_content(None, "content2", "id2")])
     assert result.result_key == "split"
     assert result.result_type == "SPLIT"
     verify_no_metrics(result)
@@ -277,10 +278,10 @@ def test_split_result():
 
 
 def test_transform_result():
-    result = TransformResult()
+    result = TransformResult(make_context())
     add_canned_metadata(result)
-    result.add_content("content1", make_content_reference("id1"))
-    result.add_content("content2", make_content_reference("id2"))
+    result.add_content(make_content(None, "content1", "id1"))
+    result.add_content(make_content(None, "content2", "id2"))
 
     assert result.result_key == "transform"
     assert result.result_type == "TRANSFORM"
@@ -298,7 +299,7 @@ def test_transform_result():
 
 
 def test_validate_result():
-    result = ValidateResult()
+    result = ValidateResult(make_context())
     assert result.result_key is None
     assert result.result_type == "VALIDATE"
     verify_no_metrics(result)

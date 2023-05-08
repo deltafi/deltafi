@@ -122,5 +122,5 @@ class HelloWorldDomainAction(DomainAction):
         super().__init__('Hello domain', ['pyHelloWorld'])
 
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult().index_metadata('domainKey', 'domainValue')
+        return DomainResult(context).index_metadata('domainKey', 'domainValue')
 ```

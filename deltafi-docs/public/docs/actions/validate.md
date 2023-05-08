@@ -93,5 +93,5 @@ class HelloWorldValidateAction(ValidateAction):
         super().__init__('Hello validation')
 
     def validate(self, context: Context, params: BaseModel, validate_input: ValidateInput):
-        return ValidateResult()
+        return ValidateResult(context)
 ```

@@ -20,9 +20,8 @@ import abc
 from typing import Dict, List
 import uuid
 
-from deltafi.domain import Content, SourceInfo
+from deltafi.domain import Content, Context, SourceInfo
 from deltafi.metric import Metric
-from deltafi.storage import ContentReference
 
 ENDPOINT_TAG = "endpoint"
 FILES_OUT = "files_out"
@@ -32,10 +31,11 @@ BYTES_OUT = "bytes_out"
 class Result:
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, result_key, result_type):
+    def __init__(self, result_key, result_type, context):
         self.result_key = result_key
         self.result_type = result_type
         self.metrics = []
+        self.context = context
 
     @abc.abstractmethod
     def response(self):
@@ -46,8 +46,8 @@ class Result:
 
 
 class DomainResult(Result):
-    def __init__(self):
-        super().__init__('domain', 'DOMAIN')
+    def __init__(self, context: Context):
+        super().__init__('domain', 'DOMAIN', context)
         self.indexed_metadata = {}
 
     def index_metadata(self, key: str, value: str):
@@ -61,8 +61,8 @@ class DomainResult(Result):
 
 
 class EgressResult(Result):
-    def __init__(self, destination: str, bytes_egressed: int):
-        super().__init__(None, 'EGRESS')
+    def __init__(self, context: Context, destination: str, bytes_egressed: int):
+        super().__init__(None, 'EGRESS', context)
         self.add_metric(Metric(FILES_OUT, 1, {ENDPOINT_TAG: destination}))
         self.add_metric(Metric(BYTES_OUT, bytes_egressed, {ENDPOINT_TAG: destination}))
 
@@ -71,8 +71,8 @@ class EgressResult(Result):
 
 
 class EnrichResult(Result):
-    def __init__(self):
-        super().__init__('enrich', 'ENRICH')
+    def __init__(self, context: Context):
+        super().__init__('enrich', 'ENRICH', context)
         self.enrichments = []
         self.indexed_metadata = {}
 
@@ -96,21 +96,21 @@ class EnrichResult(Result):
 
 
 class ErrorResult(Result):
-    def __init__(self, cause: str, context: str):
-        super().__init__('error', 'ERROR')
-        self.cause = cause
-        self.context = context
+    def __init__(self, context: Context, error_cause: str, error_context: str):
+        super().__init__('error', 'ERROR', context)
+        self.error_cause = error_cause
+        self.error_context = error_context
 
     def response(self):
         return {
-            'cause': self.cause,
-            'context': self.context
+            'cause': self.error_cause,
+            'context': self.error_context
         }
 
 
 class FilterResult(Result):
-    def __init__(self, filtered_cause: str):
-        super().__init__('filter', 'FILTER')
+    def __init__(self, context: Context, filtered_cause: str):
+        super().__init__('filter', 'FILTER', context)
         self.filtered_cause = filtered_cause
 
     def response(self):
@@ -120,27 +120,40 @@ class FilterResult(Result):
 
 
 class FormatResult(Result):
-    def __init__(self, filename: str, content_reference: ContentReference):
-        super().__init__('format', 'FORMAT')
-        self.filename = filename
-        self.content_reference = content_reference
+    def __init__(self, context: Context):
+        super().__init__('format', 'FORMAT', context)
+        self.content = None
         self.metadata = {}
 
     def add_metadata(self, key: str, value: str):
         self.metadata[key] = value
         return self
 
+    def set_content(self, content: Content):
+        self.content = content
+        return self
+
+    def save_string_content(self, string_data: str, name: str, media_type: str):
+        content_reference = self.context.content_service.put_str(self.context.did, string_data, media_type)
+        self.content = Content(name=name, content_reference=content_reference, content_service=self.context.content_service)
+        return self
+
+    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
+        content_reference = self.context.content_service.put_bytes(self.context.did, byte_data, media_type)
+        self.content = Content(name=name, content_reference=content_reference, content_service=self.context.content_service)
+        return self
+
     def response(self):
         return {
-            'filename': self.filename,
-            'contentReference': self.content_reference.json(),
+            'filename': self.content.name,
+            'contentReference': self.content.content_reference.json(),
             'metadata': self.metadata
         }
 
 
 class FormatManyResult(Result):
-    def __init__(self):
-        super().__init__('formatMany', 'FORMAT_MANY')
+    def __init__(self, context: Context):
+        super().__init__('formatMany', 'FORMAT_MANY', context)
         self.format_results = []
 
     def add_format_result(self, format_result: FormatResult):
@@ -152,8 +165,8 @@ class FormatManyResult(Result):
 
 
 class JoinResult(Result):
-    def __init__(self):
-        super().__init__('join', 'JOIN')
+    def __init__(self, context: Context):
+        super().__init__('join', 'JOIN', context)
         self.content = []
         self.metadata = {}
         self.domains = []
@@ -188,8 +201,8 @@ class JoinResult(Result):
 
 
 class JoinReinjectResult(Result):
-    def __init__(self, flow: str):
-        super().__init__('joinReinject', 'JOIN_REINJECT')
+    def __init__(self, context: Context, flow: str):
+        super().__init__('joinReinject', 'JOIN_REINJECT', context)
         self.content = []
         self.metadata = {}
         self.flow = flow
@@ -217,15 +230,30 @@ class JoinReinjectResult(Result):
 
 
 class LoadResult(Result):
-    def __init__(self):
-        super().__init__('load', 'LOAD')
+    def __init__(self, context: Context):
+        super().__init__('load', 'LOAD', context)
         self.content = []
         self.metadata = {}
         self.domains = []
 
-    def add_content(self, name: str, content_reference: ContentReference):
-        content = Content(name=name, content_reference=content_reference)
-        self.content.append(content)
+    # content can be a single Content or a List[Content]
+    def add_content(self, content):
+        if content:
+            if type(content) == list:
+                self.content.extend(content)
+            else:
+                self.content.append(content)
+
+        return self
+
+    def save_string_content(self, string_data: str, name: str, media_type: str):
+        content_reference = self.context.content_service.put_str(self.context.did, string_data, media_type)
+        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
+        return self
+
+    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
+        content_reference = self.context.content_service.put_bytes(self.context.did, byte_data, media_type)
+        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
         return self
 
     def add_metadata(self, key: str, value: str):
@@ -265,8 +293,8 @@ class ChildLoadResult:
 
 
 class LoadManyResult(Result):
-    def __init__(self):
-        super().__init__('loadMany', 'LOAD_MANY')
+    def __init__(self, context: Context):
+        super().__init__('loadMany', 'LOAD_MANY', context)
         self.load_results = []
 
     def add_load_result(self, load_result):
@@ -292,8 +320,8 @@ class SplitResult(Result):
                 'content': [content.json() for content in self.content]
             }
 
-    def __init__(self):
-        super().__init__('split', 'SPLIT')
+    def __init__(self, context: Context):
+        super().__init__('split', 'SPLIT', context)
         self.children = []
 
     def add_child(self, filename: str, flow: str, metadata: Dict[str, str], content: List[Content]):
@@ -305,14 +333,29 @@ class SplitResult(Result):
 
 
 class TransformResult(Result):
-    def __init__(self):
-        super().__init__('transform', 'TRANSFORM')
+    def __init__(self, context: Context):
+        super().__init__('transform', 'TRANSFORM', context)
         self.content = []
         self.metadata = {}
 
-    def add_content(self, name: str, content_reference: ContentReference):
-        content = Content(name=name, content_reference=content_reference)
-        self.content.append(content)
+    # content can be a single Content or a List[Content]
+    def add_content(self, content):
+        if content:
+            if type(content) == list:
+                self.content.extend(content)
+            else:
+                self.content.append(content)
+
+        return self
+
+    def save_string_content(self, string_data: str, name: str, media_type: str):
+        content_reference = self.context.content_service.put_str(self.context.did, string_data, media_type)
+        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
+        return self
+
+    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
+        content_reference = self.context.content_service.put_bytes(self.context.did, byte_data, media_type)
+        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
         return self
 
     def add_metadata(self, key: str, value: str):
@@ -329,8 +372,8 @@ class TransformResult(Result):
 
 
 class ValidateResult(Result):
-    def __init__(self):
-        super().__init__(None, 'VALIDATE')
+    def __init__(self, context: Context):
+        super().__init__(None, 'VALIDATE', context)
 
     def response(self):
         return None

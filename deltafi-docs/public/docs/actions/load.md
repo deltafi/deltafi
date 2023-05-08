@@ -121,22 +121,17 @@ class HelloWorldLoadAction(LoadAction):
 
     def load(self, context: Context, params: HelloWorldLoadParameters, load_input: LoadInput):
         context.logger.info(f"Loading {context.did}")
-        content_reference = load_input.content[0].content_reference
-        data = context.content_service.get_str(content_reference)
+        data = load_input.content[0].load_str()
 
         if 'split' in data:
             data = f"{data}\nHelloWorldLoadAction loaded me"
-            new_content_reference = context.content_service.put_str(context.did, data, 'test/plain')
-            return LoadResult().add_metadata('loadKey', 'loadValue')\
-                .add_domain(params.domain, 'Python domain!', 'text/plain')\
-                .add_content('loaded content', new_content_reference)
+            return LoadResult(context).add_metadata('loadKey', 'loadValue')
+                .add_domain(params.domain, 'Python domain!', 'text/plain')
+                .save_string_content(data, 'loaded content', 'text/plain')
         else:
             data = f"{data}\nHelloWorldLoadAction split me"
-            new_content_reference = context.content_service.put_str(context.did, data, 'test/plain')
-            content = Content(name='child content',
-                              metadata={},
-                              content_reference=new_content_reference)
-            split_result = SplitResult()
+            content = Content.from_str(context, data, 'child content', 'text/plain')
+            split_result = SplitResult(context)
             split_result.add_child('child 1', 'hello-python', {'child': 'first'}, [content])
             split_result.add_child('child 2', 'hello-python', {'child': 'second'}, [content])
             return split_result

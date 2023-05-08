@@ -16,31 +16,11 @@
 #    limitations under the License.
 #
 
+import copy
 from logging import Logger
 from typing import Dict, List, NamedTuple
 
 from deltafi.storage import ContentService, ContentReference
-
-
-class Content(NamedTuple):
-    name: str
-    content_reference: ContentReference
-
-    def json(self):
-        return {
-            'name': self.name,
-            'contentReference': self.content_reference.json(),
-        }
-
-    @classmethod
-    def from_dict(cls, content: dict):
-        if 'name' in content:
-            name = content['name']
-        else:
-            name = None
-        content_reference = ContentReference.from_dict(content['contentReference'])
-        return Content(name=name,
-                       content_reference=content_reference)
 
 
 class Context(NamedTuple):
@@ -58,7 +38,10 @@ class Context(NamedTuple):
     def create(cls, context: dict, hostname: str, content_service: ContentService, logger: Logger):
         did = context['did']
         action_name = context['name']
-        source_filename = context['sourceFilename']
+        if 'sourceFilename' in context:
+            source_filename = context['sourceFilename']
+        else:
+            source_filename = None
         ingress_flow = context['ingressFlow']
         if 'egressFlow' in context:
             egress_flow = context['egressFlow']
@@ -74,6 +57,150 @@ class Context(NamedTuple):
                        hostname=hostname,
                        content_service=content_service,
                        logger=logger)
+
+
+class Content:
+    """
+    A Content class that holds information about a piece of content, including its name, reference, and service.
+    Attributes:
+        name (str): The name of the content.
+        content_reference (ContentReference): A ContentReference object that holds information about the content's data.
+        content_service (ContentService): A ContentService object used to retrieve the content data.
+    """
+
+    def __init__(self, name: str, content_reference: ContentReference, content_service: ContentService):
+        self.name = name
+        self.content_reference = content_reference
+        self.content_service = content_service
+
+    def json(self):
+        """
+        Returns a dictionary representation of the Content object.
+
+        Returns:
+            dict: A dictionary containing 'name' and 'contentReference' keys.
+        """
+        return {
+            'name': self.name,
+            'contentReference': self.content_reference.json(),
+        }
+
+    def copy(self):
+        """
+        Returns a deep copy of the Content object.
+
+        Returns:
+            Content: A deep copy of the Content object.
+        """
+        return Content(name=self.name,
+                       content_reference=copy.deepcopy(self.content_reference),
+                       content_service=self.content_service)
+
+    def subcontent(self, offset: int, size: int):
+        """
+        Returns a new Content object with a subset of the original content.
+
+        Args:
+            offset (int): The starting byte offset.
+            size (int): The size of the subset in bytes.
+
+        Returns:
+            Content: A new Content object with the specified subcontent.
+        """
+        return Content(name=self.name,
+                       content_reference=self.content_reference.subreference(offset, size),
+                       content_service=self.content_service)
+
+    def get_size(self):
+        """
+        Returns the size of the content in bytes.
+
+        Returns:
+            int: The size of the content in bytes.
+        """
+        return self.content_reference.get_size()
+
+    def get_media_type(self):
+        """
+        Returns the media type of the content.
+
+        Returns:
+        str: The media type of the content.
+        """
+        return self.content_reference.media_type
+
+    def set_media_type(self, media_type: str):
+        """
+        Sets the media type of the content.
+
+        Args:
+            media_type (str): The media type to set.
+        """
+        self.content_reference = self.content_reference._replace(media_type=media_type)
+
+    def load_bytes(self):
+        """
+        Retrieves the content as bytes.
+
+        Returns:
+            bytes: The content as bytes.
+        """
+        return self.content_service.get_bytes(self.content_reference)
+
+    def load_str(self):
+        """
+        Retrieves the content as a string.
+
+        Returns:
+            str: The content as a string.
+        """
+        return self.content_service.get_str(self.content_reference)
+
+    def prepend(self, other_content):
+        """
+        Prepends the content from another Content object.
+
+        Args:
+            other_content (Content): The Content object to prepend.
+        """
+        self.content_reference.segments[0:0] = other_content.content_reference.segments
+
+    def append(self, other_content):
+        """
+        Appends the content from another Content object.
+
+        Args:
+            other_content (Content): The Content object to append.
+        """
+        self.content_reference.segments.extend(other_content.content_reference.segments)
+
+    def __eq__(self, other):
+        if isinstance(other, Content):
+            return (self.name == other.name and
+                    self.content_reference == other.content_reference and
+                    self.content_service == other.content_service)
+        return False
+
+    @classmethod
+    def from_str(cls, context: Context, str_data: str, name: str, media_type: str):
+        content_reference = context.content_service.put_str(context.did, str_data, media_type)
+        return Content(name=name, content_reference=content_reference, content_service=context.content_service)
+
+    @classmethod
+    def from_bytes(cls, context: Context, byte_data: bytes, name: str, media_type: str):
+        content_reference = context.content_service.put_bytes(context.did, byte_data, media_type)
+        return Content(name=name, content_reference=content_reference, content_service=context.content_service)
+
+    @classmethod
+    def from_dict(cls, content: dict, content_service: ContentService):
+        if 'name' in content:
+            name = content['name']
+        else:
+            name = None
+        content_reference = ContentReference.from_dict(content['contentReference'])
+        return Content(name=name,
+                       content_reference=content_reference,
+                       content_service=content_service)
 
 
 class Domain(NamedTuple):
@@ -114,9 +241,9 @@ class DeltaFileMessage(NamedTuple):
     enrichment: List[Domain]
 
     @classmethod
-    def from_dict(cls, delta_file_message: dict):
+    def from_dict(cls, delta_file_message: dict, content_service: ContentService):
         metadata = delta_file_message['metadata']
-        content_list = [Content.from_dict(content) for content in delta_file_message['contentList']]
+        content_list = [Content.from_dict(content, content_service) for content in delta_file_message['contentList']]
         domains = [Domain.from_dict(domain) for domain in delta_file_message['domains']] if 'domains' in delta_file_message else []
         enrichment = [Domain.from_dict(domain) for domain in delta_file_message['enrichment']] if 'enrichment' in delta_file_message else []
 
@@ -135,7 +262,7 @@ class Event(NamedTuple):
 
     @classmethod
     def create(cls, event: dict, hostname: str, content_service: ContentService, logger: Logger):
-        delta_file_messages = [DeltaFileMessage.from_dict(delta_file_message) for delta_file_message in event['deltaFileMessages']]
+        delta_file_messages = [DeltaFileMessage.from_dict(delta_file_message, content_service) for delta_file_message in event['deltaFileMessages']]
         context = Context.create(event['actionContext'], hostname, content_service, logger)
         params = event['actionParams']
         queue_name = None

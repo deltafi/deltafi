@@ -106,12 +106,10 @@ class HelloWorldTransformAction(TransformAction):
     def transform(self, context: Context, params: BaseModel, transform_input: TransformInput):
         context.logger.info(f"Transforming {context.did}")
         if context.did.startswith('2'):
-            return FilterResult('We prefer dids that do not start with 2')
+            return FilterResult(context, 'We prefer dids that do not start with 2')
 
-        content_reference = transform_input.content[0].content_reference
-        data = f"{context.content_service.get_str(content_reference)}\nHelloWorldTransformAction did a great job"
-        new_content_reference = context.content_service.put_str(context.did, data, 'test/plain')
+        data = f"{transform_input.content[0].load_str()}\nHelloWorldTransformAction did a great job"
 
-        return TransformResult().add_metadata('transformKey', 'transformValue')\
-            .add_content('transform-named-me', new_content_reference)
+        return TransformResult(context).add_metadata('transformKey', 'transformValue')
+            .save_string_content(data, 'transform-named-me', 'test/plain')
 ```

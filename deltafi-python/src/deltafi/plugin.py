@@ -172,20 +172,25 @@ class Plugin(object):
                 try:
                     result = action.execute(event)
                 except ExpectedContentException as e:
-                    result = ErrorResult(f"Action attempted to look up element {e.index + 1} (index {e.index}) from "
+                    result = ErrorResult(event.context,
+                                         f"Action attempted to look up element {e.index + 1} (index {e.index}) from "
                                          f"content list of size {e.size}",
                                          f"{str(e)}\n{traceback.format_exc()}")
                 except MissingDomainException as e:
-                    result = ErrorResult(f"Action attempted to access domain {e.name}, which does not exist",
+                    result = ErrorResult(event.context,
+                                         f"Action attempted to access domain {e.name}, which does not exist",
                                          f"{str(e)}\n{traceback.format_exc()}")
                 except MissingEnrichmentException as e:
-                    result = ErrorResult(f"Action attempted to access enrichment {e.name}, which does not exist",
+                    result = ErrorResult(event.context,
+                                         f"Action attempted to access enrichment {e.name}, which does not exist",
                                          f"{str(e)}\n{traceback.format_exc()}")
                 except MissingMetadataException as e:
-                    result = ErrorResult(f"Missing metadata with key {e.key}",
+                    result = ErrorResult(event.context,
+                                         f"Missing metadata with key {e.key}",
                                          f"{str(e)}\n{traceback.format_exc()}")
                 except BaseException as e:
-                    result = ErrorResult(f"Action execution {type(e)} exception", f"{str(e)}\n{traceback.format_exc()}")
+                    result = ErrorResult(event.context,
+                                         f"Action execution {type(e)} exception", f"{str(e)}\n{traceback.format_exc()}")
 
                 response = {
                     'did': event.context.did,

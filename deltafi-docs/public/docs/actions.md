@@ -73,13 +73,12 @@ String encodedString = content.loadString(Charset.forName(encoding));
 InputStream inputStream = content.loadInputStream();
 ```
 
-To retrieve content as a string or byte array in a Python action execution, use the `ContextService` methods `get_str()`
-or `get_bytes()`. For example, in a Load action execute:
+To retrieve content as a string or byte array in a Python action execution:
 
 ```python
     def load(self, context: Context, params: BaseModel, load_input: LoadInput):
-        content_reference = load_input.content[0].content_reference
-        data = context.content_service.get_str(content_reference)
+        string = load_input.content[0].load_str()
+        bytes = load_input.content[0].load_bytes()
 
 ```
 
@@ -105,11 +104,10 @@ copyOfFirstContent.append(partOfSecondContent);
 transformResult.addContent(copyOfFirstContent);
 ```
 
-Or in Python use `put_bytes()` or `put_str()` in your action execution:
+Or in Python save content to a Result:
 
 ```python
-    new_content_reference = context.content_service.put_bytes(context.did, data, media_type)
-    result.add_content(content_name, new_content_reference)
+    result.save_content(data, content_name, media_type)
 ```
 
 ### Parameters

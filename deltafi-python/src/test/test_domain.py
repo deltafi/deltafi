@@ -17,7 +17,7 @@
 #
 
 from deltafi.domain import Content, Context, Domain, Event
-from deltafi.storage import ContentService
+from deltafi.storage import ContentReference, ContentService, Segment
 from mockito import mock, unstub
 
 from .helperutils import *
@@ -33,14 +33,88 @@ def check_pl_meta(meta):
     assert meta["plKey2"] == "valueB"
 
 
-def make_content(name):
-    return Content.from_dict(make_content_dict(name))
+def make_content(name, content_service):
+    return Content.from_dict(make_content_dict(name), content_service)
 
 
 def test_content_json():
-    content = make_content("CONTENT_NAME")
+    content = make_content("CONTENT_NAME", make_context())
     content_json = content.json()
     assert content_json["name"] == "CONTENT_NAME"
+
+
+def test_content_copy():
+    segment = Segment(uuid="id1", offset=0, size=100, did="device1")
+    content_reference = ContentReference(segments=[segment], media_type="text/plain")
+    content = Content(name="test", content_reference=content_reference, content_service=mock(ContentService))
+    copied_content = content.copy()
+    assert content == copied_content
+    assert content is not copied_content
+    assert content.content_reference.segments is not copied_content.content_reference.segments
+
+
+def test_content_subcontent():
+    segment = Segment(uuid="id1", offset=0, size=100, did="device1")
+    content_reference = ContentReference(segments=[segment], media_type="text/plain")
+    content = Content(name="test", content_reference=content_reference, content_service=mock(ContentService))
+    sub_content = content.subcontent(50, 25)
+    assert sub_content.name == content.name
+    assert sub_content.content_service == content.content_service
+    assert len(sub_content.content_reference.segments) == 1
+    assert sub_content.content_reference.segments[0].offset == 50
+    assert sub_content.content_reference.segments[0].size == 25
+
+
+def test_content_get_size():
+    segment = Segment(uuid="id1", offset=0, size=100, did="device1")
+    content_reference = ContentReference(segments=[segment], media_type="text/plain")
+    content = Content(name="test", content_reference=content_reference, content_service=mock(ContentService))
+    assert content.get_size() == 100
+
+
+def test_content_get_set_media_type():
+    segment = Segment(uuid="id1", offset=0, size=100, did="device1")
+    content_reference = ContentReference(segments=[segment], media_type="text/plain")
+    content = Content(name="test", content_reference=content_reference, content_service=mock(ContentService))
+    assert content.get_media_type() == "text/plain"
+    content.set_media_type("application/json")
+    assert content.get_media_type() == "application/json"
+
+
+def test_content_prepend():
+    content_service = mock(ContentService)
+
+    segment1 = Segment(uuid="id1", offset=0, size=100, did="device1")
+    content_reference1 = ContentReference(segments=[segment1], media_type="text/plain")
+    content1 = Content(name="test1", content_reference=content_reference1, content_service=content_service)
+
+    segment2 = Segment(uuid="id2", offset=0, size=200, did="device2")
+    content_reference2 = ContentReference(segments=[segment2], media_type="text/plain")
+    content2 = Content(name="test2", content_reference=content_reference2, content_service=content_service)
+
+    content1.prepend(content2)
+    assert len(content1.content_reference.segments) == 2
+    assert content1.content_reference.segments[0].uuid == "id2"
+    assert content1.content_reference.segments[1].uuid == "id1"
+    assert content1.get_size() == 300
+
+
+def test_content_append():
+    content_service = mock(ContentService)
+
+    segment1 = Segment(uuid="id1", offset=0, size=100, did="device1")
+    content_reference1 = ContentReference(segments=[segment1], media_type="text/plain")
+    content1 = Content(name="test1", content_reference=content_reference1, content_service=content_service)
+
+    segment2 = Segment(uuid="id2", offset=0, size=200, did="device2")
+    content_reference2 = ContentReference(segments=[segment2], media_type="text/plain")
+    content2 = Content(name="test2", content_reference=content_reference2, content_service=content_service)
+
+    content1.append(content2)
+    assert len(content1.content_reference.segments) == 2
+    assert content1.content_reference.segments[0].uuid == "id1"
+    assert content1.content_reference.segments[1].uuid == "id2"
+    assert content1.get_size() == 300
 
 
 def test_context_json():

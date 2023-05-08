@@ -40,7 +40,7 @@ class SampleLoadAction(LoadAction):
         return SampleLoadParameters
 
     def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return LoadResult().add_metadata('loadKey', 'loadValue') \
+        return LoadResult(context).add_metadata('loadKey', 'loadValue') \
             .add_domain(params.domain, 'the domain value!', 'text/plain')
 
 
@@ -49,7 +49,7 @@ class InvalidResult(LoadAction):
         super().__init__('A sample load action')
 
     def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return EnrichResult()
+        return EnrichResult(context)
 
 
 def make_event(content_service):

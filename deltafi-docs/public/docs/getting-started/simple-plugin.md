@@ -175,7 +175,6 @@ import org.deltafi.actionkit.action.load.LoadInput;
 import org.deltafi.actionkit.action.load.LoadResult;
 import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -198,7 +197,7 @@ public class JsonLoadAction extends LoadAction<ActionParameters> {
 
     @Override
     public LoadResultType load(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull LoadInput loadInput) {
-        try (InputStream is = loadContentAsInputStream(loadInput.firstContent().getContentReference())) {
+        try (InputStream is = loadInput.getContentList().get(0).loadInputStream()) {
             Map<String, String> incomingData = OBJECT_MAPPER.readValue(is, Map.class);
 
             Map<String, String> lowerCaseKeys = new HashMap<>();
@@ -210,8 +209,6 @@ public class JsonLoadAction extends LoadAction<ActionParameters> {
             LoadResult loadResult = new LoadResult(context, List.of());
             loadResult.addDomain(Constants.DOMAIN, OBJECT_MAPPER.writeValueAsString(lowerCaseKeys), "application/json");
             return loadResult;
-        } catch (ObjectStorageException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -233,7 +230,6 @@ import org.deltafi.actionkit.action.format.FormatInput;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.format.FormatResultType;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -259,7 +255,7 @@ public class YamlFormatAction extends FormatAction<ActionParameters> {
         try {
             Map<String, String> domainData = JSON_MAPPER.readValue(data, Map.class);
             formatResult.saveContent(YAML_MAPPER.writeValueAsString(domainData).getBytes(), "application/yaml");
-        } catch (ObjectStorageException | JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return new ErrorResult(context, "Failed to convert or store data", e);
         }
         return formatResult;
@@ -377,7 +373,6 @@ import org.deltafi.actionkit.action.load.LoadInput;
 import org.deltafi.actionkit.action.load.LoadResult;
 import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -400,7 +395,7 @@ public class JsonLoadAction extends LoadAction<ActionParameters> {
 
     @Override
     public LoadResultType load(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull LoadInput loadInput) {
-        try (InputStream is = loadContentAsInputStream(loadInput.firstContent().getContentReference())) {
+        try (InputStream is = loadInput.getContentList().get(0).loadInputStream()) {
             Map<String, Object> incomingData = OBJECT_MAPPER.readValue(is, Map.class);
 
             Map<String, Object> lowerCaseKeys = new HashMap<>();
@@ -412,8 +407,6 @@ public class JsonLoadAction extends LoadAction<ActionParameters> {
             LoadResult loadResult = new LoadResult(context, List.of());
             loadResult.addDomain(Constants.DOMAIN, OBJECT_MAPPER.writeValueAsString(lowerCaseKeys), "application/json");
             return loadResult;
-        } catch (ObjectStorageException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

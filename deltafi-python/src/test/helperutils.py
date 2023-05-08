@@ -16,6 +16,7 @@
 #    limitations under the License.
 #
 
+from deltafi.domain import Context
 from deltafi.storage import ContentReference, Segment
 
 SEG_ID = "1"
@@ -65,3 +66,15 @@ def make_delta_file_message_dict():
             {'name': "ENRICH3", 'value': "VALUE3", 'mediaType': "MEDIA_TYPE3"}
         ]
     }
+
+
+def make_context():
+    return Context(did="did",
+                   action_name="action_name",
+                   source_filename="source_filename",
+                   ingress_flow="ingress_flow",
+                   egress_flow="egress_flow",
+                   system="system",
+                   hostname="hostname",
+                   content_service=None,
+                   logger=None)

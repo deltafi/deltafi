@@ -95,5 +95,5 @@ class HelloWorldEgressAction(EgressAction):
         super().__init__('Hello pretends to egress')
 
     def egress(self, context: Context, params: BaseModel, egress_input: EgressInput):
-        return EgressResult("pocUrl", 100)
+        return EgressResult(context, "pocUrl", 100)
 ```

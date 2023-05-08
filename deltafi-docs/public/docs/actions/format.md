@@ -126,21 +126,20 @@ class HelloWorldFormatAction(FormatAction):
         super().__init__('Format or formatMany', ['pyHelloWorld'], ['helloWorld'])
 
     def format(self, context: Context, params: BaseModel, format_input: FormatInput):
-        content_reference = format_input.content[0].content_reference
-        data = f"{context.content_service.get_str(content_reference)}\nHelloWorldFormatAction did its thing"
-        new_content_reference = context.content_service.put_str(context.did, data, 'test/plain')
-        format_result = FormatResult("formattedHello", new_content_reference)
+        data = f"{format_input.content[0].load_str()}\nHelloWorldFormatAction did its thing"
+        format_result = FormatResult(context)
+        format_result.add_content(data, 'formattedHello', 'text/plain')
         format_result.add_metadata("segment", "1")
 
         if randrange(5) != 0:
             return format_result
         else:
-            format_many_result = FormatManyResult()
+            format_many_result = FormatManyResult(context)
             format_many_result.add_format_result(format_result)
 
             data = f"{data} a second time"
-            second_content_reference = context.content_service.put_str(context.did, data, 'test/plain')
-            second_format_result = FormatResult("formattedHello", second_content_reference)
+            second_format_result = FormatResult(context)
+            second_format_result.add_content(data, 'formattedHello', 'text/plain')
             second_format_result.add_metadata("segment", "2")
             format_many_result.add_format_result(second_format_result)
 

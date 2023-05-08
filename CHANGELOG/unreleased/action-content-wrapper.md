@@ -19,15 +19,15 @@ To store and add content and add to a Result:
 
 ```java
 // create a result of the type appropriate for your Action
-TransformResult transformResult = new TransformResult();
+TransformResult transformResult = new TransformResult(context);
 transformResult.saveContent(byteArray, fileName, MediaType.APPLICATION_JSON);
 transformResult.saveContent(inputStream, fileName, MediaType.APPLICATION_JSON);
 
-// you can modify existing content and add it to the Result without having to save new Content to disk:
+// you can reuse existing content and add it to the Result without having to save new Content to disk:
 List<ActionContent> existingContentList = input.getContentList();
 transformResult.addContent(existingContentList);
 
-// you can also manipulate existing content to store new content on disk
+// you can also manipulate existing content
 ActionContent copyOfFirstContent = existingContentList.get(0).copy();
 copyOfFirstContent.setName("new-name.txt");
 

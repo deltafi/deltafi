@@ -33,7 +33,7 @@ class SampleDomainAction(DomainAction):
         super().__init__('Description', ['TheDomain'])
 
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult().index_metadata('theIndexMetaKey', 'theIndexMetaValue')
+        return DomainResult(context).index_metadata('theIndexMetaKey', 'theIndexMetaValue')
 
 
 class InvalidResult(DomainAction):
@@ -41,7 +41,7 @@ class InvalidResult(DomainAction):
         super().__init__('Description', ['TheDomain'])
 
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return FilterResult("cause")
+        return FilterResult(context, "cause")
 
 
 def make_event(content_service):

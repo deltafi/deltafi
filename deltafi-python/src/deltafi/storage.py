@@ -59,6 +59,60 @@ class ContentReference(NamedTuple):
     segments: List[Segment]
     media_type: str
 
+    def subreference_segments(self, offset: int, size: int):
+        if offset < 0:
+            raise ValueError(f"subreference offset must be positive, got {offset}")
+
+        if size < 0:
+            raise ValueError(f"subreference size must be positive, got {size}")
+
+        if size + offset > self.get_size():
+            raise ValueError(f"Size + offset ({size} + {offset}) exceeds total ContentReference size of {self.get_size()}")
+
+        if size == 0:
+            return []
+
+        new_segments = []
+        offset_remaining = offset
+        size_remaining = size
+
+        for segment in self.segments:
+            if offset_remaining > 0:
+                if segment.size < offset_remaining:
+                    # the first offset is past this segment, skip it
+                    offset_remaining -= segment.size
+                    continue
+                else:
+                    # chop off the front of this segment
+                    segment = Segment(uuid=segment.uuid,
+                                      offset=segment.offset + offset_remaining,
+                                      size=segment.size - offset_remaining,
+                                      did=segment.did)
+                    offset_remaining = 0
+
+            if size_remaining < segment.size:
+                # chop off the back of this segment
+                segment = Segment(uuid=segment.uuid,
+                                  offset=segment.offset,
+                                  size=size_remaining,
+                                  did=segment.did)
+            size_remaining -= segment.size
+            new_segments.append(segment)
+            if size_remaining == 0:
+                break
+
+        return new_segments
+
+    def subreference(self, offset: int, size: int):
+        return ContentReference(segments=self.subreference_segments(offset, size),
+                                media_type=self.media_type)
+
+    def get_size(self):
+        sum = 0
+        for segment in self.segments:
+            sum = sum + segment.size
+        return sum
+
     def json(self):
         return {
             'segments': [segment.json() for segment in self.segments],

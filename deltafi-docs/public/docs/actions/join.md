@@ -133,9 +133,9 @@ class HelloWorldJoinAction(JoinAction):
         context.logger.debug(f"Joining {len(join_inputs)} to {context.did} with params: {params}")
 
         if params.reinject_flow:
-            join_result = JoinReinjectResult(params.reinject_flow)
+            join_result = JoinReinjectResult(context, params.reinject_flow)
         else:
-            join_result = JoinResult()
+            join_result = JoinResult(context)
             if params.domains:
                 for domain in params.domains:
                     join_result.add_domain(domain, None, 'text/plan')

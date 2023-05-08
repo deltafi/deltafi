@@ -133,9 +133,9 @@ class HelloWorldEnrichAction(EnrichAction):
 
     def enrich(self, context: Context, params: BaseModel, enrich_input: EnrichInput):
         if randrange(1000) != 0:
-            return EnrichResult().enrich('helloWorld', 'python was here', 'text/plain')\
+            return EnrichResult(context).enrich('helloWorld', 'python was here', 'text/plain')\
                 .index_metadata('enrichKey', 'enrichValue')
         else:
             context.logger.error('haha gremlins')
-            return ErrorResult('Something bad happened I guess', 'try again?')
+            return ErrorResult(context, 'Something bad happened I guess', 'try again?')
 ```
