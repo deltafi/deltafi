@@ -18,7 +18,7 @@ networks:
 
 services:
   deltafi-core:
-    image: ${DELTAFI_CORE}:${DELTAFI_VERSION}
+    image: ${DELTAFI_CORE}
     container_name: deltafi-core
     depends_on:
       deltafi-redis:
@@ -33,11 +33,11 @@ services:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
       UNIQUE_ID: deltafi-core
     env_file:
-      - settings/common.env
-      - settings/secrets/redis.env
-      - settings/secrets/mongodb.env
-      - settings/secrets/minio.env
-      - settings/secrets/ssl.env
+      - ${ENV_DIR}/common.env
+      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/mongodb.env
+      - ${SECRETS_DIR}/minio.env
+      - ${SECRETS_DIR}/ssl.env
     <<: *health-probe
     labels:
       deltafi-group: deltafi-core
@@ -47,7 +47,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   deltafi-ingress:
-    image: ${DELTAFI_INGRESS}:${DELTAFI_VERSION}
+    image: ${DELTAFI_INGRESS}
     container_name: deltafi-ingress
     depends_on:
       deltafi-redis:
@@ -59,11 +59,11 @@ services:
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
     env_file:
-      - settings/common.env
-      - settings/secrets/redis.env
-      - settings/secrets/mongodb.env
-      - settings/secrets/minio.env
-      - settings/secrets/ssl.env
+      - ${ENV_DIR}/common.env
+      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/mongodb.env
+      - ${SECRETS_DIR}/minio.env
+      - ${SECRETS_DIR}/ssl.env
     expose:
       - "8080"
     <<: *health-probe
@@ -73,18 +73,18 @@ services:
     networks:
       - deltafi
   deltafi-api:
-    image: ${DELTAFI_API}:${DELTAFI_VERSION}
+    image: ${DELTAFI_API}
     container_name: deltafi-api
     depends_on:
       deltafi-core:
         condition: service_healthy
     environment:
-      WORKERS: 8
+      WORKERS: ${API_WORKERS}
     env_file:
-      - settings/common.env
-      - settings/secrets/redis.env
-      - settings/secrets/mongodb.env
-      - settings/secrets/minio.env
+      - ${ENV_DIR}/common.env
+      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/mongodb.env
+      - ${SECRETS_DIR}/minio.env
     expose:
       - "9292"
     <<: *health-probe
@@ -94,13 +94,13 @@ services:
     networks:
       - deltafi
   deltafi-auth:
-    image: ${DELTAFI_AUTH}:${DELTAFI_VERSION}
+    image: ${DELTAFI_AUTH}
     container_name: deltafi-auth
     environment:
       DATA_DIR: /data
-      WORKERS: 8
+      WORKERS: ${AUTH_WORKERS}
     env_file:
-      - settings/common.env
+      - ${ENV_DIR}/common.env
     expose:
       - "9292"
     labels:
@@ -109,19 +109,30 @@ services:
     networks:
       - deltafi
     volumes:
-      - ./data/auth:/data
+      - ${DATA_DIR}/auth:/data
+  deltafi-auth-resolver:
+    image: ${DELTAFI_AUTH_RESOLVER}
+    container_name: deltafi-auth-resolver
+    expose:
+      - "${AUTH_RESOLVER_PORT}"
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    profiles: ["auth-resolver"]
   deltafi-monitor:
-    image: ${DELTAFI_API}:${DELTAFI_VERSION}
+    image: ${DELTAFI_API}
     container_name: deltafi-monitor
     command: [ 'bundle', 'exec', 'bin/monitor.rb' ]
     depends_on:
       deltafi-core:
         condition: service_healthy
     env_file:
-      - settings/common.env
-      - settings/secrets/redis.env
-      - settings/secrets/mongodb.env
-      - settings/secrets/minio.env
+      - ${ENV_DIR}/common.env
+      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/mongodb.env
+      - ${SECRETS_DIR}/minio.env
     healthcheck:
       test: /monitor_probe.sh
       interval: 30s
@@ -135,7 +146,7 @@ services:
     networks:
       - deltafi
   deltafi-ui:
-    image: ${DELTAFI_UI}:${DELTAFI_VERSION}
+    image: ${DELTAFI_UI}
     container_name: deltafi-ui
     depends_on:
       deltafi-api:
@@ -148,15 +159,15 @@ services:
     networks:
       - deltafi
   deltafi-core-actions:
-    image: ${DELTAFI_CORE_ACTIONS}:${DELTAFI_VERSION}
+    image: ${DELTAFI_CORE_ACTIONS}
     container_name: deltafi-core-actions
     depends_on:
       deltafi-core:
         condition: service_healthy
     env_file:
-      - settings/common.env
-      - settings/secrets/redis.env
-      - settings/secrets/minio.env
+      - ${ENV_DIR}/common.env
+      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/minio.env
     healthcheck:
       test: cat /running
       interval: 30s
@@ -169,7 +180,7 @@ services:
     networks:
       - deltafi
   deltafi-docs:
-    image: ${DELTAFI_DOCS}:${DELTAFI_VERSION}
+    image: ${DELTAFI_DOCS}
     container_name: deltafi-docs
     expose:
       - "80"
@@ -177,29 +188,30 @@ services:
       deltafi-group: deltafi-core
     networks:
       - deltafi
+    profiles: ["docs"]
   deltafi-nodemonitor:
-    image: ${DELTAFI_NODEMONITOR}:${DELTAFI_VERSION}
+    image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
     depends_on:
       deltafi-graphite:
         condition: service_started
     env_file:
-      - settings/common.env
+      - ${ENV_DIR}/common.env
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:
       - deltafi
     volumes:
-      - ./data:/data
+      - ${DATA_DIR}:/data
   deltafi-egress-sink:
-    image: ${DELTAFI_EGRESS_SINK}:${DELTAFI_VERSION}
+    image: ${DELTAFI_EGRESS_SINK}
     container_name: deltafi-egress-sink
     depends_on:
       deltafi-core:
         condition: service_started
     env_file:
-      - settings/common.env
+      - ${ENV_DIR}/common.env
     expose:
       - "9292"
     labels:
@@ -207,8 +219,9 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    profiles: ["egress-sink"]
     volumes:
-      - ./data:/data/deltafi/egress-sink
+      - ${DATA_DIR}:/data/deltafi/egress-sink
   deltafi-minio:
     image: ${MINIO}
     command: server /export -S /etc/minio/certs/ --address :9000 --console-address :9001
@@ -221,13 +234,13 @@ services:
       MINIO_PROMETHEUS_AUTH_TYPE: public
       MINIO_API_DELETE_CLEANUP_INTERVAL: 1s
     env_file:
-      - settings/secrets/minio.env
+      - ${SECRETS_DIR}/minio.env
     labels:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
     volumes:
-      - ./data/minio:/export
+      - ${DATA_DIR}/minio:/export
   deltafi-mongodb:
     image: ghcr.io/zcube/bitnami-compat/mongodb:5.0.14
     container_name: deltafi-mongodb
@@ -240,7 +253,7 @@ services:
       MONGODB_ENABLE_IPV6: no
       MONGODB_ENABLE_DIRECTORY_PER_DB: no
     env_file:
-      - settings/secrets/mongodb.env
+      - ${SECRETS_DIR}/mongodb.env
     healthcheck:
       test: mongo --disableImplicitSessions --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
       start_period: 5s
@@ -254,7 +267,7 @@ services:
     expose:
       - "27017"
     volumes:
-      - ./data/mongo:/bitnami/mongodb
+      - ${DATA_DIR}/mongo:/bitnami/mongodb
   deltafi-redis:
     image: ghcr.io/zcube/bitnami-compat/redis:7.0.7
     container_name: deltafi-redis
@@ -262,7 +275,7 @@ services:
       BITNAMI_DEBUG: false
       REDIS_REPLICATION_MODE: master
     env_file:
-      - settings/secrets/redis.env
+      - ${SECRETS_DIR}/redis.env
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 5s
@@ -284,7 +297,7 @@ services:
       GF_PATHS_PLUGINS: /var/lib/grafana/plugins
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
     env_file:
-      - settings/secrets/grafana.env
+      - ${SECRETS_DIR}/grafana.env
     expose:
       - "3000"
     labels:
@@ -292,11 +305,11 @@ services:
     networks:
       - deltafi
     volumes:
-      - ./data/grafana:/var/lib/grafana
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ./grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
-      - ./grafana/dashboards:/tmp/dashboards
+      - ${DATA_DIR}/grafana:/var/lib/grafana
+      - ${SETTINGS_DIR}/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ${SETTINGS_DIR}/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
+      - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
   deltafi-graphite:
     image: ${GRAPHITE}
     container_name: deltafi-graphite
@@ -317,10 +330,10 @@ services:
     networks:
       - deltafi
     volumes:
-      - ./graphite/conf:/opt/graphite/conf/
-      - ./graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
-      - ./graphite/statsd/udp.js:/opt/statsd/config/udp.js
-      - ./data/graphite:/opt/graphite/storage/
+      - ${SETTINGS_DIR}/graphite/conf:/opt/graphite/conf/
+      - ${SETTINGS_DIR}/graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
+      - ${SETTINGS_DIR}/graphite/statsd/udp.js:/opt/statsd/config/udp.js
+      - ${DATA_DIR}/graphite:/opt/graphite/storage/
   deltafi-loki:
     image: ${LOKI}
     container_name: deltafi-loki
@@ -334,8 +347,8 @@ services:
     networks:
       - deltafi
     volumes:
-      - ./loki/loki.yaml:/etc/loki/loki.yaml
-      - ./data/loki:/data
+      - ${SETTINGS_DIR}/loki/loki.yaml:/etc/loki/loki.yaml
+      - ${DATA_DIR}/loki:/data
   deltafi-promtail:
     image: ${PROMTAIL}
     container_name: deltafi-promtail
@@ -351,7 +364,7 @@ services:
       - deltafi
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./promtail/promtail.yaml:/etc/promtail/promtail.yaml
+      - ${SETTINGS_DIR}/promtail/promtail.yaml:/etc/promtail/promtail.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
   deltafi-nginx:
     image: ${NGINX}
@@ -370,13 +383,13 @@ services:
     environment:
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/
     env_file:
-      - settings/nginx.env
+      - ${ENV_DIR}/nginx.env
     labels:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
     volumes:
-      - ./nginx:/etc/nginx/templates
+      - ${SETTINGS_DIR}/nginx:/etc/nginx/templates
     ports:
       - "80:80"
       - "8888:8888"

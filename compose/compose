@@ -7,16 +7,139 @@ cli_help_command() {
 Command: system-snapshot
 
 Subcommands:
-  start               start all of the services
-  stop                stop all of the services
-  restart <services>  restart the list of services (space delimited)
+  start                       start all of the services
+  stop                        stop all of the services
+  restart <services>          restart the list of services (space delimited)
+  stop-service <services>     stop the list of services (space delimited)
 
 Usage:
-  compose start [OPTIONS]
+  compose [SUBCOMMAND] [ARGS]
 
 Options:
   -h, --help        Show help"
   exit 1
+}
+
+cli_start_help_command() {
+  echo "
+Command: compose start
+
+Usage:
+  compose start <arguments>
+
+  Arguments:
+  -f|--values <val>    specify values in a YAML file (can specify multiple)"
+  exit 1
+}
+
+# _readlink()
+#
+# Usage:
+#   _readlink [-e|-f|<options>] <path/to/symlink>
+#
+# Options:
+#   -f  All but the last component must exist.
+#   -e  All components must exist.
+#
+# Description:
+#   Wrapper for `readlink` that provides portable versions of GNU `readlink -f`
+#   and `readlink -e`, which canonicalize by following every symlink in every
+#   component of the given name recursively.
+#
+# More Information:
+#   http://stackoverflow.com/a/1116890
+_readlink() {
+  local _target_path
+  local _target_file
+  local _final_directory
+  local _final_path
+  local _option
+
+  for __arg in "${@:-}"
+  do
+    case "${__arg}" in
+      -e|-f)
+        _option="${__arg}"
+        ;;
+      -*)
+        # do nothing
+        # ':' is bash no-op
+        :
+        ;;
+      *)
+        if [[ -z "${_target_path:-}" ]]
+        then
+          _target_path="${__arg}"
+        fi
+        ;;
+    esac
+  done
+
+  if [[ -z "${_option}" ]]
+  then
+    readlink "${@}"
+  else
+    if [[ -z "${_target_path:-}" ]]
+    then
+      printf "_readlink: missing operand\\n"
+      return 1
+    fi
+
+    cd "$(dirname "${_target_path}")" || return 1
+    _target_file="$(basename "${_target_path}")"
+
+    # Iterate down a (possible) chain of symlinks
+    while [[ -L "${_target_file}" ]]
+    do
+      _target_file="$(readlink "${_target_file}")"
+      cd "$(dirname "${_target_file}")" || return 1
+      _target_file="$(basename "${_target_file}")"
+    done
+
+    # Compute the canonicalized name by finding the physical path
+    # for the directory we're in and appending the target file.
+    _final_directory="$(pwd -P)"
+    _final_path="${_final_directory}/${_target_file}"
+
+    if [[ "${_option}" == "-f" ]]
+    then
+      printf "%s\\n" "${_final_path}"
+      return 0
+    elif [[ "${_option}" == "-e" ]]
+    then
+      if [[ -e "${_final_path}" ]]
+      then
+        printf "%s\\n" "${_final_path}"
+        return 0
+      else
+        return 1
+      fi
+    else
+      return 1
+    fi
+  fi
+}
+
+DELTAFI_COMPOSE_PATH=$(cd $(dirname $(_readlink -f $0)) && pwd)
+COMPOSE_FILE="${DELTAFI_COMPOSE_PATH}/docker-compose.yml"
+
+# TODO make the data directory configurable
+DATA_DIR="${DELTAFI_COMPOSE_PATH}/data"
+SETTINGS_DIR="${DELTAFI_COMPOSE_PATH}/settings"
+SECRETS_DIR="${SETTINGS_DIR}/secrets"
+ENV_DIR="${SETTINGS_DIR}/env"
+
+VALUES_YAML="${ENV_DIR}/values.yaml"
+COMMON_SETTINGS="${ENV_DIR}/common.env"
+NGINX_SETTINGS="${ENV_DIR}/nginx.env"
+STARTUP_SETTINGS="${ENV_DIR}/startup.env"
+
+_is_arm() {
+  if [[ $(uname -p) == 'arm' || $(uname -m) == 'aarch64' ]]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 _random_password() {
@@ -25,12 +148,11 @@ _random_password() {
 }
 
 _setup_secrets() {
-  SECRETS_PATH="./settings/secrets"
-  GRAFANA_SECRET_PATH="${SECRETS_PATH}/grafana.env"
-  MINIO_SECRET_PATH="${SECRETS_PATH}/minio.env"
-  MONGODB_SECRET_PATH="${SECRETS_PATH}/mongodb.env"
-  REDIS_SECRET_PATH="${SECRETS_PATH}/redis.env"
-  SSL_SECRET_PATH="${SECRETS_PATH}/ssl.env"
+  GRAFANA_SECRET_PATH="${SECRETS_DIR}/grafana.env"
+  MINIO_SECRET_PATH="${SECRETS_DIR}/minio.env"
+  MONGODB_SECRET_PATH="${SECRETS_DIR}/mongodb.env"
+  REDIS_SECRET_PATH="${SECRETS_DIR}/redis.env"
+  SSL_SECRET_PATH="${SECRETS_DIR}/ssl.env"
 
   if [[ ! -f "${GRAFANA_SECRET_PATH}" ]]; then
       grafana_password=$(_random_password 16)
@@ -90,23 +212,247 @@ _create_network() {
   fi
 }
 
-start_compose() {
-  _setup_secrets
-  _create_network
+# creates a default values yaml using the local repo if this is a snapshot version otherwise it will use docker.io/deltafi
+_write_default_values() {
+  tag=$(deltafi version)
+  repo="deltafi"
 
-  docker compose --env-file "${1}" up -d
+  if [[ "${tag}" = *-SNAPSHOT ]]; then
+    repo="localhost:5000"
+    tag="latest"
+  fi
+
+  cat <<EOF > "${VALUES_YAML}"
+deltafi:
+  core_actions:
+    image: ${repo}/deltafi-core-actions:${tag}
+  core:
+    image: ${repo}/deltafi-core:${tag}
+  docs:
+    image: ${repo}/deltafi-docs:${tag}
+    enabled: true
+  ingress:
+    image: ${repo}/deltafi-core:${tag}
+    envVar:
+      HTTP_MAX_BODY_SIZE: 5G
+  auth:
+    image: ${repo}/deltafi-auth:${tag}
+    workers: 8
+    mode: disabled # basic, cert, or disabled
+    secret: auth-secret
+    entityResolver:
+      enabled: false
+      image: ${repo}/deltafi-entity-resolver:${tag}
+      port: 8080
+  api:
+    image: ${repo}/deltafi-api:${tag}
+    workers: 8
+  ui:
+    image: ${repo}/deltafi-ui:${tag}
+  egress_sink:
+    enabled: true
+    image: ${repo}/deltafi-egress-sink:${tag}
+  nodemonitor:
+    image: ${repo}/deltafi-nodemonitor:${tag}
+# nginx domain
+ingress:
+  domain: local.deltafi.org
+dependencies:
+  grafana: grafana/grafana:9.3.2
+  graphite: graphiteapp/graphite-statsd:1.1.10-4
+  loki: grafana/loki:2.7.1
+  minio: quay.io/minio/minio:RELEASE.2023-02-10T18-48-39Z
+  nginx: docker.io/nginx:1.23.3-alpine
+  promtail: docker.io/grafana/promtail:2.7.1
+  mongodb: docker.io/bitnami/mongodb:5.0.14
+  redis: docker.io/bitnami/redis:7.0.7
+EOF
+
+  if _is_arm; then
+    yq -i '.dependencies.mongodb = "zcube/bitnami-compat/mongodb:5.0.14"' "${VALUES_YAML}"
+    yq -i '.dependencies.redis = "zcube/bitnami-compat/redis:7.0.7"' "${VALUES_YAML}"
+  fi
+}
+
+# overlay the values that were passed on top of the default values
+_merge_values_yaml() {
+  _write_default_values
+
+  if [[ -n "${1}" ]]; then
+    for i; do
+      echo "Adding values from ${i}"
+      if [ ! -f "${i}" ]; then
+        echo "${i}: No such file"
+        exit 1
+      fi
+      yq -i '. *= load("'"${i}"'")' "${VALUES_YAML}"
+    done
+  fi
+}
+
+_append() {
+  printf "%s=%s\n" "${1}" "${2}" >> "${3}"
+}
+
+_append_common() {
+  _append "${1}" "${2}" "${COMMON_SETTINGS}"
+}
+
+_append_startup() {
+  _append "${1}" "${2}" "${STARTUP_SETTINGS}"
+}
+
+_from_values() {
+  yq "${1}" ${VALUES_YAML}
+}
+
+_append_startup_from_values() {
+  _append_startup "${1}" $(_from_values "${2}") "${STARTUP_SETTINGS}"
+}
+
+_append_compose_profiles() {
+  profiles=()
+  docs_enabled=$(_from_values ".deltafi.docs.enabled")
+  egress_sink_enabled=$(_from_values ".deltafi.egress_sink.enabled")
+  entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
+
+  if [[ "${docs_enabled}" = "true" ]]; then
+    profiles+=("docs")
+  fi
+
+  if [[ "${egress_sink_enabled}" = "true" ]]; then
+    profiles+=("egress-sink")
+  fi
+
+  if [[ "${entity_resolver_enabled}" = "true" ]]; then
+    profiles+=("entity-resolver")
+  fi
+
+  # TODO - nginx template needs to support disabling these services before the profiles can be used to disable services
+  # profile_str=$(local IFS=, ; echo "${profiles[*]}")
+  profile_str="docs,egress-sink"
+  if [[ -n "${profile_str}" ]]; then
+    _append_startup "COMPOSE_PROFILES" "${profile_str}"
+  fi
+}
+
+# create the startup.env file used by the docker compose commands
+_write_startup_file() {
+  truncate -s 0 "${STARTUP_SETTINGS}"
+  _append_startup "SETTINGS_DIR" "${SETTINGS_DIR}"
+  _append_startup "SECRETS_DIR" "${SECRETS_DIR}"
+  _append_startup "ENV_DIR" "${ENV_DIR}"
+  _append_startup "DATA_DIR" "${DATA_DIR}"
+  _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
+  _append_startup_from_values "DELTAFI_AUTH" ".deltafi.auth.image"
+  _append_startup_from_values "DELTAFI_AUTH_RESOLVER" ".deltafi.auth.entityResolver.image"
+  _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
+  _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
+  _append_startup_from_values "DELTAFI_DOCS" ".deltafi.docs.image"
+  _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
+  _append_startup_from_values "DELTAFI_INGRESS" ".deltafi.ingress.image"
+  _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
+  _append_startup_from_values "DELTAFI_UI" ".deltafi.ui.image"
+  _append_startup_from_values "GRAFANA" ".dependencies.grafana"
+  _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
+  _append_startup_from_values "LOKI" ".dependencies.loki"
+  _append_startup_from_values "MINIO" ".dependencies.minio"
+  _append_startup_from_values "MONGODB" ".dependencies.mongodb"
+  _append_startup_from_values "NGINX" ".dependencies.nginx"
+  _append_startup_from_values "PROMTAIL" ".dependencies.promtail"
+  _append_startup_from_values "REDIS" ".dependencies.redis"
+  _append_startup_from_values "API_WORKERS" ".deltafi.api.workers"
+  _append_startup_from_values "AUTH_WORKERS" ".deltafi.auth.workers"
+  _append_startup_from_values "AUTH_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
+  _append_compose_profiles
+}
+
+# write the static common settings
+_write_common_base() {
+  cat <<EOF > "${COMMON_SETTINGS}"
+API_URL=http://deltafi-api:9292
+CORE_URL=http://deltafi-core:8080
+DELTAFI_AUTH_URL=http://deltafi-auth:9292
+DELTAFI_GRAFANA_URL=http://deltafi-grafana:3000
+DELTAFI_MODE=STANDALONE
+GRAPHITE_HOST=deltafi-graphite
+GRAPHITE_PORT="2003"
+INGRESS_URL=http://deltafi-ingress:8080
+PERIOD="9"
+METRICS_PERIOD_SECONDS="10"
+MINIO_PARTSIZE="100000000"
+MINIO_URL=http://deltafi-minio:9000
+RACK_ENV=production
+REDIS_URL=http://deltafi-redis:6379
+RUNNING_IN_CLUSTER=false
+STATSD_HOSTNAME=deltafi-graphite
+STATSD_PORT="8125"
+EOF
+}
+
+# create the env-files used by the individual services within docker-compose.yaml
+_write_env_files() {
+  truncate -s 0 "${NGINX_SETTINGS}"
+
+  hostname_value=$(hostname)
+  auth_mode=$(_from_values ".deltafi.auth.mode")
+  domain=$(_from_values ".ingress.domain")
+
+  _write_common_base
+  _append_common "AUTH_MODE" "${auth_mode}"
+  _append_common "NODE_NAME" "${hostname_value}"
+  _append_common "HOSTNAME" "${hostname_value}"
+  _append_common "DELTAFI_UI_DOMAIN" "${domain}"
+  _append_common "DOMAIN" "${domain}"
+
+  entity_resolver_port=$(_from_values ".deltafi.auth.entityResolver.port")
+  entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
+  entity_resolver_url="http://deltafi-auth-resolver:${entity_resolver_port}"
+
+  _append_common "ENTITY_RESOLVER_ENABLED" "${entity_resolver_enabled}"
+  _append_common "ENTITY_RESOLVER_URL" "${entity_resolver_url}"
+
+  case "${auth_mode}" in
+    disabled)
+      auth_request="/no-auth"
+      ;;
+    basic)
+      auth_request="/basic-auth"
+      ;;
+    cert)
+      auth_request="/cert-auth"
+      ;;
+    *)
+      echo "Invalid auth mode - ${auth_mode}"
+      exit 1
+  esac
+
+  _append "AUTH_REQUEST" "${auth_request}" "${NGINX_SETTINGS}"
+  _append "DOMAIN" "${domain}" "${NGINX_SETTINGS}"
+}
+
+_write_config() {
+  _merge_values_yaml "$@"
+  _write_env_files
+  _write_startup_file
+  _setup_secrets
+}
+
+start_compose() {
+  _create_network
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d
 }
 
 stop_compose() {
-  docker compose --env-file "${1}" down
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" down
 }
 
 stop_service() {
-  docker compose --env-file "${1}" stop ${2}
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" stop ${1}
 }
 
 restart_service() {
-  docker-compose --env-file "${1}" up -d --force-recreate --no-deps ${2}
+  docker-compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d --force-recreate --no-deps ${1}
 }
 
 ARGS=("$@")
@@ -114,29 +460,46 @@ ARGS=("$@")
 SUBCOMMAND=${ARGS[0]}
 shift
 
-# TODO pick the env based on input/OS
-images_file="./settings/images/local-images.env"
-
 case "$SUBCOMMAND" in
   restart)
     SERVICES=""
     for i
       do SERVICES="${SERVICES} ${i}"
     done
-    restart_service "$images_file" "${SERVICES}"
+    restart_service "${SERVICES}"
     ;;
   start)
-    start_compose "$images_file"
+    config_files=()
+    while [[ $# -gt 0 ]]; do
+      key="$1"
+      case $key in
+        -f|--values)
+          shift
+          config_files+=("$1")
+          shift
+          ;;
+        -h|--help)
+          cli_start_help_command
+          ;;
+        *)
+          # skip over anything else
+          shift
+          ;;
+      esac
+    done
+
+    _write_config "${config_files[@]}"
+    start_compose
     ;;
   stop)
-    stop_compose "$images_file"
+    stop_compose
     ;;
   stop-service)
     SERVICES=""
     for i
       do SERVICES="${SERVICES} ${i}"
     done
-    stop_service $images_file "${SERVICES}"
+    stop_service "${SERVICES}"
     ;;
   *)
     cli_help_command

@@ -1,5 +1,7 @@
 data/
 settings/secrets/*.env
+settings/env/*.env
+settings/env/*.yaml
 mounts/
 config/
 .logs/

@@ -132,9 +132,8 @@ _compose_install() {
     _pre_upgrade_tasks
   fi
 
-  cd "${DELTAFICLI_COMPOSE_PATH}"
-  ./compose start
-  cd - > /dev/null
+  "${DELTAFICLI_COMPOSE_PATH}"/compose start ${ARGS[@]:1}
+
 
   NEW_CORE_CONTAINER=$(${core_finder})
 
