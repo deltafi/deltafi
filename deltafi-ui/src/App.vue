@@ -60,7 +60,7 @@ const route = useRoute();
 const title = useTitle("DeltaFi");
 const notify = useNotifications();
 const { serverSentEvents } = useServerSentEvents();
-const { uiConfig, fetchUiConfig } = useUiConfig();
+const { uiConfig } = useUiConfig();
 const { fetchCurrentUser } = useCurrentUser();
 const { fetchVersion } = useVersion();
 
@@ -75,7 +75,6 @@ const sidebarClasses = computed(() => {
 });
 
 onBeforeMount(async () => {
-  fetchUiConfig();
   fetchVersion();
   provide("uiConfig", uiConfig);
   await fetchCurrentUser();

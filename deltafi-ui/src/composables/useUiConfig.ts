@@ -69,11 +69,13 @@ export default function useUiConfig(): {
     Object.assign(uiConfig, $uiConfig);
     return uiConfig;
   };
-  const fetchUiConfig = async () => {
+  const fetchUiConfig = async (skipCache = false) => {
     const { response, get } = useApi();
     const endpoint = 'config';
+    const params = new URLSearchParams();
+    if (skipCache) params.append("skip_cache", "true")
     try {
-      await get(endpoint);
+      await get(endpoint, params);
       setUiConfig(response.value.config.ui);
     } catch {
       // Continue regardless of error

@@ -29,11 +29,27 @@ const generateData = () => {
         text: "Mocked Data",
         textColor: "#FFFFFF",
       },
-      // deltaFileLinks: [{ name: "View in HTTPBin", url: "https://httpbin.org/anything/example?did=${DID}" }],
+      deltaFileLinks: [
+        {
+          name: "View in Mock HTTPBin",
+          url: "https://mock.httpbin.org/anything/example?did=${did}",
+          description: null,
+        },
+        {
+          name: "View Filename in Mock HTTPBin",
+          url: "https://mock.httpbin.org/anything/example?filename=${sourceInfo.filename}",
+          description: null,
+        },
+        {
+          name: "View test_key in Mock HTTPBin",
+          url: "https://mock.httpbin.org/anything/example?filename=${indexedMetadata.test_key}",
+          description: null,
+        },
+      ],
       externalLinks: [
-        { url: "/graphiql/", name: "GraphiQL", description: "GraphQL query interface" },
-        { url: "https://k8s.dev.deltafi.org/#/workloads?namespace=deltafi", name: "Kubernetes Dashboard", description: "Kubernetes admin interface" },
-        { url: "https://metrics.dev.deltafi.org/dashboards", name: "Grafana Dashboards", description: "Metrics and logging visualization" },
+        { url: "/mock-graphiql/", name: "Mock GraphiQL", description: "Mock GraphQL query interface" },
+        { url: "https://mock.k8s.dev.deltafi.org/#/workloads?namespace=deltafi", name: "Mock Kubernetes Dashboard", description: "Mock Kubernetes admin interface" },
+        { url: "https://mock.metrics.dev.deltafi.org/dashboards", name: "Mock Grafana Dashboards", description: "Mock Metrics and logging visualization" },
       ],
     },
   };

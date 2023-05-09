@@ -181,6 +181,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: "/admin/external-links",
+    name: "External Links",
+    component: () => import("@/pages/ExternalLinksPage.vue"),
+    meta: {
+      permission: "Admin",
+    },
+  },
+  {
     path: "/admin/audit",
     name: "Audit Log",
     component: () => import("@/pages/AuditLogPage.vue"),

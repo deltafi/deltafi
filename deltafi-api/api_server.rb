@@ -54,7 +54,8 @@ class ApiServer < Sinatra::Base
     get '/config' do
       authorize! :UIAccess
 
-      config = { ui: DF::API::V1::Config::UI.config }
+      skip_cache = params['skip_cache'] == 'true'
+      config = { ui: DF::API::V1::Config::UI.config(skip_cache: skip_cache) }
       build_response({ config: config })
     end
 

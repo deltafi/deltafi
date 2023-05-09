@@ -226,6 +226,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("RoleRead")),
       },
       {
+        name: "External Links",
+        icon: "fas fa-link fa-fw",
+        path: "/admin/external-links",
+        visible: computed(() => hasPermission("Admin")),
+      },
+      {
         name: "Kubernetes Dashboard",
         icon: "icomoon kubernetes",
         url: computed(() => buildURL("k8s", "/#/workloads?namespace=deltafi")),
