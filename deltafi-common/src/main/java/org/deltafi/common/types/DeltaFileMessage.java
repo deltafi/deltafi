@@ -22,6 +22,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -38,10 +39,18 @@ public class DeltaFileMessage {
     List<Enrichment> enrichment;
 
     public Map<String, Domain> domainMap() {
+        if (domains == null) {
+            return Collections.emptyMap();
+        }
+
         return getDomains().stream().collect(Collectors.toMap(Domain::getName, Function.identity()));
     }
 
     public Map<String, Enrichment> enrichmentMap() {
+        if (enrichment == null) {
+            return Collections.emptyMap();
+        }
+
         return getEnrichment().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
     }
 
