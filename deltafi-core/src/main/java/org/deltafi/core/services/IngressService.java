@@ -46,7 +46,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,10 +71,9 @@ public class IngressService {
     private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
-    private final Clock clock;
 
     public IngressResult ingress(String flow, String filename, String contentType, String username,
-            String headerMetadataString, InputStream dataStream) throws IngressMetadataException,
+            String headerMetadataString, InputStream dataStream, OffsetDateTime created) throws IngressMetadataException,
             ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled()) {
             log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
@@ -97,8 +95,9 @@ public class IngressService {
 
             ingressResult = switch (contentType) {
                 case APPLICATION_FLOWFILE, APPLICATION_FLOWFILE_V_1, APPLICATION_FLOWFILE_V_2,
-                        APPLICATION_FLOWFILE_V_3 -> ingressFlowFile(flow, filename, contentType, headerMetadata, dataStream);
-                default -> ingressBinary(flow, filename, contentType, headerMetadata, dataStream);
+                        APPLICATION_FLOWFILE_V_3 ->
+                        ingressFlowFile(flow, filename, contentType, headerMetadata, dataStream, created);
+                default -> ingressBinary(flow, filename, contentType, headerMetadata, dataStream, created);
             };
         } catch (IngressMetadataException | ObjectStorageException | IngressException e) {
             log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
@@ -136,8 +135,8 @@ public class IngressService {
     }
 
     private IngressResult ingressFlowFile(String flow, String filename, String contentType,
-            Map<String, String> headerMetadata, InputStream contentInputStream) throws ObjectStorageException,
-            IngressException, IngressMetadataException {
+            Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
+            throws ObjectStorageException, IngressException, IngressMetadataException {
         FlowFile flowFile;
         try {
             flowFile = FlowFileUtil.unpackageFlowFile(contentType, contentInputStream);
@@ -158,11 +157,11 @@ public class IngressService {
             throw new IngressMetadataException("Filename must be passed in as a header or flowfile attribute");
         }
         return ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM, new ByteArrayInputStream(flowFile.content()),
-                combinedMetadata);
+                combinedMetadata, created);
     }
 
     private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
-            Map<String, String> metadata) throws ObjectStorageException, IngressException {
+            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
         SourceInfo sourceInfo = SourceInfo.builder()
                 .flow(flow)
                 .filename(filename)
@@ -202,7 +201,7 @@ public class IngressService {
                 .did(did)
                 .sourceInfo(sourceInfo)
                 .content(List.of(Content.newBuilder().contentReference(contentReference).name(filename).build()))
-                .created(OffsetDateTime.now(clock))
+                .created(created)
                 .build();
 
         try {
@@ -219,12 +218,12 @@ public class IngressService {
     }
 
     private IngressResult ingressBinary(String flow, String filename, String mediaType,
-            Map<String, String> headerMetadata, InputStream contentInputStream) throws IngressMetadataException,
-            IngressException, ObjectStorageException {
+            Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
+            throws IngressMetadataException, IngressException, ObjectStorageException {
         if (filename == null) {
             throw new IngressMetadataException("Filename must be passed in as a header");
         }
-        return ingress(flow, filename, mediaType, contentInputStream, headerMetadata);
+        return ingress(flow, filename, mediaType, contentInputStream, headerMetadata, created);
     }
 
     private Map<String, String> tagsFor(String ingressFlow) {

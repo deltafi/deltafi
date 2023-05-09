@@ -3631,7 +3631,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress() {
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any()))
+		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenReturn(INGRESS_RESULT);
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
@@ -3642,7 +3642,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_missingFilename() {
-		Mockito.when(ingressService.ingress(eq(FLOW), isNull(), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any()))
+		Mockito.when(ingressService.ingress(eq(FLOW), isNull(), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressMetadataException(""));
 
 		ResponseEntity<String> response = ingress(null, CONTENT.getBytes());
@@ -3652,7 +3652,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_disabled() {
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any()))
+		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressUnavailableException(""));
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
@@ -3662,7 +3662,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_storageLimit() {
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any()))
+		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressStorageException(""));
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
@@ -3672,7 +3672,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_internalServerError() {
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any()))
+		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new RuntimeException());
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
