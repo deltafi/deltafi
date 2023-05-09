@@ -27,8 +27,8 @@ module Deltafi
             DOMAIN = ENV.fetch('DELTAFI_UI_DOMAIN', nil)
             AUTH_MODE = ENV.fetch('AUTH_MODE', nil)
 
-            def config(skip_cache: false)
-              system_properties = DF::SystemProperties.all(skip_cache: skip_cache)
+            def config(skip_cache = false)
+              system_properties = DF::SystemProperties.all(skip_cache)
 
               config = system_properties['ui'] || {}
               config[:title] = system_properties['systemName'] || 'DeltaFi'

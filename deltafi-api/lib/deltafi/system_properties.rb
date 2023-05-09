@@ -83,7 +83,7 @@ module Deltafi
     @@last_cache_time = Time.at(0)
     @@system_properties = {}
 
-    def self.all(skip_cache: false)
+    def self.all(skip_cache = false)
       if skip_cache || @@system_properties.keys.empty? || Time.now - @@last_cache_time > REFRESH_CACHE_SECONDS
         begin
           debug 'Refreshing cache'
@@ -101,7 +101,7 @@ module Deltafi
       @@system_properties
     end
 
-    def self.dig(dig_path = [], default_value = nil, skip_cache: false)
+    def self.dig(dig_path = [], default_value = nil, skip_cache = false)
       all(skip_cache).dig(*dig_path) || default_value
     end
   end
