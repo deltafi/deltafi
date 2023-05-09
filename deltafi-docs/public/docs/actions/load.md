@@ -24,11 +24,11 @@ public class LoadInput {
 
 ### Return Types
 
-The `load` method must return a `LoadResultType`, which is currently implemented by `LoadResult`, `SplitResult`, `LoadManyResult`, `ErrorResult`, and `FilterResult`.
+The `load` method must return a `LoadResultType`, which is currently implemented by `LoadResult`, `ReinjectResult`, `LoadManyResult`, `ErrorResult`, and `FilterResult`.
 
 The `LoadResult` includes the domains, content, and metadata created by the `LoadAction`.  
 The `LoadManyResult` contains a list of `ChildLoadResults`. Each `ChildLoadResult` will be split into a child `DeltaFile` that will continue to be processed independently.  
-The `SplitResult` includes seperate child DeltaFiles which will be ingressed back into DeltaFi.
+The `ReinjectResult` includes separate child DeltaFiles which will be ingressed back into DeltaFi.
 
 ### Example
 
@@ -92,10 +92,10 @@ class LoadInput(NamedTuple):
 
 ### Return Types
 
-The `load()` method must return one of: `LoadResult`, `LoadManyResult`, `SplitResult`, `ErrorResult`, or `FilterResult`.
+The `load()` method must return one of: `LoadResult`, `LoadManyResult`, `ReinjectResult`, `ErrorResult`, or `FilterResult`.
 
 The `LoadResult` includes the domains, content, and metadata created by the `LoadAction`.
-A `SplitResult` includes seperate child DeltaFiles which will be ingressed back into DeltaFi.
+A `ReinjectResult` includes seperate child DeltaFiles which will be ingressed back into DeltaFi.
 The `LoadManyResult` contains a list of `ChildLoadResults`. Each `ChildLoadResult` will be split into a child `DeltaFile` that will continue to be processed independently.
 
 ### Example
@@ -104,7 +104,7 @@ The `LoadManyResult` contains a list of `ChildLoadResults`. Each `ChildLoadResul
 from deltafi.action import LoadAction
 from deltafi.domain import Context, Content
 from deltafi.input import LoadInput
-from deltafi.result import LoadResult, SplitResult
+from deltafi.result import LoadResult, ReinjectResult
 from pydantic import BaseModel, Field
 
 
@@ -114,7 +114,7 @@ class HelloWorldLoadParameters(BaseModel):
 
 class HelloWorldLoadAction(LoadAction):
     def __init__(self):
-        super().__init__('Split if we haven\'t already, else load')
+        super().__init__('Reinject if we haven\'t already, else load')
 
     def param_class(self):
         return HelloWorldLoadParameters
@@ -123,16 +123,16 @@ class HelloWorldLoadAction(LoadAction):
         context.logger.info(f"Loading {context.did}")
         data = load_input.content[0].load_str()
 
-        if 'split' in data:
+        if 'reinject' in data:
             data = f"{data}\nHelloWorldLoadAction loaded me"
             return LoadResult(context).add_metadata('loadKey', 'loadValue')
                 .add_domain(params.domain, 'Python domain!', 'text/plain')
                 .save_string_content(data, 'loaded content', 'text/plain')
         else:
-            data = f"{data}\nHelloWorldLoadAction split me"
+            data = f"{data}\nHelloWorldLoadAction reinjected me"
             content = Content.from_str(context, data, 'child content', 'text/plain')
-            split_result = SplitResult(context)
-            split_result.add_child('child 1', 'hello-python', {'child': 'first'}, [content])
-            split_result.add_child('child 2', 'hello-python', {'child': 'second'}, [content])
-            return split_result
+            reinject_result = ReinjectResult(context)
+            reinject_result.add_child('child 1', 'hello-python', {'child': 'first'}, [content])
+            reinject_result.add_child('child 2', 'hello-python', {'child': 'second'}, [content])
+            return reinject_result
 ```

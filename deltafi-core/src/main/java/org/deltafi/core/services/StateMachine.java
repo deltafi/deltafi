@@ -82,7 +82,7 @@ public class StateMachine {
     }
 
     private List<ActionInput> advanceTransformation(DeltaFile deltaFile, boolean newDeltaFile) {
-        if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasSplitAction()) {
+        if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction()) {
             return Collections.emptyList();
         }
 
@@ -116,7 +116,7 @@ public class StateMachine {
     }
 
     private List<ActionInput> advanceIngressStage(DeltaFile deltaFile, boolean newDeltaFile) {
-        if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasSplitAction()) {
+        if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction()) {
             return Collections.emptyList();
         }
 

@@ -738,17 +738,17 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testSplit() throws IOException {
+	void testReinject() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postTransform = postTransformDeltaFile(did);
 		deltaFileRepo.save(postTransform);
 
-		deltaFilesService.handleActionEvent(actionEvent("split", did));
+		deltaFilesService.handleActionEvent(actionEvent("reinject", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 		assertEquals(2, deltaFile.getChildDids().size());
-		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+		assertEquals(ActionState.REINJECTED, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
 
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
@@ -774,7 +774,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(child1.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(0).getDeltaFileMessages().get(0));
 		assertEquals(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFileMessages().get(0));
 
-		Map<String, String> tags = tagsFor(ActionEventType.SPLIT, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
+		Map<String, String> tags = tagsFor(ActionEventType.REINJECT, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -790,7 +790,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 		assertEquals(2, deltaFile.getChildDids().size());
-		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+		assertEquals(ActionState.REINJECTED, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
 
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
@@ -904,7 +904,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 		assertEquals(2, deltaFile.getChildDids().size());
-		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+		assertEquals(ActionState.REINJECTED, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
 
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
@@ -3874,7 +3874,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 		assertEquals(2, deltaFile.getChildDids().size());
-		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+		assertEquals(ActionState.REINJECTED, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
 
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());

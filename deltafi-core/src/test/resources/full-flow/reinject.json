@@ -3,8 +3,8 @@
     "action": "sampleIngress.SampleLoadAction",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
-    "type": "SPLIT",
-    "split": [
+    "type": "REINJECT",
+    "reinject": [
         {
             "sourceInfo": {
                 "filename": "file1",

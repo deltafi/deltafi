@@ -45,7 +45,7 @@ public class ActionEventInput {
   private List<FormatEvent> formatMany;
   private ErrorEvent error;
   private FilterEvent filter;
-  private List<SplitEvent> split;
+  private List<ReinjectEvent> reinject;
   private JoinEvent join;
   private JoinReinjectEvent joinReinject;
   private List<Metric> metrics;

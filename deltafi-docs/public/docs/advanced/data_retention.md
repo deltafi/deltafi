@@ -21,7 +21,7 @@ The System Properties page includes a few advanced settings that let you customi
 - `delete.frequency` - how often each delete policy executes
 - `delete.policyBatchSize` - the maximum number of deltaFiles that will be removed from MinIO or MongoDB in a single bulk operation. Batches will be deleted back-to-back until all eligible DeltaFiles are deleted each `delete.frequency` cycle
 
-If you use the split or join features of DeltaFi to create child DeltaFiles, be sure to allow enough time for children to complete before deleting parents.
+If you use the reinject, split, or join features of DeltaFi to create child DeltaFiles, be sure to allow enough time for children to complete before deleting parents.
 
 All delete policies added to the system must be named. Any DeltaFiles deleted by that policy will include an AUDIT log entry including the policy name.
 

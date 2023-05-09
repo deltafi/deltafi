@@ -155,18 +155,18 @@ public class DeltaFile {
             .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage));
   }
 
-  public void splitAction(ActionEventInput event) {
+  public void reinjectAction(ActionEventInput event) {
     getActions().stream()
             .filter(action -> action.getName().equals(event.getAction()) && !terminalState(action.getState()))
-            .forEach(action -> setActionState(action, ActionState.SPLIT, event.getStart(), event.getStop()));
+            .forEach(action -> setActionState(action, ActionState.REINJECTED, event.getStart(), event.getStop()));
   }
 
   public Action lastAction() {
     return getActions().get(getActions().size() - 1);
   }
 
-  public void splitLastAction() {
-    lastAction().setState(ActionState.SPLIT);
+  public void setLastActionReinjected() {
+    lastAction().setState(ActionState.REINJECTED);
   }
 
   public void removeLastAction() {
@@ -318,8 +318,8 @@ public class DeltaFile {
     return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.FILTERED));
   }
 
-  public boolean hasSplitAction() {
-    return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.SPLIT));
+  public boolean hasReinjectedAction() {
+    return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.REINJECTED));
   }
 
   public boolean noPendingAction(String name) {

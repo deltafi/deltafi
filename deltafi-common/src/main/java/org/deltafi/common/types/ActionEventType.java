@@ -29,7 +29,7 @@ public enum ActionEventType {
   EGRESS,
   ERROR,
   FILTER,
-  SPLIT,
+  REINJECT,
   JOIN,
   JOIN_REINJECT,
   UNKNOWN

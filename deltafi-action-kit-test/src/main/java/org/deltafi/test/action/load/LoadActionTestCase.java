@@ -21,7 +21,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.SplitResult;
+import org.deltafi.actionkit.action.load.ReinjectResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.content.ContentReference;
 import org.deltafi.test.action.Child;
@@ -62,7 +62,7 @@ public class LoadActionTestCase extends TestCaseBase<LoadAction<? extends Action
         }
 
         public B expectSplitResult(List<Child> children) {
-            expectedResultType(SplitResult.class);
+            expectedResultType(ReinjectResult.class);
             outputs(children);
 
             return self();

@@ -21,7 +21,7 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.load.LoadInput;
 import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.load.LoadAction;
-import org.deltafi.actionkit.action.load.SplitResult;
+import org.deltafi.actionkit.action.load.ReinjectResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.actionkit.action.parameters.ReinjectParameters;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,7 @@ public class SplitterLoadAction extends LoadAction<ReinjectParameters> {
     public LoadResultType load(@NotNull ActionContext context,
                                @NotNull ReinjectParameters params,
                                @NotNull LoadInput input) {
-        SplitResult result = new SplitResult(context);
+        ReinjectResult result = new ReinjectResult(context);
 
         for (ActionContent content : input.getContentList()) {
             result.addChild(content.getName(),

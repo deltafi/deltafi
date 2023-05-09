@@ -20,7 +20,7 @@ package org.deltafi.test.action.load;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.SplitResult;
+import org.deltafi.actionkit.action.load.ReinjectResult;
 import org.deltafi.common.types.*;
 import org.deltafi.test.action.Child;
 import org.deltafi.test.action.IOContent;
@@ -82,8 +82,8 @@ public abstract class LoadActionTest extends ActionTest {
         assertContentIsEqual(expectedContent, actualContent);
     }
 
-    public void assertSplitResult(LoadActionTestCase testCase, SplitResult splitResult) {
-        SplitResult expectedResult = new SplitResult(context());
+    public void assertSplitResult(LoadActionTestCase testCase, ReinjectResult reinjectResult) {
+        ReinjectResult expectedResult = new ReinjectResult(context());
         testCase.getOutputs().forEach(c -> {
             Assertions.assertTrue(c instanceof Child);
             Child child = (Child) c;
@@ -94,12 +94,12 @@ public abstract class LoadActionTest extends ActionTest {
                     ), testCase, "split."));
         });
 
-        List<SplitEvent> ordered = orderListByAnother(splitResult.getSplitEvents(), expectedResult.getSplitEvents(), (item) -> item.getSourceInfo().getFilename());
-        expectedResult.getSplitEvents().clear();
-        expectedResult.getSplitEvents().addAll(ordered);
+        List<ReinjectEvent> ordered = orderListByAnother(reinjectResult.getReinjectEvents(), expectedResult.getReinjectEvents(), (item) -> item.getSourceInfo().getFilename());
+        expectedResult.getReinjectEvents().clear();
+        expectedResult.getReinjectEvents().addAll(ordered);
 
         String expectedEvent = normalizeData(expectedResult.toEvent().toString());
-        String outputEvent = normalizeData(splitResult.toEvent().toString());
+        String outputEvent = normalizeData(reinjectResult.toEvent().toString());
         Assertions.assertEquals(expectedEvent, outputEvent);
     }
 
@@ -107,7 +107,7 @@ public abstract class LoadActionTest extends ActionTest {
         if(testCase.getExpectedResultType()==LoadResult.class) {
             executeLoadResult(testCase);
         }
-        else if(testCase.getExpectedResultType()==SplitResult.class) {
+        else if(testCase.getExpectedResultType()== ReinjectResult.class) {
             executeLoadSplitResult(testCase);
         }
         else {
@@ -121,7 +121,7 @@ public abstract class LoadActionTest extends ActionTest {
     }
 
     public void executeLoadSplitResult(LoadActionTestCase loadActionTestCase) {
-        SplitResult result = execute(loadActionTestCase, SplitResult.class);
+        ReinjectResult result = execute(loadActionTestCase, ReinjectResult.class);
         assertSplitResult(loadActionTestCase, result);
     }
 }

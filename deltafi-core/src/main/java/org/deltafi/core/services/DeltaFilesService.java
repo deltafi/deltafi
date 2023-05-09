@@ -94,7 +94,7 @@ public class DeltaFilesService {
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
     public static final String NO_CHILD_INGRESS_CONFIGURED_CAUSE = "No child ingress flow configured";
-    public static final String NO_CHILD_INGRESS_CONFIGURED_CONTEXT = "This DeltaFile split does not match any running ingress flows: ";
+    public static final String NO_CHILD_INGRESS_CONFIGURED_CONTEXT = "This DeltaFile reinject does not match any running ingress flows: ";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
@@ -311,9 +311,9 @@ public class DeltaFilesService {
                     generateMetrics(metrics, event, deltaFile);
                     filter(deltaFile, event);
                 }
-                case SPLIT -> {
+                case REINJECT -> {
                     generateMetrics(metrics, event, deltaFile);
-                    split(deltaFile, event);
+                    reinject(deltaFile, event);
                 }
                 case FORMAT_MANY -> {
                     generateMetrics(metrics, event, deltaFile);
@@ -584,7 +584,7 @@ public class DeltaFilesService {
                     .map(loadEvent -> this.buildLoadManyChildAndEnqueue(deltaFile, event, loadEvent, enqueueActions, now))
                     .toList();
 
-            deltaFile.splitAction(event);
+            deltaFile.reinjectAction(event);
         }
 
         advanceOnly(deltaFile, false);
@@ -620,17 +620,17 @@ public class DeltaFilesService {
         return child;
     }
 
-    public void split(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
-        List<SplitEvent> splits = event.getSplit();
+    public void reinject(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
+        List<ReinjectEvent> reinjects = event.getReinject();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<String> encounteredError = new ArrayList<>();
         List<ActionInput> enqueueActions = new ArrayList<>();
 
         String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
-            deltaFile.errorAction(event, "Attempted to split from an Action that is not a LoadAction: " + event.getAction(), "");
-        } else if (Objects.isNull(splits) || splits.isEmpty()) {
-            deltaFile.errorAction(event, "Attempted to split DeltaFile into 0 children", "");
+            deltaFile.errorAction(event, "Attempted to reinject from an Action that is not a LoadAction: " + event.getAction(), "");
+        } else if (Objects.isNull(reinjects) || reinjects.isEmpty()) {
+            deltaFile.errorAction(event, "Attempted to reinject DeltaFile into 0 children", "");
         } else {
             if (Objects.isNull(deltaFile.getChildDids())) {
                 deltaFile.setChildDids(new ArrayList<>());
@@ -644,19 +644,19 @@ public class DeltaFilesService {
                     .modified(now)
                     .build();
 
-            childDeltaFiles = splits.stream().map(split -> {
+            childDeltaFiles = reinjects.stream().map(reinject -> {
                 if (!encounteredError.isEmpty()) {
                     // Fail fast on first error
                     return null;
                 }
 
-                // Before we build a DeltaFile, make sure the split makes sense to do--i.e. the flow is
+                // Before we build a DeltaFile, make sure the reinject makes sense to do--i.e. the flow is
                 // enabled and valid
                 try {
-                    ingressFlowService.getRunningFlowByName(split.getSourceInfo().getFlow());
+                    ingressFlowService.getRunningFlowByName(reinject.getSourceInfo().getFlow());
                 } catch (DgsEntityNotFoundException notFound) {
                     deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getAction(),
-                            split.getSourceInfo().getFlow(), OffsetDateTime.now(clock)));
+                            reinject.getSourceInfo().getFlow(), OffsetDateTime.now(clock)));
                     encounteredError.add(deltaFile.getDid());
                     return null;
                 }
@@ -666,11 +666,11 @@ public class DeltaFilesService {
                         .parentDids(List.of(deltaFile.getDid()))
                         .childDids(Collections.emptyList())
                         .requeueCount(0)
-                        .ingressBytes(ContentUtil.computeContentSize(split.getContent()))
+                        .ingressBytes(ContentUtil.computeContentSize(reinject.getContent()))
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
-                        .sourceInfo(split.getSourceInfo())
-                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, split.getContent(), Collections.emptyMap())))
+                        .sourceInfo(reinject.getSourceInfo())
+                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, reinject.getContent(), Collections.emptyMap())))
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())
                         .formattedData(Collections.emptyList())
@@ -691,7 +691,7 @@ public class DeltaFilesService {
                 deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).toList());
             }
 
-            deltaFile.splitAction(event);
+            deltaFile.reinjectAction(event);
         }
 
         advanceOnly(deltaFile, false);
@@ -746,7 +746,7 @@ public class DeltaFilesService {
                 return child;
             }).toList();
 
-            deltaFile.splitAction(event);
+            deltaFile.reinjectAction(event);
         }
 
         advanceOnly(deltaFile, false);
@@ -782,7 +782,7 @@ public class DeltaFilesService {
             return child;
         }).toList();
 
-        deltaFile.splitLastAction();
+        deltaFile.setLastActionReinjected();
 
         advanceOnly(deltaFile, false);
 
@@ -1064,7 +1064,7 @@ public class DeltaFilesService {
      */
     private List<ActionInput> advanceOnly(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
         // MissingEgressFlowException is not expected when a DeltaFile is entering the INGRESS stage
-        // such as from replay or split, since an ingress flow requires at least the Load action to
+        // such as from replay or reinject, since an ingress flow requires at least the Load action to
         // be queued, nor when handling an event for any egress flow action, e.g. format.
         List<ActionInput> enqueueActions = stateMachine.advance(deltaFile, newDeltaFile);
 

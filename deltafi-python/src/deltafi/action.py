@@ -141,7 +141,7 @@ class LoadAction(Action):
         load_input = LoadInput(content=event.delta_file_messages[0].content_list,
                                metadata=event.delta_file_messages[0].metadata)
         result = self.load(event.context, self.param_class().parse_obj(event.params), load_input)
-        self.validate_type(result, (LoadResult, LoadManyResult, ErrorResult, FilterResult, SplitResult))
+        self.validate_type(result, (LoadResult, LoadManyResult, ErrorResult, FilterResult, ReinjectResult))
         return result
 
     @abstractmethod

@@ -584,7 +584,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.INGRESS);
         deltaFile.queueNewAction("SplitLoadAction");
-        deltaFile.splitAction(ActionEventInput.newBuilder()
+        deltaFile.reinjectAction(ActionEventInput.newBuilder()
                 .did(deltaFile.getDid())
                 .action("SplitLoadAction")
                 .build());

@@ -29,18 +29,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Specialized result class for LOAD actions that split DeltaFiles into multiple child flows.  Each child added to
+ * Specialized result class for LOAD actions that reinjects one or more DeltaFiles into child flows. Each child added to
  * this result object will be ingressed as a new DeltaFile on the specified flow.
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class SplitResult extends Result<SplitResult> implements LoadResultType {
-    final List<SplitEvent> splitEvents = new ArrayList<>();
+public class ReinjectResult extends Result<ReinjectResult> implements LoadResultType {
+    final List<ReinjectEvent> reinjectEvents = new ArrayList<>();
 
     /**
      * @param context Execution context for the current action
      */
-    public SplitResult(ActionContext context) {
+    public ReinjectResult(ActionContext context) {
         super(context);
     }
 
@@ -52,7 +52,7 @@ public class SplitResult extends Result<SplitResult> implements LoadResultType {
      * @param content Content of the new DeltaFile
      */
     public void addChild(String filename, String flow, Map<String, String> metadata, List<ActionContent> content) {
-        splitEvents.add(SplitEvent.newBuilder()
+        reinjectEvents.add(ReinjectEvent.newBuilder()
                 .sourceInfo(new SourceInfo(filename, flow, metadata))
                 .content(content.stream().map(ContentConverter::convert).toList())
                 .build());
@@ -60,13 +60,13 @@ public class SplitResult extends Result<SplitResult> implements LoadResultType {
 
     @Override
     protected final ActionEventType actionEventType() {
-        return ActionEventType.SPLIT;
+        return ActionEventType.REINJECT;
     }
 
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setSplit(splitEvents);
+        event.setReinject(reinjectEvents);
         return event;
     }
 }

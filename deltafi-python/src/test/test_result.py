@@ -19,7 +19,7 @@
 from deltafi.domain import Content, Context, SourceInfo
 from deltafi.metric import Metric
 from deltafi.result import DomainResult, EgressResult, EnrichResult, ErrorResult, FilterResult, FormatResult, \
-    FormatManyResult, JoinResult, JoinReinjectResult, LoadResult, SplitResult, TransformResult, ValidateResult
+    FormatManyResult, JoinResult, JoinReinjectResult, LoadResult, ReinjectResult, TransformResult, ValidateResult
 
 from .helperutils import make_content_reference, make_context
 
@@ -256,12 +256,12 @@ def test_load_result():
         'mediaType': "json"}
 
 
-def test_split_result():
-    result = SplitResult(make_context())
+def test_reinject_result():
+    result = ReinjectResult(make_context())
     result.add_child("fn1", "flow", {}, [make_content(None, "content1", "id1")])
     result.add_child("fn2", "flow", {}, [make_content(None, "content2", "id2")])
-    assert result.result_key == "split"
-    assert result.result_type == "SPLIT"
+    assert result.result_key == "reinject"
+    assert result.result_type == "REINJECT"
     verify_no_metrics(result)
 
     response = result.response()

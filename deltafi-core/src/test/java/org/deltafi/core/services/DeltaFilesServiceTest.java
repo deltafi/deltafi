@@ -326,14 +326,14 @@ class DeltaFilesServiceTest {
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
-        deltaFilesService.split(deltaFile, ActionEventInput.newBuilder()
+        deltaFilesService.reinject(deltaFile, ActionEventInput.newBuilder()
                 .action("loadAction")
-                .split(List.of(
-                        SplitEvent.newBuilder().sourceInfo(
+                .reinject(List.of(
+                        ReinjectEvent.newBuilder().sourceInfo(
                                 SourceInfo.builder().flow("good").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
                                         .build())).build(),
-                        SplitEvent.newBuilder().sourceInfo(
+                        ReinjectEvent.newBuilder().sourceInfo(
                                 SourceInfo.builder().flow("bad").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
                                         .build())).build())).build());
@@ -363,14 +363,14 @@ class DeltaFilesServiceTest {
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
-        deltaFilesService.split(deltaFile, ActionEventInput.newBuilder()
+        deltaFilesService.reinject(deltaFile, ActionEventInput.newBuilder()
                 .action("loadAction")
-                .split(List.of(
-                        SplitEvent.newBuilder().sourceInfo(
+                .reinject(List.of(
+                        ReinjectEvent.newBuilder().sourceInfo(
                                         SourceInfo.builder().flow("good").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
                                         .build())).build(),
-                        SplitEvent.newBuilder().sourceInfo(
+                        ReinjectEvent.newBuilder().sourceInfo(
                                         SourceInfo.builder().flow("good").build())
                                 .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
                                         .build())).build()))

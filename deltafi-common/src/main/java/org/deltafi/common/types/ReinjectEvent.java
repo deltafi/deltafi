@@ -29,7 +29,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class SplitEvent {
+public class ReinjectEvent {
   private SourceInfo sourceInfo;
   private List<Content> content;
   private Map<String, String> metadata;

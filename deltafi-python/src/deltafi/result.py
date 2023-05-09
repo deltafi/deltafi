@@ -308,8 +308,8 @@ class LoadManyResult(Result):
         return [load_result.response() for load_result in self.load_results]
 
 
-class SplitResult(Result):
-    class SplitChild:
+class ReinjectResult(Result):
+    class ReinjectChild:
         def __init__(self, source_info: SourceInfo, content: List[Content]):
             self.source_info = source_info
             self.content = content
@@ -321,11 +321,11 @@ class SplitResult(Result):
             }
 
     def __init__(self, context: Context):
-        super().__init__('split', 'SPLIT', context)
+        super().__init__('reinject', 'REINJECT', context)
         self.children = []
 
     def add_child(self, filename: str, flow: str, metadata: Dict[str, str], content: List[Content]):
-        child = SplitResult.SplitChild(SourceInfo(filename, flow, metadata), content)
+        child = ReinjectResult.ReinjectChild(SourceInfo(filename, flow, metadata), content)
         self.children.append(child)
 
     def response(self):

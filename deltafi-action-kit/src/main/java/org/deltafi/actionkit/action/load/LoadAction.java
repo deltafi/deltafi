@@ -54,11 +54,11 @@ public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
      * @param params The parameter class that configures the behavior of this action execution
      * @param loadInput Action input from the DeltaFile
      * @return A result object containing results for the action execution.
-     *         The result can be an ErrorResult, SplitResult, FilterResult, or LoadResult
+     *         The result can be an ErrorResult, ReinjectResult, FilterResult, or LoadResult
      * @see LoadResult
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
-     * @see SplitResult
+     * @see ReinjectResult
      */
     public abstract LoadResultType load(@NotNull ActionContext context,
                                         @NotNull P params,
