@@ -46,7 +46,5 @@ public class ActionEventInput {
   private ErrorEvent error;
   private FilterEvent filter;
   private List<ReinjectEvent> reinject;
-  private JoinEvent join;
-  private JoinReinjectEvent joinReinject;
   private List<Metric> metrics;
 }

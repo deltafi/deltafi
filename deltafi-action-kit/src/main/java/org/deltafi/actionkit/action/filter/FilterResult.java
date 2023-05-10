@@ -20,9 +20,9 @@ package org.deltafi.actionkit.action.filter;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.format.FormatResultType;
-import org.deltafi.actionkit.action.join.JoinResultType;
 import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.actionkit.action.validate.ValidateResultType;
@@ -37,8 +37,8 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class FilterResult extends Result<FilterResult> implements EgressResultType, FormatResultType, JoinResultType,
-        LoadResultType, TransformResultType, ValidateResultType {
+public class FilterResult extends Result<FilterResult> implements EgressResultType, FormatResultType,
+        LoadResultType, TransformResultType, ValidateResultType, ResultType {
 
     private final String filteredCause;
 

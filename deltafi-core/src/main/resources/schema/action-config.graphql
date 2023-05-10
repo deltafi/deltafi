@@ -56,30 +56,6 @@ input LoadActionConfigurationInput {
     parameters: JSON
 }
 
-type JoinActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
-    name: String!
-    apiVersion: String
-    actionType: String!
-    type: String!
-    parameters: JSON
-    maxAge: String!
-    maxNum: Int
-    metadataKey: String
-    metadataIndexKey: String
-}
-
-input JoinActionConfigurationInput {
-    name: String!
-    apiVersion: String
-    actionType: String!
-    type: String!
-    parameters: JSON
-    maxAge: String!
-    maxNum: Int
-    metadataKey: String
-    metadataIndexKey: String
-}
-
 type DomainActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String

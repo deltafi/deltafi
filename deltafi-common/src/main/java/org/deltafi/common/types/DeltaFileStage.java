@@ -23,7 +23,5 @@ public enum DeltaFileStage {
   EGRESS,
   COMPLETE,
   ERROR,
-  CANCELLED,
-  JOINING,
-  JOINED
+  CANCELLED
 }

@@ -73,8 +73,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
 
     public void save(DeltaFile deltaFile) {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ||
-                deltaFile.inactiveStage() ||
-                deltaFile.getStage() == DeltaFileStage.JOINING) {
+                deltaFile.inactiveStage()) {
             try {
                 deltaFileRepo.save(deltaFile);
             } finally {

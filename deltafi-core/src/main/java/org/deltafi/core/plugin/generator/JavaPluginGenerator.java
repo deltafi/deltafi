@@ -223,7 +223,6 @@ public class JavaPluginGenerator {
     private void populateClassTemplateMap() {
         actionTemplateMap.put(ActionType.TRANSFORM, readClassPathResource("plugin-templates/java/classTemplates/transform-action.tpl"));
         actionTemplateMap.put(ActionType.LOAD, readClassPathResource("plugin-templates/java/classTemplates/load-action.tpl"));
-        actionTemplateMap.put(ActionType.JOIN, readClassPathResource("plugin-templates/java/classTemplates/join-action.tpl"));
         actionTemplateMap.put(ActionType.DOMAIN, readClassPathResource("plugin-templates/java/classTemplates/domain-action.tpl"));
         actionTemplateMap.put(ActionType.ENRICH, readClassPathResource("plugin-templates/java/classTemplates/enrich-action.tpl"));
         actionTemplateMap.put(ActionType.FORMAT, readClassPathResource("plugin-templates/java/classTemplates/format-action.tpl"));

@@ -37,10 +37,7 @@ public class Constants {
 
     public static final String INGRESS_FLOW_NAME = "sampleIngress";
     public static final String EGRESS_FLOW_NAME = "sampleEgress";
-    public static final String JOIN_FLOW_NAME = "joinFlow";
     public static final String TRANSFORM_FLOW_NAME = "sampleTransform";
-
-    public static final String TEST_JOIN_ACTION = "TestJoinAction";
 
     public static final String CONTENT = "STARLORD was here";
     public static final String METADATA = "{\"key\": \"value\"}";

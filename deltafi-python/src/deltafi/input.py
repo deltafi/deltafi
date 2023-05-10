@@ -155,34 +155,6 @@ class FormatInput(NamedTuple):
         return self.enrichment[name]
 
 
-class JoinInput(NamedTuple):
-    content: List[Content]
-    metadata: dict
-
-    def has_content(self) -> bool:
-        return len(self.content) > 0
-
-    def content_at(self, index: int) -> Content:
-        if len(self.content) < index + 1:
-            raise ExpectedContentException(index, len(self.content))
-        return self.content[index]
-
-    def first_content(self):
-        return self.content_at(0)
-
-    def get_metadata(self, key: str):
-        if key in self.metadata:
-            return self.metadata[key]
-        else:
-            raise MissingMetadataException(key)
-
-    def get_metadata_or_else(self, key: str, default: str) -> str:
-        if key in self.metadata:
-            return self.metadata[key]
-        else:
-            return default
-
-
 class LoadInput(NamedTuple):
     content: List[Content]
     metadata: dict

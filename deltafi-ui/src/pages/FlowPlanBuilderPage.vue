@@ -184,12 +184,6 @@ const transformActionsTemplate = {
   ...defaultActionKeys,
 };
 
-const joinActionTemplate = {
-  actionType: "JOIN",
-  disableEdit: false,
-  ...defaultActionKeys,
-};
-
 const loadActionTemplate = {
   actionType: "LOAD",
   disableEdit: false,
@@ -243,14 +237,13 @@ const flowTypesDisplay = [
 
 const flowTypesMap = new Map([
   ["TRANSFORM", { actions: ["TRANSFORM", "EGRESS"] }],
-  ["INGRESS", { actions: ["TRANSFORM", "JOIN", "LOAD"] }],
+  ["INGRESS", { actions: ["TRANSFORM", "LOAD"] }],
   ["ENRICH", { actions: ["DOMAIN", "ENRICH"] }],
   ["EGRESS", { actions: ["FORMAT", "VALIDATE", "EGRESS"] }],
 ]);
 
 const actionTemplateMap = new Map([
   ["TRANSFORM", { actionTemplate: transformActionsTemplate, selectTemplate: [transformActionsTemplate], activeContainer: "transformActions", limit: false }],
-  ["JOIN", { actionTemplate: joinActionTemplate, selectTemplate: [joinActionTemplate], activeContainer: "joinAction", limit: true }],
   ["LOAD", { actionTemplate: loadActionTemplate, selectTemplate: [loadActionTemplate], activeContainer: "loadAction", limit: true }],
   ["DOMAIN", { actionTemplate: domainActionsTemplate, selectTemplate: [domainActionsTemplate], activeContainer: "domainActions", limit: false }],
   ["ENRICH", { actionTemplate: enrichActionsTemplate, selectTemplate: [enrichActionsTemplate], activeContainer: "enrichActions", limit: false }],
@@ -261,7 +254,6 @@ const actionTemplateMap = new Map([
 
 const actionTemplateObject = ref({
   transformActions: [],
-  joinAction: [],
   loadAction: [],
   domainActions: [],
   enrichActions: [],
@@ -272,7 +264,6 @@ const actionTemplateObject = ref({
 
 const loadedActions = ref({
   TRANSFORM: [],
-  JOIN: [],
   LOAD: [],
   DOMAIN: [],
   ENRICH: [],

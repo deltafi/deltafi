@@ -110,10 +110,6 @@ new Docute({
           link: '/actions/load'
         },
         {
-          title: 'Join Action',
-          link: '/actions/join'
-        },
-        {
           title: 'Domain Action',
           link: '/actions/domain'
         },

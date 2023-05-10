@@ -98,7 +98,6 @@ generateJava {
 			"IngressFlowPlan": "org.deltafi.common.types.IngressFlowPlan",
 			"IngressProperties": "org.deltafi.core.configuration.IngressProperties",
 			"IngressPropertiesInput": "org.deltafi.core.configuration.IngressProperties",
-			"JoinActionConfiguration": "org.deltafi.common.types.JoinActionConfiguration",
 			"KeyValue": "org.deltafi.common.types.KeyValue",
 			"KeyValueInput": "org.deltafi.common.types.KeyValue",
 			"Link": "org.deltafi.core.configuration.ui.Link",

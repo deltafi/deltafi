@@ -31,7 +31,6 @@ import org.deltafi.core.util.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
-import org.deltafi.core.join.JoinRepo;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
@@ -78,7 +77,7 @@ class DeltaFilesServiceTest {
             @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
             @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
-            @Mock CoreAuditLogger coreAuditLogger, @Mock JoinRepo joinRepo, @Mock IdentityService identityService,
+            @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
             @Mock DeltaFileCacheService deltaFileCacheService) {
         this.ingressFlowService = ingressFlowService;
         this.egressFlowService = egressFlowService;
@@ -92,7 +91,7 @@ class DeltaFilesServiceTest {
         Clock clock = new TestClock();
         deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService, transformFlowService,
                 new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, resumePolicyService, metricService, coreAuditLogger, joinRepo,
+                actionEventQueue, contentStorageService, resumePolicyService, metricService, coreAuditLogger,
                 identityService, new DidMutexService(), deltaFileCacheService);
     }
 

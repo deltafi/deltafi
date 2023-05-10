@@ -63,7 +63,7 @@ public class StateMachine {
             case TRANSFORMATION -> advanceTransformation(deltaFile, newDeltaFile);
         };
 
-        if (!deltaFile.hasPendingActions() && (deltaFile.getStage() != DeltaFileStage.JOINING)) {
+        if (!deltaFile.hasPendingActions()) {
             deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
         }
 
@@ -134,12 +134,6 @@ public class StateMachine {
         if ((loadAction != null) && !deltaFile.hasTerminalAction(loadAction.getName())) {
             deltaFile.queueAction(loadAction.getName());
             return List.of(buildActionInput(loadAction, deltaFile, null, newDeltaFile));
-        }
-
-        JoinActionConfiguration joinAction = ingressFlow.getJoinAction();
-        if ((joinAction != null) && !deltaFile.isJoined()) {
-            deltaFile.setStage(DeltaFileStage.JOINING);
-            return Collections.emptyList();
         }
 
         deltaFile.setStage(DeltaFileStage.ENRICH);

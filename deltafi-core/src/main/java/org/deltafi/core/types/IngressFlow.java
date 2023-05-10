@@ -36,7 +36,6 @@ import java.util.List;
 public class IngressFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
-    private JoinActionConfiguration joinAction;
     private int maxErrors = -1;
     private int schemaVersion;
 
@@ -72,7 +71,7 @@ public class IngressFlow extends Flow {
             return loadAction;
         }
 
-        return (joinAction != null && nameMatches(joinAction, actionNamed)) ? joinAction : null;
+        return null;
     }
 
     @Override
@@ -80,9 +79,6 @@ public class IngressFlow extends Flow {
         List<ActionConfiguration> actionConfigurations = new ArrayList<>(transformActions);
         if (loadAction != null) {
             actionConfigurations.add(loadAction);
-        }
-        if (joinAction != null) {
-            actionConfigurations.add(joinAction);
         }
         return actionConfigurations;
     }
@@ -93,7 +89,6 @@ public class IngressFlow extends Flow {
             case INGRESS_FLOW -> List.of(asFlowConfiguration());
             case TRANSFORM_ACTION -> transformActions != null ? new ArrayList<>(transformActions) : Collections.emptyList();
             case LOAD_ACTION -> loadAction != null ? List.of(loadAction) : Collections.emptyList();
-            case JOIN_ACTION -> joinAction != null ? List.of(joinAction) : Collections.emptyList();
             default -> Collections.emptyList();
         };
     }
@@ -104,9 +99,6 @@ public class IngressFlow extends Flow {
         if (loadAction != null) {
             updateActionNamesByFamily(actionFamilyMap, ActionType.LOAD, loadAction.getName());
         }
-        if (joinAction != null) {
-            updateActionNamesByFamily(actionFamilyMap, ActionType.JOIN, joinAction.getName());
-        }
     }
 
     @Override
@@ -115,9 +107,6 @@ public class IngressFlow extends Flow {
         ingressFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).toList());
         if (loadAction != null) {
             ingressFlowConfiguration.setLoadAction(loadAction.getName());
-        }
-        if (joinAction != null) {
-            ingressFlowConfiguration.setJoinAction(joinAction.getName());
         }
         return ingressFlowConfiguration;
     }

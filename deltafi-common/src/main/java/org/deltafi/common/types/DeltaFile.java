@@ -79,7 +79,6 @@ public class DeltaFile {
   private String replayDid;
   private OffsetDateTime nextAutoResume;
   private String nextAutoResumeReason;
-  private boolean joined;
 
   @Version
   @Getter

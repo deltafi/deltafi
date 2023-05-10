@@ -29,7 +29,6 @@ import java.util.List;
 public class IngressFlowConfiguration extends DeltaFiConfiguration {
     private List<String> transformActions;
     private String loadAction;
-    private String joinAction;
 
     public IngressFlowConfiguration(String name) {
         super(name);

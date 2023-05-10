@@ -40,15 +40,12 @@ import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.exceptions.UnexpectedActionException;
 import org.deltafi.core.exceptions.UnknownTypeException;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.join.*;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -62,7 +59,6 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -112,16 +108,11 @@ public class DeltaFilesService {
     private final ResumePolicyService resumePolicyService;
     private final MetricService metricService;
     private final CoreAuditLogger coreAuditLogger;
-    private final JoinRepo joinRepo;
     private final IdentityService identityService;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
 
     private ExecutorService executor;
-
-    private final ScheduledExecutorService timedOutJoinExecutor = Executors.newSingleThreadScheduledExecutor();
-    private ScheduledFuture<?> timedOutJoinFuture;
-    private final ScheduledExecutorService joinEntryLockCheckExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @PostConstruct
     private void init() {
@@ -129,12 +120,6 @@ public class DeltaFilesService {
         int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
         executor = Executors.newFixedThreadPool(threadCount);
         log.info("Executors pool size: " + threadCount);
-
-        scheduleJoinCheckForSoonestInRepository();
-
-        Duration lockCheckInterval = properties.getJoin().getLockCheckInterval();
-        joinEntryLockCheckExecutor.scheduleAtFixedRate(this::unlockTimedOutJoinEntryLocks,
-                lockCheckInterval.getSeconds(), lockCheckInterval.getSeconds(), TimeUnit.SECONDS);
     }
 
     public DeltaFile getDeltaFile(String did) {
@@ -269,14 +254,6 @@ public class DeltaFilesService {
                     generateMetrics(metrics, event, deltaFile);
                     loadMany(deltaFile, event);
                 }
-                case JOIN -> {
-                    generateMetrics(metrics, event, deltaFile);
-                    join(deltaFile, event);
-                }
-                case JOIN_REINJECT -> {
-                    generateMetrics(metrics, event, deltaFile);
-                    joinReinject(deltaFile, event);
-                }
                 case DOMAIN -> {
                     generateMetrics(metrics, event, deltaFile);
                     domain(deltaFile, event);
@@ -346,45 +323,6 @@ public class DeltaFilesService {
         } else {
             advanceAndSave(deltaFile);
         }
-    }
-
-    public void join(DeltaFile deltaFile, ActionEventInput event) {
-        log.debug("Received join for {}", event.getDid());
-
-        deltaFile.completeAction(event);
-        ProtocolLayer protocolLayer = ProtocolLayer.builder()
-                .action(event.getAction())
-                .content(event.getJoin().getContent())
-                .metadata(event.getJoin().getMetadata())
-                .build();
-        deltaFile.getProtocolStack().add(protocolLayer);
-
-        if (event.getJoin().getDomains() != null) {
-            deltaFile.getDomains().addAll(event.getJoin().getDomains());
-        }
-
-        deltaFile.setStage(DeltaFileStage.ENRICH);
-
-        advanceAndSave(deltaFile);
-    }
-
-
-
-    public void joinReinject(DeltaFile deltaFile, ActionEventInput event) {
-        log.debug("Received joinReinject for {}", event.getDid());
-
-        deltaFile.completeAction(event);
-        ProtocolLayer protocolLayer = ProtocolLayer.builder()
-                .action(event.getAction())
-                .content(event.getJoinReinject().getContent())
-                .metadata(event.getJoinReinject().getMetadata())
-                .build();
-        deltaFile.getProtocolStack().add(protocolLayer);
-
-        log.debug("Reinjecting {} to {} flow", event.getDid(), event.getJoinReinject().getFlow());
-        deltaFile.getSourceInfo().setFlow(event.getJoinReinject().getFlow());
-
-        advanceAndSave(deltaFile);
     }
 
     public void load(DeltaFile deltaFile, ActionEventInput event) {
@@ -1068,11 +1006,6 @@ public class DeltaFilesService {
         // be queued, nor when handling an event for any egress flow action, e.g. format.
         List<ActionInput> enqueueActions = stateMachine.advance(deltaFile, newDeltaFile);
 
-        if (deltaFile.getStage() == DeltaFileStage.JOINING) {
-            processJoin(deltaFile, ingressFlowService.getRunningFlowByName(
-                    deltaFile.getSourceInfo().getFlow()).getJoinAction());
-        }
-
         return enqueueActions;
     }
 
@@ -1105,9 +1038,6 @@ public class DeltaFilesService {
             deltaFileCacheService.save(deltaFile);
             if (!enqueueActions.isEmpty()) {
                 enqueueActions(enqueueActions);
-            } else if (deltaFile.getStage() == DeltaFileStage.JOINING) {
-                processJoin(deltaFile, ingressFlowService.getRunningFlowByName(
-                        deltaFile.getSourceInfo().getFlow()).getJoinAction());
             }
         } catch (MissingEgressFlowException e) {
             handleMissingEgressFlow(deltaFile);
@@ -1135,13 +1065,6 @@ public class DeltaFilesService {
         if (!enqueueActions.isEmpty()) {
             enqueueActions(enqueueActions);
         }
-
-        deltaFiles.forEach(deltaFile -> {
-            if (deltaFile.getStage() == DeltaFileStage.JOINING) {
-                processJoin(deltaFile, ingressFlowService.getRunningFlowByName(
-                        deltaFile.getSourceInfo().getFlow()).getJoinAction());
-            }
-        });
     }
 
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
@@ -1426,193 +1349,5 @@ public class DeltaFilesService {
 
     public DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent) {
         return deltaFileRepo.deltaFileStats(inFlightOnly, includeDeletedContent);
-    }
-
-    private void scheduleJoinCheckForSoonestInRepository() {
-        List<JoinEntry> joinEntries = joinRepo.findAllByOrderByJoinDate();
-        if (!joinEntries.isEmpty()) {
-            scheduleJoinCheck(joinEntries.get(0).getJoinDate());
-        } else {
-            cancelJoinCheck();
-        }
-    }
-
-    private void scheduleJoinCheck(OffsetDateTime joinDate) {
-        cancelJoinCheck();
-        log.debug("Scheduling next join check in {} seconds",
-                Math.max(joinDate.toEpochSecond() - OffsetDateTime.now(clock).toEpochSecond(), 1));
-        timedOutJoinFuture = timedOutJoinExecutor.schedule(this::queueJoinActionsForTimedOutJoins,
-                Math.max(joinDate.toEpochSecond() - OffsetDateTime.now(clock).toEpochSecond(), 1), TimeUnit.SECONDS);
-    }
-
-    private void cancelJoinCheck() {
-        if (timedOutJoinFuture != null) {
-            timedOutJoinFuture.cancel(false);
-        }
-    }
-
-    private void queueJoinActionsForTimedOutJoins() {
-        log.debug("Queuing join actions for timed out joins");
-
-        JoinEntry joinEntry = joinRepo.lockFirstBefore(OffsetDateTime.now(clock));
-        while (joinEntry != null) {
-            queueJoinAction(joinEntry);
-            joinEntry = joinRepo.lockFirstBefore(OffsetDateTime.now(clock));
-        }
-
-        scheduleJoinCheckForSoonestInRepository();
-    }
-
-    private void queueJoinAction(JoinEntry joinEntry) {
-        List<DeltaFile> joinedDeltaFiles = new ArrayList<>();
-        List<String> missingDeltaFileIds = new ArrayList<>();
-
-        for (IndexedDeltaFileEntry deltaFileEntry : joinEntry.getSortedDeltaFileEntries()) {
-            Optional<DeltaFile> deltaFileToJoin = deltaFileRepo.findById(deltaFileEntry.did());
-
-            if (deltaFileToJoin.isPresent()) {
-                joinedDeltaFiles.add(deltaFileToJoin.get());
-            } else {
-                missingDeltaFileIds.add(deltaFileEntry.did());
-            }
-        }
-
-        if (!missingDeltaFileIds.isEmpty()) {
-            log.warn("DeltaFiles with the following ids were missing during join: {}",
-                    String.join(", ", missingDeltaFileIds));
-        }
-
-        DeltaFile joinedDeltaFile = buildJoinedDeltaFile(joinEntry.getId().getFlow(), joinedDeltaFiles);
-        joinedDeltaFile.queueNewAction(joinEntry.getId().getAction());
-        deltaFileRepo.save(joinedDeltaFile);
-
-        enqueueActions(List.of(buildJoinActionInput(joinedDeltaFile, joinedDeltaFiles)));
-
-        joinRepo.deleteById(joinEntry.getId());
-    }
-
-    private ActionInput buildJoinActionInput(DeltaFile joinedDeltaFile, List<DeltaFile> joiningDeltaFiles) {
-        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(joinedDeltaFile.getSourceInfo().getFlow());
-        return ingressFlow.getJoinAction().buildActionInput(joinedDeltaFile.getDid(), ingressFlow.getName(),
-                joiningDeltaFiles, getProperties().getSystemName());
-    }
-
-    public static final String JOINED_SOURCE_FILE_NAME = "joined-content";
-
-    private DeltaFile buildJoinedDeltaFile(String flow, List<DeltaFile> deltaFiles) {
-        log.debug("Joining {}", deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.joining(",")));
-
-        String joinedDeltaFileId = UUID.randomUUID().toString();
-
-        SourceInfo joinedSourceInfo = new SourceInfo();
-        joinedSourceInfo.setFilename(JOINED_SOURCE_FILE_NAME);
-        joinedSourceInfo.setFlow(flow);
-
-        for (DeltaFile deltaFile : deltaFiles) {
-            deltaFile.setStage(DeltaFileStage.JOINED);
-            deltaFile.setChildDids(List.of(joinedDeltaFileId));
-
-            joinedSourceInfo.addMetadata(deltaFile.getMetadata());
-        }
-        deltaFileRepo.saveAll(deltaFiles);
-
-        OffsetDateTime now = OffsetDateTime.now();
-
-        return DeltaFile.newBuilder()
-                .did(joinedDeltaFileId)
-                .parentDids(deltaFiles.stream().map(DeltaFile::getDid).collect(Collectors.toList()))
-                .childDids(Collections.emptyList())
-                .ingressBytes(0L)
-                .totalBytes(0L)
-                .stage(DeltaFileStage.INGRESS)
-                .actions(new ArrayList<>())
-                .sourceInfo(joinedSourceInfo)
-                .protocolStack(Collections.emptyList())
-                .domains(Collections.emptyList())
-                .enrichment(Collections.emptyList())
-                .formattedData(Collections.emptyList())
-                .created(now)
-                .modified(now)
-                .egressed(false)
-                .filtered(false)
-                .joined(true)
-                .build();
-    }
-
-    private static final String DEFAULT_JOIN_VALUE = "DEFAULT";
-
-    private void processJoin(DeltaFile deltaFile, JoinActionConfiguration joinActionConfiguration) {
-        log.debug("Processing join for deltaFile with id {}", deltaFile.getDid());
-
-        String joinGroup = deltaFile.getSourceInfo().getMetadata(joinActionConfiguration.getMetadataKey());
-        if (joinGroup == null) {
-            joinGroup = joinActionConfiguration.getMetadataKey() == null ? DEFAULT_JOIN_VALUE :
-                    deltaFile.getMetadata().getOrDefault(joinActionConfiguration.getMetadataKey(), DEFAULT_JOIN_VALUE);
-        }
-
-        String joinIndex = Long.toString(clock.millis());
-        if (joinActionConfiguration.getMetadataIndexKey() != null) {
-            joinIndex = deltaFile.getMetadata().getOrDefault(joinActionConfiguration.getMetadataIndexKey(), joinIndex);
-        }
-
-        JoinEntryId joinEntryId = new JoinEntryId(deltaFile.getSourceInfo().getFlow(),
-                joinActionConfiguration.getName(), joinGroup);
-
-        JoinEntry joinEntry = upsertAndLockJoinEntry(joinEntryId, OffsetDateTime.now(clock).plus(Duration.parse(
-                joinActionConfiguration.getMaxAge())), joinActionConfiguration.getMaxNum(), deltaFile.getDid(),
-                joinIndex);
-
-        if (joinEntry == null) {
-            log.debug("Timed out trying to lock join entry {}", joinEntryId);
-            deltaFile.setStage(DeltaFileStage.ERROR);
-            deltaFileRepo.save(deltaFile);
-            return;
-        }
-
-        log.debug("Updated join entry with {} DeltaFiles", joinEntry.getDeltaFileEntries().size());
-
-        if (joinEntry.getDeltaFileEntries().size() < joinActionConfiguration.getMaxNum()) {
-            updateJoinCheck(joinEntry.getJoinDate());
-            joinRepo.unlock(joinEntryId);
-            return;
-        }
-
-        queueJoinAction(joinEntry);
-
-        scheduleJoinCheckForSoonestInRepository();
-    }
-
-    private void updateJoinCheck(OffsetDateTime joinDate) {
-        if ((timedOutJoinFuture == null) || timedOutJoinFuture.isDone() || joinDate.isBefore(
-                OffsetDateTime.now(clock).plus(timedOutJoinFuture.getDelay(TimeUnit.SECONDS), ChronoUnit.SECONDS))) {
-            scheduleJoinCheck(joinDate);
-        }
-    }
-
-    private JoinEntry upsertAndLockJoinEntry(JoinEntryId joinEntryId, OffsetDateTime joinDate,
-            Integer maxDeltaFileEntries, String did, String index) {
-        JoinEntry joinEntry = null;
-        long endTimeMs = clock.millis() + getProperties().getJoin().getAcquireLockTimeoutMs();
-        while ((joinEntry == null) && (clock.millis() < endTimeMs)) {
-            try {
-                joinEntry = joinRepo.upsertAndLock(joinEntryId, joinDate, maxDeltaFileEntries, did, index);
-            } catch (DuplicateKeyException e) {
-                // Tried to insert duplicate while other was locked. Sleep and try again.
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {}
-            }
-        }
-        return joinEntry;
-    }
-
-    public void unlockTimedOutJoinEntryLocks() {
-        long numUnlocked = joinRepo.unlockBefore(
-                OffsetDateTime.now(clock).minus(getProperties().getJoin().getMaxLockDuration()));
-        if (numUnlocked > 0) {
-            log.warn("Unlocked {} join entries", numUnlocked);
-        }
-
-        scheduleJoinCheckForSoonestInRepository();
     }
 }

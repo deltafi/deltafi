@@ -28,9 +28,6 @@ import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.types.ActionState.QUEUED;
-import static org.deltafi.common.types.DeltaFileStage.ENRICH;
-import static org.deltafi.common.types.DeltaFileStage.INGRESS;
-import static org.deltafi.core.services.DeltaFilesService.JOINED_SOURCE_FILE_NAME;
 import static org.deltafi.core.util.Constants.*;
 
 public class FullFlowExemplars {
@@ -131,23 +128,6 @@ public class FullFlowExemplars {
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
     }
-
-    public static DeltaFile preJoinDeltaFile(List<String> parentDids, String did) {
-        DeltaFile deltaFile = Util.emptyDeltaFile(did, JOIN_FLOW_NAME);
-        deltaFile.setParentDids(parentDids);
-        deltaFile.getActions().clear(); // remove IngressAction
-        deltaFile.setSourceInfo(SourceInfo.builder()
-                .filename(JOINED_SOURCE_FILE_NAME)
-                .flow(JOIN_FLOW_NAME)
-                .metadata(Map.of("fragment-index", "1",
-                        "join1-source-metadata1", "abc",
-                        "join2-source-metadata1", "ABC",
-                        "common-source-metadata", "def",
-                        "different-source-metadata", "xyz")).build());
-        deltaFile.queueAction(TEST_JOIN_ACTION);
-        return deltaFile;
-    }
-
     public static DeltaFile postFormatDeltaFile(String did) {
         DeltaFile deltaFile = postEnrichDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.EGRESS);
@@ -235,35 +215,6 @@ public class FullFlowExemplars {
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
     }
-
-    public static DeltaFile postJoinDeltaFile(List<String> parentDids, String did) {
-        DeltaFile deltaFile = preJoinDeltaFile(parentDids, did);
-
-        deltaFile.setStage(ENRICH);
-        deltaFile.completeAction(TEST_JOIN_ACTION, START_TIME, STOP_TIME);
-        deltaFile.queueAction("sampleEnrich.SampleDomainAction");
-        ContentReference contentReference = new ContentReference("application/octet-stream", new Segment("uuid", 0, 500, did));
-        Content content = new Content("theName", contentReference);
-        ProtocolLayer protocolLayer = ProtocolLayer.builder()
-                .action(TEST_JOIN_ACTION)
-                .content(List.of(content))
-                .metadata(Map.of("x", "y")).build();
-        deltaFile.setProtocolStack(List.of(protocolLayer));
-        deltaFile.addDomain("sampleDomain", "sampleDomainValue", "application/octet-stream");
-        deltaFile.recalculateBytes();
-
-        return deltaFile;
-    }
-
-    public static DeltaFile postJoinReinjectDeltaFile(List<String> parentDids, String did) {
-        DeltaFile deltaFile = postJoinDeltaFile(parentDids, did);
-        deltaFile.setStage(INGRESS);
-        deltaFile.setDomains(Collections.emptyList());
-        deltaFile.getSourceInfo().setFlow(INGRESS_FLOW_NAME);
-        deltaFile.getActions().get(1).setName("sampleIngress.Utf8TransformAction");
-        return deltaFile;
-    }
-
     public static DeltaFile transformFlowPostIngressDeltaFile(String did) {
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
         deltaFile.setIngressBytes(500L);

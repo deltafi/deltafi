@@ -11,7 +11,7 @@ Normalization Flows include Ingress Flows, Enrich Flows, and Egress Flows. They 
 
 ### Ingress Flows
 
-Ingress flows steer data through an optional series of Transform Actions and into a Load or Join Action.
+Ingress flows steer data through an optional series of Transform Actions and into a Load Action.
 
 ```json
 {
@@ -26,25 +26,6 @@ Ingress flows steer data through an optional series of Transform Actions and int
   "loadAction": {
     "name": "PassthroughLoadAction",
     "type": "org.deltafi.passthrough.action.RoteLoadAction",
-    "parameters": {
-      "domains": [
-        "binary"
-      ]
-    }
-  }
-}
-```
-```json
-{
-  "name": "join-max-ingress",
-  "type": "INGRESS",
-  "description": "Collects up to 3 ingress files at a time, waiting up to 1 hour, for processing as a single DeltaFile",
-  "joinAction": {
-    "name": "RoteJoinAction",
-    "actionType": "JOIN",
-    "type": "org.deltafi.passthrough.action.RoteJoinAction",
-    "maxAge": "PT1H",
-    "maxNum": 3,
     "parameters": {
       "domains": [
         "binary"

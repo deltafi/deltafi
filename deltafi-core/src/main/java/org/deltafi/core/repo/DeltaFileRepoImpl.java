@@ -354,8 +354,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds) {
-        Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.JOINED,
-                DeltaFileStage.JOINING, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
+        Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
 
         long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
         Criteria expired = Criteria.where(MODIFIED).lt(new Date(epochMs));
@@ -388,8 +387,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (completeOnly) {
-            andCriteria.add(Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.JOINED,
-                    DeltaFileStage.CANCELLED));
+            andCriteria.add(Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.CANCELLED));
         }
 
         if (andCriteria.size() == 1) {
@@ -652,7 +650,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {
-        Criteria completed = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.JOINED);
+        Criteria completed = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE);
         Criteria acknowledged = new Criteria().andOperator(
                 Criteria.where(STAGE).is(DeltaFileStage.ERROR),
                 Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
@@ -942,7 +940,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         List<AggregationOperation> aggregationOps = new ArrayList<>();
         List<Criteria> criteriaList = new ArrayList<>();
         if (inFlightOnly) {
-            criteriaList.add(Criteria.where(STAGE).in(DeltaFileStage.INGRESS, DeltaFileStage.JOINING,
+            criteriaList.add(Criteria.where(STAGE).in(DeltaFileStage.INGRESS,
                     DeltaFileStage.ENRICH, DeltaFileStage.EGRESS));
         }
         if (!includeDeletedContent) {

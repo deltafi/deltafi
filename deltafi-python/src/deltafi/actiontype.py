@@ -23,7 +23,6 @@ class ActionType(Enum):
     INGRESS = "ingress"
     TRANSFORM = "transform"
     LOAD = "load"
-    JOIN = "join"
     DOMAIN = "domain"
     ENRICH = "enrich"
     FORMAT = "format"

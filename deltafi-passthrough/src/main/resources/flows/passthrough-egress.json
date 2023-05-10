@@ -5,10 +5,7 @@
   "includeIngressFlows": [
     "decompress-and-merge",
     "passthrough",
-    "split-lines-passthrough",
-    "join-max-ingress",
-    "join-timeout-ingress",
-    "join-grouped-ordered-max-ingress"
+    "split-lines-passthrough"
   ],
   "formatAction": {
     "name": "PassthroughFormatAction",

@@ -59,7 +59,6 @@ type IngressFlowPlan {
   sourcePlugin: PluginCoordinates!
   transformActions: [TransformActionConfiguration]
   loadAction: LoadActionConfiguration
-  joinAction: JoinActionConfiguration
 }
 
 input IngressFlowPlanInput {
@@ -69,7 +68,6 @@ input IngressFlowPlanInput {
   sourcePlugin: PluginCoordinatesInput!
   transformActions: [TransformActionConfigurationInput]
   loadAction: LoadActionConfigurationInput
-  joinAction: JoinActionConfigurationInput
 }
 
 type EnrichFlowPlan {
@@ -190,7 +188,6 @@ type IngressFlow {
   maxErrors: Int!
   transformActions: [TransformActionConfiguration]
   loadAction: LoadActionConfiguration
-  joinAction: JoinActionConfiguration
   variables: [Variable]!
 }
 

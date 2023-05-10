@@ -19,7 +19,7 @@
 from deltafi.domain import Content, Context, SourceInfo
 from deltafi.metric import Metric
 from deltafi.result import DomainResult, EgressResult, EnrichResult, ErrorResult, FilterResult, FormatResult, \
-    FormatManyResult, JoinResult, JoinReinjectResult, LoadResult, ReinjectResult, TransformResult, ValidateResult
+    FormatManyResult, LoadResult, ReinjectResult, TransformResult, ValidateResult
 
 from .helperutils import make_content_reference, make_context
 
@@ -168,59 +168,6 @@ def test_format_many_result():
 def make_content(content_service, name, seg_id):
     content = Content(name=name, content_reference=make_content_reference(seg_id), content_service=content_service)
     return content
-
-
-def test_join_result():
-    result = JoinResult(make_context())
-    result.add_content([Content(name="content1", content_reference=make_content_reference("id1"), content_service=None),
-                        Content(name="content2", content_reference=make_content_reference("id2"), content_service=None)])
-    add_canned_metadata(result)
-    result.add_domain("domain1", "data1", "xml")
-    result.add_domain("domain2", "data2", "json")
-    assert result.result_key == "join"
-    assert result.result_type == "JOIN"
-    verify_no_metrics(result)
-
-    response = result.response()
-    assert len(response) == 3
-
-    domains = response.get("domains")
-    assert len(domains) == 2
-    assert domains[0] == {
-        'name': "domain1",
-        'value': "data1",
-        'mediaType': "xml"}
-    assert domains[1] == {
-        'name': "domain2",
-        'value': "data2",
-        'mediaType': "json"}
-
-    content = response.get("content")
-    assert len(content) == 2
-    assert content[0]['name'] == "content1"
-    assert content[1]['name'] == "content2"
-    verify_all_metadata(response)
-
-
-def test_join_reinject_result():
-    result = JoinReinjectResult(make_context(), "flow")
-    result.add_content([Content(name="content1", content_reference=make_content_reference("id1"), content_service=None),
-                        Content(name="content2", content_reference=make_content_reference("id2"), content_service=None)])
-    add_canned_metadata(result)
-    assert result.result_key == "joinReinject"
-    assert result.result_type == "JOIN_REINJECT"
-    verify_no_metrics(result)
-
-    response = result.response()
-    assert len(response) == 3
-
-    assert response.get("flow") == "flow"
-
-    content = response.get("content")
-    assert len(content) == 2
-    assert content[0]['name'] == "content1"
-    assert content[1]['name'] == "content2"
-    verify_all_metadata(response)
 
 
 def test_load_result():

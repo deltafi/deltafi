@@ -107,12 +107,10 @@ import java.util.stream.Stream;
 import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.common.types.ActionState.QUEUED;
-import static org.deltafi.common.types.DeltaFileStage.JOINING;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.*;
 import static org.deltafi.core.util.FullFlowExemplars.*;
@@ -122,7 +120,6 @@ import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
-import static org.deltafi.core.services.DeltaFilesService.JOINED_SOURCE_FILE_NAME;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -3899,202 +3896,6 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
 
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleTransform.SampleTransformAction", TRANSFORM_FLOW_NAME, null);
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricService);
-	}
-
-	private void addJoinFlow(Integer maxNum, String metadataKey, String metadataIndexKey) {
-		JoinActionConfiguration joinActionConfiguration = new JoinActionConfiguration(TEST_JOIN_ACTION, TEST_JOIN_ACTION, "PT1S");
-		if (maxNum != null) {
-			joinActionConfiguration.setMaxNum(maxNum);
-		}
-		if (metadataKey != null) {
-			joinActionConfiguration.setMetadataKey(metadataKey);
-		}
-		if (metadataIndexKey != null) {
-			joinActionConfiguration.setMetadataIndexKey(metadataIndexKey);
-		}
-
-		IngressFlow ingressFlow = new IngressFlow();
-		ingressFlow.setName(JOIN_FLOW_NAME);
-		ingressFlow.getFlowStatus().setState(FlowState.RUNNING);
-		ingressFlow.setJoinAction(joinActionConfiguration);
-		ingressFlowRepo.insert(ingressFlow);
-		ingressFlowService.refreshCache();
-	}
-
-	private DeltaFile ingestJoiningDeltaFile(String filename, Map<String, String> sourceMetadata) {
-		Content content1 = Content.newBuilder()
-				.contentReference(new ContentReference(filename + "-content1-media-type",
-						new Segment(filename + "-content1-segment1", 0, 500, "did"),
-						new Segment(filename + "-content1-segment2", 100, 200, "did")))
-				.build();
-		Content content2 = Content.newBuilder()
-				.contentReference(new ContentReference(filename + "-content2-media-type",
-						new Segment(filename + "-content2-segment1", 0, 500, "did")))
-				.build();
-		List<Content> contentList = List.of(content1, content2);
-
-		IngressEvent ingressEvent = IngressEvent.newBuilder()
-				.content(contentList)
-				.sourceInfo(SourceInfo.builder()
-						.filename(filename)
-						.flow(JOIN_FLOW_NAME)
-						.metadata(sourceMetadata)
-						.build())
-				.build();
-		return deltaFilesService.ingress(ingressEvent);
-	}
-
-	private String ingestJoin1() {
-		return ingestJoiningDeltaFile("join1.txt", new HashMap<>(Map.of(
-				"join1-source-metadata1", "abc",
-				"common-source-metadata", "def",
-				"different-source-metadata", "jkl",
-				"fragment-index", "2"))).getDid();
-	}
-
-	private String ingestJoin2() {
-		return ingestJoiningDeltaFile("join2.txt", new HashMap<>(Map.of(
-				"join2-source-metadata1", "ABC",
-				"common-source-metadata", "def",
-				"different-source-metadata", "xyz",
-				"fragment-index", "1"))).getDid();
-	}
-
-	private void verifyJoined(String did1, String did2) {
-		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
-		assertEquals(1, parent1.getChildDids().size());
-		assertEquals(DeltaFileStage.JOINED, parent1.getStage());
-
-		DeltaFile parent2 = deltaFileRepo.findById(did2).orElseThrow();
-		assertEquals(1, parent2.getChildDids().size());
-		assertEquals(DeltaFileStage.JOINED, parent2.getStage());
-		assertEquals(parent1.getChildDids(), parent2.getChildDids());
-
-		DeltaFile child = deltaFileRepo.findById(parent1.getChildDids().get(0)).orElseThrow();
-		assertEquals(List.of(parent1.getDid(), parent2.getDid()), child.getParentDids());
-		assertEquals(JOINED_SOURCE_FILE_NAME, child.getSourceInfo().getFilename());
-		assertEquals(JOIN_FLOW_NAME, child.getSourceInfo().getFlow());
-		assertEquals(5, child.getSourceInfo().getMetadata().size());
-		assertEquals(1, child.getActions().size());
-		assertEquals(TEST_JOIN_ACTION, child.getActions().get(0).getName());
-		assertEquals(QUEUED, child.getActions().get(0).getState());
-		assertTrue(child.getProtocolStack().isEmpty());
-
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
-		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
-		assertThat(actionInputs).hasSize(1);
-		ActionInput actionInput = actionInputs.get(0);
-
-		assertEquals(2, actionInput.getDeltaFileMessages().size());
-		assertEquals(parent1.forQueue(TEST_JOIN_ACTION), actionInput.getDeltaFileMessages().get(0));
-		assertEquals(parent2.forQueue(TEST_JOIN_ACTION), actionInput.getDeltaFileMessages().get(1));
-
-		assertEqualsIgnoringDates(preJoinDeltaFile(List.of(parent1.getDid(), parent2.getDid()), child.getDid()), child);
-	}
-
-	private void assertJoining(String did) {
-		DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
-		assert deltaFile != null;
-		assertEquals(JOINING, deltaFile.getStage());
-	}
-
-	@Test
-	public void testPreparesJoinAfterTimeout() {
-		addJoinFlow(3, null, null);
-
-		String did1 = ingestJoin1();
-		assertEquals(1, deltaFileRepo.count());
-		assertJoining(did1);
-
-		String did2 = ingestJoin2();
-		assertEquals(2, deltaFileRepo.count());
-		assertJoining(did2);
-
-		await().until(() -> deltaFileRepo.count() == 3); // join after 1 second
-
-		verifyJoined(did1, did2);
-	}
-
-	@Test
-	public void testPreparesJoinAfterMaxNum() {
-		addJoinFlow(2, null, null);
-
-		String did1 = ingestJoin1();
-		assertEquals(1, deltaFileRepo.count());
-		assertJoining(did1);
-
-		String did2 = ingestJoin2();
-		assertEquals(3, deltaFileRepo.count()); // join immediately
-
-		verifyJoined(did1, did2);
-	}
-
-	@Test
-	public void testJoinOrder() {
-		addJoinFlow(2, null, "fragment-index");
-
-		String parent1Did = ingestJoin1();
-		String parent2Did = ingestJoin2();
-
-		DeltaFile parent = deltaFileRepo.findById(parent2Did).orElseThrow();
-		DeltaFile child = deltaFileRepo.findById(parent.getChildDids().get(0)).orElseThrow();
-
-		// verify parents are in reverse order
-		assertEquals(List.of(parent2Did, parent1Did), child.getParentDids());
-	}
-
-	@Test
-	public void testJoinsByMetadataKeyCommon() {
-		addJoinFlow(5, "common-source-metadata", null);
-
-		ingestJoin1();
-		assertEquals(1, deltaFileRepo.count());
-		ingestJoin2();
-		assertEquals(2, deltaFileRepo.count());
-
-		await().until(() -> deltaFileRepo.count() == 3); // join to 1 child
-	}
-
-	@Test
-	public void testJoinsByMetadataKeyDifferent() {
-		addJoinFlow(5, "different-source-metadata", null);
-
-		ingestJoin1();
-		assertEquals(1, deltaFileRepo.count());
-		ingestJoin2();
-		assertEquals(2, deltaFileRepo.count());
-
-		await().until(() -> deltaFileRepo.count() == 4); // create 2 different children
-	}
-
-	@Test
-	public void testJoin() throws IOException {
-		addJoinFlow(2, null, null);
-		String did = UUID.randomUUID().toString();
-		List<String> parentDids = List.of(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-		deltaFileRepo.save(preJoinDeltaFile(parentDids, did));
-
-		deltaFilesService.handleActionEvent(actionEvent("join", did));
-
-		verifyActionEventResults(postJoinDeltaFile(parentDids, did), "sampleEnrich.SampleDomainAction");
-		Map<String, String> tags = tagsFor(ActionEventType.JOIN, TEST_JOIN_ACTION, JOIN_FLOW_NAME, null);
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricService);
-	}
-
-	@Test
-	public void testJoinReinject() throws IOException {
-		addJoinFlow(2, null, null);
-		String did = UUID.randomUUID().toString();
-		List<String> parentDids = List.of(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-		deltaFileRepo.save(preJoinDeltaFile(parentDids, did));
-
-		deltaFilesService.handleActionEvent(actionEvent("join-reinject", did));
-
-		verifyActionEventResults(postJoinReinjectDeltaFile(parentDids, did), "sampleIngress.Utf8TransformAction");
-		Map<String, String> tags = tagsFor(ActionEventType.JOIN_REINJECT, TEST_JOIN_ACTION, JOIN_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}

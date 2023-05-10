@@ -35,7 +35,6 @@ import java.util.List;
 public class IngressFlowPlan extends FlowPlan {
     private List<TransformActionConfiguration> transformActions;
     private LoadActionConfiguration loadAction;
-    private JoinActionConfiguration joinAction;
 
     public IngressFlowPlan(String name, String description) {
         super(name, FlowType.INGRESS, description);
@@ -58,9 +57,6 @@ public class IngressFlowPlan extends FlowPlan {
         }
         if (loadAction != null) {
             actionConfigurations.add(loadAction);
-        }
-        if (joinAction != null) {
-            actionConfigurations.add(joinAction);
         }
         return actionConfigurations;
     }

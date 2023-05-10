@@ -30,7 +30,5 @@ public enum ActionEventType {
   ERROR,
   FILTER,
   REINJECT,
-  JOIN,
-  JOIN_REINJECT,
   UNKNOWN
 }

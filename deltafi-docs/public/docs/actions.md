@@ -192,7 +192,6 @@ return new FilterResult(context, "Description of why this DeltaFile was filtered
 ## Ingress Flow Actions
 - [Transform Action](/actions/transform)
 - [Load Action](/actions/load)
-- [Join Action](/actions/join)
 
 ## Enrichment Flow Actions
 - [Domain Action](/actions/domain)

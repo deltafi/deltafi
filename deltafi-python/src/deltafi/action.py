@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 
 from deltafi.actiontype import ActionType
 from deltafi.domain import Context, DeltaFileMessage
-from deltafi.input import DomainInput, EgressInput, EnrichInput, FormatInput, JoinInput, LoadInput, TransformInput, ValidateInput
+from deltafi.input import DomainInput, EgressInput, EnrichInput, FormatInput, LoadInput, TransformInput, ValidateInput
 from deltafi.result import *
 from pydantic import BaseModel
 
@@ -113,23 +113,6 @@ class FormatAction(Action):
 
     @abstractmethod
     def format(self, context: Context, params: BaseModel, format_input: FormatInput):
-        pass
-
-
-class JoinAction(Action):
-    def __init__(self, description: str):
-        super().__init__(ActionType.JOIN, description, [], [])
-
-    def execute(self, event):
-        join_inputs = [JoinInput(
-            content=delta_file_message.content_list,
-            metadata=delta_file_message.metadata) for delta_file_message in event.delta_file_messages]
-        result = self.join(event.context, self.param_class().parse_obj(event.params), join_inputs)
-        self.validate_type(result, (JoinResult, JoinReinjectResult, ErrorResult, FilterResult))
-        return result
-
-    @abstractmethod
-    def join(self, context: Context, params: BaseModel, join_inputs: [JoinInput]):
         pass
 
 

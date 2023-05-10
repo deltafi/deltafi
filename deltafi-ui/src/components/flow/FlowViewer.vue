@@ -178,7 +178,7 @@ const props = defineProps({
 
 const { header, flowName, flowType, variables } = reactive(props);
 
-const actionsList = ["transformActions", "loadAction", "joinAction", "deleteActions", "domainActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
+const actionsList = ["transformActions", "loadAction", "deleteActions", "domainActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
 
 const refreshInterval = 5000; // 5 seconds
 const flowData = ref("");

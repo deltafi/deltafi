@@ -161,37 +161,6 @@ public enum PropertyType {
             target.getIngress().setEnabled(source.getIngress().isEnabled());
         }
     },
-    JOIN_ACQUIRE_LOCK_TIMEOUT_MS("join.acquireLockTimeoutMs", "Timeout for acquiring a database lock on a join",
-            props -> props.getJoin().getAcquireLockTimeoutMs()) {
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getJoin().setAcquireLockTimeoutMs(source.getJoin().getAcquireLockTimeoutMs());
-        }
-    },
-    JOIN_LOCK_CHECK_INTERVAL("join.lockCheckInterval", "Frequency that database locks on joins are checked for expiration (ISO 8601)",
-            props -> props.getJoin().getLockCheckInterval()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertDuration(value, "The join.lockCheckInterval must be greater than 0");
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getJoin().setLockCheckInterval(source.getJoin().getLockCheckInterval());
-        }
-    },
-    JOIN_MAX_LOCK_DURATION("join.maxLockDuration", "Maximum duration to hold a database lock on a join (ISO 8601)",
-            props -> props.getJoin().getMaxLockDuration()) {
-        @Override
-        public Object convertValue(String value) {
-            return convertDuration(value, "The join.maxLockDuration must be greater than 0");
-        }
-
-        @Override
-        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getJoin().setMaxLockDuration(source.getJoin().getMaxLockDuration());
-        }
-    },
     METRICS_ENABLED("metrics.enabled", "Enable reporting of metrics to statsd/graphite",
             props -> props.getMetrics().isEnabled(), false) {
         @Override
